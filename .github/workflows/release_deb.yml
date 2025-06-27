@@ -1,0 +1,75 @@
+# Prepares a deb package of Storm
+name: Release deb package
+
+on:
+  # needed to trigger the workflow manually
+  workflow_dispatch:
+
+env:
+  # GitHub runners currently have 4 cores
+  NR_JOBS: "4"
+
+jobs:
+  debian:
+    name: Debian package on ${{ matrix.distro.name }}-${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      matrix:
+        distro:
+          - {name: "debian:12",
+             tag: "debian-12",
+             build_type: "Release"
+            }
+          - {name: "debian:13",
+             tag: "debian-13",
+             build_type: "Release"
+            }
+          - {name: "ubuntu:24.04",
+             tag: "ubuntu-24.04",
+             build_type: "Release"
+            }
+          - {name: "ubuntu:rolling",
+             tag: "latest",
+             build_type: "Release"
+            }
+        platform:
+          - {name: amd64, runner: "ubuntu-latest"}
+          - {name: arm64, runner: "ubuntu-24.04-arm"}
+      fail-fast: false
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v6
+      - name: Build storm from Dockerfile
+        run: |
+          docker build -t movesrwth/storm:ci . \
+            --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro.tag }} \
+            --build-arg build_type="${{ matrix.distro.build_type }}" \
+            --build-arg carl_tag="master" \
+            --build-arg cmake_args="-DSTORM_BUILD_TESTS=OFF" \
+            --build-arg no_threads=${NR_JOBS}
+            # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:ci
+      - name: Create package
+        run: docker exec ci bash -c "cd /opt/storm/build; make package"
+      - name: Copy package
+        run: |
+          docker exec ci bash -c "mkdir /opt/package; cp /opt/storm/build/*.deb /opt/package/"
+          docker cp ci:/opt/package .
+      - uses: actions/upload-artifact@v6
+        with:
+          name: storm-deb-${{ matrix.distro.tag }}-${{ matrix.platform.name }}
+          path: ./package/*.deb
+      - name: Test package
+        run: |
+          docker run -d -it --name ci-test ${{ matrix.distro.name }}
+          docker cp package/*.deb ci-test:/opt/
+          docker exec ci-test bash -c "apt-get update; apt-get install -y /opt/*.deb"
+          docker exec ci-test bash -c "storm --version"
+      - name: Build starter project using Storm package
+        run: |
+          docker exec ci-test bash -c "apt-get install -y build-essential ca-certificates cmake git"
+          docker exec ci-test bash -c "git clone https://github.com/stormchecker/storm-project-starter-cpp /opt/storm-starter"
+          docker exec ci-test bash -c "mkdir -p /opt/storm-starter/build; cd /opt/storm-starter/build; cmake -DNEVER_FETCH_STORM=TRUE .."
+          docker exec ci-test bash -c "cd /opt/storm-starter/build; make -j ${NR_JOBS}"
+          docker exec ci-test bash -c "/opt/storm-starter/build/bin/starter-project /opt/storm-starter/examples/die.pm /opt/storm-starter/examples/die.pctl"
