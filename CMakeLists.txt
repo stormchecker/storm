@@ -4,10 +4,13 @@ if (NOT ${CMAKE_VERSION} VERSION_LESS 3.24)
 endif()
 
 # Set project name
-project (storm
-		LANGUAGES CXX C
-		VERSION 1.12.0.1)
-# Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
+project(storm
+	VERSION 1.12.0.1
+	# Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
+	LANGUAGES CXX C
+	DESCRIPTION "Storm - A Modern Probabilistic Model Checker"
+	HOMEPAGE_URL "https://www.stormchecker.org"
+)
 
 # Add the resources/cmake folder to Module Search Path
 set(STORM_CMAKE_FIND_MODULES "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules")
@@ -532,4 +535,4 @@ install(FILES ${PROJECT_BINARY_DIR}/stormConfig.cmake.install DESTINATION ${STOR
 install(FILES ${PROJECT_BINARY_DIR}/stormConfigVersion.cmake DESTINATION ${STORM_CMAKE_INSTALL_DIR})
 install(EXPORT storm_Targets FILE stormTargets.cmake DESTINATION ${STORM_CMAKE_INSTALL_DIR})
 
-include(StormCPackConfig.cmake)
+include(${PROJECT_SOURCE_DIR}/resources/cmake/stormCPackConfig.cmake)
