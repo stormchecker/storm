@@ -939,6 +939,7 @@ template class SparseDtmcPrctlHelper<double>;
 template class SparseDtmcPrctlHelper<storm::RationalNumber>;
 template class SparseDtmcPrctlHelper<storm::RationalFunction>;
 template class SparseDtmcPrctlHelper<storm::Interval, storm::models::sparse::StandardRewardModel<storm::Interval>, double>;
+template class SparseDtmcPrctlHelper<storm::RationalInterval, storm::models::sparse::StandardRewardModel<storm::RationalInterval>, storm::RationalNumber>;
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

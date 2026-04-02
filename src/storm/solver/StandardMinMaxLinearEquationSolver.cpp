@@ -43,5 +43,6 @@ void StandardMinMaxLinearEquationSolver<ValueType, SolutionType>::setMatrix(stor
 template class StandardMinMaxLinearEquationSolver<double>;
 template class StandardMinMaxLinearEquationSolver<storm::RationalNumber>;
 template class StandardMinMaxLinearEquationSolver<storm::Interval, double>;
+template class StandardMinMaxLinearEquationSolver<storm::RationalInterval, storm::RationalNumber>;
 
 }  // namespace storm::solver

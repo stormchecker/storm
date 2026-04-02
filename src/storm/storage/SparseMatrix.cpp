@@ -672,15 +672,20 @@ typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getEntryCo
 
 template<typename ValueType>
 typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getRowGroupEntryCount(index_type const group) const {
-    index_type result = 0;
     if (!this->hasTrivialRowGrouping()) {
+        index_type result = 0;
         for (auto row : this->getRowGroupIndices(group)) {
             result += (this->rowIndications[row + 1] - this->rowIndications[row]);
         }
+        return result;
     } else {
-        result += (this->rowIndications[group + 1] - this->rowIndications[group]);
+        return (this->rowIndications[group + 1] - this->rowIndications[group]);
     }
-    return result;
+}
+
+template<typename ValueType>
+typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getRowEntryCount(index_type const row) const {
+    return (this->rowIndications[row + 1] - this->rowIndications[row]);
 }
 
 template<typename ValueType>
@@ -2581,6 +2586,20 @@ template std::vector<storm::Interval> SparseMatrix<Interval>::getPointwiseProduc
 template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<storm::Interval> const& matrix) const;
 
 template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
+
+// Rational Intervals
+template std::vector<storm::RationalInterval> SparseMatrix<storm::RationalNumber>::getPointwiseProductRowSumVector(
+    storm::storage::SparseMatrix<storm::RationalInterval> const& otherMatrix) const;
+template class MatrixEntry<typename SparseMatrix<RationalInterval>::index_type, RationalInterval>;
+template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<RationalInterval>::index_type, RationalInterval> const& entry);
+template class SparseMatrixBuilder<RationalInterval>;
+template class SparseMatrix<RationalInterval>;
+template std::ostream& operator<<(std::ostream& out, SparseMatrix<RationalInterval> const& matrix);
+template std::vector<storm::RationalInterval> SparseMatrix<RationalInterval>::getPointwiseProductRowSumVector(
+    storm::storage::SparseMatrix<storm::RationalInterval> const& otherMatrix) const;
+template bool SparseMatrix<storm::RationalInterval>::isSubmatrixOf(SparseMatrix<storm::RationalInterval> const& matrix) const;
+
+template bool SparseMatrix<storm::RationalInterval>::isSubmatrixOf(SparseMatrix<storm::RationalNumber> const& matrix) const;
 
 }  // namespace storage
 }  // namespace storm

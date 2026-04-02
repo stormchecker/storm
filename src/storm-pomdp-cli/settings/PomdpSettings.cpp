@@ -30,6 +30,7 @@
 #include "storm/settings/modules/TransformationSettings.h"
 
 #include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
+#include "storm-pomdp-cli/settings/modules/GenerateMonitorVerifierSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 #include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
 #include "storm-pomdp-cli/settings/modules/ToParametricSettings.h"
@@ -68,6 +69,7 @@ void initializePomdpSettings(std::string const& name, std::string const& executa
     storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
     storm::settings::addModule<storm::settings::modules::HintSettings>();
     storm::settings::addModule<storm::settings::modules::OviSolverSettings>();
+    storm::settings::addModule<storm::settings::modules::GenerateMonitorVerifierSettings>();
 }
 }  // namespace settings
 }  // namespace storm

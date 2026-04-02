@@ -148,7 +148,7 @@ template<typename ValueType>
 std::unique_ptr<LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
     EquationSolverType type = env.solver().getLinearEquationSolverType();
 
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not implemented interval-based linear equation solvers");
     }
 

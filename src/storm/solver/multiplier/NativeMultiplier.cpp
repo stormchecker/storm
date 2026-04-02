@@ -4,6 +4,8 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/macros.h"
 
@@ -41,7 +43,10 @@ void NativeMultiplier<ValueType>::multiplyGaussSeidel(Environment const& env, st
 template<typename ValueType>
 void NativeMultiplier<ValueType>::multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
                                                     std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result,
-                                                    std::vector<uint_fast64_t>* choices) const {
+                                                    UncertaintyResolutionMode const& uncertaintyResolutionMode, std::vector<uint_fast64_t>* choices) const {
+    STORM_LOG_THROW(uncertaintyResolutionMode == UncertaintyResolutionMode::Unset, storm::exceptions::NotSupportedException,
+                    "Uncertainty resolution modes other than 'Unset' are not supported by the native multiplier.");
+
     std::vector<ValueType>* target = &result;
     if (&x == &result) {
         target = &this->provideCachedVector(x.size());

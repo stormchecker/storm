@@ -66,6 +66,7 @@ template class RewardModelBuilder<double>;
 template class RewardModelBuilder<storm::RationalNumber>;
 template class RewardModelBuilder<storm::RationalFunction>;
 template class RewardModelBuilder<storm::Interval>;
+template class RewardModelBuilder<storm::RationalInterval>;
 
 }  // namespace builder
 }  // namespace storm

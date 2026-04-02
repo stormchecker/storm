@@ -1,5 +1,6 @@
 #include "storm-config.h"
 #include "storm/adapters/IntervalForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "test/storm_gtest.h"
 
 #include "storm-parsers/api/model_descriptions.h"
@@ -14,6 +15,7 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/transformer/AddUncertainty.h"
+#include "storm/utility/constants.h"
 
 std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> const& model) {
@@ -153,6 +155,133 @@ void checkModelForQualitativeResult(std::string const& path, std::string const& 
     }
 }
 
+std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> const& model) {
+    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<storm::RationalNumber>>(model->getInitialStates());
+}
+
+storm::RationalNumber getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> const& model,
+                                                          std::unique_ptr<storm::modelchecker::CheckResult>& result) {
+    auto filter = getInitialStateFilter(model);
+    result->filter(*filter);
+    return result->asQuantitativeCheckResult<storm::RationalNumber>().getMin();
+}
+
+std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> const& model) {
+    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<storm::RationalNumber>>(model->getInitialStates());
+}
+
+storm::RationalNumber getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> const& model,
+                                                          std::unique_ptr<storm::modelchecker::CheckResult>& result) {
+    auto filter = getInitialStateFilter(model);
+    result->filter(*filter);
+    return result->asQuantitativeCheckResult<storm::RationalNumber>().getMin();
+}
+
+void expectThrowRational(std::string const& path, std::string const& formulaString,
+                         std::optional<storm::UncertaintyResolutionMode> uncertaintyResolutionMode = std::nullopt) {
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> modelPtr = storm::parser::parseDirectEncodingModel<storm::RationalInterval>(path);
+
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
+
+    storm::Environment env;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalInterval>> dtmc = modelPtr->as<storm::models::sparse::Dtmc<storm::RationalInterval>>();
+    ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
+    auto task = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[0]);
+    if (uncertaintyResolutionMode.has_value()) {
+        task.setUncertaintyResolutionMode(uncertaintyResolutionMode.value());
+    }
+
+    auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalInterval>>(*dtmc);
+    STORM_SILENT_EXPECT_THROW(checker.check(env, task), storm::exceptions::BaseException);
+}
+
+void checkExplicitModelForQuantitativeResultRational(std::string const& path, std::string const& formulaString, storm::RationalNumber min,
+                                                     storm::RationalNumber max) {
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> modelPtr = storm::parser::parseDirectEncodingModel<storm::RationalInterval>(path);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
+    storm::Environment env;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalInterval>> dtmc = modelPtr->as<storm::models::sparse::Dtmc<storm::RationalInterval>>();
+    ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
+    auto taskMax = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[0]);
+    taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Maximize);
+
+    auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalInterval>>(*dtmc);
+    auto resultMax = checker.check(env, taskMax);
+    EXPECT_EQ(max, getQuantitativeResultAtInitialState(dtmc, resultMax));
+
+    auto taskMin = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[1]);
+    taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Minimize);
+
+    auto resultMin = checker.check(env, taskMin);
+    EXPECT_EQ(min, getQuantitativeResultAtInitialState(dtmc, resultMin));
+}
+
+void checkPrismModelForQuantitativeResultRational(std::string const& path, std::string const& formulaString, storm::RationalNumber min,
+                                                  storm::RationalNumber max) {
+    storm::prism::Program program = storm::api::parseProgram(path);
+    program = storm::utility::prism::preprocess(program, "");
+
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> modelPtr = storm::api::buildSparseModel<storm::RationalInterval>(program, formulas);
+
+    storm::Environment env;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalInterval>> dtmc = modelPtr->as<storm::models::sparse::Dtmc<storm::RationalInterval>>();
+    ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
+    auto taskMax = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[0]);
+    taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Maximize);
+
+    auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalInterval>>(*dtmc);
+    auto resultMax = checker.check(env, taskMax);
+    EXPECT_EQ(max, getQuantitativeResultAtInitialState(dtmc, resultMax));
+
+    auto taskMin = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[1]);
+    taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Minimize);
+
+    auto resultMin = checker.check(env, taskMin);
+    EXPECT_EQ(min, getQuantitativeResultAtInitialState(dtmc, resultMin));
+}
+
+void makeUncertainAndCheckRational(std::string const& path, std::string const& formulaString, storm::RationalNumber amountOfUncertainty) {
+    storm::prism::Program program = storm::api::parseProgram(path);
+    program = storm::utility::prism::preprocess(program, "");
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaString, program));
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> modelPtr = storm::api::buildSparseModel<storm::RationalNumber>(program, formulas);
+    auto dtmc = modelPtr->as<storm::models::sparse::Dtmc<storm::RationalNumber>>();
+
+    storm::Environment env;
+    auto taskCertain = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[0]);
+    auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>>(*dtmc);
+    auto exresult = checker.check(env, taskCertain);
+    storm::RationalNumber certainValue = getQuantitativeResultAtInitialState(modelPtr, exresult);
+
+    storm::Environment envIntervals;
+    envIntervals.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+    auto transformer = storm::transformer::AddUncertainty<storm::RationalNumber>(modelPtr);
+    auto idtmc = transformer.transform(amountOfUncertainty)->as<storm::models::sparse::Dtmc<storm::RationalInterval>>();
+    auto ichecker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalInterval>>(*idtmc);
+
+    auto taskMin = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[0]);
+    taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Minimize);
+    auto iresultMin = ichecker.check(envIntervals, taskMin);
+    storm::RationalNumber minValue = getQuantitativeResultAtInitialState(idtmc, iresultMin);
+    EXPECT_LE(minValue, certainValue);
+
+    auto taskMax = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[0]);
+    taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Maximize);
+    auto iresultMax = ichecker.check(envIntervals, taskMax);
+    storm::RationalNumber maxValue = getQuantitativeResultAtInitialState(idtmc, iresultMax);
+    EXPECT_LE(certainValue, maxValue);
+}
+
 TEST(RobustDtmcModelCheckerTest, Tiny01ReachMaxMinProbs) {
     // Maximal Reachability probabilities using explicit format.
     checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-01.drn", "P=? [ F \"target\"];P=? [ F \"target\"]", 0.3, 0.5);
@@ -227,4 +356,84 @@ TEST(RobustDtmcModelCheckerTest, TinyO2Propositional) {
     expectedResults.push_back(result1);
 
     checkModelForQualitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-02.drn", "\"target\";!\"target\"", expectedResults);
+}
+
+// ---- RationalInterval tests (exact arithmetic) ----
+
+TEST(RobustRationalDtmcModelCheckerTest, Tiny01ReachMaxMinProbs) {
+    checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-01.drn", "P=? [ F \"target\"];P=? [ F \"target\"]",
+                                                    storm::RationalNumber("3/10"), storm::RationalNumber("1/2"));
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, Tiny01MaxReachProbNoUncertaintyResolutionMode) {
+    expectThrowRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-01.drn", "P=? [ F \"target\"];",
+                        std::make_optional<storm::UncertaintyResolutionMode>(storm::UncertaintyResolutionMode::Unset));
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, Tiny01MaxReachProbNoOptimizationDirectionButRobust) {
+    expectThrowRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-01.drn", "P=? [ F \"target\"];",
+                        std::make_optional<storm::UncertaintyResolutionMode>(storm::UncertaintyResolutionMode::Robust));
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, Tiny02GloballyMaxMinProbs) {
+    expectThrowRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-02.drn", "P=? [ G \"target\"];P=? [ G \"target\"]");
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, DieIntervalsMaxMin) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+    checkPrismModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "P=? [ F \"one\"];P=? [ F \"one\"]",
+                                                 storm::RationalNumber("4483008223/94143178827"), storm::RationalNumber("35864065784/94143178827"));
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, BrpIntervalsMaxMin) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+    checkPrismModelForQuantitativeResultRational(
+        STORM_TEST_RESOURCES_DIR "/idtmc/brp-32-2-intervals.pm", "P=? [ F \"error\" ];P=? [ F \"error\" ]",
+        // The number is to large to be represented as a literal, so we construct it from strings.
+        storm::RationalNumber("10238464074071514998168131748974289312176706851339248682605279417683104172439385084862067764341447739354976890683145110072150529"
+                              "29484271217452553595194641992099205093706027267658909966207049695357884534755950707204946503657943965652247014748702342577938440"
+                              "579441829932769922685028147340905022682454110960938051"
+                              "/"
+                              "40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+                              "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+                              "000000000000000000000000000000000000000000000000000000000000000"),
+        storm::RationalNumber("73421101667166357614487085157865792442422423664718103404519649530149236548299533815461648662459394997073289369183682645650367121"
+                              "4626220291672876565353557862092334897"
+                              "/"
+                              "86736173798840354720596224069595336914062500000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+                              "0000000000000000000000000000000000000000"));
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, DieIntervalsMaxMinRewards) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+    checkPrismModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "R=? [ F \"done\"];R=? [ F \"done\"]",
+                                                 storm::RationalNumber("15544649/4782969"), storm::RationalNumber("76715008330675523/16677181699666569"));
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, Tiny03MaxMinRewards) {
+    checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ F \"target\"];R=? [ F \"target\"]",
+                                                    storm::RationalNumber("13/2"), storm::RationalNumber("17/2"));
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, Tiny03RewardsNoUncertaintyResolutionMode) {
+    expectThrowRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ F \"target\"]", storm::UncertaintyResolutionMode::Unset);
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, Tiny04MaxMinRewards) {
+    checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "R=? [ F \"target\"];R=? [ F \"target\"]",
+                                                    storm::utility::infinity<storm::RationalNumber>(), storm::utility::infinity<storm::RationalNumber>());
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, AddUncertaintyBrpMax) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", storm::RationalNumber("1/10"));
+    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", storm::RationalNumber("1/20"));
 }

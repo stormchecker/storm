@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm/adapters/IntervalForward.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/models/sparse/Dtmc.h"
 
@@ -11,7 +12,7 @@ class SparseDtmcPrctlModelChecker : public SparsePropositionalModelChecker<Spars
    public:
     typedef typename SparseDtmcModelType::ValueType ValueType;
     typedef typename SparseDtmcModelType::RewardModelType RewardModelType;
-    using SolutionType = typename std::conditional<std::is_same_v<ValueType, storm::Interval>, double, ValueType>::type;
+    using SolutionType = storm::IntervalBaseType<ValueType>;
 
     explicit SparseDtmcPrctlModelChecker(SparseDtmcModelType const& model);
 

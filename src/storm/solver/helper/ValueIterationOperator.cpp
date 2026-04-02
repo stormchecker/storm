@@ -33,7 +33,7 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMat
     matrixColumns.reserve(matrix.getNonzeroEntryCount() + numRows + 1);  // matrixColumns also contain indications for when a row(group) starts
 
     // hasOnlyConstants is only used for Interval matrices, currently only populated for iMCs
-    if constexpr (std::is_same<ValueType, storm::Interval>::value) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         applyCache.hasOnlyConstants.clear();
         applyCache.hasOnlyConstants.grow(matrix.getRowCount());
     }
@@ -53,7 +53,7 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMat
             matrixColumns.back() = StartOfRowGroupIndicator;  // This is the start of the next row group
         }
     } else {
-        if constexpr (std::is_same<ValueType, storm::Interval>::value) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
             matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of first row
             for (auto rowIndex : indexRange<Backward>(0, numRows)) {
                 bool hasOnlyConstants = true;
@@ -204,5 +204,7 @@ template class ValueIterationOperator<storm::RationalNumber, true>;
 template class ValueIterationOperator<storm::RationalNumber, false>;
 template class ValueIterationOperator<storm::Interval, true, double>;
 template class ValueIterationOperator<storm::Interval, false, double>;
+template class ValueIterationOperator<storm::RationalInterval, true, storm::RationalNumber>;
+template class ValueIterationOperator<storm::RationalInterval, false, storm::RationalNumber>;
 
 }  // namespace storm::solver::helper

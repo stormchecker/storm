@@ -76,5 +76,6 @@ template class StateBehavior<double>;
 template class StateBehavior<storm::RationalNumber>;
 template class StateBehavior<storm::RationalFunction>;
 template class StateBehavior<storm::Interval>;
+template class StateBehavior<storm::RationalInterval>;
 }  // namespace generator
 }  // namespace storm

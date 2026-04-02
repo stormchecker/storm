@@ -14,25 +14,27 @@ class SparseMatrix;
 
 namespace solver {
 
-template<typename ValueType, bool TrivialRowGrouping>
-class ViOperatorMultiplier : public Multiplier<ValueType> {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType = ValueType>
+class ViOperatorMultiplier : public Multiplier<ValueType, SolutionType> {
    public:
     ViOperatorMultiplier(storm::storage::SparseMatrix<ValueType> const& matrix);
     virtual ~ViOperatorMultiplier() = default;
 
-    virtual void multiply(Environment const& env, std::vector<ValueType> const& x, std::vector<ValueType> const* b,
-                          std::vector<ValueType>& result) const override;
-    virtual void multiplyGaussSeidel(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, bool backwards = true) const override;
+    virtual void multiply(Environment const& env, std::vector<SolutionType> const& x, std::vector<ValueType> const* b,
+                          std::vector<SolutionType>& result) const override;
+    virtual void multiplyGaussSeidel(Environment const& env, std::vector<SolutionType>& x, std::vector<ValueType> const* b,
+                                     bool backwards = true) const override;
     virtual void multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
-                                   std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result,
+                                   std::vector<SolutionType> const& x, std::vector<ValueType> const* b, std::vector<SolutionType>& result,
+                                   UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset,
                                    std::vector<uint_fast64_t>* choices = nullptr) const override;
     virtual void multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
-                                              std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr,
+                                              std::vector<SolutionType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr,
                                               bool backwards = true) const override;
     virtual void clearCache() const override;
 
    private:
-    using ViOpT = storm::solver::helper::ValueIterationOperator<ValueType, TrivialRowGrouping>;
+    using ViOpT = storm::solver::helper::ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>;
 
     ViOpT& initialize() const;
     ViOpT& initialize(bool backwards) const;

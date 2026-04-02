@@ -119,6 +119,51 @@ bool parseInterval(std::string const& value, storm::Interval& result) {
     return true;
 }
 
+bool parseRationalInterval(std::string const& value, storm::RationalInterval& result) {
+    // Try whether it is a constant.
+    if (storm::RationalNumber pointResult; parseNumber(value, pointResult)) {
+        result = storm::RationalInterval(pointResult);
+        return true;
+    }
+
+    std::string intermediate = value;
+    boost::trim(intermediate);
+    carl::BoundType leftBound;
+    carl::BoundType rightBound;
+    if (intermediate.front() == '(') {
+        leftBound = carl::BoundType::STRICT;
+    } else if (intermediate.front() == '[') {
+        leftBound = carl::BoundType::WEAK;
+    } else {
+        return false;  // Expect start with '(' or '['.
+    }
+    if (intermediate.back() == ')') {
+        rightBound = carl::BoundType::STRICT;
+    } else if (intermediate.back() == ']') {
+        rightBound = carl::BoundType::WEAK;
+    } else {
+        return false;  // Expected end with ')' or ']'.
+    }
+    intermediate = intermediate.substr(1, intermediate.size() - 2);
+
+    std::vector<std::string> words;
+    boost::split(words, intermediate, boost::is_any_of(","));
+    if (words.size() != 2) {
+        return false;  // Did not find exactly one comma.
+    }
+    storm::RationalNumber leftVal, rightVal;
+    boost::trim(words[0]);
+    if (!parseNumber(words[0], leftVal)) {
+        return false;  // lower value of interval invalid.
+    }
+    boost::trim(words[1]);
+    if (!parseNumber(words[1], rightVal)) {
+        return false;  // upper value of interval invalid.
+    }
+    result = storm::RationalInterval(leftVal, leftBound, rightVal, rightBound);
+    return true;
+}
+
 template<typename NumberType>
 bool parseNumber(std::string const& value, NumberType& result) {
     if constexpr (std::is_same_v<NumberType, double>) {
@@ -127,6 +172,8 @@ bool parseNumber(std::string const& value, NumberType& result) {
         return carl::try_parse(value, result);
     } else if constexpr (std::is_same_v<NumberType, storm::Interval>) {
         return parseInterval(value, result);
+    } else if constexpr (std::is_same_v<NumberType, storm::RationalInterval>) {
+        return parseRationalInterval(value, result);
     } else {
         return boost::conversion::try_lexical_convert(value, result);
     }
@@ -137,6 +184,7 @@ template class ValueParser<double>;
 template class ValueParser<storm::RationalNumber>;
 template class ValueParser<storm::RationalFunction>;
 template class ValueParser<storm::Interval>;
+template class ValueParser<storm::RationalInterval>;
 
 template std::size_t parseNumber<std::size_t>(std::string const&);
 

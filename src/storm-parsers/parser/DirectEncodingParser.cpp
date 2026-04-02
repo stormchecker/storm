@@ -9,6 +9,7 @@
 
 #include "storm-parsers/parser/ValueParser.h"
 #include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/AbortException.h"
@@ -86,6 +87,8 @@ bool isCompatibleValueType(DirectEncodingValueType fileValueType) {
     if constexpr (std::is_same_v<OutputValueType, double> || std::is_same_v<OutputValueType, storm::RationalNumber>) {
         return fileValueType == Double || fileValueType == Rational;
     } else if constexpr (std::is_same_v<OutputValueType, storm::Interval>) {
+        return fileValueType == Double || fileValueType == Rational || fileValueType == DoubleInterval || fileValueType == RationalInterval;
+    } else if constexpr (std::is_same_v<OutputValueType, storm::RationalInterval>) {
         return fileValueType == Double || fileValueType == Rational || fileValueType == DoubleInterval || fileValueType == RationalInterval;
     } else if constexpr (std::is_same_v<OutputValueType, storm::RationalFunction>) {
         return fileValueType == Double || fileValueType == Rational || fileValueType == Parametric;
@@ -581,6 +584,8 @@ template std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> pa
     std::filesystem::path const& file, DirectEncodingParserOptions const& options);
 template std::shared_ptr<storm::models::sparse::Model<storm::Interval>> parseDirectEncodingModel<storm::Interval>(std::filesystem::path const& file,
                                                                                                                   DirectEncodingParserOptions const& options);
+template std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> parseDirectEncodingModel<storm::RationalInterval>(
+    std::filesystem::path const& file, DirectEncodingParserOptions const& options);
 template std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> parseDirectEncodingModel<storm::RationalFunction>(
     std::filesystem::path const& file, DirectEncodingParserOptions const& options);
 

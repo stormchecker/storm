@@ -1,5 +1,7 @@
 #pragma once
 
+#include "storm/adapters/RationalNumberForward.h"
+
 namespace carl {
 template<typename Number>
 class Interval;
@@ -11,6 +13,7 @@ namespace storm {
  * Interval type
  */
 typedef carl::Interval<double> Interval;
+typedef carl::Interval<storm::RationalNumber> RationalInterval;
 
 namespace detail {
 template<typename ValueType>
@@ -21,6 +24,11 @@ struct IntervalMetaProgrammingHelper {
 template<>
 struct IntervalMetaProgrammingHelper<Interval> {
     using BaseType = double;
+    static const bool isInterval = true;
+};
+template<>
+struct IntervalMetaProgrammingHelper<RationalInterval> {
+    using BaseType = storm::RationalNumber;
     static const bool isInterval = true;
 };
 }  // namespace detail

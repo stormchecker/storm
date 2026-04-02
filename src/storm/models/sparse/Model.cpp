@@ -643,7 +643,7 @@ bool Model<ValueType, RewardModelType>::supportsParameters() const {
 
 template<typename ValueType, typename RewardModelType>
 bool Model<ValueType, RewardModelType>::supportsUncertainty() const {
-    return std::is_same<ValueType, storm::Interval>::value;
+    return storm::IsIntervalType<ValueType>;
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -728,7 +728,9 @@ std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::Rational
 template class Model<double>;
 template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class Model<storm::RationalNumber>;
+template class Model<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
 template class Model<storm::Interval>;
+template class Model<storm::RationalInterval>;
 template class Model<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models

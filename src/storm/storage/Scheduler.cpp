@@ -391,6 +391,7 @@ template class Scheduler<double>;
 template class Scheduler<storm::RationalNumber>;
 template class Scheduler<storm::RationalFunction>;
 template class Scheduler<storm::Interval>;
+template class Scheduler<storm::RationalInterval>;
 
 }  // namespace storage
 }  // namespace storm

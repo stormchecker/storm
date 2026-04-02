@@ -571,9 +571,11 @@ SparseModelMemoryProductReverseData SparseModelMemoryProduct<ValueType, RewardMo
 
 template class SparseModelMemoryProduct<double>;
 template class SparseModelMemoryProduct<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+template class SparseModelMemoryProduct<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
 template class SparseModelMemoryProduct<storm::RationalNumber>;
 template class SparseModelMemoryProduct<storm::RationalFunction>;
 template class SparseModelMemoryProduct<storm::Interval>;
+template class SparseModelMemoryProduct<storm::RationalInterval>;
 
 }  // namespace storage
 }  // namespace storm

@@ -87,42 +87,6 @@ class SparseBeliefState {
 };
 
 /**
- * ObservationDenseBeliefState stores beliefs in a dense format (per observation).
- */
-template<typename ValueType>
-class ObservationDenseBeliefState;
-template<typename ValueType>
-bool operator==(ObservationDenseBeliefState<ValueType> const& lhs, ObservationDenseBeliefState<ValueType> const& rhs);
-
-template<typename ValueType>
-class ObservationDenseBeliefState {
-   public:
-    ObservationDenseBeliefState(std::shared_ptr<BeliefStateManager<ValueType>> const& manager, uint64_t state);
-    void update(uint32_t newObservation, std::unordered_set<ObservationDenseBeliefState>& previousBeliefs) const;
-    std::size_t hash() const noexcept;
-    ValueType get(uint64_t state) const;
-    ValueType getRisk() const;
-    std::string toString() const;
-    uint64_t getSupportSize() const;
-    void setSupport(storm::storage::BitVector&) const;
-    friend bool operator== <>(ObservationDenseBeliefState<ValueType> const& lhs, ObservationDenseBeliefState<ValueType> const& rhs);
-
-   private:
-    void updateHelper(std::vector<std::map<uint64_t, ValueType>> const& partialBeliefs, std::vector<ValueType> const& sums, uint64_t currentEntry,
-                      uint32_t newObservation, std::unordered_set<ObservationDenseBeliefState<ValueType>>& previousBeliefs) const;
-    ObservationDenseBeliefState(std::shared_ptr<BeliefStateManager<ValueType>> const& manager, uint32_t observation, std::vector<ValueType> const& belief,
-                                std::size_t newHash, ValueType const& risk, uint64_t prevId);
-    std::shared_ptr<BeliefStateManager<ValueType>> manager;
-
-    std::vector<ValueType> belief;
-    uint64_t observation = 0;
-    std::size_t prestoredhash = 0;
-    ValueType risk;
-    uint64_t id;
-    uint64_t prevId;
-};
-
-/**
  * This tracker implements state estimation for POMDPs.
  * This corresponds to forward filtering in Junges, Torfah, Seshia.
  *
@@ -210,12 +174,6 @@ namespace std {
 template<typename T>
 struct hash<storm::generator::SparseBeliefState<T>> {
     std::size_t operator()(storm::generator::SparseBeliefState<T> const& s) const noexcept {
-        return s.hash();
-    }
-};
-template<typename T>
-struct hash<storm::generator::ObservationDenseBeliefState<T>> {
-    std::size_t operator()(storm::generator::ObservationDenseBeliefState<T> const& s) const noexcept {
         return s.hash();
     }
 };

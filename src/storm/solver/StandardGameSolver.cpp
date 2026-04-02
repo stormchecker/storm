@@ -427,7 +427,7 @@ void StandardGameSolver<ValueType>::multiplyAndReduce(Environment const& env, Op
                                                       storm::solver::Multiplier<ValueType> const& multiplier, std::vector<ValueType>& player2ReducedResult,
                                                       std::vector<ValueType>& player1ReducedResult, std::vector<uint64_t>* player1SchedulerChoices,
                                                       std::vector<uint64_t>* player2SchedulerChoices) const {
-    multiplier.multiplyAndReduce(env, player2Dir, x, b, player2ReducedResult, player2SchedulerChoices);
+    multiplier.multiplyAndReduce(env, player2Dir, x, b, player2ReducedResult, UncertaintyResolutionMode::Unset, player2SchedulerChoices);
 
     if (this->player1RepresentedByMatrix()) {
         // Player 1 represented by matrix.
