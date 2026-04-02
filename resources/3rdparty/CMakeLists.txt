@@ -4,6 +4,7 @@ if(PROJECT_TOP_LEVEL)
 endif()
 add_custom_target(test-resources)
 
+include(FetchContent)
 
 message(STATUS "Storm - Building external resources with ${STORM_RESOURCES_BUILD_JOBCOUNT} job(s) in parallel.")
 
@@ -190,11 +191,11 @@ if(${Boost_VERSION} VERSION_LESS "1.75.0") # Debian 12 ships with Boost 1.74.0
     add_dependencies(boost_pfr boost_pfr_src)
     target_include_directories(boost_pfr INTERFACE
             $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}/boost_pfr/include>
-            $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/boost_pfr/include>
+            $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/boost_pfr>
     )
     install(TARGETS boost_pfr EXPORT storm_Targets)
     install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/boost_pfr/include/
-            DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/boost_pfr/include
+            DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/boost_pfr
             PATTERN ".git" EXCLUDE)
     add_dependencies(storm_resources boost_pfr)
     list(APPEND STORM_DEP_TARGETS boost_pfr)
@@ -253,7 +254,7 @@ list(APPEND STORM_DEP_TARGETS phmap)
 # Use the shipped version of cpphoafparser
 message(STATUS "Storm - Including cpphoafparser 0.99.2")
 set(cppHOAparser_SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/cpphoafparser-0.99.2/include)
-set(cppHOAparser_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/cpphoafparser-0.99.2/)
+set(cppHOAparser_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/cpphoafparser/)
 add_library(cppHOAparser INTERFACE) # Not imported, we are in control of the sources.
 target_include_directories(cppHOAparser INTERFACE
         $<BUILD_INTERFACE:${cppHOAparser_SOURCE_DIR}>
@@ -425,7 +426,8 @@ endif()
 ##      carl (including cln and ginac)
 ##
 #############################################################
-# Set compile flags for dependencies
+
+# Set CLN/GiNaC configuration
 if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
     set(SHIPPED_CARL_USE_CLN_NUMBERS ON)
     set(SHIPPED_CARL_USE_GINAC ON)
@@ -434,25 +436,30 @@ else()
     set(SHIPPED_CARL_USE_GINAC OFF)
 endif()
 
-include(FetchContent)
+# Fetch carl
 FETCHCONTENT_DECLARE(
-        carl
-        GIT_REPOSITORY ${STORM_CARL_GIT_REPO}
-        GIT_TAG ${STORM_CARL_GIT_TAG}
+    carl
+    GIT_REPOSITORY ${STORM_CARL_GIT_REPO}
+    GIT_TAG ${STORM_CARL_GIT_TAG}
 )
+
+# Configure carl
 SET(CARL_EXCLUDE_TESTS_FROM_ALL ON)  #carl without tests
 SET(CARL_THREAD_SAFE ON) #carl thread safe code
 SET(CARL_USE_CLN_NUMBERS ${SHIPPED_CARL_USE_CLN_NUMBERS})
 SET(CARL_USE_GINAC ${SHIPPED_CARL_USE_GINAC})
 SET(CARL_EIGEN_GIT_TAG ${STORM_EIGEN_GIT_TAG})
 SET(CARL_PORTABLE ${STORM_PORTABLE})
-SET(CARL_LIB_INSTALL_DIR "lib/storm/resources")
-SET(CARL_INCLUDE_INSTALL_DIR "include/storm/resources") # maybe use resources folder /carl instead for consistency?
 SET(CARL_EXPORT_TO_CMAKE OFF)
-SET(CARL_CMAKE_INSTALL_DIR "lib/cmake/storm")
+
+# Override carl's install dirs to match system conventions
+SET(CARL_LIB_INSTALL_DIR ${STORM_RESOURCE_LIBRARY_INSTALL_DIR})
+SET(CARL_INCLUDE_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/carl)
+SET(CARL_CMAKE_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/carl)
 
 FETCHCONTENT_MAKEAVAILABLE(carl)
 include(${carl_BINARY_DIR}/carlConfig.cmake)
+
 # Read variables from this config.
 set(STORM_HAVE_CLN ${CARL_HAVE_CLN})
 set(STORM_HAVE_GINAC ${CARL_HAVE_GINAC})
@@ -607,8 +614,8 @@ if(NOT STORM_DISABLE_SYLVAN)
     SET(SYLVAN_GMP ON)
     SET(USE_CARL ON)
     set(SYLVAN_PORTABLE ${STORM_PORTABLE})
-    SET(SYLVAN_INSTALL_BINDIR ${STORM_RESOURCE_BIN_INSTALL_DIR}/sylvan)
-    SET(SYLVAN_INSTALL_LIBDIR ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/sylvan)
+    SET(SYLVAN_INSTALL_BINDIR ${STORM_RESOURCE_BIN_INSTALL_DIR})
+    SET(SYLVAN_INSTALL_LIBDIR ${STORM_RESOURCE_LIBRARY_INSTALL_DIR})
     SET(SYLVAN_INSTALL_INCLUDEDIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/sylvan)
     SET(CMAKE_POSITION_INDEPENDENT_CODE ON) # Likely only necessary on linux
     SET(STORM_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src/") # TODO this is ugly.

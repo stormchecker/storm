@@ -8,4 +8,7 @@ target_precompile_headers(storm-gspn-cli REUSE_FROM storm-cli)
 add_dependencies(binaries storm-gspn-cli)
 
 # installation
-install(TARGETS storm-gspn-cli EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-gspn-cli
+        EXPORT storm_Targets
+        RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+)

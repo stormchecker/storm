@@ -8,4 +8,7 @@ target_precompile_headers(storm-dft-cli REUSE_FROM storm-cli)
 add_dependencies(binaries storm-dft-cli)
 
 # installation
-install(TARGETS storm-dft-cli EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-dft-cli
+        EXPORT storm_Targets
+        RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+)

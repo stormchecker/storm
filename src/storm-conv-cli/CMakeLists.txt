@@ -8,4 +8,7 @@ target_precompile_headers(storm-conv-cli REUSE_FROM storm-cli)
 add_dependencies(binaries storm-conv-cli)
 
 # installation
-install(TARGETS storm-conv-cli EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-conv-cli
+        EXPORT storm_Targets
+        RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+)

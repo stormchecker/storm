@@ -59,10 +59,10 @@ ExternalProject_Add(
         LOG_BUILD ON
         LOG_INSTALL ON
         BUILD_BYPRODUCTS ${CUDD_LIB_DIR}/libcudd${STATIC_EXT}
-		LOG_OUTPUT_ON_FAILURE ON
+        LOG_OUTPUT_ON_FAILURE ON
 )
 
-# Do not use system CUDD, StoRM has a modified version
+# Do not use system CUDD, Storm has a modified version
 set(CUDD_INCLUDE_DIR ${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0/include)
 set(CUDD_STATIC_LIBRARY ${CUDD_LIB_DIR}/libcudd${STATIC_EXT})
 set(CUDD_VERSION_STRING 3.0.0)

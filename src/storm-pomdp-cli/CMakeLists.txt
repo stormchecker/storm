@@ -11,4 +11,7 @@ set_target_properties(storm-pomdp-cli PROPERTIES VERSION ${STORM_VERSION} SOVERS
 add_dependencies(binaries storm-pomdp-cli)
 
 # installation
-install(TARGETS storm-pomdp-cli RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-pomdp-cli
+        EXPORT storm_Targets
+        RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+)

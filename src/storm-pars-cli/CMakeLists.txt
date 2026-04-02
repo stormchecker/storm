@@ -13,4 +13,7 @@ target_precompile_headers(storm-pars-cli REUSE_FROM storm-cli)
 add_dependencies(binaries storm-pars-cli)
 
 # installation
-install(TARGETS storm-pars-cli EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-pars-cli
+        EXPORT storm_Targets
+        RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+)

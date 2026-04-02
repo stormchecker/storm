@@ -17,11 +17,11 @@ endif()
 set(STORM_RESOURCE_INCLUDE_INSTALL_DIR "${_IMPORT_PREFIX}/@STORM_RESOURCE_INCLUDE_INSTALL_DIR@")
 set(STORM_RESOURCE_LIBRARY_INSTALL_DIR "${_IMPORT_PREFIX}/@STORM_RESOURCE_LIBRARY_INSTALL_DIR@")
 
-include("${CMAKE_CURRENT_LIST_DIR}/carlConfig.cmake")
+include("${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/cmake/carl/carlConfig.cmake")
 if(NOT TARGET lib_carl)
-    message(FATAL_ERROR "Including ${CMAKE_CURRENT_LIST_DIR}/carlConfig.cmake did not define target lib_carl.")
+    message(FATAL_ERROR "Including ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/cmake/carl/carlConfig.cmake did not define target lib_carl.")
 endif()
-set(storm_carl_DIR "${CMAKE_CURRENT_LIST_DIR}")
+set(storm_carl_DIR "${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/cmake/carl")
 
 set(CMAKE_MODULE_PATH_save "${CMAKE_MODULE_PATH}")
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_LIST_DIR}/find_modules/")
@@ -112,7 +112,7 @@ if(@STORM_HAVE_SPOT@)  # STORM_HAVE_SPOT
 endif()
 
 if(@STORM_HAVE_SYLVAN@)  # STORM_HAVE_SYLVAN
-    include("${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/sylvan/cmake/sylvan/sylvan-config.cmake")
+    include("${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/cmake/sylvan/sylvan-config.cmake")
 endif()
 
 if(@STORM_HAVE_XERCES@)  # STORM_HAVE_XERCES
