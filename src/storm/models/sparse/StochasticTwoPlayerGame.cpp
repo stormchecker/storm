@@ -63,8 +63,10 @@ storm::models::sparse::ChoiceLabeling const& StochasticTwoPlayerGame<ValueType, 
 
 template class StochasticTwoPlayerGame<double>;
 template class StochasticTwoPlayerGame<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-template class StochasticTwoPlayerGame<storm::Interval>;
 template class StochasticTwoPlayerGame<storm::RationalNumber>;
+template class StochasticTwoPlayerGame<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
+template class StochasticTwoPlayerGame<storm::Interval>;
+template class StochasticTwoPlayerGame<storm::RationalInterval>;
 template class StochasticTwoPlayerGame<storm::RationalFunction>;
 
 }  // namespace sparse

@@ -662,6 +662,48 @@ template storm::storage::BitVector StandardRewardModel<storm::Interval>::getChoi
     storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix) const;
 template class StandardRewardModel<storm::Interval>;
 template std::ostream& operator<< <storm::Interval>(std::ostream& out, StandardRewardModel<storm::Interval> const& rewardModel);
+
+template std::vector<storm::RationalInterval> StandardRewardModel<storm::RationalInterval>::getTotalRewardVector(
+    uint_fast64_t numberOfRows, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& filter) const;
+template std::vector<storm::RationalInterval> StandardRewardModel<storm::RationalInterval>::getTotalRewardVector(
+    storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix) const;
+template std::vector<storm::RationalInterval> StandardRewardModel<storm::RationalInterval>::getTotalRewardVector(
+    storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<storm::RationalNumber> const& weights) const;
+template std::vector<storm::RationalInterval> StandardRewardModel<storm::RationalInterval>::getTotalRewardVector(
+    uint_fast64_t numberOfRows, storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix, storm::storage::BitVector const& filter) const;
+template std::vector<storm::RationalInterval> StandardRewardModel<storm::RationalInterval>::getTotalRewardVector(
+    storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix) const;
+template std::vector<storm::RationalInterval> StandardRewardModel<storm::RationalInterval>::getTotalRewardVector(
+    storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix, std::vector<storm::RationalInterval> const& weights) const;
+template std::vector<storm::RationalInterval> StandardRewardModel<storm::RationalInterval>::getTotalActionRewardVector(
+    storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<storm::RationalNumber> const& stateRewardWeights) const;
+template storm::storage::BitVector StandardRewardModel<storm::RationalInterval>::getStatesWithFilter(
+    storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::function<bool(storm::RationalInterval const&)> const& filter) const;
+template storm::storage::BitVector StandardRewardModel<storm::RationalInterval>::getStatesWithFilter(
+    storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix, std::function<bool(storm::RationalInterval const&)> const& filter) const;
+template storm::storage::BitVector StandardRewardModel<storm::RationalInterval>::getChoicesWithFilter(
+    storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::function<bool(storm::RationalInterval const&)> const& filter) const;
+template storm::storage::BitVector StandardRewardModel<storm::RationalInterval>::getChoicesWithFilter(
+    storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix, std::function<bool(storm::RationalInterval const&)> const& filter) const;
+template void StandardRewardModel<storm::RationalInterval>::setStateActionReward(uint_fast64_t choiceIndex, storm::RationalNumber const& newValue);
+template void StandardRewardModel<storm::RationalInterval>::setStateActionReward(uint_fast64_t choiceIndex, storm::RationalInterval const& newValue);
+template void StandardRewardModel<storm::RationalInterval>::setStateReward(uint_fast64_t state, storm::RationalNumber const& newValue);
+template void StandardRewardModel<storm::RationalInterval>::setStateReward(uint_fast64_t state, storm::RationalInterval const& newValue);
+template void StandardRewardModel<storm::RationalInterval>::clearRewardAtState(uint_fast64_t state,
+                                                                               storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix);
+template void StandardRewardModel<storm::RationalInterval>::clearRewardAtState(uint_fast64_t state,
+                                                                               storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix);
+template void StandardRewardModel<storm::RationalInterval>::reduceToStateBasedRewards(
+    storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, bool reduceToStateRewards, std::vector<storm::RationalNumber> const* weights);
+template void StandardRewardModel<storm::RationalInterval>::reduceToStateBasedRewards(
+    storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix, bool reduceToStateRewards,
+    std::vector<storm::RationalInterval> const* weights);
+template storm::storage::BitVector StandardRewardModel<storm::RationalInterval>::getStatesWithZeroReward(
+    storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix) const;
+template storm::storage::BitVector StandardRewardModel<storm::RationalInterval>::getChoicesWithZeroReward(
+    storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix) const;
+template class StandardRewardModel<storm::RationalInterval>;
+template std::ostream& operator<< <storm::RationalInterval>(std::ostream& out, StandardRewardModel<storm::RationalInterval> const& rewardModel);
 }  // namespace sparse
 
 }  // namespace models

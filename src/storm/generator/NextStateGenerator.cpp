@@ -363,5 +363,9 @@ template class NextStateGenerator<storm::RationalFunction>;
 template class ActionMask<storm::Interval>;
 template class StateValuationFunctionMask<storm::Interval>;
 template class NextStateGenerator<storm::Interval>;
+
+template class ActionMask<storm::RationalInterval>;
+template class StateValuationFunctionMask<storm::RationalInterval>;
+template class NextStateGenerator<storm::RationalInterval>;
 }  // namespace generator
 }  // namespace storm

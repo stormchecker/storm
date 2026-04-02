@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm/adapters/IntervalForward.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/solver/stateelimination/StatePriorityQueue.h"
@@ -27,7 +28,7 @@ class SparseDtmcEliminationModelChecker : public SparsePropositionalModelChecker
     typedef typename SparseDtmcModelType::RewardModelType RewardModelType;
     typedef typename storm::storage::FlexibleSparseMatrix<ValueType>::row_type FlexibleRowType;
     typedef typename FlexibleRowType::iterator FlexibleRowIterator;
-    using SolutionType = typename std::conditional<std::is_same_v<ValueType, storm::Interval>, double, ValueType>::type;
+    using SolutionType = storm::IntervalBaseType<ValueType>;
 
     /*!
      * Creates an elimination-based model checker for the given model.

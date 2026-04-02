@@ -65,7 +65,9 @@ void DeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostre
 template class DeterministicModel<double>;
 template class DeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class DeterministicModel<storm::RationalNumber>;
+template class DeterministicModel<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
 template class DeterministicModel<storm::Interval>;
+template class DeterministicModel<storm::RationalInterval>;
 template class DeterministicModel<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models

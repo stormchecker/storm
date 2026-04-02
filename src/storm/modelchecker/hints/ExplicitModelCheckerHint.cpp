@@ -122,6 +122,7 @@ template class ExplicitModelCheckerHint<double>;
 template class ExplicitModelCheckerHint<storm::RationalNumber>;
 template class ExplicitModelCheckerHint<storm::RationalFunction>;
 template class ExplicitModelCheckerHint<storm::Interval>;
+template class ExplicitModelCheckerHint<storm::RationalInterval>;
 
 }  // namespace modelchecker
 }  // namespace storm

@@ -105,7 +105,7 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
     std::vector<ValueType>* columnSumVector, std::vector<ValueType>* summandResultVector, bool gatherExitChoices) {
     SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
     // TODO: Just like SparseMdpPrctlHelper::computeFixedPointSystemUntilProbabilities, this method must be adapted for intervals.
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                         "We do not support the elimination of end components and the creation of an adequate equation system with interval models.");
     }
@@ -247,7 +247,7 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
     storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& subvector, bool gatherExitChoices) {
     SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
     // TODO: Just like SparseMdpPrctlHelper::computeFixedPointSystemUntilProbabilities, this method must be adapted for intervals.
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                         "We do not support the elimination of end components and the creation of an adequate equation system with interval models.");
     }
@@ -421,6 +421,7 @@ void SparseMdpEndComponentInformation<ValueType>::setScheduler(storm::storage::S
 template class SparseMdpEndComponentInformation<double>;
 template class SparseMdpEndComponentInformation<storm::RationalNumber>;
 template class SparseMdpEndComponentInformation<storm::Interval>;
+template class SparseMdpEndComponentInformation<storm::RationalInterval>;
 
 template void SparseMdpEndComponentInformation<double>::setScheduler(storm::storage::Scheduler<double>& scheduler, storm::storage::BitVector const& maybeStates,
                                                                      storm::storage::SparseMatrix<double> const& transitionMatrix,
@@ -437,6 +438,11 @@ template void SparseMdpEndComponentInformation<storm::Interval>::setScheduler(st
                                                                               storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
                                                                               storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
                                                                               std::vector<uint64_t> const& fromResult);
+
+template void SparseMdpEndComponentInformation<storm::RationalInterval>::setScheduler(
+    storm::storage::Scheduler<storm::RationalNumber>& scheduler, storm::storage::BitVector const& maybeStates,
+    storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix,
+    storm::storage::SparseMatrix<storm::RationalInterval> const& backwardTransitions, std::vector<uint64_t> const& fromResult);
 
 // template class SparseMdpEndComponentInformation<storm::RationalFunction>;
 

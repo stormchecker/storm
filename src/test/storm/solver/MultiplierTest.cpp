@@ -123,4 +123,6 @@ TYPED_TEST(MultiplierTest, repeatedMultiplyAndReduceTest) {
     EXPECT_NEAR(x[0], this->parseNumber("0.923808265834023387639"), this->precision());
 }
 
+// TODO: Write test using the uncertainty resolution mode when more modes than 'Unset' are supported by the native multiplier.
+
 }  // namespace

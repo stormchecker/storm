@@ -34,6 +34,8 @@ template ExplicitModelCheckerHint<storm::RationalFunction> const& ModelCheckerHi
 template ExplicitModelCheckerHint<storm::RationalFunction>& ModelCheckerHint::asExplicitModelCheckerHint();
 template ExplicitModelCheckerHint<storm::Interval> const& ModelCheckerHint::asExplicitModelCheckerHint() const;
 template ExplicitModelCheckerHint<storm::Interval>& ModelCheckerHint::asExplicitModelCheckerHint();
+template ExplicitModelCheckerHint<storm::RationalInterval> const& ModelCheckerHint::asExplicitModelCheckerHint() const;
+template ExplicitModelCheckerHint<storm::RationalInterval>& ModelCheckerHint::asExplicitModelCheckerHint();
 
 }  // namespace modelchecker
 }  // namespace storm

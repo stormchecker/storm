@@ -72,6 +72,8 @@ void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::
         os << "rational";
     } else if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         os << "double-interval";
+    } else if constexpr (std::is_same_v<ValueType, storm::RationalInterval>) {
+        os << "rational-interval";
     } else if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
         os << "parametric";
     } else {
@@ -338,5 +340,8 @@ template void explicitExportSparseModel<storm::RationalFunction>(std::ostream& o
                                                                  std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
 template void explicitExportSparseModel<storm::Interval>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::Interval>> sparseModel,
                                                          std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
+template void explicitExportSparseModel<storm::RationalInterval>(std::ostream& os,
+                                                                 std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> sparseModel,
+                                                                 std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
 }  // namespace io
 }  // namespace storm

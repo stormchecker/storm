@@ -252,6 +252,10 @@ template class MaximalEndComponentDecomposition<storm::Interval>;
 template MaximalEndComponentDecomposition<storm::Interval>::MaximalEndComponentDecomposition(
     storm::models::sparse::NondeterministicModel<storm::Interval> const& model);
 
+template class MaximalEndComponentDecomposition<storm::RationalInterval>;
+template MaximalEndComponentDecomposition<storm::RationalInterval>::MaximalEndComponentDecomposition(
+    storm::models::sparse::NondeterministicModel<storm::RationalInterval> const& model);
+
 template class MaximalEndComponentDecomposition<storm::RationalFunction>;
 template MaximalEndComponentDecomposition<storm::RationalFunction>::MaximalEndComponentDecomposition(
     storm::models::sparse::NondeterministicModel<storm::RationalFunction> const& model);

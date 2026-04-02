@@ -3,6 +3,7 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {
@@ -47,7 +48,9 @@ void Dtmc<ValueType, RewardModelType>::reduceToStateBasedRewards() {
 template class Dtmc<double>;
 template class Dtmc<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class Dtmc<storm::RationalNumber>;
+template class Dtmc<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
 template class Dtmc<storm::Interval>;
+template class Dtmc<storm::RationalInterval>;
 template class Dtmc<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models

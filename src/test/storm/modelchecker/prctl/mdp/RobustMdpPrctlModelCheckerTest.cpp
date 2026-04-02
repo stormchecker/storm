@@ -1,4 +1,6 @@
 #include "storm-config.h"
+#include "storm/adapters/RationalNumberForward.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "test/storm_gtest.h"
 
 #include "storm-parsers/api/model_descriptions.h"
@@ -25,6 +27,23 @@ std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilt
     return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(model->getInitialStates());
 }
 
+std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> const& model) {
+    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<storm::RationalNumber>>(model->getInitialStates());
+}
+
+storm::RationalNumber getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> const& model,
+                                                          std::unique_ptr<storm::modelchecker::CheckResult>& result) {
+    auto filter = getInitialStateFilter(model);
+    result->filter(*filter);
+    return result->asQuantitativeCheckResult<storm::RationalNumber>().getMin();
+}
+
+std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> const& model) {
+    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<storm::RationalNumber>>(model->getInitialStates());
+}
+
 double getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse::Model<storm::Interval>> const& model,
                                            std::unique_ptr<storm::modelchecker::CheckResult>& result) {
     auto filter = getInitialStateFilter(model);
@@ -39,6 +58,13 @@ double getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse
     return result->asQuantitativeCheckResult<double>().getMin();
 }
 
+storm::RationalNumber getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> const& model,
+                                                          std::unique_ptr<storm::modelchecker::CheckResult>& result) {
+    auto filter = getInitialStateFilter(model);
+    result->filter(*filter);
+    return result->asQuantitativeCheckResult<storm::RationalNumber>().getMin();
+}
+
 void expectThrow(std::string const& path, std::string const& formulaString) {
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::parser::parseDirectEncodingModel<storm::Interval>(path);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
@@ -51,7 +77,7 @@ void expectThrow(std::string const& path, std::string const& formulaString) {
     auto task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
 
     auto checker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>(*mdp);
-    STORM_SILENT_EXPECT_THROW(checker.check(env, task), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_EXPECT_THROW(checker.check(env, task), storm::exceptions::NotImplementedException);
 }
 
 void checkModel(std::string const& path, std::string const& formulaString, double maxmin, double maxmax, double minmax, double minmin, bool produceScheduler) {
@@ -124,6 +150,38 @@ void checkPrismModelForQuantitativeResult(std::string const& path, std::string c
     EXPECT_NEAR(maxmax, getQuantitativeResultAtInitialState(mdp, resultMaxMax), 0.0001);
 }
 
+void checkModelRational(std::string const& path, std::string const& formulaString, storm::RationalNumber maxmin, storm::RationalNumber maxmax,
+                        storm::RationalNumber minmax, storm::RationalNumber minmin, bool produceScheduler) {
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> modelPtr = storm::parser::parseDirectEncodingModel<storm::RationalInterval>(path);
+
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
+    storm::Environment env;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+
+    std::shared_ptr<storm::models::sparse::Mdp<storm::RationalInterval>> mdp = modelPtr->as<storm::models::sparse::Mdp<storm::RationalInterval>>();
+    ASSERT_EQ(storm::models::ModelType::Mdp, modelPtr->getType());
+    auto taskMax = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[0]);
+    taskMax.setProduceSchedulers(produceScheduler);
+
+    auto checker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalInterval>>(*mdp);
+    taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Robust);
+    auto resultMax = checker.check(env, taskMax);
+    EXPECT_EQ(maxmin, getQuantitativeResultAtInitialState(mdp, resultMax));
+    taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
+    auto resultMaxNonRobust = checker.check(env, taskMax);
+    EXPECT_EQ(maxmax, getQuantitativeResultAtInitialState(mdp, resultMaxNonRobust));
+
+    auto taskMin = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[1]);
+    taskMin.setProduceSchedulers(produceScheduler);
+
+    taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Robust);
+    auto resultMin = checker.check(env, taskMin);
+    EXPECT_EQ(minmax, getQuantitativeResultAtInitialState(mdp, resultMin));
+    taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
+    auto resultMinNonRobust = checker.check(env, taskMin);
+    EXPECT_EQ(minmin, getQuantitativeResultAtInitialState(mdp, resultMinNonRobust));
+}
+
 TEST(RobustMdpModelCheckerTest, RobotMinMaxTest) {
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
@@ -168,16 +226,54 @@ void makeUncertainAndCheck(std::string const& path, std::string const& formulaSt
     EXPECT_LE(certainValue, maxValue);
 }
 
+void makeUncertainAndCheckRational(std::string const& path, std::string const& formulaString, storm::RationalNumber amountOfUncertainty) {
+    storm::prism::Program program = storm::api::parseProgram(path);
+    program = storm::utility::prism::preprocess(program, "");
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaString, program));
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> modelPtr = storm::api::buildSparseModel<storm::RationalNumber>(program, formulas);
+    auto mdp = modelPtr->as<storm::models::sparse::Mdp<storm::RationalNumber>>();
+
+    ASSERT_TRUE(formulas[0]->isProbabilityOperatorFormula());
+    ASSERT_TRUE(formulas[0]->asProbabilityOperatorFormula().getOptimalityType() == storm::solver::OptimizationDirection::Maximize);
+
+    storm::Environment env;
+    auto taskCertain = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[0]);
+    auto checker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalNumber>>(*mdp);
+    auto exresult = checker.check(env, taskCertain);
+    storm::RationalNumber certainValue = getQuantitativeResultAtInitialState(modelPtr, exresult);
+
+    storm::Environment envIntervals;
+    envIntervals.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+    auto transformer = storm::transformer::AddUncertainty<storm::RationalNumber>(modelPtr);
+    auto imdp = transformer.transform(amountOfUncertainty)->as<storm::models::sparse::Mdp<storm::RationalInterval>>();
+    auto ichecker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalInterval>>(*imdp);
+
+    auto taskMin = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[0]);
+    taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Minimize);
+    auto iresultMin = ichecker.check(envIntervals, taskMin);
+    storm::RationalNumber minValue = getQuantitativeResultAtInitialState(imdp, iresultMin);
+    EXPECT_LE(minValue, certainValue);
+
+    auto taskMax = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[0]);
+    taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Maximize);
+    auto iresultMax = ichecker.check(envIntervals, taskMax);
+    storm::RationalNumber maxValue = getQuantitativeResultAtInitialState(imdp, iresultMax);
+    EXPECT_LE(certainValue, maxValue);
+}
+
+// TODO: Add next properties
+
 TEST(RobustMDPModelCheckingTest, Tiny01maxmin) {
     checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-01.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", 0.4, 0.5, 0.5, 0.4, false);
 }
 
 TEST(RobustMDPModelCheckingTest, Tiny03maxmin) {
-    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", 0.4, 0.5, 0.5, 0.4, true);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", 0.4, 0.6, 0.5, 0.3, true);
 }
 
 TEST(RobustMDPModelCheckingTest, BoundedTiny03maxmin) {
-    expectThrow(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"]");
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", 0.4, 0.6, 0.5, 0.3, true);
 }
 
 TEST(RobustMDPModelCheckingTest, Tiny04maxmin) {
@@ -192,10 +288,46 @@ TEST(RobustMDPModelCheckingTest, Tiny04maxmin_rewards) {
     expectThrow(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn", "Rmin=? [ F \"target\"]");
 }
 
+// ---- RationalInterval tests (exact arithmetic) ----
+
+TEST(RobustRationalMDPModelCheckingTest, Tiny01maxmin) {
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-01.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", storm::RationalNumber("2/5"),
+                       storm::RationalNumber("1/2"), storm::RationalNumber("1/2"), storm::RationalNumber("2/5"), false);
+}
+
+TEST(RobustRationalMDPModelCheckingTest, Tiny03maxmin) {
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", storm::RationalNumber("2/5"),
+                       storm::RationalNumber("3/5"), storm::RationalNumber("1/2"), storm::RationalNumber("3/10"), true);
+}
+
+TEST(RobustRationalMDPModelCheckingTest, BoundedTiny03maxmin) {
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", storm::RationalNumber("2/5"),
+                       storm::RationalNumber("3/5"), storm::RationalNumber("1/2"), storm::RationalNumber("3/10"), true);
+}
+
+TEST(RobustRationalMDPModelCheckingTest, Tiny04maxmin) {
+    // Fill in exact rational values once test output is known.
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", storm::RationalNumber(1),
+                       storm::RationalNumber(1), storm::RationalNumber("42857140807299/100000000000000"), storm::RationalNumber("21/50"), false);
+}
+
+TEST(RobustRationalMDPModelCheckingTest, Tiny05maxmin) {
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-05.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", storm::RationalNumber("3/10"),
+                       storm::RationalNumber("2/5"), storm::RationalNumber("2/5"), storm::RationalNumber("3/10"), false);
+}
+
 TEST(RobustMDPModelCheckingTest, AddUncertaintyCoin22max) {
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
 #endif
     makeUncertainAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", 0.1);
     makeUncertainAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", 0.2);
+}
+
+TEST(RobustRationalMDPModelCheckingTest, AddUncertaintyCoin22max) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", storm::RationalNumber("1/10"));
+    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", storm::RationalNumber("1/5"));
 }

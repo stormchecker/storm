@@ -431,6 +431,7 @@ template class ExplicitModelBuilder<RationalNumber, storm::models::sparse::Stand
 template class ExplicitModelBuilder<RationalFunction, storm::models::sparse::StandardRewardModel<RationalFunction>, uint32_t>;
 template class ExplicitModelBuilder<double, storm::models::sparse::StandardRewardModel<storm::Interval>, uint32_t>;  // TODO: where is this used?
 template class ExplicitModelBuilder<storm::Interval, storm::models::sparse::StandardRewardModel<storm::Interval>, uint32_t>;
+template class ExplicitModelBuilder<storm::RationalInterval, storm::models::sparse::StandardRewardModel<storm::RationalInterval>, uint32_t>;
 
 }  // namespace builder
 }  // namespace storm

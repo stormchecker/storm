@@ -7,6 +7,7 @@
 #include "storm/modelchecker/prctl/helper/MDPModelCheckingHelperReturnType.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/solver/SolveGoal.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/storage/MaximalEndComponent.h"
 #include "storm/storage/SparseMatrix.h"
 
@@ -38,6 +39,7 @@ class SparseMdpPrctlHelper {
         storm::storage::BitVector const& initialStates);
 
     static std::vector<SolutionType> computeNextProbabilities(Environment const& env, OptimizationDirection dir,
+                                                              UncertaintyResolutionMode uncertaintyResolutionMode,
                                                               storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                               storm::storage::BitVector const& nextStates);
 
@@ -96,6 +98,12 @@ class SparseMdpPrctlHelper {
                                                                 storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                 storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                 storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel,
+                                                                bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative);
+
+    static std::vector<SolutionType> computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                                storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                storm::models::sparse::StandardRewardModel<storm::RationalInterval> const& intervalRewardModel,
                                                                 bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative);
 
    private:

@@ -190,8 +190,10 @@ uint_least64_t NondeterministicModel<ValueType, RewardModelType>::getChoiceIndex
 
 template class NondeterministicModel<double>;
 template class NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-template class NondeterministicModel<storm::Interval>;
 template class NondeterministicModel<storm::RationalNumber>;
+template class NondeterministicModel<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
+template class NondeterministicModel<storm::Interval>;
+template class NondeterministicModel<storm::RationalInterval>;
 template class NondeterministicModel<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models

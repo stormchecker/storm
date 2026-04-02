@@ -141,7 +141,7 @@ template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeUntilProbabilities(
     Environment const& env, CheckTask<storm::logic::UntilFormula, SolutionType> const& checkTask) {
     storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
-    if (storm::IsIntervalType<ValueType>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(checkTask.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
                         "Uncertainty resolution mode must be set for uncertain (interval) models.");
         STORM_LOG_THROW(checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Robust &&
@@ -297,7 +297,7 @@ template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeReachabilityRewards(
     Environment const& env, CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
-    if (storm::IsIntervalType<ValueType>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(checkTask.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
                         "Uncertainty resolution mode must be set for uncertain (interval) models.");
         STORM_LOG_THROW(checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Robust &&
@@ -537,5 +537,6 @@ template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>;
 template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>>;
 template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>;
 template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::Interval>>;
+template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalInterval>>;
 }  // namespace modelchecker
 }  // namespace storm
