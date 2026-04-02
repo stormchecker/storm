@@ -1,0 +1,169 @@
+name: Indepth Tests
+
+on:
+  workflow_call:
+    inputs:
+      carl_tag:
+        description: "Carl git tag to use"
+        type: string
+        default: "master"
+      NR_JOBS:
+        description: "Number of parallel build jobs"
+        type: string
+        default: "4"
+      name:
+        description: "Display name for the test configuration"
+        type: string
+        required: true
+      baseImg:
+        description: "Base image name (e.g. storm-dependencies:latest)"
+        type: string
+        default: "storm-dependencies:latest"
+      buildType:
+        description: "CMake build type (Debug or Release)"
+        type: string
+        default: "Debug"
+      disable_cudd:
+        type: string
+        default: "OFF"
+      disable_glpk:
+        type: string
+        default: "OFF"
+      disable_gmm:
+        type: string
+        default: "OFF"
+      disable_gurobi:
+        type: string
+        default: "OFF"
+      disable_libarchive:
+        type: string
+        default: "OFF"
+      disable_mathsat:
+        type: string
+        default: "OFF"
+      disable_soplex:
+        type: string
+        default: "OFF"
+      disable_spot:
+        type: string
+        default: "OFF"
+      disable_sylvan:
+        type: string
+        default: "OFF"
+      disable_xerces:
+        type: string
+        default: "OFF"
+      disable_z3:
+        type: string
+        default: "OFF"
+      Developer:
+        description: "Enable developer mode (ON/OFF)"
+        type: string
+        default: "ON"
+      ClnExact:
+        description: "Use CLN for exact arithmetic (ON/OFF)"
+        type: string
+        default: "OFF"
+      ClnRatfunc:
+        description: "Use CLN for rational functions (ON/OFF)"
+        type: string
+        default: "OFF"
+      AllSanitizers:
+        description: "Enable all sanitizers (ON/OFF)"
+        type: string
+        default: "OFF"
+      cmakeArgs:
+        description: "Extra CMake arguments"
+        type: string
+        default: "-DSTORM_WARNING_AS_ERROR=ON"
+
+jobs:
+  indepthTests:
+    name: Indepth Tests (${{ inputs.name }}, ${{ inputs.buildType }})
+    runs-on: ubuntu-latest
+    env:
+      NR_JOBS: ${{ inputs.NR_JOBS }}
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v6
+      - name: Restore ccache (Docker)
+        id: ccache-restore
+        if: github.ref != 'refs/heads/master'
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci-ccache
+          key: buildtest-ccache-indepth-${{ inputs.buildType }}-${{ inputs.ClnExact }}-${{ inputs.ClnRatfunc }}-${{ inputs.disable_cudd }}-${{ inputs.baseImg }}-${{ hashFiles('Dockerfile', 'CMakeLists.txt') }}-${{ github.run_id }}
+          restore-keys: |
+            buildtest-ccache-indepth-${{ inputs.buildType }}-${{ inputs.ClnExact }}-${{ inputs.ClnRatfunc }}-${{ inputs.disable_cudd }}-${{ inputs.baseImg }}-
+            buildtest-ccache-indepth-${{ inputs.buildType }}-${{ inputs.ClnExact }}-${{ inputs.ClnRatfunc }}-${{ inputs.disable_cudd }}-
+            buildtest-ccache-indepth-
+      - name: Build storm from Dockerfile
+        run: |
+          mkdir -p .ci-ccache
+          docker build -t movesrwth/storm:ci . \
+            --build-arg BASE_IMAGE=movesrwth/${{ inputs.baseImg }} \
+            --build-arg build_type="${{ inputs.buildType }}" \
+            --build-arg carl_tag="${{ inputs.carl_tag }}" \
+            --build-arg disable_cudd="${{ inputs.disable_cudd }}" \
+            --build-arg disable_glpk="${{ inputs.disable_glpk }}" \
+            --build-arg disable_gmm="${{ inputs.disable_gmm }}" \
+            --build-arg disable_gurobi="${{ inputs.disable_gurobi }}" \
+            --build-arg disable_libarchive="${{ inputs.disable_libarchive }}" \
+            --build-arg disable_mathsat="${{ inputs.disable_mathsat }}" \
+            --build-arg disable_soplex="${{ inputs.disable_soplex }}" \
+            --build-arg disable_spot="${{ inputs.disable_spot }}" \
+            --build-arg disable_sylvan="${{ inputs.disable_sylvan }}" \
+            --build-arg disable_xerces="${{ inputs.disable_xerces }}" \
+            --build-arg disable_z3="${{ inputs.disable_z3 }}" \
+            --build-arg developer="${{ inputs.Developer }}" \
+            --build-arg cln_exact="${{ inputs.ClnExact }}" \
+            --build-arg cln_ratfunc="${{ inputs.ClnRatfunc }}" \
+            --build-arg all_sanitizers="${{ inputs.AllSanitizers }}" \
+            --build-arg cmake_args="${{ inputs.cmakeArgs }}" \
+            --build-arg no_threads=${NR_JOBS}
+      - name: Export ccache from Docker image
+        run: |
+          rm -rf .ci-ccache
+          mkdir -p .ci-ccache
+          docker create --name ccache-extract movesrwth/storm:ci
+          docker cp ccache-extract:/root/.ccache/. .ci-ccache/ || true
+          docker rm ccache-extract
+      - name: Save ccache (Docker)
+        if: github.ref != 'refs/heads/master' && always() && steps.ccache-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .ci-ccache
+          key: buildtest-ccache-indepth-${{ inputs.buildType }}-${{ inputs.ClnExact }}-${{ inputs.ClnRatfunc }}-${{ inputs.disable_cudd }}-${{ inputs.baseImg }}-${{ hashFiles('Dockerfile', 'CMakeLists.txt') }}-${{ github.run_id }}
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:ci
+      - name: Run storm
+        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ inputs.buildType }}
+          docker: true
+      - name: Run tests
+        # Disabled sanitizer checks for now
+        #run: docker exec ci bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
+        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "--help" # TODO using --help as running the starter-project requires Z3.
+      - name: Install storm
+        run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Remove build dir
+        run: |
+          docker exec ci bash -c "rm -rf /opt/storm/build"
+      - name: Run installed storm
+        run: |
+          docker exec ci bash -c "/usr/local/bin/storm --version"
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "--help" # TODO using --help as running the starter-project requires Z3.

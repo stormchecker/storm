@@ -1,0 +1,184 @@
+name: PR Label Test Dispatcher
+
+on:
+  pull_request:
+    types: [labeled]
+
+# Labels:
+#   run-all-tests       — run all test suites
+#   run-indepth-tests   — run indepth tests only
+#   run-compiler-tests  — run compiler tests only
+#   run-linux-tests     — run linux tests only
+#   run-mac-tests       — run mac tests only
+
+permissions:
+  pull-requests: write
+
+jobs:
+  indepthTests:
+    if: |
+      github.event.label.name == 'run-all-tests' ||
+      github.event.label.name == 'run-indepth-tests'
+    strategy:
+      matrix:
+        config:
+          - {name: "GMP exact; GMP rational functions; All dependencies",
+             baseImg: "storm-dependencies:latest",
+             buildType: "Debug",
+             disable_cudd: "OFF", disable_glpk: "OFF", disable_gmm: "OFF",
+             disable_gurobi: "OFF", disable_libarchive: "OFF", disable_mathsat: "OFF",
+             disable_soplex: "OFF", disable_spot: "OFF", disable_sylvan: "OFF",
+             disable_xerces: "OFF", disable_z3: "OFF",
+             Developer: "ON", ClnExact: "OFF", ClnRatfunc: "OFF", AllSanitizers: "OFF",
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
+          }
+          - {name: "CLN exact; GMP rational functions; All dependencies",
+             baseImg: "storm-dependencies:latest",
+             buildType: "Debug",
+             disable_cudd: "OFF", disable_glpk: "OFF", disable_gmm: "OFF",
+             disable_gurobi: "OFF", disable_libarchive: "OFF", disable_mathsat: "OFF",
+             disable_soplex: "OFF", disable_spot: "OFF", disable_sylvan: "OFF",
+             disable_xerces: "OFF", disable_z3: "OFF",
+             Developer: "ON", ClnExact: "ON", ClnRatfunc: "OFF", AllSanitizers: "OFF",
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
+          }
+          - {name: "CLN exact; CLN rational functions; All dependencies",
+             baseImg: "storm-dependencies:latest",
+             buildType: "Debug",
+             disable_cudd: "OFF", disable_glpk: "OFF", disable_gmm: "OFF",
+             disable_gurobi: "OFF", disable_libarchive: "OFF", disable_mathsat: "OFF",
+             disable_soplex: "OFF", disable_spot: "OFF", disable_sylvan: "OFF",
+             disable_xerces: "OFF", disable_z3: "OFF",
+             Developer: "ON", ClnExact: "ON", ClnRatfunc: "ON", AllSanitizers: "OFF",
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
+          }
+          - {name: "GMP exact; CLN rational functions; No dependencies",
+             baseImg: "storm-dependencies:latest",
+             buildType: "Debug",
+             disable_cudd: "ON", disable_glpk: "ON", disable_gmm: "ON",
+             disable_gurobi: "ON", disable_libarchive: "ON", disable_mathsat: "ON",
+             disable_soplex: "ON", disable_spot: "ON", disable_sylvan: "ON",
+             disable_xerces: "ON", disable_z3: "ON",
+             Developer: "ON", ClnExact: "OFF", ClnRatfunc: "ON", AllSanitizers: "OFF",
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
+          }
+          - {name: "Minimal dependencies (without CLN)",
+             baseImg: "storm-basesystem:minimal_dependencies",
+             buildType: "Debug",
+             disable_cudd: "ON", disable_glpk: "ON", disable_gmm: "ON",
+             disable_gurobi: "ON", disable_libarchive: "ON", disable_mathsat: "ON",
+             disable_soplex: "ON", disable_spot: "ON", disable_sylvan: "ON",
+             disable_xerces: "ON", disable_z3: "ON",
+             Developer: "ON", ClnExact: "OFF", ClnRatfunc: "OFF", AllSanitizers: "OFF",
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
+          }
+    uses: ./.github/workflows/test-indepth.yml
+    with:
+      NR_JOBS: "4"
+      name: ${{ matrix.config.name }}
+      baseImg: ${{ matrix.config.baseImg }}
+      buildType: ${{ matrix.config.buildType }}
+      disable_cudd: ${{ matrix.config.disable_cudd }}
+      disable_glpk: ${{ matrix.config.disable_glpk }}
+      disable_gmm: ${{ matrix.config.disable_gmm }}
+      disable_gurobi: ${{ matrix.config.disable_gurobi }}
+      disable_libarchive: ${{ matrix.config.disable_libarchive }}
+      disable_mathsat: ${{ matrix.config.disable_mathsat }}
+      disable_soplex: ${{ matrix.config.disable_soplex }}
+      disable_spot: ${{ matrix.config.disable_spot }}
+      disable_sylvan: ${{ matrix.config.disable_sylvan }}
+      disable_xerces: ${{ matrix.config.disable_xerces }}
+      disable_z3: ${{ matrix.config.disable_z3 }}
+      Developer: ${{ matrix.config.Developer }}
+      ClnExact: ${{ matrix.config.ClnExact }}
+      ClnRatfunc: ${{ matrix.config.ClnRatfunc }}
+      AllSanitizers: ${{ matrix.config.AllSanitizers }}
+      cmakeArgs: ${{ matrix.config.cmakeArgs }}
+
+  compilerTests:
+    if: |
+      github.event.label.name == 'run-all-tests' ||
+      github.event.label.name == 'run-compiler-tests'
+    strategy:
+      matrix:
+        config:
+          - { name: "GCC",
+              buildType: "Debug",
+              Developer: "ON",
+              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
+              packages: "",
+              distro: "archlinux"
+          }
+          - { name: "Clang",
+              buildType: "Debug",
+              Developer: "ON",
+              cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",
+              packages: "clang",
+              distro: "archlinux"
+          }
+          - { name: "musl",
+              buildType: "Debug",
+              Developer: "ON",
+              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
+              packages: "",
+              distro: "alpine"
+          }
+    uses: ./.github/workflows/test-compiler.yml
+    with:
+      NR_JOBS: "4"
+      name: ${{ matrix.config.name }}
+      buildType: ${{ matrix.config.buildType }}
+      Developer: ${{ matrix.config.Developer }}
+      cmakeArgs: ${{ matrix.config.cmakeArgs }}
+      packages: ${{ matrix.config.packages }}
+      distro: ${{ matrix.config.distro }}
+
+  linuxTests:
+    if: |
+      github.event.label.name == 'run-all-tests' ||
+      github.event.label.name == 'run-linux-tests'
+    uses: ./.github/workflows/test-linux.yml
+    strategy:
+      matrix:
+        distro: ["debian-12", "ubuntu-24.04", "debian-13"]
+        buildType: ["Release"]
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
+    with:
+      NR_JOBS: "4"
+      distro: ${{ matrix.distro }}
+      buildType: ${{ matrix.buildType }}
+      runner: ${{ matrix.runner }}
+
+  macTests:
+    if: |
+      github.event.label.name == 'run-all-tests' ||
+      github.event.label.name == 'run-mac-tests'
+    strategy:
+      matrix:
+        config:
+          - { name: "Xcode 15.4, ARM",    distro: "macos-14",       xcode: "15.4",          buildType: "Debug" }
+          - { name: "Xcode Latest, ARM",   distro: "macos-15",       xcode: "latest-stable", buildType: "Debug" }
+          - { name: "Xcode Latest, Intel", distro: "macos-15-intel", xcode: "latest-stable", buildType: "Debug" }
+    uses: ./.github/workflows/test-mac.yml
+    with:
+      NR_JOBS: "4"
+      name: ${{ matrix.config.name }}
+      distro: ${{ matrix.config.distro }}
+      xcode: ${{ matrix.config.xcode }}
+      buildType: ${{ matrix.config.buildType }}
+
+  cleanup:
+    name: Remove trigger label
+    runs-on: ubuntu-latest
+    needs: [indepthTests, compilerTests, linuxTests, macTests]
+    if: always()
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              name: context.payload.label.name
+            });

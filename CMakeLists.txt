@@ -48,6 +48,8 @@ option(STORM_FORCE_POPCNT "Sets whether the popcnt instruction is forced to be u
 MARK_AS_ADVANCED(STORM_FORCE_POPCNT)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache [if found]" ON)
 mark_as_advanced(STORM_COMPILE_WITH_CCACHE)
+option(STORM_COMPILE_WITH_PCH "Enable pre-compiled headers" ON)
+mark_as_advanced(STORM_COMPILE_WITH_PCH)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
 option(STORM_COMPILE_WITH_ADDRESS_SANITIZER "Sets whether to compile with AddressSanitizer enabled" OFF)
 option(STORM_COMPILE_WITH_ALL_SANITIZERS "Sets whether to compile with all sanitizers enabled" OFF)
@@ -153,6 +155,8 @@ if (STORM_DEVELOPER)
     set(STORM_DEBUG_SPOT ON)
     set(STORM_DEBUG_SYLVAN ON)
     set(STORM_WARNING_AS_ERROR ON)
+	# Turn off PCH for faster ccache usage on warm caches.
+	set(STORM_COMPILE_WITH_PCH OFF)
 else()
     set(STORM_LOG_DISABLE_DEBUG ON)
     if (NOT CMAKE_BUILD_TYPE)
@@ -163,13 +167,23 @@ set(CMAKE_COMPILE_WARNING_AS_ERROR ${STORM_WARNING_AS_ERROR})
 
 message(STATUS "Storm - Building ${CMAKE_BUILD_TYPE} version.")
 
+# PCH compiled files cannot be properly cached currently. Thus disabling it is recommended when doing many warm ccache builds.
+if(NOT STORM_COMPILE_WITH_PCH)
+	set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
+	message(STATUS "Storm - Disabling precompiled headers because of ccache compatibility.")
+endif()
+
 if(STORM_COMPILE_WITH_CCACHE)
 	find_program(CCACHE_FOUND ccache)
 	mark_as_advanced(CCACHE_FOUND)
 	if(CCACHE_FOUND)
 		message(STATUS "Storm - Using ccache")
+		set(ENV{CCACHE_SLOPPINESS} "pch_defines,time_macros,include_file_mtime,include_file_ctime")
 		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-		set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+
+		if(STORM_COMPILE_WITH_PCH)
+			message(STATUS "STORM - PCH is enabled which will lead to significantly lower ccache hit rates. Consider disabling PCH if you plan to rebuild storm multiple times.")
+		endif()
 	else()
 		message(STATUS "Storm - Could not find ccache.")
 	endif()
@@ -312,6 +326,12 @@ endif ()
 SET(STORM_PRECOMPILED_HEADERS "<any>" "<map>" "<vector>" "<unordered_set>" "<forward_list>"
 		"<optional>" "<ostream>" "<istream>" "<list>" "<set>" "<fstream>" "<string>" "<boost/optional.hpp>" "<boost/variant.hpp>"
 		"<boost/container/flat_set.hpp>" "<boost/dynamic_bitset.hpp>" "<boost/range/irange.hpp>")
+
+function(storm_target_precompile_headers target)
+	if(NOT CMAKE_DISABLE_PRECOMPILE_HEADERS)
+		target_precompile_headers(${target} ${ARGN})
+	endif()
+endfunction()
 
 #############################################################
 ##

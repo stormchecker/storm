@@ -1,0 +1,117 @@
+name: Compiler Tests
+
+on:
+  workflow_call:
+    inputs:
+      carl_tag:
+        description: "Carl git tag to use"
+        type: string
+        default: "master"
+      NR_JOBS:
+        description: "Number of parallel build jobs"
+        type: string
+        default: "4"
+      name:
+        description: "Compiler name (e.g. GCC, Clang, musl)"
+        type: string
+        required: true
+      buildType:
+        description: "CMake build type (Debug or Release)"
+        type: string
+        required: true
+      Developer:
+        description: "Enable developer mode (ON/OFF)"
+        type: string
+        default: "ON"
+      cmakeArgs:
+        description: "Extra CMake arguments"
+        type: string
+        default: ""
+      packages:
+        description: "Extra packages to install (e.g. clang)"
+        type: string
+        default: ""
+      distro:
+        description: "Distro for Dockerfile selection (archlinux or alpine)"
+        type: string
+        required: true
+
+jobs:
+  compilerTests:
+    # Build and run with different compilers (GCC, Clang)
+    # Run on latest Archlinux version to get most recent compiler versions
+    name: Compiler Tests (${{ inputs.name }} on ${{ inputs.distro }}, ${{ inputs.buildType }})
+    runs-on: ubuntu-latest
+    env:
+      NR_JOBS: ${{ inputs.NR_JOBS }}
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v6
+      - name: Replace Dockerfile
+        run: cp .github/workflows/Dockerfile.${{ inputs.distro }} Dockerfile
+      - name: Restore ccache (Docker)
+        id: ccache-restore
+        if: github.ref != 'refs/heads/master'
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci-ccache
+          key: buildtest-ccache-compiler-${{ inputs.distro }}-${{ inputs.cmakeArgs }}-${{ inputs.buildType }}-${{ github.run_id }}
+          restore-keys: |
+            buildtest-ccache-compiler-${{ inputs.distro }}-${{ inputs.cmakeArgs }}-${{ inputs.buildType }}-
+            buildtest-ccache-compiler-${{ inputs.distro }}-
+            buildtest-ccache-compiler-
+      - name: Build storm from Dockerfile
+        run: |
+          mkdir -p .ci-ccache
+          docker build -t movesrwth/storm:ci . \
+            --build-arg build_type="${{ inputs.buildType }}" \
+            --build-arg carl_tag="${{ inputs.carl_tag }}" \
+            --build-arg developer="${{ inputs.Developer }}" \
+            --build-arg cmake_args="${{ inputs.cmakeArgs }}" \
+            --build-arg packages="${{ inputs.packages }}" \
+            --build-arg no_threads=${NR_JOBS}
+            # Omitting arguments disable_*, cln_exact, cln_ratfunc, all_sanitizers
+      - name: Export ccache from Docker image
+        run: |
+          rm -rf .ci-ccache
+          mkdir -p .ci-ccache
+          docker create --name ccache-extract movesrwth/storm:ci
+          docker cp ccache-extract:/root/.ccache/. .ci-ccache/ || true
+          docker rm ccache-extract
+      - name: Save ccache (Docker)
+        if: github.ref != 'refs/heads/master' && always() && steps.ccache-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .ci-ccache
+          key: buildtest-ccache-compiler-${{ inputs.distro }}-${{ inputs.cmakeArgs }}-${{ inputs.buildType }}-${{ github.run_id }}
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:ci
+      - name: Run storm
+        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ inputs.buildType }}
+          docker: true
+      - name: Run tests
+        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Install storm
+        run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Remove build dir
+        run: |
+          docker exec ci bash -c "rm -rf /opt/storm/build"
+      - name: Run installed storm
+        run: |
+          docker exec ci bash -c "/usr/local/bin/storm --version"
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"

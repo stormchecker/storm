@@ -2,6 +2,8 @@
 #include <memory>
 #include <vector>
 
+#include <boost/optional.hpp>
+
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"

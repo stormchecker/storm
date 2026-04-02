@@ -7,7 +7,7 @@ target_sources(storm-counterexamples
         ${STORM_CEX_SOURCES}
         PUBLIC
         FILE_SET fs_storm_cex_headers TYPE HEADERS BASE_DIRS "${PROJECT_SOURCE_DIR}/src" FILES ${STORM_CEX_HEADERS})
-target_precompile_headers(storm-counterexamples REUSE_FROM storm)
+storm_target_precompile_headers(storm-counterexamples REUSE_FROM storm)
 set_target_properties(storm-counterexamples PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 target_link_libraries(storm-counterexamples PUBLIC storm)
 set_target_properties(storm-counterexamples PROPERTIES DEFINE_SYMBOL "")  # to avoid problems with pch on linux.

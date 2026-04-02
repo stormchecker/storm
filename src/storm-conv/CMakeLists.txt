@@ -8,7 +8,7 @@ target_sources(storm-conv
         ${STORM_CONV_SOURCES}
         PUBLIC
         FILE_SET fs_storm_conv_headers TYPE HEADERS BASE_DIRS "${PROJECT_SOURCE_DIR}/src" FILES ${STORM_CONV_HEADERS})
-target_precompile_headers(storm-conv REUSE_FROM storm)
+storm_target_precompile_headers(storm-conv REUSE_FROM storm)
 set_target_properties(storm-conv PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 target_link_libraries(storm-conv PUBLIC storm)
 set_target_properties(storm-conv PROPERTIES DEFINE_SYMBOL "") # to avoid problems with pch on linux.

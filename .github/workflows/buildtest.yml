@@ -10,15 +10,8 @@ on:
   workflow_dispatch:
   pull_request:
 
-env:
-  # GitHub runners currently have 4 cores
-  NR_JOBS: "4"
-
 jobs:
-  # Perform in-depth tests with different configurations
   indepthTests:
-    name: Indepth Tests (${{ matrix.config.name }}, ${{ matrix.config.buildType }})
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         config:
@@ -122,199 +115,81 @@ jobs:
              AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
-    steps:
-      - name: Git clone
-        uses: actions/checkout@v6
-      - name: Build storm from Dockerfile
-        run: |
-          docker build -t movesrwth/storm:ci . \
-            --build-arg BASE_IMAGE=movesrwth/${{ matrix.config.baseImg }} \
-            --build-arg build_type="${{ matrix.config.buildType }}" \
-            --build-arg carl_tag="master" \
-            --build-arg disable_cudd="${{ matrix.config.disable_cudd }}" \
-            --build-arg disable_glpk="${{ matrix.config.disable_glpk }}" \
-            --build-arg disable_gmm="${{ matrix.config.disable_gmm }}" \
-            --build-arg disable_gurobi="${{ matrix.config.disable_gurobi }}" \
-            --build-arg disable_libarchive="${{ matrix.config.disable_libarchive }}" \
-            --build-arg disable_mathsat="${{ matrix.config.disable_mathsat }}" \
-            --build-arg disable_soplex="${{ matrix.config.disable_soplex }}" \
-            --build-arg disable_spot="${{ matrix.config.disable_spot }}" \
-            --build-arg disable_sylvan="${{ matrix.config.disable_sylvan }}" \
-            --build-arg disable_xerces="${{ matrix.config.disable_xerces }}" \
-            --build-arg disable_z3="${{ matrix.config.disable_z3 }}" \
-            --build-arg developer="${{ matrix.config.Developer }}" \
-            --build-arg cln_exact="${{ matrix.config.ClnExact }}" \
-            --build-arg cln_ratfunc="${{ matrix.config.ClnRatfunc }}" \
-            --build-arg all_sanitizers="${{ matrix.config.AllSanitizers }}" \
-            --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" \
-            --build-arg no_threads=${NR_JOBS}
-      - name: Run Docker
-        run: docker run -d -it --name ci movesrwth/storm:ci
-      - name: Run storm
-        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
-      - name: Check compile flags
-        uses: ./.github/actions/check-compile-flags-action
-        with:
-          buildType: ${{ matrix.config.buildType }}
-          docker: true
-      - name: Run tests
-        # Disabled sanitizer checks for now
-        #run: docker exec ci bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
-        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
-      - name: Build starter-project
-        uses: ./.github/actions/starter-project-action
-        with:
-          docker: true
-          stormDir: "/opt/storm/build"
-          command: "--help" # TODO using --help as running the starter-project requires Z3.
-      - name: Install storm
-        run: docker exec ci bash -c "cd /opt/storm/build; make install"
-      - name: Remove build dir
-        run: |
-          docker exec ci bash -c "rm -rf /opt/storm/build"
-      - name: Run installed storm
-        run: |
-          docker exec ci bash -c "/usr/local/bin/storm --version"
-      - name: Build starter-project on installed Storm
-        uses: ./.github/actions/starter-project-action
-        with:
-          docker: true
-          stormDir: ""
-          command: "--help" # TODO using --help as running the starter-project requires Z3.
+    uses: ./.github/workflows/test-indepth.yml
+    with:
+      NR_JOBS: "4"
+      name: ${{ matrix.config.name }}
+      baseImg: ${{ matrix.config.baseImg }}
+      buildType: ${{ matrix.config.buildType }}
+      disable_cudd: ${{ matrix.config.disable_cudd }}
+      disable_glpk: ${{ matrix.config.disable_glpk }}
+      disable_gmm: ${{ matrix.config.disable_gmm }}
+      disable_gurobi: ${{ matrix.config.disable_gurobi }}
+      disable_libarchive: ${{ matrix.config.disable_libarchive }}
+      disable_mathsat: ${{ matrix.config.disable_mathsat }}
+      disable_soplex: ${{ matrix.config.disable_soplex }}
+      disable_spot: ${{ matrix.config.disable_spot }}
+      disable_sylvan: ${{ matrix.config.disable_sylvan }}
+      disable_xerces: ${{ matrix.config.disable_xerces }}
+      disable_z3: ${{ matrix.config.disable_z3 }}
+      Developer: ${{ matrix.config.Developer }}
+      ClnExact: ${{ matrix.config.ClnExact }}
+      ClnRatfunc: ${{ matrix.config.ClnRatfunc }}
+      AllSanitizers: ${{ matrix.config.AllSanitizers }}
+      cmakeArgs: ${{ matrix.config.cmakeArgs }}
 
   compilerTests:
-    # Build and run with different compilers (GCC, Clang)
-    # Run on latest Archlinux version to get most recent compiler versions
-    name: Compiler Tests (${{ matrix.config.name }} on  ${{ matrix.config.distro }}, ${{ matrix.config.buildType }})
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         config:
-          - {name: "GCC",
-             buildType: "Debug",
-             Developer: "ON",
-             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
-             packages: "",
-             distro: "archlinux"
+          - { name: "GCC",
+              buildType: "Debug",
+              Developer: "ON",
+              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
+              packages: "",
+              distro: "archlinux"
           }
-          - {name: "Clang",
-             buildType: "Debug",
-             Developer: "ON",
-             cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",
-             packages: "clang",
-             distro: "archlinux"
+          - { name: "Clang",
+              buildType: "Debug",
+              Developer: "ON",
+              cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",
+              packages: "clang",
+              distro: "archlinux"
           }
-          - {name: "musl",
-             buildType: "Debug",
-             Developer: "ON",
-             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
-             packages: "",
-             distro: "alpine"
+          - { name: "musl",
+              buildType: "Debug",
+              Developer: "ON",
+              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
+              packages: "",
+              distro: "alpine"
           }
-    steps:
-      - name: Git clone
-        uses: actions/checkout@v6
-      - name: Replace Dockerfile
-        run: cp .github/workflows/Dockerfile.${{ matrix.config.distro }} Dockerfile
-      - name: Build storm from Dockerfile
-        run: |
-          docker build -t movesrwth/storm:ci . \
-            --build-arg build_type="${{ matrix.config.buildType }}" \
-            --build-arg carl_tag="master" \
-            --build-arg developer="${{ matrix.config.Developer }}" \
-            --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" \
-            --build-arg packages="${{ matrix.config.packages }}" \
-            --build-arg no_threads=${NR_JOBS}
-            # Omitting arguments disable_*, cln_exact, cln_ratfunc, all_sanitizers
-      - name: Run Docker
-        run: docker run -d -it --name ci movesrwth/storm:ci
-      - name: Run storm
-        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
-      - name: Check compile flags
-        uses: ./.github/actions/check-compile-flags-action
-        with:
-          buildType: ${{ matrix.config.buildType }}
-          docker: true
-      - name: Run tests
-        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
-      - name: Build starter-project
-        uses: ./.github/actions/starter-project-action
-        with:
-          docker: true
-          stormDir: "/opt/storm/build"
-          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
-      - name: Install storm
-        run: docker exec ci bash -c "cd /opt/storm/build; make install"
-      - name: Remove build dir
-        run: |
-          docker exec ci bash -c "rm -rf /opt/storm/build"
-      - name: Run installed storm
-        run: |
-          docker exec ci bash -c "/usr/local/bin/storm --version"
-      - name: Build starter-project on installed Storm
-        uses: ./.github/actions/starter-project-action
-        with:
-          docker: true
-          stormDir: ""
-          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+    uses: ./.github/workflows/test-compiler.yml
+    with:
+      NR_JOBS: "4"
+      name: ${{ matrix.config.name }}
+      buildType: ${{ matrix.config.buildType }}
+      Developer: ${{ matrix.config.Developer }}
+      cmakeArgs: ${{ matrix.config.cmakeArgs }}
+      packages: ${{ matrix.config.packages }}
+      distro: ${{ matrix.config.distro }}
 
   linuxTests:
-    name: Linux Tests (${{ matrix.distro }}, ${{ matrix.buildType }}) on ${{ matrix.runner }}
-    runs-on: ${{ matrix.runner }}
+    uses: ./.github/workflows/test-linux.yml
     strategy:
       matrix:
         distro: ["debian-12", "ubuntu-24.04", "debian-13"]
         buildType: ["Release"]
         runner: [ubuntu-latest, ubuntu-24.04-arm]
-    steps:
-      - name: Git clone
-        uses: actions/checkout@v6
-      - name: Build storm from Dockerfile
-        run: |
-          docker build -t movesrwth/storm:ci . \
-            --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro }} \
-            --build-arg build_type="${{ matrix.buildType }}" \
-            --build-arg carl_tag="master" \
-            --build-arg no_threads=${NR_JOBS} \
-            --build-arg cmake_args="-DSTORM_WARNING_AS_ERROR=ON"
-            # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers
-      - name: Run Docker
-        run: docker run -d -it --name ci movesrwth/storm:ci
-      - name: Run storm
-        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
-      - name: Check compile flags
-        uses: ./.github/actions/check-compile-flags-action
-        with:
-          buildType: ${{ matrix.buildType }}
-          docker: true
-      - name: Run tests
-        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
-      - name: Build starter-project
-        uses: ./.github/actions/starter-project-action
-        with:
-          docker: true
-          stormDir: "/opt/storm/build"
-          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
-      - name: Install storm
-        run: docker exec ci bash -c "cd /opt/storm/build; make install"
-      - name: Remove build dir
-        run: |
-          docker exec ci bash -c "rm -rf /opt/storm/build"
-      - name: Run installed storm
-        run: |
-          docker exec ci bash -c "/usr/local/bin/storm --version"
-      - name: Build starter-project on installed Storm
-        uses: ./.github/actions/starter-project-action
-        with:
-          docker: true
-          stormDir: ""
-          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+    with:
+      NR_JOBS: "4"
+      distro: ${{ matrix.distro }}
+      buildType: ${{ matrix.buildType }}
+      runner: ${{ matrix.runner }}
 
   macTests:
-    name: macOS Tests (${{ matrix.config.name }}, ${{ matrix.config.buildType }})
     strategy:
       matrix:
-        config:
+        config:          
           - {name: "MacOS 14, ARM",
              distro: "macos-14",
              xcode: "15.4",
@@ -335,140 +210,41 @@ jobs:
              xcode: "latest-stable",
              buildType: "Debug"
           }
-    runs-on: ${{ matrix.config.distro }}
-    steps:
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: ${{ matrix.config.xcode }}
-      - name: Git clone
-        uses: actions/checkout@v6
-      - name: Install dependencies
-        # cmake and gmp are already installed
-        run: |
-          brew update
-          brew install automake boost cln ginac glpk hwloc libarchive xerces-c z3
-      - name: Configure storm
-        run: |
-          mkdir build
-          cd build
-          cmake .. -DCMAKE_BUILD_TYPE="${{ matrix.config.buildType }}" -DSTORM_CARL_GIT_TAG="master" -DSTORM_WARNING_AS_ERROR=ON
-      - name: Build storm
-        working-directory: ./build
-        run: make -j ${NR_JOBS}
-      - name: Run storm (build tree)
-        working-directory: ./build
-        run: ./bin/storm
-      - name: Check compile flags
-        uses: ./.github/actions/check-compile-flags-action
-        with:
-          buildType: ${{ matrix.config.buildType }}
-          docker: false
-      - name: Run tests
-        working-directory: ./build
-        run: ctest test --output-on-failure
-      - name: Build starter-project
-        uses: ./.github/actions/starter-project-action
-        with:
-          docker: false
-          stormDir: "${GITHUB_WORKSPACE}/build"
-          command: "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
-      - name: Install storm
-        working-directory: ./build
-        run: sudo make install
-      - name: Remove build dir
-        run: |
-          rm -rf ${GITHUB_WORKSPACE}/build
-      - name: Run installed storm
-        run: |
-          /usr/local/bin/storm --version
-      - name: Build starter-project on installed Storm
-        uses: ./.github/actions/starter-project-action
-        with:
-          docker: false
-          stormDir: ""
-          command: "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+    uses: ./.github/workflows/test-mac.yml
+    with:
+      NR_JOBS: "4"
+      name: ${{ matrix.config.name }}
+      distro: ${{ matrix.config.distro }}
+      xcode: ${{ matrix.config.xcode }}
+      buildType: ${{ matrix.config.buildType }}
 
   deploy:
-    name: Test and Deploy (${{ matrix.buildType.name }})
-    runs-on: ubuntu-latest
     strategy:
       matrix:
-        buildType:
-          - {name: "Debug",
-             dockerTag: "ci-debug",
-             baseImg: "storm-dependencies:latest",
-             Developer: "ON",
-             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
+        config:
+          - { buildType: "Debug",
+              dockerTag: "ci-debug",
+              baseImg: "storm-dependencies:latest",
+              Developer: "ON",
+              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
-          - {name: "Release",
-             dockerTag: "ci",
-             baseImg: "storm-dependencies:latest",
-             Developer: "OFF",
-             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
+          - { buildType: "Release",
+              dockerTag: "ci",
+              baseImg: "storm-dependencies:latest",
+              Developer: "OFF",
+              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
-    steps:
-      - name: Git clone
-        uses: actions/checkout@v6
-      - name: Git describe
-        id: ghd
-        uses: proudust/gh-describe@v3
-      - name: Set static Storm version
-        run: echo "set(STORM_VERSION_COMMITS_AHEAD ${{ steps.ghd.outputs.distance }})" >> version.cmake
-      - name: Build storm from Dockerfile
-        run: |
-          docker build -t movesrwth/storm:${{ matrix.buildType.dockerTag }} . \
-            --build-arg BASE_IMAGE=movesrwth/${{ matrix.buildType.baseImg }} \
-            --build-arg build_type="${{ matrix.buildType.name }}" \
-            --build-arg carl_tag="master" \
-            --build-arg developer="${{ matrix.buildType.Developer }}" \
-            --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" \
-            --build-arg no_threads=${NR_JOBS}
-            # Omitting arguments disable_*, cln_exact, cln_ratfunc, all_sanitizers
-      - name: Run Docker
-        run: docker run -d -it --name ci movesrwth/storm:${{ matrix.buildType.dockerTag }}
-      - name: Check compile flags
-        uses: ./.github/actions/check-compile-flags-action
-        with:
-          buildType: ${{ matrix.buildType.name }}
-          docker: true
-      - name: Run tests
-        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
-      - name: Build starter-project
-        uses: ./.github/actions/starter-project-action
-        with:
-          docker: true
-          stormDir: "/opt/storm/build"
-          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
-      - name: Install storm
-        run: docker exec ci bash -c "cd /opt/storm/build; make install"
-      - name: Temporarily move build dir
-        run: |
-          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
-      - name: Run installed storm
-        run: |
-          docker exec ci bash -c "/usr/local/bin/storm --version"
-      - name: Build starter-project on installed Storm
-        uses: ./.github/actions/starter-project-action
-        with:
-          docker: true
-          stormDir: ""
-          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
-      - name: Restore build dir
-        run: |
-          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
-      - name: Login into docker
-        # Only login if using master on original repo (and not for pull requests or forks)
-        if: github.repository_owner == 'stormchecker' && github.ref == 'refs/heads/master'
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.STORM_CI_DOCKER_USERNAME }}
-          password: ${{ secrets.STORM_CI_DOCKER_TOKEN }}
-      - name: Deploy storm
-        # Only deploy if using master on original repo (and not for pull requests or forks)
-        if: github.repository_owner == 'stormchecker' && github.ref == 'refs/heads/master'
-        run: |
-          docker commit ci movesrwth/storm:${{ matrix.buildType.dockerTag }}
-          docker push movesrwth/storm:${{ matrix.buildType.dockerTag }}
+    uses: ./.github/workflows/test-deploy.yml
+    with:
+      NR_JOBS: "4"
+      buildType: ${{ matrix.config.buildType }}
+      dockerTag: ${{ matrix.config.dockerTag }}
+      baseImg: ${{ matrix.config.baseImg }}
+      Developer: ${{ matrix.config.Developer }}
+      cmakeArgs: ${{ matrix.config.cmakeArgs }}
+    secrets:
+      STORM_CI_DOCKER_USERNAME: ${{ secrets.STORM_CI_DOCKER_USERNAME }}
+      STORM_CI_DOCKER_TOKEN: ${{ secrets.STORM_CI_DOCKER_TOKEN }}
 
   notify:
     name: Email notification

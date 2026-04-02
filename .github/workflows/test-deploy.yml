@@ -1,0 +1,108 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      carl_tag:
+        description: "Carl git tag to use"
+        type: string
+        default: "master"
+      NR_JOBS:
+        description: "Number of parallel build jobs"
+        type: string
+        default: "4"
+      buildType:
+        description: "Build type name (Debug or Release)"
+        type: string
+        required: true
+      dockerTag:
+        description: "Docker image tag to use (e.g. ci-debug, ci)"
+        type: string
+        required: true
+      baseImg:
+        description: "Base image name (e.g. storm-dependencies:latest)"
+        type: string
+        default: "storm-dependencies:latest"
+      Developer:
+        description: "Enable developer mode (ON/OFF)"
+        type: string
+        default: "OFF"
+      cmakeArgs:
+        description: "Extra CMake arguments"
+        type: string
+        default: ""
+    secrets:
+      STORM_CI_DOCKER_USERNAME:
+        required: false
+      STORM_CI_DOCKER_TOKEN:
+        required: false
+
+jobs:
+  deploy:
+    name: Test and Deploy (${{ inputs.buildType }})
+    runs-on: ubuntu-latest
+    env:
+      NR_JOBS: ${{ inputs.NR_JOBS }}
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v6
+      - name: Git describe
+        id: ghd
+        uses: proudust/gh-describe@v3
+      - name: Set static Storm version
+        run: echo "set(STORM_VERSION_COMMITS_AHEAD ${{ steps.ghd.outputs.distance }})" >> version.cmake
+      - name: Build storm from Dockerfile
+        run: |
+          docker build -t movesrwth/storm:${{ inputs.dockerTag }} . \
+            --build-arg BASE_IMAGE=movesrwth/${{ inputs.baseImg }} \
+            --build-arg build_type="${{ inputs.buildType }}" \
+            --build-arg carl_tag="${{ inputs.carl_tag }}" \
+            --build-arg developer="${{ inputs.Developer }}" \
+            --build-arg cmake_args="${{ inputs.cmakeArgs }}" \
+            --build-arg no_threads=${NR_JOBS}
+            # Omitting arguments disable_*, cln_exact, cln_ratfunc, all_sanitizers
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:${{ inputs.dockerTag }}
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ inputs.buildType }}
+          docker: true
+      - name: Run tests
+        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Install storm
+        run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Temporarily move build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+      - name: Run installed storm
+        run: |
+          docker exec ci bash -c "/usr/local/bin/storm --version"
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Restore build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
+      - name: Login into docker
+        # Only login if using master on original repo (and not for pull requests or forks)
+        if: github.repository_owner == 'stormchecker' && github.ref == 'refs/heads/master'
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.STORM_CI_DOCKER_USERNAME }}
+          password: ${{ secrets.STORM_CI_DOCKER_TOKEN }}
+      - name: Deploy storm
+        # Only deploy if using master on original repo (and not for pull requests or forks)
+        if: github.repository_owner == 'stormchecker' && github.ref == 'refs/heads/master'
+        run: |
+          docker commit ci movesrwth/storm:${{ inputs.dockerTag }}
+          docker push movesrwth/storm:${{ inputs.dockerTag }}

@@ -51,6 +51,7 @@ ARG packages=""
 RUN pacman -Syu --noconfirm  # Updates needed as Archlinux is rolling release
 RUN pacman -S --noconfirm \
         base-devel \
+        ccache \
         cmake \
         git \
         boost \
@@ -67,11 +68,16 @@ RUN pacman -S --noconfirm \
 
 # Build Storm
 #############
+ENV CCACHE_DIR=/root/.ccache
 RUN mkdir /opt/storm
 WORKDIR /opt/storm
 
 # Copy the content of the current local Storm repository into the Docker image
 COPY . .
+
+# Seed ccache from the workflow cache directory if available.
+RUN mkdir -p "$CCACHE_DIR" && \
+        if [ -d "/opt/storm/.ci-ccache" ]; then cp -a /opt/storm/.ci-ccache/. "$CCACHE_DIR"/; fi
 
 # Switch to build directory
 RUN mkdir -p /opt/storm/build
@@ -79,27 +85,27 @@ WORKDIR /opt/storm/build
 
 # Configure Storm
 RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
-          -DSTORM_PORTABLE=ON \
-          -DSTORM_CARL_GIT_TAG=$carl_tag \
-          -DSTORM_DISABLE_CUDD=$disable_cudd \
-          -DSTORM_DISABLE_GLPK=$disable_glpk \
-          -DSTORM_DISABLE_GMM=$disable_gmm \
-          -DSTORM_DISABLE_GUROBI=$disable_gurobi \
-          -DSTORM_DISABLE_LIBARCHIVE=$disable_libarchive \
-          -DSTORM_DISABLE_MATHSAT=$disable_mathsat \
-          -DSTORM_DISABLE_SOPLEX=$disable_soplex \
-          -DSTORM_DISABLE_SPOT=$disable_spot \
-          -DSTORM_DISABLE_SYLVAN=$disable_sylvan \
-          -DSTORM_DISABLE_XERCES=$disable_xerces \
-          -DSTORM_DISABLE_Z3=$disable_z3 \
-          -DSTORM_DEVELOPER=$developer \
-          -DSTORM_USE_CLN_EA=$cln_exact \
-          -DSTORM_USE_CLN_RF=$cln_ratfunc \
-          -DSTORM_COMPILE_WITH_ALL_SANITIZERS=$all_sanitizers \
-          $cmake_args ..
+        -DSTORM_PORTABLE=ON \
+        -DSTORM_CARL_GIT_TAG=$carl_tag \
+        -DSTORM_DISABLE_CUDD=$disable_cudd \
+        -DSTORM_DISABLE_GLPK=$disable_glpk \
+        -DSTORM_DISABLE_GMM=$disable_gmm \
+        -DSTORM_DISABLE_GUROBI=$disable_gurobi \
+        -DSTORM_DISABLE_LIBARCHIVE=$disable_libarchive \
+        -DSTORM_DISABLE_MATHSAT=$disable_mathsat \
+        -DSTORM_DISABLE_SOPLEX=$disable_soplex \
+        -DSTORM_DISABLE_SPOT=$disable_spot \
+        -DSTORM_DISABLE_SYLVAN=$disable_sylvan \
+        -DSTORM_DISABLE_XERCES=$disable_xerces \
+        -DSTORM_DISABLE_Z3=$disable_z3 \
+        -DSTORM_DEVELOPER=$developer \
+        -DSTORM_USE_CLN_EA=$cln_exact \
+        -DSTORM_USE_CLN_RF=$cln_ratfunc \
+        -DSTORM_COMPILE_WITH_ALL_SANITIZERS=$all_sanitizers \
+        $cmake_args ..
 
 # Build Storm
 # (This can be adapted to only build 'storm' or 'binaries' depending on custom needs)
-RUN make -j $no_threads
+RUN ccache --max-size=3G && ccache --zero-stats && make -j $no_threads && ccache --show-stats --verbose
 
 WORKDIR /opt/storm

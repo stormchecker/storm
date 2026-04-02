@@ -45,11 +45,28 @@ ARG cmake_args=""
 
 # Build Storm
 #############
+RUN if ! command -v ccache >/dev/null 2>&1; then \
+        if command -v apt-get >/dev/null 2>&1; then \
+            apt-get update && apt-get install -y --no-install-recommends ccache && rm -rf /var/lib/apt/lists/*; \
+        elif command -v apk >/dev/null 2>&1; then \
+            apk add --no-cache ccache; \
+        elif command -v pacman >/dev/null 2>&1; then \
+            pacman -S --noconfirm ccache; \
+        else \
+            echo "No supported package manager found for ccache installation"; \
+        fi; \
+    fi
+
+ENV CCACHE_DIR=/root/.ccache
 RUN mkdir /opt/storm
 WORKDIR /opt/storm
 
 # Copy the content of the current local Storm repository into the Docker image
 COPY . .
+
+# Seed ccache from the workflow cache directory if available.
+RUN mkdir -p "$CCACHE_DIR" && \
+    if [ -d "/opt/storm/.ci-ccache" ]; then cp -a /opt/storm/.ci-ccache/. "$CCACHE_DIR"/; fi
 
 # Switch to build directory
 RUN mkdir -p /opt/storm/build
@@ -78,6 +95,6 @@ RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
 
 # Build Storm
 # (This can be adapted to only build 'storm' or 'binaries' depending on custom needs)
-RUN make -j $no_threads
+RUN ccache --max-size=3G && ccache --zero-stats && make -j $no_threads && ccache --show-stats --verbose
 
 WORKDIR /opt/storm

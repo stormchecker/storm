@@ -1,0 +1,118 @@
+name: macOS Tests
+
+on:
+  workflow_call:
+    inputs:
+      NR_JOBS:
+        description: "Number of parallel build jobs"
+        type: string
+        default: "4"
+      name:
+        description: "Display name (e.g. Xcode 15.4, ARM)"
+        type: string
+        required: true
+      distro:
+        description: "macOS runner image (e.g. macos-14, macos-15)"
+        type: string
+        required: true
+      xcode:
+        description: "Xcode version (e.g. 15.4, latest-stable)"
+        type: string
+        required: true
+      buildType:
+        description: "CMake build type (Debug or Release)"
+        type: string
+        required: true
+
+jobs:
+  macTests:
+    name: macOS Tests (${{ inputs.name }}, ${{ inputs.buildType }})
+    runs-on: ${{ inputs.distro }}
+    env:
+      CCACHE_DIR: /Users/runner/.ccache
+      NR_JOBS: ${{ inputs.NR_JOBS }}
+    steps:
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ inputs.xcode }}
+      - name: Git clone
+        uses: actions/checkout@v6
+      - name: Cache Homebrew downloads
+        if: github.ref != 'refs/heads/master'
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/Homebrew
+          key: buildtest-brew-${{ inputs.distro }}-${{ hashFiles('.github/workflows/buildtest.yml') }}
+          restore-keys: |
+            buildtest-brew-${{ inputs.distro }}-
+      - name: Ensure ccache directory exists (macOS)
+        run: mkdir -p /Users/runner/.ccache
+      - name: Restore ccache (macOS)
+        id: ccache-restore-macos
+        if: github.ref != 'refs/heads/master'
+        uses: actions/cache/restore@v4
+        with:
+          path: /Users/runner/.ccache
+          key: buildtest-ccache-macos-${{ inputs.distro }}-${{ inputs.buildType }}-${{ github.run_id }}
+          restore-keys: |
+            buildtest-ccache-macos-${{ inputs.distro }}-${{ inputs.buildType }}-
+            buildtest-ccache-macos-${{ inputs.distro }}-
+      - name: Install dependencies
+        # cmake and gmp are already installed
+        run: |
+          brew update
+          brew install automake boost ccache cln ginac glpk hwloc libarchive xerces-c z3
+      - name: Prepare ccache
+        run: |
+          ccache --max-size=2G
+          ccache --zero-stats
+          ccache --show-stats --verbose
+      - name: Configure storm
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE="${{ inputs.buildType }}" -DSTORM_CARL_GIT_TAG="master" -DSTORM_WARNING_AS_ERROR=ON -DSTORM_COMPILE_WITH_PCH=OFF
+      - name: Build storm
+        working-directory: ./build
+        run: |
+          make -j ${NR_JOBS}
+      - name: Print ccache stats
+        run: ccache --show-stats --verbose
+      - name: Save ccache (macOS)
+        if: github.ref != 'refs/heads/master' && always() && steps.ccache-restore-macos.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /Users/runner/.ccache
+          key: buildtest-ccache-macos-${{ inputs.distro }}-${{ inputs.buildType }}-${{ github.run_id }}
+      - name: Run storm (build tree)
+        working-directory: ./build
+        run: ./bin/storm
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ inputs.buildType }}
+          docker: false
+      - name: Run tests
+        working-directory: ./build
+        run: ctest test --output-on-failure
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: false
+          stormDir: "${GITHUB_WORKSPACE}/build"
+          command: "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Install storm
+        working-directory: ./build
+        run: sudo make install
+      - name: Remove build dir
+        run: |
+          rm -rf ${GITHUB_WORKSPACE}/build
+      - name: Run installed storm
+        run: |
+          /usr/local/bin/storm --version
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: false
+          stormDir: ""
+          command: "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
