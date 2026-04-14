@@ -54,6 +54,7 @@ class Formula : public std::enable_shared_from_this<Formula> {
 
     virtual bool isMultiObjectiveFormula() const;
     virtual bool isQuantileFormula() const;
+    virtual bool isCvarFormula() const;
 
     // Operator formulas.
     virtual bool isOperatorFormula() const;
@@ -125,6 +126,9 @@ class Formula : public std::enable_shared_from_this<Formula> {
 
     QuantileFormula& asQuantileFormula();
     QuantileFormula const& asQuantileFormula() const;
+
+    CvarFormula& asCvarFormula();
+    CvarFormula const& asCvarFormula() const;
 
     BinaryStateFormula& asBinaryStateFormula();
     BinaryStateFormula const& asBinaryStateFormula() const;

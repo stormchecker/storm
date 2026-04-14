@@ -109,6 +109,10 @@ boost::any ToPrefixStringVisitor::visit(CumulativeRewardFormula const&, boost::a
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
 }
 
+boost::any ToPrefixStringVisitor::visit(CvarFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+}
+
 boost::any ToPrefixStringVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {
     std::string subexpression = boost::any_cast<std::string>(f.getSubformula().accept(*this, data));
     return std::string("F ") + subexpression;

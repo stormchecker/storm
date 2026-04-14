@@ -33,6 +33,10 @@ bool Formula::isQuantileFormula() const {
     return false;
 }
 
+bool Formula::isCvarFormula() const {
+    return false;
+}
+
 bool Formula::isBinaryStateFormula() const {
     return false;
 }
@@ -248,6 +252,14 @@ QuantileFormula& Formula::asQuantileFormula() {
 
 QuantileFormula const& Formula::asQuantileFormula() const {
     return dynamic_cast<QuantileFormula const&>(*this);
+}
+
+CvarFormula& Formula::asCvarFormula() {
+    return dynamic_cast<CvarFormula&>(*this);
+}
+
+CvarFormula const& Formula::asCvarFormula() const {
+    return dynamic_cast<CvarFormula const&>(*this);
 }
 
 BinaryStateFormula& Formula::asBinaryStateFormula() {

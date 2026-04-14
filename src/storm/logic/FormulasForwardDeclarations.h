@@ -15,6 +15,7 @@ class BooleanLiteralFormula;
 class BoundedUntilFormula;
 class ConditionalFormula;
 class CumulativeRewardFormula;
+class CvarFormula;
 class EventuallyFormula;
 class TimeOperatorFormula;
 class GloballyFormula;
