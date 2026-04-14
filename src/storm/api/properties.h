@@ -36,6 +36,7 @@ std::vector<storm::jani::Property> substituteTranscendentalNumbersInProperties(s
 std::vector<storm::jani::Property> filterProperties(std::vector<storm::jani::Property> const& properties,
                                                     boost::optional<std::set<std::string>> const& propertyFilter);
 std::vector<std::shared_ptr<storm::logic::Formula const>> extractFormulasFromProperties(std::vector<storm::jani::Property> const& properties);
+storm::jani::Property createCvarProperty(storm::jani::Property const& property, double alpha);
 storm::jani::Property createMultiObjectiveProperty(std::vector<storm::jani::Property> const& properties, bool lexicographic);
 
 }  // namespace api

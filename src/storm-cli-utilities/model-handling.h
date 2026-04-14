@@ -443,8 +443,7 @@ inline std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicIn
                         "Can not translate properties to a CVaR formula because no properties were specified.");
         STORM_LOG_THROW(output.properties.size() == 1, storm::exceptions::InvalidArgumentException,
                         "The '--cvar' option currently requires exactly one selected property.");
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                        "The '--cvar' option is recognized, but rewriting the selected property to a dedicated CVaR formula is not implemented yet.");
+        output.properties = {storm::api::createCvarProperty(output.properties.front(), ioSettings.getCvarAlpha())};
     }
 
     // Substitute constant definitions in symbolic input.

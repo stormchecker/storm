@@ -69,6 +69,13 @@ std::vector<std::shared_ptr<storm::logic::Formula const>> extractFormulasFromPro
     return formulas;
 }
 
+storm::jani::Property createCvarProperty(storm::jani::Property const& property, double alpha) {
+    STORM_LOG_THROW(property.getFilter().isDefault(), storm::exceptions::InvalidArgumentException,
+                    "Non-default property filter of property " << property.getName() << " is not supported for CVaR queries.");
+    auto cvarFormula = std::make_shared<storm::logic::CvarFormula>(alpha, property.getRawFormula());
+    return storm::jani::Property(property.getName(), cvarFormula, property.getUndefinedConstants(), property.getComment());
+}
+
 storm::jani::Property createMultiObjectiveProperty(std::vector<storm::jani::Property> const& properties, bool lexicographic) {
     std::set<storm::expressions::Variable> undefConstants;
     std::string name = "";
