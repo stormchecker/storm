@@ -296,6 +296,8 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkStateFormula(
             STORM_LOG_ASSERT(mof.isTradeoff(), "Unexpected multi-objective formula type.");
             return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(mof));
         }
+    } else if (stateFormula.isCvarFormula()) {
+        return this->checkCvarFormula(env, checkTask.substituteFormula(stateFormula.asCvarFormula()));
     } else if (stateFormula.isQuantileFormula()) {
         return this->checkQuantileFormula(env, checkTask.substituteFormula(stateFormula.asQuantileFormula()));
     }
@@ -440,6 +442,13 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkLexObjectiveF
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkMultiObjectiveFormula(
     Environment const&, CheckTask<storm::logic::MultiObjectiveFormula, SolutionType> const& checkTask) {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
+                    "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
+}
+
+template<typename ModelType>
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkCvarFormula(Environment const&,
+                                                                               CheckTask<storm::logic::CvarFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }

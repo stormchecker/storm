@@ -6,6 +6,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/FragmentSpecification.h"
+#include "storm/modelchecker/cvar/CvarFormulaInformation.h"
 #include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
@@ -90,7 +91,8 @@ bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandleStatic(CheckTask<s
                                             .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
                                             .setRewardAccumulationAllowed(true);
 
-            if (formula.isInFragment(multiObjectiveFragment) || formula.isInFragment(storm::logic::quantiles()) || formula.isInFragment(lexObjectiveFragment)) {
+            if (formula.isInFragment(multiObjectiveFragment) || formula.isInFragment(storm::logic::quantiles()) ||
+                formula.isInFragment(storm::logic::cvars()) || formula.isInFragment(lexObjectiveFragment)) {
                 if (requiresSingleInitialState) {
                     *requiresSingleInitialState = true;
                 }
@@ -518,6 +520,20 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
         std::unique_ptr<CheckResult> result(new LexicographicCheckResult<SolutionType>(ret.values, *this->getModel().getInitialStates().begin()));
         return result;
     }
+}
+
+template<typename SparseMdpModelType>
+std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkCvarFormula(
+    Environment const&, CheckTask<storm::logic::CvarFormula, SolutionType> const& checkTask) {
+    STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException,
+                    "Computing CVaR is only supported for the initial states of a model.");
+    STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidOperationException,
+                    "CVaR is not supported on models with multiple initial states.");
+
+    auto cvarFormulaInformation = storm::modelchecker::cvar::extractCvarFormulaInformation(checkTask.getFormula());
+    static_cast<void>(cvarFormulaInformation);
+
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "CVaR model checking for sparse MDPs is not implemented yet.");
 }
 
 template<typename SparseMdpModelType>
