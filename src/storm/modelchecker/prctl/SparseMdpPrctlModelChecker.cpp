@@ -6,6 +6,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/cvar/CvarModelCheckingData.h"
+#include "storm/modelchecker/cvar/SparseCvarHelper.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/cvar/CvarFormulaInformation.h"
 #include "storm/modelchecker/cvar/WeightedReachabilityModelInformation.h"
@@ -543,9 +544,9 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
     auto cvarModelCheckingData =
         storm::modelchecker::cvar::createCvarModelCheckingData(this->getModel(), cvarFormulaInformation, weightedReachabilityModelInformation);
 
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                    "CVaR model checking for sparse MDPs is not implemented yet after validating terminal reward model '"
-                    << weightedReachabilityModelInformation.rewardModelName << "'.");
+    storm::modelchecker::cvar::SparseCvarHelper<SparseMdpModelType> cvarHelper(cvarModelCheckingData);
+    auto cvarValue = cvarHelper.computeCvar(env);
+    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(cvarModelCheckingData.initialState, std::move(cvarValue)));
 }
 
 template<typename SparseMdpModelType>
