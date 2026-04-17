@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "storm/environment/Environment.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/cvar/CvarModelCheckingData.h"
 #include "storm/storage/expressions/BinaryRelationType.h"
@@ -32,20 +33,29 @@ public:
         STORM_LOG_THROW(!modelCheckingData.candidateThresholds.empty(), storm::exceptions::NotImplementedException,
                         "CVaR model checking requires at least one target reward threshold candidate.");
 
+        std::optional<ValueType> bestValue;
         for (auto const& threshold : modelCheckingData.candidateThresholds) {
             auto thresholdData = createCvarThresholdData(modelCheckingData.targetStates, modelCheckingData.terminalRewards, threshold);
-            buildLpForThreshold(thresholdData);
+            auto thresholdValue = buildLpForThreshold(thresholdData);
+            if (!thresholdValue.has_value()) {
+                continue;
+            }
+            if (!bestValue.has_value()) {
+                bestValue = thresholdValue.value();
+            } else if ((storm::solver::minimize(modelCheckingData.optimizationDirection) && thresholdValue.value() < bestValue.value()) ||
+                       (storm::solver::maximize(modelCheckingData.optimizationDirection) && thresholdValue.value() > bestValue.value())) {
+                bestValue = thresholdValue.value();
+            }
         }
 
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                        "CVaR LP scaffolding created for reward model '" << modelCheckingData.rewardModelName << "' with "
-                        << modelCheckingData.candidateThresholds.size()
-                        << " threshold candidates.");
+        STORM_LOG_THROW(bestValue.has_value(), storm::exceptions::UnexpectedException,
+                        "CVaR model checking did not find a feasible LP for any threshold candidate.");
+        return bestValue.value();
     }
 
 private:
     template<typename ValueType>
-    void buildLpForThreshold(CvarThresholdData<ValueType> const& thresholdData) const {
+    std::optional<ValueType> buildLpForThreshold(CvarThresholdData<ValueType> const& thresholdData) const {
         using RawLpSolver = storm::solver::LpSolver<ValueType, true>;
         using RawLpConstraint = storm::solver::RawLpConstraint<ValueType>;
 
@@ -136,6 +146,16 @@ private:
             probabilityConsistentSplitConstraint.addToLhs(splitFlowVariables[state].value(), storm::utility::one<ValueType>());
         }
         solver->addConstraint("probability_consistent_split", probabilityConsistentSplitConstraint);
+
+        solver->optimize();
+        if (solver->isInfeasible()) {
+            return std::nullopt;
+        }
+        STORM_LOG_THROW(!solver->isUnbounded(), storm::exceptions::UnexpectedException,
+                        "The CVaR LP for threshold " << thresholdData.threshold << " is unbounded.");
+        STORM_LOG_THROW(solver->isOptimal(), storm::exceptions::UnexpectedException,
+                        "The CVaR LP for threshold " << thresholdData.threshold << " did not reach an optimal solution.");
+        return solver->getObjectiveValue();
     }
 
     CvarModelCheckingData<SparseMdpModelType> const& modelCheckingData;
