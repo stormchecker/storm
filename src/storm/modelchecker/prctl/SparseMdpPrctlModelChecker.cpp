@@ -547,7 +547,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
         auto cvarModelCheckingData =
             storm::modelchecker::cvar::createCvarModelCheckingData(this->getModel(), cvarFormulaInformation, weightedReachabilityModelInformation);
 
-        storm::modelchecker::cvar::SparseCvarHelper<SparseMdpModelType> cvarHelper(cvarModelCheckingData);
+        storm::modelchecker::cvar::SparseCvarHelper<ValueType> cvarHelper(cvarModelCheckingData);
         auto cvarValue = cvarHelper.computeCvar(env);
         return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(cvarModelCheckingData.initialState, std::move(cvarValue)));
     }

@@ -23,10 +23,8 @@ struct CvarThresholdData {
     storm::storage::BitVector targetStatesBelowOrAtThreshold;
 };
 
-template<typename SparseMdpModelType>
+template<typename ValueType>
 struct CvarModelCheckingData {
-    using ValueType = typename SparseMdpModelType::ValueType;
-
     double alpha;
     storm::solver::OptimizationDirection optimizationDirection;
     uint64_t initialState;
@@ -34,8 +32,7 @@ struct CvarModelCheckingData {
     storm::storage::BitVector targetStates;
     std::vector<ValueType> terminalRewards;
     std::vector<ValueType> candidateThresholds;
-    storm::storage::SparseMatrix<ValueType> const& transitionMatrix;
-    SparseMdpModelType const& model;
+    storm::storage::SparseMatrix<ValueType> transitionMatrix;
 };
 
 template<typename ValueType>
@@ -76,20 +73,19 @@ CvarThresholdData<ValueType> createCvarThresholdData(storm::storage::BitVector c
 }
 
 template<typename SparseMdpModelType>
-CvarModelCheckingData<SparseMdpModelType> createCvarModelCheckingData(
+CvarModelCheckingData<typename SparseMdpModelType::ValueType> createCvarModelCheckingData(
     SparseMdpModelType const& model, CvarFormulaInformation const& formulaInformation,
     WeightedReachabilityModelInformation<typename SparseMdpModelType::ValueType> const& weightedReachabilityModelInformation) {
     auto candidateThresholds =
-        collectCandidateThresholds(weightedReachabilityModelInformation.targetStates, weightedReachabilityModelInformation.terminalRewards);
+        collectCandidateThresholds(weightedReachabilityModelInformation.effectiveTargetStates, weightedReachabilityModelInformation.terminalRewards);
     return {formulaInformation.alpha,
             formulaInformation.optimizationDirection,
             *model.getInitialStates().begin(),
             weightedReachabilityModelInformation.rewardModelName,
-            weightedReachabilityModelInformation.targetStates,
+            weightedReachabilityModelInformation.effectiveTargetStates,
             weightedReachabilityModelInformation.terminalRewards,
             std::move(candidateThresholds),
-            model.getTransitionMatrix(),
-            model};
+            weightedReachabilityModelInformation.transitionMatrix};
 }
 
 }  // namespace cvar

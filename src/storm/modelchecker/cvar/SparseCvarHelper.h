@@ -21,16 +21,15 @@ namespace cvar {
  * Solves an LP for Conditional Value-at-Risk on an MDP with a terminal reward objective.
  * @see https://doi.org/10.1145/3209108.3209176 Fig. 4 for a description of the algorithm as implemented (and slightly altered) here.
  */
-template<typename SparseMdpModelType>
+template<typename ValueType>
 class SparseCvarHelper {
 public:
-    explicit SparseCvarHelper(CvarModelCheckingData<SparseMdpModelType> const& modelCheckingData)
+    explicit SparseCvarHelper(CvarModelCheckingData<ValueType> const& modelCheckingData)
         : modelCheckingData(modelCheckingData) {
         // Intentionally left empty.
     }
 
-    typename SparseMdpModelType::ValueType computeCvar(Environment const&) const {
-        using ValueType = typename SparseMdpModelType::ValueType;
+    ValueType computeCvar(Environment const&) const {
         STORM_LOG_THROW(!modelCheckingData.candidateThresholds.empty(), storm::exceptions::NotImplementedException,
                         "CVaR model checking requires at least one target reward threshold candidate.");
 
@@ -56,7 +55,6 @@ public:
     }
 
 private:
-    template<typename ValueType>
     std::optional<ValueType> buildLpForThreshold(CvarThresholdData<ValueType> const& thresholdData) const {
         using RawLpSolver = storm::solver::LpSolver<ValueType, true>;
         using RawLpConstraint = storm::solver::RawLpConstraint<ValueType>;
@@ -164,7 +162,7 @@ private:
         return solver->getObjectiveValue();
     }
 
-    CvarModelCheckingData<SparseMdpModelType> const& modelCheckingData;
+    CvarModelCheckingData<ValueType> const& modelCheckingData;
 };
 } // namespace cvar
 } // namespace modelchecker
