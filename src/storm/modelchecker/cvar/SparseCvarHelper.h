@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <optional>
 #include <vector>
 
@@ -33,6 +34,7 @@ public:
         STORM_LOG_THROW(!modelCheckingData.candidateThresholds.empty(), storm::exceptions::NotImplementedException,
                         "CVaR model checking requires at least one target reward threshold candidate.");
 
+        // checking all possible threshold values for VaR iteratively. Could possibly improved by e.g. creating a product MDP or similar.
         std::optional<ValueType> bestValue;
         for (auto const& threshold : modelCheckingData.candidateThresholds) {
             auto thresholdData = createCvarThresholdData(modelCheckingData.targetStates, modelCheckingData.terminalRewards, threshold);
@@ -50,7 +52,7 @@ public:
 
         STORM_LOG_THROW(bestValue.has_value(), storm::exceptions::UnexpectedException,
                         "CVaR model checking did not find a feasible LP for any threshold candidate.");
-        return bestValue.value();
+        return bestValue.value() / storm::utility::convertNumber<ValueType>(modelCheckingData.alpha);
     }
 
 private:
@@ -62,7 +64,7 @@ private:
         auto lpSolverFactory = storm::utility::solver::getLpSolverFactory<ValueType>();
         auto solver = lpSolverFactory->createRaw("cvar");
         solver->setOptimizationDirection(modelCheckingData.optimizationDirection);
-        auto backwardTransitions = modelCheckingData.model.getBackwardTransitions();
+        auto backwardChoices = modelCheckingData.transitionMatrix.transpose();
 
         std::vector<typename RawLpSolver::Variable> actionFlowVariables;
         actionFlowVariables.reserve(modelCheckingData.transitionMatrix.getRowCount());
@@ -90,22 +92,26 @@ private:
 
         solver->update();
 
-        static_cast<void>(splitFlowVariables);
-
         // Equation (2) from Fig. 4:
         for (uint64_t state = 0; state < modelCheckingData.transitionMatrix.getRowGroupCount(); ++state) {
             auto outgoingActions = modelCheckingData.transitionMatrix.getRowGroupIndices(state);
-            auto incomingActions = backwardTransitions.getRow(state);
+            auto incomingActions = backwardChoices.getRow(state);
             uint64_t reservedSize = outgoingActions.size() + incomingActions.getNumberOfEntries() + (recurrentFlowVariables[state].has_value() ? 1 : 0);
             RawLpConstraint constraint(storm::expressions::RelationType::Equal,
                                        state == modelCheckingData.initialState ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>(),
                                        reservedSize);
+            std::map<typename RawLpSolver::Variable, ValueType> actionCoefficients;
 
             for (auto const& incomingAction : incomingActions) {
-                constraint.addToLhs(actionFlowVariables[incomingAction.getColumn()], -incomingAction.getValue());
+                actionCoefficients[actionFlowVariables[incomingAction.getColumn()]] -= incomingAction.getValue();
             }
             for (auto const& action : outgoingActions) {
-                constraint.addToLhs(actionFlowVariables[action], storm::utility::one<ValueType>());
+                actionCoefficients[actionFlowVariables[action]] += storm::utility::one<ValueType>();
+            }
+            for (auto const& actionCoefficient : actionCoefficients) {
+                if (!storm::utility::isZero(actionCoefficient.second)) {
+                    constraint.addToLhs(actionCoefficient.first, actionCoefficient.second);
+                }
             }
             if (recurrentFlowVariables[state].has_value()) {
                 constraint.addToLhs(recurrentFlowVariables[state].value(), storm::utility::one<ValueType>());

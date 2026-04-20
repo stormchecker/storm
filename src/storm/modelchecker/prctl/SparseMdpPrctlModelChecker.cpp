@@ -528,25 +528,29 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
 template<typename SparseMdpModelType>
 std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkCvarFormula(
     Environment const& env, CheckTask<storm::logic::CvarFormula, SolutionType> const& checkTask) {
-    STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException,
-                    "Computing CVaR is only supported for the initial states of a model.");
-    STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidOperationException,
-                    "CVaR is not supported on models with multiple initial states.");
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "CVaR formulas are not supported for interval models.");
+    } else {
+        STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException,
+                        "Computing CVaR is only supported for the initial states of a model.");
+        STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidOperationException,
+                        "CVaR is not supported on models with multiple initial states.");
 
-    // check if query fits specified format
-    auto cvarFormulaInformation = storm::modelchecker::cvar::extractCvarFormulaInformation(checkTask.getFormula());
-    auto targetStates =
-        this->check(env, *cvarFormulaInformation.targetFormula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
-    // check if model fits terminal reward
-    auto weightedReachabilityModelInformation =
-        storm::modelchecker::cvar::extractWeightedReachabilityModelInformation(this->getModel(), cvarFormulaInformation, targetStates);
-    // combine info into 1 simplified object
-    auto cvarModelCheckingData =
-        storm::modelchecker::cvar::createCvarModelCheckingData(this->getModel(), cvarFormulaInformation, weightedReachabilityModelInformation);
+        // check if query fits specified format
+        auto cvarFormulaInformation = storm::modelchecker::cvar::extractCvarFormulaInformation(checkTask.getFormula());
+        auto targetStates =
+            this->check(env, *cvarFormulaInformation.targetFormula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
+        // check if model fits terminal reward
+        auto weightedReachabilityModelInformation =
+            storm::modelchecker::cvar::extractWeightedReachabilityModelInformation(this->getModel(), cvarFormulaInformation, targetStates);
+        // combine info into 1 simplified object
+        auto cvarModelCheckingData =
+            storm::modelchecker::cvar::createCvarModelCheckingData(this->getModel(), cvarFormulaInformation, weightedReachabilityModelInformation);
 
-    storm::modelchecker::cvar::SparseCvarHelper<SparseMdpModelType> cvarHelper(cvarModelCheckingData);
-    auto cvarValue = cvarHelper.computeCvar(env);
-    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(cvarModelCheckingData.initialState, std::move(cvarValue)));
+        storm::modelchecker::cvar::SparseCvarHelper<SparseMdpModelType> cvarHelper(cvarModelCheckingData);
+        auto cvarValue = cvarHelper.computeCvar(env);
+        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(cvarModelCheckingData.initialState, std::move(cvarValue)));
+    }
 }
 
 template<typename SparseMdpModelType>
