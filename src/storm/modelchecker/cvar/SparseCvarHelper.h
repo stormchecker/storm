@@ -68,7 +68,7 @@ class SparseCvarHelper {
         return {bestValue.value() / storm::utility::convertNumber<ValueType>(modelCheckingData.alpha), std::move(bestScheduler)};
     }
 
-private:
+   private:
     std::optional<CvarComputationResult<ValueType>> buildLpForThreshold(CvarThresholdData<ValueType> const& thresholdData, bool produceScheduler) const {
         using RawLpSolver = storm::solver::LpSolver<ValueType, true>;
         using RawLpConstraint = storm::solver::RawLpConstraint<ValueType>;
