@@ -40,8 +40,7 @@ void validateTargetStatesAreAbsorbing(storm::storage::SparseMatrix<ValueType> co
 }
 
 template<typename ValueType>
-storm::storage::BitVector computeBadMecStates(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                              storm::storage::BitVector const& initialStates,
+storm::storage::BitVector computeBadMecStates(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& initialStates,
                                               storm::storage::BitVector const& targetStates) {
     storm::storage::BitVector allStates(transitionMatrix.getRowGroupCount(), true);
     storm::storage::BitVector noStates(transitionMatrix.getRowGroupCount(), false);
@@ -106,13 +105,8 @@ WeightedReachabilityModelInformation<typename SparseMdpModelType::ValueType> ext
         }
     }
 
-    return {rewardModelName,
-            targetStates,
-            effectiveTargetStates,
-            badMecStates,
-            std::move(terminalRewards),
-            std::move(transitionMatrix)};
+    return {rewardModelName, targetStates, effectiveTargetStates, badMecStates, std::move(terminalRewards), std::move(transitionMatrix)};
 }
-} // namespace cvar
-} // namespace modelchecker
-} // namespace storm
+}  // namespace cvar
+}  // namespace modelchecker
+}  // namespace storm

@@ -119,8 +119,7 @@ private:
         }
 
         // Equation (3):
-        RawLpConstraint recurrentConstraint(storm::expressions::RelationType::Equal,
-                                            storm::utility::one<ValueType>(),
+        RawLpConstraint recurrentConstraint(storm::expressions::RelationType::Equal, storm::utility::one<ValueType>(),
                                             modelCheckingData.targetStates.getNumberOfSetBits());
 
         for (auto state : modelCheckingData.targetStates) {

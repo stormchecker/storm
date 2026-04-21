@@ -3,9 +3,8 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/EventuallyFormula.h"
 #include "storm/logic/RewardOperatorFormula.h"
-#include "storm/utility/macros.h"
 #include "storm/utility/logging.h"
-
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {
@@ -34,6 +33,6 @@ CvarFormulaInformation extractCvarFormulaInformation(storm::logic::CvarFormula c
     return {formula.getAlpha(), rewardOperator.getOptimalityType(), rewardOperator.getOptionalRewardModelName(),
             eventuallyFormula.getSubformula().asSharedPointer()};
 }
-} // namespace cvar
-} // namespace modelchecker
-} // namespace storm
+}  // namespace cvar
+}  // namespace modelchecker
+}  // namespace storm

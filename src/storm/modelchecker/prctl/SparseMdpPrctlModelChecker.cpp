@@ -5,10 +5,10 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/modelchecker/cvar/CvarModelCheckingData.h"
-#include "storm/modelchecker/cvar/SparseCvarHelper.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/cvar/CvarFormulaInformation.h"
+#include "storm/modelchecker/cvar/CvarModelCheckingData.h"
+#include "storm/modelchecker/cvar/SparseCvarHelper.h"
 #include "storm/modelchecker/cvar/WeightedReachabilityModelInformation.h"
 #include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
@@ -53,46 +53,46 @@ bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandleStatic(CheckTask<s
         }
     } else {
         if (formula.isInFragment(storm::logic::prctlstar()
-            .setLongRunAverageRewardFormulasAllowed(true)
-            .setLongRunAverageProbabilitiesAllowed(true)
-            .setConditionalProbabilityFormulasAllowed(true)
-            .setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true)
-            .setTotalRewardFormulasAllowed(true)
-            .setRewardBoundedUntilFormulasAllowed(true)
-            .setRewardBoundedCumulativeRewardFormulasAllowed(true)
-            .setMultiDimensionalBoundedUntilFormulasAllowed(true)
-            .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
-            .setTimeOperatorsAllowed(true)
-            .setReachbilityTimeFormulasAllowed(true)
-            .setRewardAccumulationAllowed(true)
-            .setDiscountedTotalRewardFormulasAllowed(true)
-            .setDiscountedCumulativeRewardFormulasAllowed(true))) {
+                                     .setLongRunAverageRewardFormulasAllowed(true)
+                                     .setLongRunAverageProbabilitiesAllowed(true)
+                                     .setConditionalProbabilityFormulasAllowed(true)
+                                     .setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true)
+                                     .setTotalRewardFormulasAllowed(true)
+                                     .setRewardBoundedUntilFormulasAllowed(true)
+                                     .setRewardBoundedCumulativeRewardFormulasAllowed(true)
+                                     .setMultiDimensionalBoundedUntilFormulasAllowed(true)
+                                     .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
+                                     .setTimeOperatorsAllowed(true)
+                                     .setReachbilityTimeFormulasAllowed(true)
+                                     .setRewardAccumulationAllowed(true)
+                                     .setDiscountedTotalRewardFormulasAllowed(true)
+                                     .setDiscountedCumulativeRewardFormulasAllowed(true))) {
             return true;
         } else if (checkTask.isOnlyInitialStatesRelevantSet()) {
             auto multiObjectiveFragment = storm::logic::multiObjective()
-                .setTimeAllowed(true)
-                .setCumulativeRewardFormulasAllowed(true)
-                .setTimeBoundedCumulativeRewardFormulasAllowed(true)
-                .setStepBoundedCumulativeRewardFormulasAllowed(true)
-                .setRewardBoundedCumulativeRewardFormulasAllowed(true)
-                .setTimeBoundedUntilFormulasAllowed(true)
-                .setStepBoundedUntilFormulasAllowed(true)
-                .setRewardBoundedUntilFormulasAllowed(true)
-                .setMultiDimensionalBoundedUntilFormulasAllowed(true)
-                .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
-                .setRewardAccumulationAllowed(true);
+                                              .setTimeAllowed(true)
+                                              .setCumulativeRewardFormulasAllowed(true)
+                                              .setTimeBoundedCumulativeRewardFormulasAllowed(true)
+                                              .setStepBoundedCumulativeRewardFormulasAllowed(true)
+                                              .setRewardBoundedCumulativeRewardFormulasAllowed(true)
+                                              .setTimeBoundedUntilFormulasAllowed(true)
+                                              .setStepBoundedUntilFormulasAllowed(true)
+                                              .setRewardBoundedUntilFormulasAllowed(true)
+                                              .setMultiDimensionalBoundedUntilFormulasAllowed(true)
+                                              .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
+                                              .setRewardAccumulationAllowed(true);
             auto lexObjectiveFragment = storm::logic::lexObjective()
-                .setHOAPathFormulasAllowed(true)
-                .setCumulativeRewardFormulasAllowed(true)
-                .setTimeBoundedCumulativeRewardFormulasAllowed(true)
-                .setStepBoundedCumulativeRewardFormulasAllowed(true)
-                .setRewardBoundedCumulativeRewardFormulasAllowed(true)
-                .setTimeBoundedUntilFormulasAllowed(true)
-                .setStepBoundedUntilFormulasAllowed(true)
-                .setRewardBoundedUntilFormulasAllowed(true)
-                .setMultiDimensionalBoundedUntilFormulasAllowed(true)
-                .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
-                .setRewardAccumulationAllowed(true);
+                                            .setHOAPathFormulasAllowed(true)
+                                            .setCumulativeRewardFormulasAllowed(true)
+                                            .setTimeBoundedCumulativeRewardFormulasAllowed(true)
+                                            .setStepBoundedCumulativeRewardFormulasAllowed(true)
+                                            .setRewardBoundedCumulativeRewardFormulasAllowed(true)
+                                            .setTimeBoundedUntilFormulasAllowed(true)
+                                            .setStepBoundedUntilFormulasAllowed(true)
+                                            .setRewardBoundedUntilFormulasAllowed(true)
+                                            .setMultiDimensionalBoundedUntilFormulasAllowed(true)
+                                            .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
+                                            .setRewardAccumulationAllowed(true);
 
             if (formula.isInFragment(multiObjectiveFragment) || formula.isInFragment(storm::logic::quantiles()) ||
                 formula.isInFragment(storm::logic::cvars()) || formula.isInFragment(lexObjectiveFragment)) {
@@ -230,7 +230,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
         std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
         if (checkTask.isProduceSchedulersSet()) {
             result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(
-                std::make_unique<storm::storage::Scheduler<SolutionType> >(helper.extractScheduler(this->getModel())));
+                std::make_unique<storm::storage::Scheduler<SolutionType>>(helper.extractScheduler(this->getModel())));
         }
 
         return result;
@@ -259,7 +259,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
         std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
         if (checkTask.isProduceSchedulersSet()) {
             result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(
-                std::make_unique<storm::storage::Scheduler<SolutionType> >(helper.extractScheduler(this->getModel())));
+                std::make_unique<storm::storage::Scheduler<SolutionType>>(helper.extractScheduler(this->getModel())));
         }
 
         return result;
@@ -329,13 +329,13 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
 }
 
 template<>
-std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval> >::computeDiscountedCumulativeRewards(
+std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>::computeDiscountedCumulativeRewards(
     Environment const& env, CheckTask<storm::logic::DiscountedCumulativeRewardFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Discounted properties are not implemented for interval models.");
 }
 
 template<>
-std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalInterval> >::computeDiscountedCumulativeRewards(
+std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalInterval>>::computeDiscountedCumulativeRewards(
     Environment const& env, CheckTask<storm::logic::DiscountedCumulativeRewardFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Discounted properties are not implemented for interval models.");
 }
@@ -424,13 +424,13 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
 }
 
 template<>
-std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval> >::computeDiscountedTotalRewards(
+std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>::computeDiscountedTotalRewards(
     Environment const& env, CheckTask<storm::logic::DiscountedTotalRewardFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Discounted properties are not implemented for interval models.");
 }
 
 template<>
-std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalInterval> >::computeDiscountedTotalRewards(
+std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalInterval>>::computeDiscountedTotalRewards(
     Environment const& env, CheckTask<storm::logic::DiscountedTotalRewardFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Discounted properties are not implemented for interval models.");
 }
@@ -473,7 +473,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
         std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(values)));
         if (checkTask.isProduceSchedulersSet()) {
             result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(
-                std::make_unique<storm::storage::Scheduler<SolutionType> >(helper.extractScheduler()));
+                std::make_unique<storm::storage::Scheduler<SolutionType>>(helper.extractScheduler()));
         }
         return result;
     }
@@ -494,7 +494,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
         std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(values)));
         if (checkTask.isProduceSchedulersSet()) {
             result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(
-                std::make_unique<storm::storage::Scheduler<SolutionType> >(helper.extractScheduler()));
+                std::make_unique<storm::storage::Scheduler<SolutionType>>(helper.extractScheduler()));
         }
         return result;
     }
@@ -576,9 +576,9 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
     }
 }
 
-template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double> >;
-template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalNumber> >;
-template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval> >;
-template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalInterval> >;
-} // namespace modelchecker
-} // namespace storm
+template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>>;
+template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
+template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>;
+template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalInterval>>;
+}  // namespace modelchecker
+}  // namespace storm

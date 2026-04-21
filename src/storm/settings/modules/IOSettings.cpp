@@ -282,8 +282,7 @@ IOSettings::IOSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .build());
 
-    this->addOption(storm::settings::OptionBuilder(moduleName, cvarOptionName, false,
-                                                   "Computes the conditional value-at-risk for the selected property.")
+    this->addOption(storm::settings::OptionBuilder(moduleName, cvarOptionName, false, "Computes the conditional value-at-risk for the selected property.")
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("alpha", "The size of the lower tail.")
                                          .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0))
                                          .build())

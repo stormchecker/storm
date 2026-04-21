@@ -13,14 +13,16 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/utility/constants.h"
 
+#include <set>
+
 namespace {
 template<typename ValueType>
-std::shared_ptr<storm::models::sparse::Mdp<ValueType> > buildCvarModel(std::string const& modelPath, std::string const& propertyString, double alpha) {
+std::shared_ptr<storm::models::sparse::Mdp<ValueType>> buildCvarModel(std::string const& modelPath, std::string const& propertyString, double alpha) {
     storm::prism::Program program = storm::api::parseProgram(modelPath);
     auto properties = storm::api::parsePropertiesForPrismProgram(propertyString, program);
     std::vector<storm::jani::Property> cvarProperties = {storm::api::createCvarProperty(properties.front(), alpha)};
     auto formulas = storm::api::extractFormulasFromProperties(cvarProperties);
-    return storm::api::buildSparseModel<ValueType>(program, formulas)->template as<storm::models::sparse::Mdp<ValueType> >();
+    return storm::api::buildSparseModel<ValueType>(program, formulas)->template as<storm::models::sparse::Mdp<ValueType>>();
 }
 
 std::shared_ptr<storm::logic::Formula const> buildCvarFormula(std::string const& modelPath, std::string const& propertyString, double alpha) {
@@ -84,7 +86,7 @@ TEST(CvarQueryTest, RejectsNonAbsorbingOriginalTargetStates) {
     auto formula = buildCvarFormula(modelPath, "R{\"term\"}max=? [ F \"target\" ];", alpha);
 
     storm::Environment env;
-    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double> > checker(*mdp);
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp);
     storm::modelchecker::CheckTask<storm::logic::Formula, double> task(*formula, true);
     STORM_SILENT_EXPECT_THROW(checker.check(env, task), storm::exceptions::InvalidPropertyException);
 }
