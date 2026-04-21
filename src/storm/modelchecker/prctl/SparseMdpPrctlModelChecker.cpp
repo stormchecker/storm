@@ -548,8 +548,13 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
             storm::modelchecker::cvar::createCvarModelCheckingData(this->getModel(), cvarFormulaInformation, weightedReachabilityModelInformation);
 
         storm::modelchecker::cvar::SparseCvarHelper<ValueType> cvarHelper(cvarModelCheckingData);
-        auto cvarValue = cvarHelper.computeCvar(env);
-        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(cvarModelCheckingData.initialState, std::move(cvarValue)));
+        auto cvarResult = cvarHelper.computeCvar(env, checkTask.isProduceSchedulersSet());
+        std::unique_ptr<CheckResult> result(
+            new ExplicitQuantitativeCheckResult<SolutionType>(cvarModelCheckingData.initialState, std::move(cvarResult.value)));
+        if (checkTask.isProduceSchedulersSet() && cvarResult.scheduler) {
+            result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(cvarResult.scheduler));
+        }
+        return result;
     }
 }
 
