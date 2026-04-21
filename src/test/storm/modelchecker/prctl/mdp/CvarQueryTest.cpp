@@ -1,6 +1,7 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/api/builder.h"
@@ -24,6 +25,14 @@ constexpr uint64_t pushChoice = 1;
 
 bool hasLpSolver() {
 #if !defined(STORM_HAVE_GLPK) && !defined(STORM_HAVE_GUROBI) && !defined(STORM_HAVE_Z3) && !defined(STORM_HAVE_SOPLEX)
+    return false;
+#else
+    return true;
+#endif
+}
+
+bool hasExactLpSolver() {
+#if !defined(STORM_HAVE_Z3)
     return false;
 #else
     return true;
@@ -136,6 +145,20 @@ TEST(CvarQueryTest, BranchingTradeoffMdp) {
     // this requires randomization of the strategy
     auto minThreeQuarterInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", 0.75);
     EXPECT_NEAR(checkInitialStateValue(minThreeQuarterInput), 14.0 / 3.0, 1e-10);
+}
+
+TEST(CvarQueryTest, BranchingTradeoffMdpRationalNumbers) {
+    if (!hasExactLpSolver()) {
+        GTEST_SKIP() << "No exact LP solver available.";
+    }
+
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_branching_tradeoff_mdp.nm";
+
+    auto maxInput = buildCvarInput<storm::RationalNumber>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", 0.75);
+    EXPECT_EQ(storm::RationalNumber(8), checkInitialStateValue(maxInput));
+
+    auto minInput = buildCvarInput<storm::RationalNumber>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", 0.75);
+    EXPECT_EQ(storm::RationalNumber("14/3"), checkInitialStateValue(minInput));
 }
 
 TEST(CvarQueryTest, ProducesDeterministicSchedulerForMaxBranchingTradeoffMdp) {
