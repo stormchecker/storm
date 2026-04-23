@@ -1,12 +1,13 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
 #include "storm/environment/Environment.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
@@ -32,7 +33,7 @@ bool hasLpSolver() {
 }
 
 bool hasExactLpSolver() {
-#if !defined(STORM_HAVE_Z3)
+#if !defined(STORM_HAVE_Z3) && !defined(STORM_HAVE_SOPLEX)
     return false;
 #else
     return true;
@@ -112,6 +113,31 @@ TEST(CvarQueryTest, ReachableBadMecIsPreprocessedToZeroTerminalReward) {
     auto minInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", alpha);
     double minValue = checkInitialStateValue(minInput);
     EXPECT_NEAR(minValue, 0.0, 1e-10);
+}
+
+TEST(CvarQueryTest, TargetReachingMecIsCollapsed) {
+    if (!hasLpSolver()) {
+        GTEST_SKIP() << "No LP solver available.";
+    }
+
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_target_reaching_mec_mdp.nm";
+
+    auto maxInput = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", 0.75);
+    EXPECT_NEAR(checkInitialStateValue(maxInput), 6.0, 1e-10);
+
+    auto minInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", 0.75);
+    EXPECT_NEAR(checkInitialStateValue(minInput), 4.0, 1e-10);
+}
+
+TEST(CvarQueryTest, RejectsSchedulerForTargetReachingMecCollapse) {
+    if (!hasLpSolver()) {
+        GTEST_SKIP() << "No LP solver available.";
+    }
+
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_target_reaching_mec_mdp.nm";
+    auto input = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", 0.75);
+
+    STORM_SILENT_EXPECT_THROW(checkInitialStateResult(input, true), storm::exceptions::InvalidOperationException);
 }
 
 TEST(CvarQueryTest, RejectsNonAbsorbingOriginalTargetStates) {

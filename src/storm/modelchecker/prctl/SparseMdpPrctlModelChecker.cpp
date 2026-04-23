@@ -541,15 +541,15 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
         auto targetStates =
             this->check(env, *cvarFormulaInformation.targetFormula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
         // check if model fits terminal reward
-        auto weightedReachabilityModelInformation =
-            storm::modelchecker::cvar::extractWeightedReachabilityModelInformation(this->getModel(), cvarFormulaInformation, targetStates);
+        auto weightedReachabilityModelInformation = storm::modelchecker::cvar::extractWeightedReachabilityModelInformation(
+            this->getModel(), cvarFormulaInformation, targetStates, checkTask.isProduceSchedulersSet());
         // combine info into 1 simplified object
-        auto cvarModelCheckingData =
-            storm::modelchecker::cvar::createCvarModelCheckingData(this->getModel(), cvarFormulaInformation, weightedReachabilityModelInformation);
+        auto cvarModelCheckingData = storm::modelchecker::cvar::createCvarModelCheckingData(cvarFormulaInformation, weightedReachabilityModelInformation);
 
         storm::modelchecker::cvar::SparseCvarHelper<ValueType> cvarHelper(cvarModelCheckingData);
         auto cvarResult = cvarHelper.computeCvar(env, checkTask.isProduceSchedulersSet());
-        std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(cvarModelCheckingData.initialState, std::move(cvarResult.value)));
+        std::unique_ptr<CheckResult> result(
+            new ExplicitQuantitativeCheckResult<SolutionType>(*this->getModel().getInitialStates().begin(), std::move(cvarResult.value)));
         if (checkTask.isProduceSchedulersSet() && cvarResult.scheduler) {
             result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(cvarResult.scheduler));
         }

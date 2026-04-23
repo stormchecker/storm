@@ -27,6 +27,17 @@ struct CvarComputationResult {
 };
 /*!
  * Solves an LP for Conditional Value-at-Risk on an MDP with a terminal reward objective.
+ *
+ * Supported CLI shape:
+ *   storm --prism model.nm --prop 'R{"reward"}min/max=? [ F "target" ]' --cvar <alpha>
+ *
+ * The --cvar option requires exactly one selected property. That property must be unfiltered and must be an unbounded
+ * reward query with an optimization direction (min or max) and an eventually formula F phi whose target phi is a state
+ * formula. The reward model may be named explicitly (R{"reward"}...) or omitted if the model has a unique reward model.
+ *
+ * Requirements: sparse MDP, 0 < alpha < 1, exactly one initial state, state-based terminal rewards,
+ * reward 0 on non-target states, and absorbing original target states.
+ *
  * @see https://doi.org/10.1145/3209108.3209176 Fig. 4 for a description of the algorithm as implemented (and slightly altered) here.
  */
 template<typename ValueType>

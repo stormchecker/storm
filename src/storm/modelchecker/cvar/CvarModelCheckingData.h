@@ -72,15 +72,14 @@ CvarThresholdData<ValueType> createCvarThresholdData(storm::storage::BitVector c
     return {threshold, targetStatesBelowThreshold, targetStatesAtThreshold, targetStatesBelowOrAtThreshold};
 }
 
-template<typename SparseMdpModelType>
-CvarModelCheckingData<typename SparseMdpModelType::ValueType> createCvarModelCheckingData(
-    SparseMdpModelType const& model, CvarFormulaInformation const& formulaInformation,
-    WeightedReachabilityModelInformation<typename SparseMdpModelType::ValueType> const& weightedReachabilityModelInformation) {
+template<typename ValueType>
+CvarModelCheckingData<ValueType> createCvarModelCheckingData(CvarFormulaInformation const& formulaInformation,
+                                                             WeightedReachabilityModelInformation<ValueType> const& weightedReachabilityModelInformation) {
     auto candidateThresholds =
         collectCandidateThresholds(weightedReachabilityModelInformation.effectiveTargetStates, weightedReachabilityModelInformation.terminalRewards);
     return {formulaInformation.alpha,
             formulaInformation.optimizationDirection,
-            *model.getInitialStates().begin(),
+            weightedReachabilityModelInformation.initialState,
             weightedReachabilityModelInformation.rewardModelName,
             weightedReachabilityModelInformation.effectiveTargetStates,
             weightedReachabilityModelInformation.terminalRewards,
