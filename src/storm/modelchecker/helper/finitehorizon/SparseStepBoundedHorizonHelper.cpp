@@ -58,8 +58,8 @@ std::vector<SolutionType> SparseStepBoundedHorizonHelper<ValueType, Deterministi
         std::vector<ValueType> b;
         uint64_t subresultSize;
 
-        // In case of interval models we do not incorporate the one-step probabilities to the target in 'b' when computing '<='. Thus, we need to perform
-        // 'n + 1' multiplications instead of 'n' in the non-interval case.
+        // In case of interval models we do not incorporate the one-step probabilities to the target in 'b' when computing '<=' and '<'. Thus, we need to
+        // perform 'n + 1' multiplications instead of 'n' in the non-interval case.
         bool bIncludesOneStepProbabilities = false;
 
         if constexpr (storm::IsIntervalType<ValueType>) {
@@ -92,7 +92,7 @@ std::vector<SolutionType> SparseStepBoundedHorizonHelper<ValueType, Deterministi
         std::vector<SolutionType> subresult(subresultSize);
 
         auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, submatrix);
-        if (lowerBound == 0) {  // Case '<='
+        if (lowerBound == 0) {  // Case '<=' and '<'
             multiplier->repeatedMultiplyAndReduce(env, optimizationDirection, subresult, &b, upperBound + (bIncludesOneStepProbabilities ? 0 : 1),
                                                   goal.getUncertaintyResolutionMode());
         } else {  // Case '[n, m]'
