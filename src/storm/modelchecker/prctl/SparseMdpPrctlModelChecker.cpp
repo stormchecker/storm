@@ -6,6 +6,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/FragmentSpecification.h"
+#include "storm/modelchecker/cvar/CvarClassification.h"
 #include "storm/modelchecker/cvar/CvarFormulaInformation.h"
 #include "storm/modelchecker/cvar/CvarModelCheckingData.h"
 #include "storm/modelchecker/cvar/SparseCvarHelper.h"
@@ -540,18 +541,31 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
         auto cvarFormulaInformation = storm::modelchecker::cvar::extractCvarFormulaInformation(checkTask.getFormula());
         auto targetStates =
             this->check(env, *cvarFormulaInformation.targetFormula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
-        // check if model fits terminal reward
-        auto weightedReachabilityModelInformation = storm::modelchecker::cvar::extractWeightedReachabilityModelInformation(
-            this->getModel(), cvarFormulaInformation, targetStates, checkTask.isProduceSchedulersSet());
-        // combine info into 1 simplified object
-        auto cvarModelCheckingData = storm::modelchecker::cvar::createCvarModelCheckingData(cvarFormulaInformation, weightedReachabilityModelInformation);
+        auto queryKind = storm::modelchecker::cvar::classifyCvarQuery(cvarFormulaInformation);
+        auto problemKind = storm::modelchecker::cvar::classifyCvarProblem(this->getModel(), cvarFormulaInformation, queryKind, targetStates);
 
-        storm::modelchecker::cvar::SparseCvarHelper<ValueType> cvarHelper(cvarModelCheckingData);
-        auto cvarResult = cvarHelper.computeCvar(env, checkTask.isProduceSchedulersSet());
-        std::unique_ptr<CheckResult> result(
-            new ExplicitQuantitativeCheckResult<SolutionType>(*this->getModel().getInitialStates().begin(), std::move(cvarResult.value)));
-        if (checkTask.isProduceSchedulersSet() && cvarResult.scheduler) {
-            result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(cvarResult.scheduler));
+        std::unique_ptr<CheckResult> result;
+        switch (problemKind) {
+            case storm::modelchecker::cvar::CvarProblemKind::WeightedReachability: {
+                // check if model fits terminal reward
+                auto weightedReachabilityModelInformation = storm::modelchecker::cvar::extractWeightedReachabilityModelInformation(
+                    this->getModel(), cvarFormulaInformation, targetStates, checkTask.isProduceSchedulersSet());
+                // combine info into 1 simplified object
+                auto cvarModelCheckingData =
+                    storm::modelchecker::cvar::createCvarModelCheckingData(cvarFormulaInformation, weightedReachabilityModelInformation);
+
+                storm::modelchecker::cvar::SparseCvarHelper<ValueType> cvarHelper(cvarModelCheckingData);
+                auto cvarResult = cvarHelper.computeCvar(env, checkTask.isProduceSchedulersSet());
+                result = std::unique_ptr<CheckResult>(
+                    new ExplicitQuantitativeCheckResult<SolutionType>(*this->getModel().getInitialStates().begin(), std::move(cvarResult.value)));
+                if (checkTask.isProduceSchedulersSet() && cvarResult.scheduler) {
+                    result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(cvarResult.scheduler));
+                }
+                break;
+            }
+            case storm::modelchecker::cvar::CvarProblemKind::Ssp:
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
+                                "CVaR for stochastic shortest path objectives is not implemented yet.");
         }
         return result;
     }
