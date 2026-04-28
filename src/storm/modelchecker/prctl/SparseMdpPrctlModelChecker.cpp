@@ -10,6 +10,7 @@
 #include "storm/modelchecker/cvar/CvarClassification.h"
 #include "storm/modelchecker/cvar/CvarFormulaInformation.h"
 #include "storm/modelchecker/cvar/CvarModelCheckingData.h"
+#include "storm/modelchecker/cvar/SspModelInformation.h"
 #include "storm/modelchecker/cvar/SparseCvarHelper.h"
 #include "storm/modelchecker/cvar/WeightedReachabilityModelInformation.h"
 #include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
@@ -565,8 +566,11 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
                 }
                 break;
             }
-            case storm::modelchecker::cvar::CvarProblemKind::Ssp:
+            case storm::modelchecker::cvar::CvarProblemKind::Ssp: {
+                auto sspModelInformation = storm::modelchecker::cvar::extractSspModelInformation(this->getModel(), cvarFormulaInformation, targetStates);
+                static_cast<void>(sspModelInformation);
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "CVaR for stochastic shortest path objectives is not implemented yet.");
+            }
         }
         return result;
     }
