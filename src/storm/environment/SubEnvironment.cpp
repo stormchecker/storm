@@ -48,6 +48,7 @@ void SubEnvironment<EnvironmentType>::assertInitialized() const {
 
 template class SubEnvironment<InternalEnvironment>;
 
+template class SubEnvironment<CvarModelCheckerEnvironment>;
 template class SubEnvironment<MultiObjectiveModelCheckerEnvironment>;
 template class SubEnvironment<ModelCheckerEnvironment>;
 

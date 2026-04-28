@@ -1,5 +1,6 @@
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 
+#include "storm/environment/modelchecker/CvarModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
@@ -25,6 +26,14 @@ ModelCheckerEnvironment::ModelCheckerEnvironment() {
 
 ModelCheckerEnvironment::~ModelCheckerEnvironment() {
     // Intentionally left empty
+}
+
+CvarModelCheckerEnvironment& ModelCheckerEnvironment::cvar() {
+    return cvarModelCheckerEnvironment.get();
+}
+
+CvarModelCheckerEnvironment const& ModelCheckerEnvironment::cvar() const {
+    return cvarModelCheckerEnvironment.get();
 }
 
 SteadyStateDistributionAlgorithm ModelCheckerEnvironment::getSteadyStateDistributionAlgorithm() const {

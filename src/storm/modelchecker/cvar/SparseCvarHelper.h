@@ -30,6 +30,7 @@ struct CvarComputationResult {
  *
  * Supported CLI shape:
  *   storm --prism model.nm --prop 'R{"reward"}min/max=? [ F "target" ]' --cvar <alpha>
+ *   storm --prism model.nm --prop 'R{"reward"}min/max=? [ F "target" ]' --cvar <alpha> --cvar:method wr
  *
  * The --cvar option requires exactly one selected property. That property must be unfiltered and must be an unbounded
  * reward query with an optimization direction (min or max) and an eventually formula F phi whose target phi is a state

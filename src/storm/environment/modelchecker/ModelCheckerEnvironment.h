@@ -6,6 +6,7 @@
 
 #include "storm/environment/Environment.h"
 #include "storm/environment/SubEnvironment.h"
+#include "storm/environment/modelchecker/CvarModelCheckerEnvironment.h"
 #include "storm/modelchecker/helper/conditional/ConditionalAlgorithmSetting.h"
 #include "storm/modelchecker/helper/infinitehorizon/SteadyStateDistributionAlgorithm.h"
 
@@ -18,6 +19,9 @@ class ModelCheckerEnvironment {
    public:
     ModelCheckerEnvironment();
     ~ModelCheckerEnvironment();
+
+    CvarModelCheckerEnvironment& cvar();
+    CvarModelCheckerEnvironment const& cvar() const;
 
     MultiObjectiveModelCheckerEnvironment& multi();
     MultiObjectiveModelCheckerEnvironment const& multi() const;
@@ -34,6 +38,7 @@ class ModelCheckerEnvironment {
     void unsetLtl2daTool();
 
    private:
+    SubEnvironment<CvarModelCheckerEnvironment> cvarModelCheckerEnvironment;
     SubEnvironment<MultiObjectiveModelCheckerEnvironment> multiObjectiveModelCheckerEnvironment;
     boost::optional<std::string> ltl2daTool;
     SteadyStateDistributionAlgorithm steadyStateDistributionAlgorithm;

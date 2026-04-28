@@ -3,6 +3,7 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -542,7 +543,8 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
         auto targetStates =
             this->check(env, *cvarFormulaInformation.targetFormula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
         auto queryKind = storm::modelchecker::cvar::classifyCvarQuery(cvarFormulaInformation);
-        auto problemKind = storm::modelchecker::cvar::classifyCvarProblem(this->getModel(), cvarFormulaInformation, queryKind, targetStates);
+        auto problemKind = storm::modelchecker::cvar::classifyCvarProblem(this->getModel(), cvarFormulaInformation, queryKind, targetStates,
+                                                                          env.modelchecker().cvar().getMethod());
 
         std::unique_ptr<CheckResult> result;
         switch (problemKind) {
@@ -564,8 +566,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
                 break;
             }
             case storm::modelchecker::cvar::CvarProblemKind::Ssp:
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                                "CVaR for stochastic shortest path objectives is not implemented yet.");
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "CVaR for stochastic shortest path objectives is not implemented yet.");
         }
         return result;
     }
