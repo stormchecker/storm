@@ -1052,7 +1052,6 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
                 if (*lowerBound > *upperBound) {
                     std::swap(*lowerBound, *upperBound);
                 }
-                STORM_LOG_WARN("Precision of non-exact type reached during bisection method. Result might be inaccurate.");
             } else {
                 STORM_LOG_ASSERT(middle >= *lowerBound && middle <= *upperBound, "Bisection method bounds are inconsistent.");
             }
@@ -1087,6 +1086,10 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
                                                                        << storm::utility::convertNumber<double>(*upperBound) << "], threshold is "
                                                                        << storm::utility::convertNumber<double>(goal.thresholdValue()) << ".");
             break;
+        }
+        if (!storm::NumberTraits<SolutionType>::IsExact && storm::utility::isAlmostZero(boundDiff)) {
+            STORM_LOG_WARN("Precision of non-exact type exceeded: Bisection method has not terminated, but the difference between upper and lower bound is "
+                           << boundDiff << ".");
         }
         // check for early termination
         if (storm::utility::resources::isTerminate()) {
