@@ -1,15 +1,11 @@
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/modelchecker/cvar/CvarPreprocessingUtilities.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
-#include "storm/storage/BitVector.h"
+#include "storm/modelchecker/cvar/preprocessing/WeightedReachabilityCvarPreprocessingResult.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/SparseMatrix.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
@@ -19,28 +15,15 @@
 namespace storm {
 namespace modelchecker {
 namespace cvar {
+namespace preprocessing {
 
 /*!
- * Collects and preprocesses the model information needed by the CVaR LP.
+ * Preprocesses a sparse MDP for the weighted-reachability CVaR LP backend.
  *
- * The LP implemented in SparseWeightedReachabilityCvarLpHelper follows the weighted-reachability setting from the referenced CVaR paper:
- * a single initial state, terminal rewards on absorbing target states, and no reward before reaching such a terminal
- * state. This helper enforces these assumptions on the input model and rewrites the transition structure where needed:
- * end components that cannot reach the original target set become zero-reward terminal targets, while target-reaching
- * end components are collapsed before the LP is built.
+ * This enforces the weighted-reachability assumptions on the reward model and
+ * transition structure and returns the normalized terminal-reward instance that
+ * can be consumed by the LP helper.
  */
-template<typename ValueType>
-struct WeightedReachabilityModelInformation {
-    std::string rewardModelName;
-    uint64_t initialState;
-    storm::storage::BitVector originalTargetStates;
-    storm::storage::BitVector effectiveTargetStates;
-    storm::storage::BitVector badMecStates;
-    uint64_t collapsedTargetReachingMecCount;
-    std::vector<ValueType> terminalRewards;
-    storm::storage::SparseMatrix<ValueType> transitionMatrix;
-};
-
 template<typename ValueType>
 storm::storage::MaximalEndComponentDecomposition<ValueType> computeTargetReachingMecs(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                                       storm::storage::BitVector const& initialStates,
@@ -70,7 +53,6 @@ void applyTargetReachingMecCollapse(storm::storage::SparseMatrix<ValueType>& tra
                                     storm::storage::MaximalEndComponentDecomposition<ValueType> const& targetReachingMecs) {
     storm::storage::BitVector allStates(transitionMatrix.getRowGroupCount(), true);
     storm::storage::BitVector noSinkRows(transitionMatrix.getRowGroupCount(), false);
-    // Preserve the eliminated end component as a single representative state with a self-loop choice, plus the original exits.
     auto eliminationResult = storm::transformer::EndComponentEliminator<ValueType>::transform(transitionMatrix, targetReachingMecs, allStates, noSinkRows);
 
     storm::storage::BitVector newEffectiveTargetStates(eliminationResult.matrix.getRowGroupCount(), false);
@@ -98,7 +80,7 @@ void applyTargetReachingMecCollapse(storm::storage::SparseMatrix<ValueType>& tra
 }
 
 template<typename SparseMdpModelType>
-WeightedReachabilityModelInformation<typename SparseMdpModelType::ValueType> extractWeightedReachabilityModelInformation(
+WeightedReachabilityCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessWeightedReachabilityCvar(
     SparseMdpModelType const& model, CvarQueryInformation const& queryInformation, storm::storage::BitVector const& targetStates,
     bool produceScheduler = false) {
     using ValueType = typename SparseMdpModelType::ValueType;
@@ -168,6 +150,8 @@ WeightedReachabilityModelInformation<typename SparseMdpModelType::ValueType> ext
             std::move(terminalRewards),
             std::move(transitionMatrix)};
 }
+
+}  // namespace preprocessing
 }  // namespace cvar
 }  // namespace modelchecker
 }  // namespace storm

@@ -9,10 +9,10 @@
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/cvar/CvarClassification.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
+#include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessor.h"
+#include "storm/modelchecker/cvar/preprocessing/WeightedReachabilityCvarPreprocessor.h"
 #include "storm/modelchecker/cvar/SparseWeightedReachabilityCvarLpHelper.h"
-#include "storm/modelchecker/cvar/SspModelInformation.h"
 #include "storm/modelchecker/cvar/WeightedReachabilityCvarLpData.h"
-#include "storm/modelchecker/cvar/WeightedReachabilityModelInformation.h"
 #include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
@@ -550,12 +550,10 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
         std::unique_ptr<CheckResult> result;
         switch (problemKind) {
             case storm::modelchecker::cvar::CvarProblemKind::WeightedReachability: {
-                // check if model fits terminal reward
-                auto weightedReachabilityModelInformation = storm::modelchecker::cvar::extractWeightedReachabilityModelInformation(
+                auto weightedReachabilityPreprocessingResult = storm::modelchecker::cvar::preprocessing::preprocessWeightedReachabilityCvar(
                     this->getModel(), cvarQueryInformation, targetStates, checkTask.isProduceSchedulersSet());
-                // combine info into 1 simplified object
                 auto weightedReachabilityCvarLpData =
-                    storm::modelchecker::cvar::createWeightedReachabilityCvarLpData(cvarQueryInformation, weightedReachabilityModelInformation);
+                    storm::modelchecker::cvar::createWeightedReachabilityCvarLpData(cvarQueryInformation, weightedReachabilityPreprocessingResult);
 
                 storm::modelchecker::cvar::SparseWeightedReachabilityCvarLpHelper<ValueType> cvarHelper(weightedReachabilityCvarLpData);
                 auto cvarResult = cvarHelper.computeCvar(env, checkTask.isProduceSchedulersSet());
@@ -567,8 +565,8 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
                 break;
             }
             case storm::modelchecker::cvar::CvarProblemKind::Ssp: {
-                auto sspModelInformation = storm::modelchecker::cvar::extractSspModelInformation(this->getModel(), cvarQueryInformation, targetStates);
-                static_cast<void>(sspModelInformation);
+                auto sspPreprocessingResult = storm::modelchecker::cvar::preprocessing::preprocessSspCvar(this->getModel(), cvarQueryInformation, targetStates);
+                static_cast<void>(sspPreprocessingResult);
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "CVaR for stochastic shortest path objectives is not implemented yet.");
             }
         }

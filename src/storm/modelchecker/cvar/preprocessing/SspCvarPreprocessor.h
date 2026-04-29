@@ -6,6 +6,7 @@
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/cvar/CvarPreprocessingUtilities.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
+#include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessingResult.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/constants.h"
@@ -15,28 +16,14 @@
 namespace storm {
 namespace modelchecker {
 namespace cvar {
+namespace preprocessing {
 
 /*!
- * Collects the normalized SSP model information needed by the future CVaR VI.
+ * Preprocesses a sparse MDP for the SSP CVaR backend.
  *
- * The SSP CVaR algorithm works with per-choice costs. If the input reward model
- * only uses state rewards, we lift those rewards to equivalent state-action
- * costs by copying the state reward to each outgoing choice of the state.
+ * This normalizes the model to terminal-goal semantics and extracts the
+ * choice-based costs and graph information needed by the future Pareto-front VI.
  */
-template<typename ValueType>
-struct SspModelInformation {
-    std::string rewardModelName;
-    uint64_t initialState;
-    storm::storage::BitVector targetStates;
-    storm::storage::BitVector reachableStates;
-    storm::storage::BitVector statesThatCanReachTarget;
-    storm::storage::BitVector badMecStates;
-    bool liftedStateRewardsToChoiceCosts;
-    bool normalizedTargetStatesToAbsorbing;
-    std::vector<ValueType> choiceCosts;
-    storm::storage::SparseMatrix<ValueType> transitionMatrix;
-};
-
 template<typename SparseMdpModelType>
 std::vector<typename SparseMdpModelType::ValueType> extractChoiceCostsForSsp(
     SparseMdpModelType const& model, typename SparseMdpModelType::RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates) {
@@ -48,7 +35,6 @@ std::vector<typename SparseMdpModelType::ValueType> extractChoiceCostsForSsp(
 
     for (uint64_t state = 0; state < model.getNumberOfStates(); ++state) {
         if (targetStates[state]) {
-            // Costs stop once the goal state is reached.
             continue;
         }
 
@@ -66,9 +52,9 @@ std::vector<typename SparseMdpModelType::ValueType> extractChoiceCostsForSsp(
 }
 
 template<typename SparseMdpModelType>
-SspModelInformation<typename SparseMdpModelType::ValueType> extractSspModelInformation(SparseMdpModelType const& model,
-                                                                                        CvarQueryInformation const& queryInformation,
-                                                                                        storm::storage::BitVector const& targetStates) {
+SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSspCvar(SparseMdpModelType const& model,
+                                                                                       CvarQueryInformation const& queryInformation,
+                                                                                       storm::storage::BitVector const& targetStates) {
     using ValueType = typename SparseMdpModelType::ValueType;
 
     std::string rewardModelName = queryInformation.rewardModelName ? queryInformation.rewardModelName.get() : "";
@@ -128,6 +114,7 @@ SspModelInformation<typename SparseMdpModelType::ValueType> extractSspModelInfor
             std::move(transitionMatrix)};
 }
 
+}  // namespace preprocessing
 }  // namespace cvar
 }  // namespace modelchecker
 }  // namespace storm

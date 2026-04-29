@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
-#include "storm/modelchecker/cvar/WeightedReachabilityModelInformation.h"
+#include "storm/modelchecker/cvar/preprocessing/WeightedReachabilityCvarPreprocessingResult.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/constants.h"
@@ -74,17 +74,18 @@ CvarThresholdData<ValueType> createCvarThresholdData(storm::storage::BitVector c
 
 template<typename ValueType>
 WeightedReachabilityCvarLpData<ValueType> createWeightedReachabilityCvarLpData(
-    CvarQueryInformation const& queryInformation, WeightedReachabilityModelInformation<ValueType> const& weightedReachabilityModelInformation) {
+    CvarQueryInformation const& queryInformation,
+    preprocessing::WeightedReachabilityCvarPreprocessingResult<ValueType> const& weightedReachabilityPreprocessingResult) {
     auto candidateThresholds =
-        collectCandidateThresholds(weightedReachabilityModelInformation.effectiveTargetStates, weightedReachabilityModelInformation.terminalRewards);
+        collectCandidateThresholds(weightedReachabilityPreprocessingResult.effectiveTargetStates, weightedReachabilityPreprocessingResult.terminalRewards);
     return {queryInformation.alpha,
             queryInformation.optimizationDirection,
-            weightedReachabilityModelInformation.initialState,
-            weightedReachabilityModelInformation.rewardModelName,
-            weightedReachabilityModelInformation.effectiveTargetStates,
-            weightedReachabilityModelInformation.terminalRewards,
+            weightedReachabilityPreprocessingResult.initialState,
+            weightedReachabilityPreprocessingResult.rewardModelName,
+            weightedReachabilityPreprocessingResult.effectiveTargetStates,
+            weightedReachabilityPreprocessingResult.terminalRewards,
             std::move(candidateThresholds),
-            weightedReachabilityModelInformation.transitionMatrix};
+            weightedReachabilityPreprocessingResult.transitionMatrix};
 }
 
 }  // namespace cvar
