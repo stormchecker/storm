@@ -41,7 +41,8 @@ std::vector<SolutionType> SparseStepBoundedHorizonHelper<ValueType, Deterministi
         optimizationDirection = goal.direction();
     }
 
-    // Determine the states that have 0 probability of reaching the target states.
+    // If we identify the states that have probability 0 of reaching the target states, we might be able to exclude them in the further analysis.
+    // For the 'maybeStates' we definitely have to compute the values.
     storm::storage::BitVector maybeStates = computeMaybeStates(goal, transitionMatrix, backwardTransitions, phiStates, psiStates, lowerBound, upperBound, hint);
     storm::storage::BitVector makeZeroColumns;
 
