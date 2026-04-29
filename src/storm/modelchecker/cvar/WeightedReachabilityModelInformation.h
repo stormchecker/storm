@@ -6,7 +6,7 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/modelchecker/cvar/CvarPreprocessingUtilities.h"
-#include "storm/modelchecker/cvar/CvarFormulaInformation.h"
+#include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
@@ -23,7 +23,7 @@ namespace cvar {
 /*!
  * Collects and preprocesses the model information needed by the CVaR LP.
  *
- * The LP implemented in SparseCvarHelper follows the weighted-reachability setting from the referenced CVaR paper:
+ * The LP implemented in SparseWeightedReachabilityCvarLpHelper follows the weighted-reachability setting from the referenced CVaR paper:
  * a single initial state, terminal rewards on absorbing target states, and no reward before reaching such a terminal
  * state. This helper enforces these assumptions on the input model and rewrites the transition structure where needed:
  * end components that cannot reach the original target set become zero-reward terminal targets, while target-reaching
@@ -99,11 +99,11 @@ void applyTargetReachingMecCollapse(storm::storage::SparseMatrix<ValueType>& tra
 
 template<typename SparseMdpModelType>
 WeightedReachabilityModelInformation<typename SparseMdpModelType::ValueType> extractWeightedReachabilityModelInformation(
-    SparseMdpModelType const& model, CvarFormulaInformation const& formulaInformation, storm::storage::BitVector const& targetStates,
+    SparseMdpModelType const& model, CvarQueryInformation const& queryInformation, storm::storage::BitVector const& targetStates,
     bool produceScheduler = false) {
     using ValueType = typename SparseMdpModelType::ValueType;
 
-    std::string rewardModelName = formulaInformation.rewardModelName ? formulaInformation.rewardModelName.get() : "";
+    std::string rewardModelName = queryInformation.rewardModelName ? queryInformation.rewardModelName.get() : "";
     auto const& rewardModel = model.getRewardModel(rewardModelName);
     if (rewardModelName.empty()) {
         rewardModelName = model.getUniqueRewardModelName();

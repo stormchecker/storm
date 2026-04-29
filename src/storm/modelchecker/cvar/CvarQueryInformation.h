@@ -10,14 +10,14 @@ namespace storm {
 namespace modelchecker {
 namespace cvar {
 
-struct CvarFormulaInformation {
+struct CvarQueryInformation {
     double alpha;
     storm::solver::OptimizationDirection optimizationDirection;
     boost::optional<std::string> rewardModelName;
     std::shared_ptr<storm::logic::Formula const> targetFormula;
 };
 
-CvarFormulaInformation extractCvarFormulaInformation(storm::logic::CvarFormula const& formula);
+CvarQueryInformation extractCvarQueryInformation(storm::logic::CvarFormula const& formula);
 
 }  // namespace cvar
 }  // namespace modelchecker

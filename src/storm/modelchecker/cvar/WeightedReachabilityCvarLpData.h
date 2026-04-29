@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "storm/modelchecker/cvar/CvarFormulaInformation.h"
+#include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/modelchecker/cvar/WeightedReachabilityModelInformation.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
@@ -24,7 +24,7 @@ struct CvarThresholdData {
 };
 
 template<typename ValueType>
-struct CvarModelCheckingData {
+struct WeightedReachabilityCvarLpData {
     double alpha;
     storm::solver::OptimizationDirection optimizationDirection;
     uint64_t initialState;
@@ -73,12 +73,12 @@ CvarThresholdData<ValueType> createCvarThresholdData(storm::storage::BitVector c
 }
 
 template<typename ValueType>
-CvarModelCheckingData<ValueType> createCvarModelCheckingData(CvarFormulaInformation const& formulaInformation,
-                                                             WeightedReachabilityModelInformation<ValueType> const& weightedReachabilityModelInformation) {
+WeightedReachabilityCvarLpData<ValueType> createWeightedReachabilityCvarLpData(
+    CvarQueryInformation const& queryInformation, WeightedReachabilityModelInformation<ValueType> const& weightedReachabilityModelInformation) {
     auto candidateThresholds =
         collectCandidateThresholds(weightedReachabilityModelInformation.effectiveTargetStates, weightedReachabilityModelInformation.terminalRewards);
-    return {formulaInformation.alpha,
-            formulaInformation.optimizationDirection,
+    return {queryInformation.alpha,
+            queryInformation.optimizationDirection,
             weightedReachabilityModelInformation.initialState,
             weightedReachabilityModelInformation.rewardModelName,
             weightedReachabilityModelInformation.effectiveTargetStates,

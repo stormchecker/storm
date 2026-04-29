@@ -8,10 +8,10 @@
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/cvar/CvarClassification.h"
-#include "storm/modelchecker/cvar/CvarFormulaInformation.h"
-#include "storm/modelchecker/cvar/CvarModelCheckingData.h"
+#include "storm/modelchecker/cvar/CvarQueryInformation.h"
+#include "storm/modelchecker/cvar/SparseWeightedReachabilityCvarLpHelper.h"
 #include "storm/modelchecker/cvar/SspModelInformation.h"
-#include "storm/modelchecker/cvar/SparseCvarHelper.h"
+#include "storm/modelchecker/cvar/WeightedReachabilityCvarLpData.h"
 #include "storm/modelchecker/cvar/WeightedReachabilityModelInformation.h"
 #include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
@@ -540,11 +540,11 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
                         "CVaR is not supported on models with multiple initial states.");
 
         // check if query fits specified format
-        auto cvarFormulaInformation = storm::modelchecker::cvar::extractCvarFormulaInformation(checkTask.getFormula());
+        auto cvarQueryInformation = storm::modelchecker::cvar::extractCvarQueryInformation(checkTask.getFormula());
         auto targetStates =
-            this->check(env, *cvarFormulaInformation.targetFormula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
-        auto queryKind = storm::modelchecker::cvar::classifyCvarQuery(cvarFormulaInformation);
-        auto problemKind = storm::modelchecker::cvar::classifyCvarProblem(this->getModel(), cvarFormulaInformation, queryKind, targetStates,
+            this->check(env, *cvarQueryInformation.targetFormula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
+        auto queryKind = storm::modelchecker::cvar::classifyCvarQuery(cvarQueryInformation);
+        auto problemKind = storm::modelchecker::cvar::classifyCvarProblem(this->getModel(), cvarQueryInformation, queryKind, targetStates,
                                                                           env.modelchecker().cvar().getMethod());
 
         std::unique_ptr<CheckResult> result;
@@ -552,12 +552,12 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
             case storm::modelchecker::cvar::CvarProblemKind::WeightedReachability: {
                 // check if model fits terminal reward
                 auto weightedReachabilityModelInformation = storm::modelchecker::cvar::extractWeightedReachabilityModelInformation(
-                    this->getModel(), cvarFormulaInformation, targetStates, checkTask.isProduceSchedulersSet());
+                    this->getModel(), cvarQueryInformation, targetStates, checkTask.isProduceSchedulersSet());
                 // combine info into 1 simplified object
-                auto cvarModelCheckingData =
-                    storm::modelchecker::cvar::createCvarModelCheckingData(cvarFormulaInformation, weightedReachabilityModelInformation);
+                auto weightedReachabilityCvarLpData =
+                    storm::modelchecker::cvar::createWeightedReachabilityCvarLpData(cvarQueryInformation, weightedReachabilityModelInformation);
 
-                storm::modelchecker::cvar::SparseCvarHelper<ValueType> cvarHelper(cvarModelCheckingData);
+                storm::modelchecker::cvar::SparseWeightedReachabilityCvarLpHelper<ValueType> cvarHelper(weightedReachabilityCvarLpData);
                 auto cvarResult = cvarHelper.computeCvar(env, checkTask.isProduceSchedulersSet());
                 result = std::unique_ptr<CheckResult>(
                     new ExplicitQuantitativeCheckResult<SolutionType>(*this->getModel().getInitialStates().begin(), std::move(cvarResult.value)));
@@ -567,7 +567,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
                 break;
             }
             case storm::modelchecker::cvar::CvarProblemKind::Ssp: {
-                auto sspModelInformation = storm::modelchecker::cvar::extractSspModelInformation(this->getModel(), cvarFormulaInformation, targetStates);
+                auto sspModelInformation = storm::modelchecker::cvar::extractSspModelInformation(this->getModel(), cvarQueryInformation, targetStates);
                 static_cast<void>(sspModelInformation);
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "CVaR for stochastic shortest path objectives is not implemented yet.");
             }

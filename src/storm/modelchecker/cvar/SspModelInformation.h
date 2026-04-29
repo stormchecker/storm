@@ -5,7 +5,7 @@
 
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/cvar/CvarPreprocessingUtilities.h"
-#include "storm/modelchecker/cvar/CvarFormulaInformation.h"
+#include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/constants.h"
@@ -67,11 +67,11 @@ std::vector<typename SparseMdpModelType::ValueType> extractChoiceCostsForSsp(
 
 template<typename SparseMdpModelType>
 SspModelInformation<typename SparseMdpModelType::ValueType> extractSspModelInformation(SparseMdpModelType const& model,
-                                                                                        CvarFormulaInformation const& formulaInformation,
+                                                                                        CvarQueryInformation const& queryInformation,
                                                                                         storm::storage::BitVector const& targetStates) {
     using ValueType = typename SparseMdpModelType::ValueType;
 
-    std::string rewardModelName = formulaInformation.rewardModelName ? formulaInformation.rewardModelName.get() : "";
+    std::string rewardModelName = queryInformation.rewardModelName ? queryInformation.rewardModelName.get() : "";
     auto const& rewardModel = model.getRewardModel(rewardModelName);
     if (rewardModelName.empty()) {
         rewardModelName = model.getUniqueRewardModelName();

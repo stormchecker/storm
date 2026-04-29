@@ -2,7 +2,7 @@
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/modelchecker/cvar/CvarFormulaInformation.h"
+#include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/modelchecker/cvar/CvarMethod.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/macros.h"
@@ -35,7 +35,7 @@ enum class CvarProblemKind { WeightedReachability, Ssp };
  * explicit classification provides the extension point for future CVaR query
  * families.
  */
-inline CvarQueryKind classifyCvarQuery(CvarFormulaInformation const&) {
+inline CvarQueryKind classifyCvarQuery(CvarQueryInformation const&) {
     return CvarQueryKind::ReachabilityReward;
 }
 
@@ -48,9 +48,9 @@ inline CvarQueryKind classifyCvarQuery(CvarFormulaInformation const&) {
  * weighted-reachability path until SSP preprocessing is introduced.
  */
 template<typename SparseMdpModelType>
-CvarProblemKind classifyCvarProblem(SparseMdpModelType const& model, CvarFormulaInformation const& formulaInformation, CvarQueryKind,
+CvarProblemKind classifyCvarProblem(SparseMdpModelType const& model, CvarQueryInformation const& queryInformation, CvarQueryKind,
                                     storm::storage::BitVector const&, CvarMethod method) {
-    std::string rewardModelName = formulaInformation.rewardModelName ? formulaInformation.rewardModelName.get() : "";
+    std::string rewardModelName = queryInformation.rewardModelName ? queryInformation.rewardModelName.get() : "";
     auto const& rewardModel = model.getRewardModel(rewardModelName);
     if (rewardModelName.empty()) {
         rewardModelName = model.getUniqueRewardModelName();

@@ -1,4 +1,4 @@
-#include "storm/modelchecker/cvar/CvarFormulaInformation.h"
+#include "storm/modelchecker/cvar/CvarQueryInformation.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/EventuallyFormula.h"
@@ -9,7 +9,7 @@
 namespace storm {
 namespace modelchecker {
 namespace cvar {
-CvarFormulaInformation extractCvarFormulaInformation(storm::logic::CvarFormula const& formula) {
+CvarQueryInformation extractCvarQueryInformation(storm::logic::CvarFormula const& formula) {
     storm::logic::Formula const& embeddedFormula = formula.getSubformula();
     STORM_LOG_THROW(embeddedFormula.isRewardOperatorFormula(), storm::exceptions::InvalidPropertyException,
                     "CVaR formulas currently require an embedded reward operator formula.");
