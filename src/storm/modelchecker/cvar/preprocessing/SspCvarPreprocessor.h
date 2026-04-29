@@ -3,13 +3,14 @@
 #include <string>
 #include <vector>
 
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/modelchecker/cvar/CvarPreprocessingUtilities.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessingResult.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
 
@@ -49,6 +50,21 @@ std::vector<typename SparseMdpModelType::ValueType> extractChoiceCostsForSsp(
     }
 
     return choiceCosts;
+}
+
+template<typename ValueType>
+void validatePositiveChoiceCostsOutsideGoals(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& targetStates,
+                                             std::vector<ValueType> const& choiceCosts) {
+    ValueType const zero = storm::utility::zero<ValueType>();
+    for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
+        if (targetStates[state]) {
+            continue;
+        }
+        for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
+            STORM_LOG_THROW(choiceCosts[row] > zero, storm::exceptions::InvalidPropertyException,
+                            "CVaR SSP preprocessing currently requires strictly positive choice costs outside goal states.");
+        }
+    }
 }
 
 template<typename SparseMdpModelType>
@@ -94,20 +110,22 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
         transitionMatrix.makeRowGroupsAbsorbing(targetStates, true);
     }
 
+    auto backwardTransitions = transitionMatrix.transpose(true);
     auto reachableStates = storm::utility::graph::getReachableStates(
         transitionMatrix, model.getInitialStates(), storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true),
         storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false));
-    auto statesThatCanReachTarget = computeStatesThatCanReachTarget(transitionMatrix, targetStates);
-    auto badMecStates =
-        computeBadMecStates(computeReachableMecs(transitionMatrix, model.getInitialStates()), statesThatCanReachTarget, transitionMatrix.getRowGroupCount());
+    auto properStates =
+        storm::utility::graph::performProb1E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions,
+                                             storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), targetStates);
+    STORM_LOG_THROW(reachableStates.isSubsetOf(properStates), storm::exceptions::InvalidPropertyException,
+                    "CVaR SSP preprocessing currently requires a proper policy from every reachable state.");
     auto choiceCosts = extractChoiceCostsForSsp(model, rewardModel, targetStates);
+    validatePositiveChoiceCostsOutsideGoals(transitionMatrix, targetStates, choiceCosts);
 
     return {rewardModelName,
             *model.getInitialStates().begin(),
             targetStates,
             std::move(reachableStates),
-            std::move(statesThatCanReachTarget),
-            std::move(badMecStates),
             liftedStateRewardsToChoiceCosts,
             normalizedTargetStatesToAbsorbing,
             std::move(choiceCosts),

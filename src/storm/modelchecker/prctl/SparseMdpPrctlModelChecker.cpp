@@ -7,10 +7,8 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/FragmentSpecification.h"
-#include "storm/modelchecker/cvar/CvarClassification.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
-#include "storm/modelchecker/cvar/SspCvarBackend.h"
-#include "storm/modelchecker/cvar/WeightedReachabilityCvarBackend.h"
+#include "storm/modelchecker/cvar/helper/SparseCvarComputationHelper.h"
 #include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
@@ -541,27 +539,14 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
         auto cvarQueryInformation = storm::modelchecker::cvar::extractCvarQueryInformation(checkTask.getFormula());
         auto targetStates =
             this->check(env, *cvarQueryInformation.targetFormula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
-        auto queryKind = storm::modelchecker::cvar::classifyCvarQuery(cvarQueryInformation);
-        auto backendKind =
-            storm::modelchecker::cvar::selectCvarBackend(this->getModel(), cvarQueryInformation, queryKind, targetStates, env.modelchecker().cvar().getMethod());
 
-        std::unique_ptr<CheckResult> result;
-        switch (backendKind) {
-            case storm::modelchecker::cvar::CvarBackendKind::WeightedReachability: {
-                auto cvarResult =
-                    storm::modelchecker::cvar::computeWeightedReachabilityCvar(env, this->getModel(), cvarQueryInformation, targetStates,
-                                                                               checkTask.isProduceSchedulersSet());
-                result = std::unique_ptr<CheckResult>(
-                    new ExplicitQuantitativeCheckResult<SolutionType>(*this->getModel().getInitialStates().begin(), std::move(cvarResult.value)));
-                if (checkTask.isProduceSchedulersSet() && cvarResult.scheduler) {
-                    result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(cvarResult.scheduler));
-                }
-                break;
-            }
-            case storm::modelchecker::cvar::CvarBackendKind::Ssp: {
-                storm::modelchecker::cvar::computeSspCvar(env, this->getModel(), cvarQueryInformation, targetStates, checkTask.isProduceSchedulersSet());
-                break;
-            }
+        storm::modelchecker::cvar::SparseCvarComputationHelper<SparseMdpModelType> cvarHelper(this->getModel(), cvarQueryInformation, targetStates);
+        auto cvarResult = cvarHelper.computeCvar(env, checkTask.isProduceSchedulersSet());
+
+        std::unique_ptr<CheckResult> result(
+            new ExplicitQuantitativeCheckResult<SolutionType>(*this->getModel().getInitialStates().begin(), std::move(cvarResult.value)));
+        if (checkTask.isProduceSchedulersSet() && cvarResult.scheduler) {
+            result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(cvarResult.scheduler));
         }
         return result;
     }

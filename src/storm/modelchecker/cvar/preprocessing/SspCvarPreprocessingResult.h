@@ -17,8 +17,6 @@ struct SspCvarPreprocessingResult {
     uint64_t initialState;
     storm::storage::BitVector targetStates;
     storm::storage::BitVector reachableStates;
-    storm::storage::BitVector statesThatCanReachTarget;
-    storm::storage::BitVector badMecStates;
     bool liftedStateRewardsToChoiceCosts;
     bool normalizedTargetStatesToAbsorbing;
     std::vector<ValueType> choiceCosts;
