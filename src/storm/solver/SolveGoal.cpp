@@ -112,6 +112,11 @@ UncertaintyResolutionMode SolveGoal<ValueType, SolutionType>::getUncertaintyReso
 }
 
 template<typename ValueType, typename SolutionType>
+storm::logic::ComparisonType SolveGoal<ValueType, SolutionType>::boundComparisonType() const {
+    return comparisonType.get();
+}
+
+template<typename ValueType, typename SolutionType>
 SolutionType const& SolveGoal<ValueType, SolutionType>::thresholdValue() const {
     return threshold.get();
 }

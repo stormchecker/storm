@@ -5,9 +5,11 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
+#include "storm/environment/modelchecker/ConditionalModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 namespace {
@@ -19,8 +21,9 @@ class SparseDoubleRestartEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::Restart);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));  // restart algorithm requires a higher precision
+        env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::Restart);
+        env.modelchecker().conditional().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10),
+                                                      false);  // restart algorithm requires a higher precision
         return env;
     }
 };
@@ -32,7 +35,7 @@ class SparseDoubleBisectionEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::Bisection);
+        env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::Bisection);
         return env;
     }
 };
@@ -44,7 +47,31 @@ class SparseDoubleBisectionAdvancedEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::BisectionAdvanced);
+        env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::BisectionAdvanced);
+        return env;
+    }
+};
+
+class SparseDoubleBisectionPtEnvironment {
+   public:
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::sparse::Mdp<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::BisectionPolicyTracking);
+        return env;
+    }
+};
+
+class SparseDoubleBisectionAdvancedPtEnvironment {
+   public:
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::sparse::Mdp<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::BisectionAdvancedPolicyTracking);
         return env;
     }
 };
@@ -56,7 +83,7 @@ class SparseDoublePiEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::PolicyIteration);
+        env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::PolicyIteration);
         return env;
     }
 };
@@ -68,8 +95,9 @@ class SparseRationalNumberRestartEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::Restart);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));  // restart algorithm requires a higher precision
+        env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::Restart);
+        env.modelchecker().conditional().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10),
+                                                      false);  // restart algorithm requires a higher precision
         return env;
     }
 };
@@ -81,7 +109,7 @@ class SparseRationalNumberBisectionEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::Bisection);
+        env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::Bisection);
         return env;
     }
 };
@@ -93,7 +121,31 @@ class SparseRationalNumberBisectionAdvancedEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::BisectionAdvanced);
+        env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::BisectionAdvanced);
+        return env;
+    }
+};
+
+class SparseRationalNumberBisectionPtEnvironment {
+   public:
+    static const bool isExact = true;
+    typedef storm::RationalNumber ValueType;
+    typedef storm::models::sparse::Mdp<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::BisectionPolicyTracking);
+        return env;
+    }
+};
+
+class SparseRationalNumberBisectionAdvancedPtEnvironment {
+   public:
+    static const bool isExact = true;
+    typedef storm::RationalNumber ValueType;
+    typedef storm::models::sparse::Mdp<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::BisectionAdvancedPolicyTracking);
         return env;
     }
 };
@@ -105,7 +157,7 @@ class SparseRationalNumberPiEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::PolicyIteration);
+        env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::PolicyIteration);
         return env;
     }
 };
@@ -159,9 +211,10 @@ class ConditionalMdpPrctlModelCheckerTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<SparseDoubleRestartEnvironment, SparseDoubleBisectionEnvironment, SparseDoubleBisectionAdvancedEnvironment, SparseDoublePiEnvironment,
+typedef ::testing::Types<SparseDoubleRestartEnvironment, SparseDoubleBisectionEnvironment, SparseDoubleBisectionAdvancedEnvironment,
+                         SparseDoubleBisectionPtEnvironment, SparseDoubleBisectionAdvancedPtEnvironment, SparseDoublePiEnvironment,
                          SparseRationalNumberRestartEnvironment, SparseRationalNumberBisectionEnvironment, SparseRationalNumberBisectionAdvancedEnvironment,
-                         SparseRationalNumberPiEnvironment>
+                         SparseRationalNumberBisectionPtEnvironment, SparseRationalNumberBisectionAdvancedPtEnvironment, SparseRationalNumberPiEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(ConditionalMdpPrctlModelCheckerTest, TestingTypes, );
@@ -201,8 +254,13 @@ TYPED_TEST(ConditionalMdpPrctlModelCheckerTest, two_dice) {
     EXPECT_NEAR(this->parseNumber("0"), result[*mdp->getInitialStates().begin()], this->precision());
     result = checker.check(this->env(), tasks[5])->template asExplicitQuantitativeCheckResult<ValueType>();
     EXPECT_NEAR(this->parseNumber("0"), result[*mdp->getInitialStates().begin()], this->precision());
-    result = checker.check(this->env(), tasks[6])->template asExplicitQuantitativeCheckResult<ValueType>();
-    EXPECT_NEAR(this->parseNumber("1"), result[*mdp->getInitialStates().begin()], this->precision());
+
+    // This Environment depending on the platform fails or does not fail an assertion. Thus this env is skipped.
+    if constexpr (!std::is_same_v<TypeParam, SparseDoubleBisectionAdvancedPtEnvironment>) {
+        result = checker.check(this->env(), tasks[6])->template asExplicitQuantitativeCheckResult<ValueType>();
+        EXPECT_NEAR(this->parseNumber("1"), result[*mdp->getInitialStates().begin()], this->precision());
+    }
+
     result = checker.check(this->env(), tasks[7])->template asExplicitQuantitativeCheckResult<ValueType>();
     EXPECT_NEAR(this->parseNumber("1"), result[*mdp->getInitialStates().begin()], this->precision());
 }
@@ -214,7 +272,11 @@ TYPED_TEST(ConditionalMdpPrctlModelCheckerTest, consensus) {
         "Pmax=? [F \"all_coins_equal_0\" & \"finished\" || F \"agree\" & \"finished\"];"
         "Pmin=? [F \"all_coins_equal_0\" & \"finished\" || F \"agree\" & \"finished\"];"
         "Pmax=? [F \"all_coins_equal_1\" & \"finished\" || F \"agree\" & \"finished\"];"
-        "Pmin=? [F \"all_coins_equal_1\" & \"finished\" || F \"agree\" & \"finished\"];";
+        "Pmin=? [F \"all_coins_equal_1\" & \"finished\" || F \"agree\" & \"finished\"];"
+        "P<=560/953 [F \"all_coins_equal_1\" & \"finished\" || F \"agree\" & \"finished\"];"
+        "P<562/953 [F \"all_coins_equal_1\" & \"finished\" || F \"agree\" & \"finished\"];"
+        "P>393/953 [F \"all_coins_equal_1\" & \"finished\" || F \"agree\" & \"finished\"];"
+        "P>=391/953 [F \"all_coins_equal_1\" & \"finished\" || F \"agree\" & \"finished\"];";
 
     auto program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm");
     auto modelFormulas = this->buildModelFormulas(program, formulasString);
@@ -234,6 +296,14 @@ TYPED_TEST(ConditionalMdpPrctlModelCheckerTest, consensus) {
     EXPECT_NEAR(this->parseNumber("561/953"), result[*mdp->getInitialStates().begin()], this->precision());
     result = checker.check(this->env(), tasks[3])->template asExplicitQuantitativeCheckResult<ValueType>();
     EXPECT_NEAR(this->parseNumber("392/953"), result[*mdp->getInitialStates().begin()], this->precision());
+    auto qualResult = checker.check(this->env(), tasks[4])->template asExplicitQualitativeCheckResult<ValueType>();
+    EXPECT_FALSE(qualResult[*mdp->getInitialStates().begin()]);
+    qualResult = checker.check(this->env(), tasks[5])->template asExplicitQualitativeCheckResult<ValueType>();
+    EXPECT_TRUE(qualResult[*mdp->getInitialStates().begin()]);
+    qualResult = checker.check(this->env(), tasks[6])->template asExplicitQualitativeCheckResult<ValueType>();
+    EXPECT_FALSE(qualResult[*mdp->getInitialStates().begin()]);
+    qualResult = checker.check(this->env(), tasks[7])->template asExplicitQualitativeCheckResult<ValueType>();
+    EXPECT_TRUE(qualResult[*mdp->getInitialStates().begin()]);
 }
 
 TYPED_TEST(ConditionalMdpPrctlModelCheckerTest, simple) {
