@@ -9,10 +9,8 @@
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/cvar/CvarClassification.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
-#include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessor.h"
-#include "storm/modelchecker/cvar/preprocessing/WeightedReachabilityCvarPreprocessor.h"
-#include "storm/modelchecker/cvar/SparseWeightedReachabilityCvarLpHelper.h"
-#include "storm/modelchecker/cvar/WeightedReachabilityCvarLpData.h"
+#include "storm/modelchecker/cvar/SspCvarBackend.h"
+#include "storm/modelchecker/cvar/WeightedReachabilityCvarBackend.h"
 #include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
@@ -544,19 +542,15 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
         auto targetStates =
             this->check(env, *cvarQueryInformation.targetFormula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
         auto queryKind = storm::modelchecker::cvar::classifyCvarQuery(cvarQueryInformation);
-        auto problemKind = storm::modelchecker::cvar::classifyCvarProblem(this->getModel(), cvarQueryInformation, queryKind, targetStates,
-                                                                          env.modelchecker().cvar().getMethod());
+        auto backendKind =
+            storm::modelchecker::cvar::selectCvarBackend(this->getModel(), cvarQueryInformation, queryKind, targetStates, env.modelchecker().cvar().getMethod());
 
         std::unique_ptr<CheckResult> result;
-        switch (problemKind) {
-            case storm::modelchecker::cvar::CvarProblemKind::WeightedReachability: {
-                auto weightedReachabilityPreprocessingResult = storm::modelchecker::cvar::preprocessing::preprocessWeightedReachabilityCvar(
-                    this->getModel(), cvarQueryInformation, targetStates, checkTask.isProduceSchedulersSet());
-                auto weightedReachabilityCvarLpData =
-                    storm::modelchecker::cvar::createWeightedReachabilityCvarLpData(cvarQueryInformation, weightedReachabilityPreprocessingResult);
-
-                storm::modelchecker::cvar::SparseWeightedReachabilityCvarLpHelper<ValueType> cvarHelper(weightedReachabilityCvarLpData);
-                auto cvarResult = cvarHelper.computeCvar(env, checkTask.isProduceSchedulersSet());
+        switch (backendKind) {
+            case storm::modelchecker::cvar::CvarBackendKind::WeightedReachability: {
+                auto cvarResult =
+                    storm::modelchecker::cvar::computeWeightedReachabilityCvar(env, this->getModel(), cvarQueryInformation, targetStates,
+                                                                               checkTask.isProduceSchedulersSet());
                 result = std::unique_ptr<CheckResult>(
                     new ExplicitQuantitativeCheckResult<SolutionType>(*this->getModel().getInitialStates().begin(), std::move(cvarResult.value)));
                 if (checkTask.isProduceSchedulersSet() && cvarResult.scheduler) {
@@ -564,10 +558,9 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
                 }
                 break;
             }
-            case storm::modelchecker::cvar::CvarProblemKind::Ssp: {
-                auto sspPreprocessingResult = storm::modelchecker::cvar::preprocessing::preprocessSspCvar(this->getModel(), cvarQueryInformation, targetStates);
-                static_cast<void>(sspPreprocessingResult);
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "CVaR for stochastic shortest path objectives is not implemented yet.");
+            case storm::modelchecker::cvar::CvarBackendKind::Ssp: {
+                storm::modelchecker::cvar::computeSspCvar(env, this->getModel(), cvarQueryInformation, targetStates, checkTask.isProduceSchedulersSet());
+                break;
             }
         }
         return result;

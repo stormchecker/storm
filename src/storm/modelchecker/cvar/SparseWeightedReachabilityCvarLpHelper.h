@@ -8,6 +8,7 @@
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/modelchecker/cvar/CvarComputationResult.h"
 #include "storm/modelchecker/cvar/WeightedReachabilityCvarLpData.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/storage/Scheduler.h"
@@ -20,11 +21,6 @@ namespace storm {
 namespace modelchecker {
 namespace cvar {
 
-template<typename ValueType>
-struct CvarComputationResult {
-    ValueType value;
-    std::unique_ptr<storm::storage::Scheduler<ValueType>> scheduler;
-};
 /*!
  * Solves an LP for Conditional Value-at-Risk on an MDP with a terminal reward objective.
  *

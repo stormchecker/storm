@@ -13,20 +13,20 @@ namespace cvar {
 /*!
  * Classifies the embedded CVaR query at the formula level.
  *
- * This is intentionally separate from the concrete problem kind below:
- * multiple concrete problem kinds may share the same surface query syntax.
+ * This is intentionally separate from the concrete backend selection below:
+ * multiple concrete backends may share the same surface query syntax.
  */
 enum class CvarQueryKind { ReachabilityReward };
 
 /*!
- * Classifies the concrete solver problem induced by a CVaR query on a given
+ * Selects the concrete CVaR backend induced by a query on a given
  * model and reward structure.
  *
  * Weighted reachability is the currently implemented LP-based terminal-reward
  * setting. SSP will be used by the future value-iteration implementation for
  * accumulated state-action costs until reaching the goal.
  */
-enum class CvarProblemKind { WeightedReachability, Ssp };
+enum class CvarBackendKind { WeightedReachability, Ssp };
 
 /*!
  * Determines the formula-level CVaR query kind.
@@ -40,7 +40,7 @@ inline CvarQueryKind classifyCvarQuery(CvarQueryInformation const&) {
 }
 
 /*!
- * Classifies the concrete CVaR problem kind to use.
+ * Selects the concrete CVaR backend to use.
  *
  * The selection can be overridden explicitly via the CVaR method setting.
  * Otherwise, classification stays conservative: state-action reward models are
@@ -48,8 +48,8 @@ inline CvarQueryKind classifyCvarQuery(CvarQueryInformation const&) {
  * weighted-reachability path until SSP preprocessing is introduced.
  */
 template<typename SparseMdpModelType>
-CvarProblemKind classifyCvarProblem(SparseMdpModelType const& model, CvarQueryInformation const& queryInformation, CvarQueryKind,
-                                    storm::storage::BitVector const&, CvarMethod method) {
+CvarBackendKind selectCvarBackend(SparseMdpModelType const& model, CvarQueryInformation const& queryInformation, CvarQueryKind,
+                                  storm::storage::BitVector const&, CvarMethod method) {
     std::string rewardModelName = queryInformation.rewardModelName ? queryInformation.rewardModelName.get() : "";
     auto const& rewardModel = model.getRewardModel(rewardModelName);
     if (rewardModelName.empty()) {
@@ -59,20 +59,20 @@ CvarProblemKind classifyCvarProblem(SparseMdpModelType const& model, CvarQueryIn
     if (method == CvarMethod::WeightedReachability) {
         STORM_LOG_THROW(!rewardModel.hasStateActionRewards() && !rewardModel.hasTransitionRewards(), storm::exceptions::InvalidPropertyException,
                         "The weighted-reachability CVaR method requires state-based terminal rewards only.");
-        return CvarProblemKind::WeightedReachability;
+        return CvarBackendKind::WeightedReachability;
     }
 
     STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotImplementedException,
                     "CVaR queries with transition rewards are not supported yet.");
 
     if (method == CvarMethod::SspParetoVi) {
-        return CvarProblemKind::Ssp;
+        return CvarBackendKind::Ssp;
     }
 
     if (rewardModel.hasStateActionRewards()) {
-        return CvarProblemKind::Ssp;
+        return CvarBackendKind::Ssp;
     }
-    return CvarProblemKind::WeightedReachability;
+    return CvarBackendKind::WeightedReachability;
 }
 }  // namespace cvar
 }  // namespace modelchecker
