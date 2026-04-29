@@ -70,9 +70,9 @@ set(CUDD_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/storm-cudd/)
 
 
 file(MAKE_DIRECTORY ${CUDD_INCLUDE_DIR}) # Workaround https://gitlab.kitware.com/cmake/cmake/-/issues/15052
-add_library(Storm::Cudd STATIC IMPORTED)
+add_library(cuddstorm STATIC IMPORTED)
 set_target_properties(
-        Storm::Cudd
+        cuddstorm
         PROPERTIES
         IMPORTED_LOCATION ${CUDD_STATIC_LIBRARY}
         INTERFACE_INCLUDE_DIRECTORIES ${CUDD_INCLUDE_DIR}
@@ -81,8 +81,8 @@ install(FILES ${CUDD_STATIC_LIBRARY} DESTINATION ${STORM_RESOURCE_LIBRARY_INSTAL
 install(DIRECTORY ${CUDD_INCLUDE_DIR}/ DESTINATION ${CUDD_INSTALL_DIR}
 		FILES_MATCHING PATTERN "*.h" PATTERN "*.hh" PATTERN ".git" EXCLUDE)
 
-add_dependencies(storm_resources Storm::Cudd)
-add_dependencies(Storm::Cudd cudd_src)
-list(APPEND STORM_DEP_IMP_TARGETS Storm::Cudd)
+add_dependencies(storm_resources cuddstorm)
+add_dependencies(cuddstorm cudd_src)
+list(APPEND STORM_DEP_IMP_TARGETS cuddstorm)
 
 message(STATUS "Storm - Linking with CUDD ${CUDD_VERSION_STRING}.")
