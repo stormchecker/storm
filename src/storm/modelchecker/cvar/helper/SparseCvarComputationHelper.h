@@ -38,7 +38,7 @@ class SparseCvarComputationHelper {
                 return cvarHelper.computeCvar(env, produceScheduler);
             }
             case CvarBackendKind::Ssp: {
-                auto sspPreprocessingResult = preprocessing::preprocessSspCvar(model, queryInformation, targetStates);
+                auto sspPreprocessingResult = preprocessing::preprocessSspCvar(env, model, queryInformation, targetStates);
                 static_cast<void>(sspPreprocessingResult);
                 static_cast<void>(produceScheduler);
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,

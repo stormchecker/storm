@@ -20,6 +20,7 @@ struct SspCvarPreprocessingResult {
     bool liftedStateRewardsToChoiceCosts;
     bool normalizedTargetStatesToAbsorbing;
     std::vector<ValueType> choiceCosts;
+    std::vector<ValueType> expectedCostsToGoal;
     storm::storage::SparseMatrix<ValueType> transitionMatrix;
 };
 

@@ -6,6 +6,9 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
+#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/SolveGoal.h"
 #include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessingResult.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
@@ -67,8 +70,19 @@ void validatePositiveChoiceCostsOutsideGoals(storm::storage::SparseMatrix<ValueT
     }
 }
 
+template<typename ValueType>
+std::vector<ValueType> computeExpectedCostsToGoal(Environment const& env, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                  storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                  storm::storage::BitVector const& targetStates, std::vector<ValueType> const& choiceCosts) {
+    storm::models::sparse::StandardRewardModel<ValueType> rewardModel(std::nullopt, std::vector<ValueType>(choiceCosts), std::nullopt);
+    auto result = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, ValueType>::computeReachabilityRewards(
+        env, storm::solver::SolveGoal<ValueType, ValueType>(storm::OptimizationDirection::Minimize), transitionMatrix, backwardTransitions, rewardModel,
+        targetStates, false, false);
+    return std::move(result.values);
+}
+
 template<typename SparseMdpModelType>
-SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSspCvar(SparseMdpModelType const& model,
+SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSspCvar(Environment const& env, SparseMdpModelType const& model,
                                                                                        CvarQueryInformation const& queryInformation,
                                                                                        storm::storage::BitVector const& targetStates) {
     using ValueType = typename SparseMdpModelType::ValueType;
@@ -121,6 +135,7 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
                     "CVaR SSP preprocessing currently requires a proper policy from every reachable state.");
     auto choiceCosts = extractChoiceCostsForSsp(model, rewardModel, targetStates);
     validatePositiveChoiceCostsOutsideGoals(transitionMatrix, targetStates, choiceCosts);
+    auto expectedCostsToGoal = computeExpectedCostsToGoal(env, transitionMatrix, backwardTransitions, targetStates, choiceCosts);
 
     return {rewardModelName,
             *model.getInitialStates().begin(),
@@ -129,6 +144,7 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
             liftedStateRewardsToChoiceCosts,
             normalizedTargetStatesToAbsorbing,
             std::move(choiceCosts),
+            std::move(expectedCostsToGoal),
             std::move(transitionMatrix)};
 }
 
