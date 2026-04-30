@@ -1,20 +1,25 @@
-name: CI PR
-# Runs on every pull request commit: compile-flag checks and short tests.
-# All jobs are cached and fail-fast.
+name: CI PR Ready for Review / Master
+# Runs on PRs labelled "ready for review" and on every master push.
+# Full task suite: compile flags, all tests, starter project, install, deploy.
+# Cache is read-only on PRs, disabled on master.
 
 on:
+  push:
+    branches: [master]
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
 
 jobs:
   buildTests:
-    if: "! contains(github.event.pull_request.labels.*.name, 'ready for review')"
+    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
     strategy:
       fail-fast: true
       matrix:
         config:
-          - {name: "Debug; All dependencies",          buildType: "Debug",   baseImg: "movesrwth/storm-dependencies:latest",            disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF"}
-          - {name: "Release; All dependencies",        buildType: "Release", baseImg: "movesrwth/storm-dependencies:latest",            disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF"}
-          - {name: "Release; GMP; GMP; Minimal dependencies", buildType: "Release", baseImg: "movesrwth/storm-basesystem:minimal_dependencies", disable_all: "ON",  ClnExact: "OFF", ClnRatfunc: "OFF"}
+          - {name: "Debug; All dependencies",              buildType: "Debug",   baseImg: "movesrwth/storm-dependencies:latest", disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF"}
+          - {name: "Release; All dependencies",            buildType: "Release", baseImg: "movesrwth/storm-dependencies:latest", disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF"}
+          - {name: "Release; GMP; GMP; Required dependencies", buildType: "Release", baseImg: "movesrwth/storm-basesystem:latest", disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF"}
+          - {name: "Release; CLN; CLN; Required dependencies", buildType: "Release", baseImg: "movesrwth/storm-basesystem:latest", disable_all: "OFF", ClnExact: "ON",  ClnRatfunc: "ON"}
     uses: ./.github/workflows/test-build.yml
     with:
       NR_JOBS: "4"
@@ -37,12 +42,12 @@ jobs:
       ClnRatfunc: ${{ matrix.config.ClnRatfunc }}
       AllSanitizers: "OFF"
       cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
-      restore_cache: true
-      save_cache: true
-      install: false
+      restore_cache: ${{ github.event_name != 'push' }}
+      save_cache: false
+      install: true
 
   compilerTests:
-    if: "! contains(github.event.pull_request.labels.*.name, 'ready for review')"
+    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
     strategy:
       fail-fast: true
       matrix:
@@ -60,33 +65,34 @@ jobs:
       packages: ${{ matrix.config.packages }}
       dockerfile: ${{ matrix.config.dockerfile }}
       starterProjectCommand: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
-      restore_cache: true
-      save_cache: true
-      install: false
+      restore_cache: ${{ github.event_name != 'push' }}
+      save_cache: false
+      install: true
 
   linuxTests:
-    if: "! contains(github.event.pull_request.labels.*.name, 'ready for review')"
+    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
     strategy:
       fail-fast: true
       matrix:
-        distro: ["debian-12", "ubuntu-24.04"]
+        distro: ["debian-12", "debian-13", "ubuntu-24.04"]
     uses: ./.github/workflows/test-linux.yml
     with:
       NR_JOBS: "4"
       distro: ${{ matrix.distro }}
       buildType: Release
       runner: ubuntu-latest
-      restore_cache: true
-      save_cache: true
-      install: false
+      restore_cache: ${{ github.event_name != 'push' }}
+      save_cache: false
+      install: true
 
   macTests:
-    if: "! contains(github.event.pull_request.labels.*.name, 'ready for review')"
+    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
     strategy:
       fail-fast: true
       matrix:
         config:
           - {name: "Mac 14, ARM",   distro: "macos-14",       xcode: "15.4",          buildType: "Release"}
+          - {name: "Mac 15, ARM",   distro: "macos-15",       xcode: "16.4",          buildType: "Release"}
           - {name: "Mac 26, ARM",   distro: "macos-26",       xcode: "latest-stable", buildType: "Release"}
           - {name: "Mac 26, Intel", distro: "macos-26-intel", xcode: "latest-stable", buildType: "Release"}
     uses: ./.github/workflows/test-mac.yml
@@ -96,6 +102,21 @@ jobs:
       distro: ${{ matrix.config.distro }}
       xcode: ${{ matrix.config.xcode }}
       buildType: ${{ matrix.config.buildType }}
-      restore_cache: true
-      save_cache: true
-      install: false
+      restore_cache: ${{ github.event_name != 'push' }}
+      save_cache: false
+      install: true
+
+  deploy:
+    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
+    strategy:
+      fail-fast: true
+      matrix:
+        config:
+          - {buildType: "Debug",   dockerTag: "ci-debug"}
+          - {buildType: "Release", dockerTag: "ci"}
+    uses: ./.github/workflows/test-deploy.yml
+    with:
+      NR_JOBS: "4"
+      buildType: ${{ matrix.config.buildType }}
+      dockerTag: ${{ matrix.config.dockerTag }}
+    secrets: inherit

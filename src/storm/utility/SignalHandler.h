@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <cstdlib>
 
+#include <unistd.h>
+
 #include "storm-config.h"
 #include "storm/utility/OsDetection.h"
 

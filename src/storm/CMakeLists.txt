@@ -19,7 +19,7 @@ add_library(storm SHARED)
 target_sources(storm PRIVATE ${STORM_SOURCES})
 target_sources(storm PUBLIC FILE_SET fs_storm_headers TYPE HEADERS BASE_DIRS "${PROJECT_SOURCE_DIR}/src" FILES ${STORM_HEADERS})
 target_sources(storm PUBLIC FILE_SET fs_storm_configured_headers TYPE HEADERS BASE_DIRS "${PROJECT_BINARY_DIR}/include" FILES ${STORM_BUILD_HEADERS})
-target_precompile_headers(storm PRIVATE ${STORM_PRECOMPILED_HEADERS})
+storm_target_precompile_headers(storm PRIVATE ${STORM_PRECOMPILED_HEADERS})
 set_target_properties(storm PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 set_target_properties(storm PROPERTIES DEFINE_SYMBOL "") # to avoid problems with pch on linux.
 set_target_properties(storm PROPERTIES BUILD_RPATH ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/)
@@ -28,6 +28,16 @@ add_dependencies(storm storm_resources)
 target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS} ${STORM_DEP_IMP_TARGETS} ${STORM_FETCHED_TARGETS})
 list(APPEND STORM_TARGETS storm)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
+
+# GCC 15 raises a false positive -Wfree-nonheap-object when compiling SparseDtmcEliminationModelChecker
+# with GMP rational functions (STORM_USE_CLN_RF=OFF) in Release mode: the inlined std::vector destructor
+# for MatrixEntry<..., RationalFunction<..., GMP>> is incorrectly flagged. Not a real memory error.
+# See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108846
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set_source_files_properties(
+        ${PROJECT_SOURCE_DIR}/src/storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.cpp
+        PROPERTIES COMPILE_FLAGS -Wno-free-nonheap-object)
+endif()
 
 # installation
 install(TARGETS storm

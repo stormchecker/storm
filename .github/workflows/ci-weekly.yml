@@ -1,0 +1,144 @@
+name: CI Weekly
+# Comprehensive weekly test run across all configurations.
+# No cache, not fail-fast, full task suite including deploy.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  buildTests:
+    strategy:
+      fail-fast: false
+      matrix:
+        buildType: ["Debug", "Release"]
+        config:
+          - {name: "GMP; GMP; Required dependencies", baseImg: "movesrwth/storm-basesystem:latest",               disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF"}
+          - {name: "CLN; GMP; Required dependencies", baseImg: "movesrwth/storm-basesystem:latest",               disable_all: "OFF", ClnExact: "ON",  ClnRatfunc: "OFF"}
+          - {name: "GMP; CLN; Required dependencies", baseImg: "movesrwth/storm-basesystem:latest",               disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "ON"}
+          - {name: "CLN; CLN; Required dependencies", baseImg: "movesrwth/storm-basesystem:latest",               disable_all: "OFF", ClnExact: "ON",  ClnRatfunc: "ON"}
+          - {name: "All dependencies (disabled)",      baseImg: "movesrwth/storm-dependencies:latest",             disable_all: "ON",  ClnExact: "OFF", ClnRatfunc: "OFF"}
+          - {name: "Minimal dependencies",             baseImg: "movesrwth/storm-basesystem:minimal_dependencies", disable_all: "ON",  ClnExact: "OFF", ClnRatfunc: "OFF"}
+    uses: ./.github/workflows/test-build.yml
+    with:
+      NR_JOBS: "4"
+      name: ${{ matrix.config.name }}
+      baseImg: ${{ matrix.config.baseImg }}
+      buildType: ${{ matrix.buildType }}
+      disable_cudd: ${{ matrix.config.disable_all }}
+      disable_glpk: ${{ matrix.config.disable_all }}
+      disable_gmm: ${{ matrix.config.disable_all }}
+      disable_gurobi: ${{ matrix.config.disable_all }}
+      disable_libarchive: ${{ matrix.config.disable_all }}
+      disable_mathsat: ${{ matrix.config.disable_all }}
+      disable_soplex: ${{ matrix.config.disable_all }}
+      disable_spot: ${{ matrix.config.disable_all }}
+      disable_sylvan: ${{ matrix.config.disable_all }}
+      disable_xerces: ${{ matrix.config.disable_all }}
+      disable_z3: ${{ matrix.config.disable_all }}
+      Developer: ${{ matrix.buildType == 'Debug' && 'ON' || 'OFF' }}
+      ClnExact: ${{ matrix.config.ClnExact }}
+      ClnRatfunc: ${{ matrix.config.ClnRatfunc }}
+      AllSanitizers: "OFF"
+      cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
+      restore_cache: false
+      save_cache: false
+      install: true
+
+  compilerTests:
+    strategy:
+      fail-fast: false
+      matrix:
+        buildType: ["Debug", "Release"]
+        config:
+          - {name: "GCC",   cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",         packages: "",      dockerfile: ".github/workflows/Dockerfile.archlinux", baseImg: "archlinux:latest"}
+          - {name: "Clang", cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",   packages: "clang", dockerfile: ".github/workflows/Dockerfile.archlinux", baseImg: "archlinux:latest"}
+    uses: ./.github/workflows/test-build.yml
+    with:
+      NR_JOBS: "4"
+      name: ${{ matrix.config.name }}
+      buildType: ${{ matrix.buildType }}
+      Developer: ${{ matrix.buildType == 'Debug' && 'ON' || 'OFF' }}
+      baseImg: ${{ matrix.config.baseImg }}
+      cmakeArgs: ${{ matrix.config.cmakeArgs }}
+      packages: ${{ matrix.config.packages }}
+      dockerfile: ${{ matrix.config.dockerfile }}
+      starterProjectCommand: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      restore_cache: false
+      save_cache: false
+      install: true
+
+  linuxTests:
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: ["debian-12", "debian-13", "ubuntu-24.04"]
+        buildType: ["Debug", "Release"]
+    uses: ./.github/workflows/test-linux.yml
+    with:
+      NR_JOBS: "4"
+      distro: ${{ matrix.distro }}
+      buildType: ${{ matrix.buildType }}
+      runner: ubuntu-latest
+      restore_cache: false
+      save_cache: false
+      install: true
+
+  macTests:
+    strategy:
+      fail-fast: false
+      matrix:
+        buildType: ["Debug", "Release"]
+        config:
+          - {name: "Mac 14, ARM",   distro: "macos-14",       xcode: "15.4"}
+          - {name: "Mac 15, ARM",   distro: "macos-15",       xcode: "16.4"}
+          - {name: "Mac 26, ARM",   distro: "macos-26",       xcode: "latest-stable"}
+          - {name: "Mac 26, Intel", distro: "macos-26-intel", xcode: "latest-stable"}
+    uses: ./.github/workflows/test-mac.yml
+    with:
+      NR_JOBS: "4"
+      name: ${{ matrix.config.name }}
+      distro: ${{ matrix.config.distro }}
+      xcode: ${{ matrix.config.xcode }}
+      buildType: ${{ matrix.buildType }}
+      restore_cache: false
+      save_cache: false
+      install: true
+
+  deploy:
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {buildType: "Debug",   dockerTag: "ci-debug"}
+          - {buildType: "Release", dockerTag: "ci"}
+          # TODO: Add binaries build/publish configs
+    uses: ./.github/workflows/test-deploy.yml
+    with:
+      NR_JOBS: "4"
+      buildType: ${{ matrix.config.buildType }}
+      dockerTag: ${{ matrix.config.dockerTag }}
+    secrets: inherit
+
+  notify:
+    name: Email notification
+    runs-on: ubuntu-latest
+    needs: [buildTests, compilerTests, linuxTests, macTests, deploy]
+    if: github.repository_owner == 'stormchecker' && always()
+    steps:
+      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: dawidd6/action-send-mail@v16
+        with:
+          server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
+          server_port: 587
+          username: ${{ secrets.STORM_CI_MAIL_USERNAME }}
+          password: ${{ secrets.STORM_CI_MAIL_PASSWORD }}
+          subject: "[You broke it] CI Weekly failed for ${{ github.repository }}"
+          body:
+            "CI job of ${{ github.repository }} has failed for commit ${{ github.sha }}.\n\
+            The error type is: ${{ env.WORKFLOW_CONCLUSION }}.\n\n\
+            For more information, see https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          to: ${{ secrets.STORM_CI_MAIL_RECIPIENTS }}
+          from: Github Actions <you-broke-it@stormchecker.org>
+        if: env.WORKFLOW_CONCLUSION != 'success'

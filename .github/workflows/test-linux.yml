@@ -1,0 +1,111 @@
+name: Linux Tests
+
+on:
+  workflow_call:
+    inputs:
+      NR_JOBS:
+        description: "Number of parallel build jobs"
+        type: string
+        default: "4"
+      distro:
+        description: "distro to use as base image for the docker image"
+        type: string
+        required: true
+      buildType:
+        description: "build type to use for the docker image"
+        type: string
+        required: true
+      runner:
+        description: "runner to use for the job"
+        type: string
+        default: "ubuntu-latest"
+      restore_cache:
+        description: "Restore ccache from cache"
+        type: boolean
+        default: false
+      save_cache:
+        description: "Save ccache to cache"
+        type: boolean
+        default: false
+      install:
+        description: "Run post-build steps: starter project, install, run installed storm"
+        type: boolean
+        default: true
+
+jobs:
+  linuxTests:
+    name: Linux Tests (${{ inputs.distro }}, ${{ inputs.buildType }}) on ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner }}
+    env:
+      NR_JOBS: ${{ inputs.NR_JOBS }}
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v6
+      - name: Restore ccache (Docker)
+        id: ccache-restore
+        if: inputs.restore_cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci-ccache
+          key: buildtest-ccache-linux-${{ inputs.distro }}-${{ inputs.buildType }}-${{ inputs.runner }}-${{ github.run_id }}
+          restore-keys: |
+            buildtest-ccache-linux-${{ inputs.distro }}-${{ inputs.buildType }}-${{ inputs.runner }}-
+            buildtest-ccache-linux-
+      - name: Build storm from Dockerfile
+        run: |
+          mkdir -p .ci-ccache
+          docker build -t movesrwth/storm:ci . \
+            --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ inputs.distro }} \
+            --build-arg build_type="${{ inputs.buildType }}" \
+            --build-arg no_threads=${NR_JOBS} \
+            --build-arg cmake_args="-DSTORM_WARNING_AS_ERROR=ON -DSTORM_COMPILE_WITH_PCH=OFF"
+            # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers
+      - name: Export ccache from Docker image
+        run: |
+          rm -rf .ci-ccache
+          mkdir -p .ci-ccache
+          docker create --name ccache-extract movesrwth/storm:ci
+          docker cp ccache-extract:/root/.ccache/. .ci-ccache/ || true
+          docker rm ccache-extract
+      - name: Save ccache (Docker)
+        if: inputs.save_cache && always() && steps.ccache-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .ci-ccache
+          key: buildtest-ccache-linux-${{ inputs.distro }}-${{ inputs.buildType }}-${{ inputs.runner }}-${{ github.run_id }}
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:ci
+      - name: Run storm
+        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ inputs.buildType }}
+          docker: true
+      - name: Run tests
+        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+      - name: Build starter-project
+        if: inputs.install
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Install storm
+        if: inputs.install
+        run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Remove build dir
+        if: inputs.install
+        run: |
+          docker exec ci bash -c "rm -rf /opt/storm/build"
+      - name: Run installed storm
+        if: inputs.install
+        run: |
+          docker exec ci bash -c "/usr/local/bin/storm --version"
+      - name: Build starter-project on installed Storm
+        if: inputs.install
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"

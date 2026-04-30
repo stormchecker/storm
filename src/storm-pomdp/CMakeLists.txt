@@ -8,7 +8,7 @@ target_sources(storm-pomdp
 		${STORM_POMDP_SOURCES}
 		PUBLIC
 		FILE_SET fs_storm_pomdp_headers TYPE HEADERS BASE_DIRS "${PROJECT_SOURCE_DIR}/src" FILES ${STORM_POMDP_HEADERS})
-target_precompile_headers(storm-pomdp REUSE_FROM storm)
+storm_target_precompile_headers(storm-pomdp REUSE_FROM storm)
 set_target_properties(storm-pomdp PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 set_target_properties(storm-pomdp PROPERTIES DEFINE_SYMBOL "")  # to avoid problems with pch on linux.
 target_link_libraries(storm-pomdp PUBLIC storm storm-parsers storm-pars)
