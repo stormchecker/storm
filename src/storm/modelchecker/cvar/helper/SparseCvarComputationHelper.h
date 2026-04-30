@@ -6,6 +6,7 @@
 #include "storm/modelchecker/cvar/CvarClassification.h"
 #include "storm/modelchecker/cvar/CvarComputationResult.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
+#include "storm/modelchecker/cvar/helper/SparseSspCvarParetoViHelper.h"
 #include "storm/modelchecker/cvar/helper/SparseWeightedReachabilityCvarLpHelper.h"
 #include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessor.h"
 #include "storm/modelchecker/cvar/preprocessing/WeightedReachabilityCvarPreprocessor.h"
@@ -39,10 +40,8 @@ class SparseCvarComputationHelper {
             }
             case CvarBackendKind::Ssp: {
                 auto sspPreprocessingResult = preprocessing::preprocessSspCvar(env, model, queryInformation, targetStates);
-                static_cast<void>(sspPreprocessingResult);
-                static_cast<void>(produceScheduler);
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                                "CVaR for stochastic shortest path objectives is not implemented yet.");
+                SparseSspCvarParetoViHelper<ValueType> cvarHelper(queryInformation, sspPreprocessingResult);
+                return cvarHelper.computeCvar(env, produceScheduler);
             }
         }
         STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Encountered an unknown CVaR backend.");
