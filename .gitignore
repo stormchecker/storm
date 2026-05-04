@@ -1,11 +1,8 @@
 ##Third-Party libs
-resources/3rdparty/l3pp/.git/
-resources/3rdparty/gtest-1.7.0/
-resources/3rdparty/cudd-3.0.0/
-resources/3rdparty/cudd-3.0.0/config.h.in
-resources/3rdparty/cudd-3.0.0/aclocal.m4
-resources/3rdparty/cudd-3.0.0/Makefile.in
-resources/3rdparty/xercesc-3.1.2/
+resources/3rdparty/storm-cudd/config.h.in
+resources/3rdparty/storm-cudd/configure
+resources/3rdparty/storm-cudd/aclocal.m4
+resources/3rdparty/storm-cudd/Makefile.in
 #Visual Studio files
 *.[Oo]bj
 *.user
