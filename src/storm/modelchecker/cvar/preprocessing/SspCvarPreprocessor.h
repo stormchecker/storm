@@ -111,6 +111,10 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
         rewardModelName = model.getUniqueRewardModelName();
     }
 
+    STORM_LOG_THROW(queryInformation.optimizationDirection == storm::solver::OptimizationDirection::Minimize,
+                    storm::exceptions::InvalidPropertyException,
+                    "CVaR SSP preprocessing currently only supports minimizing total costs.");
+
     STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotImplementedException,
                     "CVaR SSP preprocessing does not support transition rewards.");
 

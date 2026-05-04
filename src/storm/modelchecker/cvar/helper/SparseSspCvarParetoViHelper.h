@@ -2,10 +2,12 @@
 
 #include <cstdint>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/cvar/CvarComputationResult.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/modelchecker/cvar/helper/SspParetoFront.h"
@@ -43,10 +45,26 @@ class SparseSspCvarParetoViHelper {
     }
 
     CvarComputationResult<ValueType> computeCvar(Environment const&, bool produceScheduler = false) const {
-        static_cast<void>(produceScheduler);
-        static_assert(sizeof(SspParetoFront<ValueType>) > 0, "Expected SSP Pareto front type to be available.");
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                        "CVaR for stochastic shortest path objectives is not implemented yet.");
+        STORM_LOG_THROW(!produceScheduler, storm::exceptions::NotImplementedException,
+                        "Scheduler extraction for CVaR SSP value iteration is not implemented yet.");
+
+        FrontierWindow frontierWindow = initializeFrontierWindow();
+        std::optional<ValueType> bestCandidate =
+            extractCvarCandidateFromInitialFrontier(frontierWindow[0][preprocessingResult.initialState], 0, queryInformation.alpha);
+
+        for (uint64_t costBound = 1;
+             !bestCandidate.has_value() || storm::utility::convertNumber<ValueType>(costBound) <= bestCandidate.value(); ++costBound) {
+            auto currentLayer = computeFrontierLayerForCostBound(costBound, frontierWindow);
+            auto currentCandidate = extractCvarCandidateFromInitialFrontier(currentLayer[preprocessingResult.initialState], costBound, queryInformation.alpha);
+            if (currentCandidate.has_value() && (!bestCandidate.has_value() || currentCandidate.value() < bestCandidate.value())) {
+                bestCandidate = currentCandidate;
+            }
+            writeFrontierLayerToWindow(costBound, std::move(currentLayer), frontierWindow);
+        }
+
+        STORM_LOG_THROW(bestCandidate.has_value(), storm::exceptions::UnexpectedException,
+                        "CVaR SSP value iteration did not find a feasible candidate.");
+        return {bestCandidate.value(), nullptr};
     }
 
    private:
@@ -63,10 +81,15 @@ class SparseSspCvarParetoViHelper {
     }
 
     FrontierWindow initializeFrontierWindow() const {
-        uint64_t const windowSize = preprocessingResult.maximalChoiceCost + 1;
-        FrontierWindow frontierWindow(windowSize, FrontierLayer(preprocessingResult.transitionMatrix.getRowGroupCount()));
+        STORM_LOG_ASSERT(preprocessingResult.maximalChoiceCost > 0,
+                         "Expected a strictly positive maximal choice cost.");
+        FrontierWindow frontierWindow(preprocessingResult.maximalChoiceCost, FrontierLayer(preprocessingResult.transitionMatrix.getRowGroupCount()));
         frontierWindow[0] = createBaseFrontierLayer();
         return frontierWindow;
+    }
+
+    static void writeFrontierLayerToWindow(uint64_t costBound, FrontierLayer layer, FrontierWindow& frontierWindow) {
+        frontierWindow[costBound % frontierWindow.size()] = std::move(layer);
     }
 
     ParetoFront computeActionFront(uint64_t actionRow, uint64_t costBound, FrontierWindow const& frontierWindow) const {
