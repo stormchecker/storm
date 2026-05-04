@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <optional>
 #include <sstream>
 #include <vector>
 
@@ -11,11 +12,23 @@ namespace storm {
 namespace modelchecker {
 namespace cvar {
 
+/*!
+ * Represents the lower-right boundary of one SSP CVaR Pareto set from the paper.
+ *
+ * For a fixed state and cost bound n, each point (p, E) represents an achievable tradeoff where:
+ *  - p is the probability of reaching the goal within the current cost bound, and
+ *  - E is the expected continuation cost beyond that bound.
+ *
+ * The class only stores extremal boundary points. The upward/leftward closed polygon itself is induced by
+ * these points together with convex closure.
+ */
 template<typename ValueType>
 class SspParetoFront {
    public:
     struct Point {
+        //! Probability of reaching the goal within the current cost bound.
         ValueType probability;
+        //! Expected continuation cost beyond the current cost bound.
         ValueType expectedCost;
 
         enum class DominanceResult { Incomparable, Dominates, Dominated, Equal };
@@ -136,6 +149,37 @@ class SspParetoFront {
             unionPoints.insert(unionPoints.end(), front.begin(), front.end());
         }
         return SspParetoFront(std::move(unionPoints));
+    }
+
+    /*!
+     * Returns the minimal continuation cost E on the lower boundary at the given probability p.
+     *
+     * This is the paper-specific query used to evaluate a frontier for a fixed bound n:
+     * it yields the value min{E | (p, E) is contained in the convex Pareto set}.
+     */
+    std::optional<ValueType> getMinimalContinuationCostAtProbability(ValueType const& probability) const {
+        if (empty()) {
+            return std::nullopt;
+        }
+        if (probability > points.back().probability) {
+            return std::nullopt;
+        }
+        if (probability <= points.front().probability) {
+            return points.front().expectedCost;
+        }
+
+        for (std::size_t index = 1; index < points.size(); ++index) {
+            Point const& left = points[index - 1];
+            Point const& right = points[index];
+            if (probability <= right.probability) {
+                ValueType const probabilityDelta = right.probability - left.probability;
+                STORM_LOG_ASSERT(probabilityDelta > 0, "Expected SSP Pareto front points to be strictly sorted by probability.");
+                ValueType const interpolationFactor = (probability - left.probability) / probabilityDelta;
+                return left.expectedCost + interpolationFactor * (right.expectedCost - left.expectedCost);
+            }
+        }
+
+        return points.back().expectedCost;
     }
 
     std::string toString() const {

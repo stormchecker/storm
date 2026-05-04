@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -71,6 +72,23 @@ void validatePositiveChoiceCostsOutsideGoals(storm::storage::SparseMatrix<ValueT
 }
 
 template<typename ValueType>
+uint64_t validateAndComputeMaximalChoiceCostOutsideGoals(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                         storm::storage::BitVector const& targetStates, std::vector<ValueType> const& choiceCosts) {
+    uint64_t maximalChoiceCost = 0;
+    for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
+        if (targetStates[state]) {
+            continue;
+        }
+        for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
+            STORM_LOG_THROW(storm::utility::isInteger(choiceCosts[row]), storm::exceptions::InvalidPropertyException,
+                            "CVaR SSP preprocessing currently requires integer-valued choice costs.");
+            maximalChoiceCost = std::max(maximalChoiceCost, storm::utility::convertNumber<uint64_t>(choiceCosts[row]));
+        }
+    }
+    return maximalChoiceCost;
+}
+
+template<typename ValueType>
 std::vector<ValueType> computeExpectedCostsToGoal(Environment const& env, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                   storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                   storm::storage::BitVector const& targetStates, std::vector<ValueType> const& choiceCosts) {
@@ -135,6 +153,7 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
                     "CVaR SSP preprocessing currently requires a proper policy from every reachable state.");
     auto choiceCosts = extractChoiceCostsForSsp(model, rewardModel, targetStates);
     validatePositiveChoiceCostsOutsideGoals(transitionMatrix, targetStates, choiceCosts);
+    uint64_t maximalChoiceCost = validateAndComputeMaximalChoiceCostOutsideGoals(transitionMatrix, targetStates, choiceCosts);
     auto expectedCostsToGoal = computeExpectedCostsToGoal(env, transitionMatrix, backwardTransitions, targetStates, choiceCosts);
 
     return {rewardModelName,
@@ -143,6 +162,7 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
             std::move(reachableStates),
             liftedStateRewardsToChoiceCosts,
             normalizedTargetStatesToAbsorbing,
+            maximalChoiceCost,
             std::move(choiceCosts),
             std::move(expectedCostsToGoal),
             std::move(transitionMatrix)};
