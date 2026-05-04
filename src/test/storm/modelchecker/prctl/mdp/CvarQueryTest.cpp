@@ -7,8 +7,10 @@
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
 #include "storm/environment/Environment.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/modelchecker/cvar/CvarMethod.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -68,6 +70,16 @@ std::unique_ptr<storm::modelchecker::CheckResult> checkInitialStateResult(CvarTe
 template<typename ValueType>
 ValueType checkInitialStateValue(CvarTestInput<ValueType> const& input) {
     auto result = checkInitialStateResult(input);
+    return result->template asExplicitQuantitativeCheckResult<ValueType>().getMax();
+}
+
+template<typename ValueType>
+ValueType checkInitialStateValueWithMethod(CvarTestInput<ValueType> const& input, storm::modelchecker::cvar::CvarMethod method) {
+    storm::Environment env;
+    env.modelchecker().cvar().setMethod(method);
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> checker(*input.mdp);
+    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*input.formula, true);
+    auto result = checker.check(env, task);
     return result->template asExplicitQuantitativeCheckResult<ValueType>().getMax();
 }
 
@@ -246,5 +258,13 @@ TEST(CvarQueryTest, ProducesRandomizedSchedulerForMinBranchingTradeoffMdp) {
     EXPECT_NEAR(initialDistribution.getProbability(adaptiveChoice), 0.0, 1e-10);
     EXPECT_TRUE(scheduler.isDontCare(adaptiveSuccessors[0]));
     EXPECT_TRUE(scheduler.isDontCare(adaptiveSuccessors[1]));
+}
+
+TEST(CvarQueryTest, DeterministicSspPathMdp) {
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_deterministic_mdp.nm";
+    auto input = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", 0.5);
+
+    double value = checkInitialStateValueWithMethod(input, storm::modelchecker::cvar::CvarMethod::SspParetoVi);
+    EXPECT_NEAR(value, 5.0, 1e-10);
 }
 }  // namespace
