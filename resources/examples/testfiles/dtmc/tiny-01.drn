@@ -1,4 +1,5 @@
 @type: DTMC
+@value_type: double
 @parameters
 
 @reward_models
