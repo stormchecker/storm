@@ -204,6 +204,7 @@ class SspParetoFront {
         }
         sortPoints();
         removeDuplicateProbabilityPoints();
+        removeDominatedPoints();
         removeNonExtremeConvexPoints();
     }
 
@@ -228,6 +229,25 @@ class SspParetoFront {
         points = std::move(uniquePoints);
     }
 
+    void removeDominatedPoints() {
+        if (points.size() < 2) {
+            return;
+        }
+        container_type nonDominatedPoints;
+        nonDominatedPoints.reserve(points.size());
+        ValueType bestExpectedCostSeenFromRight = points.back().expectedCost;
+        nonDominatedPoints.push_back(points.back());
+        for (std::size_t index = points.size() - 1; index > 0; --index) {
+            Point const& point = points[index - 1];
+            if (point.expectedCost < bestExpectedCostSeenFromRight) {
+                nonDominatedPoints.push_back(point);
+                bestExpectedCostSeenFromRight = point.expectedCost;
+            }
+        }
+        std::reverse(nonDominatedPoints.begin(), nonDominatedPoints.end());
+        points = std::move(nonDominatedPoints);
+    }
+
     void removeNonExtremeConvexPoints() {
         if (points.size() < 3) {
             return;
@@ -243,9 +263,9 @@ class SspParetoFront {
         }
         points = std::move(hullPoints);
         STORM_LOG_ASSERT(std::adjacent_find(points.begin(), points.end(), [](Point const& left, Point const& right) {
-                             return left.probability >= right.probability || left.expectedCost <= right.expectedCost;
+                             return left.probability >= right.probability || left.expectedCost >= right.expectedCost;
                          }) == points.end(),
-                         "Expected SSP Pareto front points to be strictly ordered by increasing probability and decreasing expected cost.");
+                         "Expected SSP Pareto front points to be strictly ordered by increasing probability and increasing expected cost.");
     }
 
     static bool liesOnOrAboveSegment(Point const& left, Point const& middle, Point const& right) {

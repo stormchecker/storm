@@ -267,4 +267,14 @@ TEST(CvarQueryTest, DeterministicSspPathMdp) {
     double value = checkInitialStateValueWithMethod(input, storm::modelchecker::cvar::CvarMethod::SspParetoVi);
     EXPECT_NEAR(value, 5.0, 1e-10);
 }
+
+TEST(CvarQueryTest, BranchingSspTradeoffMdp) {
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_branching_tradeoff_mdp.nm";
+
+    auto halfInput = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", 0.5);
+    EXPECT_NEAR(checkInitialStateValueWithMethod(halfInput, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 6.0, 1e-10);
+
+    auto nineTenthsInput = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", 0.9);
+    EXPECT_NEAR(checkInitialStateValueWithMethod(nineTenthsInput, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 16.0 / 3.0, 1e-10);
+}
 }  // namespace

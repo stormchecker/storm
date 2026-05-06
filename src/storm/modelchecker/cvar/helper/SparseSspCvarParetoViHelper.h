@@ -68,13 +68,26 @@ class SparseSspCvarParetoViHelper {
     }
 
    private:
-    FrontierLayer createBaseFrontierLayer() const {
+    /*!
+     * Creates the initial frontier layer for a given bound n.
+     *
+     * For n < 0 we intentionally deviate from the paper's P_n = empty convention and instead use the
+     * mathematically direct excess-cost semantics induced by E[(X-n)^+]: because all costs are nonnegative,
+     * Pr[X <= n] = 0 and E[(X-n)^+] = E[X] - n. Hence the Pareto set collapses to the singleton
+     * (0, e*(s) - n), where e*(s) is the minimal expected cost-to-go from s.
+     */
+    FrontierLayer createInitialFrontierLayer(int64_t costBound) const {
         FrontierLayer baseLayer(preprocessingResult.transitionMatrix.getRowGroupCount());
+        ValueType const boundValue = storm::utility::convertNumber<ValueType>(costBound);
         for (uint64_t state = 0; state < preprocessingResult.transitionMatrix.getRowGroupCount(); ++state) {
-            if (preprocessingResult.targetStates[state]) {
+            if (!preprocessingResult.reachableStates[state]) {
+                continue;
+            }
+            if (costBound >= 0 && preprocessingResult.targetStates[state]) {
                 baseLayer[state] = ParetoFront::singleton(storm::utility::one<ValueType>(), storm::utility::zero<ValueType>());
-            } else if (preprocessingResult.reachableStates[state]) {
-                baseLayer[state] = ParetoFront::singleton(storm::utility::zero<ValueType>(), preprocessingResult.expectedCostsToGoal[state]);
+            } else {
+                baseLayer[state] =
+                    ParetoFront::singleton(storm::utility::zero<ValueType>(), preprocessingResult.expectedCostsToGoal[state] - boundValue);
             }
         }
         return baseLayer;
@@ -84,23 +97,25 @@ class SparseSspCvarParetoViHelper {
         STORM_LOG_ASSERT(preprocessingResult.maximalChoiceCost > 0,
                          "Expected a strictly positive maximal choice cost.");
         FrontierWindow frontierWindow(preprocessingResult.maximalChoiceCost, FrontierLayer(preprocessingResult.transitionMatrix.getRowGroupCount()));
-        frontierWindow[0] = createBaseFrontierLayer();
+        for (int64_t costBound = 1 - static_cast<int64_t>(preprocessingResult.maximalChoiceCost); costBound <= 0; ++costBound) {
+            frontierWindow[getWindowIndex(costBound)] = createInitialFrontierLayer(costBound);
+        }
         return frontierWindow;
     }
 
-    static void writeFrontierLayerToWindow(uint64_t costBound, FrontierLayer layer, FrontierWindow& frontierWindow) {
-        frontierWindow[costBound % frontierWindow.size()] = std::move(layer);
+    static void writeFrontierLayerToWindow(int64_t costBound, FrontierLayer layer, FrontierWindow& frontierWindow) {
+        frontierWindow[getWindowIndex(costBound, frontierWindow.size())] = std::move(layer);
+    }
+
+    FrontierLayer const& getFrontierLayerForBound(int64_t costBound, FrontierWindow const& frontierWindow) const {
+        return frontierWindow[getWindowIndex(costBound, frontierWindow.size())];
     }
 
     ParetoFront computeActionFront(uint64_t actionRow, uint64_t costBound, FrontierWindow const& frontierWindow) const {
         uint64_t const actionCost = getChoiceCostBoundOffset(actionRow);
-        if (costBound < actionCost) {
-            return ParetoFront();
-        }
-
         ParetoFront actionFront = ParetoFront::singleton(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
-        uint64_t const predecessorBound = costBound - actionCost;
-        FrontierLayer const& predecessorLayer = frontierWindow[predecessorBound % frontierWindow.size()];
+        int64_t const predecessorBound = static_cast<int64_t>(costBound) - static_cast<int64_t>(actionCost);
+        FrontierLayer const& predecessorLayer = getFrontierLayerForBound(predecessorBound, frontierWindow);
 
         for (auto const& transition : preprocessingResult.transitionMatrix.getRow(actionRow)) {
             actionFront = actionFront.minkowskiSum(predecessorLayer[transition.getColumn()].scaled(transition.getValue()));
@@ -152,6 +167,20 @@ class SparseSspCvarParetoViHelper {
 
     uint64_t getChoiceCostBoundOffset(uint64_t actionRow) const {
         return storm::utility::convertNumber<uint64_t>(preprocessingResult.choiceCosts[actionRow]);
+    }
+
+    static std::size_t getWindowIndex(int64_t costBound, std::size_t windowSize) {
+        STORM_LOG_ASSERT(windowSize > 0, "Expected a non-empty SSP frontier window.");
+        int64_t const signedWindowSize = static_cast<int64_t>(windowSize);
+        int64_t index = costBound % signedWindowSize;
+        if (index < 0) {
+            index += signedWindowSize;
+        }
+        return static_cast<std::size_t>(index);
+    }
+
+    std::size_t getWindowIndex(int64_t costBound) const {
+        return getWindowIndex(costBound, preprocessingResult.maximalChoiceCost);
     }
 
     CvarQueryInformation const& queryInformation;
