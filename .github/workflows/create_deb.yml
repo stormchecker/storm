@@ -57,7 +57,7 @@ jobs:
             --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro.tag }} \
             --build-arg build_type="${{ matrix.distro.build_type }}" \
             --build-arg carl_tag=master \
-            --build-arg cmake_args="-DSTORM_BUILD_TESTS=OFF -DCPACK_DEBIAN_PACKAGE_VERSION=${{ inputs.version }}" \
+            --build-arg cmake_args="-DSTORM_BUILD_TESTS=OFF -DCPACK_DEBIAN_PACKAGE_VERSION=${{ inputs.version }}-${{ matrix.distro.artifact }}" \
             --build-arg no_threads=${NR_JOBS}
             # Sets the debian version for CPack. CMake version remains unchanged because it must be numeric.
             # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers
