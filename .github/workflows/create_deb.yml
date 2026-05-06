@@ -88,19 +88,18 @@ jobs:
       matrix:
         distro:
           - {name: "debian:12",
-             tag: "debian-12",
              artifact: "debian12",
             }
           - {name: "debian:13",
-             tag: "debian-13",
              artifact: "debian13",
             }
           - {name: "ubuntu:24.04",
-             tag: "ubuntu-24.04",
              artifact: "debian12",
             }
+          - {name: "ubuntu:26.04",
+             artifact: "debian13",
+            }
           - {name: "ubuntu:rolling",
-             tag: "latest",
              artifact: "debian13",
             }
         platform:
@@ -113,8 +112,7 @@ jobs:
         with:
           name: storm-deb-${{matrix.distro.artifact }}-${{ matrix.platform.name }}
           path: package
-
-      - name: Install and test package
+      - name: Install package
         run: |
           docker run -d -it --name ci-test ${{ matrix.distro.name }}
           docker cp package/*.deb ci-test:/opt/
@@ -122,8 +120,10 @@ jobs:
             set -e
             apt-get update
             apt-get install -y /opt/*.deb
-            storm --version
           "
+      - name: Run Storm
+        run: |
+          docker exec ci-test bash -c "storm --version"
       - name: Build starter project using Storm
         run: |
           docker exec ci-test bash -c "
@@ -133,5 +133,10 @@ jobs:
             cd /opt/storm-starter/build
             cmake -DNEVER_FETCH_STORM=TRUE ..
             make -j ${NR_JOBS}
-            ./bin/starter-project ../examples/die.pm ../examples/die.pctl
+          "
+      - name: Run starter project
+        run: |
+          docker exec ci-test bash -c "
+            cd /opt/storm-starter
+            ./build/bin/starter-project examples/die.pm examples/die.pctl
           "
