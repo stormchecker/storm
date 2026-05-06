@@ -21,8 +21,7 @@ class SparseCvarComputationHelper {
    public:
     using ValueType = typename SparseMdpModelType::ValueType;
 
-    SparseCvarComputationHelper(SparseMdpModelType const& model, CvarQueryInformation const& queryInformation,
-                                storm::storage::BitVector const& targetStates)
+    SparseCvarComputationHelper(SparseMdpModelType const& model, CvarQueryInformation const& queryInformation, storm::storage::BitVector const& targetStates)
         : model(model), queryInformation(queryInformation), targetStates(targetStates) {
         // Intentionally left empty.
     }

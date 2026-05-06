@@ -256,15 +256,16 @@ class SspParetoFront {
         hullPoints.reserve(points.size());
         for (auto const& point : points) {
             hullPoints.push_back(point);
-            while (hullPoints.size() >= 3 && liesOnOrAboveSegment(hullPoints[hullPoints.size() - 3], hullPoints[hullPoints.size() - 2],
-                                                                  hullPoints[hullPoints.size() - 1])) {
+            while (hullPoints.size() >= 3 &&
+                   liesOnOrAboveSegment(hullPoints[hullPoints.size() - 3], hullPoints[hullPoints.size() - 2], hullPoints[hullPoints.size() - 1])) {
                 hullPoints.erase(hullPoints.end() - 2);
             }
         }
         points = std::move(hullPoints);
-        STORM_LOG_ASSERT(std::adjacent_find(points.begin(), points.end(), [](Point const& left, Point const& right) {
-                             return left.probability >= right.probability || left.expectedCost >= right.expectedCost;
-                         }) == points.end(),
+        STORM_LOG_ASSERT(std::adjacent_find(points.begin(), points.end(),
+                                            [](Point const& left, Point const& right) {
+                                                return left.probability >= right.probability || left.expectedCost >= right.expectedCost;
+                                            }) == points.end(),
                          "Expected SSP Pareto front points to be strictly ordered by increasing probability and increasing expected cost.");
     }
 

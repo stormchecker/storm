@@ -38,8 +38,7 @@ class SparseSspCvarParetoViHelper {
     using FrontierLayer = std::vector<ParetoFront>;
     using FrontierWindow = std::vector<FrontierLayer>;
 
-    SparseSspCvarParetoViHelper(CvarQueryInformation const& queryInformation,
-                                preprocessing::SspCvarPreprocessingResult<ValueType> const& preprocessingResult)
+    SparseSspCvarParetoViHelper(CvarQueryInformation const& queryInformation, preprocessing::SspCvarPreprocessingResult<ValueType> const& preprocessingResult)
         : queryInformation(queryInformation), preprocessingResult(preprocessingResult) {
         // Intentionally left empty.
     }
@@ -52,8 +51,7 @@ class SparseSspCvarParetoViHelper {
         std::optional<ValueType> bestCandidate =
             extractCvarCandidateFromInitialFrontier(frontierWindow[0][preprocessingResult.initialState], 0, queryInformation.alpha);
 
-        for (uint64_t costBound = 1;
-             !bestCandidate.has_value() || storm::utility::convertNumber<ValueType>(costBound) <= bestCandidate.value(); ++costBound) {
+        for (uint64_t costBound = 1; !bestCandidate.has_value() || storm::utility::convertNumber<ValueType>(costBound) <= bestCandidate.value(); ++costBound) {
             auto currentLayer = computeFrontierLayerForCostBound(costBound, frontierWindow);
             auto currentCandidate = extractCvarCandidateFromInitialFrontier(currentLayer[preprocessingResult.initialState], costBound, queryInformation.alpha);
             if (currentCandidate.has_value() && (!bestCandidate.has_value() || currentCandidate.value() < bestCandidate.value())) {
@@ -62,8 +60,7 @@ class SparseSspCvarParetoViHelper {
             writeFrontierLayerToWindow(costBound, std::move(currentLayer), frontierWindow);
         }
 
-        STORM_LOG_THROW(bestCandidate.has_value(), storm::exceptions::UnexpectedException,
-                        "CVaR SSP value iteration did not find a feasible candidate.");
+        STORM_LOG_THROW(bestCandidate.has_value(), storm::exceptions::UnexpectedException, "CVaR SSP value iteration did not find a feasible candidate.");
         return {bestCandidate.value(), nullptr};
     }
 
@@ -86,16 +83,14 @@ class SparseSspCvarParetoViHelper {
             if (costBound >= 0 && preprocessingResult.targetStates[state]) {
                 baseLayer[state] = ParetoFront::singleton(storm::utility::one<ValueType>(), storm::utility::zero<ValueType>());
             } else {
-                baseLayer[state] =
-                    ParetoFront::singleton(storm::utility::zero<ValueType>(), preprocessingResult.expectedCostsToGoal[state] - boundValue);
+                baseLayer[state] = ParetoFront::singleton(storm::utility::zero<ValueType>(), preprocessingResult.expectedCostsToGoal[state] - boundValue);
             }
         }
         return baseLayer;
     }
 
     FrontierWindow initializeFrontierWindow() const {
-        STORM_LOG_ASSERT(preprocessingResult.maximalChoiceCost > 0,
-                         "Expected a strictly positive maximal choice cost.");
+        STORM_LOG_ASSERT(preprocessingResult.maximalChoiceCost > 0, "Expected a strictly positive maximal choice cost.");
         FrontierWindow frontierWindow(preprocessingResult.maximalChoiceCost, FrontierLayer(preprocessingResult.transitionMatrix.getRowGroupCount()));
         for (int64_t costBound = 1 - static_cast<int64_t>(preprocessingResult.maximalChoiceCost); costBound <= 0; ++costBound) {
             frontierWindow[getWindowIndex(costBound)] = createInitialFrontierLayer(costBound);
@@ -161,8 +156,7 @@ class SparseSspCvarParetoViHelper {
         if (!continuationCost.has_value()) {
             return std::nullopt;
         }
-        return storm::utility::convertNumber<ValueType>(costBound) +
-               continuationCost.value() / storm::utility::convertNumber<ValueType>(alpha);
+        return storm::utility::convertNumber<ValueType>(costBound) + continuationCost.value() / storm::utility::convertNumber<ValueType>(alpha);
     }
 
     uint64_t getChoiceCostBoundOffset(uint64_t actionRow) const {

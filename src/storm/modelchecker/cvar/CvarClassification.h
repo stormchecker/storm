@@ -2,8 +2,8 @@
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/modelchecker/cvar/CvarMethod.h"
+#include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/macros.h"
 

@@ -7,10 +7,10 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
+#include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessingResult.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/SolveGoal.h"
-#include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessingResult.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/constants.h"
@@ -30,8 +30,9 @@ namespace preprocessing {
  * choice-based costs and graph information needed by the future Pareto-front VI.
  */
 template<typename SparseMdpModelType>
-std::vector<typename SparseMdpModelType::ValueType> extractChoiceCostsForSsp(
-    SparseMdpModelType const& model, typename SparseMdpModelType::RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates) {
+std::vector<typename SparseMdpModelType::ValueType> extractChoiceCostsForSsp(SparseMdpModelType const& model,
+                                                                             typename SparseMdpModelType::RewardModelType const& rewardModel,
+                                                                             storm::storage::BitVector const& targetStates) {
     using ValueType = typename SparseMdpModelType::ValueType;
 
     std::vector<ValueType> choiceCosts(model.getNumberOfChoices(), storm::utility::zero<ValueType>());
@@ -44,8 +45,8 @@ std::vector<typename SparseMdpModelType::ValueType> extractChoiceCostsForSsp(
         }
 
         ValueType stateReward = hasStateRewards ? rewardModel.getStateReward(state) : storm::utility::zero<ValueType>();
-        for (uint64_t row = model.getTransitionMatrix().getRowGroupIndices()[state], endRow = model.getTransitionMatrix().getRowGroupIndices()[state + 1]; row < endRow;
-             ++row) {
+        for (uint64_t row = model.getTransitionMatrix().getRowGroupIndices()[state], endRow = model.getTransitionMatrix().getRowGroupIndices()[state + 1];
+             row < endRow; ++row) {
             choiceCosts[row] = stateReward;
             if (hasStateActionRewards) {
                 choiceCosts[row] += rewardModel.getStateActionReward(row);
@@ -101,8 +102,8 @@ std::vector<ValueType> computeExpectedCostsToGoal(Environment const& env, storm:
 
 template<typename SparseMdpModelType>
 SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSspCvar(Environment const& env, SparseMdpModelType const& model,
-                                                                                       CvarQueryInformation const& queryInformation,
-                                                                                       storm::storage::BitVector const& targetStates) {
+                                                                                     CvarQueryInformation const& queryInformation,
+                                                                                     storm::storage::BitVector const& targetStates) {
     using ValueType = typename SparseMdpModelType::ValueType;
 
     std::string rewardModelName = queryInformation.rewardModelName ? queryInformation.rewardModelName.get() : "";
@@ -111,8 +112,7 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
         rewardModelName = model.getUniqueRewardModelName();
     }
 
-    STORM_LOG_THROW(queryInformation.optimizationDirection == storm::solver::OptimizationDirection::Minimize,
-                    storm::exceptions::InvalidPropertyException,
+    STORM_LOG_THROW(queryInformation.optimizationDirection == storm::solver::OptimizationDirection::Minimize, storm::exceptions::InvalidPropertyException,
                     "CVaR SSP preprocessing currently only supports minimizing total costs.");
 
     STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotImplementedException,
@@ -126,7 +126,8 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
     auto transitionMatrix = model.getTransitionMatrix();
     bool normalizedTargetStatesToAbsorbing = false;
     for (auto targetState : targetStates) {
-        for (uint64_t row = transitionMatrix.getRowGroupIndices()[targetState], endRow = transitionMatrix.getRowGroupIndices()[targetState + 1]; row < endRow; ++row) {
+        for (uint64_t row = transitionMatrix.getRowGroupIndices()[targetState], endRow = transitionMatrix.getRowGroupIndices()[targetState + 1]; row < endRow;
+             ++row) {
             for (auto const& entry : transitionMatrix.getRow(row)) {
                 if (entry.getColumn() != targetState) {
                     normalizedTargetStatesToAbsorbing = true;
@@ -147,12 +148,11 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
     }
 
     auto backwardTransitions = transitionMatrix.transpose(true);
-    auto reachableStates = storm::utility::graph::getReachableStates(
-        transitionMatrix, model.getInitialStates(), storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true),
-        storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false));
-    auto properStates =
-        storm::utility::graph::performProb1E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions,
-                                             storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), targetStates);
+    auto reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, model.getInitialStates(),
+                                                                     storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true),
+                                                                     storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false));
+    auto properStates = storm::utility::graph::performProb1E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions,
+                                                             storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), targetStates);
     STORM_LOG_THROW(reachableStates.isSubsetOf(properStates), storm::exceptions::InvalidPropertyException,
                     "CVaR SSP preprocessing currently requires a proper policy from every reachable state.");
     auto choiceCosts = extractChoiceCostsForSsp(model, rewardModel, targetStates);
