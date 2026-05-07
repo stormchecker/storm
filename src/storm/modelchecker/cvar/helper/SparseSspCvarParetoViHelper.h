@@ -143,15 +143,26 @@ class SparseSspCvarParetoViHelper {
                 continue;
             }
 
-            std::vector<ParetoFront> actionFronts;
-            actionFronts.reserve(endActionRow - firstActionRow);
+            ParetoFront firstNonEmptyActionFront;
+            typename ParetoFront::container_type actionFrontPoints;
+            bool hasNonEmptyActionFront = false;
             for (uint64_t actionRow = firstActionRow; actionRow < endActionRow; ++actionRow) {
                 auto actionFront = computeActionFront(actionRow, costBound, frontierWindow);
-                if (!actionFront.empty()) {
-                    actionFronts.push_back(std::move(actionFront));
+                if (actionFront.empty()) {
+                    continue;
                 }
+                if (!hasNonEmptyActionFront) {
+                    firstNonEmptyActionFront = std::move(actionFront);
+                    hasNonEmptyActionFront = true;
+                    continue;
+                }
+                if (actionFrontPoints.empty()) {
+                    actionFrontPoints.reserve(firstNonEmptyActionFront.size() + actionFront.size());
+                    actionFrontPoints.insert(actionFrontPoints.end(), firstNonEmptyActionFront.begin(), firstNonEmptyActionFront.end());
+                }
+                actionFrontPoints.insert(actionFrontPoints.end(), actionFront.begin(), actionFront.end());
             }
-            currentLayer[state] = ParetoFront::convexUnion(actionFronts);
+            currentLayer[state] = actionFrontPoints.empty() ? std::move(firstNonEmptyActionFront) : ParetoFront(std::move(actionFrontPoints));
         }
         return currentLayer;
     }
