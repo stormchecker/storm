@@ -112,12 +112,19 @@ class SparseSspCvarParetoViHelper {
 
     ParetoFront computeActionFront(uint64_t actionRow, uint64_t costBound, FrontierWindow const& frontierWindow) const {
         uint64_t const actionCost = getChoiceCostBoundOffset(actionRow);
-        ParetoFront actionFront = ParetoFront::singleton(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
+        ParetoFront actionFront;
         int64_t const predecessorBound = static_cast<int64_t>(costBound) - static_cast<int64_t>(actionCost);
         FrontierLayer const& predecessorLayer = getFrontierLayerForBound(predecessorBound, frontierWindow);
 
+        bool initialized = false;
         for (auto const& transition : preprocessingResult.transitionMatrix.getRow(actionRow)) {
-            actionFront = actionFront.minkowskiSumScaled(predecessorLayer[transition.getColumn()], transition.getValue());
+            auto const& successorFront = predecessorLayer[transition.getColumn()];
+            if (initialized) {
+                actionFront = actionFront.minkowskiSumScaled(successorFront, transition.getValue());
+            } else {
+                actionFront = successorFront.scaled(transition.getValue());
+                initialized = true;
+            }
         }
         return actionFront;
     }
