@@ -81,7 +81,7 @@ class SparseSspCvarParetoViHelper {
         FrontierLayer baseLayer(preprocessingResult.transitionMatrix.getRowGroupCount());
         ValueType const boundValue = storm::utility::convertNumber<ValueType>(costBound);
         for (auto state : reachableTargetStates) {
-            if (costBound >= 0 && preprocessingResult.targetStates[state]) {
+            if (costBound >= 0) {
                 baseLayer[state] = ParetoFront::singleton(storm::utility::one<ValueType>(), storm::utility::zero<ValueType>());
             } else {
                 baseLayer[state] = ParetoFront::singleton(storm::utility::zero<ValueType>(), preprocessingResult.expectedCostsToGoal[state] - boundValue);
@@ -117,7 +117,7 @@ class SparseSspCvarParetoViHelper {
         FrontierLayer const& predecessorLayer = getFrontierLayerForBound(predecessorBound, frontierWindow);
 
         for (auto const& transition : preprocessingResult.transitionMatrix.getRow(actionRow)) {
-            actionFront = actionFront.minkowskiSum(predecessorLayer[transition.getColumn()].scaled(transition.getValue()));
+            actionFront = actionFront.minkowskiSumScaled(predecessorLayer[transition.getColumn()], transition.getValue());
         }
         return actionFront;
     }

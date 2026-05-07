@@ -170,6 +170,34 @@ class SspParetoFront {
         return SspParetoFront(std::move(sumPoints));
     }
 
+    SspParetoFront minkowskiSumScaled(SspParetoFront const& other, ValueType const& factor) const {
+        if (empty() || other.empty()) {
+            return SspParetoFront();
+        }
+        if (storm::utility::isZero(factor)) {
+            return *this;
+        }
+        if (storm::utility::isOne(factor)) {
+            return minkowskiSum(other);
+        }
+        if (isSingleton()) {
+            return other.scaledTranslated(factor, points.front());
+        }
+        if (other.isSingleton()) {
+            Point const& point = other.points.front();
+            return translated(Point{factor * point.probability, factor * point.expectedCost});
+        }
+
+        container_type sumPoints;
+        sumPoints.reserve(points.size() * other.points.size());
+        for (auto const& left : points) {
+            for (auto const& right : other.points) {
+                sumPoints.push_back(Point{left.probability + factor * right.probability, left.expectedCost + factor * right.expectedCost});
+            }
+        }
+        return SspParetoFront(std::move(sumPoints));
+    }
+
     static SspParetoFront convexUnion(std::vector<SspParetoFront> const& fronts) {
         SspParetoFront const* onlyNonEmptyFront = nullptr;
         container_type unionPoints;
@@ -257,6 +285,29 @@ class SspParetoFront {
             translatedPoints.push_back(Point{point.probability + offset.probability, point.expectedCost + offset.expectedCost});
         }
         return SspParetoFront(std::move(translatedPoints), AlreadyCanonicalTag{});
+    }
+
+    SspParetoFront scaledTranslated(ValueType const& factor, Point const& offset) const {
+        if (empty()) {
+            return SspParetoFront();
+        }
+        if (storm::utility::isZero(factor)) {
+            return singleton(offset.probability, offset.expectedCost);
+        }
+        if (isSingleton()) {
+            Point const& point = points.front();
+            return singleton(offset.probability + factor * point.probability, offset.expectedCost + factor * point.expectedCost);
+        }
+
+        container_type scaledTranslatedPoints;
+        scaledTranslatedPoints.reserve(points.size());
+        for (auto const& point : points) {
+            scaledTranslatedPoints.push_back(Point{offset.probability + factor * point.probability, offset.expectedCost + factor * point.expectedCost});
+        }
+        if (storm::utility::isPositive(factor)) {
+            return SspParetoFront(std::move(scaledTranslatedPoints), AlreadyCanonicalTag{});
+        }
+        return SspParetoFront(std::move(scaledTranslatedPoints));
     }
 
     void canonicalize() {
