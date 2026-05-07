@@ -129,10 +129,15 @@ class SparseSspCvarParetoViHelper {
                 continue;
             }
 
+            uint64_t const firstActionRow = preprocessingResult.transitionMatrix.getRowGroupIndices()[state];
+            uint64_t const endActionRow = preprocessingResult.transitionMatrix.getRowGroupIndices()[state + 1];
+            if (firstActionRow + 1 == endActionRow) {
+                currentLayer[state] = computeActionFront(firstActionRow, costBound, frontierWindow);
+                continue;
+            }
+
             std::vector<ParetoFront> actionFronts;
-            for (uint64_t actionRow = preprocessingResult.transitionMatrix.getRowGroupIndices()[state],
-                          endRow = preprocessingResult.transitionMatrix.getRowGroupIndices()[state + 1];
-                 actionRow < endRow; ++actionRow) {
+            for (uint64_t actionRow = firstActionRow; actionRow < endActionRow; ++actionRow) {
                 auto actionFront = computeActionFront(actionRow, costBound, frontierWindow);
                 if (!actionFront.empty()) {
                     actionFronts.push_back(std::move(actionFront));
