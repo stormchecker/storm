@@ -21,6 +21,7 @@
 #include "storm/storage/expressions/BinaryRelationType.h"
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
 
@@ -47,6 +48,7 @@ struct WeightedReachabilityCvarLpData {
     double alpha;
     storm::solver::OptimizationDirection optimizationDirection;
     uint64_t initialState;
+    storm::storage::BitVector initialStates;
     std::string rewardModelName;
     storm::storage::BitVector targetStates;
     std::vector<ValueType> terminalRewards;
@@ -57,9 +59,13 @@ struct WeightedReachabilityCvarLpData {
 };
 
 template<typename ValueType>
-std::vector<CvarRewardBucket<ValueType>> collectRewardBuckets(storm::storage::BitVector const& targetStates, std::vector<ValueType> const& terminalRewards) {
+std::vector<CvarRewardBucket<ValueType>> collectRewardBuckets(storm::storage::BitVector const& targetStates, std::vector<ValueType> const& terminalRewards,
+                                                              storm::storage::BitVector const& reachableStates) {
     std::map<ValueType, std::vector<uint64_t>> buckets;
     for (auto state : targetStates) {
+        if (!reachableStates[state]) {
+            continue;
+        }
         buckets[terminalRewards[state]].push_back(state);
     }
 
@@ -138,11 +144,18 @@ class SparseWeightedReachabilityCvarLpHelper {
     static WeightedReachabilityCvarLpData<ValueType> createLpData(
         CvarQueryInformation const& queryInformation,
         preprocessing::WeightedReachabilityCvarPreprocessingResult<ValueType> const& weightedReachabilityPreprocessingResult) {
-        auto rewardBuckets =
-            collectRewardBuckets(weightedReachabilityPreprocessingResult.effectiveTargetStates, weightedReachabilityPreprocessingResult.terminalRewards);
+        auto initialStates = createInitialStateBitVector(weightedReachabilityPreprocessingResult.transitionMatrix.getRowGroupCount(),
+                                                         weightedReachabilityPreprocessingResult.initialState);
+        storm::storage::BitVector allStates(weightedReachabilityPreprocessingResult.transitionMatrix.getRowGroupCount(), true);
+        storm::storage::BitVector noStates(weightedReachabilityPreprocessingResult.transitionMatrix.getRowGroupCount(), false);
+        auto reachableStates =
+            storm::utility::graph::getReachableStates(weightedReachabilityPreprocessingResult.transitionMatrix, initialStates, allStates, noStates);
+        auto rewardBuckets = collectRewardBuckets(weightedReachabilityPreprocessingResult.effectiveTargetStates,
+                                                  weightedReachabilityPreprocessingResult.terminalRewards, reachableStates);
         return {queryInformation.alpha,
                 queryInformation.optimizationDirection,
                 weightedReachabilityPreprocessingResult.initialState,
+                std::move(initialStates),
                 weightedReachabilityPreprocessingResult.rewardModelName,
                 weightedReachabilityPreprocessingResult.effectiveTargetStates,
                 weightedReachabilityPreprocessingResult.terminalRewards,
@@ -152,9 +165,9 @@ class SparseWeightedReachabilityCvarLpHelper {
                 weightedReachabilityPreprocessingResult.transitionMatrix.transpose(true)};
     }
 
-    storm::storage::BitVector createInitialStateBitVector() const {
-        storm::storage::BitVector initialStates(lpData.transitionMatrix.getRowGroupCount(), false);
-        initialStates.set(lpData.initialState, true);
+    static storm::storage::BitVector createInitialStateBitVector(uint64_t stateCount, uint64_t initialState) {
+        storm::storage::BitVector initialStates(stateCount, false);
+        initialStates.set(initialState, true);
         return initialStates;
     }
 
@@ -176,6 +189,14 @@ class SparseWeightedReachabilityCvarLpHelper {
             addBucketStates(states, bucketIndex);
         }
         return states;
+    }
+
+    storm::storage::BitVector const& getCachedPrefixTargetStates(uint64_t endBucketIndex, std::map<uint64_t, storm::storage::BitVector>& cache) const {
+        auto cachedPrefix = cache.find(endBucketIndex);
+        if (cachedPrefix != cache.end()) {
+            return cachedPrefix->second;
+        }
+        return cache.emplace(endBucketIndex, createPrefixTargetStates(endBucketIndex)).first->second;
     }
 
     CvarThresholdData<ValueType> createThresholdData(uint64_t thresholdIndex) const {
@@ -201,7 +222,7 @@ class SparseWeightedReachabilityCvarLpHelper {
 
         storm::storage::BitVector allStates(lpData.transitionMatrix.getRowGroupCount(), true);
         auto result = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, ValueType>::computeUntilProbabilities(
-            env, storm::solver::SolveGoal<ValueType, ValueType>(direction, createInitialStateBitVector()), lpData.transitionMatrix, lpData.backwardTransitions,
+            env, storm::solver::SolveGoal<ValueType, ValueType>(direction, lpData.initialStates), lpData.transitionMatrix, lpData.backwardTransitions,
             allStates, targetStates, false, false);
         return result.values[lpData.initialState];
     }
@@ -210,12 +231,13 @@ class SparseWeightedReachabilityCvarLpHelper {
         uint64_t const bucketCount = lpData.rewardBuckets.size();
         ValueType const alpha = storm::utility::convertNumber<ValueType>(lpData.alpha);
         storm::utility::ConstantsComparator<ValueType> comparator(storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
+        std::map<uint64_t, storm::storage::BitVector> prefixTargetStateCache;
 
         uint64_t lower = 0;
         uint64_t upper = bucketCount;
         while (lower < upper) {
             uint64_t const mid = lower + (upper - lower) / 2;
-            auto targetStatesBelowOrAtThreshold = createPrefixTargetStates(mid + 1);
+            auto const& targetStatesBelowOrAtThreshold = getCachedPrefixTargetStates(mid + 1, prefixTargetStateCache);
             auto maxReachability = computeReachabilityProbability(env, storm::solver::OptimizationDirection::Maximize, targetStatesBelowOrAtThreshold);
             if (comparator.isLess(maxReachability, alpha)) {
                 lower = mid + 1;
@@ -229,7 +251,7 @@ class SparseWeightedReachabilityCvarLpHelper {
         upper = bucketCount;
         while (lower < upper) {
             uint64_t const mid = lower + (upper - lower) / 2;
-            auto targetStatesBelowThreshold = createPrefixTargetStates(mid);
+            auto const& targetStatesBelowThreshold = getCachedPrefixTargetStates(mid, prefixTargetStateCache);
             auto minReachability = computeReachabilityProbability(env, storm::solver::OptimizationDirection::Minimize, targetStatesBelowThreshold);
             if (comparator.isLess(alpha, minReachability)) {
                 upper = mid;
