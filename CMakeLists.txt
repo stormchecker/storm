@@ -5,7 +5,7 @@ endif()
 
 # Set project name
 project(storm
-	VERSION 1.12.0.1
+	VERSION 1.13.0
 	# Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
 	LANGUAGES CXX C
 	DESCRIPTION "Storm - A Modern Probabilistic Model Checker"

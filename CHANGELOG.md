@@ -5,6 +5,32 @@ This changelog lists only the most important changes. Smaller (bug)fixes as well
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
 
+Version 1.13.x
+--------------
+
+## Version 1.13.0 (2026/05)
+- Moved repository to stormchecker/storm.
+- Import/export of explicit models in (binary) [UMB](https://pmc-tools.github.io/umb/spec) format.
+- Support for exact intervals and bounded model checking of intervals.
+- Support for monitor verification.
+- Extended support for conditional model checking.
+- Added scheduler to `ExplicitQualitativeCheckResult`.
+- Adaption to changes of CMake options in carl-storm.
+- Revised installation paths.
+- Updated dependencies: carl-storm, ExprTk, Spot.
+- Renamed directories: storm-cudd and cpphoafparser.
+- Bug fixes:
+    * in Unif+ for Markov automata with non-Markovian initial states
+    * dangling reference to tmp object
+    * assert in observation trace unfolder
+    * warning in `ConditionalHelper`
+    * error for IDTMC checking from CLI
+    * in includes
+    * compiler warnings
+- Developer: Added support for creating Debian packages in CMake and via CI workflow.
+- Developer: minor fixes in CI workflows.
+
+
 Version 1.12.x
 --------------
 
