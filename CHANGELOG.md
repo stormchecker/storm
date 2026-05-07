@@ -27,6 +27,8 @@ Version 1.13.x
     * error for IDTMC checking from CLI
     * in includes
     * compiler warnings
+- Developer: Added support for intervals in multipliers.
+- Developer: Extended differentation of `ValueType` and `SolutionType` in more places.
 - Developer: Added support for creating Debian packages in CMake and via CI workflow.
 - Developer: minor fixes in CI workflows.
 
