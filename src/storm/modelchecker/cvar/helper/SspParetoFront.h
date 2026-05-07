@@ -211,18 +211,16 @@ class SspParetoFront {
             return points.front().expectedCost;
         }
 
-        for (std::size_t index = 1; index < points.size(); ++index) {
-            Point const& left = points[index - 1];
-            Point const& right = points[index];
-            if (probability <= right.probability) {
-                ValueType const probabilityDelta = right.probability - left.probability;
-                STORM_LOG_ASSERT(probabilityDelta > 0, "Expected SSP Pareto front points to be strictly sorted by probability.");
-                ValueType const interpolationFactor = (probability - left.probability) / probabilityDelta;
-                return left.expectedCost + interpolationFactor * (right.expectedCost - left.expectedCost);
-            }
-        }
+        auto rightIt = std::lower_bound(points.begin(), points.end(), probability,
+                                        [](Point const& point, ValueType const& value) { return point.probability < value; });
+        STORM_LOG_ASSERT(rightIt != points.begin() && rightIt != points.end(), "Expected probability to lie inside the SSP Pareto-front range.");
 
-        return points.back().expectedCost;
+        Point const& left = *(rightIt - 1);
+        Point const& right = *rightIt;
+        ValueType const probabilityDelta = right.probability - left.probability;
+        STORM_LOG_ASSERT(probabilityDelta > 0, "Expected SSP Pareto front points to be strictly sorted by probability.");
+        ValueType const interpolationFactor = (probability - left.probability) / probabilityDelta;
+        return left.expectedCost + interpolationFactor * (right.expectedCost - left.expectedCost);
     }
 
     std::string toString() const {
@@ -321,7 +319,8 @@ class SspParetoFront {
             hullPoints.push_back(point);
             while (hullPoints.size() >= 3 &&
                    liesOnOrAboveSegment(hullPoints[hullPoints.size() - 3], hullPoints[hullPoints.size() - 2], hullPoints[hullPoints.size() - 1])) {
-                hullPoints.erase(hullPoints.end() - 2);
+                hullPoints[hullPoints.size() - 2] = hullPoints.back();
+                hullPoints.pop_back();
             }
         }
         points = std::move(hullPoints);
