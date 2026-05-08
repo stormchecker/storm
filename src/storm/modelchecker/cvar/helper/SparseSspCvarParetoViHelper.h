@@ -80,10 +80,13 @@ class SparseSspCvarParetoViHelper {
     FrontierLayer createInitialFrontierLayer(int64_t costBound) const {
         FrontierLayer baseLayer(preprocessingResult.transitionMatrix.getRowGroupCount());
         ValueType const boundValue = storm::utility::convertNumber<ValueType>(costBound);
-        for (auto state : reachableTargetStates) {
-            if (costBound >= 0) {
-                baseLayer[state] = ParetoFront::singleton(storm::utility::one<ValueType>(), storm::utility::zero<ValueType>());
-            } else {
+        if (costBound >= 0) {
+            ParetoFront const targetFront = createTargetFrontier();
+            for (auto state : reachableTargetStates) {
+                baseLayer[state] = targetFront;
+            }
+        } else {
+            for (auto state : reachableTargetStates) {
                 baseLayer[state] = ParetoFront::singleton(storm::utility::zero<ValueType>(), preprocessingResult.expectedCostsToGoal[state] - boundValue);
             }
         }
@@ -131,9 +134,12 @@ class SparseSspCvarParetoViHelper {
 
     FrontierLayer computeFrontierLayerForCostBound(uint64_t costBound, FrontierWindow const& frontierWindow) const {
         FrontierLayer currentLayer(preprocessingResult.transitionMatrix.getRowGroupCount());
+        ParetoFront const targetFront = createTargetFrontier();
         for (auto state : reachableTargetStates) {
-            currentLayer[state] = ParetoFront::singleton(storm::utility::one<ValueType>(), storm::utility::zero<ValueType>());
+            currentLayer[state] = targetFront;
         }
+
+        std::vector<ParetoFront> actionFronts;
         for (auto state : reachableNonTargetStates) {
 
             uint64_t const firstActionRow = preprocessingResult.transitionMatrix.getRowGroupIndices()[state];
@@ -143,7 +149,7 @@ class SparseSspCvarParetoViHelper {
                 continue;
             }
 
-            std::vector<ParetoFront> actionFronts;
+            actionFronts.clear();
             actionFronts.reserve(endActionRow - firstActionRow);
             for (uint64_t actionRow = firstActionRow; actionRow < endActionRow; ++actionRow) {
                 auto actionFront = computeActionFront(actionRow, costBound, frontierWindow);
@@ -151,7 +157,7 @@ class SparseSspCvarParetoViHelper {
                     actionFronts.push_back(std::move(actionFront));
                 }
             }
-            currentLayer[state] = ParetoFront::convexUnion(actionFronts);
+            currentLayer[state] = ParetoFront::convexUnionDestructive(actionFronts);
         }
         return currentLayer;
     }
@@ -188,6 +194,10 @@ class SparseSspCvarParetoViHelper {
 
     std::size_t getWindowIndex(int64_t costBound) const {
         return getWindowIndex(costBound, preprocessingResult.maximalChoiceCost);
+    }
+
+    static ParetoFront createTargetFrontier() {
+        return ParetoFront::singleton(storm::utility::one<ValueType>(), storm::utility::zero<ValueType>());
     }
 
     static std::vector<uint64_t> createChoiceCostOffsets(preprocessing::SspCvarPreprocessingResult<ValueType> const& preprocessingResult) {

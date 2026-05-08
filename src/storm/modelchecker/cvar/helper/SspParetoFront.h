@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <optional>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "storm/utility/constants.h"
@@ -218,6 +219,29 @@ class SspParetoFront {
         }
         if (onlyNonEmptyFront != nullptr && onlyNonEmptyFront->size() == totalPointCount) {
             return *onlyNonEmptyFront;
+        }
+        return SspParetoFront(mergeSortedFrontPoints(fronts, totalPointCount), AlreadySortedTag{});
+    }
+
+    static SspParetoFront convexUnion(std::vector<SspParetoFront>&& fronts) {
+        return convexUnionDestructive(fronts);
+    }
+
+    static SspParetoFront convexUnionDestructive(std::vector<SspParetoFront>& fronts) {
+        SspParetoFront* onlyNonEmptyFront = nullptr;
+        std::size_t totalPointCount = 0;
+        for (auto& front : fronts) {
+            if (front.empty()) {
+                continue;
+            }
+            onlyNonEmptyFront = onlyNonEmptyFront == nullptr ? &front : onlyNonEmptyFront;
+            totalPointCount += front.size();
+        }
+        if (totalPointCount == 0) {
+            return SspParetoFront();
+        }
+        if (onlyNonEmptyFront != nullptr && onlyNonEmptyFront->size() == totalPointCount) {
+            return std::move(*onlyNonEmptyFront);
         }
         return SspParetoFront(mergeSortedFrontPoints(fronts, totalPointCount), AlreadySortedTag{});
     }
