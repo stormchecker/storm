@@ -117,13 +117,12 @@ void exportFiles(UmbStructure const& umbStructure, storm::io::ArchiveWriter& tar
                 writeVector(data, target, context / fieldName / path);
             }
         } else if constexpr (std::is_same_v<FieldType, GenericVector>) {
-            if (field.template isType<storm::RationalNumber>()) {
+            if (field.template isType<storm::RationalNumber>() || field.template isType<storm::RationalInterval>()) {
                 // Need to call UMBModel::encodeRationals prior to export
-                STORM_LOG_THROW(
-                    false, storm::exceptions::UnexpectedException,
-                    "Unable to export RationalNumber vector '" << (context / fieldName) << "' to UMB. RationalNumber vectors must be encoded prior to export");
+                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException,
+                                "Unable to export rational vector '" << (context / fieldName) << "' to UMB. Rational values must be encoded prior to export");
             } else if (field.template isType<storm::Interval>()) {
-                writeVector(ValueEncoding::intervalToDoubleRangeView(field.template get<storm::Interval>()), target, context / fieldName);
+                writeVector(ValueEncoding::intervalToBaseRangeView<double>(field.template get<storm::Interval>()), target, context / fieldName);
             } else {
                 writeVector(field, target, context / fieldName);
             }
