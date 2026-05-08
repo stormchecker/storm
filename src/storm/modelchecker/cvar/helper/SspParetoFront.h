@@ -53,9 +53,14 @@ class SspParetoFront {
 
    private:
     struct AlreadyCanonicalTag {};
+    struct AlreadySortedTag {};
 
     explicit SspParetoFront(container_type points, AlreadyCanonicalTag) : points(std::move(points)) {
         // Intentionally left empty.
+    }
+
+    explicit SspParetoFront(container_type points, AlreadySortedTag) : points(std::move(points)) {
+        canonicalizeSorted();
     }
 
    public:
@@ -200,7 +205,6 @@ class SspParetoFront {
 
     static SspParetoFront convexUnion(std::vector<SspParetoFront> const& fronts) {
         SspParetoFront const* onlyNonEmptyFront = nullptr;
-        container_type unionPoints;
         std::size_t totalPointCount = 0;
         for (auto const& front : fronts) {
             if (front.empty()) {
@@ -215,11 +219,7 @@ class SspParetoFront {
         if (onlyNonEmptyFront != nullptr && onlyNonEmptyFront->size() == totalPointCount) {
             return *onlyNonEmptyFront;
         }
-        unionPoints.reserve(totalPointCount);
-        for (auto const& front : fronts) {
-            unionPoints.insert(unionPoints.end(), front.begin(), front.end());
-        }
-        return SspParetoFront(std::move(unionPoints));
+        return SspParetoFront(mergeSortedFrontPoints(fronts, totalPointCount), AlreadySortedTag{});
     }
 
     /*!
@@ -315,8 +315,14 @@ class SspParetoFront {
             return;
         }
         sortPoints();
-        removeDuplicateProbabilityPoints();
-        removeDominatedPoints();
+        canonicalizeSorted();
+    }
+
+    void canonicalizeSorted() {
+        if (points.empty()) {
+            return;
+        }
+        removeDuplicateAndDominatedPoints();
         removeNonExtremeConvexPoints();
     }
 
@@ -329,52 +335,84 @@ class SspParetoFront {
         });
     }
 
-    void removeDuplicateProbabilityPoints() {
-        container_type uniquePoints;
-        uniquePoints.reserve(points.size());
-        for (auto const& point : points) {
-            if (!uniquePoints.empty() && uniquePoints.back().probability == point.probability) {
-                continue;
-            }
-            uniquePoints.push_back(point);
+    static bool pointLess(Point const& left, Point const& right) {
+        if (left.probability == right.probability) {
+            return left.expectedCost < right.expectedCost;
         }
-        points = std::move(uniquePoints);
+        return left.probability < right.probability;
     }
 
-    void removeDominatedPoints() {
+    static container_type mergeSortedFrontPoints(std::vector<SspParetoFront> const& fronts, std::size_t totalPointCount) {
+        std::vector<const_iterator> iterators;
+        std::vector<const_iterator> ends;
+        iterators.reserve(fronts.size());
+        ends.reserve(fronts.size());
+        for (auto const& front : fronts) {
+            if (!front.empty()) {
+                iterators.push_back(front.begin());
+                ends.push_back(front.end());
+            }
+        }
+
+        container_type mergedPoints;
+        mergedPoints.reserve(totalPointCount);
+        while (mergedPoints.size() < totalPointCount) {
+            std::size_t bestFront = iterators.size();
+            for (std::size_t index = 0; index < iterators.size(); ++index) {
+                if (iterators[index] == ends[index]) {
+                    continue;
+                }
+                if (bestFront == iterators.size() || pointLess(*iterators[index], *iterators[bestFront])) {
+                    bestFront = index;
+                }
+            }
+            STORM_LOG_ASSERT(bestFront < iterators.size(), "Expected at least one non-exhausted SSP Pareto front during sorted merge.");
+            mergedPoints.push_back(*iterators[bestFront]);
+            ++iterators[bestFront];
+        }
+        return mergedPoints;
+    }
+
+    void removeDuplicateAndDominatedPoints() {
         if (points.size() < 2) {
             return;
         }
-        container_type nonDominatedPoints;
-        nonDominatedPoints.reserve(points.size());
-        ValueType bestExpectedCostSeenFromRight = points.back().expectedCost;
-        nonDominatedPoints.push_back(points.back());
-        for (std::size_t index = points.size() - 1; index > 0; --index) {
-            Point const& point = points[index - 1];
-            if (point.expectedCost < bestExpectedCostSeenFromRight) {
-                nonDominatedPoints.push_back(point);
-                bestExpectedCostSeenFromRight = point.expectedCost;
+
+        std::size_t writeIndex = points.size();
+        std::size_t index = points.size();
+        bool hasBestExpectedCostSeenFromRight = false;
+        ValueType bestExpectedCostSeenFromRight{};
+        while (index > 0) {
+            std::size_t const groupEnd = index;
+            ValueType const probability = points[groupEnd - 1].probability;
+            while (index > 0 && points[index - 1].probability == probability) {
+                --index;
+            }
+
+            Point const& bestPointForProbability = points[index];
+            if (!hasBestExpectedCostSeenFromRight || bestPointForProbability.expectedCost < bestExpectedCostSeenFromRight) {
+                --writeIndex;
+                points[writeIndex] = bestPointForProbability;
+                bestExpectedCostSeenFromRight = bestPointForProbability.expectedCost;
+                hasBestExpectedCostSeenFromRight = true;
             }
         }
-        std::reverse(nonDominatedPoints.begin(), nonDominatedPoints.end());
-        points = std::move(nonDominatedPoints);
+        points.erase(points.begin(), points.begin() + static_cast<typename container_type::difference_type>(writeIndex));
     }
 
     void removeNonExtremeConvexPoints() {
         if (points.size() < 3) {
             return;
         }
-        container_type hullPoints;
-        hullPoints.reserve(points.size());
-        for (auto const& point : points) {
-            hullPoints.push_back(point);
-            while (hullPoints.size() >= 3 &&
-                   liesOnOrAboveSegment(hullPoints[hullPoints.size() - 3], hullPoints[hullPoints.size() - 2], hullPoints[hullPoints.size() - 1])) {
-                hullPoints[hullPoints.size() - 2] = hullPoints.back();
-                hullPoints.pop_back();
+        std::size_t hullSize = 0;
+        for (std::size_t index = 0, endIndex = points.size(); index < endIndex; ++index) {
+            points[hullSize++] = points[index];
+            while (hullSize >= 3 && liesOnOrAboveSegment(points[hullSize - 3], points[hullSize - 2], points[hullSize - 1])) {
+                points[hullSize - 2] = points[hullSize - 1];
+                --hullSize;
             }
         }
-        points = std::move(hullPoints);
+        points.resize(hullSize);
         STORM_LOG_ASSERT(std::adjacent_find(points.begin(), points.end(),
                                             [](Point const& left, Point const& right) {
                                                 return left.probability >= right.probability || left.expectedCost >= right.expectedCost;
