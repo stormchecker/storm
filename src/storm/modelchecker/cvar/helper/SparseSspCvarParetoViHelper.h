@@ -54,14 +54,15 @@ class SparseSspCvarParetoViHelper {
         FrontierWindow frontierWindow = initializeFrontierWindow();
         std::optional<ValueType> bestCandidate =
             extractCvarCandidateFromInitialFrontier(frontierWindow[0][preprocessingResult.initialState], 0, queryInformation.alpha);
+        FrontierLayer currentLayer(preprocessingResult.transitionMatrix.getRowGroupCount());
 
         for (uint64_t costBound = 1; !bestCandidate.has_value() || storm::utility::convertNumber<ValueType>(costBound) <= bestCandidate.value(); ++costBound) {
-            auto currentLayer = computeFrontierLayerForCostBound(costBound, frontierWindow);
+            computeFrontierLayerForCostBound(costBound, frontierWindow, currentLayer);
             auto currentCandidate = extractCvarCandidateFromInitialFrontier(currentLayer[preprocessingResult.initialState], costBound, queryInformation.alpha);
             if (currentCandidate.has_value() && (!bestCandidate.has_value() || currentCandidate.value() < bestCandidate.value())) {
                 bestCandidate = currentCandidate;
             }
-            writeFrontierLayerToWindow(costBound, std::move(currentLayer), frontierWindow);
+            swapFrontierLayerIntoWindow(costBound, currentLayer, frontierWindow);
         }
 
         STORM_LOG_THROW(bestCandidate.has_value(), storm::exceptions::UnexpectedException, "CVaR SSP value iteration did not find a feasible candidate.");
@@ -105,8 +106,8 @@ class SparseSspCvarParetoViHelper {
         return frontierWindow;
     }
 
-    static void writeFrontierLayerToWindow(int64_t costBound, FrontierLayer layer, FrontierWindow& frontierWindow) {
-        frontierWindow[getWindowIndex(costBound, frontierWindow.size())] = std::move(layer);
+    static void swapFrontierLayerIntoWindow(int64_t costBound, FrontierLayer& layer, FrontierWindow& frontierWindow) {
+        std::swap(frontierWindow[getWindowIndex(costBound, frontierWindow.size())], layer);
     }
 
     FrontierLayer const& getFrontierLayerForBound(int64_t costBound, FrontierWindow const& frontierWindow) const {
@@ -132,8 +133,8 @@ class SparseSspCvarParetoViHelper {
         return actionFront;
     }
 
-    FrontierLayer computeFrontierLayerForCostBound(uint64_t costBound, FrontierWindow const& frontierWindow) const {
-        FrontierLayer currentLayer(preprocessingResult.transitionMatrix.getRowGroupCount());
+    void computeFrontierLayerForCostBound(uint64_t costBound, FrontierWindow const& frontierWindow, FrontierLayer& currentLayer) const {
+        prepareFrontierLayer(currentLayer);
         ParetoFront const targetFront = createTargetFrontier();
         for (auto state : reachableTargetStates) {
             currentLayer[state] = targetFront;
@@ -141,7 +142,6 @@ class SparseSspCvarParetoViHelper {
 
         std::vector<ParetoFront> actionFronts;
         for (auto state : reachableNonTargetStates) {
-
             uint64_t const firstActionRow = preprocessingResult.transitionMatrix.getRowGroupIndices()[state];
             uint64_t const endActionRow = preprocessingResult.transitionMatrix.getRowGroupIndices()[state + 1];
             if (firstActionRow + 1 == endActionRow) {
@@ -159,7 +159,6 @@ class SparseSspCvarParetoViHelper {
             }
             currentLayer[state] = ParetoFront::convexUnionDestructive(actionFronts);
         }
-        return currentLayer;
     }
 
     /*!
@@ -198,6 +197,15 @@ class SparseSspCvarParetoViHelper {
 
     static ParetoFront createTargetFrontier() {
         return ParetoFront::singleton(storm::utility::one<ValueType>(), storm::utility::zero<ValueType>());
+    }
+
+    void prepareFrontierLayer(FrontierLayer& layer) const {
+        if (layer.size() != preprocessingResult.transitionMatrix.getRowGroupCount()) {
+            layer.resize(preprocessingResult.transitionMatrix.getRowGroupCount());
+        }
+        for (auto& front : layer) {
+            front.clear();
+        }
     }
 
     static std::vector<uint64_t> createChoiceCostOffsets(preprocessing::SspCvarPreprocessingResult<ValueType> const& preprocessingResult) {

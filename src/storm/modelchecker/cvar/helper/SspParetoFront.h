@@ -2,7 +2,9 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
+#include <queue>
 #include <sstream>
 #include <utility>
 #include <vector>
@@ -166,14 +168,7 @@ class SspParetoFront {
         if (other.isSingleton()) {
             return translated(other.points.front());
         }
-        container_type sumPoints;
-        sumPoints.reserve(points.size() * other.points.size());
-        for (auto const& left : points) {
-            for (auto const& right : other.points) {
-                sumPoints.push_back(Point{left.probability + right.probability, left.expectedCost + right.expectedCost});
-            }
-        }
-        return SspParetoFront(std::move(sumPoints));
+        return minkowskiSumConvexChain(other, storm::utility::one<ValueType>());
     }
 
     SspParetoFront minkowskiSumScaled(SspParetoFront const& other, ValueType const& factor) const {
@@ -192,6 +187,9 @@ class SspParetoFront {
         if (other.isSingleton()) {
             Point const& point = other.points.front();
             return translated(Point{factor * point.probability, factor * point.expectedCost});
+        }
+        if (storm::utility::isPositive(factor)) {
+            return minkowskiSumConvexChain(other, factor);
         }
 
         container_type sumPoints;
@@ -263,8 +261,8 @@ class SspParetoFront {
             return points.front().expectedCost;
         }
 
-        auto rightIt = std::lower_bound(points.begin(), points.end(), probability,
-                                        [](Point const& point, ValueType const& value) { return point.probability < value; });
+        auto rightIt =
+            std::lower_bound(points.begin(), points.end(), probability, [](Point const& point, ValueType const& value) { return point.probability < value; });
         STORM_LOG_ASSERT(rightIt != points.begin() && rightIt != points.end(), "Expected probability to lie inside the SSP Pareto-front range.");
 
         Point const& left = *(rightIt - 1);
@@ -334,6 +332,47 @@ class SspParetoFront {
         return SspParetoFront(std::move(scaledTranslatedPoints));
     }
 
+    SspParetoFront minkowskiSumConvexChain(SspParetoFront const& other, ValueType const& factor) const {
+        STORM_LOG_ASSERT(storm::utility::isPositive(factor), "Expected a positive scaling factor for convex-chain Minkowski sum.");
+
+        container_type sumPoints;
+        sumPoints.reserve(points.size() + other.points.size() - 1);
+
+        Point current{points.front().probability + factor * other.points.front().probability,
+                      points.front().expectedCost + factor * other.points.front().expectedCost};
+        sumPoints.push_back(current);
+
+        std::size_t leftEdge = 0;
+        std::size_t rightEdge = 0;
+        while (leftEdge + 1 < points.size() || rightEdge + 1 < other.points.size()) {
+            if (rightEdge + 1 == other.points.size()) {
+                addEdge(current, points[leftEdge], points[leftEdge + 1]);
+                ++leftEdge;
+            } else if (leftEdge + 1 == points.size()) {
+                addScaledEdge(current, other.points[rightEdge], other.points[rightEdge + 1], factor);
+                ++rightEdge;
+            } else {
+                int_fast8_t const slopeComparison =
+                    compareEdgeSlopes(points[leftEdge], points[leftEdge + 1], other.points[rightEdge], other.points[rightEdge + 1]);
+                if (slopeComparison < 0) {
+                    addEdge(current, points[leftEdge], points[leftEdge + 1]);
+                    ++leftEdge;
+                } else if (slopeComparison > 0) {
+                    addScaledEdge(current, other.points[rightEdge], other.points[rightEdge + 1], factor);
+                    ++rightEdge;
+                } else {
+                    addEdge(current, points[leftEdge], points[leftEdge + 1]);
+                    addScaledEdge(current, other.points[rightEdge], other.points[rightEdge + 1], factor);
+                    ++leftEdge;
+                    ++rightEdge;
+                }
+            }
+            sumPoints.push_back(current);
+        }
+
+        return SspParetoFront(std::move(sumPoints), AlreadySortedTag{});
+    }
+
     void canonicalize() {
         if (points.empty()) {
             return;
@@ -366,34 +405,59 @@ class SspParetoFront {
         return left.probability < right.probability;
     }
 
+    static void addEdge(Point& point, Point const& edgeStart, Point const& edgeEnd) {
+        point.probability += edgeEnd.probability - edgeStart.probability;
+        point.expectedCost += edgeEnd.expectedCost - edgeStart.expectedCost;
+    }
+
+    static void addScaledEdge(Point& point, Point const& edgeStart, Point const& edgeEnd, ValueType const& factor) {
+        point.probability += factor * (edgeEnd.probability - edgeStart.probability);
+        point.expectedCost += factor * (edgeEnd.expectedCost - edgeStart.expectedCost);
+    }
+
+    static int_fast8_t compareEdgeSlopes(Point const& leftStart, Point const& leftEnd, Point const& rightStart, Point const& rightEnd) {
+        ValueType const leftProbabilityDelta = leftEnd.probability - leftStart.probability;
+        ValueType const rightProbabilityDelta = rightEnd.probability - rightStart.probability;
+        STORM_LOG_ASSERT(leftProbabilityDelta > 0 && rightProbabilityDelta > 0, "Expected strictly increasing probabilities in SSP Pareto front edges.");
+
+        ValueType const leftScaledCostDelta = (leftEnd.expectedCost - leftStart.expectedCost) * rightProbabilityDelta;
+        ValueType const rightScaledCostDelta = (rightEnd.expectedCost - rightStart.expectedCost) * leftProbabilityDelta;
+        if (leftScaledCostDelta < rightScaledCostDelta) {
+            return -1;
+        }
+        if (rightScaledCostDelta < leftScaledCostDelta) {
+            return 1;
+        }
+        return 0;
+    }
+
     static container_type mergeSortedFrontPoints(std::vector<SspParetoFront> const& fronts, std::size_t totalPointCount) {
-        std::vector<const_iterator> iterators;
-        std::vector<const_iterator> ends;
-        iterators.reserve(fronts.size());
-        ends.reserve(fronts.size());
+        struct MergeCursor {
+            const_iterator iterator;
+            const_iterator end;
+        };
+        auto cursorGreater = [](MergeCursor const& left, MergeCursor const& right) { return pointLess(*right.iterator, *left.iterator); };
+        std::vector<MergeCursor> initialCursors;
+        initialCursors.reserve(fronts.size());
         for (auto const& front : fronts) {
             if (!front.empty()) {
-                iterators.push_back(front.begin());
-                ends.push_back(front.end());
+                initialCursors.push_back(MergeCursor{front.begin(), front.end()});
             }
         }
+        std::priority_queue<MergeCursor, std::vector<MergeCursor>, decltype(cursorGreater)> cursors(cursorGreater, std::move(initialCursors));
 
         container_type mergedPoints;
         mergedPoints.reserve(totalPointCount);
-        while (mergedPoints.size() < totalPointCount) {
-            std::size_t bestFront = iterators.size();
-            for (std::size_t index = 0; index < iterators.size(); ++index) {
-                if (iterators[index] == ends[index]) {
-                    continue;
-                }
-                if (bestFront == iterators.size() || pointLess(*iterators[index], *iterators[bestFront])) {
-                    bestFront = index;
-                }
+        while (!cursors.empty()) {
+            MergeCursor cursor = cursors.top();
+            cursors.pop();
+            mergedPoints.push_back(*cursor.iterator);
+            ++cursor.iterator;
+            if (cursor.iterator != cursor.end) {
+                cursors.push(cursor);
             }
-            STORM_LOG_ASSERT(bestFront < iterators.size(), "Expected at least one non-exhausted SSP Pareto front during sorted merge.");
-            mergedPoints.push_back(*iterators[bestFront]);
-            ++iterators[bestFront];
         }
+        STORM_LOG_ASSERT(mergedPoints.size() == totalPointCount, "Unexpected number of points produced by sorted SSP Pareto-front merge.");
         return mergedPoints;
     }
 
