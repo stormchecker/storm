@@ -15,176 +15,165 @@
 #include "storm/solver/multiplier/Multiplier.h"
 #include "storm/utility/SignalHandler.h"
 
-namespace storm {
-namespace modelchecker {
-namespace helper {
+namespace storm::modelchecker::helper {
 
-template<typename ValueType, bool Deterministic, typename SolutionType>
-SparseStepBoundedHorizonHelper<ValueType, Deterministic, SolutionType>::SparseStepBoundedHorizonHelper() {
+namespace detail {
+template<typename ValueType, typename SolutionType>
+storm::storage::BitVector computeProbGreater0States(storm::solver::SolveGoal<ValueType, SolutionType> const& goal,
+                                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                    storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                    storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
+                                                    uint64_t const upperBound, ModelCheckerHint const& hint) {
+    if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
+        return hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates() | psiStates;
+    } else {
+        if (transitionMatrix.hasTrivialRowGrouping()) {  // DTMC
+            return storm::utility::graph::performProbGreater0(backwardTransitions, phiStates, psiStates, true, upperBound);
+        } else {  // MDP
+            if (goal.minimize()) {
+                return storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, phiStates,
+                                                                   psiStates, true, upperBound);
+            } else {
+                return storm::utility::graph::performProbGreater0E(backwardTransitions, phiStates, psiStates, true, upperBound);
+            }
+        }
+    }
+}
+}  // namespace detail
+
+template<typename ValueType, typename SolutionType>
+SparseStepBoundedHorizonHelper<ValueType, SolutionType>::SparseStepBoundedHorizonHelper() {
     // Intentionally left empty.
 }
 
-template<typename ValueType, bool Deterministic, typename SolutionType>
-std::vector<SolutionType> SparseStepBoundedHorizonHelper<ValueType, Deterministic, SolutionType>::compute(
+template<typename ValueType, typename SolutionType>
+std::vector<SolutionType> SparseStepBoundedHorizonHelper<ValueType, SolutionType>::computeStepBoundedUntilProbabilities(
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
-    uint64_t lowerBound, uint64_t upperBound, ModelCheckerHint const& hint) {
-    std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
+    uint64_t const lowerBound, uint64_t const upperBound, ModelCheckerHint const& hint) {
+    STORM_LOG_ASSERT(([&]() {
+                         uint64_t const numStates = transitionMatrix.getRowGroupCount();
+                         std::initializer_list<uint64_t> const r{transitionMatrix.getColumnCount(), backwardTransitions.getRowCount(),
+                                                                 backwardTransitions.getColumnCount(), phiStates.size(), psiStates.size()};
+                         return std::all_of(r.begin(), r.end(), [&numStates](auto i) { return i == numStates; });
+                     }()),
+                     "Inconsistent input dimensions.");
+    STORM_LOG_ASSERT(transitionMatrix.hasTrivialRowGrouping() || goal.hasDirection(),
+                     "Got a nondeterministic transition matrix but solve goal does not specify a direction.");
+    STORM_LOG_ASSERT(!storm::IsIntervalType<ValueType> || storm::solver::isSet(goal.getUncertaintyResolutionMode()),
+                     "Interval transition matrix given, but no uncertainty resolution mode is specified.");
 
-    storm::solver::OptimizationDirection optimizationDirection;
-    if constexpr (Deterministic) {
-        optimizationDirection = OptimizationDirection::Maximize;
+    // Catch trivial case where lowerBound exceeds the upperBound
+    if (lowerBound > upperBound) {
+        return std::vector<SolutionType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
+    }
+
+    storm::solver::OptimizationDirection const optimizationDirection =
+        transitionMatrix.hasTrivialRowGrouping() ? OptimizationDirection::Maximize : goal.direction();
+
+    // We identify states that must have probability 0 of reaching the target states to exclude them in the further analysis.
+    storm::storage::BitVector const probGreater0States =
+        detail::computeProbGreater0States<ValueType, SolutionType>(goal, transitionMatrix, backwardTransitions, phiStates, psiStates, upperBound, hint);
+    STORM_LOG_INFO("Preprocessing step-bounded reachability probability computation: "
+                   << probGreater0States.getNumberOfSetBits() << " states with probability greater 0. " << psiStates.getNumberOfSetBits() << " target states.");
+
+    // We compute the values using matrix-vector multiplication in two phases.
+    // The first phase computes the values for step epochs upperBound, upperBound-1, upperBound-2, ..., lowerBound.
+    // In that phase, reaching a psiState incurs a probability of 1.
+    // After the first phase, the result vector contains the probabilities for reaching Psi via Phi within upperBound-lowerBound steps.
+    // The second phase computes the values for step epochs lowerBound-1, lowerBound-2, ..., 0.
+    // In the second phase, psiStates are treated as any other state.
+
+    // Allocate the solution vector for the iterations.
+    std::vector<SolutionType> result;
+    result.reserve(transitionMatrix.getRowGroupCount());  // x will later hold the final result for each state.
+
+    // First phase: Apply upperBound-lowerBound many iterations
+    // During this phase, we set probability 1 to all psiStates. The maybeStates are those for which we still need to compute a value.
+    auto const firstPhaseMaybeStates = probGreater0States & ~psiStates;
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        // For interval models, we do not remove non-maybestates for the analysis: We need to keep their incoming transition intervals so that we can pick
+        // valid interval instantiations at predecessors of non-maybestates.
+        // The result vector thus has one entry for each state.
+        // We initialize the result with the probability of reaching psiStates in 0 steps.
+        storm::utility::vector::setAllValues(result, psiStates, storm::utility::one<SolutionType>(), storm::utility::zero<SolutionType>());
+        // Check if we actually need to do any iteration
+        if (upperBound > lowerBound && firstPhaseMaybeStates.getNumberOfSetBits() > 0) {
+            // For the iterations, we clear all outgoing transitions of non-maybe states.
+            auto submatrix = transitionMatrix.filterEntries(transitionMatrix.getRowFilter(firstPhaseMaybeStates));
+            // The `b` vector is used to set a constant value for the non-maybe states. That means it has to hold value 1 for all choices at psiStates.
+            std::vector<ValueType> b;
+            storm::utility::vector::setAllValues(b, transitionMatrix.getRowFilter(psiStates), storm::utility::one<ValueType>(),
+                                                 storm::utility::zero<ValueType>());
+            // Perform the iterations for the first phase
+            auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, std::move(submatrix));
+            multiplier->repeatedMultiplyAndReduce(env, optimizationDirection, result, &b, upperBound - lowerBound, goal.getUncertaintyResolutionMode());
+        }
     } else {
-        optimizationDirection = goal.direction();
-    }
-
-    // If we identify the states that have probability 0 of reaching the target states, we might be able to exclude them in the further analysis.
-    // For the 'maybeStates' we definitely have to compute the values.
-    // In the case of 'lowerBound != 0', the 'maybeStates' also include the psi states, as we need their outgoing transitions during computation.
-    storm::storage::BitVector maybeStates = computeMaybeStates(goal, transitionMatrix, backwardTransitions, phiStates, psiStates, lowerBound, upperBound, hint);
-    storm::storage::BitVector makeZeroColumns;
-
-    // In the non-interval case for 'lowerBound != 0', we do not want the psi states to contribute twice to the computation. Note that they are already included
-    // in the 'b' vector as a result of the one-step probabilities and are a part of the 'maybeStates', as we need them during the shifting.
-    if constexpr (!storm::IsIntervalType<ValueType>) {
-        if (lowerBound != 0) {
-            makeZeroColumns = psiStates;
+        // For non-interval models, we can consider a proper subsystem consisting only of maybe states. That means, the solution vector only has entries for
+        // each maybeState. Initially, (when doing 0 steps), all maybeStates have value 0
+        result.assign(firstPhaseMaybeStates.getNumberOfSetBits(), storm::utility::zero<SolutionType>());
+        // Check if we actually need to do any iteration
+        if (upperBound > lowerBound && firstPhaseMaybeStates.getNumberOfSetBits() > 0) {
+            // Create the subsystem that only consists of maybe states.
+            auto submatrix = transitionMatrix.getSubmatrix(true, firstPhaseMaybeStates, firstPhaseMaybeStates, false);
+            // The 'b' vector contains for each choice the probabilities to reach psiStates within one step via that choice
+            auto const b = transitionMatrix.getConstrainedRowGroupSumVector(firstPhaseMaybeStates, psiStates);
+            // Perform the iterations for the first phase
+            auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, std::move(submatrix));
+            multiplier->repeatedMultiplyAndReduce(env, optimizationDirection, result, &b, upperBound - lowerBound);
         }
     }
 
-    STORM_LOG_INFO("Preprocessing: " << maybeStates.getNumberOfSetBits() << " maybe states with probability greater 0.");
-
-    if (!maybeStates.empty()) {
-        storm::storage::SparseMatrix<ValueType> submatrix;
-        std::vector<ValueType> b;
-        uint64_t subresultSize;
-
-        // In case of interval models we do not incorporate the one-step probabilities to the target in 'b' when computing '<=' and '<'. Thus, we need to
-        // perform 'upperBound + 1' multiplications in the interval case, instead of 'upperBound' in the non-interval case.
-        bool bIncludesOneStepProbabilities = false;
+    // Second phase: Apply lowerBound many iterations
+    auto const secondPhaseMaybeStates = probGreater0States & phiStates;
+    if (lowerBound != 0 && !secondPhaseMaybeStates.empty()) {
+        // In the second phase, we compute values for states those states where the value is not known to be zero.
+        // Note that there might be (psiStates & ~phiStates)-states which have value 1 in the first phase but must get value 0 at the end of this phase.
         if constexpr (storm::IsIntervalType<ValueType>) {
-            // For intervals, we cannot remove all non-maybe states, as that would lead to the upper probability of rows summing to below 1.
-            submatrix = transitionMatrix.filterEntries(transitionMatrix.getRowFilter(maybeStates));
-
-            storm::utility::vector::setAllValues(b, transitionMatrix.getRowFilter(psiStates));
-
-            subresultSize = transitionMatrix.getRowGroupCount();
+            // As in the first phase, we build a submatrix with all states. Now we do not include outgoing transitions for all states that must have value zero
+            auto submatrix = transitionMatrix.filterEntries(transitionMatrix.getRowFilter(secondPhaseMaybeStates));
+            // Perform the iterations for the second phase. We do not need to set a `b` vector, as the non-maybeStates in the second phase must get value zero.
+            // Note that (psiStates & ~phiStates)-states have value 1 right now, but will have value 0 after the first and any subsequent iteration.
+            auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, std::move(submatrix));
+            multiplier->repeatedMultiplyAndReduce(env, optimizationDirection, result, nullptr, lowerBound, goal.getUncertaintyResolutionMode());
         } else {
-            // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
-            submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false, makeZeroColumns);
-
-            // Create the vector of one-step probabilities to go to target states.
-            b = transitionMatrix.getConstrainedRowGroupSumVector(maybeStates, psiStates);
-            bIncludesOneStepProbabilities = true;
-
-            subresultSize = maybeStates.getNumberOfSetBits();
-        }
-
-        // Create the vector with which to multiply.
-        std::vector<SolutionType> subresult(subresultSize);
-
-        auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, submatrix);
-        if (lowerBound == 0) {  // Case '<=' and '<'
-            multiplier->repeatedMultiplyAndReduce(env, optimizationDirection, subresult, &b, upperBound + (bIncludesOneStepProbabilities ? 0 : 1),
-                                                  goal.getUncertaintyResolutionMode());
-        } else {  // Case '[lowerBound, upperBound]'
-            if constexpr (storm::IsIntervalType<ValueType>) {
-                // Compute the robust one-step probabilities.
-                std::vector<ValueType> emptyB(b.size(), storm::utility::zero<ValueType>());
-                // Here, the 'b' vector contains '1' for psi-states, which we want to copy into subresult first.
-                multiplier->multiplyAndReduce(env, optimizationDirection, subresult, &b, subresult, goal.getUncertaintyResolutionMode());
-                // Next, we multiply once to obtain the one-step probabilities (with an empty 'b' vector, as we do not want any offset).
-                multiplier->multiplyAndReduce(env, optimizationDirection, subresult, &emptyB, subresult, goal.getUncertaintyResolutionMode());
-
-                if (upperBound == lowerBound) {
-                    // Intentionally left empty, as we are already done after computing the one-step probabilities.
-                } else if (upperBound > lowerBound) {
-                    // Compute probabilities to hit target in [1 .. upperBound - lowerBound + 1] steps.
-                    // We need to do this manually, as we cannot precompute the contribution of psi-states separately.
-                    // In each Bellman backup, the optimizer has to choose one feasible row distribution that
-                    // determines the probability mass for both psi states and the other successors.
-                    uint64_t stepsInterval = upperBound - lowerBound + 1;
-
-                    // Perform remaining steps of steps interval.
-                    for (uint64_t step = 2; step <= stepsInterval; ++step) {
-                        // Keep '1' for every psi state, as they are included in the submatrix and would otherwise be updated according to their outgoing
-                        // transitions. However, for bounded reachability within a step-interval, reaching a psi state satisfies the objective.
-                        // Thus, this '1' needs to be considered when resolving the uncertainty.
-                        storm::utility::vector::setAllValues(subresult, transitionMatrix.getRowFilter(psiStates), storm::utility::one<SolutionType>());
-                        multiplier->multiplyAndReduce(env, optimizationDirection, subresult, &emptyB, subresult, goal.getUncertaintyResolutionMode());
-                    }
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot compute step-bounded until with lowerBound > upperBound");
-                }
-            } else {
-                multiplier->repeatedMultiplyAndReduce(env, optimizationDirection, subresult, &b, upperBound - lowerBound + 1,
-                                                      goal.getUncertaintyResolutionMode());
+            // Create the subsystem that only consists of maybe states.
+            // In contrast to the first phase, we add (psiStates & phiStates) to the set of maybe states.
+            // That means we have to enlarge our solution vector and insert probability 1 for those newly added states, as this is the value of those states
+            // towards the end of the first phase.
+            auto firstPhaseFilter = firstPhaseMaybeStates % secondPhaseMaybeStates;  // indicates those states that were already present before
+            storm::utility::vector::blowUpVectorInPlace(result, firstPhaseFilter, storm::utility::one<SolutionType>());
+            // Create a submatrix that only consists of maybeStates for the second phase
+            auto submatrix = transitionMatrix.getSubmatrix(true, secondPhaseMaybeStates, secondPhaseMaybeStates, false);
+            // Perform the iterations for the second phase.
+            auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, std::move(submatrix));
+            uint64_t numIterations = lowerBound;
+            // For the very first iteration, we might need to add the probability of reaching a (psiStates & ~phiStates) state in one step.
+            if (auto const excludedPsiStates = psiStates & ~phiStates; !excludedPsiStates.empty()) {
+                auto const b = transitionMatrix.getConstrainedRowGroupSumVector(secondPhaseMaybeStates, excludedPsiStates);
+                multiplier->multiplyAndReduce(env, optimizationDirection, result, &b, result);
+                --numIterations;
             }
-
-            if constexpr (storm::IsIntervalType<ValueType>) {
-                // For lower-bounded step-interval queries, we also need the outgoing transitions of psi states during shifting.
-                submatrix = transitionMatrix.filterEntries(transitionMatrix.getRowFilter(maybeStates));
-            } else {
-                // Here, we actually need the outgoing transitions of the psi states. Thus, we do not apply the 'makeZeroColumns'.
-                submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
-            }
-
-            // Shift result to hit target in [1 .. upperBound - lowerBound + 1] steps by 'lowerBound - 1'-steps.
-            multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, submatrix);
-            b = std::vector<ValueType>(b.size(), storm::utility::zero<ValueType>());
-            multiplier->repeatedMultiplyAndReduce(env, optimizationDirection, subresult, &b, lowerBound - 1, goal.getUncertaintyResolutionMode());
+            multiplier->repeatedMultiplyAndReduce(env, optimizationDirection, result, nullptr, numIterations);
+            // Finally, we blow up the solution vector once more to also incorporate values for the non-maybe states, which all have value zero.
+            storm::utility::vector::blowUpVectorInPlace(result, secondPhaseMaybeStates, storm::utility::zero<SolutionType>());
         }
-
-        // Set the values of the resulting vector accordingly.
-        storm::utility::vector::setVectorValues(result, maybeStates, subresult);
-    }
-
-    if (lowerBound == 0) {
-        storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<SolutionType>());
+    } else {
+        // If there is no second phase, we still need to blow up the solution vector in case it refers to the reduced system
+        if (!storm::IsIntervalType<ValueType>) {
+            storm::utility::vector::blowUpVectorInPlace(result, firstPhaseMaybeStates, storm::utility::zero<SolutionType>());
+            storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<SolutionType>());
+        }
     }
 
     return result;
 }
 
-template<typename ValueType, bool Deterministic, typename SolutionType>
-storm::storage::BitVector SparseStepBoundedHorizonHelper<ValueType, Deterministic, SolutionType>::computeMaybeStates(
-    storm::solver::SolveGoal<ValueType, SolutionType> const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-    storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
-    uint64_t lowerBound, uint64_t upperBound, ModelCheckerHint const& hint) {
-    storm::storage::BitVector maybeStates;
+template class SparseStepBoundedHorizonHelper<double>;
+template class SparseStepBoundedHorizonHelper<storm::RationalNumber>;
+template class SparseStepBoundedHorizonHelper<storm::RationalFunction>;
+template class SparseStepBoundedHorizonHelper<storm::Interval, double>;
+template class SparseStepBoundedHorizonHelper<storm::RationalInterval, storm::RationalNumber>;
 
-    if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
-        maybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates();
-    } else {
-        if constexpr (Deterministic) {  // DTMC
-            maybeStates = storm::utility::graph::performProbGreater0(backwardTransitions, phiStates, psiStates, true, upperBound);
-        } else {  // MDP
-            if (goal.minimize()) {
-                maybeStates = storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions,
-                                                                          phiStates, psiStates, true, upperBound);
-            } else {
-                maybeStates = storm::utility::graph::performProbGreater0E(backwardTransitions, phiStates, psiStates, true, upperBound);
-            }
-        }
-
-        if (lowerBound == 0) {
-            maybeStates &= ~psiStates;
-        }
-    }
-
-    return maybeStates;
-}
-
-template class SparseStepBoundedHorizonHelper<double, false>;
-template class SparseStepBoundedHorizonHelper<double, true>;
-template class SparseStepBoundedHorizonHelper<storm::RationalNumber, false>;
-template class SparseStepBoundedHorizonHelper<storm::RationalNumber, true>;
-template class SparseStepBoundedHorizonHelper<storm::RationalFunction, true>;
-template class SparseStepBoundedHorizonHelper<storm::Interval, false, double>;
-template class SparseStepBoundedHorizonHelper<storm::Interval, true, double>;
-template class SparseStepBoundedHorizonHelper<storm::RationalInterval, false, storm::RationalNumber>;
-template class SparseStepBoundedHorizonHelper<storm::RationalInterval, true, storm::RationalNumber>;
-
-}  // namespace helper
-}  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::modelchecker::helper
