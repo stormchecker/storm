@@ -73,6 +73,10 @@ class ExplicitQualitativeCheckResult : public QualitativeCheckResult {
                                          std::optional<storm::models::sparse::StateLabeling> const& stateLabels = std::nullopt) const;
 
    private:
+    bool hasValueType(std::type_info const& t) const override {
+        return t == typeid(ValueType);
+    }
+
     static void performLogicalOperation(ExplicitQualitativeCheckResult& first, QualitativeCheckResult const& second, bool logicalAnd);
 
     // The values of the quantitative check result.

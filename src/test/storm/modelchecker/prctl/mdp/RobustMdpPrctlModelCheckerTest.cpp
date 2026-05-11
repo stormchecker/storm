@@ -288,6 +288,12 @@ TEST(RobustMDPModelCheckingTest, Tiny04maxmin_rewards) {
     expectThrow(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn", "Rmin=? [ F \"target\"]");
 }
 
+TEST(RobustMDPModelCheckingTest, CrowdsQuotientIMDP) {
+    // Ensuring equivalent behavior when checking identical model as IDTMC and IMDP (cf. CrowdsQuotientIDTMC)
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/crowds-quotient-3-5.drn", "Pmax=? [ F \"observe0Greater1\"]; Pmin=? [ F \"observe0Greater1\"]", 0.1383409,
+               0.1383409, 0.1383409, 0.1383409, false);
+}
+
 // ---- RationalInterval tests (exact arithmetic) ----
 
 TEST(RobustRationalMDPModelCheckingTest, Tiny01maxmin) {

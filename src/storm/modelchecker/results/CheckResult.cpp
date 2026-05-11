@@ -80,21 +80,25 @@ bool CheckResult::isHybridQuantitativeCheckResult() const {
 
 template<typename ValueType>
 ExplicitQualitativeCheckResult<ValueType>& CheckResult::asExplicitQualitativeCheckResult() {
+    STORM_LOG_THROW(this->hasValueType<ValueType>(), storm::exceptions::InvalidOperationException, "Unexpected value type in check result.");
     return dynamic_cast<ExplicitQualitativeCheckResult<ValueType>&>(*this);
 }
 
 template<typename ValueType>
 ExplicitQualitativeCheckResult<ValueType> const& CheckResult::asExplicitQualitativeCheckResult() const {
+    STORM_LOG_THROW(this->hasValueType<ValueType>(), storm::exceptions::InvalidOperationException, "Unexpected value type in check result.");
     return dynamic_cast<ExplicitQualitativeCheckResult<ValueType> const&>(*this);
 }
 
 template<typename ValueType>
 ExplicitQuantitativeCheckResult<ValueType>& CheckResult::asExplicitQuantitativeCheckResult() {
+    STORM_LOG_THROW(this->hasValueType<ValueType>(), storm::exceptions::InvalidOperationException, "Unexpected value type in check result.");
     return dynamic_cast<ExplicitQuantitativeCheckResult<ValueType>&>(*this);
 }
 
 template<typename ValueType>
 ExplicitQuantitativeCheckResult<ValueType> const& CheckResult::asExplicitQuantitativeCheckResult() const {
+    STORM_LOG_THROW(this->hasValueType<ValueType>(), storm::exceptions::InvalidOperationException, "Unexpected value type in check result.");
     return dynamic_cast<ExplicitQuantitativeCheckResult<ValueType> const&>(*this);
 }
 
@@ -128,11 +132,13 @@ QualitativeCheckResult const& CheckResult::asQualitativeCheckResult() const {
 
 template<typename ValueType>
 QuantitativeCheckResult<ValueType>& CheckResult::asQuantitativeCheckResult() {
+    STORM_LOG_THROW(this->hasValueType<ValueType>(), storm::exceptions::InvalidOperationException, "Unexpected value type in check result.");
     return static_cast<QuantitativeCheckResult<ValueType>&>(*this);
 }
 
 template<typename ValueType>
 QuantitativeCheckResult<ValueType> const& CheckResult::asQuantitativeCheckResult() const {
+    STORM_LOG_THROW(this->hasValueType<ValueType>(), storm::exceptions::InvalidOperationException, "Unexpected value type in check result.");
     return static_cast<QuantitativeCheckResult<ValueType> const&>(*this);
 }
 
@@ -177,6 +183,10 @@ SymbolicParetoCurveCheckResult<Type, ValueType> const& CheckResult::asSymbolicPa
 }
 
 bool CheckResult::hasScheduler() const {
+    return false;
+}
+
+bool CheckResult::hasValueType(std::type_info const& t) const {
     return false;
 }
 

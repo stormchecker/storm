@@ -93,7 +93,8 @@ storm::models::sparse::StateLabeling constructStateLabeling(storm::umb::UmbModel
         stateLabelling.addLabel("init", storm::storage::BitVector(numStates, false));  // default to all states not being initial
     }
     if (umbModel.index.aps().has_value()) {
-        for (auto const& [apName, apIndex] : umbModel.index.aps().value()) {
+        auto aps = umbModel.index.aps();
+        for (auto const& [apName, apIndex] : aps.value()) {
             STORM_LOG_THROW(umbModel.aps().has_value() && umbModel.aps()->contains(apName), storm::exceptions::WrongFormatException,
                             "Atomic proposition '" << apName << "' mentioned in index but no files were found.");
             STORM_LOG_THROW(isBooleanType(apIndex.type.type), storm::exceptions::WrongFormatException,
@@ -159,7 +160,8 @@ auto constructRewardModels(storm::umb::UmbModel const& umbModel) {
     using RewardModel = storm::models::sparse::StandardRewardModel<ValueType>;
     std::unordered_map<std::string, RewardModel> rewardModels;
     if (umbModel.index.rewards().has_value()) {
-        for (auto const& [rewName, rewIndex] : umbModel.index.rewards().value()) {
+        auto rewards = umbModel.index.rewards();
+        for (auto const& [rewName, rewIndex] : rewards.value()) {
             STORM_LOG_THROW(umbModel.rewards().has_value() && umbModel.rewards()->contains(rewName), storm::exceptions::WrongFormatException,
                             "Reward " << rewName << "' mentioned in index but no files were found.");
             auto const& rew = umbModel.rewards()->at(rewName);

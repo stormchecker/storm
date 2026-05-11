@@ -41,6 +41,11 @@ class Scheduler {
     bool isChoiceSelected(BitVector const& selectedStates, uint64_t memoryState = 0) const;
 
     /*!
+     * Is the scheduler defined on the given state
+     */
+    bool isChoiceSelected(uint64_t modelState, uint64_t memoryState = 0) const;
+
+    /*!
      * Clears the choice defined by the scheduler for the given state.
      *
      * @param modelState The state of the model for which to clear the choice.
@@ -113,6 +118,13 @@ class Scheduler {
      * Retrieves the memory structure associated with this scheduler
      */
     boost::optional<storm::storage::MemoryStructure> const& getMemoryStructure() const;
+
+    /*!
+     * Retrieves a memoryless scheduler that corresponds to the given memory state.
+     *
+     * @param memoryState the memory state to fix
+     */
+    Scheduler<ValueType> getMemorylessSchedulerForMemoryState(uint64_t memoryState = 0) const;
 
     /*!
      * Returns a copy of this scheduler with the new value type

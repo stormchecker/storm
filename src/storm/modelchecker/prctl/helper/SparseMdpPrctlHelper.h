@@ -101,6 +101,12 @@ class SparseMdpPrctlHelper {
                                                                 storm::models::sparse::StandardRewardModel<IntervalRewardType> const& intervalRewardModel,
                                                                 bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative);
 
+    static std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                                        storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                        storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                        storm::storage::BitVector const& targetStates,
+                                                                        storm::storage::BitVector const& conditionStates);
+
    private:
     static MDPSparseModelCheckingHelperReturnType<SolutionType> computeReachabilityRewardsHelper(
         Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,

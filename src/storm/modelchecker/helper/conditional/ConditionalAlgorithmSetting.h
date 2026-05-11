@@ -5,7 +5,15 @@
 #include "storm/utility/macros.h"
 
 namespace storm {
-enum class ConditionalAlgorithmSetting { Default, Restart, Bisection, BisectionAdvanced, PolicyIteration };
+enum class ConditionalAlgorithmSetting {
+    Default,
+    Restart,
+    Bisection,
+    BisectionAdvanced,
+    BisectionPolicyTracking,
+    BisectionAdvancedPolicyTracking,
+    PolicyIteration
+};
 
 std::ostream& operator<<(std::ostream& stream, ConditionalAlgorithmSetting const& algorithm);
 ConditionalAlgorithmSetting conditionalAlgorithmSettingFromString(std::string const& algorithm);

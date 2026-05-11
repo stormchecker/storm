@@ -4,6 +4,7 @@
 #include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/Stopwatch.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -225,154 +226,6 @@ void SparseBeliefState<ValueType>::updateHelper(std::vector<std::map<uint64_t, V
     }
 }
 
-template<typename ValueType>
-bool operator==(ObservationDenseBeliefState<ValueType> const& lhs, ObservationDenseBeliefState<ValueType> const& rhs) {
-    if (lhs.hash() != rhs.hash()) {
-        return false;
-    }
-    if (lhs.observation != rhs.observation) {
-        return false;
-    }
-    storm::utility::ConstantsComparator<ValueType> cmp(0.00001, true);
-    auto lhsIt = lhs.belief.begin();
-    auto rhsIt = rhs.belief.begin();
-    while (lhsIt != lhs.belief.end()) {
-        if (!cmp.isEqual(*lhsIt, *rhsIt)) {
-            return false;
-        }
-        ++lhsIt;
-        ++rhsIt;
-    }
-    return true;
-    // return std::equal(lhs.belief.begin(), lhs.belief.end(), rhs.belief.begin());
-}
-
-template<typename ValueType>
-ObservationDenseBeliefState<ValueType>::ObservationDenseBeliefState(std::shared_ptr<BeliefStateManager<ValueType>> const& manager, uint64_t state)
-    : manager(manager), belief(manager->numberOfStatesPerObservation(manager->getObservation(state))) {
-    observation = manager->getObservation(state);
-    belief[manager->getObservationOffset(state)] = storm::utility::one<ValueType>();
-}
-
-template<typename ValueType>
-ObservationDenseBeliefState<ValueType>::ObservationDenseBeliefState(std::shared_ptr<BeliefStateManager<ValueType>> const& manager, uint32_t observation,
-                                                                    std::vector<ValueType> const& belief, std::size_t newHash, ValueType const& risk,
-                                                                    uint64_t prevId)
-    : manager(manager), belief(belief), observation(observation), prestoredhash(newHash), risk(risk), id(manager->getFreshId()), prevId(prevId) {
-    // Intentionally left empty.
-}
-
-template<typename ValueType>
-void ObservationDenseBeliefState<ValueType>::update(uint32_t newObservation, std::unordered_set<ObservationDenseBeliefState>& previousBeliefs) const {
-    updateHelper({{}}, {storm::utility::zero<ValueType>()}, 0, newObservation, previousBeliefs);
-}
-
-template<typename ValueType>
-void ObservationDenseBeliefState<ValueType>::updateHelper(std::vector<std::map<uint64_t, ValueType>> const& partialBeliefs, std::vector<ValueType> const& sums,
-                                                          uint64_t currentEntry, uint32_t newObservation,
-                                                          std::unordered_set<ObservationDenseBeliefState<ValueType>>& previousBeliefs) const {
-    while (currentEntry != belief.size() && storm::utility::isZero(belief[currentEntry])) {
-        currentEntry++;
-    }
-    if (currentEntry == belief.size()) {
-        for (uint64_t i = 0; i < partialBeliefs.size(); ++i) {
-            auto const& partialBelief = partialBeliefs[i];
-            auto const& sum = sums[i];
-            if (storm::utility::isZero(sum)) {
-                continue;
-            }
-            std::size_t newHash = 0;
-            ValueType risk = storm::utility::zero<ValueType>();
-            std::vector<ValueType> finalBelief(manager->numberOfStatesPerObservation(observation), storm::utility::zero<ValueType>());
-            for (auto& entry : partialBelief) {
-                assert(!storm::utility::isZero(sum));
-                finalBelief[manager->getObservationOffset(entry.first)] = (entry.second / sum);
-                // boost::hash_combine(newHash, std::hash<ValueType>()(entry.second));
-                boost::hash_combine(newHash, entry.first);
-                risk += entry.second / sum * manager->getRisk(entry.first);
-            }
-            previousBeliefs.insert(ObservationDenseBeliefState<ValueType>(manager, newObservation, finalBelief, newHash, risk, id));
-        }
-    } else {
-        uint64_t state = manager->getState(observation, currentEntry);
-        uint64_t nextEntry = currentEntry + 1;
-        std::vector<std::map<uint64_t, ValueType>> newPartialBeliefs;
-        std::vector<ValueType> newSums;
-        for (uint64_t i = 0; i < partialBeliefs.size(); ++i) {
-            for (auto row = manager->getPomdp().getNondeterministicChoiceIndices()[state];
-                 row < manager->getPomdp().getNondeterministicChoiceIndices()[state + 1]; ++row) {
-                std::map<uint64_t, ValueType> newPartialBelief = partialBeliefs[i];
-                ValueType newSum = sums[i];
-                for (auto const& transition : manager->getPomdp().getTransitionMatrix().getRow(row)) {
-                    if (newObservation != manager->getPomdp().getObservation(transition.getColumn())) {
-                        continue;
-                    }
-
-                    if (newPartialBelief.count(transition.getColumn()) == 0) {
-                        newPartialBelief[transition.getColumn()] = transition.getValue() * belief[currentEntry];
-                    } else {
-                        newPartialBelief[transition.getColumn()] += transition.getValue() * belief[currentEntry];
-                    }
-                    newSum += transition.getValue() * belief[currentEntry];
-                }
-                newPartialBeliefs.push_back(newPartialBelief);
-                newSums.push_back(newSum);
-            }
-        }
-        updateHelper(newPartialBeliefs, newSums, nextEntry, newObservation, previousBeliefs);
-    }
-}
-
-template<typename ValueType>
-std::size_t ObservationDenseBeliefState<ValueType>::hash() const noexcept {
-    return prestoredhash;
-}
-
-template<typename ValueType>
-ValueType ObservationDenseBeliefState<ValueType>::get(uint64_t state) const {
-    if (manager->getObservation(state) != state) {
-        return storm::utility::zero<ValueType>();
-    }
-    return belief[manager->getObservationOffset(state)];
-}
-
-template<typename ValueType>
-ValueType ObservationDenseBeliefState<ValueType>::getRisk() const {
-    return risk;
-}
-
-template<typename ValueType>
-uint64_t ObservationDenseBeliefState<ValueType>::getSupportSize() const {
-    return belief.size();
-}
-
-template<typename ValueType>
-void ObservationDenseBeliefState<ValueType>::setSupport(storm::storage::BitVector& support) const {
-    storm::utility::vector::setNonzeroIndices(belief, support);
-}
-
-template<typename ValueType>
-std::string ObservationDenseBeliefState<ValueType>::toString() const {
-    std::stringstream sstr;
-    sstr << "id: " << id << "; ";
-    bool first = true;
-    uint64_t i = 0;
-    for (auto const& beliefentry : belief) {
-        if (!storm::utility::isZero(beliefentry)) {
-            if (!first) {
-                sstr << ", ";
-            } else {
-                first = false;
-            }
-
-            sstr << manager->getState(observation, i) << " : " << beliefentry;
-        }
-        i++;
-    }
-    sstr << " (from " << prevId << ")";
-    return sstr.str();
-}
-
 template<typename ValueType, typename BeliefState>
 NondeterministicBeliefTracker<ValueType, BeliefState>::NondeterministicBeliefTracker(
     storm::models::sparse::Pomdp<ValueType> const& pomdp, typename NondeterministicBeliefTracker<ValueType, BeliefState>::Options options)
@@ -382,6 +235,7 @@ NondeterministicBeliefTracker<ValueType, BeliefState>::NondeterministicBeliefTra
 
 template<typename ValueType, typename BeliefState>
 bool NondeterministicBeliefTracker<ValueType, BeliefState>::reset(uint32_t observation) {
+    beliefs = std::unordered_set<BeliefState>();
     bool hit = false;
     for (auto state : pomdp.getInitialStates()) {
         if (observation == pomdp.getObservation(state)) {
@@ -489,13 +343,12 @@ bool NondeterministicBeliefTracker<ValueType, BeliefState>::hasTimedOut() const 
     return reductionTimedOut;
 }
 
+template class BeliefStateManager<double>;
 template class SparseBeliefState<double>;
 template bool operator==(SparseBeliefState<double> const&, SparseBeliefState<double> const&);
 template class NondeterministicBeliefTracker<double, SparseBeliefState<double>>;
-// template class ObservationDenseBeliefState<double>;
-// template bool operator==(ObservationDenseBeliefState<double> const&, ObservationDenseBeliefState<double> const&);
-// template class NondeterministicBeliefTracker<double, ObservationDenseBeliefState<double>>;
 
+template class BeliefStateManager<storm::RationalNumber>;
 template class SparseBeliefState<storm::RationalNumber>;
 template bool operator==(SparseBeliefState<storm::RationalNumber> const&, SparseBeliefState<storm::RationalNumber> const&);
 template class NondeterministicBeliefTracker<storm::RationalNumber, SparseBeliefState<storm::RationalNumber>>;

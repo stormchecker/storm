@@ -150,6 +150,8 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
                                                                                           storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                                           storm::OptionalRef<storm::storage::BitVector const> states,
                                                                                           storm::OptionalRef<storm::storage::BitVector const> choices) {
+    STORM_LOG_ASSERT(!states.has_value() || transitionMatrix.getRowGroupCount() == states->size(), "Unexpected size of states bitvector.");
+    STORM_LOG_ASSERT(!choices.has_value() || transitionMatrix.getRowCount() == choices->size(), "Unexpected size of choices bitvector.");
     // Get some data for convenient access.
     auto const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 

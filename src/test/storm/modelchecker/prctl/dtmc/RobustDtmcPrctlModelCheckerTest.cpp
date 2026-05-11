@@ -345,6 +345,12 @@ TEST(RobustDtmcModelCheckerTest, Tiny04MaxMinRewards) {
                                             std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
 }
 
+TEST(RobustDtmcModelCheckerTest, CrowdsQuotientIDTMC) {
+    // Ensuring equivalent behavior when checking identical model as IDTMC and IMDP (cf. CrowdsQuotientIMDP)
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/crowds-quotient-3-5.drn",
+                                            "P=? [ F \"observe0Greater1\"];P=? [ F \"observe0Greater1\"]", 0.1383409, 0.1383409);
+}
+
 TEST(RobustDtmcModelCheckerTest, TinyO2Propositional) {
     // Propositional formula using explicit format.
     std::vector<storm::storage::BitVector> expectedResults;

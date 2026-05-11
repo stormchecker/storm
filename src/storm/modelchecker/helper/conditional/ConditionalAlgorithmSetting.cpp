@@ -11,6 +11,10 @@ std::ostream& operator<<(std::ostream& stream, ConditionalAlgorithmSetting const
             return stream << "bisection";
         case ConditionalAlgorithmSetting::BisectionAdvanced:
             return stream << "bisection-advanced";
+        case ConditionalAlgorithmSetting::BisectionPolicyTracking:
+            return stream << "bisection-pt";
+        case ConditionalAlgorithmSetting::BisectionAdvancedPolicyTracking:
+            return stream << "bisection-advanced-pt";
         case ConditionalAlgorithmSetting::PolicyIteration:
             return stream << "pi";
     }
@@ -27,6 +31,10 @@ ConditionalAlgorithmSetting conditionalAlgorithmSettingFromString(std::string co
         return ConditionalAlgorithmSetting::Bisection;
     } else if (algorithm == "bisection-advanced") {
         return ConditionalAlgorithmSetting::BisectionAdvanced;
+    } else if (algorithm == "bisection-pt") {
+        return ConditionalAlgorithmSetting::BisectionPolicyTracking;
+    } else if (algorithm == "bisection-advanced-pt") {
+        return ConditionalAlgorithmSetting::BisectionAdvancedPolicyTracking;
     } else if (algorithm == "pi") {
         return ConditionalAlgorithmSetting::PolicyIteration;
     }

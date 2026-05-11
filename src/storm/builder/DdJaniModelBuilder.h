@@ -5,6 +5,7 @@
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/jani/Property.h"
+#include "storm/utility/OptionalRef.h"
 
 #include "storm/builder/TerminalStatesGetter.h"
 #include "storm/logic/Formula.h"
@@ -36,7 +37,7 @@ class DdJaniModelBuilder {
      * This method only over-approximates the set of models that can be handled, i.e., if this
      * returns true, the model might still be unsupported.
      */
-    static bool canHandle(storm::jani::Model const& model, boost::optional<std::vector<storm::jani::Property>> const& properties = boost::none);
+    static bool canHandle(storm::jani::Model const& model, storm::OptionalRef<std::vector<storm::jani::Property> const> properties = storm::NullRef);
 
     struct Options {
         /*!

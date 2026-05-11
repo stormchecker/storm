@@ -1,0 +1,132 @@
+// Exported by storm
+// Original model type: DTMC
+@type: DTMC
+@value_type: double-interval
+@parameters
+
+@reward_models
+
+@nr_states
+33
+@nr_choices
+33
+@model
+state 0
+	action 0
+		32 : [1, 1]
+state 1
+	action 0
+		31 : [1, 1]
+state 2
+	action 0
+		30 : [1, 1]
+state 3
+	action 0
+		29 : [0.2, 0.2]
+		30 : [0.8, 0.8]
+state 4
+	action 0
+		18 : [0.2, 0.2]
+		31 : [0.8, 0.8]
+state 5
+	action 0
+		29 : [1, 1]
+state 6
+	action 0
+		28 : [1, 1]
+state 7
+	action 0
+		9 : [0.8, 0.8]
+		29 : [0.2, 0.2]
+state 8
+	action 0
+		18 : [0.167, 0.167]
+		26 : [0.833, 0.833]
+state 9
+	action 0
+		5 : [0.167, 0.167]
+		27 : [0.833, 0.833]
+state 10
+	action 0
+		25 : [1, 1]
+state 11 init
+	action 0
+		24 : [1, 1]
+state 12
+	action 0
+		22 : [0.2, 0.2]
+		24 : [0.8, 0.8]
+state 13
+	action 0
+		18 : [0.2, 0.2]
+		25 : [0.8, 0.8]
+state 14
+	action 0
+		22 : [1, 1]
+state 15
+	action 0
+		17 : [0.8, 0.8]
+		22 : [0.2, 0.2]
+state 16
+	action 0
+		18 : [0.167, 0.167]
+		20 : [0.833, 0.833]
+state 17
+	action 0
+		14 : [0.167, 0.167]
+		21 : [0.833, 0.833]
+state 18
+	action 0
+		18 : [1, 1]
+state 19
+	action 0
+		16 : [0.8, 0.8]
+		18 : [0.2, 0.2]
+state 20
+	action 0
+		13 : [0.2, 0.2]
+		19 : [0.8, 0.8]
+state 21
+	action 0
+		12 : [0.2, 0.2]
+		15 : [0.8, 0.8]
+state 22
+	action 0
+		10 : [1, 1]
+state 23
+	action 0
+		8 : [0.8, 0.8]
+		18 : [0.2, 0.2]
+state 24
+	action 0
+		6 : [0.167, 0.167]
+		21 : [0.833, 0.833]
+state 25
+	action 0
+		5 : [0.167, 0.167]
+		20 : [0.833, 0.833]
+state 26
+	action 0
+		4 : [0.2, 0.2]
+		23 : [0.8, 0.8]
+state 27
+	action 0
+		3 : [0.2, 0.2]
+		7 : [0.8, 0.8]
+state 28
+	action 0
+		2 : [1, 1]
+state 29
+	action 0
+		1 : [1, 1]
+state 30
+	action 0
+		0 : [0.167, 0.167]
+		27 : [0.833, 0.833]
+state 31
+	action 0
+		0 : [0.167, 0.167]
+		26 : [0.833, 0.833]
+state 32 observe0Greater1
+	action 0
+		32 : [1, 1]

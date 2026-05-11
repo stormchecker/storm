@@ -238,10 +238,11 @@ std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, Solu
                 // the accumulated probability of going from state i to some state that has probability 1.
                 storm::utility::vector::setAllValues(b, transitionMatrix.getRowFilter(statesWithProbability1));
 
-                std::vector<SolutionType> x = computeRobustValuesForMaybeStates(env, std::move(goal), std::move(submatrix), b, false);
+                std::vector<SolutionType> resultForMaybeStates = computeRobustValuesForMaybeStates(env, std::move(goal), std::move(submatrix), b, false);
 
-                // Set values of resulting vector according to result.
-                storm::utility::vector::setVectorValues<SolutionType>(result, maybeStates, x);
+                // For interval models, the result for maybe states indeed also holds values for all qualitative states.
+                STORM_LOG_ASSERT(resultForMaybeStates.size() == transitionMatrix.getColumnCount(), "Dimensions do not match");
+                result = std::move(resultForMaybeStates);
             } else {
                 // Check whether we need to convert the input to equation system format.
                 storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;

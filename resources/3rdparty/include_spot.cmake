@@ -57,7 +57,7 @@ if(NOT STORM_DISABLE_SPOT)
 
         # download and install shipped Spot as shared libraries.
         # set Spot version
-        set(SPOT_SHIPPED_VERSION 2.14.3)
+        set(SPOT_SHIPPED_VERSION 2.15.1)
         set(STORM_SPOT_FLAGS "--disable-python;--enable-shared;--disable-static")
         if (NOT STORM_DEBUG_SPOT)
                 set(STORM_SPOT_FLAGS "${STORM_SPOT_FLAGS};--disable-devel;--disable-debug;--enable-optimizations")
