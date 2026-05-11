@@ -32,8 +32,7 @@ class SspParetoValueIterationOperator {
         : preprocessingResult(preprocessingResult),
           choiceCostOffsets(createChoiceCostOffsets(preprocessingResult)),
           reachableTargetStates(collectReachableStates(preprocessingResult, true)),
-          reachableNonTargetStates(collectReachableStates(preprocessingResult, false)) {
-    }
+          reachableNonTargetStates(collectReachableStates(preprocessingResult, false)) {}
 
     void apply(uint64_t costBound, FrontierWindow const& frontierWindow, FrontierLayer& outputLayer) const {
         prepareOutputLayer(outputLayer);

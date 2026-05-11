@@ -12,9 +12,13 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/cvar/CvarMethod.h"
+#include "storm/modelchecker/cvar/helper/SspParetoFront.h"
+#include "storm/modelchecker/cvar/helper/SspParetoValueIterationOperator.h"
+#include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessingResult.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/storage/SparseMatrix.h"
 
 #include <set>
 
@@ -91,6 +95,82 @@ std::vector<uint64_t> getChoiceSuccessors(std::shared_ptr<storm::models::sparse:
         result.push_back(entry.getColumn());
     }
     return result;
+}
+
+void expectParetoFrontPoints(storm::modelchecker::cvar::SspParetoFront<double> const& front, std::vector<std::pair<double, double>> const& expectedPoints) {
+    auto const& actualPoints = front.getPoints();
+    ASSERT_EQ(expectedPoints.size(), actualPoints.size());
+    for (std::size_t index = 0; index < expectedPoints.size(); ++index) {
+        EXPECT_NEAR(expectedPoints[index].first, actualPoints[index].probability, 1e-10);
+        EXPECT_NEAR(expectedPoints[index].second, actualPoints[index].expectedCost, 1e-10);
+    }
+}
+
+storm::modelchecker::cvar::preprocessing::SspCvarPreprocessingResult<double> buildTinySspPreprocessingResult() {
+    storm::storage::SparseMatrixBuilder<double> builder(4, 3, 4, true, true, 3);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 1, 1.0);
+    builder.addNextValue(1, 1, 1.0);
+    builder.newRowGroup(2);
+    builder.addNextValue(2, 2, 1.0);
+    builder.newRowGroup(3);
+    builder.addNextValue(3, 2, 1.0);
+
+    storm::modelchecker::cvar::preprocessing::SspCvarPreprocessingResult<double> result;
+    result.rewardModelName = "cost";
+    result.initialState = 0;
+    result.targetStates = storm::storage::BitVector(3, false);
+    result.targetStates.set(2, true);
+    result.reachableStates = storm::storage::BitVector(3, true);
+    result.liftedStateRewardsToChoiceCosts = true;
+    result.normalizedTargetStatesToAbsorbing = true;
+    result.maximalChoiceCost = 2;
+    result.choiceCosts = {1.0, 2.0, 1.0, 0.0};
+    result.expectedCostsToGoal = {0.0, 0.0, 0.0};
+    result.transitionMatrix = builder.build();
+    return result;
+}
+
+TEST(CvarSspParetoFrontTest, CanonicalizesDuplicateDominatedAndConvexRedundantPoints) {
+    using ParetoFront = storm::modelchecker::cvar::SspParetoFront<double>;
+
+    ParetoFront front({{0.4, 5.0}, {0.2, 4.0}, {0.2, 3.0}, {0.6, 6.0}, {0.8, 9.0}, {0.5, 7.0}});
+
+    expectParetoFrontPoints(front, {{0.2, 3.0}, {0.6, 6.0}, {0.8, 9.0}});
+}
+
+TEST(CvarSspParetoFrontTest, ScaledMinkowskiSumMergesConvexChains) {
+    using ParetoFront = storm::modelchecker::cvar::SspParetoFront<double>;
+
+    ParetoFront left({{0.0, 0.0}, {0.25, 1.0}, {0.5, 3.0}});
+    ParetoFront right({{0.0, 0.0}, {0.25, 0.5}, {0.5, 2.0}});
+
+    auto result = left.minkowskiSumScaled(right, 0.5);
+
+    expectParetoFrontPoints(result, {{0.0, 0.0}, {0.125, 0.25}, {0.375, 1.25}, {0.5, 2.0}, {0.75, 4.0}});
+}
+
+TEST(CvarSspParetoValueIterationOperatorTest, AppliesActionCostsAndUnionsActionFronts) {
+    using ParetoFront = storm::modelchecker::cvar::SspParetoFront<double>;
+    using ParetoViOperator = storm::modelchecker::cvar::SspParetoValueIterationOperator<double>;
+    using FrontierLayer = std::vector<ParetoFront>;
+    using FrontierWindow = std::vector<FrontierLayer>;
+
+    auto preprocessingResult = buildTinySspPreprocessingResult();
+    ParetoViOperator paretoViOperator(preprocessingResult);
+    FrontierWindow frontierWindow(3, FrontierLayer(3));
+    for (auto& layer : frontierWindow) {
+        layer[2] = ParetoViOperator::createTargetFrontier();
+    }
+    frontierWindow[0][1] = ParetoFront::singleton(0.8, 4.0);
+    frontierWindow[1][1] = ParetoFront::singleton(0.5, 1.0);
+
+    FrontierLayer outputLayer;
+    paretoViOperator.apply(2, frontierWindow, outputLayer);
+
+    expectParetoFrontPoints(outputLayer[0], {{0.5, 1.0}, {0.8, 4.0}});
+    expectParetoFrontPoints(outputLayer[1], {{1.0, 0.0}});
+    expectParetoFrontPoints(outputLayer[2], {{1.0, 0.0}});
 }
 
 TEST(CvarQueryTest, SimpleMdp) {
