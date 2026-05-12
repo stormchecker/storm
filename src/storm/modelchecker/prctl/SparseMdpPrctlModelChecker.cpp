@@ -7,7 +7,7 @@
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
-#include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
+#include "storm/modelchecker/helper/finitehorizon/SparseStepBoundedHorizonHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
@@ -143,11 +143,11 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
         std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
         ExplicitQualitativeCheckResult<SolutionType> const& leftResult = leftResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
         ExplicitQualitativeCheckResult<SolutionType> const& rightResult = rightResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
-        storm::modelchecker::helper::SparseNondeterministicStepBoundedHorizonHelper<ValueType, SolutionType> helper;
-        std::vector<SolutionType> numericResult =
-            helper.compute(env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
-                           this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(),
-                           pathFormula.getNonStrictLowerBound<uint64_t>(), pathFormula.getNonStrictUpperBound<uint64_t>(), checkTask.getHint());
+        storm::modelchecker::helper::SparseStepBoundedHorizonHelper<ValueType, SolutionType> helper;
+        std::vector<SolutionType> numericResult = helper.computeStepBoundedUntilProbabilities(
+            env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
+            this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(),
+            pathFormula.getNonStrictLowerBound<uint64_t>(), pathFormula.getNonStrictUpperBound<uint64_t>(), checkTask.getHint());
         return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
     }
 }
