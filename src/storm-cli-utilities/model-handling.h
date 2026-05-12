@@ -363,15 +363,15 @@ auto castAndApply(std::shared_ptr<storm::models::ModelBase> const& model, auto c
     // branch on type of value representation
     if (model->supportsParameters()) {
         return castAndApplyVT.template operator()<storm::RationalFunction>();
-    } else if (model->isExact()) {
-        if (model->supportsUncertainty()) {
+    } else if (model->supportsUncertainty()) {
+        if (model->isExact()) {
             return castAndApplyVT.template operator()<storm::RationalInterval>();
         } else {
-            return castAndApplyVT.template operator()<storm::RationalNumber>();
+            return castAndApplyVT.template operator()<storm::Interval>();
         }
     } else {
-        if (model->supportsUncertainty()) {
-            return castAndApplyVT.template operator()<storm::Interval>();
+        if (model->isExact()) {
+            return castAndApplyVT.template operator()<storm::RationalNumber>();
         } else {
             return castAndApplyVT.template operator()<double>();
         }
@@ -569,16 +569,16 @@ inline storm::builder::BuilderOptions createBuildOptionsSparseFromSettings(Symbo
 
 template<typename ValueType>
 std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::builder::BuilderOptions const& options) {
-    // Adapt the ValueType if it does not support intervals and the input is an interval model
+    // If the input is an interval model, we might need to change the ValueType to an interval type.
     if (!storm::IsIntervalType<ValueType> && input.model.is_initialized() && input.model->isPrismProgram() &&
         input.model->asPrismProgram().hasIntervalUpdates()) {
-        if (std::is_same_v<ValueType, storm::IntervalBaseType<storm::Interval>>) {
-            return storm::api::buildSparseModel<storm::Interval>(input.model.get(), options);
-        } else {
-            STORM_LOG_THROW((std::is_same_v<ValueType, storm::IntervalBaseType<storm::RationalInterval>>), storm::exceptions::NotSupportedException,
-                            "Can not build interval model for the provided value type.");
-            return storm::api::buildSparseModel<storm::RationalInterval>(input.model.get(), options);
-        }
+        // Get the right interval type for the given ValueType
+        bool constexpr IsDoubleInterval = std::is_same_v<ValueType, storm::IntervalBaseType<storm::Interval>>;
+        bool constexpr IsRationalInterval = std::is_same_v<ValueType, storm::IntervalBaseType<storm::RationalInterval>>;
+        STORM_LOG_THROW(IsDoubleInterval || IsRationalInterval, storm::exceptions::NotSupportedException,
+                        "Can not build interval model for the provided value type.");
+        using IntervalType = std::conditional_t<IsDoubleInterval, storm::Interval, storm::RationalInterval>;
+        return storm::api::buildSparseModel<IntervalType>(input.model.get(), options);
     } else {
         return storm::api::buildSparseModel<ValueType>(input.model.get(), options);
     }
