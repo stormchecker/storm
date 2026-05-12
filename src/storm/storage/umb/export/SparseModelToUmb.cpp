@@ -260,9 +260,11 @@ storm::umb::Type getExportType(ExportOptions const& options) {
                 return ExportType::Double;
             } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
                 return ExportType::Rational;
-            } else {
-                static_assert(std::is_same_v<ValueType, storm::Interval>, "Unhandled value type");
+            } else if constexpr (std::is_same_v<ValueType, storm::Interval>) {
                 return ExportType::DoubleInterval;
+            } else {
+                static_assert(std::is_same_v<ValueType, storm::RationalInterval>, "Unhandled value type");
+                return ExportType::RationalInterval;
             }
         case OptionType::Double:
             return ExportType::Double;
@@ -270,6 +272,8 @@ storm::umb::Type getExportType(ExportOptions const& options) {
             return ExportType::Rational;
         case OptionType::DoubleInterval:
             return ExportType::DoubleInterval;
+        case OptionType::RationalInterval:
+            return ExportType::RationalInterval;
     }
     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected value type.");
 }
@@ -480,6 +484,9 @@ storm::umb::UmbModel sparseModelToUmb(storm::models::sparse::Model<ValueType> co
         case DoubleInterval:
             detail::sparseModelToUmb<ValueType, storm::Interval>(model, umbModel, options);
             break;
+        case RationalInterval:
+            detail::sparseModelToUmb<ValueType, storm::RationalInterval>(model, umbModel, options);
+            break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unexpected value type.");
     }
@@ -491,4 +498,6 @@ template storm::umb::UmbModel sparseModelToUmb<double>(storm::models::sparse::Mo
 template storm::umb::UmbModel sparseModelToUmb<storm::RationalNumber>(storm::models::sparse::Model<storm::RationalNumber> const& model,
                                                                       ExportOptions const& options);
 template storm::umb::UmbModel sparseModelToUmb<storm::Interval>(storm::models::sparse::Model<storm::Interval> const& model, ExportOptions const& options);
+template storm::umb::UmbModel sparseModelToUmb<storm::RationalInterval>(storm::models::sparse::Model<storm::RationalInterval> const& model,
+                                                                        ExportOptions const& options);
 }  // namespace storm::umb
