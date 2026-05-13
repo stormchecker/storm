@@ -11,7 +11,7 @@ Version 1.13.x
 ### Version 1.13.0 (2026/05)
 - Moved repository to stormchecker/storm.
 - Import/export of explicit models in (binary) [UMB](https://pmc-tools.github.io/umb/spec) format.
-- Support for exact intervals and bounded model checking of intervals.
+- Support for exact intervals, parsing exact intervals from Prism and bounded model checking of interval DTMC and interval MDP.
 - Support for monitor verification.
 - Extended support for conditional model checking.
 - Added scheduler to `ExplicitQualitativeCheckResult`.
