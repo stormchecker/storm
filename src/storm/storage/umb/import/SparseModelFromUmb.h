@@ -21,7 +21,7 @@ storm::models::ModelType deriveModelType(storm::umb::ModelIndex const& index);
 
 /*!
  * Returns true iff the given umb model with the given options should have ValueType as its ValueType.
- * Currently, this can be either double, storm::RationalNumber, or storm::Interval.
+ * Currently, this can be either double, storm::RationalNumber, storm::Interval, or storm::RationalInterval.
  * @note this does not check whether the model can actually be represented with the derived ValueType (e.g., interval to double is not possible).
  */
 template<typename ValueType>

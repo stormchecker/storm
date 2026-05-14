@@ -1085,6 +1085,40 @@ void filterVectorInPlace(std::vector<Type>& v, storm::storage::BitVector const& 
     STORM_LOG_ASSERT(v.size() == filter.getNumberOfSetBits(), "Result does not match.");
 }
 
+/*!
+ * Gets as input a vector with size n and a BitVector with size m>=n and exactly n set bits.
+ * The function modifies the input vector in place such that the resulting vector has size m and contains the original values at the positions where the
+ * BitVector has a set bit. The remaining positions are filled with the default value.
+ * @tparam T
+ * @param vector input and output vector
+ * @param positions the positions at which the output vector will have the values from the input vector
+ * @param defaultValue the value to set for all other values
+ *
+ * @note This is the inverse operation to filterVectorInPlace: blowUpVectorInPlace(v, bv); filterVectorInPlace(v, bv); results in the original vector v
+ *
+ */
+template<class T>
+void blowUpVectorInPlace(std::vector<T>& vector, storm::storage::BitVector const& positions, T const& defaultValue = storm::utility::zero<T>()) {
+    STORM_LOG_ASSERT(vector.size() == positions.getNumberOfSetBits(), "The number of selected positions (" << positions.getNumberOfSetBits()
+                                                                                                           << ") must match the size of the input vector ("
+                                                                                                           << vector.size() << ").");
+    auto readPos = vector.size();
+    vector.resize(positions.size(), defaultValue);
+    auto writePos = positions.getStartOfZeroSequenceBefore(positions.size());
+    while (writePos > 0) {
+        --writePos;
+        if (positions.get(writePos)) {
+            --readPos;
+            if (readPos != writePos) {
+                STORM_LOG_ASSERT(readPos < writePos, "We shall not write to positions that we later still have to read from.");
+                vector[writePos] = vector[readPos];
+            }
+        } else {
+            vector[writePos] = defaultValue;
+        }
+    }
+}
+
 template<typename T>
 bool hasNegativeEntry(std::vector<T> const& v) {
     return std::any_of(v.begin(), v.end(), [](T value) { return value < storm::utility::zero<T>(); });

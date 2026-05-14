@@ -1102,4 +1102,47 @@ TYPED_TEST(MdpPrctlModelCheckerTest, OneStateDiscounting) {
         EXPECT_FALSE(checker->canHandle(tasks[2]));
     }
 }
+
+TYPED_TEST(MdpPrctlModelCheckerTest, StepBoundedReachability) {
+    std::string formulasString = "Pmax=? [ F<=0 x=5];";  // 0
+    formulasString += "Pmax=? [ F<=1 x=5];";             // 1/2
+    formulasString += "Pmax=? [ F<=2 x=5];";             // 3/4
+    formulasString += "Pmax=? [ F[2,2] x=5];";           // 1/4
+    formulasString += "Pmax=? [ F[2,3] x=5];";           // 3/8
+    formulasString += "Pmin=? [ F[2,3] x=5];";           // 0
+    formulasString += "Pmax=? [ x<2 U[2,2] x=5];";       // 1/4
+    formulasString += "Pmax=? [ x<2 U[2,3] x=5];";       // 1/4
+    formulasString += "Pmax=? [ x<3 U[2,2] x=5];";       // 1/4
+    formulasString += "Pmax=? [ x<3 U<=4 x=5];";         // 7/8
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/chain.nm", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    EXPECT_EQ(7ul, model->getNumberOfStates());
+    EXPECT_EQ(16ul, model->getNumberOfTransitions());
+    ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+    auto checker = this->createModelChecker(model);
+
+    if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse) {
+        std::unique_ptr<storm::modelchecker::CheckResult> result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[1]);
+        EXPECT_NEAR(this->parseNumber("1/2"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[2]);
+        EXPECT_NEAR(this->parseNumber("3/4"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[3]);
+        EXPECT_NEAR(this->parseNumber("1/4"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[4]);
+        EXPECT_NEAR(this->parseNumber("3/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[5]);
+        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[6]);
+        EXPECT_NEAR(this->parseNumber("1/4"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[7]);
+        EXPECT_NEAR(this->parseNumber("1/4"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[8]);
+        EXPECT_NEAR(this->parseNumber("1/4"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[9]);
+        EXPECT_NEAR(this->parseNumber("7/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    }
+}
 }  // namespace

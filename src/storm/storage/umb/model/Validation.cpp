@@ -97,8 +97,9 @@ bool vectorMatchesType(storm::umb::GenericVector const& vector, storm::umb::Size
         case DoubleInterval:
             return vector.isType<double>() || vector.isType<storm::Interval>();
         case Rational:
-        case RationalInterval:
             return vector.isType<storm::RationalNumber>() || vector.isType<uint64_t>();  // rationals might be encoded as uint64_t
+        case RationalInterval:
+            return vector.isType<storm::RationalInterval>() || vector.isType<uint64_t>();  // rationals might be encoded as uint64_t
         case String:
             return vector.isType<uint64_t>();  // strings are encoded by their indices
     }
@@ -245,7 +246,7 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
                     return actual == expected * type.bitSize() / 64;
                 case RationalInterval:
                     // might be encoded as uint64
-                    return actual == 2 * (expected * type.bitSize() / 64);
+                    return actual == (expected * type.bitSize() / 64);
                 default:
                     // for all other types, the size must match exactly which we have checked above already
                     return false;

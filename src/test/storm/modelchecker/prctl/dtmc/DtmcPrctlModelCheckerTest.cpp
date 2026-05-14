@@ -4,6 +4,7 @@
 #include "storm-conv/api/storm-conv.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
+#include "storm-parsers/parser/DirectEncodingParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/builder.h"
@@ -747,6 +748,41 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, SynchronousLeader) {
         result = checker->check(this->env(), tasks[2]);
         EXPECT_NEAR(this->parseNumber("25/24"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
     });
+}
+
+TEST(DtmcPrctlModelCheckerTest, BoundedReachability) {
+    std::string formulasString = "P=? [F<=1 \"a\"]";
+    formulasString += "; P=? [F[1,1] \"a\"]";
+    formulasString += "; P=? [F[0,2] \"a\"]";
+
+    std::shared_ptr<storm::models::sparse::Model<double>> modelPtr =
+        storm::parser::parseDirectEncodingModel<double>(STORM_TEST_RESOURCES_DIR "/dtmc/tiny-01.drn");
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulasString));
+    storm::Environment env;
+
+    std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = modelPtr->as<storm::models::sparse::Dtmc<double>>();
+    ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
+    auto task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
+
+    auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>(*dtmc);
+    auto result = checker.check(env, task);
+    auto filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(dtmc->getInitialStates());
+    result->filter(*filter);
+    EXPECT_NEAR(0.2, result->asQuantitativeCheckResult<double>().getMin(), 0.0001);
+
+    task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[1]);
+
+    result = checker.check(env, task);
+    filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(dtmc->getInitialStates());
+    result->filter(*filter);
+    EXPECT_NEAR(0.2, result->asQuantitativeCheckResult<double>().getMin(), 0.0001);
+
+    task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[2]);
+
+    result = checker.check(env, task);
+    filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(dtmc->getInitialStates());
+    result->filter(*filter);
+    EXPECT_NEAR(0.366, result->asQuantitativeCheckResult<double>().getMin(), 0.0001);
 }
 
 TEST(DtmcPrctlModelCheckerTest, AllUntilProbabilities) {

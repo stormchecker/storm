@@ -50,3 +50,33 @@ TEST(VectorTest, grouped_inverse_permute) {
     std::vector<double> expected = {4.0, 5.0, 1.0, 2.0, 3.0};
     EXPECT_EQ(aperm, expected);
 }
+
+TEST(VectorTest, filterBlowUp) {
+    std::vector<uint64_t> v1 = {0, 1, 2, 3};
+    storm::storage::BitVector bv1(8, {4, 5, 6, 7});
+    storm::utility::vector::blowUpVectorInPlace<uint64_t>(v1, bv1, 9);
+    EXPECT_EQ(v1, (std::vector<uint64_t>{9, 9, 9, 9, 0, 1, 2, 3}));
+    storm::utility::vector::filterVectorInPlace(v1, bv1);
+    EXPECT_EQ(v1, (std::vector<uint64_t>{0, 1, 2, 3}));
+
+    std::vector<uint64_t> v2 = {0, 1, 2, 3};
+    storm::storage::BitVector bv2(8, {0, 1, 5, 6});
+    storm::utility::vector::blowUpVectorInPlace<uint64_t>(v2, bv2, 9);
+    EXPECT_EQ(v2, (std::vector<uint64_t>{0, 1, 9, 9, 9, 2, 3, 9}));
+    storm::utility::vector::filterVectorInPlace(v2, bv2);
+    EXPECT_EQ(v2, (std::vector<uint64_t>{0, 1, 2, 3}));
+
+    std::vector<uint64_t> v3 = {0, 1, 2, 3};
+    storm::storage::BitVector bv3(4, true);
+    storm::utility::vector::blowUpVectorInPlace<uint64_t>(v3, bv3, 9);
+    EXPECT_EQ(v3, (std::vector<uint64_t>{0, 1, 2, 3}));
+    storm::utility::vector::filterVectorInPlace(v3, bv3);
+    EXPECT_EQ(v3, (std::vector<uint64_t>{0, 1, 2, 3}));
+
+    std::vector<uint64_t> v4 = {};
+    storm::storage::BitVector bv4(4, false);
+    storm::utility::vector::blowUpVectorInPlace<uint64_t>(v4, bv4, 9);
+    EXPECT_EQ(v4, (std::vector<uint64_t>{9, 9, 9, 9}));
+    storm::utility::vector::filterVectorInPlace(v4, bv4);
+    EXPECT_EQ(v4, (std::vector<uint64_t>{}));
+}

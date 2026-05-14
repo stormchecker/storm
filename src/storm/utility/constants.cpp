@@ -1112,6 +1112,18 @@ double convertNumber(storm::RationalInterval const& number) {
 }
 
 template<>
+storm::Interval convertNumber(storm::RationalInterval const& number) {
+    using BT = storm::IntervalBaseType<storm::Interval>;
+    return storm::Interval(convertNumber<BT>(number.lower()), convertNumber<BT>(number.upper()));
+}
+
+template<>
+storm::RationalInterval convertNumber(storm::Interval const& number) {
+    using BT = storm::IntervalBaseType<storm::RationalInterval>;
+    return storm::RationalInterval(convertNumber<BT>(number.lower()), convertNumber<BT>(number.upper()));
+}
+
+template<>
 storm::Interval abs(storm::Interval const& interval) {
     return interval.abs();
 }
@@ -1305,7 +1317,7 @@ template Interval convertNumber(Interval const&);
 
 template std::string to_string(storm::Interval const& value);
 
-// Instantiations for intervals.
+// Instantiations for rational intervals.
 template RationalInterval one();
 template RationalInterval zero();
 template bool isOne(RationalInterval const& value);
@@ -1315,6 +1327,7 @@ template bool isAlmostZero(RationalInterval const& value);
 template bool isNonNegative(RationalInterval const& value);
 template bool isPositive(RationalInterval const& value);
 template bool isBetween(RationalInterval const&, RationalInterval const&, RationalInterval const& value, bool);
+template RationalInterval convertNumber(RationalInterval const&);
 
 template std::string to_string(storm::RationalInterval const& value);
 }  // namespace utility
