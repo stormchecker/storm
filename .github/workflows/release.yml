@@ -70,7 +70,7 @@ jobs:
       - name: Set Storm dev version
         run: |
           # Add .1 suffix  to Storm version
-          sed -i -E 's/(\s+)VERSION ([0-9]+\.[0-9]+\.[0-9]+)\)/\1VERSION \2.1\)/' CMakeLists.txt
+          sed -i -E 's/(\s+)VERSION ([0-9]+\.[0-9]+\.[0-9]+)/\1VERSION \2.1/' CMakeLists.txt
       - name: Commit update
         run: |
           git diff
