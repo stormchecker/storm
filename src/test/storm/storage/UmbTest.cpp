@@ -133,6 +133,7 @@ TEST_F(UmbRoundTripTest, brp_dtmc) {
     run<double>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
     run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
     run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
+    run<storm::RationalInterval>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
     options.compression = storm::io::CompressionMode::Gzip;
     run<double>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
     options.compression = storm::io::CompressionMode::Xz;
@@ -146,6 +147,7 @@ TEST_F(UmbRoundTripTest, embedded_ctmc) {
     run<double>(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "", options);
     run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
     run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
+    run<storm::RationalInterval>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
 }
 
 TEST_F(UmbRoundTripTest, firewire_mdp) {
@@ -153,6 +155,7 @@ TEST_F(UmbRoundTripTest, firewire_mdp) {
     run<double>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
     run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
     run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
+    run<storm::RationalInterval>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
     options.allowChoiceOriginsAsActions = true;
     options.allowChoiceLabelingAsActions = false;
     run<double>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
@@ -163,11 +166,13 @@ TEST_F(UmbRoundTripTest, polling_ma) {
     run<double>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
     run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
     run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
+    run<storm::RationalInterval>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
 }
 
 TEST_F(UmbRoundTripTest, robot_imdp) {
     storm::umb::ExportOptions options;
     run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/imdp/robot.prism", "delta=0.5", options);
+    run<storm::RationalInterval>(STORM_TEST_RESOURCES_DIR "/imdp/robot.prism", "delta=0.5", options);
 }
 
 TEST_F(UmbRoundTripTest, maze_pomdp) {
@@ -175,6 +180,7 @@ TEST_F(UmbRoundTripTest, maze_pomdp) {
     run<double>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.5", options);
     run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.5", options);
     run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.5", options);
+    run<storm::RationalInterval>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.5", options);
 }
 
 }  // namespace

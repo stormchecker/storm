@@ -1,0 +1,2042 @@
+// Exported by storm
+// Original model type: DTMC
+@type: DTMC
+@value_type: rational-interval
+@parameters
+
+@reward_models
+
+@nr_states
+613
+@nr_choices
+613
+@model
+state 0 init
+	action 0
+		1 : [1, 1]
+state 1
+	action 0
+		2 : [97/100, 99/100]
+		3 : [1/100, 3/100]
+state 2
+	action 0
+		4 : [1, 1]
+state 3
+	action 0
+		5 : [1, 1]
+state 4
+	action 0
+		6 : [1, 1]
+state 5
+	action 0
+		7 : [97/100, 99/100]
+		8 : [1/100, 3/100]
+state 6
+	action 0
+		9 : [1, 1]
+state 7
+	action 0
+		10 : [1, 1]
+state 8
+	action 0
+		11 : [1, 1]
+state 9
+	action 0
+		12 : [98/100, 1]
+		13 : [1/10000, 2/100]
+state 10
+	action 0
+		14 : [1, 1]
+state 11
+	action 0
+		15 : [97/100, 99/100]
+		16 : [1/100, 3/100]
+state 12
+	action 0
+		17 : [1, 1]
+state 13
+	action 0
+		18 : [1, 1]
+state 14
+	action 0
+		19 : [1, 1]
+state 15
+	action 0
+		20 : [1, 1]
+state 16
+	action 0
+		21 : [1, 1]
+state 17
+	action 0
+		22 : [1, 1]
+state 18
+	action 0
+		23 : [97/100, 99/100]
+		24 : [1/100, 3/100]
+state 19
+	action 0
+		25 : [98/100, 1]
+		26 : [1/10000, 2/100]
+state 20
+	action 0
+		27 : [1, 1]
+state 21
+	action 0
+		28 : [1, 1]
+state 22
+	action 0
+		29 : [97/100, 99/100]
+		30 : [1/100, 3/100]
+state 23
+	action 0
+		31 : [1, 1]
+state 24
+	action 0
+		32 : [1, 1]
+state 25
+	action 0
+		33 : [1, 1]
+state 26
+	action 0
+		32 : [1, 1]
+state 27
+	action 0
+		34 : [1, 1]
+state 28 target
+	action 0
+		28 : [1, 1]
+state 29
+	action 0
+		35 : [1, 1]
+state 30
+	action 0
+		36 : [1, 1]
+state 31
+	action 0
+		25 : [98/100, 1]
+		26 : [1/10000, 2/100]
+state 32
+	action 0
+		37 : [97/100, 99/100]
+		38 : [1/100, 3/100]
+state 33
+	action 0
+		39 : [1, 1]
+state 34
+	action 0
+		40 : [98/100, 1]
+		41 : [1/10000, 2/100]
+state 35
+	action 0
+		42 : [1, 1]
+state 36
+	action 0
+		43 : [97/100, 99/100]
+		44 : [1/100, 3/100]
+state 37
+	action 0
+		45 : [1, 1]
+state 38
+	action 0
+		46 : [1, 1]
+state 39
+	action 0
+		29 : [97/100, 99/100]
+		30 : [1/100, 3/100]
+state 40
+	action 0
+		47 : [1, 1]
+state 41
+	action 0
+		46 : [1, 1]
+state 42
+	action 0
+		48 : [98/100, 1]
+		49 : [1/10000, 2/100]
+state 43
+	action 0
+		50 : [1, 1]
+state 44
+	action 0
+		51 : [1, 1]
+state 45
+	action 0
+		40 : [98/100, 1]
+		41 : [1/10000, 2/100]
+state 46
+	action 0
+		52 : [1, 1]
+state 47
+	action 0
+		53 : [1, 1]
+state 48
+	action 0
+		54 : [1, 1]
+state 49
+	action 0
+		55 : [1, 1]
+state 50
+	action 0
+		56 : [1, 1]
+state 51
+	action 0
+		57 : [97/100, 99/100]
+		58 : [1/100, 3/100]
+state 52 target
+	action 0
+		52 : [1, 1]
+state 53
+	action 0
+		29 : [97/100, 99/100]
+		30 : [1/100, 3/100]
+state 54
+	action 0
+		59 : [1, 1]
+state 55
+	action 0
+		60 : [97/100, 99/100]
+		61 : [1/100, 3/100]
+state 56
+	action 0
+		62 : [98/100, 1]
+		63 : [1/10000, 2/100]
+state 57
+	action 0
+		64 : [1, 1]
+state 58
+	action 0
+		65 : [1, 1]
+state 59
+	action 0
+		66 : [97/100, 99/100]
+		67 : [1/100, 3/100]
+state 60
+	action 0
+		68 : [1, 1]
+state 61
+	action 0
+		69 : [1, 1]
+state 62
+	action 0
+		70 : [1, 1]
+state 63
+	action 0
+		69 : [1, 1]
+state 64
+	action 0
+		71 : [1, 1]
+state 65
+	action 0
+		72 : [1, 1]
+state 66
+	action 0
+		73 : [1, 1]
+state 67
+	action 0
+		74 : [1, 1]
+state 68
+	action 0
+		62 : [98/100, 1]
+		63 : [1/10000, 2/100]
+state 69
+	action 0
+		75 : [97/100, 99/100]
+		76 : [1/100, 3/100]
+state 70
+	action 0
+		77 : [1, 1]
+state 71
+	action 0
+		78 : [98/100, 1]
+		79 : [1/10000, 2/100]
+state 72 target
+	action 0
+		72 : [1, 1]
+state 73
+	action 0
+		80 : [1, 1]
+state 74
+	action 0
+		81 : [97/100, 99/100]
+		82 : [1/100, 3/100]
+state 75
+	action 0
+		83 : [1, 1]
+state 76
+	action 0
+		84 : [1, 1]
+state 77
+	action 0
+		66 : [97/100, 99/100]
+		67 : [1/100, 3/100]
+state 78
+	action 0
+		85 : [1, 1]
+state 79
+	action 0
+		84 : [1, 1]
+state 80
+	action 0
+		86 : [98/100, 1]
+		87 : [1/10000, 2/100]
+state 81
+	action 0
+		88 : [1, 1]
+state 82
+	action 0
+		89 : [1, 1]
+state 83
+	action 0
+		78 : [98/100, 1]
+		79 : [1/10000, 2/100]
+state 84
+	action 0
+		90 : [1, 1]
+state 85
+	action 0
+		91 : [1, 1]
+state 86
+	action 0
+		92 : [1, 1]
+state 87
+	action 0
+		93 : [1, 1]
+state 88
+	action 0
+		94 : [1, 1]
+state 89
+	action 0
+		95 : [97/100, 99/100]
+		96 : [1/100, 3/100]
+state 90 target
+	action 0
+		90 : [1, 1]
+state 91
+	action 0
+		66 : [97/100, 99/100]
+		67 : [1/100, 3/100]
+state 92
+	action 0
+		97 : [1, 1]
+state 93
+	action 0
+		98 : [97/100, 99/100]
+		99 : [1/100, 3/100]
+state 94
+	action 0
+		100 : [98/100, 1]
+		101 : [1/10000, 2/100]
+state 95
+	action 0
+		102 : [1, 1]
+state 96
+	action 0
+		103 : [1, 1]
+state 97
+	action 0
+		104 : [97/100, 99/100]
+		105 : [1/100, 3/100]
+state 98
+	action 0
+		106 : [1, 1]
+state 99
+	action 0
+		107 : [1, 1]
+state 100
+	action 0
+		108 : [1, 1]
+state 101
+	action 0
+		107 : [1, 1]
+state 102
+	action 0
+		109 : [1, 1]
+state 103
+	action 0
+		110 : [1, 1]
+state 104
+	action 0
+		111 : [1, 1]
+state 105
+	action 0
+		112 : [1, 1]
+state 106
+	action 0
+		100 : [98/100, 1]
+		101 : [1/10000, 2/100]
+state 107
+	action 0
+		113 : [97/100, 99/100]
+		114 : [1/100, 3/100]
+state 108
+	action 0
+		115 : [1, 1]
+state 109
+	action 0
+		116 : [98/100, 1]
+		117 : [1/10000, 2/100]
+state 110 target
+	action 0
+		110 : [1, 1]
+state 111
+	action 0
+		118 : [1, 1]
+state 112
+	action 0
+		119 : [97/100, 99/100]
+		120 : [1/100, 3/100]
+state 113
+	action 0
+		121 : [1, 1]
+state 114
+	action 0
+		122 : [1, 1]
+state 115
+	action 0
+		104 : [97/100, 99/100]
+		105 : [1/100, 3/100]
+state 116
+	action 0
+		123 : [1, 1]
+state 117
+	action 0
+		122 : [1, 1]
+state 118
+	action 0
+		124 : [98/100, 1]
+		125 : [1/10000, 2/100]
+state 119
+	action 0
+		126 : [1, 1]
+state 120
+	action 0
+		127 : [1, 1]
+state 121
+	action 0
+		116 : [98/100, 1]
+		117 : [1/10000, 2/100]
+state 122
+	action 0
+		128 : [1, 1]
+state 123
+	action 0
+		129 : [1, 1]
+state 124
+	action 0
+		130 : [1, 1]
+state 125
+	action 0
+		131 : [1, 1]
+state 126
+	action 0
+		132 : [1, 1]
+state 127
+	action 0
+		133 : [97/100, 99/100]
+		134 : [1/100, 3/100]
+state 128 target
+	action 0
+		128 : [1, 1]
+state 129
+	action 0
+		104 : [97/100, 99/100]
+		105 : [1/100, 3/100]
+state 130
+	action 0
+		135 : [1, 1]
+state 131
+	action 0
+		136 : [97/100, 99/100]
+		137 : [1/100, 3/100]
+state 132
+	action 0
+		138 : [98/100, 1]
+		139 : [1/10000, 2/100]
+state 133
+	action 0
+		140 : [1, 1]
+state 134
+	action 0
+		141 : [1, 1]
+state 135
+	action 0
+		142 : [97/100, 99/100]
+		143 : [1/100, 3/100]
+state 136
+	action 0
+		144 : [1, 1]
+state 137
+	action 0
+		145 : [1, 1]
+state 138
+	action 0
+		146 : [1, 1]
+state 139
+	action 0
+		145 : [1, 1]
+state 140
+	action 0
+		147 : [1, 1]
+state 141
+	action 0
+		148 : [1, 1]
+state 142
+	action 0
+		149 : [1, 1]
+state 143
+	action 0
+		150 : [1, 1]
+state 144
+	action 0
+		138 : [98/100, 1]
+		139 : [1/10000, 2/100]
+state 145
+	action 0
+		151 : [97/100, 99/100]
+		152 : [1/100, 3/100]
+state 146
+	action 0
+		153 : [1, 1]
+state 147
+	action 0
+		154 : [98/100, 1]
+		155 : [1/10000, 2/100]
+state 148 target
+	action 0
+		148 : [1, 1]
+state 149
+	action 0
+		156 : [1, 1]
+state 150
+	action 0
+		157 : [97/100, 99/100]
+		158 : [1/100, 3/100]
+state 151
+	action 0
+		159 : [1, 1]
+state 152
+	action 0
+		160 : [1, 1]
+state 153
+	action 0
+		142 : [97/100, 99/100]
+		143 : [1/100, 3/100]
+state 154
+	action 0
+		161 : [1, 1]
+state 155
+	action 0
+		160 : [1, 1]
+state 156
+	action 0
+		162 : [98/100, 1]
+		163 : [1/10000, 2/100]
+state 157
+	action 0
+		164 : [1, 1]
+state 158
+	action 0
+		165 : [1, 1]
+state 159
+	action 0
+		154 : [98/100, 1]
+		155 : [1/10000, 2/100]
+state 160
+	action 0
+		166 : [1, 1]
+state 161
+	action 0
+		167 : [1, 1]
+state 162
+	action 0
+		168 : [1, 1]
+state 163
+	action 0
+		169 : [1, 1]
+state 164
+	action 0
+		170 : [1, 1]
+state 165
+	action 0
+		171 : [97/100, 99/100]
+		172 : [1/100, 3/100]
+state 166 target
+	action 0
+		166 : [1, 1]
+state 167
+	action 0
+		142 : [97/100, 99/100]
+		143 : [1/100, 3/100]
+state 168
+	action 0
+		173 : [1, 1]
+state 169
+	action 0
+		174 : [97/100, 99/100]
+		175 : [1/100, 3/100]
+state 170
+	action 0
+		176 : [98/100, 1]
+		177 : [1/10000, 2/100]
+state 171
+	action 0
+		178 : [1, 1]
+state 172
+	action 0
+		179 : [1, 1]
+state 173
+	action 0
+		180 : [97/100, 99/100]
+		181 : [1/100, 3/100]
+state 174
+	action 0
+		182 : [1, 1]
+state 175
+	action 0
+		183 : [1, 1]
+state 176
+	action 0
+		184 : [1, 1]
+state 177
+	action 0
+		183 : [1, 1]
+state 178
+	action 0
+		185 : [1, 1]
+state 179
+	action 0
+		186 : [1, 1]
+state 180
+	action 0
+		187 : [1, 1]
+state 181
+	action 0
+		188 : [1, 1]
+state 182
+	action 0
+		176 : [98/100, 1]
+		177 : [1/10000, 2/100]
+state 183
+	action 0
+		189 : [97/100, 99/100]
+		190 : [1/100, 3/100]
+state 184
+	action 0
+		191 : [1, 1]
+state 185
+	action 0
+		192 : [98/100, 1]
+		193 : [1/10000, 2/100]
+state 186 target
+	action 0
+		186 : [1, 1]
+state 187
+	action 0
+		194 : [1, 1]
+state 188
+	action 0
+		195 : [97/100, 99/100]
+		196 : [1/100, 3/100]
+state 189
+	action 0
+		197 : [1, 1]
+state 190
+	action 0
+		198 : [1, 1]
+state 191
+	action 0
+		180 : [97/100, 99/100]
+		181 : [1/100, 3/100]
+state 192
+	action 0
+		199 : [1, 1]
+state 193
+	action 0
+		198 : [1, 1]
+state 194
+	action 0
+		200 : [98/100, 1]
+		201 : [1/10000, 2/100]
+state 195
+	action 0
+		202 : [1, 1]
+state 196
+	action 0
+		203 : [1, 1]
+state 197
+	action 0
+		192 : [98/100, 1]
+		193 : [1/10000, 2/100]
+state 198
+	action 0
+		204 : [1, 1]
+state 199
+	action 0
+		205 : [1, 1]
+state 200
+	action 0
+		206 : [1, 1]
+state 201
+	action 0
+		207 : [1, 1]
+state 202
+	action 0
+		208 : [1, 1]
+state 203
+	action 0
+		209 : [97/100, 99/100]
+		210 : [1/100, 3/100]
+state 204 target
+	action 0
+		204 : [1, 1]
+state 205
+	action 0
+		180 : [97/100, 99/100]
+		181 : [1/100, 3/100]
+state 206
+	action 0
+		211 : [1, 1]
+state 207
+	action 0
+		212 : [97/100, 99/100]
+		213 : [1/100, 3/100]
+state 208
+	action 0
+		214 : [98/100, 1]
+		215 : [1/10000, 2/100]
+state 209
+	action 0
+		216 : [1, 1]
+state 210
+	action 0
+		217 : [1, 1]
+state 211
+	action 0
+		218 : [97/100, 99/100]
+		219 : [1/100, 3/100]
+state 212
+	action 0
+		220 : [1, 1]
+state 213
+	action 0
+		221 : [1, 1]
+state 214
+	action 0
+		222 : [1, 1]
+state 215
+	action 0
+		221 : [1, 1]
+state 216
+	action 0
+		223 : [1, 1]
+state 217
+	action 0
+		224 : [1, 1]
+state 218
+	action 0
+		225 : [1, 1]
+state 219
+	action 0
+		226 : [1, 1]
+state 220
+	action 0
+		214 : [98/100, 1]
+		215 : [1/10000, 2/100]
+state 221
+	action 0
+		227 : [97/100, 99/100]
+		228 : [1/100, 3/100]
+state 222
+	action 0
+		229 : [1, 1]
+state 223
+	action 0
+		230 : [98/100, 1]
+		231 : [1/10000, 2/100]
+state 224 target
+	action 0
+		224 : [1, 1]
+state 225
+	action 0
+		232 : [1, 1]
+state 226
+	action 0
+		233 : [97/100, 99/100]
+		234 : [1/100, 3/100]
+state 227
+	action 0
+		235 : [1, 1]
+state 228
+	action 0
+		236 : [1, 1]
+state 229
+	action 0
+		218 : [97/100, 99/100]
+		219 : [1/100, 3/100]
+state 230
+	action 0
+		237 : [1, 1]
+state 231
+	action 0
+		236 : [1, 1]
+state 232
+	action 0
+		238 : [98/100, 1]
+		239 : [1/10000, 2/100]
+state 233
+	action 0
+		240 : [1, 1]
+state 234
+	action 0
+		241 : [1, 1]
+state 235
+	action 0
+		230 : [98/100, 1]
+		231 : [1/10000, 2/100]
+state 236
+	action 0
+		242 : [1, 1]
+state 237
+	action 0
+		243 : [1, 1]
+state 238
+	action 0
+		244 : [1, 1]
+state 239
+	action 0
+		245 : [1, 1]
+state 240
+	action 0
+		246 : [1, 1]
+state 241
+	action 0
+		247 : [97/100, 99/100]
+		248 : [1/100, 3/100]
+state 242 target
+	action 0
+		242 : [1, 1]
+state 243
+	action 0
+		218 : [97/100, 99/100]
+		219 : [1/100, 3/100]
+state 244
+	action 0
+		249 : [1, 1]
+state 245
+	action 0
+		250 : [97/100, 99/100]
+		251 : [1/100, 3/100]
+state 246
+	action 0
+		252 : [98/100, 1]
+		253 : [1/10000, 2/100]
+state 247
+	action 0
+		254 : [1, 1]
+state 248
+	action 0
+		255 : [1, 1]
+state 249
+	action 0
+		256 : [97/100, 99/100]
+		257 : [1/100, 3/100]
+state 250
+	action 0
+		258 : [1, 1]
+state 251
+	action 0
+		259 : [1, 1]
+state 252
+	action 0
+		260 : [1, 1]
+state 253
+	action 0
+		259 : [1, 1]
+state 254
+	action 0
+		261 : [1, 1]
+state 255
+	action 0
+		262 : [1, 1]
+state 256
+	action 0
+		263 : [1, 1]
+state 257
+	action 0
+		264 : [1, 1]
+state 258
+	action 0
+		252 : [98/100, 1]
+		253 : [1/10000, 2/100]
+state 259
+	action 0
+		265 : [97/100, 99/100]
+		266 : [1/100, 3/100]
+state 260
+	action 0
+		267 : [1, 1]
+state 261
+	action 0
+		268 : [98/100, 1]
+		269 : [1/10000, 2/100]
+state 262 target
+	action 0
+		262 : [1, 1]
+state 263
+	action 0
+		270 : [1, 1]
+state 264
+	action 0
+		271 : [97/100, 99/100]
+		272 : [1/100, 3/100]
+state 265
+	action 0
+		273 : [1, 1]
+state 266
+	action 0
+		274 : [1, 1]
+state 267
+	action 0
+		256 : [97/100, 99/100]
+		257 : [1/100, 3/100]
+state 268
+	action 0
+		275 : [1, 1]
+state 269
+	action 0
+		274 : [1, 1]
+state 270
+	action 0
+		276 : [98/100, 1]
+		277 : [1/10000, 2/100]
+state 271
+	action 0
+		278 : [1, 1]
+state 272
+	action 0
+		279 : [1, 1]
+state 273
+	action 0
+		268 : [98/100, 1]
+		269 : [1/10000, 2/100]
+state 274
+	action 0
+		280 : [1, 1]
+state 275
+	action 0
+		281 : [1, 1]
+state 276
+	action 0
+		282 : [1, 1]
+state 277
+	action 0
+		283 : [1, 1]
+state 278
+	action 0
+		284 : [1, 1]
+state 279
+	action 0
+		285 : [97/100, 99/100]
+		286 : [1/100, 3/100]
+state 280 target
+	action 0
+		280 : [1, 1]
+state 281
+	action 0
+		256 : [97/100, 99/100]
+		257 : [1/100, 3/100]
+state 282
+	action 0
+		287 : [1, 1]
+state 283
+	action 0
+		288 : [97/100, 99/100]
+		289 : [1/100, 3/100]
+state 284
+	action 0
+		290 : [98/100, 1]
+		291 : [1/10000, 2/100]
+state 285
+	action 0
+		292 : [1, 1]
+state 286
+	action 0
+		293 : [1, 1]
+state 287
+	action 0
+		294 : [97/100, 99/100]
+		295 : [1/100, 3/100]
+state 288
+	action 0
+		296 : [1, 1]
+state 289
+	action 0
+		297 : [1, 1]
+state 290
+	action 0
+		298 : [1, 1]
+state 291
+	action 0
+		297 : [1, 1]
+state 292
+	action 0
+		299 : [1, 1]
+state 293
+	action 0
+		300 : [1, 1]
+state 294
+	action 0
+		301 : [1, 1]
+state 295
+	action 0
+		302 : [1, 1]
+state 296
+	action 0
+		290 : [98/100, 1]
+		291 : [1/10000, 2/100]
+state 297
+	action 0
+		303 : [97/100, 99/100]
+		304 : [1/100, 3/100]
+state 298
+	action 0
+		305 : [1, 1]
+state 299
+	action 0
+		306 : [98/100, 1]
+		307 : [1/10000, 2/100]
+state 300 target
+	action 0
+		300 : [1, 1]
+state 301
+	action 0
+		308 : [1, 1]
+state 302
+	action 0
+		309 : [97/100, 99/100]
+		310 : [1/100, 3/100]
+state 303
+	action 0
+		311 : [1, 1]
+state 304
+	action 0
+		312 : [1, 1]
+state 305
+	action 0
+		294 : [97/100, 99/100]
+		295 : [1/100, 3/100]
+state 306
+	action 0
+		313 : [1, 1]
+state 307
+	action 0
+		312 : [1, 1]
+state 308
+	action 0
+		314 : [98/100, 1]
+		315 : [1/10000, 2/100]
+state 309
+	action 0
+		316 : [1, 1]
+state 310
+	action 0
+		317 : [1, 1]
+state 311
+	action 0
+		306 : [98/100, 1]
+		307 : [1/10000, 2/100]
+state 312
+	action 0
+		318 : [1, 1]
+state 313
+	action 0
+		319 : [1, 1]
+state 314
+	action 0
+		320 : [1, 1]
+state 315
+	action 0
+		321 : [1, 1]
+state 316
+	action 0
+		322 : [1, 1]
+state 317
+	action 0
+		323 : [97/100, 99/100]
+		324 : [1/100, 3/100]
+state 318 target
+	action 0
+		318 : [1, 1]
+state 319
+	action 0
+		294 : [97/100, 99/100]
+		295 : [1/100, 3/100]
+state 320
+	action 0
+		325 : [1, 1]
+state 321
+	action 0
+		326 : [97/100, 99/100]
+		327 : [1/100, 3/100]
+state 322
+	action 0
+		328 : [98/100, 1]
+		329 : [1/10000, 2/100]
+state 323
+	action 0
+		330 : [1, 1]
+state 324
+	action 0
+		331 : [1, 1]
+state 325
+	action 0
+		332 : [97/100, 99/100]
+		333 : [1/100, 3/100]
+state 326
+	action 0
+		334 : [1, 1]
+state 327
+	action 0
+		335 : [1, 1]
+state 328
+	action 0
+		336 : [1, 1]
+state 329
+	action 0
+		335 : [1, 1]
+state 330
+	action 0
+		337 : [1, 1]
+state 331
+	action 0
+		338 : [1, 1]
+state 332
+	action 0
+		339 : [1, 1]
+state 333
+	action 0
+		340 : [1, 1]
+state 334
+	action 0
+		328 : [98/100, 1]
+		329 : [1/10000, 2/100]
+state 335
+	action 0
+		341 : [97/100, 99/100]
+		342 : [1/100, 3/100]
+state 336
+	action 0
+		343 : [1, 1]
+state 337
+	action 0
+		344 : [98/100, 1]
+		345 : [1/10000, 2/100]
+state 338 target
+	action 0
+		338 : [1, 1]
+state 339
+	action 0
+		346 : [1, 1]
+state 340
+	action 0
+		347 : [97/100, 99/100]
+		348 : [1/100, 3/100]
+state 341
+	action 0
+		349 : [1, 1]
+state 342
+	action 0
+		350 : [1, 1]
+state 343
+	action 0
+		332 : [97/100, 99/100]
+		333 : [1/100, 3/100]
+state 344
+	action 0
+		351 : [1, 1]
+state 345
+	action 0
+		350 : [1, 1]
+state 346
+	action 0
+		352 : [98/100, 1]
+		353 : [1/10000, 2/100]
+state 347
+	action 0
+		354 : [1, 1]
+state 348
+	action 0
+		355 : [1, 1]
+state 349
+	action 0
+		344 : [98/100, 1]
+		345 : [1/10000, 2/100]
+state 350
+	action 0
+		356 : [1, 1]
+state 351
+	action 0
+		357 : [1, 1]
+state 352
+	action 0
+		358 : [1, 1]
+state 353
+	action 0
+		359 : [1, 1]
+state 354
+	action 0
+		360 : [1, 1]
+state 355
+	action 0
+		361 : [97/100, 99/100]
+		362 : [1/100, 3/100]
+state 356 target
+	action 0
+		356 : [1, 1]
+state 357
+	action 0
+		332 : [97/100, 99/100]
+		333 : [1/100, 3/100]
+state 358
+	action 0
+		363 : [1, 1]
+state 359
+	action 0
+		364 : [97/100, 99/100]
+		365 : [1/100, 3/100]
+state 360
+	action 0
+		366 : [98/100, 1]
+		367 : [1/10000, 2/100]
+state 361
+	action 0
+		368 : [1, 1]
+state 362
+	action 0
+		369 : [1, 1]
+state 363
+	action 0
+		370 : [97/100, 99/100]
+		371 : [1/100, 3/100]
+state 364
+	action 0
+		372 : [1, 1]
+state 365
+	action 0
+		373 : [1, 1]
+state 366
+	action 0
+		374 : [1, 1]
+state 367
+	action 0
+		373 : [1, 1]
+state 368
+	action 0
+		375 : [1, 1]
+state 369
+	action 0
+		376 : [1, 1]
+state 370
+	action 0
+		377 : [1, 1]
+state 371
+	action 0
+		378 : [1, 1]
+state 372
+	action 0
+		366 : [98/100, 1]
+		367 : [1/10000, 2/100]
+state 373
+	action 0
+		379 : [97/100, 99/100]
+		380 : [1/100, 3/100]
+state 374
+	action 0
+		381 : [1, 1]
+state 375
+	action 0
+		382 : [98/100, 1]
+		383 : [1/10000, 2/100]
+state 376 target
+	action 0
+		376 : [1, 1]
+state 377
+	action 0
+		384 : [1, 1]
+state 378
+	action 0
+		385 : [97/100, 99/100]
+		386 : [1/100, 3/100]
+state 379
+	action 0
+		387 : [1, 1]
+state 380
+	action 0
+		388 : [1, 1]
+state 381
+	action 0
+		370 : [97/100, 99/100]
+		371 : [1/100, 3/100]
+state 382
+	action 0
+		389 : [1, 1]
+state 383
+	action 0
+		388 : [1, 1]
+state 384
+	action 0
+		390 : [98/100, 1]
+		391 : [1/10000, 2/100]
+state 385
+	action 0
+		392 : [1, 1]
+state 386
+	action 0
+		393 : [1, 1]
+state 387
+	action 0
+		382 : [98/100, 1]
+		383 : [1/10000, 2/100]
+state 388
+	action 0
+		394 : [1, 1]
+state 389
+	action 0
+		395 : [1, 1]
+state 390
+	action 0
+		396 : [1, 1]
+state 391
+	action 0
+		397 : [1, 1]
+state 392
+	action 0
+		398 : [1, 1]
+state 393
+	action 0
+		399 : [97/100, 99/100]
+		400 : [1/100, 3/100]
+state 394 target
+	action 0
+		394 : [1, 1]
+state 395
+	action 0
+		370 : [97/100, 99/100]
+		371 : [1/100, 3/100]
+state 396
+	action 0
+		401 : [1, 1]
+state 397
+	action 0
+		402 : [97/100, 99/100]
+		403 : [1/100, 3/100]
+state 398
+	action 0
+		404 : [98/100, 1]
+		405 : [1/10000, 2/100]
+state 399
+	action 0
+		406 : [1, 1]
+state 400
+	action 0
+		407 : [1, 1]
+state 401
+	action 0
+		408 : [97/100, 99/100]
+		409 : [1/100, 3/100]
+state 402
+	action 0
+		410 : [1, 1]
+state 403
+	action 0
+		411 : [1, 1]
+state 404
+	action 0
+		412 : [1, 1]
+state 405
+	action 0
+		411 : [1, 1]
+state 406
+	action 0
+		413 : [1, 1]
+state 407
+	action 0
+		414 : [1, 1]
+state 408
+	action 0
+		415 : [1, 1]
+state 409
+	action 0
+		416 : [1, 1]
+state 410
+	action 0
+		404 : [98/100, 1]
+		405 : [1/10000, 2/100]
+state 411
+	action 0
+		417 : [97/100, 99/100]
+		418 : [1/100, 3/100]
+state 412
+	action 0
+		419 : [1, 1]
+state 413
+	action 0
+		420 : [98/100, 1]
+		421 : [1/10000, 2/100]
+state 414 target
+	action 0
+		414 : [1, 1]
+state 415
+	action 0
+		422 : [1, 1]
+state 416
+	action 0
+		423 : [97/100, 99/100]
+		424 : [1/100, 3/100]
+state 417
+	action 0
+		425 : [1, 1]
+state 418
+	action 0
+		426 : [1, 1]
+state 419
+	action 0
+		408 : [97/100, 99/100]
+		409 : [1/100, 3/100]
+state 420
+	action 0
+		427 : [1, 1]
+state 421
+	action 0
+		426 : [1, 1]
+state 422
+	action 0
+		428 : [98/100, 1]
+		429 : [1/10000, 2/100]
+state 423
+	action 0
+		430 : [1, 1]
+state 424
+	action 0
+		431 : [1, 1]
+state 425
+	action 0
+		420 : [98/100, 1]
+		421 : [1/10000, 2/100]
+state 426
+	action 0
+		432 : [1, 1]
+state 427
+	action 0
+		433 : [1, 1]
+state 428
+	action 0
+		434 : [1, 1]
+state 429
+	action 0
+		435 : [1, 1]
+state 430
+	action 0
+		436 : [1, 1]
+state 431
+	action 0
+		437 : [97/100, 99/100]
+		438 : [1/100, 3/100]
+state 432 target
+	action 0
+		432 : [1, 1]
+state 433
+	action 0
+		408 : [97/100, 99/100]
+		409 : [1/100, 3/100]
+state 434
+	action 0
+		439 : [1, 1]
+state 435
+	action 0
+		440 : [97/100, 99/100]
+		441 : [1/100, 3/100]
+state 436
+	action 0
+		442 : [98/100, 1]
+		443 : [1/10000, 2/100]
+state 437
+	action 0
+		444 : [1, 1]
+state 438
+	action 0
+		445 : [1, 1]
+state 439
+	action 0
+		446 : [97/100, 99/100]
+		447 : [1/100, 3/100]
+state 440
+	action 0
+		448 : [1, 1]
+state 441
+	action 0
+		449 : [1, 1]
+state 442
+	action 0
+		450 : [1, 1]
+state 443
+	action 0
+		449 : [1, 1]
+state 444
+	action 0
+		451 : [1, 1]
+state 445
+	action 0
+		452 : [1, 1]
+state 446
+	action 0
+		453 : [1, 1]
+state 447
+	action 0
+		454 : [1, 1]
+state 448
+	action 0
+		442 : [98/100, 1]
+		443 : [1/10000, 2/100]
+state 449
+	action 0
+		455 : [97/100, 99/100]
+		456 : [1/100, 3/100]
+state 450
+	action 0
+		457 : [1, 1]
+state 451
+	action 0
+		458 : [98/100, 1]
+		459 : [1/10000, 2/100]
+state 452 target
+	action 0
+		452 : [1, 1]
+state 453
+	action 0
+		460 : [1, 1]
+state 454
+	action 0
+		461 : [97/100, 99/100]
+		462 : [1/100, 3/100]
+state 455
+	action 0
+		463 : [1, 1]
+state 456
+	action 0
+		464 : [1, 1]
+state 457
+	action 0
+		446 : [97/100, 99/100]
+		447 : [1/100, 3/100]
+state 458
+	action 0
+		465 : [1, 1]
+state 459
+	action 0
+		464 : [1, 1]
+state 460
+	action 0
+		466 : [98/100, 1]
+		467 : [1/10000, 2/100]
+state 461
+	action 0
+		468 : [1, 1]
+state 462
+	action 0
+		469 : [1, 1]
+state 463
+	action 0
+		458 : [98/100, 1]
+		459 : [1/10000, 2/100]
+state 464
+	action 0
+		470 : [1, 1]
+state 465
+	action 0
+		471 : [1, 1]
+state 466
+	action 0
+		472 : [1, 1]
+state 467
+	action 0
+		473 : [1, 1]
+state 468
+	action 0
+		474 : [1, 1]
+state 469
+	action 0
+		475 : [97/100, 99/100]
+		476 : [1/100, 3/100]
+state 470 target
+	action 0
+		470 : [1, 1]
+state 471
+	action 0
+		446 : [97/100, 99/100]
+		447 : [1/100, 3/100]
+state 472
+	action 0
+		477 : [1, 1]
+state 473
+	action 0
+		478 : [97/100, 99/100]
+		479 : [1/100, 3/100]
+state 474
+	action 0
+		480 : [98/100, 1]
+		481 : [1/10000, 2/100]
+state 475
+	action 0
+		482 : [1, 1]
+state 476
+	action 0
+		483 : [1, 1]
+state 477
+	action 0
+		484 : [97/100, 99/100]
+		485 : [1/100, 3/100]
+state 478
+	action 0
+		486 : [1, 1]
+state 479
+	action 0
+		487 : [1, 1]
+state 480
+	action 0
+		488 : [1, 1]
+state 481
+	action 0
+		487 : [1, 1]
+state 482
+	action 0
+		489 : [1, 1]
+state 483
+	action 0
+		490 : [1, 1]
+state 484
+	action 0
+		491 : [1, 1]
+state 485
+	action 0
+		492 : [1, 1]
+state 486
+	action 0
+		480 : [98/100, 1]
+		481 : [1/10000, 2/100]
+state 487
+	action 0
+		493 : [97/100, 99/100]
+		494 : [1/100, 3/100]
+state 488
+	action 0
+		495 : [1, 1]
+state 489
+	action 0
+		496 : [98/100, 1]
+		497 : [1/10000, 2/100]
+state 490 target
+	action 0
+		490 : [1, 1]
+state 491
+	action 0
+		498 : [1, 1]
+state 492
+	action 0
+		499 : [97/100, 99/100]
+		500 : [1/100, 3/100]
+state 493
+	action 0
+		501 : [1, 1]
+state 494
+	action 0
+		502 : [1, 1]
+state 495
+	action 0
+		484 : [97/100, 99/100]
+		485 : [1/100, 3/100]
+state 496
+	action 0
+		503 : [1, 1]
+state 497
+	action 0
+		502 : [1, 1]
+state 498
+	action 0
+		504 : [98/100, 1]
+		505 : [1/10000, 2/100]
+state 499
+	action 0
+		506 : [1, 1]
+state 500
+	action 0
+		507 : [1, 1]
+state 501
+	action 0
+		496 : [98/100, 1]
+		497 : [1/10000, 2/100]
+state 502
+	action 0
+		508 : [1, 1]
+state 503
+	action 0
+		509 : [1, 1]
+state 504
+	action 0
+		510 : [1, 1]
+state 505
+	action 0
+		511 : [1, 1]
+state 506
+	action 0
+		512 : [1, 1]
+state 507
+	action 0
+		513 : [97/100, 99/100]
+		514 : [1/100, 3/100]
+state 508 target
+	action 0
+		508 : [1, 1]
+state 509
+	action 0
+		484 : [97/100, 99/100]
+		485 : [1/100, 3/100]
+state 510
+	action 0
+		515 : [1, 1]
+state 511
+	action 0
+		516 : [97/100, 99/100]
+		517 : [1/100, 3/100]
+state 512
+	action 0
+		518 : [98/100, 1]
+		519 : [1/10000, 2/100]
+state 513
+	action 0
+		520 : [1, 1]
+state 514
+	action 0
+		521 : [1, 1]
+state 515
+	action 0
+		522 : [97/100, 99/100]
+		523 : [1/100, 3/100]
+state 516
+	action 0
+		524 : [1, 1]
+state 517
+	action 0
+		525 : [1, 1]
+state 518
+	action 0
+		526 : [1, 1]
+state 519
+	action 0
+		525 : [1, 1]
+state 520
+	action 0
+		527 : [1, 1]
+state 521
+	action 0
+		528 : [1, 1]
+state 522
+	action 0
+		529 : [1, 1]
+state 523
+	action 0
+		530 : [1, 1]
+state 524
+	action 0
+		518 : [98/100, 1]
+		519 : [1/10000, 2/100]
+state 525
+	action 0
+		531 : [97/100, 99/100]
+		532 : [1/100, 3/100]
+state 526
+	action 0
+		533 : [1, 1]
+state 527
+	action 0
+		534 : [98/100, 1]
+		535 : [1/10000, 2/100]
+state 528 target
+	action 0
+		528 : [1, 1]
+state 529
+	action 0
+		536 : [1, 1]
+state 530
+	action 0
+		537 : [97/100, 99/100]
+		538 : [1/100, 3/100]
+state 531
+	action 0
+		539 : [1, 1]
+state 532
+	action 0
+		540 : [1, 1]
+state 533
+	action 0
+		522 : [97/100, 99/100]
+		523 : [1/100, 3/100]
+state 534
+	action 0
+		541 : [1, 1]
+state 535
+	action 0
+		540 : [1, 1]
+state 536
+	action 0
+		542 : [98/100, 1]
+		543 : [1/10000, 2/100]
+state 537
+	action 0
+		544 : [1, 1]
+state 538
+	action 0
+		545 : [1, 1]
+state 539
+	action 0
+		534 : [98/100, 1]
+		535 : [1/10000, 2/100]
+state 540
+	action 0
+		546 : [1, 1]
+state 541
+	action 0
+		547 : [1, 1]
+state 542
+	action 0
+		548 : [1, 1]
+state 543
+	action 0
+		549 : [1, 1]
+state 544
+	action 0
+		550 : [1, 1]
+state 545
+	action 0
+		551 : [97/100, 99/100]
+		552 : [1/100, 3/100]
+state 546 target
+	action 0
+		546 : [1, 1]
+state 547
+	action 0
+		522 : [97/100, 99/100]
+		523 : [1/100, 3/100]
+state 548
+	action 0
+		553 : [1, 1]
+state 549
+	action 0
+		554 : [97/100, 99/100]
+		555 : [1/100, 3/100]
+state 550
+	action 0
+		556 : [98/100, 1]
+		557 : [1/10000, 2/100]
+state 551
+	action 0
+		558 : [1, 1]
+state 552
+	action 0
+		559 : [1, 1]
+state 553
+	action 0
+		560 : [97/100, 99/100]
+		561 : [1/100, 3/100]
+state 554
+	action 0
+		562 : [1, 1]
+state 555
+	action 0
+		563 : [1, 1]
+state 556
+	action 0
+		564 : [1, 1]
+state 557
+	action 0
+		563 : [1, 1]
+state 558
+	action 0
+		565 : [1, 1]
+state 559
+	action 0
+		566 : [1, 1]
+state 560
+	action 0
+		567 : [1, 1]
+state 561
+	action 0
+		568 : [1, 1]
+state 562
+	action 0
+		556 : [98/100, 1]
+		557 : [1/10000, 2/100]
+state 563
+	action 0
+		569 : [97/100, 99/100]
+		570 : [1/100, 3/100]
+state 564
+	action 0
+		571 : [1, 1]
+state 565
+	action 0
+		572 : [98/100, 1]
+		573 : [1/10000, 2/100]
+state 566 target
+	action 0
+		566 : [1, 1]
+state 567
+	action 0
+		574 : [1, 1]
+state 568
+	action 0
+		575 : [97/100, 99/100]
+		576 : [1/100, 3/100]
+state 569
+	action 0
+		577 : [1, 1]
+state 570
+	action 0
+		578 : [1, 1]
+state 571
+	action 0
+		560 : [97/100, 99/100]
+		561 : [1/100, 3/100]
+state 572
+	action 0
+		579 : [1, 1]
+state 573
+	action 0
+		578 : [1, 1]
+state 574
+	action 0
+		580 : [98/100, 1]
+		581 : [1/10000, 2/100]
+state 575
+	action 0
+		582 : [1, 1]
+state 576
+	action 0
+		583 : [1, 1]
+state 577
+	action 0
+		572 : [98/100, 1]
+		573 : [1/10000, 2/100]
+state 578
+	action 0
+		584 : [1, 1]
+state 579
+	action 0
+		585 : [1, 1]
+state 580
+	action 0
+		586 : [1, 1]
+state 581
+	action 0
+		587 : [1, 1]
+state 582
+	action 0
+		588 : [1, 1]
+state 583
+	action 0
+		589 : [97/100, 99/100]
+		590 : [1/100, 3/100]
+state 584 target
+	action 0
+		584 : [1, 1]
+state 585
+	action 0
+		560 : [97/100, 99/100]
+		561 : [1/100, 3/100]
+state 586
+	action 0
+		591 : [1, 1]
+state 587
+	action 0
+		592 : [97/100, 99/100]
+		593 : [1/100, 3/100]
+state 588
+	action 0
+		594 : [98/100, 1]
+		595 : [1/10000, 2/100]
+state 589
+	action 0
+		596 : [1, 1]
+state 590
+	action 0
+		597 : [1, 1]
+state 591 deadlock
+	action 0
+		591 : [1, 1]
+state 592
+	action 0
+		598 : [1, 1]
+state 593
+	action 0
+		599 : [1, 1]
+state 594
+	action 0
+		600 : [1, 1]
+state 595
+	action 0
+		599 : [1, 1]
+state 596
+	action 0
+		601 : [1, 1]
+state 597
+	action 0
+		602 : [1, 1]
+state 598
+	action 0
+		594 : [98/100, 1]
+		595 : [1/10000, 2/100]
+state 599
+	action 0
+		603 : [97/100, 99/100]
+		604 : [1/100, 3/100]
+state 600
+	action 0
+		605 : [1, 1]
+state 601
+	action 0
+		606 : [98/100, 1]
+		607 : [1/10000, 2/100]
+state 602 target
+	action 0
+		602 : [1, 1]
+state 603
+	action 0
+		608 : [1, 1]
+state 604
+	action 0
+		609 : [1, 1]
+state 605 deadlock
+	action 0
+		605 : [1, 1]
+state 606
+	action 0
+		610 : [1, 1]
+state 607
+	action 0
+		609 : [1, 1]
+state 608
+	action 0
+		606 : [98/100, 1]
+		607 : [1/10000, 2/100]
+state 609
+	action 0
+		611 : [1, 1]
+state 610
+	action 0
+		612 : [1, 1]
+state 611 target
+	action 0
+		611 : [1, 1]
+state 612 deadlock
+	action 0
+		612 : [1, 1]
