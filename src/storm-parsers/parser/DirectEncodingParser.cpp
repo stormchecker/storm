@@ -525,6 +525,8 @@ std::shared_ptr<storm::models::ModelBase> parseModel(DirectEncodingValueType val
             return parseModel<storm::RationalNumber>(file, header, options);
         case DoubleInterval:
             return parseModel<storm::Interval>(file, header, options);
+        case RationalInterval:
+            return parseModel<storm::RationalInterval>(file, header, options);
         case Parametric:
             return parseModel<storm::RationalFunction>(file, header, options);
         default:
