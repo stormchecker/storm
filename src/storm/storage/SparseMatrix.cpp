@@ -2338,18 +2338,11 @@ template<typename ValueType>
 template<typename OtherValueType>
 bool SparseMatrix<ValueType>::isSubmatrixOf(SparseMatrix<OtherValueType> const& matrix) const {
     // Check for matching sizes.
-    if (this->getRowCount() != matrix.getRowCount())
+    if (this->getRowCount() != matrix.getRowCount() || this->getColumnCount() != matrix.getColumnCount() ||
+        this->hasTrivialRowGrouping() != matrix.hasTrivialRowGrouping() ||
+        (!this->hasTrivialRowGrouping() && this->getRowGroupIndices() != matrix.getRowGroupIndices())) {
         return false;
-    if (this->getColumnCount() != matrix.getColumnCount())
-        return false;
-    if (this->hasTrivialRowGrouping() && !matrix.hasTrivialRowGrouping())
-        return false;
-    if (!this->hasTrivialRowGrouping() && matrix.hasTrivialRowGrouping())
-        return false;
-    if (!this->hasTrivialRowGrouping() && !matrix.hasTrivialRowGrouping() && this->getRowGroupIndices() != matrix.getRowGroupIndices())
-        return false;
-    if (this->getRowGroupIndices() != matrix.getRowGroupIndices())
-        return false;
+    }
 
     // Check the subset property for all rows individually.
     for (index_type row = 0; row < this->getRowCount(); ++row) {

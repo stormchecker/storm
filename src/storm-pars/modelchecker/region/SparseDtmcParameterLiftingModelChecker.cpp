@@ -460,8 +460,8 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
                     storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ConstantType> dsmpi(liftedMatrix, liftedVector, oneStepProbs);
                     solver->setUpperBounds(dsmpi.computeUpperBounds());
                 } else {
-                    storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ConstantType> baier(liftedMatrix, liftedVector, oneStepProbs);
-                    solver->setUpperBound(baier.computeUpperBound());
+                    storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ConstantType> baier(liftedMatrix, oneStepProbs);
+                    solver->setUpperBound(baier.computeTotalRewardBounds(liftedVector).upper);
                 }
             } else {
                 STORM_LOG_ERROR("Cannot use upper reward bounds in robust mode.");

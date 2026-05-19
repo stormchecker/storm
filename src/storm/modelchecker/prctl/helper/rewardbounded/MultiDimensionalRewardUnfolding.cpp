@@ -842,8 +842,8 @@ boost::optional<ValueType> MultiDimensionalRewardUnfolding<ValueType, SingleObje
                         for (auto row : ecElimRes.newToOldRowMapping) {
                             rewards.push_back(actionRewards[row]);
                         }
-                        storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType> baier(ecElimRes.matrix, rewards, rew0StateProbs);
-                        objective.upperResultBound = baier.computeUpperBound();
+                        storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType> baier(ecElimRes.matrix, rew0StateProbs);
+                        objective.upperResultBound = baier.computeTotalRewardBounds(rewards).upper;
                     }
                 }
             }

@@ -774,23 +774,27 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::computeAndSetBoundsToSolv
         oneStepTargetProbs[row] = storm::utility::one<ValueType>() - transitions.getRowSum(row);
     }
 
+    bool hasNegativeReward = false;
+    bool hasPositiveReward = false;
+    for (auto const& rew : rewards) {
+        if (rew < storm::utility::zero<ValueType>()) {
+            hasNegativeReward = true;
+        } else if (rew > storm::utility::zero<ValueType>()) {
+            hasPositiveReward = true;
+        }
+        if (hasNegativeReward && hasPositiveReward) {
+            break;
+        }
+    }
     if (requiresLower && !solver.hasLowerBound()) {
         // Compute lower bounds
-        std::vector<ValueType> negativeRewards;
-        negativeRewards.reserve(transitions.getRowCount());
-        uint64_t row = 0;
-        for (auto const& rew : rewards) {
-            if (rew < storm::utility::zero<ValueType>()) {
-                negativeRewards.resize(row, storm::utility::zero<ValueType>());
-                negativeRewards.push_back(-rew);
-            }
-            ++row;
-        }
-        if (!negativeRewards.empty()) {
-            negativeRewards.resize(row, storm::utility::zero<ValueType>());
+        if (hasNegativeReward) {
+            // For lower bounds we actually compute upper bounds for the negated rewards because DsMpi is not implemented for negative rewards.
+            std::vector<ValueType> tmpRewards(rewards.size());
+            storm::utility::vector::applyPointwise(rewards, tmpRewards,
+                                                   [](ValueType const& v) { return std::max<ValueType>(storm::utility::zero<ValueType>(), -v); });
             std::vector<ValueType> lowerBounds =
-                storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ValueType>(transitions, negativeRewards, oneStepTargetProbs)
-                    .computeUpperBounds();
+                storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ValueType>(transitions, tmpRewards, oneStepTargetProbs).computeUpperBounds();
             storm::utility::vector::scaleVectorInPlace(lowerBounds, -storm::utility::one<ValueType>());
             solver.setLowerBounds(std::move(lowerBounds));
         } else {
@@ -800,20 +804,10 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::computeAndSetBoundsToSolv
 
     // Compute upper bounds
     if (requiresUpper && !solver.hasUpperBound()) {
-        std::vector<ValueType> positiveRewards;
-        positiveRewards.reserve(transitions.getRowCount());
-        uint64_t row = 0;
-        for (auto const& rew : rewards) {
-            if (rew > storm::utility::zero<ValueType>()) {
-                positiveRewards.resize(row, storm::utility::zero<ValueType>());
-                positiveRewards.push_back(rew);
-            }
-            ++row;
-        }
-        if (!positiveRewards.empty()) {
-            positiveRewards.resize(row, storm::utility::zero<ValueType>());
-            solver.setUpperBound(
-                storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>(transitions, positiveRewards, oneStepTargetProbs).computeUpperBound());
+        if (hasPositiveReward) {
+            solver.setUpperBound(storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>(transitions, oneStepTargetProbs)
+                                     .computeTotalRewardBounds(rewards)
+                                     .upper);
         } else {
             solver.setUpperBound(storm::utility::zero<ValueType>());
         }

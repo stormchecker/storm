@@ -1336,8 +1336,8 @@ void computeUpperRewardBounds(SparseMdpHintType<SolutionType>& hintInformation, 
             DsMpiMdpUpperRewardBoundsComputer<ValueType> dsmpi(submatrix, choiceRewards, oneStepTargetProbabilities);
             hintInformation.upperResultBounds = dsmpi.computeUpperBounds();
         } else {
-            BaierUpperRewardBoundsComputer<ValueType> baier(submatrix, choiceRewards, oneStepTargetProbabilities);
-            hintInformation.upperResultBound = baier.computeUpperBound();
+            BaierUpperRewardBoundsComputer<ValueType> baier(submatrix, oneStepTargetProbabilities);
+            hintInformation.upperResultBound = baier.computeTotalRewardBounds(choiceRewards).upper;
         }
     }
 }
