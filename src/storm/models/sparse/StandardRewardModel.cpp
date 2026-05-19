@@ -217,14 +217,16 @@ template<typename MatrixValueType>
 void StandardRewardModel<ValueType>::reduceToStateBasedRewards(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, bool reduceToStateRewards,
                                                                std::vector<MatrixValueType> const* weights) {
     if (this->hasTransitionRewards()) {
+        STORM_LOG_ASSERT(this->getTransitionRewardMatrix().isSubmatrixOf(transitionMatrix),
+                         "Transition reward matrix is not a submatrix of the transition matrix.");
         if (this->hasStateActionRewards()) {
             storm::utility::vector::addVectors<ValueType>(this->getStateActionRewardVector(),
                                                           transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix()),
                                                           this->getStateActionRewardVector());
-            this->optionalTransitionRewardMatrix = std::nullopt;
         } else {
             this->optionalStateActionRewardVector = transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix());
         }
+        this->optionalTransitionRewardMatrix = std::nullopt;
     }
 
     if (reduceToStateRewards && this->hasStateActionRewards()) {
