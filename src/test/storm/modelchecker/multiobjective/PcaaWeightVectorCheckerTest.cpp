@@ -109,7 +109,7 @@ class PcaaWeightVectorCheckerTest : public ::testing::Test {
                 continue;
             }
             // Dimensions with relatively low weight don't require as much precision.
-            ValueType const prec = this->precision() / (storm::utility::abs(weightVector[i]) / wvLength);
+            ValueType const prec = this->precision() / (storm::utility::abs(weightVector[i]) / wvAbsSum);
             EXPECT_NEAR(expectedPoint[i], point[i], prec)
                 << "Found point " << storm::utility::vector::toString(point) << " for weight vector " << storm::utility::vector::toString(weightVector)
                 << "does not match expected point " << storm::utility::vector::toString(expectedPoint) << ".\n"
