@@ -57,6 +57,12 @@ class PcaaWeightVectorCheckerTest : public ::testing::Test {
    public:
     using ValueType = typename TestType::ValueType;
 
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+
     storm::Environment env() const {
         return TestType::getEnv();
     }
@@ -80,16 +86,12 @@ class PcaaWeightVectorCheckerTest : public ::testing::Test {
         }
     }
 
-    auto getMdpAndFormulasFromPrism(std::string const& prismFileString, std::string const& constantsString, std::string const& formulasString) const {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
-#endif
-        storm::prism::Program program = storm::api::parseProgram(prismFileString);
+    std::pair<std::shared_ptr<storm::models::sparse::Mdp<ValueType>>, std::vector<std::shared_ptr<storm::logic::Formula const>>> getMdpAndFormulasFromPrism(
+        std::string const& prismFileString, std::string const& constantsString, std::string const& formulasString) const {
+        auto program = storm::api::parseProgram(prismFileString);
         program = storm::utility::prism::preprocess(program, constantsString);
-        std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
-            storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasString, program));
-        std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp =
-            storm::api::buildSparseModel<ValueType>(program, formulas)->template as<storm::models::sparse::Mdp<ValueType>>();
+        auto formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasString, program));
+        auto mdp = storm::api::buildSparseModel<ValueType>(program, formulas)->template as<storm::models::sparse::Mdp<ValueType>>();
         return std::pair(std::move(mdp), std::move(formulas));
     }
 
