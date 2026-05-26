@@ -100,7 +100,7 @@ class PcaaWeightVectorCheckerTest : public ::testing::Test {
         wvChecker->setWeightedPrecision(this->precision());
         ValueType const wvLength = storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
         ValueType const wvAbsSum = std::accumulate(weightVector.begin(), weightVector.end(), storm::utility::zero<ValueType>(),
-                                                   [](ValueType acc, ValueType w) { return acc + storm::utility::abs(w); });
+                                                   [](ValueType acc, ValueType w) -> ValueType { return acc + storm::utility::abs(w); });
 
         EXPECT_NO_THROW(wvChecker->check(this->env(), weightVector));
         EXPECT_EQ(weightVector.size(), expectedPoint.size());
