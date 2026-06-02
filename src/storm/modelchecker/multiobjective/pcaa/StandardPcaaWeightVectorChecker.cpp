@@ -516,11 +516,8 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(En
     transformEcqSolutionToOriginalModel(ecQuotient->auxStateValues, solver->getSchedulerChoices(), ecqStateToOptimalMecMap, this->weightedResult,
                                         this->optimalChoices);
 
-    offsetToWeightedSum = storm::utility::zero<ValueType>();
-    if (requireSoundApproximation) {
-        // Add offset to ensure that we have an upper bound on the true optimal value
-        offsetToWeightedSum += adjustedPrecision;
-    }
+    // Add offset to ensure that we have an upper bound on the true optimal value
+    offsetToWeightedSum = requireSoundApproximation ? adjustedPrecision : storm::utility::zero<ValueType>();
 }
 
 template<class SparseModelType>
