@@ -22,6 +22,7 @@
 #include "storm/storage/jani/traverser/RewardModelInformation.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
+#include "storm/storage/umb/utility/ValuationDescriptionBuilder.h"
 #include "storm/utility/combinatorics.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -563,75 +564,49 @@ void JaniNextStateGenerator<ValueType, StateType>::unpackTransientVariableValues
 }
 
 template<typename ValueType, typename StateType>
-storm::storage::sparse::StateValuationsBuilder JaniNextStateGenerator<ValueType, StateType>::initializeStateValuationsBuilder() const {
-    auto result = NextStateGenerator<ValueType, StateType>::initializeStateValuationsBuilder();
+storm::storage::sparse::Valuations JaniNextStateGenerator<ValueType, StateType>::initializeStateValuations() const {
+    storm::umb::ValuationDescriptionBuilder builder(this->model.getManager().shared_from_this());
+    if (this->variableInformation.hasOutOfBoundsBit()) {
+        builder.addBooleanVariable(this->variableInformation.outOfBoundsBit->variable);
+    }
+    for (auto const& v : this->variableInformation.locationVariables) {
+        builder.addIntegerVariable(v.variable, 0, v.highestValue);
+    }
+    for (auto const& v : this->variableInformation.booleanVariables) {
+        builder.addBooleanVariable(v.variable);
+    }
+    for (auto const& v : this->variableInformation.integerVariables) {
+        builder.addIntegerVariable(v.variable, v.lowerBound, v.upperBound);
+    }
     // Also add information for transient variables
     for (auto const& varInfo : transientVariableInformation.booleanVariableInformation) {
-        result.addVariable(varInfo.variable);
+        builder.addBooleanVariable(varInfo.variable);
     }
     for (auto const& varInfo : transientVariableInformation.integerVariableInformation) {
-        result.addVariable(varInfo.variable);
+        builder.addIntegerVariable(varInfo.variable, varInfo.lowerBound.value_or(std::numeric_limits<int64_t>::min()),
+                                   varInfo.upperBound.value_or(std::numeric_limits<int64_t>::max()));
     }
     for (auto const& varInfo : transientVariableInformation.rationalVariableInformation) {
-        result.addVariable(varInfo.variable);
+        if (std::is_same_v<ValueType, storm::RationalNumber>) {
+            uint64_t const bitSize = std::max<uint64_t>(64, this->getOptions().getReservedBitsForUnboundedVariables());
+            builder.addRationalVariable(varInfo.variable, bitSize * 2);  // reserve bits for numerator and denominator
+        } else {
+            STORM_LOG_THROW((std::is_same_v<ValueType, double>), storm::exceptions::NotSupportedException,
+                            "State valuations for transient variables of the given value type are not supported.");
+            builder.addDoubleVariable(varInfo.variable);
+        }
     }
-    return result;
+    return storm::storage::sparse::Valuations(builder.buildClassDescription(), builder.getManager().shared_from_this());
 }
 
 template<typename ValueType, typename StateType>
 void JaniNextStateGenerator<ValueType, StateType>::addStateValuation(storm::storage::sparse::state_type const& currentStateIndex,
-                                                                     storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const {
-    std::vector<bool> booleanValues;
-    booleanValues.reserve(this->variableInformation.booleanVariables.size() + transientVariableInformation.booleanVariableInformation.size());
-    std::vector<int64_t> integerValues;
-    integerValues.reserve(this->variableInformation.locationVariables.size() + this->variableInformation.integerVariables.size() +
-                          transientVariableInformation.integerVariableInformation.size());
-    std::vector<storm::RationalNumber> rationalValues;
-    rationalValues.reserve(transientVariableInformation.rationalVariableInformation.size());
-
+                                                                     storm::storage::sparse::Valuations& valuations) const {
     // Add values for non-transient variables
-    extractVariableValues(*this->state, this->variableInformation, integerValues, booleanValues, integerValues);
+    unpackStateAppendToUmbValuations(*this->state, this->variableInformation, valuations.getUmbValuations());
 
-    // Add values for transient variables
     auto transientVariableValuation = getTransientVariableValuationAtLocations(getLocations(*this->state), *this->evaluator);
-    {
-        auto varIt = transientVariableValuation.booleanValues.begin();
-        auto varIte = transientVariableValuation.booleanValues.end();
-        for (auto const& varInfo : transientVariableInformation.booleanVariableInformation) {
-            if (varIt != varIte && varIt->first->variable == varInfo.variable) {
-                booleanValues.push_back(varIt->second);
-                ++varIt;
-            } else {
-                booleanValues.push_back(varInfo.defaultValue);
-            }
-        }
-    }
-    {
-        auto varIt = transientVariableValuation.integerValues.begin();
-        auto varIte = transientVariableValuation.integerValues.end();
-        for (auto const& varInfo : transientVariableInformation.integerVariableInformation) {
-            if (varIt != varIte && varIt->first->variable == varInfo.variable) {
-                integerValues.push_back(varIt->second);
-                ++varIt;
-            } else {
-                integerValues.push_back(varInfo.defaultValue);
-            }
-        }
-    }
-    {
-        auto varIt = transientVariableValuation.rationalValues.begin();
-        auto varIte = transientVariableValuation.rationalValues.end();
-        for (auto const& varInfo : transientVariableInformation.rationalVariableInformation) {
-            if (varIt != varIte && varIt->first->variable == varInfo.variable) {
-                rationalValues.push_back(storm::utility::convertNumber<storm::RationalNumber>(varIt->second));
-                ++varIt;
-            } else {
-                rationalValues.push_back(storm::utility::convertNumber<storm::RationalNumber>(varInfo.defaultValue));
-            }
-        }
-    }
-
-    valuationsBuilder.addState(currentStateIndex, std::move(booleanValues), std::move(integerValues), std::move(rationalValues));
+    transientVariableValuation.setInUmbValuations(currentStateIndex, transientVariableInformation, valuations.getUmbValuations());
 }
 
 template<typename ValueType, typename StateType>

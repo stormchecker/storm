@@ -9,6 +9,7 @@
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/umb/model/Valuations.h"
 
 namespace storm {
 namespace generator {
@@ -76,21 +77,66 @@ CompressedState packStateFromValuation(expressions::SimpleValuation const& valua
     return result;
 }
 
-void extractVariableValues(CompressedState const& state, VariableInformation const& variableInformation, std::vector<int64_t>& locationValues,
-                           std::vector<bool>& booleanValues, std::vector<int64_t>& integerValues) {
+namespace detail {
+enum class UnpackStateIntoUmbValuationsMode { State, Observation };
+template<UnpackStateIntoUmbValuationsMode Mode>
+void unpackIntoUmbValuations(CompressedState const& entityEncoding, uint64_t const entityIndex, VariableInformation const& variableInformation,
+                             storm::umb::Valuations& valuations) {
+    using enum UnpackStateIntoUmbValuationsMode;
+    STORM_LOG_ASSERT(valuations.size() < entityIndex,
+                     "Valuation entity index " << entityIndex << " is out of bounds for valuations of size " << valuations.size() << ".");
+    STORM_LOG_ASSERT(Mode != State || entityEncoding.size() == variableInformation.getTotalBitOffset(true),
+                     "State size does not match the expected size based on the variable information.");
+    STORM_LOG_ASSERT(
+        Mode != Observation || entityEncoding.size() == variableInformation.getTotalBitOffset(true) + variableInformation.observationLabels.size() * 64,
+        "Observation class size does not match the expected size based on the variable information.");
+
+    if (Mode == State && variableInformation.hasOutOfBoundsBit()) {
+        valuations.writeValue(entityIndex, variableInformation.outOfBoundsBit->variable, entityEncoding.get(variableInformation.getOutOfBoundsBit()));
+    }
     for (auto const& locationVariable : variableInformation.locationVariables) {
-        if (locationVariable.bitWidth != 0) {
-            locationValues.push_back(state.getAsInt(locationVariable.bitOffset, locationVariable.bitWidth));
-        } else {
-            locationValues.push_back(0);
+        if (Mode == Observation && !locationVariable.observable) {
+            continue;
         }
+        int64_t const value = locationVariable.bitWidth != 0 ? entityEncoding.getAsInt(locationVariable.bitOffset, locationVariable.bitWidth) : 0;
+        valuations.writeValue(entityIndex, locationVariable.variable, value);
     }
     for (auto const& booleanVariable : variableInformation.booleanVariables) {
-        booleanValues.push_back(state.get(booleanVariable.bitOffset));
+        if (Mode == Observation && !booleanVariable.observable) {
+            continue;
+        }
+        valuations.writeValue(entityIndex, booleanVariable.variable, entityEncoding.get(booleanVariable.bitOffset));
     }
     for (auto const& integerVariable : variableInformation.integerVariables) {
-        integerValues.push_back(static_cast<int_fast64_t>(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth)) + integerVariable.lowerBound);
+        if (Mode == Observation && !integerVariable.observable) {
+            continue;
+        }
+        int64_t const value = entityEncoding.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound;
+        valuations.writeValue(entityIndex, integerVariable.variable, value);
     }
+    if constexpr (Mode == Observation) {
+        uint64_t labelEncodingStart = variableInformation.getTotalBitOffset(true);
+        for (auto const& observationLabel : variableInformation.observationLabels) {
+            STORM_LOG_ASSERT(observationLabel.deterministic, "Only deterministic observation labels supported for unpacking into valuations.");
+            STORM_LOG_ASSERT(labelEncodingStart + 64 <= entityEncoding.size(), "Not enough bits left in the observation class encoding.");
+            int64_t const labelValue = entityEncoding.getAsInt(labelEncodingStart, 64);
+            valuations.writeCallback<false, false, bool, int64_t>(entityIndex, observationLabel.variable,
+                                                                  [labelValue](auto, auto, auto& value) { value = labelValue; });
+        }
+    }
+}
+
+}  // namespace detail
+
+void unpackStateAppendToUmbValuations(CompressedState const& state, VariableInformation const& variableInformation, storm::umb::Valuations& valuations) {
+    valuations.resize(valuations.size() + 1);
+    detail::unpackIntoUmbValuations<detail::UnpackStateIntoUmbValuationsMode::State>(state, valuations.size() - 1, variableInformation, valuations);
+}
+
+void unpackObservationClassIntoUmbValuations(CompressedState const& observationClass, uint64_t const observationClassIndex,
+                                             VariableInformation const& variableInformation, storm::umb::Valuations& valuations) {
+    detail::unpackIntoUmbValuations<detail::UnpackStateIntoUmbValuationsMode::Observation>(observationClass, observationClassIndex, variableInformation,
+                                                                                           valuations);
 }
 
 std::string toString(CompressedState const& state, VariableInformation const& variableInformation) {
@@ -187,9 +233,6 @@ storm::json<ValueType> unpackStateIntoJson(CompressedState const& state, Variabl
     }
     return result;
 }
-
-storm::expressions::SimpleValuation unpackStateIntoValuation(CompressedState const& state, VariableInformation const& variableInformation,
-                                                             storm::expressions::ExpressionManager const& manager);
 
 CompressedState createOutOfBoundsState(VariableInformation const& varInfo, bool roundTo64Bit) {
     CompressedState result(varInfo.getTotalBitOffset(roundTo64Bit));

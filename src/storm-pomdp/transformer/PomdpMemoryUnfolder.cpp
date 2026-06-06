@@ -39,7 +39,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> PomdpMemoryUnfolder<Val
             for (uint64_t newState = 0; newState < newToOldStates.size(); newState++) {
                 newToOldStates[newState] = getModelState(newState);
             }
-            components.stateValuations = pomdp.getStateValuations().blowup(newToOldStates).selectStates(reachableStates);
+            components.stateValuations = pomdp.getStateValuations().selectEntities(newToOldStates).selectEntities(reachableStates);
         }
     }
 

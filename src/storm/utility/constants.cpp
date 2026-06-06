@@ -424,6 +424,11 @@ ClnRationalNumber convertNumber(uint_fast64_t const& number) {
 }
 
 template<>
+int64_t convertNumber(NumberTraits<ClnRationalNumber>::IntegerType const& number) {
+    return carl::toInt<carl::sint>(number);
+}
+
+template<>
 typename NumberTraits<ClnRationalNumber>::IntegerType convertNumber(uint_fast64_t const& number) {
     STORM_LOG_ASSERT(static_cast<unsigned long int>(number) == number, "Conversion failed, because the number is too large.");
     return NumberTraits<ClnRationalNumber>::IntegerType(static_cast<unsigned long int>(number));
@@ -646,6 +651,11 @@ GmpRationalNumber convertNumber(uint_fast64_t const& number) {
 template<>
 GmpRationalNumber convertNumber(NumberTraits<GmpRationalNumber>::IntegerType const& number) {
     return GmpRationalNumber(number);
+}
+
+template<>
+int64_t convertNumber(NumberTraits<GmpRationalNumber>::IntegerType const& number) {
+    return carl::toInt<carl::sint>(number);
 }
 
 template<>
@@ -1227,6 +1237,11 @@ template bool isInfinity(storm::storage::sparse::state_type const& value);
 template bool isBetween(storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b, storm::storage::sparse::state_type const& c,
                         bool strict);
 template uint64_t bitsize(storm::storage::sparse::state_type const& number);
+
+// int64_t
+template int64_t zero();
+template int64_t one();
+template int64_t convertNumber(int64_t const&);
 
 // other instantiations
 template unsigned long convertNumber(long const&);

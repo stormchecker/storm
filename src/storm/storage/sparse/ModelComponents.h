@@ -14,7 +14,7 @@
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/storage/sparse/StateValuations.h"
+#include "storm/storage/sparse/Valuations.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"
@@ -64,14 +64,14 @@ struct ModelComponents {
     // A vector that stores a labeling for each choice.
     std::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
     // stores for each state to which variable valuation it belongs
-    std::optional<storm::storage::sparse::StateValuations> stateValuations;
+    std::optional<storm::storage::sparse::Valuations> stateValuations;
     // stores for each choice from which parts of the input model description it originates
     std::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
 
     // POMDP specific components
     // The POMDP observations
     std::optional<std::vector<uint32_t>> observabilityClasses;
-    std::optional<storm::storage::sparse::StateValuations> observationValuations;
+    std::optional<storm::storage::sparse::Valuations> observationValuations;
 
     // Continuous time specific components (CTMCs, Markov Automata):
     // True iff the transition values (for Markovian choices) are interpreted as rates.

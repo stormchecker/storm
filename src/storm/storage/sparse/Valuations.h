@@ -1,0 +1,111 @@
+#pragma once
+
+#include <cstdint>
+#include <string>
+
+#include "storm/adapters/JsonForward.h"
+#include "storm/adapters/RationalNumberForward.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/expressions/Variable.h"
+#include "storm/utility/NumberTraits.h"
+
+namespace storm {
+
+namespace umb {
+class ValuationClassDescription;
+class Valuations;
+}  // namespace umb
+
+namespace storage::sparse {
+
+/*!
+ * Provides access to valuations of variables for a set of entities (e.g. states / observations).
+ * This class serves as a wrapper around the more low-level storm::umb::Valuations class
+ */
+class Valuations {
+   public:
+    Valuations(storm::umb::ValuationClassDescription const valuationClassDescription,
+               std::shared_ptr<storm::expressions::ExpressionManager const> const& manager = {}, uint64_t const numEntities = 0);
+    Valuations(storm::umb::Valuations&& umbValuations);
+    Valuations(Valuations const& other);
+    Valuations(Valuations&& other);
+    ~Valuations();
+    Valuations& operator=(Valuations&& other);
+    Valuations& operator=(Valuations const& other);
+
+    storm::expressions::ExpressionManager const& getManager() const;
+    storm::umb::Valuations const& getUmbValuations() const;
+    storm::umb::Valuations& getUmbValuations();
+
+    bool getBooleanValue(uint64_t const entity, storm::expressions::Variable const& booleanVariable) const;
+    int64_t getIntegerValue(uint64_t const entity, storm::expressions::Variable const& integerVariable) const;
+    double getDoubleValue(uint64_t const entity, storm::expressions::Variable const& doubleVariable) const;
+    storm::RationalNumber getRationalValue(uint64_t const entity, storm::expressions::Variable const& rationalVariable) const;
+    std::string getStringValue(uint64_t const entity, storm::expressions::Variable const& stringVariable) const;
+
+    /*!
+     * Returns a vector of size getNumberOfEntities() such that the i'th entry is the value of the given variable of entity i.
+     */
+    storm::storage::BitVector getBooleanValues(storm::expressions::Variable const& booleanVariable) const;
+
+    /*!
+     * Returns a vector of size getNumberOfEntities() such that the i'th entry is the value of the given variable of entity i.
+     */
+    std::vector<int64_t> getInt64Values(storm::expressions::Variable const& integerVariable) const;
+
+    /*!
+     * Returns a vector of size getNumberOfEntities() such that the i'th entry is the value of the given variable of entity i.
+     */
+    std::vector<double> getDoubleValues(storm::expressions::Variable const& doubleVariable) const;
+
+    /*!
+     * Returns a vector of size getNumberOfEntities() such that the i'th entry is the value of the given variable of entity i.
+     */
+    std::vector<storm::RationalNumber> getRationalValues(storm::expressions::Variable const& rationalVariable) const;
+
+    /*!
+     * Returns a vector of size getNumberOfEntities() such that the i'th entry is the value of the given variable of entity i.
+     */
+    std::vector<std::string> getStringValues(storm::expressions::Variable const& stringVariable) const;
+
+    /*!
+     * Returns a string representation of the valuation.
+     *
+     * @param selectedVariables If given, only the informations for the variables in this set are processed.
+     * @return The string representation.
+     */
+    std::string toString(uint64_t const entity, bool const pretty = true,
+                         std::optional<std::set<storm::expressions::Variable>> const& selectedVariables = {}) const;
+
+    /*!
+     * Returns a JSON representation of this valuation
+     * @param selectedVariables If given, only the informations for the variables in this set are processed.
+     * @return the json representation
+     */
+    template<typename JsonRationalType = storm::RationalNumber>
+    storm::json<JsonRationalType> toJson(uint64_t const entity, std::optional<std::set<storm::expressions::Variable>> const& selectedVariables = {}) const;
+
+    /*!
+     * @return the numer of entities that this object describes
+     */
+    uint_fast64_t getNumberOfEntities() const;
+
+    /*!
+     * Derive new  valuations from this by selecting the given entities.
+     */
+    Valuations selectEntities(storm::storage::BitVector const& selectedEntities) const;
+
+    /*!
+     * Derive new valuations from this by selecting the given entities.
+     * Requires that the selectedEntities are valid indices, i.e., < getNumberOfEntities()
+     */
+    Valuations selectEntities(std::vector<uint64_t> const& selectedEntities) const;
+
+    virtual std::size_t hash() const;
+
+   private:
+    std::unique_ptr<storm::umb::Valuations> umbValuations;
+};
+
+}  // namespace storage::sparse
+}  // namespace storm

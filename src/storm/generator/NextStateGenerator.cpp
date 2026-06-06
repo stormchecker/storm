@@ -11,6 +11,7 @@
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/umb/utility/ValuationDescriptionBuilder.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -80,37 +81,46 @@ void NextStateGenerator<ValueType, StateType>::initializeSpecialStates() {
 }
 
 template<typename ValueType, typename StateType>
-storm::storage::sparse::StateValuationsBuilder NextStateGenerator<ValueType, StateType>::initializeStateValuationsBuilder() const {
-    storm::storage::sparse::StateValuationsBuilder result;
+storm::storage::sparse::Valuations NextStateGenerator<ValueType, StateType>::initializeStateValuations() const {
+    storm::umb::ValuationDescriptionBuilder builder(expressionManager);
+    if (variableInformation.hasOutOfBoundsBit()) {
+        builder.addBooleanVariable(variableInformation.outOfBoundsBit->variable);
+    }
     for (auto const& v : variableInformation.locationVariables) {
-        result.addVariable(v.variable);
+        builder.addIntegerVariable(v.variable, 0, v.highestValue);
     }
     for (auto const& v : variableInformation.booleanVariables) {
-        result.addVariable(v.variable);
+        builder.addBooleanVariable(v.variable);
     }
     for (auto const& v : variableInformation.integerVariables) {
-        result.addVariable(v.variable);
+        builder.addIntegerVariable(v.variable, v.lowerBound, v.upperBound);
     }
-    return result;
+    return storm::storage::sparse::Valuations(builder.buildClassDescription(), expressionManager);
 }
 
 template<typename ValueType, typename StateType>
-storm::storage::sparse::StateValuationsBuilder NextStateGenerator<ValueType, StateType>::initializeObservationValuationsBuilder() const {
-    storm::storage::sparse::StateValuationsBuilder result;
+storm::storage::sparse::Valuations NextStateGenerator<ValueType, StateType>::initializeObservationValuations() const {
+    storm::umb::ValuationDescriptionBuilder builder(expressionManager);
     for (auto const& v : variableInformation.booleanVariables) {
         if (v.observable) {
-            result.addVariable(v.variable);
+            builder.addBooleanVariable(v.variable);
         }
     }
     for (auto const& v : variableInformation.integerVariables) {
         if (v.observable) {
-            result.addVariable(v.variable);
+            builder.addIntegerVariable(v.variable, v.lowerBound, v.upperBound);
         }
     }
     for (auto const& l : variableInformation.observationLabels) {
-        result.addObservationLabel(l.name);
+        if (l.variable.hasBooleanType()) {
+            builder.addBooleanVariable(l.variable);
+        } else {
+            STORM_LOG_ASSERT(l.variable.hasIntegerType(), "Observation label " << l.variable.getName() << " has neither boolean nor integer type.");
+            builder.addIntegerVariable(l.variable, std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max());
+        }
     }
-    return result;
+    storm::storage::sparse::Valuations res(builder.buildClassDescription(), expressionManager, observabilityMap.size());
+    return res;
 }
 
 template<typename ValueType, typename StateType>
@@ -137,43 +147,17 @@ VariableInformation const& NextStateGenerator<ValueType, StateType>::getVariable
 
 template<typename ValueType, typename StateType>
 void NextStateGenerator<ValueType, StateType>::addStateValuation(storm::storage::sparse::state_type const& currentStateIndex,
-                                                                 storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const {
-    std::vector<bool> booleanValues;
-    booleanValues.reserve(variableInformation.booleanVariables.size());
-    std::vector<int64_t> integerValues;
-    integerValues.reserve(variableInformation.locationVariables.size() + variableInformation.integerVariables.size());
-    extractVariableValues(*this->state, variableInformation, integerValues, booleanValues, integerValues);
-    valuationsBuilder.addState(currentStateIndex, std::move(booleanValues), std::move(integerValues));
+                                                                 storm::storage::sparse::Valuations& valuations) const {
+    unpackStateAppendToUmbValuations(*this->state, variableInformation, valuations.getUmbValuations());
 }
 
 template<typename ValueType, typename StateType>
-storm::storage::sparse::StateValuations NextStateGenerator<ValueType, StateType>::makeObservationValuation() const {
-    storm::storage::sparse::StateValuationsBuilder valuationsBuilder = initializeObservationValuationsBuilder();
+storm::storage::sparse::Valuations NextStateGenerator<ValueType, StateType>::makeObservationValuation() const {
+    storm::storage::sparse::Valuations valuations = initializeObservationValuations();
     for (auto const& observationEntry : observabilityMap) {
-        std::vector<bool> booleanValues;
-        booleanValues.reserve(variableInformation.booleanVariables.size());  // TODO: use number of observable boolean variables
-        std::vector<int64_t> integerValues;
-        integerValues.reserve(variableInformation.locationVariables.size() +
-                              variableInformation.integerVariables.size());  // TODO: use number of observable integer variables
-        std::vector<int64_t> observationLabelValues;
-        observationLabelValues.reserve(variableInformation.observationLabels.size());
-        expressions::SimpleValuation val = unpackStateIntoValuation(observationEntry.first, variableInformation, *expressionManager);
-        for (auto const& v : variableInformation.booleanVariables) {
-            if (v.observable) {
-                booleanValues.push_back(val.getBooleanValue(v.variable));
-            }
-        }
-        for (auto const& v : variableInformation.integerVariables) {
-            if (v.observable) {
-                integerValues.push_back(val.getIntegerValue(v.variable));
-            }
-        }
-        for (uint64_t labelStart = variableInformation.getTotalBitOffset(true); labelStart < observationEntry.first.size(); labelStart += 64) {
-            observationLabelValues.push_back(observationEntry.first.getAsInt(labelStart, 64));
-        }
-        valuationsBuilder.addState(observationEntry.second, std::move(booleanValues), std::move(integerValues), {}, std::move(observationLabelValues));
+        unpackObservationClassIntoUmbValuations(observationEntry.first, observationEntry.second, variableInformation, valuations.getUmbValuations());
     }
-    return valuationsBuilder.build();
+    return valuations;
 }
 
 template<typename ValueType, typename StateType>

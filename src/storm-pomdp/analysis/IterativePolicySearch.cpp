@@ -863,7 +863,7 @@ void IterativePolicySearch<ValueType>::coveredStatesToStream(std::ostream& os, s
             }
             std::cout << state;
             if (pomdp.hasStateValuations()) {
-                os << ":" << pomdp.getStateValuations().getStateInfo(state);
+                os << ":" << pomdp.getStateValuations().toString(state);
             }
         }
     }

@@ -44,7 +44,7 @@ LocationVariableInformation::LocationVariableInformation(storm::expressions::Var
     // Intentionally left empty.
 }
 
-ObservationLabelInformation::ObservationLabelInformation(const std::string& name) : name(name) {
+ObservationLabelInformation::ObservationLabelInformation(storm::expressions::Variable const& variable) : variable(variable) {
     // Intentionally left empty.
 }
 
@@ -94,13 +94,17 @@ uint64_t getBitWidthLowerUpperBound(bool const& hasLowerBound, int64_t& lowerBou
 
 VariableInformation::VariableInformation(storm::prism::Program const& program, uint64_t reservedBitsForUnboundedVariables, bool outOfBoundsState)
     : totalBitOffset(0) {
+    auto getFreshName = [&program](std::string const& baseName) {
+        std::string name = baseName;
+        while (program.getManager().hasVariable(name)) {
+            name += "_";
+        }
+        return name;
+    };
     if (outOfBoundsState) {
-        outOfBoundsBit = 0;
+        outOfBoundsBit.emplace(program.getManager().declareBooleanVariable(getFreshName("_OutOfBoundsBit")), totalBitOffset, true, false);
         ++totalBitOffset;
-    } else {
-        outOfBoundsBit = boost::none;
     }
-
     for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
         booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset, true, booleanVariable.isObservable());
         ++totalBitOffset;
@@ -141,7 +145,13 @@ VariableInformation::VariableInformation(storm::prism::Program const& program, u
         }
     }
     for (auto const& oblab : program.getObservationLabels()) {
-        observationLabels.emplace_back(oblab.getName());
+        if (oblab.getStatePredicateExpression().hasBooleanType()) {
+            observationLabels.emplace_back(program.getManager().declareBooleanVariable(getFreshName(oblab.getName())));
+        } else {
+            STORM_LOG_ASSERT(oblab.getStatePredicateExpression().hasIntegerType(),
+                             "Unexpected type of observation label expression " << oblab.getStatePredicateExpression() << ".");
+            observationLabels.emplace_back(program.getManager().declareIntegerVariable(getFreshName(oblab.getName())));
+        }
     }
 
     sortVariables();
@@ -160,10 +170,12 @@ VariableInformation::VariableInformation(storm::jani::Model const& model,
     }
 
     if (outOfBoundsState) {
-        outOfBoundsBit = 0;
+        std::string outOfBoundsVarName = "_OutOfBoundsBit";
+        while (model.getManager().hasVariable(outOfBoundsVarName)) {
+            outOfBoundsVarName += "_";
+        }
+        outOfBoundsBit.emplace(model.getManager().declareBooleanVariable(outOfBoundsVarName), totalBitOffset, true, false);
         ++totalBitOffset;
-    } else {
-        outOfBoundsBit = boost::none;
     }
 
     createVariablesForVariableSet(model.getGlobalVariables(), reservedBitsForUnboundedVariables, true);
@@ -260,12 +272,12 @@ uint_fast64_t VariableInformation::getTotalBitOffset(bool roundTo64Bit) const {
 }
 
 bool VariableInformation::hasOutOfBoundsBit() const {
-    return outOfBoundsBit != boost::none;
+    return outOfBoundsBit.has_value();
 }
 
 uint64_t VariableInformation::getOutOfBoundsBit() const {
     assert(hasOutOfBoundsBit());
-    return outOfBoundsBit.get();
+    return outOfBoundsBit->bitOffset;
 }
 
 void VariableInformation::sortVariables() {

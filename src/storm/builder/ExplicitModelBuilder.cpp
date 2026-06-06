@@ -134,7 +134,7 @@ void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(
     StateAndChoiceInformationBuilder& stateAndChoiceInformationBuilder) {
     // Initialize building state valuations (if necessary)
     if (stateAndChoiceInformationBuilder.isBuildStateValuations()) {
-        stateAndChoiceInformationBuilder.stateValuationsBuilder() = generator->initializeStateValuationsBuilder();
+        stateAndChoiceInformationBuilder.initializeStateValuations(generator->initializeStateValuations());
     }
 
     // Create a callback for the next-state generator to enable it to request the index of states.
@@ -181,7 +181,7 @@ void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(
 
         generator->load(currentState);
         if (stateAndChoiceInformationBuilder.isBuildStateValuations()) {
-            generator->addStateValuation(currentIndex, stateAndChoiceInformationBuilder.stateValuationsBuilder());
+            generator->addStateValuation(currentIndex, stateAndChoiceInformationBuilder.stateValuations());
         }
 
         storm::generator::StateBehavior<ValueType, StateType> behavior;
@@ -396,7 +396,7 @@ storm::storage::sparse::ModelComponents<ValueType, RewardModelType> ExplicitMode
     }
     // If requested, build the state valuations and choice origins
     if (stateAndChoiceInformationBuilder.isBuildStateValuations()) {
-        modelComponents.stateValuations = stateAndChoiceInformationBuilder.stateValuationsBuilder().build();
+        modelComponents.stateValuations = std::move(stateAndChoiceInformationBuilder.stateValuations());
     }
     if (stateAndChoiceInformationBuilder.isBuildChoiceOrigins()) {
         auto originData = stateAndChoiceInformationBuilder.buildDataOfChoiceOrigins(numChoices);

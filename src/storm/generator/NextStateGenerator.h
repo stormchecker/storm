@@ -12,7 +12,7 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/StateStorage.h"
-#include "storm/storage/sparse/StateValuations.h"
+#include "storm/storage/sparse/Valuations.h"
 #include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
@@ -90,18 +90,17 @@ class NextStateGenerator {
     /// Initializes the out-of-bounds state and states with overlapping guards.
     void initializeSpecialStates();
 
-    /// Initializes a builder for state valuations by adding the appropriate variables.
-    virtual storm::storage::sparse::StateValuationsBuilder initializeStateValuationsBuilder() const;
+    /// Initializes state valuations by adding the appropriate variables.
+    virtual storm::storage::sparse::Valuations initializeStateValuations() const;
 
     void load(CompressedState const& state);
     virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) = 0;
     bool satisfies(storm::expressions::Expression const& expression) const;
 
     /// Adds the valuation for the currently loaded state to the given builder
-    virtual void addStateValuation(storm::storage::sparse::state_type const& currentStateIndex,
-                                   storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const;
+    virtual void addStateValuation(storm::storage::sparse::state_type const& currentStateIndex, storm::storage::sparse::Valuations& valuations) const;
     /// Adds the valuation for the currently loaded state
-    virtual storm::storage::sparse::StateValuations makeObservationValuation() const;
+    virtual storm::storage::sparse::Valuations makeObservationValuation() const;
 
     virtual std::size_t getNumberOfRewardModels() const = 0;
     virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const = 0;
@@ -164,7 +163,7 @@ class NextStateGenerator {
 
     virtual void extendStateInformation(storm::json<BaseValueType>& stateInfo) const;
 
-    virtual storm::storage::sparse::StateValuationsBuilder initializeObservationValuationsBuilder() const;
+    virtual storm::storage::sparse::Valuations initializeObservationValuations() const;
 
     void postprocess(StateBehavior<ValueType, StateType>& result);
 

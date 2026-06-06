@@ -124,16 +124,23 @@ class Variable {
     /*!
      * Checks whether the variable is of rational type.
      *
-     * @return True iff the variable if of rational type.
+     * @return True iff the variable is of rational type.
      */
     bool hasRationalType() const;
 
     /*!
      * Checks whether the variable is of numerical type.
      *
-     * @return True iff the variable if of numerical type.
+     * @return True iff the variable is of numerical type.
      */
     bool hasNumericalType() const;
+
+    /*!
+     * Checks whether the variable is of string type.
+     *
+     * @return True iff the variable is of string type.
+     */
+    bool hasStringType() const;
 
    private:
     // The manager that is responsible for this variable.

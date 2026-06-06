@@ -151,7 +151,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> MakePOMDPCanonic<ValueT
 template<typename ValueType>
 std::string MakePOMDPCanonic<ValueType>::getStateInformation(uint64_t state) const {
     if (pomdp.hasStateValuations()) {
-        return std::to_string(state) + " " + pomdp.getStateValuations().getStateInfo(state);
+        return std::to_string(state) + " " + pomdp.getStateValuations().toString(state);
     } else {
         return std::to_string(state);
     }
@@ -160,7 +160,7 @@ std::string MakePOMDPCanonic<ValueType>::getStateInformation(uint64_t state) con
 template<typename ValueType>
 std::string MakePOMDPCanonic<ValueType>::getObservationInformation(uint32_t obs) const {
     if (pomdp.hasObservationValuations()) {
-        return std::to_string(obs) + " " + pomdp.getObservationValuations().getStateInfo(obs);
+        return std::to_string(obs) + " " + pomdp.getObservationValuations().toString(obs);
     } else {
         return std::to_string(obs);
     }
