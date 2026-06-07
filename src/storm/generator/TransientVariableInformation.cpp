@@ -85,11 +85,18 @@ void TransientVariableValuation<ValueType>::setInUmbValuations(uint64_t const st
         auto varIt = varValues.begin();
         auto const varIte = varValues.end();
         for (auto const& varInfo : varInfos) {
-            if (varIt != varIte && varIt->first->variable == varInfo.variable) {
-                valuations.writeValue(stateIndex, varInfo.variable, varIt->second);
+            bool const hasValue = varIt != varIte && varIt->first->variable == varInfo.variable;
+            auto const& value = hasValue ? varIt->second : varInfo.defaultValue;
+            if (hasValue) {
                 ++varIt;
+            }
+            if constexpr (std::is_same_v<std::remove_cvref_t<decltype(value)>, storm::RationalFunction>) {
+                STORM_LOG_THROW(
+                    storm::utility::isConstant(value), storm::exceptions::NotSupportedException,
+                    "Non-constant variable valuations are not supported. Got value " << value << " for variable " << varInfo.variable.getName() << ".");
+                valuations.writeValue(stateIndex, varInfo.variable, storm::utility::convertNumber<storm::RationalNumber>(value));
             } else {
-                valuations.writeValue(stateIndex, varInfo.variable, varInfo.defaultValue);
+                valuations.writeValue(stateIndex, varInfo.variable, value);
             }
         }
     };
