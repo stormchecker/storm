@@ -83,7 +83,7 @@ template<UnpackStateIntoUmbValuationsMode Mode>
 void unpackIntoUmbValuations(CompressedState const& entityEncoding, uint64_t const entityIndex, VariableInformation const& variableInformation,
                              storm::umb::Valuations& valuations) {
     using enum UnpackStateIntoUmbValuationsMode;
-    STORM_LOG_ASSERT(valuations.size() < entityIndex,
+    STORM_LOG_ASSERT(entityIndex < valuations.size(),
                      "Valuation entity index " << entityIndex << " is out of bounds for valuations of size " << valuations.size() << ".");
     STORM_LOG_ASSERT(Mode != State || entityEncoding.size() == variableInformation.getTotalBitOffset(true),
                      "State size does not match the expected size based on the variable information.");

@@ -25,32 +25,32 @@ class ValuationDescriptionBuilder {
     /*!
      * Adds a new boolean variable to the builder.
      */
-    void addBooleanVariable(storm::expressions::Variable const& variable);
+    void addBooleanVariable(storm::expressions::Variable const& variable, bool optional = false);
 
     /*!
      * Adds a new integer variable to the builder.
      */
-    void addIntegerVariable(storm::expressions::Variable const& variable, int64_t const lowerBound, int64_t const upperBound);
+    void addIntegerVariable(storm::expressions::Variable const& variable, int64_t const lowerBound, int64_t const upperBound, bool optional = false);
 
     /*!
      * Adds a new integer variable to the builder.
      */
-    void addIntegerVariable(storm::expressions::Variable const& variable, Integer const lowerBound, Integer const upperBound);
+    void addIntegerVariable(storm::expressions::Variable const& variable, Integer const lowerBound, Integer const upperBound, bool optional = false);
 
     /*!
      * Adds a new double variable to the builder.
      */
-    void addDoubleVariable(storm::expressions::Variable const& variable);
+    void addDoubleVariable(storm::expressions::Variable const& variable, bool optional = false);
 
     /*!
      * Adds a new rational variable to the builder.
      */
-    void addRationalVariable(storm::expressions::Variable const& variable, uint64_t bitSize = 64);
+    void addRationalVariable(storm::expressions::Variable const& variable, uint64_t bitSize, bool optional = false);
 
     /*!
      * Adds a new string variable to the builder.
      */
-    void addStringVariable(storm::expressions::Variable const& variable);
+    void addStringVariable(storm::expressions::Variable const& variable, bool optional = false);
 
     /*!
      * Adds the given variable.

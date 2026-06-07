@@ -252,15 +252,24 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> constructSparseModel(st
     auto transitionMatrix = constructTransitionMatrix<ValueType>(umbModel);
     storm::storage::sparse::ModelComponents<ValueType> components(std::move(transitionMatrix), std::move(stateLabelling),
                                                                   constructRewardModels<ValueType>(umbModel));
+    // choice labeling
     if (options.buildChoiceLabeling && umbModel.index.transitionSystem.numChoiceActions > 0) {
         STORM_LOG_THROW(umbModel.choiceActions.has_value() && umbModel.choiceActions->values.has_value(), storm::exceptions::WrongFormatException,
                         "Choice actions mentioned in the index but no files given.");
         components.choiceLabeling = constructChoiceLabeling(umbModel);
     }
+    // state valuations
     if (options.buildStateValuations && umbModel.index.valuations.has_value() && umbModel.index.valuations->states.has_value()) {
         STORM_LOG_THROW(umbModel.valuations.states.has_value() && umbModel.valuations.states->valuations.has_value(), storm::exceptions::WrongFormatException,
                         "State valuations mentioned in the index but no files given.");
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "State valuations for UMB models are not yet supported.");
+        auto const& svIndex = umbModel.index.valuations->states.value();
+        auto const& svData = umbModel.valuations.states.value();
+        STORM_LOG_ASSERT(svIndex.numStrings.has_value() == svData.stringMapping.has_value() && svIndex.numStrings.has_value() == svData.strings.has_value(),
+                         "String mapping and strings must be given iff there are #strings mentioned in index.");
+        storm::umb::Valuations val(umbModel.index.transitionSystem.numStates, svIndex.classes, svData.valuations.value(),
+                                   svData.stringMapping.value_or(std::vector<uint64_t>()), svData.strings.value_or(std::vector<char>()),
+                                   svData.valuationToClass);
+        components.stateValuations.emplace(std::move(val));
     } else {
         STORM_LOG_WARN_COND(!options.buildStateValuations, "State valuations requested but the UMB model does not have any.");
     }
@@ -288,6 +297,21 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> constructSparseModel(st
         STORM_LOG_THROW(umbModel.stateObservations.has_value(), storm::exceptions::WrongFormatException,
                         "State observations are required for POMDP models but not present in the UMB model.");
         components.observabilityClasses.emplace(umbModel.stateObservations->values->begin(), umbModel.stateObservations->values->end());
+        // observation valuations
+        if (options.buildObservationValuations && umbModel.index.valuations.has_value() && umbModel.index.valuations->observations.has_value()) {
+            STORM_LOG_THROW(umbModel.valuations.observations.has_value() && umbModel.valuations.observations->valuations.has_value(),
+                            storm::exceptions::WrongFormatException, "Observation valuations mentioned in the index but no files given.");
+            auto const& ovIndex = umbModel.index.valuations->observations.value();
+            auto const& ovData = umbModel.valuations.observations.value();
+            STORM_LOG_ASSERT(ovIndex.numStrings.has_value() == ovData.stringMapping.has_value() && ovIndex.numStrings.has_value() == ovData.strings.has_value(),
+                             "String mapping and strings must be given iff there are #strings mentioned in index.");
+            storm::umb::Valuations val(umbModel.index.transitionSystem.numObservations, ovIndex.classes, ovData.valuations.value(),
+                                       ovData.stringMapping.value_or(std::vector<uint64_t>()), ovData.strings.value_or(std::vector<char>()),
+                                       ovData.valuationToClass);
+            components.observationValuations.emplace(std::move(val));
+        } else {
+            STORM_LOG_WARN_COND(!options.buildStateValuations, "State valuations requested but the UMB model does not have any.");
+        }
     } else if (modelType == Smg) {
         if (umbModel.stateToPlayer.has_value()) {
             auto const& stateToPlayer = umbModel.stateToPlayer.value();

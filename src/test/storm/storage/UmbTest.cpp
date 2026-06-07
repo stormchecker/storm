@@ -9,12 +9,15 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/umb/export/SparseModelToUmb.h"
 #include "storm/storage/umb/export/UmbExport.h"
 #include "storm/storage/umb/import/SparseModelFromUmb.h"
 #include "storm/storage/umb/import/UmbImport.h"
 #include "storm/storage/umb/model/UmbModel.h"
+#include "storm/storage/umb/model/Valuations.h"
 #include "storm/storage/umb/model/ValueEncoding.h"
+#include "storm/storage/umb/utility/ValuationDescriptionBuilder.h"
 #include "storm/utility/constants.h"
 #include "test/storm_gtest.h"
 /*!
@@ -53,7 +56,8 @@ class UmbRoundTripTest : public ::testing::Test {
         generatorOptions.setBuildChoiceOrigins(exportOptions.allowChoiceOriginsAsActions);
         generatorOptions.setBuildAllRewardModels();
         generatorOptions.setBuildAllLabels();
-        // TODO: valuations
+        generatorOptions.setBuildStateValuations(true);
+        generatorOptions.setBuildObservationValuations(true);
 
         // build model from prism file
         storm::prism::Program program = storm::parser::PrismParser::parse(prismfile, true);
@@ -92,6 +96,35 @@ class UmbRoundTripTest : public ::testing::Test {
                     ASSERT_TRUE(otherRewardModel.hasTransitionRewards());
                     EXPECT_EQ(rewardModel.getTransitionRewardMatrix(), otherRewardModel.getTransitionRewardMatrix());
                 }
+            }
+            auto assertEqualValuations = [](auto const& v, auto const& other_v) {
+                ASSERT_EQ(v.size(), other_v.size());
+                EXPECT_EQ(0, v.numStrings());
+                EXPECT_EQ(0, other_v.numStrings());
+                ASSERT_EQ(1, v.numClasses());
+                ASSERT_EQ(1, other_v.numClasses());
+                ASSERT_EQ(v.getClassDescription().sizeInBits(), other_v.getClassDescription().sizeInBits());
+                for (uint64_t entity = 0; entity < v.size(); ++entity) {
+                    auto const bytes = v.getRawBytes(entity);
+                    auto const otherBytes = other_v.getRawBytes(entity);
+                    ASSERT_EQ(bytes.size(), otherBytes.size()) << " valuations differ at entity " << entity;
+                    for (uint64_t i = 0; i < bytes.size(); ++i) {
+                        EXPECT_EQ(bytes[i], otherBytes[i]) << " valuations differ at entity " << entity << " byte " << i;
+                    }
+                }
+            };
+            ASSERT_TRUE(model->hasStateValuations());
+            ASSERT_TRUE(otherModelPtr->hasStateValuations());
+            assertEqualValuations(model->getStateValuations().getUmbValuations(), otherModelPtr->getStateValuations().getUmbValuations());
+            // POMDP specific things
+            if (model->isPartiallyObservable()) {
+                ASSERT_TRUE(model->isOfType(storm::models::ModelType::Pomdp));
+                auto pomdp = model->template as<storm::models::sparse::Pomdp<ValueType>>();
+                auto otherPomdp = otherModelPtr->template as<storm::models::sparse::Pomdp<ValueType>>();
+                EXPECT_EQ(pomdp->getObservations(), otherPomdp->getObservations());
+                ASSERT_TRUE(pomdp->hasObservationValuations());
+                ASSERT_TRUE(otherPomdp->hasObservationValuations());
+                assertEqualValuations(pomdp->getObservationValuations().getUmbValuations(), otherPomdp->getObservationValuations().getUmbValuations());
             }
         };
 
@@ -236,4 +269,133 @@ TEST(UmbTest, RationalEncoding) {
     for (size_t i = 0; i < values.size(); ++i) {
         EXPECT_EQ(values[i], decoded2[i]) << " at index " << i;
     }
+}
+
+TEST(UmbTest, Valuations) {
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto const b = manager->declareBooleanVariable("b");
+    auto const i = manager->declareIntegerVariable("i");
+    auto const s = manager->declareStringVariable("s");
+    auto const r = manager->declareRationalVariable("r");
+    std::vector<storm::umb::ValuationClassDescription> classes;
+    {
+        storm::umb::ValuationDescriptionBuilder builder1(manager);
+        builder1.addBooleanVariable(b, true);                 // 1 + 1 bit (optional
+        builder1.addIntegerVariable(i, -4, 12);               // 17 different values, therefore 5 bits
+        builder1.addStringVariable(s, true);                  // 64 + 1 bits (optional)
+        builder1.addRationalVariable(r, 166);                 // 166 bits
+        classes.push_back(builder1.buildClassDescription());  // adds 2 padding bits to fill a whole number of bytes
+        EXPECT_EQ(2 + 5 + 65 + 166 + 2, classes.back().sizeInBits());
+        EXPECT_TRUE(classes.back().hasStringVariable());
+
+        storm::umb::ValuationDescriptionBuilder builder2(manager);
+        builder2.addDoubleVariable(r);                        // 64 bits
+        builder2.addBooleanVariable(b);                       // 1 bit
+        builder2.addIntegerVariable(i, -10, -7);              // 4 different values, therefore  2 bits
+        classes.push_back(builder2.buildClassDescription());  // adds 5 padding bits to fill a whole number of bytes
+        EXPECT_EQ(64 + 1 + 2 + 5, classes.back().sizeInBits());
+        EXPECT_FALSE(classes.back().hasStringVariable());
+    }
+    storm::umb::Valuations valuations(classes, {manager, manager});
+    EXPECT_EQ(0, valuations.numStrings());
+    EXPECT_EQ(2, valuations.numClasses());
+    EXPECT_EQ(classes[0].sizeInBits(), valuations.getClassDescription(0).sizeInBits());
+    EXPECT_EQ(classes[1].sizeInBits(), valuations.getClassDescription(1).sizeInBits());
+    // Insert 200 entities with alternating classes and some non-trivial values
+    std::vector<std::optional<bool>> b_values;
+    std::vector<int64_t> i_values;
+    std::vector<std::optional<std::string>> s_values;
+    std::vector<storm::RationalNumber> r_values;
+    for (uint64_t e = 0; e < 200; ++e) {
+        if (e % 3 == 0) {
+            // insert class 0
+            valuations.emplaceBack<true>(0, [&](auto entity, auto const& var, auto& value) {
+                using ValueType = std::remove_cvref_t<decltype(value)>;
+                if constexpr (std::is_same_v<ValueType, std::optional<bool>>) {
+                    EXPECT_EQ(b, var);
+                    if (entity % 2 == 0) {
+                        value = entity % 4 == 0;
+                    }
+                    b_values.push_back(value);
+                } else if constexpr (std::is_same_v<ValueType, int64_t>) {
+                    EXPECT_EQ(i, var);
+                    value = static_cast<int64_t>(entity) % 17 - 4;
+                    i_values.push_back(value);
+                } else if constexpr (std::is_same_v<ValueType, std::optional<std::string>>) {
+                    EXPECT_EQ(s, var);
+                    if (entity % 2 == 1) {
+                        value = "str" + std::to_string(entity);
+                    }
+                    s_values.push_back(value);
+                } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+                    EXPECT_EQ(r, var);
+                    auto const uint64max = storm::utility::convertNumber<storm::RationalNumber, uint64_t>(std::numeric_limits<uint64_t>::max());
+                    value = (uint64max + uint64max + storm::utility::convertNumber<storm::RationalNumber>(entity)) / (uint64max);
+                    if (entity % 8 == 0) {
+                        value = -value;
+                    }
+                    r_values.push_back(value);
+                } else {
+                    FAIL() << "Unexpected variable type " << typeid(ValueType).name() << " for variable " << var.getName();
+                }
+            });
+        } else {
+            // insert class 1
+            valuations.emplaceBack<false, double, bool, int64_t>(1, [&](auto entity, auto const& var, auto& value) {
+                using ValueType = std::remove_cvref_t<decltype(value)>;
+                if constexpr (std::is_same_v<ValueType, double>) {
+                    EXPECT_EQ(r, var);
+                    value = static_cast<double>(entity) / 3.0;
+                    r_values.push_back(storm::utility::convertNumber<storm::RationalNumber>(value));
+                } else if constexpr (std::is_same_v<ValueType, bool>) {
+                    EXPECT_EQ(b, var);
+                    value = entity % 2 == 0;
+                    b_values.push_back(value);
+                } else {
+                    static_assert(std::is_same_v<ValueType, int64_t>);
+                    EXPECT_EQ(i, var);
+                    value = static_cast<int64_t>(entity) % 4 - 10;
+                    i_values.push_back(value);
+                }
+            });
+            s_values.push_back(std::nullopt);
+        }
+    }
+    // Now check if reading back the values works correctly.
+    ASSERT_EQ(200, b_values.size());
+    ASSERT_EQ(200, i_values.size());
+    ASSERT_EQ(200, s_values.size());
+    ASSERT_EQ(200, r_values.size());
+    valuations.readCallback<std::nullopt_t, bool, int64_t, std::string, storm::RationalNumber, double>([&](auto entity, auto const& var, auto const& value) {
+        using ValueType = std::remove_cvref_t<decltype(value)>;
+        if constexpr (std::is_same_v<ValueType, std::nullopt_t>) {
+            EXPECT_EQ(0, valuations.getClassOfEntity(entity));
+            if (var == b) {
+                EXPECT_FALSE(b_values[entity].has_value());
+            } else {
+                EXPECT_TRUE(var == s);
+                EXPECT_FALSE(s_values[entity].has_value());
+            }
+        } else if constexpr (std::is_same_v<ValueType, bool>) {
+            EXPECT_EQ(b, var);
+            ASSERT_TRUE(b_values[entity].has_value());
+            EXPECT_EQ(b_values[entity].value(), value);
+        } else if constexpr (std::is_same_v<ValueType, int64_t>) {
+            EXPECT_EQ(i, var);
+            EXPECT_EQ(i_values[entity], value);
+        } else if constexpr (std::is_same_v<ValueType, std::string>) {
+            EXPECT_EQ(s, var);
+            ASSERT_TRUE(s_values[entity].has_value());
+            EXPECT_EQ(s_values[entity].value(), value);
+        } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+            EXPECT_EQ(0, valuations.getClassOfEntity(entity));
+            EXPECT_EQ(r, var);
+            EXPECT_EQ(r_values[entity], value);
+        } else {
+            static_assert(std::is_same_v<ValueType, double>);
+            EXPECT_EQ(1, valuations.getClassOfEntity(entity));
+            EXPECT_EQ(r, var);
+            EXPECT_EQ(r_values[entity], storm::utility::convertNumber<double>(value));
+        }
+    });
 }

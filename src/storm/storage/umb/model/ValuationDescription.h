@@ -32,6 +32,11 @@ struct ValuationClassDescription {
      * The size is the sum of all padding and size values plus 1 for each variable where isOptional is true.
      */
     uint64_t sizeInBits() const;
+
+    /*!
+     * @return true iff there is at least one variable of type String in this class description.
+     */
+    bool hasStringVariable() const;
 };
 
 struct ValuationDescription {

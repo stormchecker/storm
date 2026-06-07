@@ -13,6 +13,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/umb/model/StringEncoding.h"
+#include "storm/storage/umb/model/UmbModel.h"
 #include "storm/storage/umb/model/ValuationDescription.h"
 #include "storm/storage/umb/model/ValueEncoding.h"
 #include "storm/utility/bitoperations.h"
@@ -39,6 +40,7 @@ class Valuations {
         : numEntities(numEntities), valuations(std::move(valuations)), stringMapping(std::move(stringMapping)), strings(std::move(strings)) {
         STORM_LOG_ASSERT(descriptions.size() == expressionManagers.size() || expressionManagers.size() <= 1,
                          "Mismatch between number of descriptions and expression managers.");
+        // First set up the variable classes.
         // We either have a separate manager for each class or all classes share the same manager.
         // Furthermore, we might create a new manager for a class, if no manager was given explicitly.
         auto sharedManager = std::make_shared<storm::expressions::ExpressionManager>();
@@ -58,9 +60,20 @@ class Valuations {
                 variableClasses.push_back(createVariablesInformation(*expressionManagers[i], descriptions[i]));
             }
         }
+        // Initialize string mappings. It should be given iff there is a string variable
+        bool const hasStringVariable =
+            std::any_of(descriptions.begin(), descriptions.end(), [](auto const& classDescr) { return classDescr.hasStringVariable(); });
+        if (hasStringVariable && this->stringMapping.empty()) {
+            this->stringMapping.push_back(0);
+        }
+        STORM_LOG_ASSERT(hasStringVariable || this->stringMapping.empty(), "Non-empty string mapping given but there is no string variable.");
+        STORM_LOG_ASSERT(stringMapping.empty() || this->stringMapping.back() == strings.size(),
+                         "String mapping should end with the total size of the string data.");
+
+        // Enable quick access to the right byte span for each entity.
         if (classes.has_value() && this->variableClasses.size() > 1) {
             STORM_LOG_ASSERT(numEntities == classes->size(), "Number of entities does not match class mapping size.");
-            this->entityClassMappings = {std::move(*classes), std::vector<uint64_t>{1, 0}};
+            this->entityClassMappings = {std::move(*classes), std::vector<uint64_t>({0ull})};
             uint64_t pos = 0;
             this->entityClassMappings->toValuationsMapping.reserve(this->entityClassMappings->toClassMapping.size() + 1);
             for (uint64_t entity = 0; entity < this->entityClassMappings->toClassMapping.size(); ++entity) {
@@ -75,21 +88,28 @@ class Valuations {
             STORM_LOG_ASSERT(this->variableClasses.size() == 1, "Valuation descriptions must be unique if no class mapping is given.");
             STORM_LOG_ASSERT(!classes.has_value() || std::all_of(classes->begin(), classes->end(), [&](auto classIndex) { return classIndex == 0; }),
                              "A single description is given but the class mapping is not unique.");
-            STORM_LOG_ASSERT(this->variableClasses.front().sizeInBytes == 0 || valuations.size() % this->variableClasses.front().sizeInBytes == 0,
+            STORM_LOG_ASSERT(this->variableClasses.front().sizeInBytes == 0 || this->valuations.size() % this->variableClasses.front().sizeInBytes == 0,
                              "Valuation data size is not a multiple of the unique valuation size.");
-            STORM_LOG_ASSERT(numEntities * this->variableClasses.front().sizeInBytes == valuations.size(),
-                             "Valuation data size does not match number of entities.");
+            STORM_LOG_ASSERT(numEntities * this->variableClasses.front().sizeInBytes == this->valuations.size(),
+                             "Valuation data size (" << valuations.size() << ") does not match number of entities (" << this->numEntities
+                                                     << ") times valuation size (" << this->variableClasses.front().sizeInBytes << ").");
         }
     }
 
     Valuations(uint64_t const numEntities, ValuationClassDescription const& description, std::vector<char> valuations,
                std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager = {})
         : Valuations(numEntities, {description}, std::move(valuations), {}, {}, std::nullopt, {expressionManager}) {
+        STORM_LOG_ASSERT(!description.hasStringVariable(), "String mapping must be given for descriptions with string variables.");
+    }
+
+    Valuations(std::vector<ValuationClassDescription> const& descriptions,
+               std::vector<std::shared_ptr<storm::expressions::ExpressionManager const>> expressionManagers = {})
+        : Valuations(0, descriptions, {}, {}, {}, std::vector<uint32_t>{}, expressionManagers) {
         // Intentionally empty
     }
 
     Valuations(ValuationClassDescription const& description, std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager = {})
-        : Valuations(0, description, {}, expressionManager) {
+        : Valuations(0, {description}, {}, {}, {}, std::nullopt, {expressionManager}) {
         // Intentionally empty
     }
 
@@ -109,16 +129,34 @@ class Valuations {
         ValuationClassDescription res;
         uint64_t currBit = 0;
         for (auto const& varInfo : variableClasses[classIndex].variables) {
-            if (uint64_t padding = varInfo.bitOffset - currBit; padding > 0) {
+            uint64_t padding = varInfo.bitOffset - currBit;
+            if (varInfo.description.isOptional.value_or(false)) {
+                STORM_LOG_ASSERT(padding >= 1, "Optional variables must have at least 1 bit preceding its offset.");
+                --padding;
+            }
+            if (padding > 0) {
                 res.variables.push_back(storm::umb::ValuationClassDescription::Padding(padding));
             }
             res.variables.push_back(varInfo.description);
             currBit = varInfo.bitOffset + varInfo.description.type.bitSize();
+            STORM_LOG_ASSERT(currBit == res.sizeInBits(), "Unexpected bit offset for variable " << varInfo.description.name << " in class " << classIndex
+                                                                                                << ". Expected " << res.sizeInBits() << ", got "
+                                                                                                << varInfo.bitOffset << ".");
         }
         if (uint64_t padding = currBit % 8; padding > 0) {
             res.variables.push_back(storm::umb::ValuationClassDescription::Padding(8 - padding));
         }
         return res;
+    }
+
+    uint64_t getClassOfEntity(uint64_t entity) const {
+        STORM_LOG_ASSERT(entity < size(), "Entity index out of bounds: " << entity << " >= " << size() << ".");
+        if (entityClassMappings) {
+            return entityClassMappings->toClassMapping[entity];
+        } else {
+            STORM_LOG_ASSERT(variableClasses.size() == 1, "No class mapping given but multiple classes exist.");
+            return 0;
+        }
     }
 
     std::span<char const> getRawBytes(uint64_t entity) const {
@@ -146,6 +184,10 @@ class Valuations {
 
     uint64_t numStrings() const {
         return stringMapping.size() > 0 ? stringMapping.size() - 1 : 0;
+    }
+
+    bool hasStrings() const {
+        return !stringMapping.empty();
     }
 
     void resize(uint64_t newEntityCount, uint64_t const classIndex = 0) {
@@ -215,7 +257,7 @@ class Valuations {
     VariableInformation const& getVariableInformation(uint64_t entity, storm::expressions::Variable const& variable) const {
         auto const& vars = info(entity).variables;
         auto varInfoIt = std::find_if(vars.begin(), vars.end(), [&variable](auto const& varInfo) { return varInfo.expressionVariable == variable; });
-        STORM_LOG_ASSERT(varInfoIt == vars.end(), "Can not find unknown variable " << variable.getName() << ".");
+        STORM_LOG_ASSERT(varInfoIt != vars.end(), "Can not find unknown variable " << variable.getName() << ".");
         return *varInfoIt;
     }
 
@@ -246,7 +288,7 @@ class Valuations {
     template<typename ValueType>
     ValueType readValue(uint64_t entity, storm::expressions::Variable const& variable) const {
         ValueType result;
-        readCallback<ValueType>(entity, variable, [&](auto&&... args, ValueType&& value) { result = std::move(value); });
+        readCallback<ValueType>(entity, variable, [&](auto, auto, ValueType value) { result = std::move(value); });
         return result;
     }
 
@@ -305,7 +347,7 @@ class Valuations {
     Valuations selectEntities(auto const& selectedEntities) const {
         Valuations result(variableClasses);
         result.numEntities = [&selectedEntities]() {
-            if constexpr (std::is_same_v<std::remove_cvref<decltype(selectedEntities)>, storm::storage::BitVector>) {
+            if constexpr (std::is_same_v<std::remove_cvref_t<decltype(selectedEntities)>, storm::storage::BitVector>) {
                 return selectedEntities.getNumberOfSetBits();
             } else {
                 return std::ranges::distance(selectedEntities);
@@ -330,6 +372,19 @@ class Valuations {
                 result.entityClassMappings->toValuationsMapping.push_back(result.valuations.size());
                 result.entityClassMappings->toClassMapping.push_back(entityClassMappings->toClassMapping[oldEntityIndex]);
             }
+        }
+        return result;
+    }
+
+    typename storm::umb::UmbModel::Valuation getRawUmbData() const {
+        storm::umb::UmbModel::Valuation result;
+        if (entityClassMappings.has_value()) {
+            result.valuationToClass = entityClassMappings->toClassMapping;
+        }
+        result.valuations = valuations;
+        if (hasStrings()) {
+            result.stringMapping = stringMapping;
+            result.strings = strings;
         }
         return result;
     }
@@ -369,12 +424,7 @@ class Valuations {
     }
 
     VariablesInformation const& info(uint64_t entity) const {
-        STORM_LOG_ASSERT(entity < size(), "Entity index out of bounds: " << entity << " >= " << size() << ".");
-        if (entityClassMappings) {
-            return variableClasses[entityClassMappings->toClassMapping[entity]];
-        } else {
-            return variableClasses.front();
-        }
+        return variableClasses[getClassOfEntity(entity)];
     }
 
     /*!
@@ -390,37 +440,41 @@ class Valuations {
             case Bool:
                 return true;
             case Uint: {
+                // The smallest possible value is 0 + offset. As the offset is given as int64_t, it always fits into 64 bits
+                // We have to check if the largest possible value also fits.
                 if (varDesc.offset.value_or(0) == 0) {
+                    // The offset is 0 and the bitSize is <= 64, so this always fits
                     return true;
-                }
-                // check if adding the (non-zero) offset still fits into 64 bits
-                uint64_t const maxValue = varDesc.upper.has_value()        ? static_cast<uint64_t>(varDesc.upper.value())
-                                          : (varDesc.type.bitSize() == 64) ? std::numeric_limits<uint64_t>::max()
-                                                                           : (static_cast<uint64_t>(1) << varDesc.type.bitSize()) - 1;
-                // the minValue equals the offset (given as int64_t and therefore always fits into 64 bits
-                if (varDesc.offset.value() < 0) {
-                    // maxValue + offset = maxValue - (-offset) must fit into output type int64_t
-                    return maxValue - static_cast<uint64_t>(-varDesc.offset.value()) <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max());
-                } else {  // positive offset
-                    // maxValue + offset must fit into output type uint64_t
-                    return maxValue <= std::numeric_limits<uint64_t>::max() - static_cast<uint64_t>(varDesc.offset.value());
+                } else if (varDesc.upper.has_value()) {
+                    // If the upper bound is given (as int64_t), then the largest value to represent is max(upper, upper - offset).
+                    // Since all numbers involved are given as int64_t, the max value will fit into 64 bits as well.
+                    return true;
+                } else if (varDesc.type.bitSize() == 64) {
+                    // The largest actual value is 2^64 - 1 + offset.
+                    // This never fits into 64 bits for positive offset.
+                    // For negative offsets, the actual value type would be int64_t. Then the above number only fits if offset = -2^63
+                    // Since offset != 0 in this branch, that is the only valid case where the values fit into 64 bits.
+                    return varDesc.offset.value() == std::numeric_limits<int64_t>::min();
+                } else {
+                    // The largest actual value is at most 2^63 - 1 + offset
+                    // For positive offset, the actual type is uint64_t and we can upper bound the above number by 2^63 - 1 + 2^63 - 1 = 2^64 - 2 < uint64_t max
+                    // For negative offset, the actual type is int64_t and we can upper bound the above number by 2^63 - 1 <= int64_t max
+                    return true;
                 }
             }
             case Int: {
                 if (varDesc.offset.value_or(0) == 0) {
                     return true;
-                }
-                // check if adding the (non-zero) offset still fits into 64 bits
-                int64_t const maxValue = varDesc.upper.value_or(varDesc.type.bitSize() == 64 ? std::numeric_limits<int64_t>::max()
-                                                                                             : (static_cast<int64_t>(1) << (varDesc.type.bitSize() - 1)) - 1);
-                int64_t const minValue = varDesc.lower.value_or(varDesc.type.bitSize() == 64 ? std::numeric_limits<int64_t>::min()
-                                                                                             : -(static_cast<int64_t>(1) << (varDesc.type.bitSize() - 1)));
-                if (varDesc.offset.value() < 0) {
-                    // minValue + offset must fit into output type int64_t
-                    return minValue >= std::numeric_limits<int64_t>::min() - varDesc.offset.value();
-                } else {  // positive offset
-                    // maxValue + offset must fit into output type int64_t
-                    return maxValue <= std::numeric_limits<int64_t>::max() - varDesc.offset.value();
+                } else if (varDesc.offset.value() < 0) {
+                    // negative offset. We might have trouble representing the smallest actual value
+                    int64_t const minValueStored =
+                        varDesc.type.bitSize() == 64 ? std::numeric_limits<int64_t>::min() : -(static_cast<int64_t>(1) << (varDesc.type.bitSize() - 1));
+                    return varDesc.lower.has_value() || minValueStored >= std::numeric_limits<int64_t>::min() - varDesc.offset.value();
+                } else {
+                    // positive offset. We might have trouble representing the largest actual value
+                    int64_t const maxValueStored =
+                        varDesc.type.bitSize() == 64 ? std::numeric_limits<int64_t>::max() : (static_cast<int64_t>(1) << (varDesc.type.bitSize() - 1)) - 1;
+                    return varDesc.upper.has_value() || maxValueStored <= std::numeric_limits<int64_t>::max() - varDesc.offset.value();
                 }
             }
             case Double:
@@ -589,9 +643,10 @@ class Valuations {
     template<typename... AllowedTypes>
     void read(uint64_t entity, VariableInformation const& varInfo, auto const& callback) const {
         auto invokeCallback = [&entity, &varInfo, &callback](auto&& value) -> bool {
-            bool constexpr IsAllowed = (sizeof...(AllowedTypes) == 0) || std::disjunction_v<std::is_same<std::remove_cvref<decltype(value)>, AllowedTypes>...>;
+            using ValueType = std::remove_cvref_t<decltype(value)>;
+            bool constexpr IsAllowed = (sizeof...(AllowedTypes) == 0) || std::disjunction_v<std::is_same<ValueType, AllowedTypes>...>;
             if constexpr (IsAllowed) {
-                callback(entity, varInfo.expressionVariable, value);
+                callback(entity, varInfo.expressionVariable, std::move(value));
             }
             return IsAllowed;
         };
@@ -715,12 +770,27 @@ class Valuations {
         std::vector<uint64_t> uint64Encoding;
         ValueEncoding::appendEncodedInteger<Signed>(uint64Encoding, value, num64BitChunks);
         STORM_LOG_ASSERT(uint64Encoding.size() == num64BitChunks, "Encoding does not fit into the specified bit size.");
-        for (auto const& v : uint64Encoding) {
+        for (auto v : uint64Encoding) {
             if (bitSize >= 64) {
                 writeUint64(bytes, bitOffset, 64, v);
                 bitOffset += 64;
                 bitSize -= 64;
             } else {
+                uint64_t const relevantBitMask = (1ull << bitSize) - 1;
+                // Check if the number is negative by looking at the sign bit
+                if (Signed && ((v & (1ull << (bitSize - 1))) != 0)) {
+                    STORM_LOG_ASSERT(value < 0, "Value " << value << " is non-negative but the sign bit is set.");
+                    // Assert that all irrelevant bits are set
+                    STORM_LOG_ASSERT((~relevantBitMask & v) == ~relevantBitMask,
+                                     "Value " << value << " does not fit into the specified bit size of " << bitSize << " bits.");
+                    // For negative numbers, we clear the upper (unused) bits, so that the resulting (unsigned) value fits into
+                    // the specified bit size. For example, -3 with bitSize=3 would be represented as 101. We get the 64 bit
+                    // value 1...1101 which (interpreted as unsigned value) doesn't fit into 3 bits. We need 0...0101.
+                    v &= relevantBitMask;  // set upper bits to zero
+                } else {
+                    // Assert that all irrelevant bits are not set
+                    STORM_LOG_ASSERT((~relevantBitMask & v) == 0, "Value " << value << " does not fit into the specified bit size of " << bitSize << " bits.");
+                }
                 writeUint64(bytes, bitOffset, bitSize, v);
                 bitSize = 0;
                 break;
@@ -781,10 +851,11 @@ class Valuations {
                 bool initializeAsUnsetOptional = false;
                 if constexpr (InitializeWithCurrent) {
                     read<std::nullopt_t, ValueType>(entity, varInfo, [&value, &initializeAsUnsetOptional](auto..., auto&& currentValue) {
-                        if constexpr (std::is_same_v<std::remove_cvref<decltype(currentValue)>, ValueType>) {
+                        using CurrentVT = std::remove_cvref_t<decltype(currentValue)>;
+                        if constexpr (std::is_same_v<CurrentVT, ValueType>) {
                             value = currentValue;
                         } else {
-                            static_assert(std::is_same_v<std::remove_cvref<decltype(currentValue)>, std::nullopt_t>);
+                            static_assert(std::is_same_v<CurrentVT, std::nullopt_t>);
                             initializeAsUnsetOptional = true;
                         }
                     });
@@ -891,6 +962,8 @@ class Valuations {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                                 "Valuations for variable type '" << varInfo.description.type.toString() << "' are not supported.");
         }
+        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException,
+                        "Variable " << varInfo.description.name << " of type " << varInfo.description.type.toString() << " is not handled.");
     }
 };
 }  // namespace storm::umb

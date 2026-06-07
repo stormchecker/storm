@@ -29,6 +29,8 @@ void ValuationTransformer::addExpression(storm::expressions::Variable const& var
 }
 
 Valuations ValuationTransformer::build(bool extend) {
+    STORM_LOG_THROW(oldValuations.getUmbValuations().numClasses() == 1, storm::exceptions::NotSupportedException,
+                    "Valuation transformation is only supported for valuations with a single class.");
     storm::umb::Valuations result = [&]() {
         storm::umb::ValuationDescriptionBuilder descriptionBuilder(oldValuations.getManager().shared_from_this());
         if (extend) {
@@ -40,7 +42,7 @@ Valuations ValuationTransformer::build(bool extend) {
             } else if (v.hasIntegerType()) {
                 descriptionBuilder.addIntegerVariable(v, std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max());
             } else if (v.hasRationalType()) {
-                descriptionBuilder.addRationalVariable(v, 64);
+                descriptionBuilder.addRationalVariable(v, 128);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
                                 "Variable " << v.getName() << " has unsupported type " << v.getType() << ".");
@@ -54,7 +56,7 @@ Valuations ValuationTransformer::build(bool extend) {
     for (uint64_t entity = 0; entity < oldValuations.getNumberOfEntities(); ++entity) {
         // Copy variables into the new state valuations and setup the expression evaluator for the current state.
         oldValuations.getUmbValuations().readCallback(entity, [&result, extend, &evaluator](auto const e, auto const& var, auto const& value) {
-            using ValueType = std::remove_cvref<decltype(value)>;
+            using ValueType = std::remove_cvref_t<decltype(value)>;
             if constexpr (std::is_same_v<ValueType, bool>) {
                 evaluator.setBooleanValue(var, value);
             } else if constexpr (std::is_same_v<ValueType, int64_t> || std::is_same_v<ValueType, uint64_t>) {
