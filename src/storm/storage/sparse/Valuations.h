@@ -118,7 +118,7 @@ class Valuations {
      */
     Valuations selectEntities(std::vector<uint64_t> const& selectedEntities) const;
 
-    virtual std::size_t hash() const;
+    std::size_t hash() const;
 
    private:
     std::unique_ptr<storm::umb::Valuations> umbValuations;

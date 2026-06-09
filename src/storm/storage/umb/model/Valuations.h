@@ -679,7 +679,8 @@ class Valuations {
                     if constexpr (std::is_same_v<ValueType, uint64_t> || std::is_same_v<ValueType, int64_t> || std::is_same_v<ValueType, Integer>) {
                         if (auto offset = varInfo.description.offset.value_or(0); offset != 0) {
                             if constexpr (std::is_same_v<ValueType, uint64_t>) {
-                                STORM_LOG_ASSERT(value >= offset, "Set negative value " << value << "-" << offset << " to unsigned variable.");
+                                STORM_LOG_ASSERT(std::cmp_greater_equal(value, offset),
+                                                 "Set negative value " << value << "-" << offset << " to unsigned variable.");
                                 value -= offset;
                             } else {
                                 value -= storm::utility::convertNumber<ValueType>(offset);
