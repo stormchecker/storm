@@ -6,9 +6,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/umb/model/Valuations.h"
 
-namespace storm {
-
-namespace storage::sparse {
+namespace storm::storage::sparse {
 
 Valuations::Valuations(storm::umb::ValuationClassDescription const umbValuationDescription,
                        std::shared_ptr<storm::expressions::ExpressionManager const> const& manager, uint64_t const numEntities)
@@ -55,6 +53,18 @@ storm::umb::Valuations& Valuations::getUmbValuations() {
     return *umbValuations;
 }
 
+uint64_t Valuations::getNumberOfEntities() const {
+    return umbValuations->size();
+}
+
+std::set<storm::expressions::Variable> Valuations::getAllVariables() const {
+    return umbValuations->getAllVariables();
+}
+
+bool Valuations::entityHasVariable(uint64_t entity, const storm::expressions::Variable& variable) const {
+    return umbValuations->entityHasVariable(entity, variable);
+}
+
 bool Valuations::getBooleanValue(uint64_t const entity, storm::expressions::Variable const& booleanVariable) const {
     return umbValuations->readValue<bool>(entity, booleanVariable);
 }
@@ -73,6 +83,77 @@ storm::RationalNumber Valuations::getRationalValue(uint64_t const entity, storm:
 
 std::string Valuations::getStringValue(uint64_t const entity, storm::expressions::Variable const& stringVariable) const {
     return umbValuations->readValue<std::string>(entity, stringVariable);
+}
+
+std::optional<bool> Valuations::getOptionalBooleanValue(uint64_t const entity, storm::expressions::Variable const& booleanVariable) const {
+    if (!entityHasVariable(entity, booleanVariable)) {
+        return std::nullopt;
+    }
+    std::optional<bool> result;
+    umbValuations->readCallback<std::nullopt_t, bool>(entity, booleanVariable, [&result](auto, auto const&, auto&& value) {
+        using T = std::remove_cvref_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, bool>) {
+            result = value;
+        }
+        // std::nullopt_t means the optional variable's presence bit is unset → result stays std::nullopt
+    });
+    return result;
+}
+
+std::optional<int64_t> Valuations::getOptionalIntegerValue(uint64_t const entity, storm::expressions::Variable const& integerVariable) const {
+    if (!entityHasVariable(entity, integerVariable)) {
+        return std::nullopt;
+    }
+    std::optional<int64_t> result;
+    umbValuations->readCallback<std::nullopt_t, int64_t>(entity, integerVariable, [&result](auto, auto const&, auto&& value) {
+        using T = std::remove_cvref_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, int64_t>) {
+            result = value;
+        }
+    });
+    return result;
+}
+
+std::optional<double> Valuations::getOptionalDoubleValue(uint64_t const entity, storm::expressions::Variable const& doubleVariable) const {
+    if (!entityHasVariable(entity, doubleVariable)) {
+        return std::nullopt;
+    }
+    std::optional<double> result;
+    umbValuations->readCallback<std::nullopt_t, double>(entity, doubleVariable, [&result](auto, auto const&, auto&& value) {
+        using T = std::remove_cvref_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, double>) {
+            result = value;
+        }
+    });
+    return result;
+}
+
+std::optional<storm::RationalNumber> Valuations::getOptionalRationalValue(uint64_t const entity, storm::expressions::Variable const& rationalVariable) const {
+    if (!entityHasVariable(entity, rationalVariable)) {
+        return std::nullopt;
+    }
+    std::optional<storm::RationalNumber> result;
+    umbValuations->readCallback<std::nullopt_t, storm::RationalNumber>(entity, rationalVariable, [&result](auto, auto const&, auto&& value) {
+        using T = std::remove_cvref_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, storm::RationalNumber>) {
+            result = std::move(value);
+        }
+    });
+    return result;
+}
+
+std::optional<std::string> Valuations::getOptionalStringValue(uint64_t const entity, storm::expressions::Variable const& stringVariable) const {
+    if (!entityHasVariable(entity, stringVariable)) {
+        return std::nullopt;
+    }
+    std::optional<std::string> result;
+    umbValuations->readCallback<std::nullopt_t, std::string>(entity, stringVariable, [&result](auto, auto const&, auto&& value) {
+        using T = std::remove_cvref_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, std::string>) {
+            result = std::move(value);
+        }
+    });
+    return result;
 }
 
 storm::storage::BitVector Valuations::getBooleanValues(storm::expressions::Variable const& booleanVariable) const {
@@ -170,10 +251,6 @@ storm::json<JsonRationalType> Valuations::toJson(uint64_t const entity, std::opt
     return result;
 }
 
-uint64_t Valuations::getNumberOfEntities() const {
-    return umbValuations->size();
-}
-
 Valuations Valuations::selectEntities(storm::storage::BitVector const& selectedEntities) const {
     return Valuations(umbValuations->selectEntities(selectedEntities));
 }
@@ -194,5 +271,4 @@ template storm::json<double> Valuations::toJson<double>(uint64_t const, std::opt
 template storm::json<storm::RationalNumber> Valuations::toJson<storm::RationalNumber>(uint64_t const,
                                                                                       std::optional<std::set<storm::expressions::Variable>> const&) const;
 
-}  // namespace storage::sparse
-}  // namespace storm
+}  // namespace storm::storage::sparse

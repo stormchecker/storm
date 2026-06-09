@@ -1,8 +1,20 @@
 #include "storm/storage/umb/model/Valuations.h"
 
+#include <bitset>
+#include <cstring>
+#include <ranges>
+
 #include "storm/storage/BitVector.h"
+#include "storm/storage/umb/model/ValueEncoding.h"
+#include "storm/utility/bitoperations.h"
+
+#include "storm/exceptions/IllegalFunctionCallException.h"
 
 namespace storm::umb {
+
+// ============================================================
+// detail helpers (used by constructors)
+// ============================================================
 
 namespace detail {
 
@@ -114,7 +126,12 @@ Valuations::VariablesInformation createVariablesInformation(ManagerType& express
     return typename Valuations::VariablesInformation{
         .variables = std::move(variables), .expressionManager = expressionManager.shared_from_this(), .sizeInBytes = currentOffset / 8};
 }
+
 }  // namespace detail
+
+// ============================================================
+// Constructors
+// ============================================================
 
 Valuations::Valuations(uint64_t const numEntities, std::vector<ValuationClassDescription> const& descriptions, std::vector<char> valuations,
                        std::vector<uint64_t> stringMapping, std::vector<char> strings, std::optional<std::vector<uint32_t>> classes,
@@ -192,6 +209,10 @@ Valuations::Valuations(ValuationClassDescription const& description, std::shared
 
 Valuations::Valuations(std::vector<VariablesInformation> const& variableClasses) : variableClasses(variableClasses), numEntities(0) {}
 
+// ============================================================
+// Size / count queries
+// ============================================================
+
 uint64_t Valuations::size() const {
     return numEntities;
 }
@@ -208,8 +229,18 @@ bool Valuations::hasStrings() const {
     return !stringMapping.empty();
 }
 
-Valuations::VariablesInformation const& Valuations::info(uint64_t entity) const {
-    return variableClasses[getClassOfEntity(entity)];
+// ============================================================
+// Class and entity queries
+// ============================================================
+
+uint64_t Valuations::getClassOfEntity(uint64_t entity) const {
+    STORM_LOG_ASSERT(entity < size(), "Entity index out of bounds: " << entity << " >= " << size() << ".");
+    if (entityClassMappings) {
+        return entityClassMappings->toClassMapping[entity];
+    } else {
+        STORM_LOG_ASSERT(variableClasses.size() == 1, "No class mapping given but multiple classes exist.");
+        return 0;
+    }
 }
 
 ValuationClassDescription Valuations::getClassDescription(uint64_t classIndex) const {
@@ -237,15 +268,54 @@ ValuationClassDescription Valuations::getClassDescription(uint64_t classIndex) c
     return res;
 }
 
-uint64_t Valuations::getClassOfEntity(uint64_t entity) const {
-    STORM_LOG_ASSERT(entity < size(), "Entity index out of bounds: " << entity << " >= " << size() << ".");
-    if (entityClassMappings) {
-        return entityClassMappings->toClassMapping[entity];
-    } else {
-        STORM_LOG_ASSERT(variableClasses.size() == 1, "No class mapping given but multiple classes exist.");
-        return 0;
-    }
+storm::expressions::ExpressionManager const& Valuations::getManager() const {
+    auto const& manager = variableClasses.front().expressionManager;
+    STORM_LOG_THROW(
+        std::all_of(variableClasses.begin(), variableClasses.end(), [&manager](auto const& varClass) { return varClass.expressionManager == manager; }),
+        storm::exceptions::IllegalFunctionCallException, "Expression manager is not unique.");
+    return *manager;
 }
+
+storm::expressions::ExpressionManager const& Valuations::getManager(uint64_t classIndex) const {
+    STORM_LOG_ASSERT(classIndex < variableClasses.size(),
+                     "Class index " << classIndex << " out of bounds. Only " << variableClasses.size() << "classes known.");
+    return *variableClasses[classIndex].expressionManager;
+}
+
+// ============================================================
+// Variable lookup
+// ============================================================
+
+Valuations::VariableInformation const& Valuations::getVariableInformation(uint64_t entity, storm::expressions::Variable const& variable) const {
+    auto const& vars = info(entity).variables;
+    auto varInfoIt = std::find_if(vars.begin(), vars.end(), [&variable](auto const& varInfo) { return varInfo.expressionVariable == variable; });
+    STORM_LOG_ASSERT(varInfoIt != vars.end(), "Can not find unknown variable " << variable.getName() << ".");
+    return *varInfoIt;
+}
+
+Valuations::VariableInformation const& Valuations::getVariableInformation(storm::expressions::Variable const& variable) const {
+    STORM_LOG_ASSERT(numClasses() == 1, "Trying to get variable information but the class is not unique among entities.");
+    return getVariableInformation(0, variable);
+}
+
+std::set<storm::expressions::Variable> Valuations::getAllVariables() const {
+    std::set<storm::expressions::Variable> result;
+    for (auto const& varClass : variableClasses) {
+        for (auto const& varInfo : varClass.variables) {
+            result.insert(varInfo.expressionVariable);
+        }
+    }
+    return result;
+}
+
+bool Valuations::entityHasVariable(uint64_t entity, storm::expressions::Variable const& variable) const {
+    auto const& vars = info(entity).variables;
+    return std::any_of(vars.begin(), vars.end(), [&variable](auto const& varInfo) { return varInfo.expressionVariable == variable; });
+}
+
+// ============================================================
+// Raw data access
+// ============================================================
 
 std::span<char const> Valuations::getRawBytes(uint64_t entity) const {
     STORM_LOG_ASSERT(entity < size(), "Entity index out of bounds: " << entity << " >= " << size() << ".");
@@ -269,6 +339,23 @@ std::span<char> Valuations::getRawBytes(uint64_t entity) {
         return std::span<char>(&valuations[start], variableClasses.front().sizeInBytes);
     }
 }
+
+storm::umb::UmbModel::Valuation Valuations::getRawUmbData() const {
+    storm::umb::UmbModel::Valuation result;
+    if (entityClassMappings.has_value()) {
+        result.valuationToClass = entityClassMappings->toClassMapping;
+    }
+    result.valuations = valuations;
+    if (hasStrings()) {
+        result.stringMapping = stringMapping;
+        result.strings = strings;
+    }
+    return result;
+}
+
+// ============================================================
+// Mutation
+// ============================================================
 
 void Valuations::resize(uint64_t newEntityCount, uint64_t const classIndex) {
     if (newEntityCount > size()) {
@@ -303,44 +390,17 @@ void Valuations::resize(uint64_t newEntityCount, uint64_t const classIndex) {
     }
 }
 
-storm::expressions::ExpressionManager const& Valuations::getManager() const {
-    auto const& manager = variableClasses.front().expressionManager;
-    STORM_LOG_THROW(
-        std::all_of(variableClasses.begin(), variableClasses.end(), [&manager](auto const& varClass) { return varClass.expressionManager == manager; }),
-        storm::exceptions::IllegalFunctionCallException, "Expression manager is not unique.");
-    return *manager;
+// ============================================================
+// Private helpers
+// ============================================================
+
+Valuations::VariablesInformation const& Valuations::info(uint64_t entity) const {
+    return variableClasses[getClassOfEntity(entity)];
 }
 
-storm::expressions::ExpressionManager const& Valuations::getManager(uint64_t classIndex) const {
-    STORM_LOG_ASSERT(classIndex < variableClasses.size(),
-                     "Class index " << classIndex << " out of bounds. Only " << variableClasses.size() << "classes known.");
-    return *variableClasses[classIndex].expressionManager;
-}
-
-storm::umb::UmbModel::Valuation Valuations::getRawUmbData() const {
-    storm::umb::UmbModel::Valuation result;
-    if (entityClassMappings.has_value()) {
-        result.valuationToClass = entityClassMappings->toClassMapping;
-    }
-    result.valuations = valuations;
-    if (hasStrings()) {
-        result.stringMapping = stringMapping;
-        result.strings = strings;
-    }
-    return result;
-}
-
-Valuations::VariableInformation const& Valuations::getVariableInformation(uint64_t entity, storm::expressions::Variable const& variable) const {
-    auto const& vars = info(entity).variables;
-    auto varInfoIt = std::find_if(vars.begin(), vars.end(), [&variable](auto const& varInfo) { return varInfo.expressionVariable == variable; });
-    STORM_LOG_ASSERT(varInfoIt != vars.end(), "Can not find unknown variable " << variable.getName() << ".");
-    return *varInfoIt;
-}
-
-Valuations::VariableInformation const& Valuations::getVariableInformation(storm::expressions::Variable const& variable) const {
-    STORM_LOG_ASSERT(numClasses() == 1, "Trying to get variable information but the class is not unique among entities.");
-    return getVariableInformation(0, variable);
-}
+// ============================================================
+// Low-level bit I/O
+// ============================================================
 
 bool Valuations::readBit(std::span<char const> bytes, uint64_t const position) const {
     STORM_LOG_ASSERT(position < bytes.size() * 8, "Bit position exceeds valuation size.");
@@ -418,41 +478,9 @@ void Valuations::writeUint64(std::span<char> bytes, uint64_t const bitOffset, ui
     }
 }
 
-template<typename T>
-Valuations Valuations::selectEntities(T const& selectedEntities) const {
-    Valuations result(variableClasses);
-    result.numEntities = [&selectedEntities]() {
-        if constexpr (std::is_same_v<T, storm::storage::BitVector>) {
-            return selectedEntities.getNumberOfSetBits();
-        } else {
-            return std::ranges::distance(selectedEntities);
-        }
-    }();
-    result.stringMapping = stringMapping;
-    result.strings = strings;
-
-    if (entityClassMappings) {
-        result.entityClassMappings.emplace();
-        result.entityClassMappings->toValuationsMapping.reserve(result.numEntities + 1);
-        result.entityClassMappings->toValuationsMapping.push_back(0);  // first entry of toValuationsMapping must be 0
-        result.entityClassMappings->toClassMapping.reserve(result.numEntities);
-    } else {
-        result.valuations.reserve(result.numEntities * result.variableClasses.front().sizeInBytes);
-    }
-    for (auto const oldEntityIndex : selectedEntities) {
-        STORM_LOG_ASSERT(oldEntityIndex < size(), "Selected entity index " << oldEntityIndex << " out of bounds. Only " << size() << " entities known.");
-        auto const bytes = getRawBytes(oldEntityIndex);
-        result.valuations.insert(valuations.end(), bytes.begin(), bytes.end());
-        if (entityClassMappings) {
-            result.entityClassMappings->toValuationsMapping.push_back(result.valuations.size());
-            result.entityClassMappings->toClassMapping.push_back(entityClassMappings->toClassMapping[oldEntityIndex]);
-        }
-    }
-    return result;
-}
-
-template Valuations Valuations::selectEntities<storm::storage::BitVector>(storm::storage::BitVector const&) const;
-template Valuations Valuations::selectEntities<std::vector<uint64_t>>(std::vector<uint64_t> const&) const;
+// ============================================================
+// Integer encoding (arbitrary precision)
+// ============================================================
 
 template<bool Signed>
 Valuations::Integer Valuations::readInteger(std::span<char const> bytes, uint64_t const bitOffset, uint64_t const bitSize) const {
@@ -511,6 +539,10 @@ void Valuations::writeInteger(std::span<char> bytes, uint64_t bitOffset, uint64_
 template void Valuations::writeInteger<false>(std::span<char>, uint64_t, uint64_t, Integer const&) const;
 template void Valuations::writeInteger<true>(std::span<char>, uint64_t, uint64_t, Integer const&) const;
 
+// ============================================================
+// Typed value encoding
+// ============================================================
+
 template<typename ValueType>
 void Valuations::writeValue(std::span<char> bytes, uint64_t bitOffset, uint64_t bitSize, ValueType const& value) {
     if constexpr (std::is_same_v<ValueType, bool>) {
@@ -560,5 +592,45 @@ template void Valuations::writeValue<Valuations::Integer>(std::span<char>, uint6
 template void Valuations::writeValue<storm::RationalNumber>(std::span<char>, uint64_t, uint64_t, storm::RationalNumber const&);
 template void Valuations::writeValue<std::string_view>(std::span<char>, uint64_t, uint64_t, std::string_view const&);
 template void Valuations::writeValue<std::string>(std::span<char>, uint64_t, uint64_t, std::string const&);
+
+// ============================================================
+// Selection
+// ============================================================
+
+template<typename T>
+Valuations Valuations::selectEntities(T const& selectedEntities) const {
+    Valuations result(variableClasses);
+    result.numEntities = [&selectedEntities]() {
+        if constexpr (std::is_same_v<T, storm::storage::BitVector>) {
+            return selectedEntities.getNumberOfSetBits();
+        } else {
+            return std::ranges::distance(selectedEntities);
+        }
+    }();
+    result.stringMapping = stringMapping;
+    result.strings = strings;
+
+    if (entityClassMappings) {
+        result.entityClassMappings.emplace();
+        result.entityClassMappings->toValuationsMapping.reserve(result.numEntities + 1);
+        result.entityClassMappings->toValuationsMapping.push_back(0);  // first entry of toValuationsMapping must be 0
+        result.entityClassMappings->toClassMapping.reserve(result.numEntities);
+    } else {
+        result.valuations.reserve(result.numEntities * result.variableClasses.front().sizeInBytes);
+    }
+    for (auto const oldEntityIndex : selectedEntities) {
+        STORM_LOG_ASSERT(oldEntityIndex < size(), "Selected entity index " << oldEntityIndex << " out of bounds. Only " << size() << " entities known.");
+        auto const bytes = getRawBytes(oldEntityIndex);
+        result.valuations.insert(valuations.end(), bytes.begin(), bytes.end());
+        if (entityClassMappings) {
+            result.entityClassMappings->toValuationsMapping.push_back(result.valuations.size());
+            result.entityClassMappings->toClassMapping.push_back(entityClassMappings->toClassMapping[oldEntityIndex]);
+        }
+    }
+    return result;
+}
+
+template Valuations Valuations::selectEntities<storm::storage::BitVector>(storm::storage::BitVector const&) const;
+template Valuations Valuations::selectEntities<std::vector<uint64_t>>(std::vector<uint64_t> const&) const;
 
 }  // namespace storm::umb

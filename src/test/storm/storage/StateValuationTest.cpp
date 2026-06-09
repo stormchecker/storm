@@ -28,15 +28,21 @@ TEST_F(StateValuationTest, StateValuationConstruction) {
     ASSERT_TRUE(model->hasStateValuations());
     auto const& sv = model->getStateValuations();
     ASSERT_EQ(sv.getNumberOfEntities(), model->getNumberOfStates());
-    uint64_t const sinit = *model->getInitialStates().begin();
-    ASSERT_EQ(2, sv.getManager().getNumberOfVariables());
     ASSERT_TRUE(sv.getManager().hasVariable("s"));
     ASSERT_TRUE(sv.getManager().hasVariable("d"));
     auto const s = sv.getManager().getVariable("s");
     auto const d = sv.getManager().getVariable("d");
+    auto const vars = sv.getAllVariables();
+    ASSERT_EQ(2, vars.size());
+    ASSERT_TRUE(vars.contains(s));
+    ASSERT_TRUE(vars.contains(d));
     // reading values at sinit
+    uint64_t const sinit = *model->getInitialStates().begin();
+    ASSERT_TRUE(sv.entityHasVariable(sinit, s));
+    ASSERT_TRUE(sv.entityHasVariable(sinit, d));
     EXPECT_EQ(0, sv.getIntegerValue(sinit, s));
-    EXPECT_EQ(0, sv.getIntegerValue(sinit, d));
+    EXPECT_EQ(0, sv.getOptionalIntegerValue(sinit, s).value());
+    EXPECT_EQ(0, sv.getOptionalIntegerValue(sinit, d).value());
     // reading json at sinit
     auto js = sv.toJson(sinit);
     EXPECT_EQ(2, js.size());
@@ -79,6 +85,13 @@ TEST_F(StateValuationTest, StateValuationTransformation) {
     transformer.addExpression(alwaysTrueVar, svar.getExpression() == svar.getExpression());
     transformer.addExpression(alwaysFalseVar, dvar.getExpression() < dvar.getExpression());
     newsv = transformer.build(true);
+    auto const vars = newsv.getAllVariables();
+    ASSERT_EQ(5, vars.size());
+    ASSERT_TRUE(vars.contains(svar));
+    ASSERT_TRUE(vars.contains(dvar));
+    ASSERT_TRUE(vars.contains(sgt3Var));
+    ASSERT_TRUE(vars.contains(alwaysTrueVar));
+    ASSERT_TRUE(vars.contains(alwaysFalseVar));
     uint64_t const sinit = *model->getInitialStates().begin();
     EXPECT_EQ(0, newsv.getIntegerValue(sinit, svar));
     EXPECT_EQ(0, newsv.getIntegerValue(sinit, dvar));
