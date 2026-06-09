@@ -207,7 +207,7 @@ Valuations::Valuations(std::vector<ValuationClassDescription> const& description
 Valuations::Valuations(ValuationClassDescription const& description, std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager)
     : Valuations(0, {description}, {}, {}, {}, std::nullopt, {expressionManager}) {}
 
-Valuations::Valuations(std::vector<VariablesInformation> const& variableClasses) : variableClasses(variableClasses), numEntities(0) {}
+Valuations::Valuations(std::vector<VariablesInformation> const& variableClasses) : numEntities(0), variableClasses(variableClasses) {}
 
 // ============================================================
 // Size / count queries
@@ -254,7 +254,7 @@ ValuationClassDescription Valuations::getClassDescription(uint64_t classIndex) c
             --padding;
         }
         if (padding > 0) {
-            res.variables.push_back(storm::umb::ValuationClassDescription::Padding(padding));
+            res.variables.push_back(storm::umb::ValuationClassDescription::Padding{.padding = padding});
         }
         res.variables.push_back(varInfo.description);
         currBit = varInfo.bitOffset + varInfo.description.type.bitSize();

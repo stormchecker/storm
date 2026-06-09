@@ -12,7 +12,7 @@
 namespace storm {
 
 namespace umb {
-class ValuationClassDescription;
+struct ValuationClassDescription;
 class Valuations;
 }  // namespace umb
 
