@@ -621,7 +621,7 @@ Valuations Valuations::selectEntities(T const& selectedEntities) const {
     for (auto const oldEntityIndex : selectedEntities) {
         STORM_LOG_ASSERT(oldEntityIndex < size(), "Selected entity index " << oldEntityIndex << " out of bounds. Only " << size() << " entities known.");
         auto const bytes = getRawBytes(oldEntityIndex);
-        result.valuations.insert(valuations.end(), bytes.begin(), bytes.end());
+        result.valuations.insert(result.valuations.end(), bytes.begin(), bytes.end());
         if (entityClassMappings) {
             result.entityClassMappings->toValuationsMapping.push_back(result.valuations.size());
             result.entityClassMappings->toClassMapping.push_back(entityClassMappings->toClassMapping[oldEntityIndex]);

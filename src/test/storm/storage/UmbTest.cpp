@@ -301,6 +301,12 @@ TEST(UmbTest, Valuations) {
     EXPECT_EQ(2, valuations.numClasses());
     EXPECT_EQ(classes[0].sizeInBits(), valuations.getClassDescription(0).sizeInBits());
     EXPECT_EQ(classes[1].sizeInBits(), valuations.getClassDescription(1).sizeInBits());
+    auto const vars = valuations.getAllVariables();
+    EXPECT_EQ(4, vars.size());
+    EXPECT_TRUE(vars.contains(b));
+    EXPECT_TRUE(vars.contains(i));
+    EXPECT_TRUE(vars.contains(s));
+    EXPECT_TRUE(vars.contains(r));
     // Insert 200 entities with alternating classes and some non-trivial values
     std::vector<std::optional<bool>> b_values;
     std::vector<int64_t> i_values;
@@ -398,4 +404,156 @@ TEST(UmbTest, Valuations) {
             EXPECT_EQ(r_values[entity], storm::utility::convertNumber<double>(value));
         }
     });
+}
+
+TEST(UmbTest, ValuationsSingleClass) {
+    // Tests point-access via readValue / writeValue, entityHasVariable, getAllVariables, and resize
+    // on a simple single-class layout with non-optional variables only.
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto const b = manager->declareBooleanVariable("b");
+    auto const i = manager->declareIntegerVariable("i");
+    auto const d = manager->declareRationalVariable("d");
+
+    storm::umb::ValuationDescriptionBuilder builder(manager);
+    builder.addBooleanVariable(b);         // 1 bit
+    builder.addIntegerVariable(i, -5, 5);  // 11 values → 4 bits
+    builder.addDoubleVariable(d);          // 64 bits
+    auto const desc = builder.buildClassDescription();
+    EXPECT_EQ(1 + 4 + 64 + 3, desc.sizeInBits());
+
+    storm::umb::Valuations valuations(desc, manager);
+    EXPECT_EQ(0u, valuations.size());
+    EXPECT_EQ(1u, valuations.numClasses());
+
+    // getAllVariables should list exactly the three declared variables
+    auto const vars = valuations.getAllVariables();
+    EXPECT_EQ(3u, vars.size());
+    EXPECT_TRUE(vars.contains(b));
+    EXPECT_TRUE(vars.contains(i));
+    EXPECT_TRUE(vars.contains(d));
+
+    // Insert 6 entities with distinct, easily checkable values
+    std::vector<bool> bVals = {true, false, true, false, true, false};
+    std::vector<int64_t> iVals = {-5, -3, 0, 2, 4, 5};
+    std::vector<double> dVals = {0.0, 1.5, -2.25, 1e10, -1e-5, 3.14};
+
+    for (uint64_t e = 0; e < 6; ++e) {
+        valuations.emplaceBack<false, bool, int64_t, double>([&](auto entity, auto const& var, auto& value) {
+            using ValueType = std::remove_cvref_t<decltype(value)>;
+            if constexpr (std::is_same_v<ValueType, bool>) {
+                value = bVals[entity];
+            } else if constexpr (std::is_same_v<ValueType, int64_t>) {
+                value = iVals[entity];
+            } else {
+                static_assert(std::is_same_v<ValueType, double>);
+                value = dVals[entity];
+            }
+        });
+    }
+    ASSERT_EQ(6u, valuations.size());
+
+    // entityHasVariable: all variables belong to the single class, so always true
+    for (uint64_t e = 0; e < 6; ++e) {
+        EXPECT_TRUE(valuations.entityHasVariable(e, b));
+        EXPECT_TRUE(valuations.entityHasVariable(e, i));
+        EXPECT_TRUE(valuations.entityHasVariable(e, d));
+    }
+
+    // readValue round-trips
+    for (uint64_t e = 0; e < 6; ++e) {
+        EXPECT_EQ(bVals[e], valuations.readValue<bool>(e, b)) << " at entity " << e;
+        EXPECT_EQ(iVals[e], valuations.readValue<int64_t>(e, i)) << " at entity " << e;
+        EXPECT_EQ(dVals[e], valuations.readValue<double>(e, d)) << " at entity " << e;
+    }
+
+    // writeValue then readValue: overwrite entity 3 and verify neighbours are unaffected
+    valuations.writeValue(3, b, true);
+    valuations.writeValue(3, i, int64_t(-1));
+    valuations.writeValue(3, d, 99.0);
+    EXPECT_EQ(true, valuations.readValue<bool>(3, b));
+    EXPECT_EQ(-1, valuations.readValue<int64_t>(3, i));
+    EXPECT_EQ(99.0, valuations.readValue<double>(3, d));
+    // neighbours untouched
+    EXPECT_EQ(bVals[2], valuations.readValue<bool>(2, b));
+    EXPECT_EQ(iVals[4], valuations.readValue<int64_t>(4, i));
+
+    // resize: grow to 9 — new entities get default values and the first 6 stay intact
+    valuations.resize(9);
+    ASSERT_EQ(9u, valuations.size());
+    for (uint64_t e = 0; e < 6; ++e) {
+        if (e == 3)
+            continue;  // entity 3 was overwritten above
+        EXPECT_EQ(bVals[e], valuations.readValue<bool>(e, b)) << " at entity " << e;
+        EXPECT_EQ(iVals[e], valuations.readValue<int64_t>(e, i)) << " at entity " << e;
+        EXPECT_EQ(dVals[e], valuations.readValue<double>(e, d)) << " at entity " << e;
+    }
+
+    // resize: shrink back to 4
+    valuations.resize(4);
+    EXPECT_EQ(4u, valuations.size());
+    EXPECT_EQ(bVals[0], valuations.readValue<bool>(0, b));
+    EXPECT_EQ(iVals[1], valuations.readValue<int64_t>(1, i));
+    EXPECT_EQ(dVals[2], valuations.readValue<double>(2, d));
+}
+
+TEST(UmbTest, ValuationsSelectEntities) {
+    // Tests selectEntities (BitVector and vector<uint64_t> overloads) on a single-class
+    // layout. Verifies that the selection preserves values in the correct order and that the
+    // original Valuations object is left unchanged.
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto const b = manager->declareBooleanVariable("b");
+    auto const i = manager->declareIntegerVariable("i");
+
+    storm::umb::ValuationDescriptionBuilder builder(manager);
+    builder.addBooleanVariable(b);        // 1 bit
+    builder.addIntegerVariable(i, 0, 7);  // 8 values → 3 bits
+    auto const desc = builder.buildClassDescription();
+
+    storm::umb::Valuations valuations(desc, manager);
+
+    // Insert 8 entities: b = (entity % 2 == 0), i = entity
+    for (uint64_t e = 0; e < 8; ++e) {
+        valuations.emplaceBack<false, bool, int64_t>([e](auto /*entity*/, auto const& var, auto& value) {
+            using ValueType = std::remove_cvref_t<decltype(value)>;
+            if constexpr (std::is_same_v<ValueType, bool>) {
+                value = (e % 2 == 0);
+            } else {
+                static_assert(std::is_same_v<ValueType, int64_t>);
+                value = static_cast<int64_t>(e);
+            }
+        });
+    }
+    ASSERT_EQ(8u, valuations.size());
+
+    // --- BitVector selection: pick entities 1, 3, 5, 7 (odd indices) ---
+    storm::storage::BitVector bvOdd(8, false);
+    for (uint64_t e = 1; e < 8; e += 2) {
+        bvOdd.set(e);
+    }
+    auto const selectedBv = valuations.selectEntities(bvOdd);
+    ASSERT_EQ(4u, selectedBv.size());
+    EXPECT_EQ(1u, selectedBv.numClasses());
+    for (uint64_t sel = 0; sel < 4; ++sel) {
+        uint64_t const origEntity = 2 * sel + 1;  // 1, 3, 5, 7
+        EXPECT_EQ(false, selectedBv.readValue<bool>(sel, b)) << " selected entity " << sel;
+        EXPECT_EQ(static_cast<int64_t>(origEntity), selectedBv.readValue<int64_t>(sel, i)) << " selected entity " << sel;
+    }
+
+    // --- vector<uint64_t> selection: pick entities {6, 0, 4} in that order ---
+    std::vector<uint64_t> const indices = {6, 0, 4};
+    auto const selectedVec = valuations.selectEntities(indices);
+    ASSERT_EQ(3u, selectedVec.size());
+    EXPECT_EQ(true, selectedVec.readValue<bool>(0, b));  // entity 6: even → true
+    EXPECT_EQ(6, selectedVec.readValue<int64_t>(0, i));
+    EXPECT_EQ(true, selectedVec.readValue<bool>(1, b));  // entity 0: even → true
+    EXPECT_EQ(0, selectedVec.readValue<int64_t>(1, i));
+    EXPECT_EQ(true, selectedVec.readValue<bool>(2, b));  // entity 4: even → true
+    EXPECT_EQ(4, selectedVec.readValue<int64_t>(2, i));
+
+    // Original must be unchanged
+    ASSERT_EQ(8u, valuations.size());
+    for (uint64_t e = 0; e < 8; ++e) {
+        EXPECT_EQ(e % 2 == 0, valuations.readValue<bool>(e, b)) << " at original entity " << e;
+        EXPECT_EQ(static_cast<int64_t>(e), valuations.readValue<int64_t>(e, i)) << " at original entity " << e;
+    }
 }
