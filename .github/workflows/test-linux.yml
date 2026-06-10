@@ -61,6 +61,7 @@ jobs:
             --build-arg cmake_args="-DSTORM_WARNING_AS_ERROR=ON -DSTORM_COMPILE_WITH_PCH=OFF"
             # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers
       - name: Export ccache from Docker image
+        if: inputs.save_cache && always() && steps.ccache-restore.outputs.cache-hit != 'true'
         run: |
           rm -rf .ci-ccache
           mkdir -p .ci-ccache

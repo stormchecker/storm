@@ -14,12 +14,42 @@ jobs:
       matrix:
         buildType: ["Debug", "Release"]
         config:
-          - {name: "GMP; GMP; Required dependencies", baseImg: "movesrwth/storm-basesystem:latest",               disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF"}
-          - {name: "CLN; GMP; Required dependencies", baseImg: "movesrwth/storm-basesystem:latest",               disable_all: "OFF", ClnExact: "ON",  ClnRatfunc: "OFF"}
-          - {name: "GMP; CLN; Required dependencies", baseImg: "movesrwth/storm-basesystem:latest",               disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "ON"}
-          - {name: "CLN; CLN; Required dependencies", baseImg: "movesrwth/storm-basesystem:latest",               disable_all: "OFF", ClnExact: "ON",  ClnRatfunc: "ON"}
-          - {name: "All dependencies (disabled)",     baseImg: "movesrwth/storm-dependencies:latest",             disable_all: "ON",  ClnExact: "OFF", ClnRatfunc: "OFF"}
-          - {name: "Minimal dependencies",            baseImg: "movesrwth/storm-basesystem:minimal_dependencies", disable_all: "ON",  ClnExact: "OFF", ClnRatfunc: "OFF"}
+          - {name: "GMP; GMP; Required dependencies",
+             baseImg: "movesrwth/storm-basesystem:latest",
+             disable_all: "OFF",
+             ClnExact: "OFF",
+             ClnRatfunc: "OFF"
+          }
+          - {name: "CLN; GMP; Required dependencies",
+             baseImg: "movesrwth/storm-basesystem:latest",
+             disable_all: "OFF",
+             ClnExact: "ON",
+             ClnRatfunc: "OFF"
+          }
+          - {name: "GMP; CLN; Required dependencies",
+             baseImg: "movesrwth/storm-basesystem:latest",
+             disable_all: "OFF",
+             ClnExact: "OFF",
+             ClnRatfunc: "ON"
+          }
+          - {name: "CLN; CLN; Required dependencies",
+             baseImg: "movesrwth/storm-basesystem:latest",
+             disable_all: "OFF",
+             ClnExact: "ON",
+             ClnRatfunc: "ON"
+          }
+          - {name: "All dependencies (disabled)",
+             baseImg: "movesrwth/storm-dependencies:latest",
+             disable_all: "ON",
+             ClnExact: "OFF",
+             ClnRatfunc: "OFF"
+          }
+          - {name: "Minimal dependencies",
+             baseImg: "movesrwth/storm-basesystem:minimal_dependencies",
+             disable_all: "ON",
+             ClnExact: "OFF",
+             ClnRatfunc: "OFF"
+          }
     uses: ./.github/workflows/test-build.yml
     with:
       nr_jobs: "4"
@@ -51,8 +81,18 @@ jobs:
       matrix:
         buildType: ["Debug", "Release"]
         config:
-          - {name: "GCC",   cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",         packages: "",      dockerfile: ".github/workflows/Dockerfile.archlinux", baseImg: "archlinux:latest"}
-          - {name: "Clang", cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",   packages: "clang", dockerfile: ".github/workflows/Dockerfile.archlinux", baseImg: "archlinux:latest"}
+          - {name: "GCC",
+             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
+             packages: "",
+             dockerfile: ".github/workflows/Dockerfile.archlinux",
+             baseImg: "archlinux:latest"
+          }
+          - {name: "Clang",
+             cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",
+             packages: "clang",
+             dockerfile: ".github/workflows/Dockerfile.archlinux",
+             baseImg: "archlinux:latest"
+          }
     uses: ./.github/workflows/test-build.yml
     with:
       nr_jobs: "4"
@@ -90,10 +130,22 @@ jobs:
       matrix:
         buildType: ["Debug", "Release"]
         config:
-          - {name: "Mac 14, ARM",   distro: "macos-14",       xcode: "15.4"}
-          - {name: "Mac 15, ARM",   distro: "macos-15",       xcode: "16.4"}
-          - {name: "Mac 26, ARM",   distro: "macos-26",       xcode: "latest-stable"}
-          - {name: "Mac 26, Intel", distro: "macos-26-intel", xcode: "latest-stable"}
+          - {name: "Mac 14, ARM",
+             distro: "macos-14",
+             xcode: "15.4"
+          }
+          - {name: "Mac 15, ARM",
+             distro: "macos-15",
+             xcode: "16.4"
+          }
+          - {name: "Mac 26, ARM",
+             distro: "macos-26",
+             xcode: "latest-stable"
+          }
+          - {name: "Mac 26, Intel",
+             distro: "macos-26-intel",
+             xcode: "latest-stable"
+          }
     uses: ./.github/workflows/test-mac.yml
     with:
       nr_jobs: "4"
@@ -110,8 +162,12 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {buildType: "Debug",   dockerTag: "ci-debug"}
-          - {buildType: "Release", dockerTag: "ci"}
+          - {buildType: "Debug",
+             dockerTag: "ci-debug"
+          }
+          - {buildType: "Release",
+             dockerTag: "ci"
+          }
           # TODO: Add binaries build/publish configs
     uses: ./.github/workflows/test-deploy.yml
     with:

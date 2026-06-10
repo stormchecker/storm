@@ -12,9 +12,27 @@ jobs:
       fail-fast: true
       matrix:
         config:
-          - {name: "Debug; All dependencies",          buildType: "Debug",   baseImg: "movesrwth/storm-dependencies:latest",            disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF"}
-          - {name: "Release; All dependencies",        buildType: "Release", baseImg: "movesrwth/storm-dependencies:latest",            disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF"}
-          - {name: "Release; GMP; GMP; Minimal dependencies", buildType: "Release", baseImg: "movesrwth/storm-basesystem:minimal_dependencies", disable_all: "ON",  ClnExact: "OFF", ClnRatfunc: "OFF"}
+          - {name: "Debug; All dependencies",
+             buildType: "Debug",
+             baseImg: "movesrwth/storm-dependencies:latest",
+             disable_all: "OFF", 
+             ClnExact: "OFF", 
+             ClnRatfunc: "OFF"
+          }
+          - {name: "Release; All dependencies",
+             buildType: "Release", 
+             baseImg: "movesrwth/storm-dependencies:latest",
+             disable_all: "OFF", 
+             ClnExact: "OFF", 
+             ClnRatfunc: "OFF"
+          }
+          - {name: "Release; GMP; GMP; Minimal dependencies", 
+             buildType: "Release",
+             baseImg: "movesrwth/storm-basesystem:minimal_dependencies",
+             disable_all: "ON",
+             ClnExact: "OFF",
+             ClnRatfunc: "OFF"
+          }
     uses: ./.github/workflows/test-build.yml
     with:
       nr_jobs: "4"
@@ -46,8 +64,18 @@ jobs:
       fail-fast: true
       matrix:
         config:
-          - {name: "GCC",   cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",       packages: "",      dockerfile: ".github/workflows/Dockerfile.archlinux", baseImg: "archlinux:latest"}
-          - {name: "Clang", cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON", packages: "clang", dockerfile: ".github/workflows/Dockerfile.archlinux", baseImg: "archlinux:latest"}
+          - {name: "GCC",
+             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
+             packages: "",
+             dockerfile: ".github/workflows/Dockerfile.archlinux", 
+             baseImg: "archlinux:latest"
+          }
+          - {name: "Clang", 
+             cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON", 
+             packages: "clang", 
+             dockerfile: ".github/workflows/Dockerfile.archlinux", 
+             baseImg: "archlinux:latest"
+          }
     uses: ./.github/workflows/test-build.yml
     with:
       nr_jobs: "4"
@@ -85,9 +113,21 @@ jobs:
       fail-fast: true
       matrix:
         config:
-          - {name: "Mac 14, ARM",   distro: "macos-14",       xcode: "15.4",          buildType: "Release"}
-          - {name: "Mac 26, ARM",   distro: "macos-26",       xcode: "latest-stable", buildType: "Release"}
-          - {name: "Mac 26, Intel", distro: "macos-26-intel", xcode: "latest-stable", buildType: "Release"}
+          - {name: "Mac 14, ARM",   
+             distro: "macos-14",       
+             xcode: "15.4",
+             buildType: "Release"
+          }
+          - {name: "Mac 26, ARM",   
+             distro: "macos-26",       
+             xcode: "latest-stable",
+             buildType: "Release"
+          }
+          - {name: "Mac 26, Intel", 
+             distro: "macos-26-intel", 
+             xcode: "latest-stable",
+             buildType: "Release"
+          }
     uses: ./.github/workflows/test-mac.yml
     with:
       nr_jobs: "4"

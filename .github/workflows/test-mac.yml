@@ -77,6 +77,7 @@ jobs:
           brew update
           brew install automake boost ccache cln ginac glpk hwloc libarchive xerces-c z3
       - name: Prepare ccache
+        if: inputs.restore_cache
         run: |
           ccache --max-size=2G
           ccache --zero-stats
@@ -91,6 +92,7 @@ jobs:
         run: |
           make -j ${NR_JOBS}
       - name: Print ccache stats
+        if: inputs.restore_cache
         run: ccache --show-stats --verbose
       - name: Save ccache (macOS)
         if: inputs.save_cache && always() && steps.ccache-restore-macos.outputs.cache-hit != 'true'

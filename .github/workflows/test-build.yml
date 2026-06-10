@@ -141,6 +141,7 @@ jobs:
             --build-arg packages="${{ inputs.packages }}" \
             --build-arg no_threads=${NR_JOBS}
       - name: Export ccache from Docker image
+        if: inputs.save_cache && always() && steps.ccache-restore.outputs.cache-hit != 'true'
         run: |
           rm -rf .ci-ccache
           mkdir -p .ci-ccache
