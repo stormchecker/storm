@@ -41,6 +41,7 @@ ARG all_sanitizers="OFF"
 
 # Specify additional CMake arguments for Storm
 ARG cmake_args=""
+ARG ccache_size="3G"
 
 
 # Build Storm
@@ -95,6 +96,6 @@ RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
 
 # Build Storm
 # (This can be adapted to only build 'storm' or 'binaries' depending on custom needs)
-RUN ccache --max-size=3G && ccache --zero-stats && make -j $no_threads && ccache --show-stats --verbose
+RUN ccache --max-size=$ccache_size && ccache --zero-stats && make -j $no_threads && ccache --show-stats --verbose
 
 WORKDIR /opt/storm

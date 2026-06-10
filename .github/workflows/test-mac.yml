@@ -3,7 +3,7 @@ name: macOS Tests
 on:
   workflow_call:
     inputs:
-      NR_JOBS:
+      nr_jobs:
         description: "Number of parallel build jobs"
         type: string
         default: "4"
@@ -42,7 +42,7 @@ jobs:
     runs-on: ${{ inputs.distro }}
     env:
       CCACHE_DIR: /Users/runner/.ccache
-      NR_JOBS: ${{ inputs.NR_JOBS }}
+      NR_JOBS: ${{ inputs.nr_jobs }}
     steps:
       - uses: maxim-lobanov/setup-xcode@v1
         with:

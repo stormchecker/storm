@@ -22,7 +22,7 @@ jobs:
           - {name: "Minimal dependencies",            baseImg: "movesrwth/storm-basesystem:minimal_dependencies", disable_all: "ON",  ClnExact: "OFF", ClnRatfunc: "OFF"}
     uses: ./.github/workflows/test-build.yml
     with:
-      NR_JOBS: "4"
+      nr_jobs: "4"
       name: ${{ matrix.config.name }}
       baseImg: ${{ matrix.config.baseImg }}
       buildType: ${{ matrix.buildType }}
@@ -41,7 +41,6 @@ jobs:
       ClnExact: ${{ matrix.config.ClnExact }}
       ClnRatfunc: ${{ matrix.config.ClnRatfunc }}
       AllSanitizers: "OFF"
-      cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
       restore_cache: false
       save_cache: false
       install: true
@@ -56,7 +55,7 @@ jobs:
           - {name: "Clang", cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",   packages: "clang", dockerfile: ".github/workflows/Dockerfile.archlinux", baseImg: "archlinux:latest"}
     uses: ./.github/workflows/test-build.yml
     with:
-      NR_JOBS: "4"
+      nr_jobs: "4"
       name: ${{ matrix.config.name }}
       buildType: ${{ matrix.buildType }}
       Developer: ${{ matrix.buildType == 'Debug' && 'ON' || 'OFF' }}
@@ -77,7 +76,7 @@ jobs:
         buildType: ["Debug", "Release"]
     uses: ./.github/workflows/test-linux.yml
     with:
-      NR_JOBS: "4"
+      nr_jobs: "4"
       distro: ${{ matrix.distro }}
       buildType: ${{ matrix.buildType }}
       runner: ubuntu-latest
@@ -97,7 +96,7 @@ jobs:
           - {name: "Mac 26, Intel", distro: "macos-26-intel", xcode: "latest-stable"}
     uses: ./.github/workflows/test-mac.yml
     with:
-      NR_JOBS: "4"
+      nr_jobs: "4"
       name: ${{ matrix.config.name }}
       distro: ${{ matrix.config.distro }}
       xcode: ${{ matrix.config.xcode }}
@@ -116,7 +115,7 @@ jobs:
           # TODO: Add binaries build/publish configs
     uses: ./.github/workflows/test-deploy.yml
     with:
-      NR_JOBS: "4"
+      nr_jobs: "4"
       buildType: ${{ matrix.config.buildType }}
       dockerTag: ${{ matrix.config.dockerTag }}
     secrets: inherit

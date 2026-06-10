@@ -33,11 +33,11 @@ set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 # with GMP rational functions (STORM_USE_CLN_RF=OFF) in Release mode: the inlined std::vector destructor
 # for MatrixEntry<..., RationalFunction<..., GMP>> is incorrectly flagged. Not a real memory error.
 # See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108846
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set_source_files_properties(
-        ${PROJECT_SOURCE_DIR}/src/storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.cpp
-        PROPERTIES COMPILE_FLAGS -Wno-free-nonheap-object)
-endif()
+# if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+#     set_source_files_properties(
+#         ${PROJECT_SOURCE_DIR}/src/storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.cpp
+#         PROPERTIES COMPILE_FLAGS -Wno-free-nonheap-object)
+# endif()
 
 # installation
 install(TARGETS storm

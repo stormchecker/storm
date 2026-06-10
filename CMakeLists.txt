@@ -182,6 +182,8 @@ if(STORM_COMPILE_WITH_CCACHE)
 	mark_as_advanced(CCACHE_FOUND)
 	if(CCACHE_FOUND)
 		message(STATUS "Storm - Using ccache")
+		# Relax ccache the caching keys, pch_defines tries to ignore precompiled headers (but often does not succeed in our case), 
+		# the time options are commonly used and ignore time macros when calculating the cache key, improving cache hit rates.
 		set(ENV{CCACHE_SLOPPINESS} "pch_defines,time_macros,include_file_mtime,include_file_ctime")
 		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
 
@@ -331,11 +333,6 @@ SET(STORM_PRECOMPILED_HEADERS "<any>" "<map>" "<vector>" "<unordered_set>" "<for
 		"<optional>" "<ostream>" "<istream>" "<list>" "<set>" "<fstream>" "<string>" "<boost/optional.hpp>" "<boost/variant.hpp>"
 		"<boost/container/flat_set.hpp>" "<boost/dynamic_bitset.hpp>" "<boost/range/irange.hpp>")
 
-function(storm_target_precompile_headers target)
-	if(NOT CMAKE_DISABLE_PRECOMPILE_HEADERS)
-		target_precompile_headers(${target} ${ARGN})
-	endif()
-endfunction()
 
 #############################################################
 ##

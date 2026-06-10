@@ -3,7 +3,7 @@ name: Build Tests
 on:
   workflow_call:
     inputs:
-      NR_JOBS:
+      nr_jobs:
         description: "Number of parallel build jobs"
         type: string
         default: "4"
@@ -22,7 +22,7 @@ on:
       cmakeArgs:
         description: "Extra CMake arguments"
         type: string
-        default: ""
+        default: "-DSTORM_WARNING_AS_ERROR=ON"
       dockerfile:
         description: "Path to the Dockerfile to use"
         type: string
@@ -102,7 +102,7 @@ jobs:
     name: Build Tests (${{ inputs.name }}, ${{ inputs.buildType }})
     runs-on: ubuntu-latest
     env:
-      NR_JOBS: ${{ inputs.NR_JOBS }}
+      NR_JOBS: ${{ inputs.nr_jobs }}
     steps:
       - name: Git clone
         uses: actions/checkout@v6
