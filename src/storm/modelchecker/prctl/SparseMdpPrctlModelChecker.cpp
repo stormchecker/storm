@@ -7,8 +7,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/FragmentSpecification.h"
-#include "storm/modelchecker/cvar/CvarQueryInformation.h"
-#include "storm/modelchecker/cvar/helper/SparseCvarComputationHelper.h"
+#include "storm/modelchecker/cvar/CvarModelChecking.h"
 #include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
@@ -531,25 +530,10 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
     if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "CVaR formulas are not supported for interval models.");
     } else {
-        STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException,
-                        "Computing CVaR is only supported for the initial states of a model.");
-        STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidOperationException,
-                        "CVaR is not supported on models with multiple initial states.");
-
-        // check if query fits specified format
-        auto cvarQueryInformation = storm::modelchecker::cvar::extractCvarQueryInformation(checkTask.getFormula());
-        auto targetStates =
-            this->check(env, *cvarQueryInformation.targetFormula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
-
-        storm::modelchecker::cvar::SparseCvarComputationHelper<SparseMdpModelType> cvarHelper(this->getModel(), cvarQueryInformation, targetStates);
-        auto cvarResult = cvarHelper.computeCvar(env, checkTask.isProduceSchedulersSet());
-
-        std::unique_ptr<CheckResult> result(
-            new ExplicitQuantitativeCheckResult<SolutionType>(*this->getModel().getInitialStates().begin(), std::move(cvarResult.value)));
-        if (checkTask.isProduceSchedulersSet() && cvarResult.scheduler) {
-            result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(cvarResult.scheduler));
-        }
-        return result;
+        auto formulaChecker = [&](storm::logic::Formula const& formula) {
+            return this->check(env, formula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
+        };
+        return cvar::performCvarModelChecking(env, this->getModel(), checkTask, formulaChecker);
     }
 }
 

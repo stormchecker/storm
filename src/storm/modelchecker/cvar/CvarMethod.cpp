@@ -11,7 +11,7 @@ std::string toString(CvarMethod method) {
         case CvarMethod::WeightedReachability:
             return "weighted-reachability";
         case CvarMethod::SspParetoVi:
-            return "ssp-pareto-vi";
+            return "ssp-vi";
     }
     return "unknown";
 }

@@ -114,7 +114,7 @@ class SparseSspCvarParetoViHelper {
      * candidate n + E / t, where E is the minimal continuation cost on the frontier at probability 1 - t.
      */
     static std::optional<ValueType> extractCvarCandidateFromInitialFrontier(SspParetoFront<ValueType> const& initialFrontier, uint64_t costBound,
-                                                                            double alpha) {
+                                                                            storm::RationalNumber const& alpha) {
         ValueType const targetProbability = storm::utility::one<ValueType>() - storm::utility::convertNumber<ValueType>(alpha);
         auto continuationCost = initialFrontier.getMinimalContinuationCostAtProbability(targetProbability);
         if (!continuationCost.has_value()) {

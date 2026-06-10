@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/CvarFormula.h"
 #include "storm/solver/OptimizationDirection.h"
 
@@ -11,7 +12,7 @@ namespace modelchecker {
 namespace cvar {
 
 struct CvarQueryInformation {
-    double alpha;
+    storm::RationalNumber alpha;
     storm::solver::OptimizationDirection optimizationDirection;
     boost::optional<std::string> rewardModelName;
     std::shared_ptr<storm::logic::Formula const> targetFormula;

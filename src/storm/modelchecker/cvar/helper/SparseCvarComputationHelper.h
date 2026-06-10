@@ -1,6 +1,7 @@
 #pragma once
 
 #include "storm/environment/Environment.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/cvar/CvarClassification.h"
@@ -27,8 +28,7 @@ class SparseCvarComputationHelper {
     }
 
     CvarComputationResult<ValueType> computeCvar(Environment const& env, bool produceScheduler = false) const {
-        auto queryKind = classifyCvarQuery(queryInformation);
-        auto backendKind = selectCvarBackend(model, queryInformation, queryKind, targetStates, env.modelchecker().cvar().getMethod());
+        auto backendKind = selectCvarBackend(model, queryInformation, targetStates, env.modelchecker().cvar().getMethod());
 
         switch (backendKind) {
             case CvarBackendKind::WeightedReachability: {

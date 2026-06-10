@@ -11,33 +11,14 @@ namespace storm {
 namespace modelchecker {
 namespace cvar {
 /*!
- * Classifies the embedded CVaR query at the formula level.
- *
- * This is intentionally separate from the concrete backend selection below:
- * multiple concrete backends may share the same surface query syntax.
- */
-enum class CvarQueryKind { ReachabilityReward };
-
-/*!
  * Selects the concrete CVaR backend induced by a query on a given
  * model and reward structure.
  *
  * Weighted reachability is the currently implemented LP-based terminal-reward
- * setting. SSP will be used by the future value-iteration implementation for
- * accumulated state-action costs until reaching the goal.
+ * setting. SSP uses Pareto value iteration for accumulated costs until
+ * reaching the goal.
  */
 enum class CvarBackendKind { WeightedReachability, Ssp };
-
-/*!
- * Determines the formula-level CVaR query kind.
- *
- * The current front-end only admits reachability reward CVaR queries, but this
- * explicit classification provides the extension point for future CVaR query
- * families.
- */
-inline CvarQueryKind classifyCvarQuery(CvarQueryInformation const&) {
-    return CvarQueryKind::ReachabilityReward;
-}
 
 /*!
  * Selects the concrete CVaR backend to use.
@@ -48,8 +29,8 @@ inline CvarQueryKind classifyCvarQuery(CvarQueryInformation const&) {
  * weighted-reachability path until SSP preprocessing is introduced.
  */
 template<typename SparseMdpModelType>
-CvarBackendKind selectCvarBackend(SparseMdpModelType const& model, CvarQueryInformation const& queryInformation, CvarQueryKind,
-                                  storm::storage::BitVector const&, CvarMethod method) {
+CvarBackendKind selectCvarBackend(SparseMdpModelType const& model, CvarQueryInformation const& queryInformation, storm::storage::BitVector const&,
+                                  CvarMethod method) {
     std::string rewardModelName = queryInformation.rewardModelName ? queryInformation.rewardModelName.get() : "";
     auto const& rewardModel = model.getRewardModel(rewardModelName);
     if (rewardModelName.empty()) {

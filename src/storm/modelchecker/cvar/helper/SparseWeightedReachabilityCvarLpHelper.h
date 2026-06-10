@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
@@ -45,7 +46,7 @@ struct CvarRewardBucket {
 
 template<typename ValueType>
 struct WeightedReachabilityCvarLpData {
-    double alpha;
+    storm::RationalNumber alpha;
     storm::solver::OptimizationDirection optimizationDirection;
     uint64_t initialState;
     storm::storage::BitVector initialStates;
@@ -84,7 +85,7 @@ std::vector<CvarRewardBucket<ValueType>> collectRewardBuckets(storm::storage::Bi
  *   storm --prism model.nm --prop 'R{"reward"}min/max=? [ F "target" ]' --cvar <alpha>
  *   storm --prism model.nm --prop 'R{"reward"}min/max=? [ F "target" ]' --cvar <alpha> --cvar:method wr
  *
- * The --cvar option requires exactly one selected property. That property must be unfiltered and must be an unbounded
+ * The --cvar option requires exactly one selected property. That property must be an unbounded
  * reward query with an optimization direction (min or max) and an eventually formula F phi whose target phi is a state
  * formula. The reward model may be named explicitly (R{"reward"}...) or omitted if the model has a unique reward model.
  *
