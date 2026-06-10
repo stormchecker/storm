@@ -8,8 +8,9 @@
 #include "storm/api/properties.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
-#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/logic/CvarFormula.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/cvar/CvarMethod.h"
 #include "storm/modelchecker/cvar/helper/SspParetoFront.h"
@@ -18,18 +19,9 @@
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/storage/SparseMatrix.h"
-
-#include <set>
+#include "storm/utility/constants.h"
 
 namespace {
-constexpr uint64_t safeChoice = 0;
-constexpr uint64_t balancedChoice = 1;
-constexpr uint64_t adaptiveChoice = 2;
-constexpr uint64_t riskyChoice = 3;
-constexpr uint64_t cashChoice = 0;
-constexpr uint64_t pushChoice = 1;
-
 bool hasLpSolver() {
 #if !defined(STORM_HAVE_GLPK) && !defined(STORM_HAVE_GUROBI) && !defined(STORM_HAVE_Z3) && !defined(STORM_HAVE_SOPLEX)
     return false;
@@ -53,7 +45,7 @@ struct CvarTestInput {
 };
 
 template<typename ValueType>
-CvarTestInput<ValueType> buildCvarInput(std::string const& modelPath, std::string const& propertyString, double alpha) {
+CvarTestInput<ValueType> buildCvarInput(std::string const& modelPath, std::string const& propertyString, std::string const& alpha) {
     storm::prism::Program program = storm::api::parseProgram(modelPath);
     auto properties = storm::api::parsePropertiesForPrismProgram(propertyString, program);
     std::vector<storm::jani::Property> cvarProperties = {storm::api::createCvarProperty(properties.front(), alpha)};
@@ -63,11 +55,10 @@ CvarTestInput<ValueType> buildCvarInput(std::string const& modelPath, std::strin
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::modelchecker::CheckResult> checkInitialStateResult(CvarTestInput<ValueType> const& input, bool produceScheduler = false) {
+std::unique_ptr<storm::modelchecker::CheckResult> checkInitialStateResult(CvarTestInput<ValueType> const& input) {
     storm::Environment env;
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> checker(*input.mdp);
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*input.formula, true);
-    task.setProduceSchedulers(produceScheduler);
     return checker.check(env, task);
 }
 
@@ -85,16 +76,6 @@ ValueType checkInitialStateValueWithMethod(CvarTestInput<ValueType> const& input
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*input.formula, true);
     auto result = checker.check(env, task);
     return result->template asExplicitQuantitativeCheckResult<ValueType>().getMax();
-}
-
-template<typename ValueType>
-std::vector<uint64_t> getChoiceSuccessors(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> const& mdp, uint64_t state, uint64_t localChoice) {
-    std::vector<uint64_t> result;
-    uint64_t row = mdp->getTransitionMatrix().getRowGroupIndices()[state] + localChoice;
-    for (auto const& entry : mdp->getTransitionMatrix().getRow(row)) {
-        result.push_back(entry.getColumn());
-    }
-    return result;
 }
 
 void expectParetoFrontPoints(storm::modelchecker::cvar::SspParetoFront<double> const& front, std::vector<std::pair<double, double>> const& expectedPoints) {
@@ -178,7 +159,7 @@ TEST(CvarQueryTest, SimpleMdp) {
         GTEST_SKIP() << "No LP solver available.";
     }
 
-    double alpha = 0.75;
+    std::string alpha = "0.75";
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_simple_mdp.nm";
 
     auto maxInput = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", alpha);
@@ -195,7 +176,7 @@ TEST(CvarQueryTest, ReachableBadMecIsPreprocessedToZeroTerminalReward) {
         GTEST_SKIP() << "No LP solver available.";
     }
 
-    double alpha = 0.5;
+    std::string alpha = "0.5";
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_bad_mec_mdp.nm";
 
     auto maxInput = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", alpha);
@@ -214,26 +195,15 @@ TEST(CvarQueryTest, TargetReachingMecIsCollapsed) {
 
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_target_reaching_mec_mdp.nm";
 
-    auto maxInput = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", 0.75);
+    auto maxInput = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", "0.75");
     EXPECT_NEAR(checkInitialStateValue(maxInput), 6.0, 1e-10);
 
-    auto minInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", 0.75);
+    auto minInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", "0.75");
     EXPECT_NEAR(checkInitialStateValue(minInput), 4.0, 1e-10);
 }
 
-TEST(CvarQueryTest, RejectsSchedulerForTargetReachingMecCollapse) {
-    if (!hasLpSolver()) {
-        GTEST_SKIP() << "No LP solver available.";
-    }
-
-    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_target_reaching_mec_mdp.nm";
-    auto input = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", 0.75);
-
-    STORM_SILENT_EXPECT_THROW(checkInitialStateResult(input, true), storm::exceptions::InvalidOperationException);
-}
-
 TEST(CvarQueryTest, RejectsNonAbsorbingOriginalTargetStates) {
-    double alpha = 0.5;
+    std::string alpha = "0.5";
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_nonabsorbing_target_mdp.nm";
 
     auto input = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", alpha);
@@ -251,17 +221,17 @@ TEST(CvarQueryTest, BranchingTradeoffMdp) {
 
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_branching_tradeoff_mdp.nm";
 
-    auto maxHalfInput = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", 0.5);
+    auto maxHalfInput = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", "0.5");
     EXPECT_NEAR(checkInitialStateValue(maxHalfInput), 7.0, 1e-10);
 
-    auto maxThreeQuarterInput = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", 0.75);
+    auto maxThreeQuarterInput = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", "0.75");
     EXPECT_NEAR(checkInitialStateValue(maxThreeQuarterInput), 8.0, 1e-10);
 
-    auto minHalfInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", 0.5);
+    auto minHalfInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", "0.5");
     EXPECT_NEAR(checkInitialStateValue(minHalfInput), 0.0, 1e-10);
 
     // this requires randomization of the strategy
-    auto minThreeQuarterInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", 0.75);
+    auto minThreeQuarterInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", "0.75");
     EXPECT_NEAR(checkInitialStateValue(minThreeQuarterInput), 14.0 / 3.0, 1e-10);
 }
 
@@ -272,77 +242,68 @@ TEST(CvarQueryTest, BranchingTradeoffMdpRationalNumbers) {
 
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_branching_tradeoff_mdp.nm";
 
-    auto maxInput = buildCvarInput<storm::RationalNumber>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", 0.75);
+    auto maxInput = buildCvarInput<storm::RationalNumber>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", "0.75");
     EXPECT_EQ(storm::RationalNumber(8), checkInitialStateValue(maxInput));
 
-    auto minInput = buildCvarInput<storm::RationalNumber>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", 0.75);
+    auto minInput = buildCvarInput<storm::RationalNumber>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", "0.75");
     EXPECT_EQ(storm::RationalNumber("14/3"), checkInitialStateValue(minInput));
 }
 
-TEST(CvarQueryTest, ProducesDeterministicSchedulerForMaxBranchingTradeoffMdp) {
+TEST(CvarQueryTest, EquivalentExactAlphaSyntaxes) {
     if (!hasLpSolver()) {
         GTEST_SKIP() << "No LP solver available.";
     }
 
-    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_branching_tradeoff_mdp.nm";
-    auto input = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", 0.75);
-    auto result = checkInitialStateResult(input, true);
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_simple_mdp.nm";
 
-    ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    auto const& quantitativeResult = result->template asExplicitQuantitativeCheckResult<double>();
-    ASSERT_TRUE(quantitativeResult.hasScheduler());
-    EXPECT_NEAR(quantitativeResult.getMax(), 8.0, 1e-10);
+    auto decimalInput = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", "0.75");
+    auto fractionInput = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", "3/4");
+    auto scientificInput = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", "7.5e-1");
 
-    storm::storage::Scheduler<double> const& scheduler = quantitativeResult.getScheduler();
-    uint64_t initialState = *input.mdp->getInitialStates().begin();
-    auto adaptiveSuccessors = getChoiceSuccessors(input.mdp, initialState, adaptiveChoice);
-    ASSERT_EQ(2, adaptiveSuccessors.size());
-    EXPECT_TRUE(scheduler.isDeterministicScheduler());
-    EXPECT_TRUE(scheduler.isMemorylessScheduler());
-    EXPECT_FALSE(scheduler.isPartialScheduler());
-    EXPECT_EQ(adaptiveChoice, scheduler.getChoice(initialState).getDeterministicChoice());
-    std::set<uint64_t> branchChoices = {scheduler.getChoice(adaptiveSuccessors[0]).getDeterministicChoice(),
-                                        scheduler.getChoice(adaptiveSuccessors[1]).getDeterministicChoice()};
-    EXPECT_EQ(std::set<uint64_t>({cashChoice, pushChoice}), branchChoices);
+    EXPECT_NEAR(checkInitialStateValue(decimalInput), 2.0, 1e-10);
+    EXPECT_NEAR(checkInitialStateValue(fractionInput), 2.0, 1e-10);
+    EXPECT_NEAR(checkInitialStateValue(scientificInput), 2.0, 1e-10);
 }
 
-TEST(CvarQueryTest, ProducesRandomizedSchedulerForMinBranchingTradeoffMdp) {
-    if (!hasLpSolver()) {
-        GTEST_SKIP() << "No LP solver available.";
+TEST(CvarQueryTest, RejectsInvalidAlphaSyntaxes) {
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_simple_mdp.nm";
+    storm::prism::Program program = storm::api::parseProgram(modelPath);
+    auto properties = storm::api::parsePropertiesForPrismProgram("R{\"term\"}max=? [ F \"target\" ];", program);
+
+    for (auto const& alpha : {"0", "1", "-0.1", "abc", "nan", "inf", "1/0", "0/1", "1/1", "1e"}) {
+        STORM_SILENT_EXPECT_THROW(storm::api::createCvarProperty(properties.front(), std::string(alpha)), storm::exceptions::InvalidArgumentException);
     }
+}
 
-    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_branching_tradeoff_mdp.nm";
-    auto input = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", 0.75);
-    auto result = checkInitialStateResult(input, true);
+TEST(CvarQueryTest, CvarFormulaValidatesAlphaAndSubformula) {
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_simple_mdp.nm";
+    storm::prism::Program program = storm::api::parseProgram(modelPath);
+    auto properties = storm::api::parsePropertiesForPrismProgram("R{\"term\"}max=? [ F \"target\" ];", program);
+    auto formula = properties.front().getRawFormula();
 
-    ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    auto const& quantitativeResult = result->template asExplicitQuantitativeCheckResult<double>();
-    ASSERT_TRUE(quantitativeResult.hasScheduler());
-    EXPECT_NEAR(quantitativeResult.getMax(), 14.0 / 3.0, 1e-10);
+    EXPECT_NO_THROW(storm::logic::CvarFormula(storm::RationalNumber("3/4"), formula));
+    STORM_SILENT_EXPECT_THROW(storm::logic::CvarFormula(storm::utility::zero<storm::RationalNumber>(), formula), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_EXPECT_THROW(storm::logic::CvarFormula(storm::utility::one<storm::RationalNumber>(), formula), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_EXPECT_THROW(storm::logic::CvarFormula(storm::RationalNumber("1/2"), nullptr), storm::exceptions::InvalidArgumentException);
+}
 
-    storm::storage::Scheduler<double> const& scheduler = quantitativeResult.getScheduler();
-    EXPECT_FALSE(scheduler.isDeterministicScheduler());
-    EXPECT_TRUE(scheduler.isMemorylessScheduler());
-    EXPECT_FALSE(scheduler.isPartialScheduler());
+TEST(CvarQueryTest, CheckTaskExtractsWrappedRewardMetadata) {
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_simple_mdp.nm";
+    auto input = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", "3/4");
 
-    uint64_t initialState = *input.mdp->getInitialStates().begin();
-    auto adaptiveSuccessors = getChoiceSuccessors(input.mdp, initialState, adaptiveChoice);
-    ASSERT_EQ(2, adaptiveSuccessors.size());
-    auto const& initialChoice = scheduler.getChoice(initialState);
-    ASSERT_TRUE(initialChoice.isDefined());
-    ASSERT_FALSE(initialChoice.isDeterministic());
-    auto const& initialDistribution = initialChoice.getChoiceAsDistribution();
-    EXPECT_NEAR(initialDistribution.getProbability(safeChoice), 0.5, 1e-10);
-    EXPECT_NEAR(initialDistribution.getProbability(riskyChoice), 0.5, 1e-10);
-    EXPECT_NEAR(initialDistribution.getProbability(balancedChoice), 0.0, 1e-10);
-    EXPECT_NEAR(initialDistribution.getProbability(adaptiveChoice), 0.0, 1e-10);
-    EXPECT_TRUE(scheduler.isDontCare(adaptiveSuccessors[0]));
-    EXPECT_TRUE(scheduler.isDontCare(adaptiveSuccessors[1]));
+    auto const& cvarFormula = input.formula->asCvarFormula();
+    storm::modelchecker::CheckTask<storm::logic::CvarFormula, double> task(cvarFormula, true);
+
+    ASSERT_TRUE(task.isOptimizationDirectionSet());
+    EXPECT_EQ(storm::solver::OptimizationDirection::Maximize, task.getOptimizationDirection());
+    ASSERT_TRUE(task.isRewardModelSet());
+    EXPECT_EQ("term", task.getRewardModel());
+    EXPECT_FALSE(task.isBoundSet());
 }
 
 TEST(CvarQueryTest, DeterministicSspPathMdp) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_deterministic_mdp.nm";
-    auto input = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", 0.5);
+    auto input = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", "0.5");
 
     double value = checkInitialStateValueWithMethod(input, storm::modelchecker::cvar::CvarMethod::SspParetoVi);
     EXPECT_NEAR(value, 5.0, 1e-10);
@@ -351,10 +312,10 @@ TEST(CvarQueryTest, DeterministicSspPathMdp) {
 TEST(CvarQueryTest, BranchingSspTradeoffMdp) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_branching_tradeoff_mdp.nm";
 
-    auto halfInput = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", 0.5);
+    auto halfInput = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", "0.5");
     EXPECT_NEAR(checkInitialStateValueWithMethod(halfInput, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 6.0, 1e-10);
 
-    auto nineTenthsInput = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", 0.9);
+    auto nineTenthsInput = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", "0.9");
     EXPECT_NEAR(checkInitialStateValueWithMethod(nineTenthsInput, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 16.0 / 3.0, 1e-10);
 }
 }  // namespace
