@@ -16,10 +16,9 @@ namespace cvar {
 template<typename SparseMdpModelType>
 std::unique_ptr<CheckResult> performCvarModelChecking(
     Environment const& env, SparseMdpModelType const& model,
-    CheckTask<storm::logic::CvarFormula, storm::IntervalBaseType<typename SparseMdpModelType::ValueType>> const& checkTask,
+    CheckTask<storm::logic::CvarFormula, typename SparseMdpModelType::ValueType> const& checkTask,
     std::function<storm::storage::BitVector(storm::logic::Formula const&)> const& formulaChecker) {
     using ValueType = typename SparseMdpModelType::ValueType;
-    using SolutionType = storm::IntervalBaseType<ValueType>;
 
     STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException,
                     "Computing CVaR is only supported for the initial states of a model.");
@@ -32,9 +31,9 @@ std::unique_ptr<CheckResult> performCvarModelChecking(
     SparseCvarComputationHelper<SparseMdpModelType> cvarHelper(model, cvarQueryInformation, targetStates);
     auto cvarResult = cvarHelper.computeCvar(env, checkTask.isProduceSchedulersSet());
 
-    std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(*model.getInitialStates().begin(), std::move(cvarResult.value)));
+    std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(*model.getInitialStates().begin(), std::move(cvarResult.value)));
     if (checkTask.isProduceSchedulersSet() && cvarResult.scheduler) {
-        result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(cvarResult.scheduler));
+        result->asExplicitQuantitativeCheckResult<ValueType>().setScheduler(std::move(cvarResult.scheduler));
     }
     return result;
 }
