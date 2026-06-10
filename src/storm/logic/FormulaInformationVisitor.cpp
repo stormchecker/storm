@@ -80,7 +80,11 @@ boost::any FormulaInformationVisitor::visit(CumulativeRewardFormula const& f, bo
 }
 
 boost::any FormulaInformationVisitor::visit(CvarFormula const& f, boost::any const& data) const {
-    return f.getSubformula().accept(*this, data);
+    if (recurseIntoOperators) {
+        return f.getSubformula().accept(*this, data);
+    } else {
+        return FormulaInformation();
+    }
 }
 
 boost::any FormulaInformationVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {

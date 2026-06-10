@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/StateFormula.h"
 
 namespace storm {
@@ -7,7 +8,7 @@ namespace logic {
 
 class CvarFormula : public StateFormula {
    public:
-    CvarFormula(double alpha, std::shared_ptr<Formula const> subformula);
+    CvarFormula(storm::RationalNumber const& alpha, std::shared_ptr<Formula const> subformula);
 
     virtual ~CvarFormula();
 
@@ -17,7 +18,7 @@ class CvarFormula : public StateFormula {
     virtual bool hasNumericalResult() const;
     virtual bool hasMultiDimensionalResult() const;
 
-    double getAlpha() const;
+    storm::RationalNumber const& getAlpha() const;
     Formula const& getSubformula() const;
 
     virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
@@ -29,7 +30,7 @@ class CvarFormula : public StateFormula {
     virtual std::ostream& writeToStream(std::ostream& out, bool allowParentheses = false) const override;
 
    private:
-    double alpha;
+    storm::RationalNumber alpha;
     std::shared_ptr<Formula const> subformula;
 };
 

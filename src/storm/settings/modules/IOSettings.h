@@ -379,7 +379,7 @@ class IOSettings : public ModuleSettings {
      *
      * @return The alpha value specified with the CVaR option.
      */
-    double getCvarAlpha() const;
+    std::string getCvarAlpha() const;
 
     /*!
      * Retrieves whether the steady-state distribution is to be computed.

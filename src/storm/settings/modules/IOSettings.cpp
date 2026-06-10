@@ -283,9 +283,7 @@ IOSettings::IOSettings() : ModuleSettings(moduleName) {
                         .build());
 
     this->addOption(storm::settings::OptionBuilder(moduleName, cvarOptionName, false, "Computes the conditional value-at-risk for the selected property.")
-                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("alpha", "The size of the tail.")
-                                         .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0))
-                                         .build())
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("alpha", "The size of the tail.").build())
                         .build());
 
     std::vector<std::string> uncertaintyResolutionModes = {"minimize", "maximize", "robust", "cooperative", "min", "max"};
@@ -529,8 +527,8 @@ bool IOSettings::isCvarSet() const {
     return this->getOption(cvarOptionName).getHasOptionBeenSet();
 }
 
-double IOSettings::getCvarAlpha() const {
-    return this->getOption(cvarOptionName).getArgumentByName("alpha").getValueAsDouble();
+std::string IOSettings::getCvarAlpha() const {
+    return this->getOption(cvarOptionName).getArgumentByName("alpha").getValueAsString();
 }
 
 bool IOSettings::isComputeSteadyStateDistributionSet() const {

@@ -4,13 +4,18 @@
 #include <ostream>
 #include <utility>
 
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/logic/FormulaVisitor.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace logic {
 
-CvarFormula::CvarFormula(double alpha, std::shared_ptr<Formula const> subformula) : alpha(alpha), subformula(std::move(subformula)) {
-    // Intentionally left empty.
+CvarFormula::CvarFormula(storm::RationalNumber const& alpha, std::shared_ptr<Formula const> subformula) : alpha(alpha), subformula(std::move(subformula)) {
+    STORM_LOG_THROW(this->subformula != nullptr, storm::exceptions::InvalidArgumentException, "A CVaR formula requires a subformula.");
+    STORM_LOG_THROW(storm::utility::zero<storm::RationalNumber>() < this->alpha && this->alpha < storm::utility::one<storm::RationalNumber>(),
+                    storm::exceptions::InvalidArgumentException, "The CVaR alpha must be in the open interval (0, 1).");
 }
 
 CvarFormula::~CvarFormula() {
@@ -33,7 +38,7 @@ bool CvarFormula::hasMultiDimensionalResult() const {
     return false;
 }
 
-double CvarFormula::getAlpha() const {
+storm::RationalNumber const& CvarFormula::getAlpha() const {
     return alpha;
 }
 

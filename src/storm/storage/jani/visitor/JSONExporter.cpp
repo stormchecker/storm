@@ -469,7 +469,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::QuantileFormula const&, boost:
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::CvarFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of a CVaR formula");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "JANI export does not support Storm's CLI-only CVaR property wrapper.");
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::NextFormula const& f, boost::any const& data) const {
