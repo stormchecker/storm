@@ -159,7 +159,7 @@ if (STORM_DEVELOPER)
     set(STORM_DEBUG_SPOT ON)
     set(STORM_DEBUG_SYLVAN ON)
     set(STORM_WARNING_AS_ERROR ON)
-	# Turn off PCH for faster ccache usage on warm caches.
+	# Turn off PCH for faster ccache usage on warm caches. PCH compiled files cannot be properly cached currently.
 	set(STORM_COMPILE_WITH_PCH OFF)
 else()
     set(STORM_LOG_DISABLE_DEBUG ON)
@@ -186,7 +186,7 @@ if(STORM_COMPILE_WITH_CCACHE)
 		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
 
 		if(STORM_COMPILE_WITH_PCH)
-			message(STATUS "STORM - PCH is enabled which will lead to significantly lower ccache hit rates. Consider disabling PCH if you plan to rebuild storm multiple times.")
+			message(STATUS "STORM - PCH is enabled which will lead to significantly lower ccache hit rates. Consider disabling PCH if you plan to rebuild Storm multiple times.")
 		endif()
 	else()
 		message(STATUS "Storm - Could not find ccache.")

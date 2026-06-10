@@ -58,6 +58,7 @@ jobs:
           restore-keys: |
             buildtest-brew-${{ inputs.distro }}-
       - name: Ensure ccache directory exists (macOS)
+        if: inputs.restore_cache
         run: mkdir -p /Users/runner/.ccache
       - name: Restore ccache (macOS)
         id: ccache-restore-macos

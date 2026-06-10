@@ -18,8 +18,8 @@ jobs:
           - {name: "CLN; GMP; Required dependencies", baseImg: "movesrwth/storm-basesystem:latest",               disable_all: "OFF", ClnExact: "ON",  ClnRatfunc: "OFF"}
           - {name: "GMP; CLN; Required dependencies", baseImg: "movesrwth/storm-basesystem:latest",               disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "ON"}
           - {name: "CLN; CLN; Required dependencies", baseImg: "movesrwth/storm-basesystem:latest",               disable_all: "OFF", ClnExact: "ON",  ClnRatfunc: "ON"}
-          - {name: "All dependencies (disabled)",      baseImg: "movesrwth/storm-dependencies:latest",             disable_all: "ON",  ClnExact: "OFF", ClnRatfunc: "OFF"}
-          - {name: "Minimal dependencies",             baseImg: "movesrwth/storm-basesystem:minimal_dependencies", disable_all: "ON",  ClnExact: "OFF", ClnRatfunc: "OFF"}
+          - {name: "All dependencies (disabled)",     baseImg: "movesrwth/storm-dependencies:latest",             disable_all: "ON",  ClnExact: "OFF", ClnRatfunc: "OFF"}
+          - {name: "Minimal dependencies",            baseImg: "movesrwth/storm-basesystem:minimal_dependencies", disable_all: "ON",  ClnExact: "OFF", ClnRatfunc: "OFF"}
     uses: ./.github/workflows/test-build.yml
     with:
       NR_JOBS: "4"

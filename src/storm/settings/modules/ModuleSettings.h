@@ -1,6 +1,7 @@
 #ifndef STORM_SETTINGS_MODULES_MODULESETTINGS_H_
 #define STORM_SETTINGS_MODULES_MODULESETTINGS_H_
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_map>
