@@ -1,6 +1,7 @@
 #ifndef STORM_STORAGE_GSPN_PLACE_H_
 #define STORM_STORAGE_GSPN_PLACE_H_
 
+#include <cstdint>
 #include <string>
 #include "boost/optional.hpp"
 

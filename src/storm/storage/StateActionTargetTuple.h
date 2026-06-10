@@ -2,6 +2,7 @@
 #ifndef STATEACTIONTARGETTUPLE_H
 #define STATEACTIONTARGETTUPLE_H
 
+#include <cstdint>
 #include <memory>
 
 namespace storm {

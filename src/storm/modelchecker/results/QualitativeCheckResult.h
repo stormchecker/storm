@@ -1,6 +1,8 @@
 #ifndef STORM_MODELCHECKER_QUALITATIVECHECKRESULT_H_
 #define STORM_MODELCHECKER_QUALITATIVECHECKRESULT_H_
 
+#include <cstdint>
+
 #include "storm/modelchecker/results/CheckResult.h"
 
 namespace storm {

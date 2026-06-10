@@ -1,6 +1,8 @@
 #ifndef STORM_LOGIC_MULTIOBJECTIVEFORMULA_H_
 #define STORM_LOGIC_MULTIOBJECTIVEFORMULA_H_
 
+#include <cstdint>
+
 #include "storm/logic/StateFormula.h"
 
 namespace storm {

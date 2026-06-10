@@ -1,6 +1,7 @@
 #ifndef STATEACTIONPAIR_H
 #define STATEACTIONPAIR_H
 
+#include <cstdint>
 #include <memory>
 
 namespace storm {

@@ -2,6 +2,7 @@
 #define STORM_UTILITY_MATH_H_
 
 #include <cmath>
+#include <cstdint>
 #include "storm/utility/macros.h"
 
 namespace storm {

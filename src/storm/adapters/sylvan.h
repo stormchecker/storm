@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_SYLVAN

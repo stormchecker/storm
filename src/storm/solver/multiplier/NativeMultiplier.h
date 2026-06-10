@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "storm/solver/multiplier/Multiplier.h"
 
 #include "storm/solver/OptimizationDirection.h"

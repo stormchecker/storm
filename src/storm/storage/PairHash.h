@@ -2,6 +2,7 @@
 #define STORM_STORAGE_PAIRHASH_H_
 
 #include <boost/functional/hash.hpp>
+#include <cstdint>
 
 namespace std {
 template<>

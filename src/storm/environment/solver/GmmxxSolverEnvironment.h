@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/solver/SolverSelectionOptions.h"
