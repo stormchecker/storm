@@ -473,6 +473,9 @@ template class AbstractModelChecker<storm::models::sparse::Smg<double>>;
 template class AbstractModelChecker<storm::models::sparse::Mdp<double, storm::models::sparse::StandardRewardModel<storm::Interval>>>;
 template class AbstractModelChecker<storm::models::sparse::Smg<double, storm::models::sparse::StandardRewardModel<storm::Interval>>>;
 
+template class AbstractModelChecker<storm::models::sparse::Mdp<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>>;
+template class AbstractModelChecker<storm::models::sparse::Smg<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>>;
+
 template class AbstractModelChecker<storm::models::sparse::Model<storm::RationalNumber>>;
 template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>>;
 template class AbstractModelChecker<storm::models::sparse::Ctmc<storm::RationalNumber>>;
@@ -490,6 +493,9 @@ template class AbstractModelChecker<storm::models::sparse::Smg<storm::RationalFu
 
 template class AbstractModelChecker<storm::models::sparse::Mdp<storm::Interval>>;
 template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::Interval>>;
+
+template class AbstractModelChecker<storm::models::sparse::Mdp<storm::RationalInterval>>;
+template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::RationalInterval>>;
 
 // DD
 template class AbstractModelChecker<storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>>;

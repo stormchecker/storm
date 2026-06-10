@@ -325,30 +325,28 @@ void setLowerUpperTotalRewardBoundsToSolver(storm::solver::AbstractEquationSolve
     // Invoke the respective reward bound computers if needed
     std::vector<ValueType> tmpRewards;
     if (reqUpper && !upperBound.has_value()) {
-        if (hasNegativeValues) {
-            tmpRewards.resize(rewards.size());
-            storm::utility::vector::applyPointwise(rewards, tmpRewards, [](ValueType const& v) { return std::max(storm::utility::zero<ValueType>(), v); });
-        }
         if (dir.has_value() && maximize(*dir)) {
             solver.setUpperBound(
-                storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>(matrix, hasNegativeValues ? tmpRewards : rewards, exitProbabilities)
-                    .computeUpperBound());
+                storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>(matrix, exitProbabilities).computeTotalRewardBounds(rewards).upper);
         } else {
+            if (hasNegativeValues) {
+                tmpRewards.resize(rewards.size());
+                storm::utility::vector::applyPointwise(rewards, tmpRewards, [](ValueType const& v) { return std::max(storm::utility::zero<ValueType>(), v); });
+            }
             solver.setUpperBounds(
                 storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ValueType>(matrix, hasNegativeValues ? tmpRewards : rewards, exitProbabilities)
                     .computeUpperBounds());
         }
     }
     if (reqLower && !lowerBound.has_value()) {
-        // For lower bounds we actually compute upper bounds for the negated rewards.
-        // We therefore need tmpRewards in any way.
-        tmpRewards.resize(rewards.size());
-        storm::utility::vector::applyPointwise(rewards, tmpRewards,
-                                               [](ValueType const& v) { return std::max<ValueType>(storm::utility::zero<ValueType>(), -v); });
         if (dir.has_value() && minimize(*dir)) {
             solver.setLowerBound(
-                -storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>(matrix, tmpRewards, exitProbabilities).computeUpperBound());
+                storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>(matrix, exitProbabilities).computeTotalRewardBounds(rewards).lower);
         } else {
+            // For lower bounds we actually compute upper bounds for the negated rewards because DsMpi is not implemented for negative rewards.
+            tmpRewards.resize(rewards.size());
+            storm::utility::vector::applyPointwise(rewards, tmpRewards,
+                                                   [](ValueType const& v) { return std::max<ValueType>(storm::utility::zero<ValueType>(), -v); });
             auto lowerBounds =
                 storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ValueType>(matrix, tmpRewards, exitProbabilities).computeUpperBounds();
             storm::utility::vector::applyPointwise(lowerBounds, lowerBounds, [](ValueType const& v) { return -v; });

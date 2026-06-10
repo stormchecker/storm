@@ -93,7 +93,8 @@ storm::models::sparse::StateLabeling constructStateLabeling(storm::umb::UmbModel
         stateLabelling.addLabel("init", storm::storage::BitVector(numStates, false));  // default to all states not being initial
     }
     if (umbModel.index.aps().has_value()) {
-        for (auto const& [apName, apIndex] : umbModel.index.aps().value()) {
+        auto aps = umbModel.index.aps();
+        for (auto const& [apName, apIndex] : aps.value()) {
             STORM_LOG_THROW(umbModel.aps().has_value() && umbModel.aps()->contains(apName), storm::exceptions::WrongFormatException,
                             "Atomic proposition '" << apName << "' mentioned in index but no files were found.");
             STORM_LOG_THROW(isBooleanType(apIndex.type.type), storm::exceptions::WrongFormatException,
@@ -159,7 +160,8 @@ auto constructRewardModels(storm::umb::UmbModel const& umbModel) {
     using RewardModel = storm::models::sparse::StandardRewardModel<ValueType>;
     std::unordered_map<std::string, RewardModel> rewardModels;
     if (umbModel.index.rewards().has_value()) {
-        for (auto const& [rewName, rewIndex] : umbModel.index.rewards().value()) {
+        auto rewards = umbModel.index.rewards();
+        for (auto const& [rewName, rewIndex] : rewards.value()) {
             STORM_LOG_THROW(umbModel.rewards().has_value() && umbModel.rewards()->contains(rewName), storm::exceptions::WrongFormatException,
                             "Reward " << rewName << "' mentioned in index but no files were found.");
             auto const& rew = umbModel.rewards()->at(rewName);
@@ -192,19 +194,39 @@ auto constructRewardModels(storm::umb::UmbModel const& umbModel) {
 template<typename ValueType>
 storm::storage::SparseMatrix<ValueType> constructTransitionMatrix(storm::umb::UmbModel const& umbModel) {
     if (umbModel.branchToProbability.hasValue()) {
-        auto result = createBranchMatrix<ValueType>(umbModel, umbModel.branchToProbability, umbModel.index.transitionSystem.branchProbabilityType.value());
+        auto const probType = umbModel.index.transitionSystem.branchProbabilityType.value();
+        auto result = createBranchMatrix<ValueType>(umbModel, umbModel.branchToProbability, probType);
         if constexpr (storm::NumberTraits<ValueType>::IsExact) {
             if (umbModel.branchToProbability.isType<double>() || umbModel.branchToProbability.isType<storm::Interval>()) {
-                // If the branch probabilities are imprecise, we might need to normalize the matrix rows to ensure they sum up to 1.
+                // If the branch probabilities are imprecise, we might need to adapt the matrix rows to ensure they sum up to 1.
                 uint64_t numNormalized{0};
-                ValueType maxDiff{storm::utility::zero<ValueType>()};
+                auto maxDiff = storm::utility::zero<storm::IntervalBaseType<ValueType>>();
+                auto updateNormStats = [&numNormalized, &maxDiff](auto const& rowSum) {
+                    maxDiff = std::max(
+                        maxDiff, storm::utility::abs<storm::IntervalBaseType<ValueType>>(storm::utility::one<storm::IntervalBaseType<ValueType>>() - rowSum));
+                    ++numNormalized;
+                };
+
                 for (uint64_t rowIndex = 0; rowIndex < result.getRowCount(); ++rowIndex) {
                     auto const rowSum = result.getRowSum(rowIndex);
-                    if (!storm::utility::isOne(rowSum)) {
-                        maxDiff = std::max(maxDiff, storm::utility::abs<ValueType>(storm::utility::one<ValueType>() - rowSum));
-                        ++numNormalized;
-                        for (auto& entry : result.getRow(rowIndex)) {
-                            entry.setValue(entry.getValue() / rowSum);
+                    if constexpr (storm::IsIntervalType<ValueType>) {
+                        if (rowSum.lower() > storm::utility::one<ValueType>()) {
+                            updateNormStats(rowSum.lower());
+                            for (auto& entry : result.getRow(rowIndex)) {
+                                entry.setValue({entry.getValue().lower() / rowSum.lower(), entry.getValue().upper()});
+                            }
+                        } else if (rowSum.upper() < storm::utility::one<ValueType>()) {
+                            updateNormStats(rowSum.upper());
+                            for (auto& entry : result.getRow(rowIndex)) {
+                                entry.setValue({entry.getValue().lower(), entry.getValue().upper() / rowSum.upper()});
+                            }
+                        }
+                    } else {
+                        if (!storm::utility::isOne(rowSum)) {
+                            updateNormStats(rowSum);
+                            for (auto& entry : result.getRow(rowIndex)) {
+                                entry.setValue(entry.getValue() / rowSum);
+                            }
                         }
                     }
                 }
@@ -327,21 +349,31 @@ bool deriveValueType(storm::umb::ModelIndex const& index, ImportOptions const& o
                     "Models without branch values are not supported.");
     bool const haveDouble = index.transitionSystem.branchProbabilityType->type == storm::umb::Type::Double;
     bool const haveRational = index.transitionSystem.branchProbabilityType->type == storm::umb::Type::Rational;
-    bool const haveInterval = index.transitionSystem.branchProbabilityType->type == storm::umb::Type::DoubleInterval;
+    bool const haveDoubleInterval = index.transitionSystem.branchProbabilityType->type == storm::umb::Type::DoubleInterval;
+    bool const haveRationalInterval = index.transitionSystem.branchProbabilityType->type == storm::umb::Type::RationalInterval;
+    bool const haveInterval = haveDoubleInterval || haveRationalInterval;
     bool const useDefault = options.valueType == ImportOptions::ValueType::Default;
     bool const useDouble = options.valueType == ImportOptions::ValueType::Double;
     bool const useRational = options.valueType == ImportOptions::ValueType::Rational;
 
     STORM_LOG_ASSERT(useDefault || useDouble || useRational, "Unexpected value type option: " << static_cast<int>(options.valueType) << ".");
 
-    if constexpr (std::is_same_v<ValueType, double>) {
-        return (useDefault && haveDouble) || (useDouble && !haveInterval);
-    } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
-        return (useDefault && haveRational) || (useRational && !haveInterval);
+    if (!haveInterval) {
+        if constexpr (std::is_same_v<ValueType, double>) {
+            return useDouble || (useDefault && haveDouble);
+        } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+            return useRational || (useDefault && haveRational);
+        } else {
+            return false;
+        }
     } else {
-        static_assert(std::is_same_v<ValueType, storm::Interval>, "Unhandled value type");
-        // Rational intervals currently not supported.
-        return (useDefault && haveInterval) || (useDouble && haveInterval);
+        if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+            return useDouble || (useDefault && haveDoubleInterval);
+        } else if constexpr (std::is_same_v<ValueType, storm::RationalInterval>) {
+            return useRational || (useDefault && haveRationalInterval);
+        } else {
+            return false;
+        }
     }
 }
 
@@ -357,6 +389,8 @@ std::shared_ptr<storm::models::ModelBase> sparseModelFromUmb(storm::umb::UmbMode
         return detail::constructSparseModel<storm::RationalNumber>(umbModel, options);
     } else if (deriveValueType<storm::Interval>(umbModel.index, options)) {
         return detail::constructSparseModel<storm::Interval>(umbModel, options);
+    } else if (deriveValueType<storm::RationalInterval>(umbModel.index, options)) {
+        return detail::constructSparseModel<storm::RationalInterval>(umbModel, options);
     } else {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                         "Could not derive a supported value type for the UMB model with branch probabilities of type "
@@ -369,5 +403,7 @@ template std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> sp
                                                                                                                         ImportOptions const& options);
 template std::shared_ptr<storm::models::sparse::Model<storm::Interval>> sparseModelFromUmb<storm::Interval>(storm::umb::UmbModel const& umbModel,
                                                                                                             ImportOptions const& options);
+template std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> sparseModelFromUmb<storm::RationalInterval>(
+    storm::umb::UmbModel const& umbModel, ImportOptions const& options);
 
 }  // namespace storm::umb

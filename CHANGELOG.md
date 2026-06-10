@@ -5,10 +5,38 @@ This changelog lists only the most important changes. Smaller (bug)fixes as well
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
 
+Version 1.13.x
+--------------
+
+### Version 1.13.0 (2026/05)
+- Moved repository to stormchecker/storm.
+- Import/export of explicit models in (binary) [UMB](https://pmc-tools.github.io/umb/spec) format.
+- Support for exact intervals, parsing exact intervals from Prism and bounded model checking of interval DTMC and interval MDP.
+- Support for monitor verification.
+- Extended support for conditional model checking.
+- Added scheduler to `ExplicitQualitativeCheckResult`.
+- Adaption to changes of CMake options in carl-storm.
+- Revised installation paths.
+- Updated dependencies: carl-storm, ExprTk, Spot.
+- Renamed directories: storm-cudd and cpphoafparser.
+- Bug fixes:
+    * in Unif+ for Markov automata with non-Markovian initial states
+    * dangling reference to tmp object
+    * assert in observation trace unfolder
+    * warning in `ConditionalHelper`
+    * error for IDTMC checking from CLI
+    * in includes
+    * compiler warnings
+- Developer: Added support for intervals in multipliers.
+- Developer: Extended differentation of `ValueType` and `SolutionType` in more places.
+- Developer: Added support for creating Debian packages in CMake and via CI workflow.
+- Developer: minor fixes in CI workflows.
+
+
 Version 1.12.x
 --------------
 
-## Version 1.12.0 (2026/03)
+### Version 1.12.0 (2026/03)
 - Support for verifying IDTMCs.
 - Extended DRN file format:
     * Use `--io:digits` option to control precision of floats.
@@ -40,14 +68,14 @@ Version 1.12.x
 Version 1.11.x
 --------------
 
-## Version 1.11.1 (2025/10)
+### Version 1.11.1 (2025/10)
 - Bug fixes in conditional probabilities computation with the (recent) bisection method.
 - Sound value iteration diagnostics in debug mode are more robust.
 - Improved support for ARM.
 - Support for musl libc.
 - Code quality fixes (reduced warnings)
 
-## Version 1.11.0 (2025/09)
+### Version 1.11.0 (2025/09)
 - Completely restructured CMake build process:
     * Storm can now be properly installed.
     * Carl-storm is now automatically fetched from a predefined repository and tag. Use CMake option `-DFETCHCONTENT_SOURCE_DIR_CARL=<path_to_carl>` to set a local path.
@@ -68,7 +96,7 @@ Version 1.11.x
 Version 1.10.x
 --------------
 
-## Version 1.10.0 (2025/05)
+### Version 1.10.0 (2025/05)
 - Improved `LpMinMaxLinearEquationSolver`, set relevant values in topological solvers.
 - Speed up of MEC decomposition by adjusting loops.
 - Minor improvements for steady-state properties.
@@ -94,7 +122,7 @@ Version 1.10.x
 Version 1.9.x
 -------------
 
-## Version 1.9.0 (2024/08)
+### Version 1.9.0 (2024/08)
 - Improved expected visiting times (EVTs) and steady state distribution computations.
 - Support for interval-based models.
 - Robust VI.
@@ -125,10 +153,10 @@ Version 1.9.x
 Version 1.8.x
 -------------
 
-## Version 1.8.1 (2023/06)
+### Version 1.8.1 (2023/06)
 - Workaround for issue with Boost >= 1.81
 
-## Version 1.8.0 (2023/05)
+### Version 1.8.0 (2023/05)
 - Revised implementation of value iteration algorithms and its variants, fixing a bug in the optimistic value iteration heuristic.
 - Experimental support for compiling on Apple Silicon
 - Added SoPlex as a possible LP solver
@@ -147,7 +175,7 @@ Version 1.8.x
 Version 1.7.x
 -------------
 
-## Version 1.7.0 (2022/07)
+### Version 1.7.0 (2022/07)
 - Fixed a bug in LP-based MDP model checking.
 - DRN Parser is now more robust, e.g., it does no longer depend on tabs.
 - PRISM Parser: Modulo with negative numbers is now consistent with Prism.
@@ -165,7 +193,7 @@ Version 1.7.x
 Version 1.6.x
 -------------
 
-## Version 1.6.4 (2022/01)
+### Version 1.6.4 (2022/01)
 - Added support for model checking LTL properties in the sparse (and dd-to-sparse) engine. Requires building with Spot or an external LTL to deterministic automaton converter (using option `--ltl2datool`).
 - Added cmake options `STORM_USE_SPOT_SYSTEM` and `STORM_USE_SPOT_SHIPPED` to facilitate building Storm with [Spot](https://spot.lrde.epita.fr/).
 - Improved parsing of formulas in PRISM-style syntax.
@@ -192,7 +220,7 @@ Version 1.6.x
 - `storm-dft`: Fixed don't care propagation for shared SPAREs which resulted in wrong results.
 - Developer: Added support for automatic code formatting and corresponding CI workflow.
 
-## Version 1.6.3 (2020/11)
+### Version 1.6.3 (2020/11)
 - Added support for multi-objective model checking of long-run average objectives including mixtures with other kinds of objectives.
 - Added support for generating optimal schedulers for globally formulae.
 - Simulator supports exact arithmetic.
@@ -205,7 +233,7 @@ Version 1.6.x
 - `storm-pomdp`: (Only API) Track state estimates.
 - `storm-pomdp`: (Only API) Reduce computation of state estimates to computation on unrolled MDP.
 
-## Version 1.6.2 (2020/09)
+### Version 1.6.2 (2020/09)
 - Prism program simplification improved.
 - Revamped implementation of long-run-average algorithms, including scheduler export for LRA properties on Markov automata.
 - Support for step-bounded properties of the form ... [F[x,y] ... ] for DTMCs and MDPs (sparse engine).
@@ -214,7 +242,7 @@ Version 1.6.x
 - `storm-pomdp`: Fix for --transformsimple and --transformbinary when used with until formulae.
 - `storm-pomdp`: POMDPs can be parametric as well.
 
-## Version 1.6.0 (2020/06)
+### Version 1.6.0 (2020/06)
 - Changed default Dd library from `cudd` to `sylvan`. The Dd library can be changed back to `cudd` using the command line switch `--ddlib`.
 - Scheduler export: Properly handle models with end components. Added export in `.json` format.
 - CMake: Search for Gurobi prefers new versions.
@@ -233,10 +261,10 @@ Version 1.6.x
 Version 1.5.x
 -------------
 
-## Version 1.5.1 (2020/03)
+### Version 1.5.1 (2020/03)
 - Jani models are now parsed using exact arithmetic.
 
-## Version 1.5.0 (2020/03)
+### Version 1.5.0 (2020/03)
 - Added portfolio engine which picks a good engine (among other settings) based on features of the symbolic input.
 - Abort of Storm (via timeout or CTRL+C for example) is now gracefully handled. After an abort signal the program waits some seconds to output the result computed so far and terminates afterwards. A second signal immediately terminates the program.
 - Setting `--engine dd-to-sparse --bisimulation` now triggers extracting the sparse bisimulation quotient.
@@ -302,7 +330,7 @@ Version 1.4.x
 Version 1.3.x
 -------------
 
-## Version 1.3.0 (2018/12)
+### Version 1.3.0 (2018/12)
 - Slightly improved scheduler extraction
 - Environments are now part of the c++ API
 - Heavily extended JANI support, in particular:

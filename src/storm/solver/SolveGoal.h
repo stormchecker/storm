@@ -85,6 +85,8 @@ class SolveGoal {
 
     bool boundIsStrict() const;
 
+    storm::logic::ComparisonType boundComparisonType() const;
+
     SolutionType const& thresholdValue() const;
 
     bool hasRelevantValues() const;

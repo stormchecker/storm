@@ -373,7 +373,7 @@ void LraViHelper<ValueType, ComponentType, TransitionsType>::performIterationSte
         } else {
             // Also keep track of the choices made.
             std::vector<uint64_t> tsChoices(_TsTransitions.getRowGroupCount());
-            _TsMultiplier->multiplyAndReduce(env, *dir, xOld(), &_TsChoiceValues, xNew(), &tsChoices);
+            _TsMultiplier->multiplyAndReduce(env, *dir, xOld(), &_TsChoiceValues, xNew(), UncertaintyResolutionMode::Unset, &tsChoices);
             // Note that nondeterminism within the timed states means that there can not be instant states (We either have MDPs or MAs)
             // Hence, in this branch we don't have to care for choices at instant states.
             STORM_LOG_ASSERT(!_hasInstantStates, "Nondeterministic timed states are only supported if there are no instant states.");

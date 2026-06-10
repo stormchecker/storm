@@ -15,13 +15,31 @@ class CheckResult;
 
 template<typename ModelType>
 class AbstractModelChecker {
+   private:
+    // Due to a GCC bug we have to add this dummy template type here
+    // https://stackoverflow.com/questions/49707184/explicit-specialization-in-non-namespace-scope-does-not-compile-in-gcc
+    template<typename T, typename Dummy>
+    struct GetSolutionType {
+        using type = T;
+    };
+
+    template<typename Dummy>
+    struct GetSolutionType<storm::Interval, Dummy> {
+        using type = double;
+    };
+
+    template<typename Dummy>
+    struct GetSolutionType<storm::RationalInterval, Dummy> {
+        using type = storm::RationalNumber;
+    };
+
    public:
     virtual ~AbstractModelChecker() {
         // Intentionally left empty.
     }
 
     typedef typename ModelType::ValueType ValueType;
-    using SolutionType = typename std::conditional<std::is_same_v<ValueType, storm::Interval>, double, ValueType>::type;
+    using SolutionType = typename GetSolutionType<ValueType, void>::type;
 
     /*!
      * Returns the name of the model checker class (e.g., for display in error messages).

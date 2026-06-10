@@ -4,7 +4,7 @@ set(STORM_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/src/test/storm-pomdp")
 # Note that the tests also need the source files, except for the main file
 include_directories(${GTEST_INCLUDE_DIR})
 
-foreach (testsuite analysis api modelchecker tracking transformation)
+foreach (testsuite analysis api modelchecker tracking transformation generator)
 
 	file(GLOB_RECURSE TEST_${testsuite}_FILES ${STORM_TESTS_BASE_PATH}/${testsuite}/*.h ${STORM_TESTS_BASE_PATH}/${testsuite}/*.cpp ${STORM_TESTS_BASE_PATH}/../storm_gtest.cpp)
 	add_executable(test-pomdp-${testsuite} ${TEST_${testsuite}_FILES} ${STORM_TESTS_BASE_PATH}/storm-test.cpp)

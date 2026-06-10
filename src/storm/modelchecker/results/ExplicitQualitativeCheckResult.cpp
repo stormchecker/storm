@@ -1,10 +1,10 @@
 #include "storm/adapters/IntervalAdapter.h"
-#include "storm/adapters/RationalNumberAdapter.h"  // Must come first. TODO: fix
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
 #include "storm/adapters/JsonAdapter.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"
 

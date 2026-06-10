@@ -369,6 +369,31 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, simple2) {
     EXPECT_NEAR(this->parseNumber("27"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 }
 
+TYPED_TEST(MarkovAutomatonCslModelCheckerTest, erlang) {
+    std::string formulasString = "Pmin=?[F<=1 \"done\"]";
+    formulasString += "; Pmax=?[F<=1 \"done\"]";
+
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ma/erlang.ma", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    this->execute(model, [&]() {
+        EXPECT_EQ(9ul, model->getNumberOfStates());
+        EXPECT_EQ(11ul, model->getNumberOfTransitions());
+        EXPECT_EQ(10ul, model->getNumberOfChoices());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::MarkovAutomaton);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        if (!storm::utility::isZero(this->precision())) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("0.13212055882856"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[1]);
+            EXPECT_NEAR(this->parseNumber("0.50066835807513"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+    });
+}
+
 TYPED_TEST(MarkovAutomatonCslModelCheckerTest, LtlSimple) {
 #ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
     std::string formulasString = "Pmax=? [X X s=3]";

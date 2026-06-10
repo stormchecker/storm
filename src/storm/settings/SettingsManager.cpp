@@ -16,6 +16,7 @@
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
+#include "storm/settings/modules/ConditionalSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/CuddSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
@@ -708,6 +709,7 @@ void initializeAll(std::string const& name, std::string const& executableName) {
     storm::settings::addModule<storm::settings::modules::TransformationSettings>();
     storm::settings::addModule<storm::settings::modules::HintSettings>();
     storm::settings::addModule<storm::settings::modules::OviSolverSettings>();
+    storm::settings::addModule<storm::settings::modules::ConditionalSettings>();
 }
 
 }  // namespace settings

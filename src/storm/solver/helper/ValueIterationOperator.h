@@ -242,6 +242,15 @@ class ValueIterationOperator {
     }
 
     template<OptimizationDirection RobustDirection, typename OpT, typename OffT>
+    OpT robustInitializeRowRes(std::vector<OpT> const&, OffT const& offsets, uint64_t offsetIndex) const {
+        if constexpr (RobustDirection == OptimizationDirection::Maximize) {
+            return offsets.upper();
+        } else {
+            return offsets.lower();
+        }
+    }
+
+    template<OptimizationDirection RobustDirection, typename OpT, typename OffT>
     OpT robustInitializeRowRes(std::vector<OpT> const&, std::vector<OffT> const& offsets, uint64_t offsetIndex) const {
         if constexpr (RobustDirection == OptimizationDirection::Maximize) {
             return offsets[offsetIndex].upper();
@@ -272,7 +281,7 @@ class ValueIterationOperator {
     template<OptimizationDirection RobustDirection, typename OperandType, typename OffsetType>
     auto applyRow(std::vector<IndexType>::const_iterator& matrixColumnIt, typename std::vector<ValueType>::const_iterator& matrixValueIt,
                   OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
-        if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
             return applyRowRobust<RobustDirection>(matrixColumnIt, matrixValueIt, operand, offsets, offsetIndex);
         } else {
             return applyRowStandard(matrixColumnIt, matrixValueIt, operand, offsets, offsetIndex);
@@ -312,13 +321,13 @@ class ValueIterationOperator {
     auto applyRowRobust(std::vector<IndexType>::const_iterator& matrixColumnIt, typename std::vector<ValueType>::const_iterator& matrixValueIt,
                         OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
         STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
-        auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
+        SolutionType result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
 
         applyCache.robustOrder.clear();
 
         if (applyCache.hasOnlyConstants.size() > 0 && applyCache.hasOnlyConstants.get(offsetIndex)) {
             for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
-                auto const lower = matrixValueIt->lower();
+                SolutionType const lower = matrixValueIt->lower();
                 if constexpr (isPair<OperandType>::value) {
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
                     // Notice the unclear semantics here in terms of how to order things.
@@ -332,7 +341,7 @@ class ValueIterationOperator {
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
         uint64_t orderCounter = 0;
         for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt, ++orderCounter) {
-            auto const lower = matrixValueIt->lower();
+            SolutionType const lower = matrixValueIt->lower();
             if constexpr (isPair<OperandType>::value) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
                 // Notice the unclear semantics here in terms of how to order things.
@@ -340,8 +349,8 @@ class ValueIterationOperator {
                 result += operand[*matrixColumnIt] * lower;
             }
             remainingValue -= lower;
-            auto const diameter = matrixValueIt->upper() - lower;
-            if (!storm::utility::isZero(diameter)) {
+            SolutionType const diameter = matrixValueIt->upper() - lower;
+            if (!storm::utility::isZero<SolutionType>(diameter)) {
                 applyCache.robustOrder.emplace_back(operand[*matrixColumnIt], std::make_pair(diameter, orderCounter));
             }
         }
@@ -353,7 +362,7 @@ class ValueIterationOperator {
         std::sort(applyCache.robustOrder.begin(), applyCache.robustOrder.end(), cmp);
 
         for (auto const& pair : applyCache.robustOrder) {
-            auto availableMass = std::min(pair.second.first, remainingValue);
+            SolutionType availableMass = std::min(pair.second.first, remainingValue);
             result += availableMass * pair.first;
             remainingValue -= availableMass;
             if (storm::utility::isZero(remainingValue)) {
@@ -462,8 +471,14 @@ class ValueIterationOperator {
         storage::BitVector hasOnlyConstants;
     };
 
+    template<typename Dummy>
+    struct ApplyCache<storm::RationalInterval, Dummy> {
+        mutable std::vector<std::pair<SolutionType, std::pair<SolutionType, uint64_t>>> robustOrder;
+        storage::BitVector hasOnlyConstants;
+    };
+
     /*!
-     * Cache for robust value iteration, empty struct for other ValueTypes than storm::Interval.
+     * Cache for robust value iteration, empty struct for other ValueTypes than storm::Interval and storm::RationalInterval.
      */
     ApplyCache<ValueType, int> applyCache;
 

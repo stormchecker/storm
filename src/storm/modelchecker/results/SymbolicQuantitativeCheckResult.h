@@ -51,6 +51,10 @@ class SymbolicQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
     virtual void oneMinus() override;
 
    private:
+    bool hasValueType(std::type_info const& t) const override {
+        return t == typeid(ValueType);
+    }
+
     // The set of all reachable states.
     storm::dd::Bdd<Type> reachableStates;
 

@@ -135,9 +135,11 @@ MemoryStructure MemoryStructureBuilder<ValueType, RewardModelType>::buildTrivial
 
 template class MemoryStructureBuilder<double>;
 template class MemoryStructureBuilder<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+template class MemoryStructureBuilder<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
 template class MemoryStructureBuilder<storm::RationalNumber>;
 template class MemoryStructureBuilder<storm::RationalFunction>;
 template class MemoryStructureBuilder<storm::Interval>;
+template class MemoryStructureBuilder<storm::RationalInterval>;
 
 }  // namespace storage
 }  // namespace storm

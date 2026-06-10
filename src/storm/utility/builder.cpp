@@ -43,12 +43,18 @@ template std::shared_ptr<storm::models::sparse::Model<double>> buildModelFromCom
 template std::shared_ptr<storm::models::sparse::Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>> buildModelFromComponents(
     storm::models::ModelType modelType,
     storm::storage::sparse::ModelComponents<double, storm::models::sparse::StandardRewardModel<storm::Interval>>&& components);
+template std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>>
+buildModelFromComponents(
+    storm::models::ModelType modelType,
+    storm::storage::sparse::ModelComponents<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>&& components);
 template std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> buildModelFromComponents(
     storm::models::ModelType modelType, storm::storage::sparse::ModelComponents<storm::RationalNumber>&& components);
 template std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> buildModelFromComponents(
     storm::models::ModelType modelType, storm::storage::sparse::ModelComponents<storm::RationalFunction>&& components);
 template std::shared_ptr<storm::models::sparse::Model<storm::Interval>> buildModelFromComponents(
     storm::models::ModelType modelType, storm::storage::sparse::ModelComponents<storm::Interval>&& components);
+template std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> buildModelFromComponents(
+    storm::models::ModelType modelType, storm::storage::sparse::ModelComponents<storm::RationalInterval>&& components);
 
 }  // namespace builder
 }  // namespace utility

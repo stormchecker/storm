@@ -570,8 +570,8 @@ void setUpperRewardBounds(storm::solver::MinMaxLinearEquationSolver<ValueType>& 
         DsMpiMdpUpperRewardBoundsComputer<ValueType> dsmpi(submatrix, choiceRewards, oneStepTargetProbabilities);
         solver.setUpperBounds(dsmpi.computeUpperBounds());
     } else {
-        BaierUpperRewardBoundsComputer<ValueType> baier(submatrix, choiceRewards, oneStepTargetProbabilities);
-        solver.setUpperBound(baier.computeUpperBound());
+        BaierUpperRewardBoundsComputer<ValueType> baier(submatrix, oneStepTargetProbabilities);
+        solver.setUpperBound(baier.computeTotalRewardBounds(choiceRewards).upper);
     }
 }
 

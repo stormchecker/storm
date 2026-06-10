@@ -88,13 +88,24 @@ class UnifPlusHelper {
         }
 
         boost::optional<storm::storage::BitVector> relevantMaybeStates;
+        storm::storage::BitVector relevantMarkovianMaybeStates;
         if (relevantStates) {
-            relevantMaybeStates = relevantStates.get() % maybeStates;
+            if (!relevantStates->isSubsetOf(markovianStates)) {
+                // Enhance the relevant states to also include Markovian states that are reachable in zero time from relevant probabilistic states
+                auto const enhancedRelevantStates =
+                    storm::utility::graph::getReachableStates(transitionMatrix, *relevantStates, ~markovianStates, markovianStates);
+                relevantMaybeStates = enhancedRelevantStates % maybeStates;
+            } else {
+                relevantMaybeStates = relevantStates.get() % maybeStates;
+            }
+            relevantMarkovianMaybeStates = relevantMaybeStates.get() & markovianStatesModMaybeStates;
+        } else {
+            relevantMarkovianMaybeStates = markovianStatesModMaybeStates;
         }
         // Store the best solution known so far (useful in cases where the computation gets aborted)
         std::vector<ValueType> bestKnownSolution;
         if (relevantMaybeStates) {
-            bestKnownSolution.resize(relevantStates->size());
+            bestKnownSolution.resize(relevantMaybeStates->getNumberOfSetBits());
         }
 
         // Get the exit rates restricted to only markovian maybe states.
@@ -257,7 +268,7 @@ class UnifPlusHelper {
                 }
 
                 // Check if the lower and upper bound are sufficiently close to each other
-                converged = checkConvergence(maybeStatesValuesLower, maybeStatesValuesUpper, relevantMaybeStates, epsilon, relativePrecision, kappa);
+                converged = checkConvergence(maybeStatesValuesLower, maybeStatesValuesUpper, relevantMarkovianMaybeStates, epsilon, relativePrecision, kappa);
                 if (converged) {
                     break;
                 }
@@ -309,42 +320,50 @@ class UnifPlusHelper {
 
         // Prepare the result vector
         std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+        // Set values of target states to 1
         storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<ValueType>());
 
         if (abortedInnerIterations && iteration > 1 && relevantMaybeStates && relevantStates) {
             // We should take the stored solution instead of the current (probably more incorrect) lower/upper values
-            storm::utility::vector::setVectorValues(result, maybeStates & relevantStates.get(), bestKnownSolution);
+            storm::utility::vector::setVectorValues(result, relevantMaybeStates.get(), bestKnownSolution);
         } else {
-            // We take the average of the lower and upper bounds
-            storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
-                maybeStatesValuesLower, maybeStatesValuesUpper, maybeStatesValuesLower,
-                [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
-
-            storm::utility::vector::setVectorValues(result, maybeStates, maybeStatesValuesLower);
+            // Set the values for Markovian "maybe" states
+            STORM_LOG_ASSERT(markovianMaybeStates.getNumberOfSetBits() == markovianStatesModMaybeStates.getNumberOfSetBits(),
+                             "Unexpected number of Markovian maybe states");
+            auto subStateIt = markovianStatesModMaybeStates.begin();
+            for (auto const markovianState : markovianMaybeStates) {
+                result[markovianState] = (maybeStatesValuesLower[*subStateIt] + maybeStatesValuesUpper[*subStateIt]) / two;
+                ++subStateIt;
+            }
+            // At this point, we only need to set the values for probabilistic "maybe" states.
+            // We derive the values from the values of the other states, which are reached in zero time.
+            uint64_t probSubState = 0;
+            for (auto const probabilisticState : probabilisticMaybeStates) {
+                for (auto const probStateRow : transitionMatrix.getRowGroupIndices(probabilisticState)) {
+                    eqSysRhs[probSubState] = transitionMatrix.multiplyRowWithVector(probStateRow, result);
+                    ++probSubState;
+                }
+            }
+            if (solver) {
+                solver->solveEquations(solverEnv, dir, nextProbabilisticStateValues, eqSysRhs);
+            } else {
+                storm::utility::vector::reduceVectorMinOrMax(dir, eqSysRhs, nextProbabilisticStateValues,
+                                                             probabilisticToProbabilisticTransitions.getRowGroupIndices());
+            }
+            storm::utility::vector::setVectorValues(result, probabilisticMaybeStates, nextProbabilisticStateValues);
         }
         return result;
     }
 
    private:
-    bool checkConvergence(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper,
-                          boost::optional<storm::storage::BitVector> const& relevantValues, ValueType const& epsilon, bool relative, ValueType& kappa) {
-        STORM_LOG_ASSERT(!relevantValues.is_initialized() || relevantValues->size() == lower.size(), "Relevant values size mismatch.");
+    bool checkConvergence(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper, storm::storage::BitVector const& relevantValues,
+                          ValueType const& epsilon, bool relative, ValueType& kappa) {
+        STORM_LOG_ASSERT(relevantValues.size() == lower.size(), "Relevant values size mismatch.");
         if (!relative) {
-            if (relevantValues) {
-                return storm::utility::vector::equalModuloPrecision(lower, upper, relevantValues.get(), epsilon * (storm::utility::one<ValueType>() - kappa),
-                                                                    false);
-            } else {
-                return storm::utility::vector::equalModuloPrecision(lower, upper, epsilon * (storm::utility::one<ValueType>() - kappa), false);
-            }
+            return storm::utility::vector::equalModuloPrecision(lower, upper, relevantValues, epsilon * (storm::utility::one<ValueType>() - kappa), false);
         }
         ValueType truncationError = epsilon * kappa;
-        for (uint64_t i = 0; i < lower.size(); ++i) {
-            if (relevantValues) {
-                i = relevantValues->getNextSetIndex(i);
-                if (i == lower.size()) {
-                    break;
-                }
-            }
+        for (uint64_t const i : relevantValues) {
             if (lower[i] == upper[i]) {
                 continue;
             }

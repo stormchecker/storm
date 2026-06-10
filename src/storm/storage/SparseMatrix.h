@@ -533,6 +533,13 @@ class SparseMatrix {
     index_type getRowGroupEntryCount(index_type const group) const;
 
     /*!
+     * Returns the number of entries in the given row of the matrix.
+     * @param row  Which row
+     * @return Number of entries
+     */
+    index_type getRowEntryCount(index_type const row) const;
+
+    /*!
      * Returns the cached number of nonzero entries in the matrix.
      *
      * @see updateNonzeroEntryCount()

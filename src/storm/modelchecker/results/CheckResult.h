@@ -128,7 +128,20 @@ class CheckResult {
 
     virtual bool hasScheduler() const;
 
+    /*!
+     * Checks whether the ValueType of the result matches the given type.
+     * @tparam T type to match
+     * @return
+     */
+    template<typename T>
+    bool hasValueType() const {
+        return hasValueType(typeid(T));
+    }
+
     virtual std::ostream& writeToStream(std::ostream& out) const = 0;
+
+   private:
+    virtual bool hasValueType(std::type_info const& t) const;
 };
 
 std::ostream& operator<<(std::ostream& out, CheckResult const& checkResult);

@@ -150,6 +150,8 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
                                                                                           storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                                           storm::OptionalRef<storm::storage::BitVector const> states,
                                                                                           storm::OptionalRef<storm::storage::BitVector const> choices) {
+    STORM_LOG_ASSERT(!states.has_value() || transitionMatrix.getRowGroupCount() == states->size(), "Unexpected size of states bitvector.");
+    STORM_LOG_ASSERT(!choices.has_value() || transitionMatrix.getRowCount() == choices->size(), "Unexpected size of choices bitvector.");
     // Get some data for convenient access.
     auto const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 
@@ -251,6 +253,10 @@ template MaximalEndComponentDecomposition<storm::RationalNumber>::MaximalEndComp
 template class MaximalEndComponentDecomposition<storm::Interval>;
 template MaximalEndComponentDecomposition<storm::Interval>::MaximalEndComponentDecomposition(
     storm::models::sparse::NondeterministicModel<storm::Interval> const& model);
+
+template class MaximalEndComponentDecomposition<storm::RationalInterval>;
+template MaximalEndComponentDecomposition<storm::RationalInterval>::MaximalEndComponentDecomposition(
+    storm::models::sparse::NondeterministicModel<storm::RationalInterval> const& model);
 
 template class MaximalEndComponentDecomposition<storm::RationalFunction>;
 template MaximalEndComponentDecomposition<storm::RationalFunction>::MaximalEndComponentDecomposition(

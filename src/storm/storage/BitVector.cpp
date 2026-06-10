@@ -721,6 +721,10 @@ std::vector<uint64_t> BitVector::getNumberOfSetBitsBeforeIndices() const {
         }
         ++currentNumberOfSetBits;
     }
+    while (lastIndex < this->size()) {
+        bitsSetBeforeIndices.push_back(currentNumberOfSetBits);
+        ++lastIndex;
+    }
     return bitsSetBeforeIndices;
 }
 

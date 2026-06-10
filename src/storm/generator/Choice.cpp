@@ -205,5 +205,6 @@ template struct Choice<double>;
 template struct Choice<storm::RationalNumber>;
 template struct Choice<storm::RationalFunction>;
 template struct Choice<storm::Interval>;
+template struct Choice<storm::RationalInterval>;
 }  // namespace generator
 }  // namespace storm

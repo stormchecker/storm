@@ -343,5 +343,6 @@ template class StronglyConnectedComponentDecomposition<double>;
 template class StronglyConnectedComponentDecomposition<storm::RationalNumber>;
 template class StronglyConnectedComponentDecomposition<storm::RationalFunction>;
 template class StronglyConnectedComponentDecomposition<storm::Interval>;
+template class StronglyConnectedComponentDecomposition<storm::RationalInterval>;
 
 }  // namespace storm::storage

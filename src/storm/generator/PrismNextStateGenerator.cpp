@@ -1100,5 +1100,6 @@ template class PrismNextStateGenerator<double>;
 template class PrismNextStateGenerator<storm::RationalNumber>;
 template class PrismNextStateGenerator<storm::RationalFunction>;
 template class PrismNextStateGenerator<storm::Interval>;
+template class PrismNextStateGenerator<storm::RationalInterval>;
 }  // namespace generator
 }  // namespace storm

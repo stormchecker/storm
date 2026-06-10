@@ -306,6 +306,7 @@ std::vector<uint64_t> MakePOMDPCanonic<ValueType>::computeCanonicalPermutation()
 template class MakePOMDPCanonic<double>;
 template class MakePOMDPCanonic<storm::RationalNumber>;
 template class MakePOMDPCanonic<storm::Interval>;
+template class MakePOMDPCanonic<storm::RationalInterval>;
 template class MakePOMDPCanonic<storm::RationalFunction>;
 }  // namespace transformer
 }  // namespace storm

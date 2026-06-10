@@ -175,7 +175,7 @@ install(TARGETS sylvan
 install(EXPORT sylvan-targets
         FILE sylvan-targets.cmake
         NAMESPACE sylvan::
-        DESTINATION ${SYLVAN_INSTALL_LIBDIR}/cmake/sylvan
+        DESTINATION ${SYLVAN_CMAKE_INSTALL_DIR}
 )
 
 include(CMakePackageConfigHelpers)
@@ -183,7 +183,7 @@ include(CMakePackageConfigHelpers)
 configure_package_config_file(
         ${PROJECT_SOURCE_DIR}/cmake/sylvan-config.cmake.in
         ${CMAKE_CURRENT_BINARY_DIR}/cmake/sylvan-config.cmake
-        INSTALL_DESTINATION ${SYLVAN_INSTALL_LIBDIR}/cmake/sylvan
+        INSTALL_DESTINATION ${SYLVAN_CMAKE_INSTALL_DIR}
 )
 
 write_basic_package_version_file(
@@ -200,7 +200,7 @@ install(
         FILES
         ${CMAKE_CURRENT_BINARY_DIR}/cmake/sylvan-config.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/cmake/sylvan-config-version.cmake
-        DESTINATION ${SYLVAN_INSTALL_LIBDIR}/cmake/sylvan
+        DESTINATION ${SYLVAN_CMAKE_INSTALL_DIR}
 )
 
 #Remark: this file has not been updated, so I guess we could disable this.

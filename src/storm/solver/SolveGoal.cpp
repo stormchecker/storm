@@ -112,6 +112,11 @@ UncertaintyResolutionMode SolveGoal<ValueType, SolutionType>::getUncertaintyReso
 }
 
 template<typename ValueType, typename SolutionType>
+storm::logic::ComparisonType SolveGoal<ValueType, SolutionType>::boundComparisonType() const {
+    return comparisonType.get();
+}
+
+template<typename ValueType, typename SolutionType>
 SolutionType const& SolveGoal<ValueType, SolutionType>::thresholdValue() const {
     return threshold.get();
 }
@@ -147,6 +152,7 @@ template class SolveGoal<double>;
 template class SolveGoal<storm::RationalNumber>;
 template class SolveGoal<storm::RationalFunction>;
 template class SolveGoal<storm::Interval, double>;
+template class SolveGoal<storm::RationalInterval, storm::RationalNumber>;
 
 }  // namespace solver
 }  // namespace storm

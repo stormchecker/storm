@@ -81,6 +81,10 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
                                   std::optional<storm::models::sparse::StateLabeling> const& stateLabels = std::nullopt) const;
 
    private:
+    bool hasValueType(std::type_info const& t) const override {
+        return t == typeid(ValueType);
+    }
+
     // The values of the quantitative check result.
     boost::variant<vector_type, map_type> values;
 

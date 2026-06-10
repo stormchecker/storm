@@ -74,10 +74,12 @@ bool parseDouble(std::string const& value, double& result) {
         }
     }
 }
-bool parseInterval(std::string const& value, storm::Interval& result) {
+
+template<typename IntervalType>
+bool parseInterval(std::string const& value, IntervalType& result) {
     // Try whether it is a constant.
-    if (double pointResult; parseNumber(value, pointResult)) {
-        result = storm::Interval(pointResult);
+    if (IntervalBaseType<IntervalType> pointResult; parseNumber(value, pointResult)) {
+        result = IntervalType(pointResult);
         return true;
     }
 
@@ -106,7 +108,7 @@ bool parseInterval(std::string const& value, storm::Interval& result) {
     if (words.size() != 2) {
         return false;  // Did not find exactly one comma.
     }
-    double leftVal, rightVal;
+    IntervalBaseType<IntervalType> leftVal, rightVal;
     boost::trim(words[0]);
     if (!parseNumber(words[0], leftVal)) {
         return false;  // lower value of interval invalid.
@@ -115,7 +117,7 @@ bool parseInterval(std::string const& value, storm::Interval& result) {
     if (!parseNumber(words[1], rightVal)) {
         return false;  // upper value of interval invalid.
     }
-    result = storm::Interval(leftVal, leftBound, rightVal, rightBound);
+    result = IntervalType(leftVal, leftBound, rightVal, rightBound);
     return true;
 }
 
@@ -126,7 +128,9 @@ bool parseNumber(std::string const& value, NumberType& result) {
     } else if constexpr (std::is_same_v<NumberType, storm::RationalNumber>) {
         return carl::try_parse(value, result);
     } else if constexpr (std::is_same_v<NumberType, storm::Interval>) {
-        return parseInterval(value, result);
+        return parseInterval<storm::Interval>(value, result);
+    } else if constexpr (std::is_same_v<NumberType, storm::RationalInterval>) {
+        return parseInterval<storm::RationalInterval>(value, result);
     } else {
         return boost::conversion::try_lexical_convert(value, result);
     }
@@ -137,6 +141,7 @@ template class ValueParser<double>;
 template class ValueParser<storm::RationalNumber>;
 template class ValueParser<storm::RationalFunction>;
 template class ValueParser<storm::Interval>;
+template class ValueParser<storm::RationalInterval>;
 
 template std::size_t parseNumber<std::size_t>(std::string const&);
 

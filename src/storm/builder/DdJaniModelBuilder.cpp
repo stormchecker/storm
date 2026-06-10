@@ -51,7 +51,7 @@ storm::jani::ModelFeatures DdJaniModelBuilder<Type, ValueType>::getSupportedJani
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& model, boost::optional<std::vector<storm::jani::Property>> const& properties) {
+bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& model, storm::OptionalRef<std::vector<storm::jani::Property> const> properties) {
     // Check jani features
     auto features = model.getModelFeatures();
     features.remove(storm::jani::ModelFeature::Arrays);  // can be substituted
@@ -71,7 +71,7 @@ bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& mo
     // Check nonTrivial reward expressions
     if (properties) {
         std::set<std::string> rewardModels;
-        for (auto const& p : properties.get()) {
+        for (auto const& p : properties.value()) {
             p.gatherReferencedRewardModels(rewardModels);
         }
         for (auto const& r : rewardModels) {

@@ -7,8 +7,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/FragmentSpecification.h"
-#include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
-#include "storm/modelchecker/helper/finitehorizon/SparseDeterministicStepBoundedHorizonHelper.h"
+#include "storm/modelchecker/helper/finitehorizon/SparseStepBoundedHorizonHelper.h"
 #include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseDeterministicInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
@@ -40,6 +39,9 @@ bool SparseDtmcPrctlModelChecker<SparseDtmcModelType>::canHandleStatic(CheckTask
             return true;
         }
         if (formula.isInFragment(storm::logic::reachability().setReachabilityRewardFormulasAllowed(true).setRewardOperatorsAllowed(true))) {
+            return true;
+        }
+        if (formula.isInFragment(storm::logic::prctlstar().setBoundedUntilFormulasAllowed(true))) {
             return true;
         }
     } else {
@@ -85,39 +87,33 @@ bool SparseDtmcPrctlModelChecker<SparseDtmcModelType>::canHandle(CheckTask<storm
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeBoundedUntilProbabilities(
     Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, SolutionType> const& checkTask) {
-    if constexpr (storm::IsIntervalType<ValueType>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not yet implemented bounded until with intervals");
-    } else {
-        storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
-        if (pathFormula.isMultiDimensional() || pathFormula.getTimeBoundReference().isRewardBound()) {
-            STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException,
-                            "Checking non-trivial bounded until probabilities can only be computed for the initial states of the model.");
-            storm::logic::OperatorInformation opInfo;
-            if (checkTask.isBoundSet()) {
-                opInfo.bound = checkTask.getBound();
-            }
-            auto formula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(checkTask.getFormula().asSharedPointer(), opInfo);
-            auto numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeRewardBoundedValues(
-                env, this->getModel(), formula);
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
-        } else {
-            STORM_LOG_THROW(pathFormula.hasUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have (a single) upper step bound.");
-            STORM_LOG_THROW(pathFormula.hasIntegerLowerBound(), storm::exceptions::InvalidPropertyException,
-                            "Formula lower step bound must be discrete/integral.");
-            STORM_LOG_THROW(pathFormula.hasIntegerUpperBound(), storm::exceptions::InvalidPropertyException,
-                            "Formula needs to have discrete upper step bound.");
-            std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
-            std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
-            ExplicitQualitativeCheckResult<SolutionType> const& leftResult = leftResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
-            ExplicitQualitativeCheckResult<SolutionType> const& rightResult = rightResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
-            storm::modelchecker::helper::SparseDeterministicStepBoundedHorizonHelper<ValueType> helper;
-            std::vector<ValueType> numericResult =
-                helper.compute(env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
-                               this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(),
-                               pathFormula.getNonStrictLowerBound<uint64_t>(), pathFormula.getNonStrictUpperBound<uint64_t>(), checkTask.getHint());
-            std::unique_ptr<CheckResult> result = std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
-            return result;
+    storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
+    if (pathFormula.isMultiDimensional() || pathFormula.getTimeBoundReference().isRewardBound()) {
+        STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException,
+                        "Checking non-trivial bounded until probabilities can only be computed for the initial states of the model.");
+        storm::logic::OperatorInformation opInfo;
+        if (checkTask.isBoundSet()) {
+            opInfo.bound = checkTask.getBound();
         }
+        auto formula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(checkTask.getFormula().asSharedPointer(), opInfo);
+        auto numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeRewardBoundedValues(
+            env, this->getModel(), formula);
+        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
+    } else {
+        STORM_LOG_THROW(pathFormula.hasUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have (a single) upper step bound.");
+        STORM_LOG_THROW(pathFormula.hasIntegerLowerBound(), storm::exceptions::InvalidPropertyException, "Formula lower step bound must be discrete/integral.");
+        STORM_LOG_THROW(pathFormula.hasIntegerUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have discrete upper step bound.");
+        std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
+        std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
+        ExplicitQualitativeCheckResult<SolutionType> const& leftResult = leftResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
+        ExplicitQualitativeCheckResult<SolutionType> const& rightResult = rightResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
+        storm::modelchecker::helper::SparseStepBoundedHorizonHelper<ValueType, SolutionType> helper;
+        std::vector<SolutionType> numericResult = helper.computeStepBoundedUntilProbabilities(
+            env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
+            this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(),
+            pathFormula.getNonStrictLowerBound<uint64_t>(), pathFormula.getNonStrictUpperBound<uint64_t>(), checkTask.getHint());
+
+        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
     }
 }
 
@@ -141,7 +137,7 @@ template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeUntilProbabilities(
     Environment const& env, CheckTask<storm::logic::UntilFormula, SolutionType> const& checkTask) {
     storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
-    if (storm::IsIntervalType<ValueType>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(checkTask.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
                         "Uncertainty resolution mode must be set for uncertain (interval) models.");
         STORM_LOG_THROW(checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Robust &&
@@ -297,7 +293,7 @@ template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeReachabilityRewards(
     Environment const& env, CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
-    if (storm::IsIntervalType<ValueType>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(checkTask.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
                         "Uncertainty resolution mode must be set for uncertain (interval) models.");
         STORM_LOG_THROW(checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Robust &&
@@ -537,5 +533,6 @@ template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>;
 template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>>;
 template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>;
 template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::Interval>>;
+template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalInterval>>;
 }  // namespace modelchecker
 }  // namespace storm

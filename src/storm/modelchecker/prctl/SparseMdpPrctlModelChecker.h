@@ -14,7 +14,7 @@ class SparseMdpPrctlModelChecker : public SparsePropositionalModelChecker<Sparse
    public:
     typedef typename SparseMdpModelType::ValueType ValueType;
     typedef typename SparseMdpModelType::RewardModelType RewardModelType;
-    using SolutionType = typename std::conditional<std::is_same_v<ValueType, storm::Interval>, double, ValueType>::type;
+    using SolutionType = storm::IntervalBaseType<ValueType>;
 
     explicit SparseMdpPrctlModelChecker(SparseMdpModelType const& model);
 
