@@ -16,6 +16,7 @@
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
 namespace storm::expressions {
@@ -662,8 +663,31 @@ class Valuations {
                     haveToWriteValue = true;
                 }
                 if (haveToWriteValue) {
-                    // Apply the offset for integer variables if necessary
+                    // Check bounds and apply the offset for integer variables
                     if constexpr (std::is_same_v<ValueType, uint64_t> || std::is_same_v<ValueType, int64_t> || std::is_same_v<ValueType, Integer>) {
+                        if constexpr (std::is_same_v<ValueType, uint64_t> || std::is_same_v<ValueType, int64_t>) {
+                            STORM_LOG_THROW(!varInfo.description.lower || std::cmp_greater_equal(value, varInfo.description.lower.value()),
+                                            storm::exceptions::OutOfRangeException,
+                                            "Value " << value << " is out of range for variable " << varInfo.description.name
+                                                     << ": value is smaller than lower bound " << varInfo.description.lower.value() << ".");
+                            STORM_LOG_THROW(!varInfo.description.upper || std::cmp_less_equal(value, varInfo.description.upper.value()),
+                                            storm::exceptions::OutOfRangeException,
+                                            "Value " << value << " is out of range for variable " << varInfo.description.name
+                                                     << ": value is greater than upper bound " << varInfo.description.upper.value() << ".");
+                        } else {
+                            if (varInfo.description.lower) {
+                                STORM_LOG_THROW(value >= storm::utility::convertNumber<Integer>(varInfo.description.lower.value()),
+                                                storm::exceptions::OutOfRangeException,
+                                                "Value " << value << " is out of range for variable " << varInfo.description.name
+                                                         << ": value is smaller than lower bound " << varInfo.description.lower.value() << ".");
+                            }
+                            if (varInfo.description.upper) {
+                                STORM_LOG_THROW(value <= storm::utility::convertNumber<Integer>(varInfo.description.upper.value()),
+                                                storm::exceptions::OutOfRangeException,
+                                                "Value " << value << " is out of range for variable " << varInfo.description.name
+                                                         << ": value is greater than upper bound " << varInfo.description.upper.value() << ".");
+                            }
+                        }
                         if (auto offset = varInfo.description.offset.value_or(0); offset != 0) {
                             if constexpr (std::is_same_v<ValueType, uint64_t>) {
                                 STORM_LOG_ASSERT(std::cmp_greater_equal(value, offset),

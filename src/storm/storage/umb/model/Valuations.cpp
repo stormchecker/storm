@@ -13,6 +13,7 @@
 
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/OutOfRangeException.h"
 
 namespace storm::umb {
 namespace detail {
@@ -440,7 +441,8 @@ uint64_t Valuations::readUint64(std::span<char const> bytes, uint64_t const bitO
 void Valuations::writeUint64(std::span<char> bytes, uint64_t const bitOffset, uint64_t const bitSize, uint64_t const value) const {
     STORM_LOG_ASSERT(bitOffset < bytes.size() * 8, "Variable offset exceeds valuation size.");
     STORM_LOG_ASSERT(bitSize <= 64, "Invalid bit range.");
-    STORM_LOG_ASSERT(bitSize == 64 || value < (1ull << bitSize), "Invalid value " << value << " for bit size " << bitSize);
+    STORM_LOG_THROW(bitSize == 64 || value < (1ull << bitSize), storm::exceptions::OutOfRangeException,
+                    "Invalid value " << value << " for bit size " << bitSize);
     uint64_t const firstByte = bitOffset / 8;
     uint8_t const bitOffsetWithinByte = bitOffset % 8;
     uint8_t const numBytes = (bitOffsetWithinByte + bitSize + 7) / 8;
@@ -493,6 +495,8 @@ template Valuations::Integer Valuations::readInteger<true>(std::span<char const>
 
 template<bool Signed>
 void Valuations::writeInteger(std::span<char> bytes, uint64_t bitOffset, uint64_t bitSize, Integer const& value) const {
+    STORM_LOG_THROW(ValueEncoding::getSizeOfIntegerEncoding<Signed>(value) <= bitSize, storm::exceptions::OutOfRangeException,
+                    "Value " << value << " cannot be encoded in " << bitSize << " bits.");
     auto const num64BitChunks = (bitSize + 63) / 64;
     std::vector<uint64_t> uint64Encoding;
     ValueEncoding::appendEncodedInteger<Signed>(uint64Encoding, value, num64BitChunks);
