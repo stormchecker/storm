@@ -21,7 +21,7 @@ void ValuationDescriptionBuilder::addBooleanVariable(storm::expressions::Variabl
     STORM_LOG_ASSERT(*manager == variable.getManager(), "Variable " << variable.getName() << " has a different manager than previously specified.");
     descr.variables.emplace_back(storm::umb::ValuationClassDescription::Variable{.name{variable.getName()},
                                                                                  .isOptional{optional ? std::optional<bool>(true) : std::nullopt},
-                                                                                 .type{storm::umb::Type::Bool, std::nullopt},
+                                                                                 .type{.type = storm::umb::Type::Bool, .size = 1},
                                                                                  .lower{},
                                                                                  .upper{},
                                                                                  .offset{}});
