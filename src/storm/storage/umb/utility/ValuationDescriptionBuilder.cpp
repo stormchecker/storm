@@ -19,8 +19,12 @@ storm::expressions::ExpressionManager const& ValuationDescriptionBuilder::getMan
 
 void ValuationDescriptionBuilder::addBooleanVariable(storm::expressions::Variable const& variable, bool optional) {
     STORM_LOG_ASSERT(*manager == variable.getManager(), "Variable " << variable.getName() << " has a different manager than previously specified.");
-    descr.variables.emplace_back(storm::umb::ValuationClassDescription::Variable{
-        .name{variable.getName()}, .isOptional{optional ? std::optional<bool>(true) : std::nullopt}, .type{storm::umb::Type::Bool}});
+    descr.variables.emplace_back(storm::umb::ValuationClassDescription::Variable{.name{variable.getName()},
+                                                                                 .isOptional{optional ? std::optional<bool>(true) : std::nullopt},
+                                                                                 .type{storm::umb::Type::Bool, std::nullopt},
+                                                                                 .lower{},
+                                                                                 .upper{},
+                                                                                 .offset{}});
 }
 
 void ValuationDescriptionBuilder::addIntegerVariable(storm::expressions::Variable const& variable, int64_t const lowerBound, int64_t const upperBound,
@@ -50,28 +54,36 @@ void ValuationDescriptionBuilder::addIntegerVariable(storm::expressions::Variabl
         uint64_t const bitSize = storm::utility::bitsize<Integer>(upperBound - lowerBound);
         storm::umb::SizedType const t{.type{lowerBound < 0 ? storm::umb::Type::Int : storm::umb::Type::Uint}, .size{std::max<uint64_t>(1, bitSize)}};
         descr.variables.emplace_back(storm::umb::ValuationClassDescription::Variable{
-            .name{variable.getName()}, .isOptional{optional ? std::optional<bool>(true) : std::nullopt}, .type{t}});
+            .name{variable.getName()}, .isOptional{optional ? std::optional<bool>(true) : std::nullopt}, .type{t}, .lower{}, .upper{}, .offset{}});
     }
 }
 
 void ValuationDescriptionBuilder::addDoubleVariable(storm::expressions::Variable const& variable, bool optional) {
     STORM_LOG_ASSERT(*manager == variable.getManager(), "Variable " << variable.getName() << " has a different manager than previously specified.");
-    descr.variables.emplace_back(storm::umb::ValuationClassDescription::Variable{
-        .name{variable.getName()}, .isOptional{optional ? std::optional<bool>(true) : std::nullopt}, .type{storm::umb::Type::Double}});
+    descr.variables.emplace_back(storm::umb::ValuationClassDescription::Variable{.name{variable.getName()},
+                                                                                 .isOptional{optional ? std::optional<bool>(true) : std::nullopt},
+                                                                                 .type{storm::umb::Type::Double, std::nullopt},
+                                                                                 .lower{},
+                                                                                 .upper{},
+                                                                                 .offset{}});
 }
 
 void ValuationDescriptionBuilder::addRationalVariable(storm::expressions::Variable const& variable, uint64_t bitSize, bool optional) {
     STORM_LOG_ASSERT(*manager == variable.getManager(), "Variable " << variable.getName() << " has a different manager than previously specified.");
     STORM_LOG_ASSERT(bitSize % 2 == 0, "Bit size for rational variables must be a multiple of 2.");
     storm::umb::SizedType const t{.type{storm::umb::Type::Rational}, .size{std::max<uint64_t>(2, bitSize)}};
-    descr.variables.emplace_back(
-        storm::umb::ValuationClassDescription::Variable{.name{variable.getName()}, .isOptional{optional ? std::optional<bool>(true) : std::nullopt}, .type{t}});
+    descr.variables.emplace_back(storm::umb::ValuationClassDescription::Variable{
+        .name{variable.getName()}, .isOptional{optional ? std::optional<bool>(true) : std::nullopt}, .type{t}, .lower{}, .upper{}, .offset{}});
 }
 
 void ValuationDescriptionBuilder::addStringVariable(storm::expressions::Variable const& variable, bool optional) {
     STORM_LOG_ASSERT(*manager == variable.getManager(), "Variable " << variable.getName() << " has a different manager than previously specified.");
-    descr.variables.emplace_back(storm::umb::ValuationClassDescription::Variable{
-        .name{variable.getName()}, .isOptional{optional ? std::optional<bool>(true) : std::nullopt}, .type{storm::umb::Type::String}});
+    descr.variables.emplace_back(storm::umb::ValuationClassDescription::Variable{.name{variable.getName()},
+                                                                                 .isOptional{optional ? std::optional<bool>(true) : std::nullopt},
+                                                                                 .type{storm::umb::Type::String, std::nullopt},
+                                                                                 .lower{},
+                                                                                 .upper{},
+                                                                                 .offset{}});
 }
 
 void ValuationDescriptionBuilder::addVariable(storm::umb::ValuationClassDescription::Variable const& variable) {

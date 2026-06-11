@@ -4,6 +4,8 @@
 #include <cstring>
 #include <ranges>
 
+#include <boost/functional/hash.hpp>
+
 #include "storm/storage/BitVector.h"
 #include "storm/storage/umb/model/ValueEncoding.h"
 #include "storm/utility/bitoperations.h"
@@ -464,7 +466,7 @@ void Valuations::writeUint64(std::span<char> bytes, uint64_t const bitOffset, ui
             // Fast path: variable is byte-aligned, so we can directly write all full bytes without bit shifts
             std::memcpy(&bytes[firstByte], &value, numFullBytes);
         } else {
-            uint64_t const shiftedValue = static_cast<uint64_t>(bytes[firstByte]) & ((1ull << bitOffsetWithinByte) - 1) | (value << bitOffsetWithinByte);
+            uint64_t const shiftedValue = (static_cast<uint64_t>(bytes[firstByte]) & ((1ull << bitOffsetWithinByte) - 1)) | (value << bitOffsetWithinByte);
             std::memcpy(&bytes[firstByte], &shiftedValue, numFullBytes);
         }
         // Then write the last byte if necessary
@@ -632,5 +634,19 @@ Valuations Valuations::selectEntities(T const& selectedEntities) const {
 
 template Valuations Valuations::selectEntities<storm::storage::BitVector>(storm::storage::BitVector const&) const;
 template Valuations Valuations::selectEntities<std::vector<uint64_t>>(std::vector<uint64_t> const&) const;
+
+// ============================================================
+// Hashing
+// ============================================================
+
+std::size_t Valuations::hash() const {
+    // As the valuations are stored as a sequence of chars, we can pretend that this is a string and use  efficient string_view hashing
+    auto const hashBytes = std::hash<std::string_view>{};
+
+    std::size_t seed = hashBytes(std::string_view(valuations.data(), valuations.size()));
+    boost::hash_combine(seed, hashBytes(std::string_view(strings.data(), strings.size())));
+
+    return seed;
+}
 
 }  // namespace storm::umb

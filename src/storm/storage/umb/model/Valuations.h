@@ -444,13 +444,22 @@ class Valuations {
     template<typename ValueType>
     void writeValue(uint64_t entity, storm::expressions::Variable const& variable, ValueType const& value) {
         if constexpr (std::is_same_v<ValueType, std::nullopt_t>) {
-            writeCallback<false, true>(entity, variable, [&value](auto, auto, auto&) { /* intentionally empty */ });
+            writeCallback<false, true>(entity, variable, [](auto, auto, auto&) { /* intentionally empty */ });
         } else if constexpr (std::is_same_v<ValueType, std::string_view>) {
             writeCallback<false, false, std::string>(entity, variable, [&value](auto, auto, std::string& val) { val = value; });
         } else {
             writeCallback<false, false, ValueType>(entity, variable, [&value](auto, auto, ValueType& val) { val = value; });
         }
     }
+
+    // --- Hashing ---
+
+    /*!
+     * Computes a hash of the entire valuation data.
+     * Two Valuations objects with the same entities and identical variable values will produce
+     * the same hash.
+     */
+    std::size_t hash() const;
 
    private:
     // --- Data ---

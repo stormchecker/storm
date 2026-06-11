@@ -401,7 +401,7 @@ TEST(UmbTest, Valuations) {
             static_assert(std::is_same_v<ValueType, double>);
             EXPECT_EQ(1, valuations.getClassOfEntity(entity));
             EXPECT_EQ(r, var);
-            EXPECT_EQ(r_values[entity], storm::utility::convertNumber<double>(value));
+            EXPECT_EQ(storm::utility::convertNumber<double>(r_values[entity]), storm::utility::convertNumber<double>(value));
         }
     });
 }
