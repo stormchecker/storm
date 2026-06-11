@@ -102,7 +102,7 @@ void ValuationDescriptionBuilder::addVariables(storm::umb::ValuationClassDescrip
 
 void ValuationDescriptionBuilder::finalize() {
     if (uint64_t const padding = descr.sizeInBits() % 8; padding > 0) {
-        descr.variables.emplace_back(storm::umb::ValuationClassDescription::Padding(8 - padding));
+        descr.variables.emplace_back(storm::umb::ValuationClassDescription::Padding{.padding = 8 - padding});
     }
 }
 
