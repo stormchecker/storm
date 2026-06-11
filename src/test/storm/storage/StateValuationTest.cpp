@@ -40,9 +40,9 @@ TEST_F(StateValuationTest, StateValuationConstruction) {
     uint64_t const sinit = *model->getInitialStates().begin();
     ASSERT_TRUE(sv.entityHasVariable(sinit, s));
     ASSERT_TRUE(sv.entityHasVariable(sinit, d));
-    EXPECT_EQ(0, sv.getIntegerValue(sinit, s));
-    EXPECT_EQ(0, sv.getOptionalIntegerValue(sinit, s).value());
-    EXPECT_EQ(0, sv.getOptionalIntegerValue(sinit, d).value());
+    EXPECT_EQ(0, sv.getInt64Value(sinit, s));
+    EXPECT_EQ(0, sv.getOptionalInt64Value(sinit, s).value());
+    EXPECT_EQ(0, sv.getOptionalInt64Value(sinit, d).value());
     // reading json at sinit
     auto js = sv.toJson(sinit);
     EXPECT_EQ(2, js.size());
@@ -54,8 +54,8 @@ TEST_F(StateValuationTest, StateValuationConstruction) {
     ASSERT_TRUE(model->getStateLabeling().containsLabel("three"));
     ASSERT_TRUE(model->getStates("three").hasUniqueSetBit());
     uint64_t const three = *model->getStates("three").begin();
-    EXPECT_EQ(7, sv.getIntegerValue(three, s));
-    EXPECT_EQ(3, sv.getIntegerValue(three, d));
+    EXPECT_EQ(7, sv.getInt64Value(three, s));
+    EXPECT_EQ(3, sv.getInt64Value(three, d));
     // reading all values for d
     auto dValues = sv.getInt64Values(d);
     ASSERT_EQ(sv.getNumberOfEntities(), dValues.size());
@@ -93,8 +93,8 @@ TEST_F(StateValuationTest, StateValuationTransformation) {
     ASSERT_TRUE(vars.contains(alwaysTrueVar));
     ASSERT_TRUE(vars.contains(alwaysFalseVar));
     uint64_t const sinit = *model->getInitialStates().begin();
-    EXPECT_EQ(0, newsv.getIntegerValue(sinit, svar));
-    EXPECT_EQ(0, newsv.getIntegerValue(sinit, dvar));
+    EXPECT_EQ(0, newsv.getInt64Value(sinit, svar));
+    EXPECT_EQ(0, newsv.getInt64Value(sinit, dvar));
     EXPECT_FALSE(newsv.getBooleanValue(sinit, sgt3Var));
     EXPECT_TRUE(newsv.getBooleanValue(sinit, alwaysTrueVar));
     EXPECT_FALSE(newsv.getBooleanValue(sinit, alwaysFalseVar));
@@ -102,7 +102,7 @@ TEST_F(StateValuationTest, StateValuationTransformation) {
     for (uint64_t state = 0; state < newsv.getNumberOfEntities(); ++state) {
         ASSERT_TRUE(newsv.getBooleanValue(state, alwaysTrueVar));
         ASSERT_FALSE(newsv.getBooleanValue(state, alwaysFalseVar));
-        ASSERT_EQ(sv.getIntegerValue(state, svar), newsv.getIntegerValue(state, svar));
-        ASSERT_EQ(newsv.getBooleanValue(state, sgt3Var), newsv.getIntegerValue(state, svar) > 3);
+        ASSERT_EQ(sv.getInt64Value(state, svar), newsv.getInt64Value(state, svar));
+        ASSERT_EQ(newsv.getBooleanValue(state, sgt3Var), newsv.getInt64Value(state, svar) > 3);
     }
 }

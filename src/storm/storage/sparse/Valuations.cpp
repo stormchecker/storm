@@ -4,6 +4,7 @@
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/umb/model/Valuations.h"
 
 namespace storm::storage::sparse {
@@ -69,22 +70,6 @@ bool Valuations::getBooleanValue(uint64_t const entity, storm::expressions::Vari
     return umbValuations->readValue<bool>(entity, booleanVariable);
 }
 
-int64_t Valuations::getIntegerValue(uint64_t const entity, storm::expressions::Variable const& integerVariable) const {
-    return umbValuations->readValue<int64_t>(entity, integerVariable);
-}
-
-double Valuations::getDoubleValue(uint64_t const entity, storm::expressions::Variable const& doubleVariable) const {
-    return umbValuations->readValue<double>(entity, doubleVariable);
-}
-
-storm::RationalNumber Valuations::getRationalValue(uint64_t const entity, storm::expressions::Variable const& rationalVariable) const {
-    return umbValuations->readValue<storm::RationalNumber>(entity, rationalVariable);
-}
-
-std::string Valuations::getStringValue(uint64_t const entity, storm::expressions::Variable const& stringVariable) const {
-    return umbValuations->readValue<std::string>(entity, stringVariable);
-}
-
 std::optional<bool> Valuations::getOptionalBooleanValue(uint64_t const entity, storm::expressions::Variable const& booleanVariable) const {
     if (!entityHasVariable(entity, booleanVariable)) {
         return std::nullopt;
@@ -100,7 +85,11 @@ std::optional<bool> Valuations::getOptionalBooleanValue(uint64_t const entity, s
     return result;
 }
 
-std::optional<int64_t> Valuations::getOptionalIntegerValue(uint64_t const entity, storm::expressions::Variable const& integerVariable) const {
+int64_t Valuations::getInt64Value(uint64_t const entity, storm::expressions::Variable const& integerVariable) const {
+    return umbValuations->readValue<int64_t>(entity, integerVariable);
+}
+
+std::optional<int64_t> Valuations::getOptionalInt64Value(uint64_t const entity, storm::expressions::Variable const& integerVariable) const {
     if (!entityHasVariable(entity, integerVariable)) {
         return std::nullopt;
     }
@@ -112,6 +101,10 @@ std::optional<int64_t> Valuations::getOptionalIntegerValue(uint64_t const entity
         }
     });
     return result;
+}
+
+double Valuations::getDoubleValue(uint64_t const entity, storm::expressions::Variable const& doubleVariable) const {
+    return umbValuations->readValue<double>(entity, doubleVariable);
 }
 
 std::optional<double> Valuations::getOptionalDoubleValue(uint64_t const entity, storm::expressions::Variable const& doubleVariable) const {
@@ -128,6 +121,10 @@ std::optional<double> Valuations::getOptionalDoubleValue(uint64_t const entity, 
     return result;
 }
 
+storm::RationalNumber Valuations::getRationalValue(uint64_t const entity, storm::expressions::Variable const& rationalVariable) const {
+    return umbValuations->readValue<storm::RationalNumber>(entity, rationalVariable);
+}
+
 std::optional<storm::RationalNumber> Valuations::getOptionalRationalValue(uint64_t const entity, storm::expressions::Variable const& rationalVariable) const {
     if (!entityHasVariable(entity, rationalVariable)) {
         return std::nullopt;
@@ -140,6 +137,10 @@ std::optional<storm::RationalNumber> Valuations::getOptionalRationalValue(uint64
         }
     });
     return result;
+}
+
+std::string Valuations::getStringValue(uint64_t const entity, storm::expressions::Variable const& stringVariable) const {
+    return umbValuations->readValue<std::string>(entity, stringVariable);
 }
 
 std::optional<std::string> Valuations::getOptionalStringValue(uint64_t const entity, storm::expressions::Variable const& stringVariable) const {
@@ -155,6 +156,13 @@ std::optional<std::string> Valuations::getOptionalStringValue(uint64_t const ent
     });
     return result;
 }
+
+template<typename RationalValueType>
+void Valuations::setValuesInEvaluator(uint64_t entity, storm::expressions::ExpressionEvaluator<RationalValueType>& evaluator) const {
+    umbValuations->setValuesInEvaluator(entity, evaluator);
+}
+template void Valuations::setValuesInEvaluator(uint64_t entity, storm::expressions::ExpressionEvaluator<double>& evaluator) const;
+template void Valuations::setValuesInEvaluator(uint64_t entity, storm::expressions::ExpressionEvaluator<storm::RationalNumber>& evaluator) const;
 
 storm::storage::BitVector Valuations::getBooleanValues(storm::expressions::Variable const& booleanVariable) const {
     STORM_LOG_ASSERT(booleanVariable.hasBooleanType(), "Variable " << booleanVariable.getName() << " is not of boolean type.");
@@ -260,11 +268,7 @@ Valuations Valuations::selectEntities(std::vector<uint64_t> const& selectedEntit
 }
 
 std::size_t Valuations::hash() const {
-    std::size_t seed = 0;
-    for (uint64_t entity = 0; entity < getNumberOfEntities(); ++entity) {
-        boost::hash_combine(seed, umbValuations->getRawBytes(entity));
-    }
-    return seed;
+    return umbValuations->hash();
 }
 
 template storm::json<double> Valuations::toJson<double>(uint64_t const, std::optional<std::set<storm::expressions::Variable>> const&) const;

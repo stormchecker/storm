@@ -7,17 +7,14 @@
 #include <boost/functional/hash.hpp>
 
 #include "storm/storage/BitVector.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/umb/model/ValueEncoding.h"
 #include "storm/utility/bitoperations.h"
 
 #include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm::umb {
-
-// ============================================================
-// detail helpers (used by constructors)
-// ============================================================
-
 namespace detail {
 
 bool fits64Bit(ValuationClassDescription::Variable const& varDesc) {
@@ -131,10 +128,6 @@ Valuations::VariablesInformation createVariablesInformation(ManagerType& express
 
 }  // namespace detail
 
-// ============================================================
-// Constructors
-// ============================================================
-
 Valuations::Valuations(uint64_t const numEntities, std::vector<ValuationClassDescription> const& descriptions, std::vector<char> valuations,
                        std::vector<uint64_t> stringMapping, std::vector<char> strings, std::optional<std::vector<uint32_t>> classes,
                        std::vector<std::shared_ptr<storm::expressions::ExpressionManager const>> expressionManagers)
@@ -211,10 +204,6 @@ Valuations::Valuations(ValuationClassDescription const& description, std::shared
 
 Valuations::Valuations(std::vector<VariablesInformation> const& variableClasses) : numEntities(0), variableClasses(variableClasses) {}
 
-// ============================================================
-// Size / count queries
-// ============================================================
-
 uint64_t Valuations::size() const {
     return numEntities;
 }
@@ -230,10 +219,6 @@ uint64_t Valuations::numStrings() const {
 bool Valuations::hasStrings() const {
     return !stringMapping.empty();
 }
-
-// ============================================================
-// Class and entity queries
-// ============================================================
 
 uint64_t Valuations::getClassOfEntity(uint64_t entity) const {
     STORM_LOG_ASSERT(entity < size(), "Entity index out of bounds: " << entity << " >= " << size() << ".");
@@ -265,15 +250,16 @@ ValuationClassDescription Valuations::getClassDescription(uint64_t classIndex) c
                                                                                             << varInfo.bitOffset << ".");
     }
     if (uint64_t padding = currBit % 8; padding > 0) {
-        res.variables.push_back(storm::umb::ValuationClassDescription::Padding(8 - padding));
+        res.variables.push_back(storm::umb::ValuationClassDescription::Padding{.padding = 8 - padding});
     }
     return res;
 }
 
 storm::expressions::ExpressionManager const& Valuations::getManager() const {
+    STORM_LOG_ASSERT(!variableClasses.empty(), "No variable classes given, cannot determine expression manager.");
     auto const& manager = variableClasses.front().expressionManager;
     STORM_LOG_THROW(
-        std::all_of(variableClasses.begin(), variableClasses.end(), [&manager](auto const& varClass) { return varClass.expressionManager == manager; }),
+        std::all_of(variableClasses.begin() + 1, variableClasses.end(), [&manager](auto const& varClass) { return varClass.expressionManager == manager; }),
         storm::exceptions::IllegalFunctionCallException, "Expression manager is not unique.");
     return *manager;
 }
@@ -283,10 +269,6 @@ storm::expressions::ExpressionManager const& Valuations::getManager(uint64_t cla
                      "Class index " << classIndex << " out of bounds. Only " << variableClasses.size() << "classes known.");
     return *variableClasses[classIndex].expressionManager;
 }
-
-// ============================================================
-// Variable lookup
-// ============================================================
 
 Valuations::VariableInformation const& Valuations::getVariableInformation(uint64_t entity, storm::expressions::Variable const& variable) const {
     auto const& vars = info(entity).variables;
@@ -301,9 +283,12 @@ Valuations::VariableInformation const& Valuations::getVariableInformation(storm:
 }
 
 std::set<storm::expressions::Variable> Valuations::getAllVariables() const {
+    [[maybe_unused]] auto const& manager = getManager();
     std::set<storm::expressions::Variable> result;
     for (auto const& varClass : variableClasses) {
         for (auto const& varInfo : varClass.variables) {
+            STORM_LOG_ASSERT(varInfo.expressionVariable.getManager() == manager,
+                             "Expression manager of variable " << varInfo.expressionVariable.getName() << " does not match the one of the valuation.");
             result.insert(varInfo.expressionVariable);
         }
     }
@@ -313,33 +298,6 @@ std::set<storm::expressions::Variable> Valuations::getAllVariables() const {
 bool Valuations::entityHasVariable(uint64_t entity, storm::expressions::Variable const& variable) const {
     auto const& vars = info(entity).variables;
     return std::any_of(vars.begin(), vars.end(), [&variable](auto const& varInfo) { return varInfo.expressionVariable == variable; });
-}
-
-// ============================================================
-// Raw data access
-// ============================================================
-
-std::span<char const> Valuations::getRawBytes(uint64_t entity) const {
-    STORM_LOG_ASSERT(entity < size(), "Entity index out of bounds: " << entity << " >= " << size() << ".");
-    if (entityClassMappings) {
-        auto const start = entityClassMappings->toValuationsMapping[entity];
-        auto const end = entityClassMappings->toValuationsMapping[entity + 1];
-        return std::span<char const>(&valuations[start], end - start);
-    } else {
-        auto const start = entity * variableClasses.front().sizeInBytes;
-        return std::span<char const>(&valuations[start], variableClasses.front().sizeInBytes);
-    }
-}
-
-std::span<char> Valuations::getRawBytes(uint64_t entity) {
-    if (entityClassMappings) {
-        auto const start = entityClassMappings->toValuationsMapping[entity];
-        auto const end = entityClassMappings->toValuationsMapping[entity + 1];
-        return std::span<char>(&valuations[start], end - start);
-    } else {
-        auto const start = entity * variableClasses.front().sizeInBytes;
-        return std::span<char>(&valuations[start], variableClasses.front().sizeInBytes);
-    }
 }
 
 storm::umb::UmbModel::Valuation Valuations::getRawUmbData() const {
@@ -354,10 +312,6 @@ storm::umb::UmbModel::Valuation Valuations::getRawUmbData() const {
     }
     return result;
 }
-
-// ============================================================
-// Mutation
-// ============================================================
 
 void Valuations::resize(uint64_t newEntityCount, uint64_t const classIndex) {
     if (newEntityCount > size()) {
@@ -392,17 +346,55 @@ void Valuations::resize(uint64_t newEntityCount, uint64_t const classIndex) {
     }
 }
 
-// ============================================================
-// Private helpers
-// ============================================================
+template<typename RationalValueType>
+void Valuations::setValuesInEvaluator(uint64_t entity, storm::expressions::ExpressionEvaluator<RationalValueType>& evaluator) const {
+    readCallback(entity, [&evaluator](auto, auto const& var, auto const& value) {
+        using ValueType = std::remove_cvref_t<decltype(value)>;
+        if constexpr (std::is_same_v<ValueType, bool>) {
+            evaluator.setBooleanValue(var, value);
+        } else if constexpr (std::is_same_v<ValueType, int64_t> || std::is_same_v<ValueType, uint64_t>) {
+            evaluator.setIntegerValue(var, value);
+            // evaluator has no support for arbitrary-precision integers.
+        } else if constexpr (std::is_same_v<ValueType, double> || std::is_same_v<ValueType, storm::RationalNumber>) {
+            evaluator.setRationalValue(var, storm::utility::convertNumber<RationalValueType>(value));
+        } else {
+            STORM_LOG_THROW(
+                (std::is_same_v<ValueType, std::string_view> || std::is_same_v<ValueType, std::string> || std::is_same_v<ValueType, std::nullopt_t>),
+                storm::exceptions::NotSupportedException, "Unsupported variable value type when reading state values: " << typeid(ValueType).name());
+        }
+    });
+}
+
+template void Valuations::setValuesInEvaluator<double>(uint64_t entity, storm::expressions::ExpressionEvaluator<double>& evaluator) const;
+template void Valuations::setValuesInEvaluator<storm::RationalNumber>(uint64_t entity,
+                                                                      storm::expressions::ExpressionEvaluator<storm::RationalNumber>& evaluator) const;
 
 Valuations::VariablesInformation const& Valuations::info(uint64_t entity) const {
     return variableClasses[getClassOfEntity(entity)];
 }
 
-// ============================================================
-// Low-level bit I/O
-// ============================================================
+std::span<char const> Valuations::getRawBytes(uint64_t entity) const {
+    STORM_LOG_ASSERT(entity < size(), "Entity index out of bounds: " << entity << " >= " << size() << ".");
+    if (entityClassMappings) {
+        auto const start = entityClassMappings->toValuationsMapping[entity];
+        auto const end = entityClassMappings->toValuationsMapping[entity + 1];
+        return std::span<char const>(&valuations[start], end - start);
+    } else {
+        auto const start = entity * variableClasses.front().sizeInBytes;
+        return std::span<char const>(&valuations[start], variableClasses.front().sizeInBytes);
+    }
+}
+
+std::span<char> Valuations::getRawBytes(uint64_t entity) {
+    if (entityClassMappings) {
+        auto const start = entityClassMappings->toValuationsMapping[entity];
+        auto const end = entityClassMappings->toValuationsMapping[entity + 1];
+        return std::span<char>(&valuations[start], end - start);
+    } else {
+        auto const start = entity * variableClasses.front().sizeInBytes;
+        return std::span<char>(&valuations[start], variableClasses.front().sizeInBytes);
+    }
+}
 
 bool Valuations::readBit(std::span<char const> bytes, uint64_t const position) const {
     STORM_LOG_ASSERT(position < bytes.size() * 8, "Bit position exceeds valuation size.");
@@ -480,10 +472,6 @@ void Valuations::writeUint64(std::span<char> bytes, uint64_t const bitOffset, ui
     }
 }
 
-// ============================================================
-// Integer encoding (arbitrary precision)
-// ============================================================
-
 template<bool Signed>
 Valuations::Integer Valuations::readInteger(std::span<char const> bytes, uint64_t const bitOffset, uint64_t const bitSize) const {
     auto const num64BitChunks = (bitSize + 63) / 64;
@@ -541,10 +529,6 @@ void Valuations::writeInteger(std::span<char> bytes, uint64_t bitOffset, uint64_
 template void Valuations::writeInteger<false>(std::span<char>, uint64_t, uint64_t, Integer const&) const;
 template void Valuations::writeInteger<true>(std::span<char>, uint64_t, uint64_t, Integer const&) const;
 
-// ============================================================
-// Typed value encoding
-// ============================================================
-
 template<typename ValueType>
 void Valuations::writeValue(std::span<char> bytes, uint64_t bitOffset, uint64_t bitSize, ValueType const& value) {
     if constexpr (std::is_same_v<ValueType, bool>) {
@@ -595,10 +579,6 @@ template void Valuations::writeValue<storm::RationalNumber>(std::span<char>, uin
 template void Valuations::writeValue<std::string_view>(std::span<char>, uint64_t, uint64_t, std::string_view const&);
 template void Valuations::writeValue<std::string>(std::span<char>, uint64_t, uint64_t, std::string const&);
 
-// ============================================================
-// Selection
-// ============================================================
-
 template<typename T>
 Valuations Valuations::selectEntities(T const& selectedEntities) const {
     Valuations result(variableClasses);
@@ -634,10 +614,6 @@ Valuations Valuations::selectEntities(T const& selectedEntities) const {
 
 template Valuations Valuations::selectEntities<storm::storage::BitVector>(storm::storage::BitVector const&) const;
 template Valuations Valuations::selectEntities<std::vector<uint64_t>>(std::vector<uint64_t> const&) const;
-
-// ============================================================
-// Hashing
-// ============================================================
 
 std::size_t Valuations::hash() const {
     // As the valuations are stored as a sequence of chars, we can pretend that this is a string and use  efficient string_view hashing

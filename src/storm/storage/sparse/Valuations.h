@@ -11,6 +11,11 @@
 
 namespace storm {
 
+namespace expressions {
+template<typename T>
+class ExpressionEvaluator;
+}
+
 namespace umb {
 struct ValuationClassDescription;
 class Valuations;
@@ -56,14 +61,23 @@ class Valuations {
     // optional varians have no value iff either entityHasVariable(entity, variable) is false or the value is of optional type and not set.
     bool getBooleanValue(uint64_t const entity, storm::expressions::Variable const& booleanVariable) const;
     std::optional<bool> getOptionalBooleanValue(uint64_t const entity, storm::expressions::Variable const& booleanVariable) const;
-    int64_t getIntegerValue(uint64_t const entity, storm::expressions::Variable const& integerVariable) const;
-    std::optional<int64_t> getOptionalIntegerValue(uint64_t const entity, storm::expressions::Variable const& integerVariable) const;
+    int64_t getInt64Value(uint64_t const entity, storm::expressions::Variable const& integerVariable) const;
+    std::optional<int64_t> getOptionalInt64Value(uint64_t const entity, storm::expressions::Variable const& integerVariable) const;
     double getDoubleValue(uint64_t const entity, storm::expressions::Variable const& doubleVariable) const;
     std::optional<double> getOptionalDoubleValue(uint64_t const entity, storm::expressions::Variable const& doubleVariable) const;
     storm::RationalNumber getRationalValue(uint64_t const entity, storm::expressions::Variable const& rationalVariable) const;
     std::optional<storm::RationalNumber> getOptionalRationalValue(uint64_t const entity, storm::expressions::Variable const& rationalVariable) const;
     std::string getStringValue(uint64_t const entity, storm::expressions::Variable const& stringVariable) const;
     std::optional<std::string> getOptionalStringValue(uint64_t const entity, storm::expressions::Variable const& stringVariable) const;
+
+    /*!
+     * Reads the variable values for the given entity and sets them into the given expression evaluator.
+     * @tparam RationalValueType The value type of rationals as stored by the evaluator (e.g. double or storm::RationalNumber).
+     * @param entity             Entity index; must be less than size().
+     * @param evaluator          The expression evaluator to set the variable values into.
+     */
+    template<typename RationalValueType>
+    void setValuesInEvaluator(uint64_t entity, storm::expressions::ExpressionEvaluator<RationalValueType>& evaluator) const;
 
     /*!
      * Returns a vector of size getNumberOfEntities() such that the i'th entry is the value of the given variable of entity i.

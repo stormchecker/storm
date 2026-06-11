@@ -104,14 +104,12 @@ class UmbRoundTripTest : public ::testing::Test {
                 ASSERT_EQ(1, v.numClasses());
                 ASSERT_EQ(1, other_v.numClasses());
                 ASSERT_EQ(v.getClassDescription().sizeInBits(), other_v.getClassDescription().sizeInBits());
-                for (uint64_t entity = 0; entity < v.size(); ++entity) {
-                    auto const bytes = v.getRawBytes(entity);
-                    auto const otherBytes = other_v.getRawBytes(entity);
-                    ASSERT_EQ(bytes.size(), otherBytes.size()) << " valuations differ at entity " << entity;
-                    for (uint64_t i = 0; i < bytes.size(); ++i) {
-                        EXPECT_EQ(bytes[i], otherBytes[i]) << " valuations differ at entity " << entity << " byte " << i;
-                    }
-                }
+                storm::umb::UmbModel::Valuation data = v.getRawUmbData();
+                storm::umb::UmbModel::Valuation other_data = other_v.getRawUmbData();
+                EXPECT_EQ(data.valuations, other_data.valuations);
+                EXPECT_EQ(data.stringMapping, other_data.stringMapping);
+                EXPECT_EQ(data.strings == other_data.strings, true);
+                EXPECT_EQ(data.valuationToClass, other_data.valuationToClass);
             };
             ASSERT_TRUE(model->hasStateValuations());
             ASSERT_TRUE(otherModelPtr->hasStateValuations());

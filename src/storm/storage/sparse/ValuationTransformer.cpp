@@ -54,20 +54,15 @@ Valuations ValuationTransformer::build(bool extend) {
 
     storm::expressions::ExpressionEvaluator<storm::RationalNumber> evaluator(oldValuations.getManager());
     for (uint64_t entity = 0; entity < oldValuations.getNumberOfEntities(); ++entity) {
-        // Copy variables into the new state valuations and setup the expression evaluator for the current state.
-        oldValuations.getUmbValuations().readCallback(entity, [&result, extend, &evaluator](auto const e, auto const& var, auto const& value) {
-            using ValueType = std::remove_cvref_t<decltype(value)>;
-            if constexpr (std::is_same_v<ValueType, bool>) {
-                evaluator.setBooleanValue(var, value);
-            } else if constexpr (std::is_same_v<ValueType, int64_t> || std::is_same_v<ValueType, uint64_t>) {
-                evaluator.setIntegerValue(var, value);
-            } else if constexpr (std::is_same_v<ValueType, double> || std::is_same_v<ValueType, storm::RationalNumber>) {
-                evaluator.setRationalValue(var, value);
-            }
-            if (extend) {
-                result.writeValue(e, var, value);
-            }
-        });
+        if (extend) {
+            // If requested, we copy variables into the new valuations
+            oldValuations.getUmbValuations().readCallback(entity,
+                                                          [&result](auto const e, auto const& var, auto const& value) { result.writeValue(e, var, value); });
+        }
+
+        // Setup the expression evaluator
+        oldValuations.setValuesInEvaluator(entity, evaluator);
+        // Evaluate expressions and write results into the new valuations
         for (uint64_t i = 0; i < variables.size(); ++i) {
             auto const& var = variables[i];
             auto const& expr = expressions[i];

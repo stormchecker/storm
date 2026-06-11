@@ -18,6 +18,11 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
+namespace storm::expressions {
+template<typename T>
+class ExpressionEvaluator;
+}
+
 namespace storm::umb {
 
 /*!
@@ -78,13 +83,10 @@ class Valuations {
         uint64_t const sizeInBytes;
     };
 
-    // --- Special members ---
     Valuations(Valuations const&) = default;
     Valuations(Valuations&&) = default;
     Valuations& operator=(Valuations const&) = default;
     Valuations& operator=(Valuations&&) = default;
-
-    // --- Constructors ---
 
     /*!
      * Full constructor. Creates a Valuations object from pre-existing packed data.
@@ -135,8 +137,6 @@ class Valuations {
      */
     Valuations(ValuationClassDescription const& description, std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager = {});
 
-    // --- Size/count queries ---
-
     /*!
      * @return The number of entities (e.g. states) that this Valuations assigns values for.
      */
@@ -158,8 +158,6 @@ class Valuations {
      *         maintains a non-empty string table).
      */
     bool hasStrings() const;
-
-    // --- Class and entity queries ---
 
     /*!
      * Returns the class index of the given entity.
@@ -187,8 +185,6 @@ class Valuations {
      */
     storm::expressions::ExpressionManager const& getManager(uint64_t classIndex) const;
 
-    // --- Variable lookup ---
-
     /*!
      * Returns all expression variables that this valuation assigns values to for at least one class.
      */
@@ -214,27 +210,11 @@ class Valuations {
      */
     VariableInformation const& getVariableInformation(storm::expressions::Variable const& variable) const;
 
-    // --- Raw data access ---
-
-    /*!
-     * Returns a read-only view of the packed valuation bytes for the given entity.
-     * @param entity  Entity index; must be less than size().
-     */
-    std::span<char const> getRawBytes(uint64_t entity) const;
-
-    /*!
-     * Returns a mutable view of the packed valuation bytes for the given entity.
-     * @param entity  Entity index; must be less than size().
-     */
-    std::span<char> getRawBytes(uint64_t entity);
-
     /*!
      * Exports a snapshot of the raw UMB model valuation data (packed bytes, optional class
      * mapping, and string table) in the format expected by UmbModel::Valuation.
      */
     typename storm::umb::UmbModel::Valuation getRawUmbData() const;
-
-    // --- Mutation ---
 
     /*!
      * Resizes the entity count to @p newEntityCount.
@@ -293,8 +273,6 @@ class Valuations {
      */
     template<typename T>
     Valuations selectEntities(T const& selectedEntities) const;
-
-    // --- Read operations ---
 
     /*!
      * Reads all variables of the given entity and invokes @p callback for each one.
@@ -377,7 +355,14 @@ class Valuations {
         return result;
     }
 
-    // --- Write operations ---
+    /*!
+     * Reads the variable values for the given entity and sets them into the given expression evaluator.
+     * @tparam RationalValueType The value type of rationals as stored by the evaluator (e.g. double or storm::RationalNumber).
+     * @param entity             Entity index; must be less than size().
+     * @param evaluator          The expression evaluator to set the variable values into.
+     */
+    template<typename RationalValueType>
+    void setValuesInEvaluator(uint64_t entity, storm::expressions::ExpressionEvaluator<RationalValueType>& evaluator) const;
 
     /*!
      * Writes all variables of the given entity by invoking @p callback for each one.
@@ -452,8 +437,6 @@ class Valuations {
         }
     }
 
-    // --- Hashing ---
-
     /*!
      * Computes a hash of the entire valuation data.
      * Two Valuations objects with the same entities and identical variable values will produce
@@ -462,7 +445,6 @@ class Valuations {
     std::size_t hash() const;
 
    private:
-    // --- Data ---
     uint64_t numEntities;
     std::vector<VariablesInformation> variableClasses;
 
@@ -476,30 +458,26 @@ class Valuations {
     std::vector<uint64_t> stringMapping;
     std::vector<char> strings;
 
-    // --- Private constructor ---
     explicit Valuations(std::vector<VariablesInformation> const& variableClasses);
 
-    // --- Internal helpers ---
     VariablesInformation const& info(uint64_t entity) const;
+    std::span<char const> getRawBytes(uint64_t entity) const;
+    std::span<char> getRawBytes(uint64_t entity);
 
-    // --- Low-level bit I/O ---
     bool readBit(std::span<char const> bytes, uint64_t position) const;
     void writeBit(std::span<char> bytes, uint64_t position, bool value) const;
     uint64_t readUint64(std::span<char const> bytes, uint64_t bitOffset, uint64_t bitSize) const;
     void writeUint64(std::span<char> bytes, uint64_t bitOffset, uint64_t bitSize, uint64_t value) const;
 
-    // --- Integer encoding (arbitrary precision) ---
     template<bool Signed>
     Integer readInteger(std::span<char const> bytes, uint64_t bitOffset, uint64_t bitSize) const;
 
     template<bool Signed>
     void writeInteger(std::span<char> bytes, uint64_t bitOffset, uint64_t bitSize, Integer const& value) const;
 
-    // --- Typed value encoding ---
     template<typename ValueType>
     void writeValue(std::span<char> bytes, uint64_t bitOffset, uint64_t bitSize, ValueType const& value);
 
-    // --- Core per-variable read/write ---
     /*!
      * Reads the given variable for the given entity and calls the callback with the read value.
      * @tparam AllowedTypes either empty (allowing all types) or a list of types that are handled in the callback.
