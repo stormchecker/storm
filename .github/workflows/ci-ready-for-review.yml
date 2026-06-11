@@ -11,7 +11,7 @@ on:
 
 jobs:
   buildTests:
-    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     strategy:
       fail-fast: true
       matrix:
@@ -70,7 +70,7 @@ jobs:
       install: true
 
   compilerTests:
-    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     strategy:
       fail-fast: true
       matrix:
@@ -103,7 +103,7 @@ jobs:
       install: true
 
   linuxTests:
-    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     strategy:
       fail-fast: true
       matrix:
@@ -112,14 +112,14 @@ jobs:
     with:
       nr_jobs: "4"
       distro: ${{ matrix.distro }}
-      buildType: Release
+      buildType: Debug
       runner: ubuntu-latest
       restore_cache: ${{ github.event_name != 'push' }}
       save_cache: false
       install: true
 
   macTests:
-    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     strategy:
       fail-fast: true
       matrix:
@@ -156,7 +156,7 @@ jobs:
       install: true
 
   deploy:
-    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     strategy:
       fail-fast: true
       matrix:
