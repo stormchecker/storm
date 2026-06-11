@@ -15,23 +15,23 @@ jobs:
           - {name: "Debug; All dependencies",
              buildType: "Debug",
              baseImg: "movesrwth/storm-dependencies:latest",
-             disable_all: "OFF", 
-             ClnExact: "OFF", 
-             ClnRatfunc: "OFF"
+             disable_all: false, 
+             ClnExact: false, 
+             ClnRatfunc: false
           }
           - {name: "Release; All dependencies",
              buildType: "Release", 
              baseImg: "movesrwth/storm-dependencies:latest",
-             disable_all: "OFF", 
-             ClnExact: "OFF", 
-             ClnRatfunc: "OFF"
+             disable_all: false, 
+             ClnExact: false, 
+             ClnRatfunc: false
           }
           - {name: "Release; GMP; GMP; Minimal dependencies", 
              buildType: "Release",
              baseImg: "movesrwth/storm-basesystem:minimal_dependencies",
-             disable_all: "ON",
-             ClnExact: "OFF",
-             ClnRatfunc: "OFF"
+             disable_all: true,
+             ClnExact: false,
+             ClnRatfunc: false
           }
     uses: ./.github/workflows/test-build.yml
     with:
@@ -50,10 +50,10 @@ jobs:
       disable_sylvan: ${{ matrix.config.disable_all }}
       disable_xerces: ${{ matrix.config.disable_all }}
       disable_z3: ${{ matrix.config.disable_all }}
-      Developer: ${{ matrix.config.buildType == 'Debug' && 'ON' || 'OFF' }}
+      Developer: ${{ matrix.config.buildType == 'Debug' }}
       ClnExact: ${{ matrix.config.ClnExact }}
       ClnRatfunc: ${{ matrix.config.ClnRatfunc }}
-      AllSanitizers: "OFF"
+      AllSanitizers: false
       restore_cache: true
       save_cache: true
       install: false
@@ -81,7 +81,7 @@ jobs:
       nr_jobs: "4"
       name: ${{ matrix.config.name }}
       buildType: Debug
-      Developer: "ON"
+      Developer: true
       baseImg: ${{ matrix.config.baseImg }}
       cmakeArgs: ${{ matrix.config.cmakeArgs }}
       packages: ${{ matrix.config.packages }}

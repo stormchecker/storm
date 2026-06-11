@@ -16,9 +16,9 @@ on:
         type: string
         default: "Debug"
       Developer:
-        description: "Enable developer mode (ON/OFF)"
-        type: string
-        default: "ON"
+        description: "Enable developer mode"
+        type: boolean
+        default: true
       cmakeArgs:
         description: "Extra CMake arguments"
         type: string
@@ -36,50 +36,50 @@ on:
         type: string
         default: "movesrwth/storm-dependencies:latest"
       disable_cudd:
-        type: string
-        default: "OFF"
+        type: boolean
+        default: false
       disable_glpk:
-        type: string
-        default: "OFF"
+        type: boolean
+        default: false
       disable_gmm:
-        type: string
-        default: "OFF"
+        type: boolean
+        default: false
       disable_gurobi:
-        type: string
-        default: "OFF"
+        type: boolean
+        default: false
       disable_libarchive:
-        type: string
-        default: "OFF"
+        type: boolean
+        default: false
       disable_mathsat:
-        type: string
-        default: "OFF"
+        type: boolean
+        default: false
       disable_soplex:
-        type: string
-        default: "OFF"
+        type: boolean
+        default: false
       disable_spot:
-        type: string
-        default: "OFF"
+        type: boolean
+        default: false
       disable_sylvan:
-        type: string
-        default: "OFF"
+        type: boolean
+        default: false
       disable_xerces:
-        type: string
-        default: "OFF"
+        type: boolean
+        default: false
       disable_z3:
-        type: string
-        default: "OFF"
+        type: boolean
+        default: false
       ClnExact:
-        description: "Use CLN for exact arithmetic (ON/OFF)"
-        type: string
-        default: "OFF"
+        description: "Use CLN for exact arithmetic"
+        type: boolean
+        default: false
       ClnRatfunc:
-        description: "Use CLN for rational functions (ON/OFF)"
-        type: string
-        default: "OFF"
+        description: "Use CLN for rational functions"
+        type: boolean
+        default: false
       AllSanitizers:
-        description: "Enable all sanitizers (ON/OFF)"
-        type: string
-        default: "OFF"
+        description: "Enable all sanitizers"
+        type: boolean
+        default: false
       packages:
         description: "Extra packages to install (e.g. clang)"
         type: string
@@ -122,21 +122,21 @@ jobs:
           docker build -t movesrwth/storm:ci --file ${{ inputs.dockerfile }} . \
             --build-arg BASE_IMAGE=${{ inputs.baseImg }} \
             --build-arg build_type="${{ inputs.buildType }}" \
-            --build-arg disable_cudd="${{ inputs.disable_cudd }}" \
-            --build-arg disable_glpk="${{ inputs.disable_glpk }}" \
-            --build-arg disable_gmm="${{ inputs.disable_gmm }}" \
-            --build-arg disable_gurobi="${{ inputs.disable_gurobi }}" \
-            --build-arg disable_libarchive="${{ inputs.disable_libarchive }}" \
-            --build-arg disable_mathsat="${{ inputs.disable_mathsat }}" \
-            --build-arg disable_soplex="${{ inputs.disable_soplex }}" \
-            --build-arg disable_spot="${{ inputs.disable_spot }}" \
-            --build-arg disable_sylvan="${{ inputs.disable_sylvan }}" \
-            --build-arg disable_xerces="${{ inputs.disable_xerces }}" \
-            --build-arg disable_z3="${{ inputs.disable_z3 }}" \
-            --build-arg developer="${{ inputs.Developer }}" \
-            --build-arg cln_exact="${{ inputs.ClnExact }}" \
-            --build-arg cln_ratfunc="${{ inputs.ClnRatfunc }}" \
-            --build-arg all_sanitizers="${{ inputs.AllSanitizers }}" \
+            --build-arg disable_cudd="${{ inputs.disable_cudd && 'ON' || 'OFF' }}" \
+            --build-arg disable_glpk="${{ inputs.disable_glpk && 'ON' || 'OFF' }}" \
+            --build-arg disable_gmm="${{ inputs.disable_gmm && 'ON' || 'OFF' }}" \
+            --build-arg disable_gurobi="${{ inputs.disable_gurobi && 'ON' || 'OFF' }}" \
+            --build-arg disable_libarchive="${{ inputs.disable_libarchive && 'ON' || 'OFF' }}" \
+            --build-arg disable_mathsat="${{ inputs.disable_mathsat && 'ON' || 'OFF' }}" \
+            --build-arg disable_soplex="${{ inputs.disable_soplex && 'ON' || 'OFF' }}" \
+            --build-arg disable_spot="${{ inputs.disable_spot && 'ON' || 'OFF' }}" \
+            --build-arg disable_sylvan="${{ inputs.disable_sylvan && 'ON' || 'OFF' }}" \
+            --build-arg disable_xerces="${{ inputs.disable_xerces && 'ON' || 'OFF' }}" \
+            --build-arg disable_z3="${{ inputs.disable_z3 && 'ON' || 'OFF' }}" \
+            --build-arg developer="${{ inputs.Developer && 'ON' || 'OFF' }}" \
+            --build-arg cln_exact="${{ inputs.ClnExact && 'ON' || 'OFF' }}" \
+            --build-arg cln_ratfunc="${{ inputs.ClnRatfunc && 'ON' || 'OFF' }}" \
+            --build-arg all_sanitizers="${{ inputs.AllSanitizers && 'ON' || 'OFF' }}" \
             --build-arg cmake_args="${{ inputs.cmakeArgs }}" \
             --build-arg packages="${{ inputs.packages }}" \
             --build-arg no_threads=${NR_JOBS}

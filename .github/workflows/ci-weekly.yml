@@ -16,39 +16,39 @@ jobs:
         config:
           - {name: "GMP; GMP; Required dependencies",
              baseImg: "movesrwth/storm-basesystem:latest",
-             disable_all: "OFF",
-             ClnExact: "OFF",
-             ClnRatfunc: "OFF"
+             disable_all: false,
+             ClnExact: false,
+             ClnRatfunc: false
           }
           - {name: "CLN; GMP; Required dependencies",
              baseImg: "movesrwth/storm-basesystem:latest",
-             disable_all: "OFF",
-             ClnExact: "ON",
-             ClnRatfunc: "OFF"
+             disable_all: false,
+             ClnExact: true,
+             ClnRatfunc: false
           }
           - {name: "GMP; CLN; Required dependencies",
              baseImg: "movesrwth/storm-basesystem:latest",
-             disable_all: "OFF",
-             ClnExact: "OFF",
-             ClnRatfunc: "ON"
+             disable_all: false,
+             ClnExact: false,
+             ClnRatfunc: true
           }
           - {name: "CLN; CLN; Required dependencies",
              baseImg: "movesrwth/storm-basesystem:latest",
-             disable_all: "OFF",
-             ClnExact: "ON",
-             ClnRatfunc: "ON"
+             disable_all: false,
+             ClnExact: true,
+             ClnRatfunc: true
           }
           - {name: "All dependencies (disabled)",
              baseImg: "movesrwth/storm-dependencies:latest",
-             disable_all: "ON",
-             ClnExact: "OFF",
-             ClnRatfunc: "OFF"
+             disable_all: true,
+             ClnExact: false,
+             ClnRatfunc: false
           }
           - {name: "Minimal dependencies",
              baseImg: "movesrwth/storm-basesystem:minimal_dependencies",
-             disable_all: "ON",
-             ClnExact: "OFF",
-             ClnRatfunc: "OFF"
+             disable_all: true,
+             ClnExact: false,
+             ClnRatfunc: false
           }
     uses: ./.github/workflows/test-build.yml
     with:
@@ -67,10 +67,10 @@ jobs:
       disable_sylvan: ${{ matrix.config.disable_all }}
       disable_xerces: ${{ matrix.config.disable_all }}
       disable_z3: ${{ matrix.config.disable_all }}
-      Developer: ${{ matrix.buildType == 'Debug' && 'ON' || 'OFF' }}
+      Developer: ${{ matrix.buildType == 'Debug' }}
       ClnExact: ${{ matrix.config.ClnExact }}
       ClnRatfunc: ${{ matrix.config.ClnRatfunc }}
-      AllSanitizers: "OFF"
+      AllSanitizers: false
       restore_cache: false
       save_cache: false
       install: true
@@ -98,7 +98,7 @@ jobs:
       nr_jobs: "4"
       name: ${{ matrix.config.name }}
       buildType: ${{ matrix.buildType }}
-      Developer: ${{ matrix.buildType == 'Debug' && 'ON' || 'OFF' }}
+      Developer: ${{ matrix.buildType == 'Debug' }}
       baseImg: ${{ matrix.config.baseImg }}
       cmakeArgs: ${{ matrix.config.cmakeArgs }}
       packages: ${{ matrix.config.packages }}

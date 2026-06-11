@@ -19,30 +19,30 @@ jobs:
           - {name: "Debug; All dependencies",
              buildType: "Debug",
              baseImg: "movesrwth/storm-dependencies:latest",
-             disable_all: "OFF",
-             ClnExact: "OFF",
-             ClnRatfunc: "OFF"
+             disable_all: false,
+             ClnExact: false,
+             ClnRatfunc: false
           }
           - {name: "Release; All dependencies",
              buildType: "Release",
              baseImg: "movesrwth/storm-dependencies:latest",
-             disable_all: "OFF",
-             ClnExact: "OFF",
-             ClnRatfunc: "OFF"
+             disable_all: false,
+             ClnExact: false,
+             ClnRatfunc: false
           }
           - {name: "Release; GMP; GMP; Required dependencies",
              buildType: "Release",
              baseImg: "movesrwth/storm-basesystem:latest",
-             disable_all: "OFF",
-             ClnExact: "OFF",
-             ClnRatfunc: "OFF"
+             disable_all: false,
+             ClnExact: false,
+             ClnRatfunc: false
           }
           - {name: "Release; CLN; CLN; Required dependencies",
              buildType: "Release",
              baseImg: "movesrwth/storm-basesystem:latest",
-             disable_all: "OFF",
-             ClnExact: "ON",
-             ClnRatfunc: "ON"
+             disable_all: false,
+             ClnExact: true,
+             ClnRatfunc: true
           }
     uses: ./.github/workflows/test-build.yml
     with:
@@ -61,10 +61,10 @@ jobs:
       disable_sylvan: ${{ matrix.config.disable_all }}
       disable_xerces: ${{ matrix.config.disable_all }}
       disable_z3: ${{ matrix.config.disable_all }}
-      Developer: ${{ matrix.config.buildType == 'Debug' && 'ON' || 'OFF' }}
+      Developer: ${{ matrix.config.buildType == 'Debug' }}
       ClnExact: ${{ matrix.config.ClnExact }}
       ClnRatfunc: ${{ matrix.config.ClnRatfunc }}
-      AllSanitizers: "OFF"
+      AllSanitizers: false
       restore_cache: ${{ github.event_name != 'push' }}
       save_cache: false
       install: true
@@ -92,7 +92,7 @@ jobs:
       nr_jobs: "4"
       name: ${{ matrix.config.name }}
       buildType: Debug
-      Developer: "ON"
+      Developer: true
       baseImg: ${{ matrix.config.baseImg }}
       cmakeArgs: ${{ matrix.config.cmakeArgs }}
       packages: ${{ matrix.config.packages }}

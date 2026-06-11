@@ -635,6 +635,12 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
 }
 
+// GCC 15 raises a false positive -Wfree-nonheap-object when compiling SparseDtmcEliminationModelChecker
+// with GMP rational functions (STORM_USE_CLN_RF=OFF) in Release mode: the inlined std::vector destructor
+// for MatrixEntry<..., RationalFunction<..., GMP>> is incorrectly flagged. Not a real memory error.
+// See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108846
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wno-free-nonheap-object"
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(
     Environment const& env, CheckTask<storm::logic::ConditionalFormula, SolutionType> const& checkTask) {
@@ -880,6 +886,7 @@ void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performPrioritizedS
 #endif
     }
 }
+#pragma GCC diagnostic pop
 
 template<typename SparseDtmcModelType>
 void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performOrdinaryStateElimination(

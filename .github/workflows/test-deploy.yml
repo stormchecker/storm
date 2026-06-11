@@ -24,9 +24,9 @@ on:
         type: string
         default: "storm-dependencies:latest"
       Developer:
-        description: "Enable developer mode (ON/OFF)"
-        type: string
-        default: "OFF"
+        description: "Enable developer mode"
+        type: boolean
+        default: false
       cmakeArgs:
         description: "Extra CMake arguments"
         type: string
@@ -57,7 +57,7 @@ jobs:
             --build-arg BASE_IMAGE=movesrwth/${{ inputs.baseImg }} \
             --build-arg build_type="${{ inputs.buildType }}" \
             --build-arg carl_tag="${{ inputs.carl_tag }}" \
-            --build-arg developer="${{ inputs.Developer }}" \
+            --build-arg developer="${{ inputs.Developer && 'ON' || 'OFF' }}" \
             --build-arg cmake_args="${{ inputs.cmakeArgs }}" \
             --build-arg no_threads=${NR_JOBS}
             # Omitting arguments disable_*, cln_exact, cln_ratfunc, all_sanitizers

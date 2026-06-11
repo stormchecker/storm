@@ -20,9 +20,9 @@ list(APPEND STORM_TARGETS storm-parsers)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
 # Boost Spirit's utf8.hpp uses char_traits<ucs4_char> which Apple libc++ (Xcode 26+) deprecated
-if (STORM_COMPILER_APPLECLANG)
-    target_compile_options(storm-parsers PRIVATE -Wno-deprecated-declarations)
-endif()
+# if (STORM_COMPILER_APPLECLANG)
+#     target_compile_options(storm-parsers PRIVATE -Wno-deprecated-declarations)
+# endif()
 
 # installation
 install(TARGETS storm-parsers EXPORT storm_Targets

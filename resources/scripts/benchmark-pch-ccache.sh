@@ -42,7 +42,7 @@ Output:
   - Summary table in stdout
   - CSV at <build-root>/results.csv
   - Per-run ccache stats in <build-root>/results/
-    - Optional traces at <build-root>/results/trace-<pch>-<cache>.json
+  - Optional traces at <build-root>/results/trace-<pch>-<cache>.json
 EOF
 }
 
