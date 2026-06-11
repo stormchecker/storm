@@ -9,6 +9,7 @@
 namespace storm {
 namespace modelchecker {
 namespace cvar {
+
 CvarQueryInformation extractCvarQueryInformation(storm::logic::CvarFormula const& formula) {
     storm::logic::Formula const& embeddedFormula = formula.getSubformula();
     STORM_LOG_THROW(embeddedFormula.isRewardOperatorFormula(), storm::exceptions::InvalidPropertyException,
@@ -30,7 +31,11 @@ CvarQueryInformation extractCvarQueryInformation(storm::logic::CvarFormula const
     STORM_LOG_THROW(eventuallyFormula.getSubformula().isStateFormula(), storm::exceptions::InvalidPropertyException,
                     "The target of the embedded reachability reward formula of a CVaR query must be a state formula.");
 
-    return {formula.getAlpha(), rewardOperator.getOptimalityType(), rewardOperator.getOptionalRewardModelName(),
+    auto const optimizationDirection = rewardOperator.getOptimalityType();
+    return {formula.getAlpha(),
+            optimizationDirection,
+            storm::solver::minimize(optimizationDirection) ? CvarInterpretation::Cost : CvarInterpretation::Reward,
+            rewardOperator.getOptionalRewardModelName(),
             eventuallyFormula.getSubformula().asSharedPointer()};
 }
 }  // namespace cvar

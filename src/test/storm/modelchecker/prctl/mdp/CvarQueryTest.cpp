@@ -168,7 +168,7 @@ TEST(CvarQueryTest, SimpleMdp) {
 
     auto minInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", alpha);
     double minValue = checkInitialStateValue(minInput);
-    EXPECT_NEAR(minValue, 5.0 / 3.0, 1e-10);
+    EXPECT_NEAR(minValue, 2.0, 1e-10);
 }
 
 TEST(CvarQueryTest, ReachableBadMecIsPreprocessedToZeroTerminalReward) {
@@ -185,7 +185,7 @@ TEST(CvarQueryTest, ReachableBadMecIsPreprocessedToZeroTerminalReward) {
 
     auto minInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", alpha);
     double minValue = checkInitialStateValue(minInput);
-    EXPECT_NEAR(minValue, 0.0, 1e-10);
+    EXPECT_NEAR(minValue, 4.0, 1e-10);
 }
 
 TEST(CvarQueryTest, TargetReachingMecIsCollapsed) {
@@ -228,11 +228,10 @@ TEST(CvarQueryTest, BranchingTradeoffMdp) {
     EXPECT_NEAR(checkInitialStateValue(maxThreeQuarterInput), 8.0, 1e-10);
 
     auto minHalfInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", "0.5");
-    EXPECT_NEAR(checkInitialStateValue(minHalfInput), 0.0, 1e-10);
+    EXPECT_NEAR(checkInitialStateValue(minHalfInput), 7.0, 1e-10);
 
-    // this requires randomization of the strategy
     auto minThreeQuarterInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", "0.75");
-    EXPECT_NEAR(checkInitialStateValue(minThreeQuarterInput), 14.0 / 3.0, 1e-10);
+    EXPECT_NEAR(checkInitialStateValue(minThreeQuarterInput), 7.0, 1e-10);
 }
 
 TEST(CvarQueryTest, BranchingTradeoffMdpRationalNumbers) {
@@ -246,7 +245,7 @@ TEST(CvarQueryTest, BranchingTradeoffMdpRationalNumbers) {
     EXPECT_EQ(storm::RationalNumber(8), checkInitialStateValue(maxInput));
 
     auto minInput = buildCvarInput<storm::RationalNumber>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", "0.75");
-    EXPECT_EQ(storm::RationalNumber("14/3"), checkInitialStateValue(minInput));
+    EXPECT_EQ(storm::RationalNumber(7), checkInitialStateValue(minInput));
 }
 
 TEST(CvarQueryTest, EquivalentExactAlphaSyntaxes) {

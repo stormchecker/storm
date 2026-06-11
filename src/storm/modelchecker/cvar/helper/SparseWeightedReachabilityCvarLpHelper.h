@@ -33,9 +33,9 @@ namespace cvar {
 template<typename ValueType>
 struct CvarThresholdData {
     ValueType threshold;
-    storm::storage::BitVector targetStatesBelowThreshold;
+    storm::storage::BitVector targetStatesInStrictTail;
     storm::storage::BitVector targetStatesAtThreshold;
-    storm::storage::BitVector targetStatesBelowOrAtThreshold;
+    storm::storage::BitVector targetStatesInTail;
 };
 
 template<typename ValueType>
@@ -48,6 +48,7 @@ template<typename ValueType>
 struct WeightedReachabilityCvarLpData {
     storm::RationalNumber alpha;
     storm::solver::OptimizationDirection optimizationDirection;
+    CvarInterpretation interpretation;
     uint64_t initialState;
     storm::storage::BitVector initialStates;
     std::string rewardModelName;
@@ -109,12 +110,10 @@ class SparseWeightedReachabilityCvarLpHelper {
         std::optional<uint64_t> bestThresholdIndex;
         std::unique_ptr<storm::storage::Scheduler<ValueType>> bestScheduler;
         auto candidateRange = computeCandidateRange(env);
-        storm::storage::BitVector targetStatesBelowThreshold = createPrefixTargetStates(candidateRange.first);
         for (uint64_t thresholdIndex = candidateRange.first; thresholdIndex < candidateRange.second; ++thresholdIndex) {
-            auto thresholdData = createThresholdData(thresholdIndex, targetStatesBelowThreshold);
+            auto thresholdData = createThresholdData(thresholdIndex);
             auto thresholdResult = buildLpForThreshold(thresholdData, false);
             if (!thresholdResult.has_value()) {
-                addBucketStates(targetStatesBelowThreshold, thresholdIndex);
                 continue;
             }
             if (!bestValue.has_value()) {
@@ -125,7 +124,6 @@ class SparseWeightedReachabilityCvarLpHelper {
                 bestValue = thresholdResult->value;
                 bestThresholdIndex = thresholdIndex;
             }
-            addBucketStates(targetStatesBelowThreshold, thresholdIndex);
         }
 
         STORM_LOG_THROW(bestValue.has_value(), storm::exceptions::UnexpectedException,
@@ -155,6 +153,7 @@ class SparseWeightedReachabilityCvarLpHelper {
                                                   weightedReachabilityPreprocessingResult.terminalRewards, reachableStates);
         return {queryInformation.alpha,
                 queryInformation.optimizationDirection,
+                queryInformation.interpretation,
                 weightedReachabilityPreprocessingResult.initialState,
                 std::move(initialStates),
                 weightedReachabilityPreprocessingResult.rewardModelName,
@@ -192,6 +191,14 @@ class SparseWeightedReachabilityCvarLpHelper {
         return states;
     }
 
+    storm::storage::BitVector createSuffixTargetStates(uint64_t startBucketIndex) const {
+        storm::storage::BitVector states(lpData.transitionMatrix.getRowGroupCount(), false);
+        for (uint64_t bucketIndex = startBucketIndex; bucketIndex < lpData.rewardBuckets.size(); ++bucketIndex) {
+            addBucketStates(states, bucketIndex);
+        }
+        return states;
+    }
+
     storm::storage::BitVector const& getCachedPrefixTargetStates(uint64_t endBucketIndex, std::map<uint64_t, storm::storage::BitVector>& cache) const {
         auto cachedPrefix = cache.find(endBucketIndex);
         if (cachedPrefix != cache.end()) {
@@ -200,16 +207,27 @@ class SparseWeightedReachabilityCvarLpHelper {
         return cache.emplace(endBucketIndex, createPrefixTargetStates(endBucketIndex)).first->second;
     }
 
-    CvarThresholdData<ValueType> createThresholdData(uint64_t thresholdIndex) const {
-        auto targetStatesBelowThreshold = createPrefixTargetStates(thresholdIndex);
-        return createThresholdData(thresholdIndex, targetStatesBelowThreshold);
+    storm::storage::BitVector const& getCachedSuffixTargetStates(uint64_t startBucketIndex, std::map<uint64_t, storm::storage::BitVector>& cache) const {
+        auto cachedSuffix = cache.find(startBucketIndex);
+        if (cachedSuffix != cache.end()) {
+            return cachedSuffix->second;
+        }
+        return cache.emplace(startBucketIndex, createSuffixTargetStates(startBucketIndex)).first->second;
     }
 
-    CvarThresholdData<ValueType> createThresholdData(uint64_t thresholdIndex, storm::storage::BitVector const& targetStatesBelowThreshold) const {
+    CvarThresholdData<ValueType> createThresholdData(uint64_t thresholdIndex) const {
         auto targetStatesAtThreshold = createBucketTargetStates(thresholdIndex);
-        auto targetStatesBelowOrAtThreshold = targetStatesBelowThreshold | targetStatesAtThreshold;
-        return {lpData.rewardBuckets[thresholdIndex].reward, targetStatesBelowThreshold, std::move(targetStatesAtThreshold),
-                std::move(targetStatesBelowOrAtThreshold)};
+        if (lpData.interpretation == CvarInterpretation::Reward) {
+            auto targetStatesInStrictTail = createPrefixTargetStates(thresholdIndex);
+            auto targetStatesInTail = targetStatesInStrictTail | targetStatesAtThreshold;
+            return {lpData.rewardBuckets[thresholdIndex].reward, std::move(targetStatesInStrictTail), std::move(targetStatesAtThreshold),
+                    std::move(targetStatesInTail)};
+        }
+
+        auto targetStatesInStrictTail = createSuffixTargetStates(thresholdIndex + 1);
+        auto targetStatesInTail = targetStatesInStrictTail | targetStatesAtThreshold;
+        return {lpData.rewardBuckets[thresholdIndex].reward, std::move(targetStatesInStrictTail), std::move(targetStatesAtThreshold),
+                std::move(targetStatesInTail)};
     }
 
     ValueType computeReachabilityProbability(Environment const& env, storm::solver::OptimizationDirection direction,
@@ -232,15 +250,49 @@ class SparseWeightedReachabilityCvarLpHelper {
         uint64_t const bucketCount = lpData.rewardBuckets.size();
         ValueType const alpha = storm::utility::convertNumber<ValueType>(lpData.alpha);
         storm::utility::ConstantsComparator<ValueType> comparator(storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
-        std::map<uint64_t, storm::storage::BitVector> prefixTargetStateCache;
+
+        if (lpData.interpretation == CvarInterpretation::Reward) {
+            std::map<uint64_t, storm::storage::BitVector> prefixTargetStateCache;
+
+            uint64_t lower = 0;
+            uint64_t upper = bucketCount;
+            while (lower < upper) {
+                uint64_t const mid = lower + (upper - lower) / 2;
+                auto const& targetStatesInTail = getCachedPrefixTargetStates(mid + 1, prefixTargetStateCache);
+                auto maxReachability = computeReachabilityProbability(env, storm::solver::OptimizationDirection::Maximize, targetStatesInTail);
+                if (comparator.isLess(maxReachability, alpha)) {
+                    lower = mid + 1;
+                } else {
+                    upper = mid;
+                }
+            }
+            uint64_t const firstNotTooLow = lower;
+
+            lower = firstNotTooLow;
+            upper = bucketCount;
+            while (lower < upper) {
+                uint64_t const mid = lower + (upper - lower) / 2;
+                auto const& targetStatesInStrictTail = getCachedPrefixTargetStates(mid, prefixTargetStateCache);
+                auto minReachability = computeReachabilityProbability(env, storm::solver::OptimizationDirection::Minimize, targetStatesInStrictTail);
+                if (comparator.isLess(alpha, minReachability)) {
+                    upper = mid;
+                } else {
+                    lower = mid + 1;
+                }
+            }
+
+            return {firstNotTooLow, lower};
+        }
+
+        std::map<uint64_t, storm::storage::BitVector> suffixTargetStateCache;
 
         uint64_t lower = 0;
         uint64_t upper = bucketCount;
         while (lower < upper) {
             uint64_t const mid = lower + (upper - lower) / 2;
-            auto const& targetStatesBelowOrAtThreshold = getCachedPrefixTargetStates(mid + 1, prefixTargetStateCache);
-            auto maxReachability = computeReachabilityProbability(env, storm::solver::OptimizationDirection::Maximize, targetStatesBelowOrAtThreshold);
-            if (comparator.isLess(maxReachability, alpha)) {
+            auto const& targetStatesInStrictTail = getCachedSuffixTargetStates(mid + 1, suffixTargetStateCache);
+            auto minReachability = computeReachabilityProbability(env, storm::solver::OptimizationDirection::Minimize, targetStatesInStrictTail);
+            if (comparator.isLess(alpha, minReachability)) {
                 lower = mid + 1;
             } else {
                 upper = mid;
@@ -252,9 +304,9 @@ class SparseWeightedReachabilityCvarLpHelper {
         upper = bucketCount;
         while (lower < upper) {
             uint64_t const mid = lower + (upper - lower) / 2;
-            auto const& targetStatesBelowThreshold = getCachedPrefixTargetStates(mid, prefixTargetStateCache);
-            auto minReachability = computeReachabilityProbability(env, storm::solver::OptimizationDirection::Minimize, targetStatesBelowThreshold);
-            if (comparator.isLess(alpha, minReachability)) {
+            auto const& targetStatesInTail = getCachedSuffixTargetStates(mid, suffixTargetStateCache);
+            auto maxReachability = computeReachabilityProbability(env, storm::solver::OptimizationDirection::Maximize, targetStatesInTail);
+            if (comparator.isLess(maxReachability, alpha)) {
                 upper = mid;
             } else {
                 lower = mid + 1;
@@ -287,7 +339,7 @@ class SparseWeightedReachabilityCvarLpHelper {
 
         std::vector<std::optional<typename RawLpSolver::Variable>> splitFlowVariables(lpData.transitionMatrix.getRowGroupCount(), std::nullopt);
         for (uint64_t state = 0; state < lpData.transitionMatrix.getRowGroupCount(); ++state) {
-            if (thresholdData.targetStatesBelowOrAtThreshold[state]) {
+            if (thresholdData.targetStatesInTail[state]) {
                 splitFlowVariables[state] =
                     solver->addLowerBoundedContinuousVariable("xb_" + std::to_string(state), storm::utility::zero<ValueType>(), lpData.terminalRewards[state]);
             }
@@ -329,7 +381,7 @@ class SparseWeightedReachabilityCvarLpHelper {
         }
         solver->addConstraint("recurrent_behaviour", recurrentConstraint);
 
-        for (auto state : thresholdData.targetStatesBelowThreshold) {
+        for (auto state : thresholdData.targetStatesInStrictTail) {
             RawLpConstraint splitEqualityConstraint(storm::expressions::RelationType::Equal, storm::utility::zero<ValueType>(), 2);
             splitEqualityConstraint.addToLhs(splitFlowVariables[state].value(), storm::utility::one<ValueType>());
             splitEqualityConstraint.addToLhs(recurrentFlowVariables[state].value(), -storm::utility::one<ValueType>());
@@ -343,8 +395,8 @@ class SparseWeightedReachabilityCvarLpHelper {
         }
 
         RawLpConstraint probabilityConsistentSplitConstraint(storm::expressions::RelationType::Equal, storm::utility::convertNumber<ValueType>(lpData.alpha),
-                                                             thresholdData.targetStatesBelowOrAtThreshold.getNumberOfSetBits());
-        for (auto state : thresholdData.targetStatesBelowOrAtThreshold) {
+                                                             thresholdData.targetStatesInTail.getNumberOfSetBits());
+        for (auto state : thresholdData.targetStatesInTail) {
             probabilityConsistentSplitConstraint.addToLhs(splitFlowVariables[state].value(), storm::utility::one<ValueType>());
         }
         solver->addConstraint("probability_consistent_split", probabilityConsistentSplitConstraint);
