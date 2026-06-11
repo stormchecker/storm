@@ -640,7 +640,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
 // for MatrixEntry<..., RationalFunction<..., GMP>> is incorrectly flagged. Not a real memory error.
 // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108846
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wno-free-nonheap-object"
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(
     Environment const& env, CheckTask<storm::logic::ConditionalFormula, SolutionType> const& checkTask) {
