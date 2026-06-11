@@ -4,6 +4,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-W#pragma-messages"
 
+// Boost Spirit's utf8.hpp uses char_traits<ucs4_char> which Apple libc++ (Xcode 26+) deprecated
 #if defined(__clang__) && defined(__apple_build_version__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
