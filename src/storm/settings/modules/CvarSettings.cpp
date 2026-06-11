@@ -15,7 +15,7 @@ std::string const CvarSettings::moduleName = "cvar";
 std::string const CvarSettings::methodOptionName = "method";
 
 CvarSettings::CvarSettings() : ModuleSettings(moduleName) {
-    std::vector<std::string> methods = {"auto", "wr", "weighted-reachability", "ssp", "ssp-vi", "pareto-vi"};
+    std::vector<std::string> methods = {"auto", "wr", "weighted-reachability", "ssp"};
     this->addOption(storm::settings::OptionBuilder(moduleName, methodOptionName, true, "The method to be used for CVaR model checking.")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.")
