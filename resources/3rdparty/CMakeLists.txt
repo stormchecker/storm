@@ -82,7 +82,7 @@ endif()
 #############################################################
 
 if(NOT STORM_DISABLE_GMM)
-    set(GMM_VERSION "5.4.4")
+    set(GMM_VERSION "5.5")
     message(STATUS "Storm - Including gmm ${GMM_VERSION}.")
     ExternalProject_Add(
             gmm_src
