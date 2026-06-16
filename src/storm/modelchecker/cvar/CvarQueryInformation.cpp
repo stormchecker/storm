@@ -10,7 +10,7 @@ namespace storm {
 namespace modelchecker {
 namespace cvar {
 
-CvarQueryInformation extractCvarQueryInformation(storm::logic::CvarFormula const& formula) {
+CvarQueryInformation extractCvarQueryInformation(storm::logic::CvarFormula const& formula, CvarInterpretation interpretation) {
     storm::logic::Formula const& embeddedFormula = formula.getSubformula();
     STORM_LOG_THROW(embeddedFormula.isRewardOperatorFormula(), storm::exceptions::InvalidPropertyException,
                     "CVaR formulas currently require an embedded reward operator formula.");
@@ -32,10 +32,9 @@ CvarQueryInformation extractCvarQueryInformation(storm::logic::CvarFormula const
                     "The target of the embedded reachability reward formula of a CVaR query must be a state formula.");
 
     auto const optimizationDirection = rewardOperator.getOptimalityType();
-    return {formula.getAlpha(),
-            optimizationDirection,
-            storm::solver::minimize(optimizationDirection) ? CvarInterpretation::Cost : CvarInterpretation::Reward,
-            rewardOperator.getOptionalRewardModelName(),
+    auto const& optionalRewardModelName = rewardOperator.getOptionalRewardModelName();
+    return {formula.getAlpha(), optimizationDirection, interpretation,
+            optionalRewardModelName ? std::optional<std::string>(optionalRewardModelName.get()) : std::nullopt,
             eventuallyFormula.getSubformula().asSharedPointer()};
 }
 }  // namespace cvar

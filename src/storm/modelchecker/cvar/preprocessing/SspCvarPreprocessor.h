@@ -106,7 +106,7 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
                                                                                      storm::storage::BitVector const& targetStates) {
     using ValueType = typename SparseMdpModelType::ValueType;
 
-    std::string rewardModelName = queryInformation.rewardModelName ? queryInformation.rewardModelName.get() : "";
+    std::string rewardModelName = queryInformation.rewardModelName.value_or("");
     auto const& rewardModel = model.getRewardModel(rewardModelName);
     if (rewardModelName.empty()) {
         rewardModelName = model.getUniqueRewardModelName();
@@ -114,6 +114,8 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
 
     STORM_LOG_THROW(queryInformation.optimizationDirection == storm::solver::OptimizationDirection::Minimize, storm::exceptions::InvalidPropertyException,
                     "CVaR SSP preprocessing currently only supports minimizing total costs.");
+    STORM_LOG_THROW(queryInformation.interpretation == CvarInterpretation::Cost, storm::exceptions::InvalidPropertyException,
+                    "CVaR SSP preprocessing currently only supports the cost interpretation.");
 
     STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotImplementedException,
                     "CVaR SSP preprocessing does not support transition rewards.");

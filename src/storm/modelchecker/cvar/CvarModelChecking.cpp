@@ -3,6 +3,8 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/modelchecker/cvar/CvarInterpretation.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/modelchecker/cvar/helper/SparseCvarComputationHelper.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -14,18 +16,20 @@ namespace modelchecker {
 namespace cvar {
 
 template<typename SparseMdpModelType>
-std::unique_ptr<CheckResult> performCvarModelChecking(
-    Environment const& env, SparseMdpModelType const& model,
-    CheckTask<storm::logic::CvarFormula, typename SparseMdpModelType::ValueType> const& checkTask,
-    std::function<storm::storage::BitVector(storm::logic::Formula const&)> const& formulaChecker) {
+std::unique_ptr<CheckResult> performCvarModelChecking(Environment const& env, SparseMdpModelType const& model,
+                                                      CheckTask<storm::logic::CvarFormula, typename SparseMdpModelType::ValueType> const& checkTask,
+                                                      std::function<storm::storage::BitVector(storm::logic::Formula const&)> const& formulaChecker) {
     using ValueType = typename SparseMdpModelType::ValueType;
 
     STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException,
                     "Computing CVaR is only supported for the initial states of a model.");
     STORM_LOG_THROW(model.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidOperationException,
                     "CVaR is not supported on models with multiple initial states.");
+    STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
+                    "The embedded reward operator formula of a CVaR query must specify whether to minimize or maximize.");
 
-    auto cvarQueryInformation = extractCvarQueryInformation(checkTask.getFormula());
+    auto interpretation = resolveCvarInterpretation(env.modelchecker().cvar().getInterpretationSelection(), checkTask.getOptimizationDirection());
+    auto cvarQueryInformation = extractCvarQueryInformation(checkTask.getFormula(), interpretation);
     auto targetStates = formulaChecker(*cvarQueryInformation.targetFormula);
 
     SparseCvarComputationHelper<SparseMdpModelType> cvarHelper(model, cvarQueryInformation, targetStates);

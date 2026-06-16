@@ -8,6 +8,7 @@ namespace storm {
 CvarModelCheckerEnvironment::CvarModelCheckerEnvironment() {
     auto const& cvarSettings = storm::settings::getModule<storm::settings::modules::CvarSettings>();
     method = cvarSettings.getCvarMethod();
+    interpretationSelection = cvarSettings.getInterpretationSelection();
 }
 
 CvarModelCheckerEnvironment::~CvarModelCheckerEnvironment() {
@@ -20,6 +21,14 @@ storm::modelchecker::cvar::CvarMethod const& CvarModelCheckerEnvironment::getMet
 
 void CvarModelCheckerEnvironment::setMethod(storm::modelchecker::cvar::CvarMethod value) {
     method = value;
+}
+
+storm::modelchecker::cvar::CvarInterpretationSelection const& CvarModelCheckerEnvironment::getInterpretationSelection() const {
+    return interpretationSelection;
+}
+
+void CvarModelCheckerEnvironment::setInterpretationSelection(storm::modelchecker::cvar::CvarInterpretationSelection value) {
+    interpretationSelection = value;
 }
 
 }  // namespace storm

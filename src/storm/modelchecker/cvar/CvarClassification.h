@@ -31,7 +31,7 @@ enum class CvarBackendKind { WeightedReachability, Ssp };
 template<typename SparseMdpModelType>
 CvarBackendKind selectCvarBackend(SparseMdpModelType const& model, CvarQueryInformation const& queryInformation, storm::storage::BitVector const&,
                                   CvarMethod method) {
-    std::string rewardModelName = queryInformation.rewardModelName ? queryInformation.rewardModelName.get() : "";
+    std::string rewardModelName = queryInformation.rewardModelName.value_or("");
     auto const& rewardModel = model.getRewardModel(rewardModelName);
     if (rewardModelName.empty()) {
         rewardModelName = model.getUniqueRewardModelName();

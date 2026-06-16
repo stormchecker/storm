@@ -1,6 +1,7 @@
 #ifndef STORM_SETTINGS_MODULES_CVARSETTINGS_H_
 #define STORM_SETTINGS_MODULES_CVARSETTINGS_H_
 
+#include "storm/modelchecker/cvar/CvarInterpretation.h"
 #include "storm/modelchecker/cvar/CvarMethod.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
@@ -25,10 +26,18 @@ class CvarSettings : public ModuleSettings {
      */
     storm::modelchecker::cvar::CvarMethod getCvarMethod() const;
 
+    /*!
+     * Retrieves the selected CVaR interpretation policy.
+     *
+     * @return The selected CVaR interpretation policy.
+     */
+    storm::modelchecker::cvar::CvarInterpretationSelection getInterpretationSelection() const;
+
     static std::string const moduleName;
 
    private:
     static std::string const methodOptionName;
+    static std::string const interpretationOptionName;
 };
 
 }  // namespace modules

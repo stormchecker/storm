@@ -20,10 +20,9 @@ namespace modelchecker {
 namespace cvar {
 
 template<typename SparseMdpModelType>
-std::unique_ptr<CheckResult> performCvarModelChecking(
-    Environment const& env, SparseMdpModelType const& model,
-    CheckTask<storm::logic::CvarFormula, typename SparseMdpModelType::ValueType> const& checkTask,
-    std::function<storm::storage::BitVector(storm::logic::Formula const&)> const& formulaChecker);
+std::unique_ptr<CheckResult> performCvarModelChecking(Environment const& env, SparseMdpModelType const& model,
+                                                      CheckTask<storm::logic::CvarFormula, typename SparseMdpModelType::ValueType> const& checkTask,
+                                                      std::function<storm::storage::BitVector(storm::logic::Formula const&)> const& formulaChecker);
 
 }  // namespace cvar
 }  // namespace modelchecker

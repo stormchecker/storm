@@ -12,6 +12,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/CvarFormula.h"
 #include "storm/modelchecker/CheckTask.h"
+#include "storm/modelchecker/cvar/CvarInterpretation.h"
 #include "storm/modelchecker/cvar/CvarMethod.h"
 #include "storm/modelchecker/cvar/helper/SspParetoFront.h"
 #include "storm/modelchecker/cvar/helper/SspParetoValueIterationOperator.h"
@@ -72,6 +73,19 @@ template<typename ValueType>
 ValueType checkInitialStateValueWithMethod(CvarTestInput<ValueType> const& input, storm::modelchecker::cvar::CvarMethod method) {
     storm::Environment env;
     env.modelchecker().cvar().setMethod(method);
+    env.modelchecker().cvar().setInterpretationSelection(storm::modelchecker::cvar::CvarInterpretationSelection::Auto);
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> checker(*input.mdp);
+    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*input.formula, true);
+    auto result = checker.check(env, task);
+    return result->template asExplicitQuantitativeCheckResult<ValueType>().getMax();
+}
+
+template<typename ValueType>
+ValueType checkInitialStateValueWithMethodAndInterpretationSelection(CvarTestInput<ValueType> const& input, storm::modelchecker::cvar::CvarMethod method,
+                                                                     storm::modelchecker::cvar::CvarInterpretationSelection interpretationSelection) {
+    storm::Environment env;
+    env.modelchecker().cvar().setMethod(method);
+    env.modelchecker().cvar().setInterpretationSelection(interpretationSelection);
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> checker(*input.mdp);
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*input.formula, true);
     auto result = checker.check(env, task);
@@ -246,6 +260,54 @@ TEST(CvarQueryTest, BranchingTradeoffMdpRationalNumbers) {
 
     auto minInput = buildCvarInput<storm::RationalNumber>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", "0.75");
     EXPECT_EQ(storm::RationalNumber(7), checkInitialStateValue(minInput));
+}
+
+TEST(CvarQueryTest, InterpretationOverridesOnSimpleMdp) {
+    if (!hasLpSolver()) {
+        GTEST_SKIP() << "No LP solver available.";
+    }
+
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_simple_mdp.nm";
+
+    auto maxInput = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", "0.75");
+    EXPECT_NEAR(checkInitialStateValueWithMethodAndInterpretationSelection(maxInput, storm::modelchecker::cvar::CvarMethod::WeightedReachability,
+                                                                           storm::modelchecker::cvar::CvarInterpretationSelection::Reward),
+                2.0, 1e-10);
+    EXPECT_NEAR(checkInitialStateValueWithMethodAndInterpretationSelection(maxInput, storm::modelchecker::cvar::CvarMethod::WeightedReachability,
+                                                                           storm::modelchecker::cvar::CvarInterpretationSelection::Cost),
+                7.0 / 3.0, 1e-10);
+
+    auto minInput = buildCvarInput<double>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", "0.75");
+    EXPECT_NEAR(checkInitialStateValueWithMethodAndInterpretationSelection(minInput, storm::modelchecker::cvar::CvarMethod::WeightedReachability,
+                                                                           storm::modelchecker::cvar::CvarInterpretationSelection::Cost),
+                2.0, 1e-10);
+    EXPECT_NEAR(checkInitialStateValueWithMethodAndInterpretationSelection(minInput, storm::modelchecker::cvar::CvarMethod::WeightedReachability,
+                                                                           storm::modelchecker::cvar::CvarInterpretationSelection::Reward),
+                5.0 / 3.0, 1e-10);
+}
+
+TEST(CvarQueryTest, InterpretationOverridesOnSimpleMdpRationalNumbers) {
+    if (!hasExactLpSolver()) {
+        GTEST_SKIP() << "No exact LP solver available.";
+    }
+
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_simple_mdp.nm";
+
+    auto maxInput = buildCvarInput<storm::RationalNumber>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", "0.75");
+    EXPECT_EQ(storm::RationalNumber(2),
+              checkInitialStateValueWithMethodAndInterpretationSelection(maxInput, storm::modelchecker::cvar::CvarMethod::WeightedReachability,
+                                                                         storm::modelchecker::cvar::CvarInterpretationSelection::Reward));
+    EXPECT_EQ(storm::RationalNumber("7/3"),
+              checkInitialStateValueWithMethodAndInterpretationSelection(maxInput, storm::modelchecker::cvar::CvarMethod::WeightedReachability,
+                                                                         storm::modelchecker::cvar::CvarInterpretationSelection::Cost));
+
+    auto minInput = buildCvarInput<storm::RationalNumber>(modelPath, "R{\"term\"}min=? [ F \"target\" ];", "0.75");
+    EXPECT_EQ(storm::RationalNumber(2),
+              checkInitialStateValueWithMethodAndInterpretationSelection(minInput, storm::modelchecker::cvar::CvarMethod::WeightedReachability,
+                                                                         storm::modelchecker::cvar::CvarInterpretationSelection::Cost));
+    EXPECT_EQ(storm::RationalNumber("5/3"),
+              checkInitialStateValueWithMethodAndInterpretationSelection(minInput, storm::modelchecker::cvar::CvarMethod::WeightedReachability,
+                                                                         storm::modelchecker::cvar::CvarInterpretationSelection::Reward));
 }
 
 TEST(CvarQueryTest, EquivalentExactAlphaSyntaxes) {

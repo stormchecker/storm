@@ -85,7 +85,7 @@ WeightedReachabilityCvarPreprocessingResult<typename SparseMdpModelType::ValueTy
     bool produceScheduler = false) {
     using ValueType = typename SparseMdpModelType::ValueType;
 
-    std::string rewardModelName = queryInformation.rewardModelName ? queryInformation.rewardModelName.get() : "";
+    std::string rewardModelName = queryInformation.rewardModelName.value_or("");
     auto const& rewardModel = model.getRewardModel(rewardModelName);
     if (rewardModelName.empty()) {
         rewardModelName = model.getUniqueRewardModelName();
