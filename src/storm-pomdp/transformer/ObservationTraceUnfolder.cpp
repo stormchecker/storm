@@ -45,12 +45,15 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
     std::cout << "build valution builder..\n";
 #endif
+    // Initialize state valuations
     storm::umb::Valuations stateValuations = [this, &observations]() {
         storm::umb::ValuationDescriptionBuilder svBuilder(exprManager);
         svBuilder.addIntegerVariable(svvar, -1, static_cast<int64_t>(model.getNumberOfStates()) - 1);
         svBuilder.addIntegerVariable(tsvar, -1, observations.size() - 1);
         return storm::umb::Valuations(svBuilder.buildClassDescription(), exprManager);
     }();
+
+    // Shorthand for adding the next state's valuations with input model state index s and trace step t
     auto addStateValuation = [this, &stateValuations](int64_t s, int64_t t) {
         stateValuations.emplaceBack<false, int64_t>([this, s, t](auto, auto const& var, auto& value) { value = var == svvar ? s : t; });
     };

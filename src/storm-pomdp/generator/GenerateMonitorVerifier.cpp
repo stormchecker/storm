@@ -347,19 +347,23 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
 
         for (uint64_t i = 0; i < mc.getNumberOfStates(); i++) {
             for (uint64_t j = 0; j < monitor.getNumberOfStates(); j++) {
-                product_state_type s(i, j);
+                product_state_type const s(i, j);
                 if (!prodToIndexMap.contains(s))
                     continue;
-
-                stateValuations.writeCallback(prodToIndexMap[std::make_pair(i, j)], [this, &oldValuations, i, j](auto, auto const& var, auto& value) {
+                auto const productStateIndex = prodToIndexMap[s];
+                // Set the variable values for the product state.
+                // We copy the valuations from the original model and set the monvar and mcvar to the corresponding state indices.
+                stateValuations.writeCallback(productStateIndex, [this, &oldValuations, i, j](auto, auto const& var, auto& value) {
+                    using VT = std::remove_cvref_t<decltype(value)>;
                     if (var == monvar || var == mcvar) {
-                        if constexpr (std::is_same_v<std::remove_cvref_t<decltype(value)>, int64_t>) {
+                        if constexpr (std::is_same_v<VT, int64_t>) {
                             value = var == monvar ? j : i;
                         } else {
                             STORM_LOG_ASSERT(false, "Unexpected type.");
                         }
                     } else {
-                        value = oldValuations.template readValue<std::remove_cvref_t<decltype(value)>>(i, var);
+                        // This is a variable of the original model. Copy old valuation value.
+                        value = oldValuations.template readValue<VT>(i, var);
                     }
                 });
             }
