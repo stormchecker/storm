@@ -13,21 +13,23 @@ Valuations::Valuations(storm::umb::ValuationClassDescription const umbValuationD
                        std::shared_ptr<storm::expressions::ExpressionManager const> const& manager, uint64_t const numEntities)
     : umbValuations(std::make_unique<storm::umb::Valuations>(umbValuationDescription, manager)) {
     umbValuations->resize(numEntities);
-    // Intentionally empty
 }
 
 Valuations::Valuations(storm::umb::Valuations&& umbValuations) : umbValuations(std::make_unique<storm::umb::Valuations>(std::move(umbValuations))) {
     // Intentionally empty
 }
 
-// The following need to be defined in the .cpp file since the umb::Valuations type definition must be complete. This allows forward-declaring the
-// umb::Valuations type in the header file.
+// The type storm::umb::Valuations is incomplete (forward declared) in the header file and complete in this cpp file.
+// The member variable Valuations::umbValuations is of type std::unique_ptr<storm::umb::Valuations>.
+// To re-assign or destruct umbValuations, the type storm::umb::Valuations must be complete (because storm::umb::Valuations::~Valuations must be invoked).
+// We therefore must define the following destructors / constructors / assignment operators in the .cpp file, not the header file.
 Valuations::~Valuations() = default;
 Valuations::Valuations(Valuations&& other) = default;
 Valuations& Valuations::operator=(Valuations&& other) = default;
 
 Valuations::Valuations(Valuations const& other) {
     if (other.umbValuations) {
+        // Create a deep copy
         umbValuations = std::make_unique<storm::umb::Valuations>(*other.umbValuations);
     }
 }
@@ -35,6 +37,7 @@ Valuations::Valuations(Valuations const& other) {
 Valuations& Valuations::operator=(Valuations const& other) {
     if (this != &other) {
         if (other.umbValuations) {
+            // Create a deep copy
             umbValuations = std::make_unique<storm::umb::Valuations>(*other.umbValuations);
         } else {
             umbValuations.reset();

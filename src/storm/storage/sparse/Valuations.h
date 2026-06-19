@@ -57,8 +57,7 @@ class Valuations {
      */
     bool entityHasVariable(uint64_t entity, storm::expressions::Variable const& variable) const;
 
-    // --- getters for variable values ---
-    // optional varians have no value iff either entityHasVariable(entity, variable) is false or the value is of optional type and not set.
+    // optional variants have no value iff either entityHasVariable(entity, variable) is false or the value is of optional type and not set.
     bool getBooleanValue(uint64_t const entity, storm::expressions::Variable const& booleanVariable) const;
     std::optional<bool> getOptionalBooleanValue(uint64_t const entity, storm::expressions::Variable const& booleanVariable) const;
     int64_t getInt64Value(uint64_t const entity, storm::expressions::Variable const& integerVariable) const;
