@@ -11,9 +11,6 @@ class ExpressionManager;
 }  // namespace expressions
 
 namespace umb {
-
-class Valuations;
-
 class ValuationDescriptionBuilder {
    public:
     using Integer = storm::NumberTraits<storm::RationalNumber>::IntegerType;
