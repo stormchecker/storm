@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include "storm/modelchecker/helper/infinitehorizon/SparseInfiniteHorizonHelper.h"
 
 namespace storm {
@@ -65,8 +66,16 @@ class SparseNondeterministicInfiniteHorizonHelper : public SparseInfiniteHorizon
    protected:
     virtual void createDecomposition() override;
 
-    std::pair<bool, ValueType> computeLraForTrivialMec(Environment const& env, ValueGetter const& stateValuesGetter, ValueGetter const& actionValuesGetter,
-                                                       storm::storage::MaximalEndComponent const& mec);
+    /*!
+     * Checks if the component consists of a single state and if so, returns the value of that state.
+     */
+    std::optional<ValueType> computeLraForTrivialMec(Environment const& env, ValueGetter const& stateValuesGetter, ValueGetter const& actionValuesGetter,
+                                                     storm::storage::MaximalEndComponent const& mec);
+    /*!
+     * Checks if we can determine via graph analysis, that the LRA value of the component is exactly zero.
+     */
+    std::optional<ValueType> computeLraForZeroMec(Environment const& env, ValueGetter const& stateValuesGetter, ValueGetter const& actionValuesGetter,
+                                                  storm::storage::MaximalEndComponent const& mec);
 
     /*!
      * As computeLraForMec but uses value iteration as a solution method (independent of what is set in env)
