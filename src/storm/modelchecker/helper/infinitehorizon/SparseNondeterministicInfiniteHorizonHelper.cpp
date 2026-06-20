@@ -243,37 +243,39 @@ std::optional<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>:
     // We have found a zero LRA sub-EC. We can infer zero LRA
     if (this->isProduceSchedulerSet()) {
         // Ensure that all other states get some choice that leads to the zero LRA sub-EC
-        this->createBackwardTransitions();
-        std::set<uint64_t> candidates;  // Always contains states with one transition to zeroLraStatesChoices
-        for (auto const& [state, _] : zeroLraStatesChoices) {
-            for (auto const& backwardTransition : this->_backwardTransitions->getRow(state)) {
-                auto const predecessor = backwardTransition.getColumn();
-                if (!zeroLraStatesChoices.contains(predecessor)) {
-                    candidates.insert(predecessor);
+        if (zeroLraStatesChoices.size() < component.size()) {
+            this->createBackwardTransitions();
+            std::set<uint64_t> candidates;  // Always contains states with one transition to zeroLraStatesChoices
+            // helper function to add predecessors of a state to the candidate set
+            auto insertPredecessors = [&](uint64_t const state) {
+                for (auto const& backwardTransition : this->_backwardTransitions->getRow(state)) {
+                    auto const predecessor = backwardTransition.getColumn();
+                    if (!zeroLraStatesChoices.contains(predecessor) && component.containsState(predecessor)) {
+                        candidates.insert(predecessor);
+                    }
                 }
+            };
+            for (auto const& [state, _] : zeroLraStatesChoices) {
+                insertPredecessors(state);
             }
-        }
-        while (!candidates.empty()) {
-            uint64_t const state = *candidates.begin();
-            candidates.erase(candidates.begin());
-            for (auto const choice : this->_transitionMatrix.getRowGroupIndices(state)) {
-                auto const row = this->_transitionMatrix.getRow(choice);
-                if (std::any_of(row.begin(), row.end(),
-                                [&zeroLraStatesChoices](auto const& transition) { return zeroLraStatesChoices.contains(transition.getColumn()); })) {
-                    zeroLraStatesChoices.emplace(state, std::set<uint64_t>{choice});
+            while (!candidates.empty()) {
+                uint64_t const state = *candidates.begin();
+                candidates.erase(candidates.begin());
+                for (auto const choice : this->_transitionMatrix.getRowGroupIndices(state)) {
+                    auto const row = this->_transitionMatrix.getRow(choice);
+                    if (std::any_of(row.begin(), row.end(),
+                                    [&zeroLraStatesChoices](auto const& transition) { return zeroLraStatesChoices.contains(transition.getColumn()); })) {
+                        zeroLraStatesChoices.emplace(state, std::set<uint64_t>{choice});
+                    }
                 }
-            }
-            STORM_LOG_ASSERT(zeroLraStatesChoices.contains(state), "No suitable choice found for state " << state);
-            for (auto const& backwardTransition : this->_backwardTransitions->getRow(state)) {
-                auto const predecessor = backwardTransition.getColumn();
-                if (!zeroLraStatesChoices.contains(predecessor)) {
-                    candidates.insert(predecessor);
-                }
+                STORM_LOG_ASSERT(zeroLraStatesChoices.contains(state), "No suitable choice found for state " << state);
+                insertPredecessors(state);
             }
         }
         // Now all states should have a choice
-        STORM_LOG_ASSERT(component.size() == zeroLraStatesChoices.size(), "Not all states have a zero LRA choice");
-        // Finally, Set some choice as optimal
+        STORM_LOG_ASSERT(component.size() == zeroLraStatesChoices.size(),
+                         "Did not find a choice for all states: " << zeroLraStatesChoices.size() << " / " << component.size() << ".");
+        // Finally, set some choice as optimal
         for (auto const& [state, choices] : zeroLraStatesChoices) {
             this->_producedOptimalChoices.get()[state] = *choices.begin() - this->_transitionMatrix.getRowGroupIndices()[state];
         }
