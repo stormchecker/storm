@@ -48,7 +48,7 @@ jobs:
 
     steps:
       - name: Git clone
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: stormchecker/storm
       - name: Build Storm from Dockerfile
