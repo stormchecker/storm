@@ -1,0 +1,45 @@
+diff --git a/include/gmm/gmm_arch_config.h b/include/gmm/gmm_arch_config.h
+index 7f81d2a..3a6871a 100644
+--- a/include/gmm/gmm_arch_config.h
++++ b/include/gmm/gmm_arch_config.h
+@@ -5,10 +5,10 @@
+ #define GMM_HAVE_PRETTY_FUNCTION /**/
+ 
+ /* defined if GMM is linked to a blas library */
+-#define GMM_USES_BLAS /**/
++/* #undef GMM_USES_BLAS */
+ 
+ /* defined if GMM is linked to a lapack library */
+-#define GMM_USES_LAPACK /**/
++/* #undef GMM_USES_LAPACK */
+ 
+ /* defined if GMM is used when building the Matlab interface */
+ /* #undef GMM_MATLAB_INTERFACE */
+@@ -17,10 +17,10 @@
+ /* #undef GMM_USES_MPI */
+ 
+ /* defined if GMM is linked to the mumps library */
+-#define GMM_USES_MUMPS /**/
++/* #undef GMM_USES_MUMPS */
+ 
+ /* defined if GMM is linked to the superlu library */
+-#define GMM_USES_SUPERLU /**/
++/* #undef GMM_USES_SUPERLU */
+ 
+ /* defined if superlu header files are not under a subdirectory called "superlu" */
+ /* #undef GMM_NO_SUPERLU_INCLUDE_SUBDIR */
+diff --git a/include/gmm/gmm_precond_ilu.h b/include/gmm/gmm_precond_ilu.h
+index a2b1443..f75a9d1 100644
+--- a/include/gmm/gmm_precond_ilu.h
++++ b/include/gmm/gmm_precond_ilu.h
+@@ -213,8 +213,8 @@ namespace gmm {
+       }
+     }
+ 
+-    L = tm_type(&(L_val[0]), &(L_ind[0]), &(L_ptr[0]), n, mat_ncols(A));
+-    U = tm_type(&(U_val[0]), &(U_ind[0]), &(U_ptr[0]), n, mat_ncols(A));
++    L = tm_type(L_val.data(), L_ind.data(), L_ptr.data(), n, mat_ncols(A));
++    U = tm_type(U_val.data(), U_ind.data(), U_ptr.data(), n, mat_ncols(A));
+   }
+ 
+   template <typename Matrix>

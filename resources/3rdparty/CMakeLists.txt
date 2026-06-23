@@ -82,7 +82,7 @@ endif()
 #############################################################
 
 if(NOT STORM_DISABLE_GMM)
-    set(GMM_VERSION "5.4.4")
+    set(GMM_VERSION "5.5")
     message(STATUS "Storm - Including gmm ${GMM_VERSION}.")
     ExternalProject_Add(
             gmm_src
@@ -90,7 +90,7 @@ if(NOT STORM_DISABLE_GMM)
             SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/gmm
             # Try to apply patch and otherwise check that patch was already applied
             # Needed because while -N ignores already applied patches it still returns with exit code 1
-            PATCH_COMMAND patch -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm544.patch || patch --dry-run -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm544.patch | grep "Reversed (or previously applied) patch detected!"
+            PATCH_COMMAND patch -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch || patch --dry-run -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch | grep "Reversed (or previously applied) patch detected!"
             UPDATE_COMMAND ""
             CONFIGURE_COMMAND ""
             BUILD_COMMAND ""
