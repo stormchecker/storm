@@ -124,7 +124,7 @@ double LongRunAverageSolverSettings::getPrecision() const {
 }
 
 bool LongRunAverageSolverSettings::isRelativePrecision() const {
-    return this->getOption(absoluteOptionName).getHasOptionBeenSet();
+    return !this->getOption(absoluteOptionName).getHasOptionBeenSet();
 }
 
 double LongRunAverageSolverSettings::getAperiodicFactor() const {
