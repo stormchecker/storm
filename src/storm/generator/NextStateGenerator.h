@@ -12,7 +12,7 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/StateStorage.h"
-#include "storm/storage/sparse/Valuations.h"
+#include "storm/storage/valuations/Valuations.h"
 #include "storm/utility/ConstantsComparator.h"
 
 namespace storm {

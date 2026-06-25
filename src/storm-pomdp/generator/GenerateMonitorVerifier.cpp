@@ -15,9 +15,9 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/sparse/Valuations.h"
-#include "storm/storage/umb/model/Valuations.h"
-#include "storm/storage/umb/utility/ValuationDescriptionBuilder.h"
+#include "storm/storage/valuations/ValuationDescriptionBuilder.h"
+#include "storm/storage/valuations/Valuations.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -334,14 +334,14 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
 
     if (mc.hasStateValuations()) {
         // Add state valuations
-        auto const& oldValuations = mc.getStateValuations().getUmbValuations();
-        storm::umb::Valuations stateValuations = [this, &oldValuations]() {
-            storm::umb::ValuationDescriptionBuilder svBuilder(exprManager);
+        auto const& oldValuations = mc.getStateValuations().getStorage();
+        storm::storage::sparse::ValuationsStorage stateValuations = [this, &oldValuations]() {
+            storm::storage::sparse::ValuationDescriptionBuilder svBuilder(exprManager);
             svBuilder.addIntegerVariable(monvar, -1, monitor.getNumberOfStates() - 1);
             svBuilder.addIntegerVariable(mcvar, -1, mc.getNumberOfStates() - 1);
             STORM_LOG_ASSERT(oldValuations.numClasses() == 1, "Only one class of valuations supported.");
             svBuilder.addVariables(oldValuations.getClassDescription());
-            return storm::umb::Valuations(svBuilder.buildClassDescription(), exprManager);
+            return storm::storage::sparse::ValuationsStorage(svBuilder.buildClassDescription(), exprManager);
         }();
         stateValuations.resize(numberOfStates);
 

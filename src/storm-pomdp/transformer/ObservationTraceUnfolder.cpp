@@ -6,9 +6,9 @@
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/sparse/Valuations.h"
-#include "storm/storage/umb/model/Valuations.h"
-#include "storm/storage/umb/utility/ValuationDescriptionBuilder.h"
+#include "storm/storage/valuations/ValuationDescriptionBuilder.h"
+#include "storm/storage/valuations/Valuations.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/utility/ConstantsComparator.h"
 
 #undef _VERBOSE_OBSERVATION_UNFOLDING
@@ -46,11 +46,11 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     std::cout << "build valution builder..\n";
 #endif
     // Initialize state valuations
-    storm::umb::Valuations stateValuations = [this, &observations]() {
-        storm::umb::ValuationDescriptionBuilder svBuilder(exprManager);
+    storm::storage::sparse::ValuationsStorage stateValuations = [this, &observations]() {
+        storm::storage::sparse::ValuationDescriptionBuilder svBuilder(exprManager);
         svBuilder.addIntegerVariable(svvar, -1, static_cast<int64_t>(model.getNumberOfStates()) - 1);
         svBuilder.addIntegerVariable(tsvar, -1, observations.size() - 1);
-        return storm::umb::Valuations(svBuilder.buildClassDescription(), exprManager);
+        return storm::storage::sparse::ValuationsStorage(svBuilder.buildClassDescription(), exprManager);
     }();
 
     // Shorthand for adding the next state's valuations with input model state index s and trace step t

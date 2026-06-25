@@ -14,7 +14,7 @@
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/storage/sparse/Valuations.h"
+#include "storm/storage/valuations/Valuations.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"

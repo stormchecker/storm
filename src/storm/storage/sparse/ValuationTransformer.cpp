@@ -5,8 +5,8 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/umb/model/Valuations.h"
-#include "storm/storage/umb/utility/ValuationDescriptionBuilder.h"
+#include "storm/storage/valuations/ValuationDescriptionBuilder.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/utility/constants.h"
 
 namespace storm::storage::sparse {
@@ -29,12 +29,12 @@ void ValuationTransformer::addExpression(storm::expressions::Variable const& var
 }
 
 Valuations ValuationTransformer::build(bool extend) {
-    STORM_LOG_THROW(oldValuations.getUmbValuations().numClasses() == 1, storm::exceptions::NotSupportedException,
+    STORM_LOG_THROW(oldValuations.getStorage().numClasses() == 1, storm::exceptions::NotSupportedException,
                     "Valuation transformation is only supported for valuations with a single class.");
-    storm::umb::Valuations result = [&]() {
-        storm::umb::ValuationDescriptionBuilder descriptionBuilder(oldValuations.getManager().shared_from_this());
+    ValuationsStorage result = [&]() {
+        ValuationDescriptionBuilder descriptionBuilder(oldValuations.getManager().shared_from_this());
         if (extend) {
-            descriptionBuilder.addVariables(oldValuations.getUmbValuations().getClassDescription());
+            descriptionBuilder.addVariables(oldValuations.getStorage().getClassDescription());
         }
         for (auto const& v : variables) {
             if (v.hasBooleanType()) {
@@ -48,7 +48,7 @@ Valuations ValuationTransformer::build(bool extend) {
                                 "Variable " << v.getName() << " has unsupported type " << v.getType() << ".");
             }
         }
-        return storm::umb::Valuations(descriptionBuilder.buildClassDescription(), oldValuations.getManager().shared_from_this());
+        return ValuationsStorage(descriptionBuilder.buildClassDescription(), oldValuations.getManager().shared_from_this());
     }();
     result.resize(oldValuations.getNumberOfEntities());
 
@@ -56,8 +56,7 @@ Valuations ValuationTransformer::build(bool extend) {
     for (uint64_t entity = 0; entity < oldValuations.getNumberOfEntities(); ++entity) {
         if (extend) {
             // If requested, we copy variables into the new valuations
-            oldValuations.getUmbValuations().readCallback(entity,
-                                                          [&result](auto const e, auto const& var, auto const& value) { result.writeValue(e, var, value); });
+            oldValuations.getStorage().readCallback(entity, [&result](auto const e, auto const& var, auto const& value) { result.writeValue(e, var, value); });
         }
 
         // Setup the expression evaluator

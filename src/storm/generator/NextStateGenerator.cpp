@@ -11,7 +11,7 @@
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/SimpleValuation.h"
-#include "storm/storage/umb/utility/ValuationDescriptionBuilder.h"
+#include "storm/storage/valuations/ValuationDescriptionBuilder.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -82,7 +82,7 @@ void NextStateGenerator<ValueType, StateType>::initializeSpecialStates() {
 
 template<typename ValueType, typename StateType>
 storm::storage::sparse::Valuations NextStateGenerator<ValueType, StateType>::initializeStateValuations() const {
-    storm::umb::ValuationDescriptionBuilder builder(expressionManager);
+    storm::storage::sparse::ValuationDescriptionBuilder builder(expressionManager);
     if (variableInformation.hasOutOfBoundsBit()) {
         builder.addBooleanVariable(variableInformation.outOfBoundsBit->variable);
     }
@@ -100,7 +100,7 @@ storm::storage::sparse::Valuations NextStateGenerator<ValueType, StateType>::ini
 
 template<typename ValueType, typename StateType>
 storm::storage::sparse::Valuations NextStateGenerator<ValueType, StateType>::initializeObservationValuations() const {
-    storm::umb::ValuationDescriptionBuilder builder(expressionManager);
+    storm::storage::sparse::ValuationDescriptionBuilder builder(expressionManager);
     for (auto const& v : variableInformation.booleanVariables) {
         if (v.observable) {
             builder.addBooleanVariable(v.variable);
@@ -148,14 +148,14 @@ VariableInformation const& NextStateGenerator<ValueType, StateType>::getVariable
 template<typename ValueType, typename StateType>
 void NextStateGenerator<ValueType, StateType>::addStateValuation(storm::storage::sparse::state_type const& currentStateIndex,
                                                                  storm::storage::sparse::Valuations& valuations) const {
-    unpackStateAppendToUmbValuations(*this->state, variableInformation, valuations.getUmbValuations());
+    unpackStateAppendToValuations(*this->state, variableInformation, valuations.getStorage());
 }
 
 template<typename ValueType, typename StateType>
 storm::storage::sparse::Valuations NextStateGenerator<ValueType, StateType>::makeObservationValuation() const {
     storm::storage::sparse::Valuations valuations = initializeObservationValuations();
     for (auto const& observationEntry : observabilityMap) {
-        unpackObservationClassIntoUmbValuations(observationEntry.first, observationEntry.second, variableInformation, valuations.getUmbValuations());
+        unpackObservationClassIntoValuations(observationEntry.first, observationEntry.second, variableInformation, valuations.getStorage());
     }
     return valuations;
 }

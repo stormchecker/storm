@@ -8,7 +8,7 @@
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/eliminator/ArrayEliminator.h"
-#include "storm/storage/umb/model/Valuations.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -79,8 +79,8 @@ void TransientVariableValuation<ValueType>::setInEvaluator(storm::expressions::E
 }
 
 template<typename ValueType>
-void TransientVariableValuation<ValueType>::setInUmbValuations(uint64_t const stateIndex, TransientVariableInformation<ValueType> const& info,
-                                                               storm::umb::Valuations& valuations) const {
+void TransientVariableValuation<ValueType>::setInValuations(uint64_t const stateIndex, TransientVariableInformation<ValueType> const& info,
+                                                               storm::storage::sparse::ValuationsStorage& valuations) const {
     auto writeValues = [stateIndex, &valuations](auto const& varInfos, auto const& varValues) {
         auto varIt = varValues.begin();
         auto const varIte = varValues.end();

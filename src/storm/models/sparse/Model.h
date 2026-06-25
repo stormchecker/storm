@@ -13,7 +13,7 @@
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/storage/sparse/Valuations.h"
+#include "storm/storage/valuations/Valuations.h"
 
 namespace storm {
 namespace storage {

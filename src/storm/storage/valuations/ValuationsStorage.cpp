@@ -1,4 +1,4 @@
-#include "storm/storage/umb/model/Valuations.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 
 #include <bitset>
 #include <cstring>
@@ -15,7 +15,7 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 
-namespace storm::umb {
+namespace storm::storage::sparse {
 namespace detail {
 
 bool fits64Bit(ValuationClassDescription::Variable const& varDesc) {
@@ -72,13 +72,13 @@ bool fits64Bit(ValuationClassDescription::Variable const& varDesc) {
             return true;  // string indices are always stored as uint64_t
         default:
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                            "Valuations for variable type '" << varDesc.type.toString() << "' are not supported.");
+                            "ValuationsStorage for variable type '" << varDesc.type.toString() << "' are not supported.");
     }
 }
 
 template<typename ManagerType>
-Valuations::VariablesInformation createVariablesInformation(ManagerType& expressionManager, ValuationClassDescription const& description) {
-    std::vector<typename Valuations::VariableInformation> variables;
+ValuationsStorage::VariablesInformation createVariablesInformation(ManagerType& expressionManager, ValuationClassDescription const& description) {
+    std::vector<typename ValuationsStorage::VariableInformation> variables;
     uint64_t currentOffset = 0;
     for (auto const& varVariant : description.variables) {
         if (std::holds_alternative<ValuationClassDescription::Variable>(varVariant)) {
@@ -106,14 +106,14 @@ Valuations::VariablesInformation createVariablesInformation(ManagerType& express
                         break;
                     default:
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                                        "Valuations for variable type '" << varDesc.type.toString() << "' are not supported.");
+                                        "ValuationsStorage for variable type '" << varDesc.type.toString() << "' are not supported.");
                 }
                 exprVar = expressionManager.declareOrGetVariable(varDesc.name, variableType);
             }
             if (varDesc.isOptional.value_or(false)) {
                 ++currentOffset;  // optional variables have a preceding presence bit
             }
-            variables.emplace_back(typename Valuations::VariableInformation{
+            variables.emplace_back(typename ValuationsStorage::VariableInformation{
                 .expressionVariable = exprVar, .description = varDesc, .bitOffset = currentOffset, .fits64Bit = fits64Bit(varDesc)});
             currentOffset += variables.back().description.type.bitSize();
         } else {
@@ -123,15 +123,15 @@ Valuations::VariablesInformation createVariablesInformation(ManagerType& express
     }
     STORM_LOG_ASSERT(currentOffset == description.sizeInBits(), "Computed size does not match description size.");
     STORM_LOG_ASSERT(currentOffset % 8 == 0, "Invalid valuation description detected: size in bits must be a multiple of 8.");
-    return typename Valuations::VariablesInformation{
+    return typename ValuationsStorage::VariablesInformation{
         .variables = std::move(variables), .expressionManager = expressionManager.shared_from_this(), .sizeInBytes = currentOffset / 8};
 }
 
 }  // namespace detail
 
-Valuations::Valuations(uint64_t const numEntities, std::vector<ValuationClassDescription> const& descriptions, std::vector<char> valuations,
-                       std::vector<uint64_t> stringMapping, std::vector<char> strings, std::optional<std::vector<uint32_t>> classes,
-                       std::vector<std::shared_ptr<storm::expressions::ExpressionManager const>> expressionManagers)
+ValuationsStorage::ValuationsStorage(uint64_t const numEntities, std::vector<ValuationClassDescription> const& descriptions, std::vector<char> valuations,
+                                     std::vector<uint64_t> stringMapping, std::vector<char> strings, std::optional<std::vector<uint32_t>> classes,
+                                     std::vector<std::shared_ptr<storm::expressions::ExpressionManager const>> expressionManagers)
     : numEntities(numEntities), valuations(std::move(valuations)), stringMapping(std::move(stringMapping)), strings(std::move(strings)) {
     STORM_LOG_ASSERT(descriptions.size() == expressionManagers.size() || expressionManagers.size() <= 1,
                      "Mismatch between number of descriptions and expression managers.");
@@ -190,38 +190,39 @@ Valuations::Valuations(uint64_t const numEntities, std::vector<ValuationClassDes
     }
 }
 
-Valuations::Valuations(uint64_t const numEntities, ValuationClassDescription const& description, std::vector<char> valuations,
-                       std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager)
-    : Valuations(numEntities, {description}, std::move(valuations), {}, {}, std::nullopt, {expressionManager}) {
+ValuationsStorage::ValuationsStorage(uint64_t const numEntities, ValuationClassDescription const& description, std::vector<char> valuations,
+                                     std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager)
+    : ValuationsStorage(numEntities, {description}, std::move(valuations), {}, {}, std::nullopt, {expressionManager}) {
     STORM_LOG_ASSERT(!description.hasStringVariable(), "String mapping must be given for descriptions with string variables.");
 }
 
-Valuations::Valuations(std::vector<ValuationClassDescription> const& descriptions,
-                       std::vector<std::shared_ptr<storm::expressions::ExpressionManager const>> expressionManagers)
-    : Valuations(0, descriptions, {}, {}, {}, std::vector<uint32_t>{}, std::move(expressionManagers)) {}
+ValuationsStorage::ValuationsStorage(std::vector<ValuationClassDescription> const& descriptions,
+                                     std::vector<std::shared_ptr<storm::expressions::ExpressionManager const>> expressionManagers)
+    : ValuationsStorage(0, descriptions, {}, {}, {}, std::vector<uint32_t>{}, std::move(expressionManagers)) {}
 
-Valuations::Valuations(ValuationClassDescription const& description, std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager)
-    : Valuations(0, {description}, {}, {}, {}, std::nullopt, {expressionManager}) {}
+ValuationsStorage::ValuationsStorage(ValuationClassDescription const& description,
+                                     std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager)
+    : ValuationsStorage(0, {description}, {}, {}, {}, std::nullopt, {expressionManager}) {}
 
-Valuations::Valuations(std::vector<VariablesInformation> const& variableClasses) : numEntities(0), variableClasses(variableClasses) {}
+ValuationsStorage::ValuationsStorage(std::vector<VariablesInformation> const& variableClasses) : numEntities(0), variableClasses(variableClasses) {}
 
-uint64_t Valuations::size() const {
+uint64_t ValuationsStorage::size() const {
     return numEntities;
 }
 
-uint64_t Valuations::numClasses() const {
+uint64_t ValuationsStorage::numClasses() const {
     return variableClasses.size();
 }
 
-uint64_t Valuations::numStrings() const {
+uint64_t ValuationsStorage::numStrings() const {
     return stringMapping.size() > 0 ? stringMapping.size() - 1 : 0;
 }
 
-bool Valuations::hasStrings() const {
+bool ValuationsStorage::hasStrings() const {
     return !stringMapping.empty();
 }
 
-uint64_t Valuations::getClassOfEntity(uint64_t entity) const {
+uint64_t ValuationsStorage::getClassOfEntity(uint64_t entity) const {
     STORM_LOG_ASSERT(entity < size(), "Entity index out of bounds: " << entity << " >= " << size() << ".");
     if (entityClassMappings) {
         return entityClassMappings->toClassMapping[entity];
@@ -231,7 +232,7 @@ uint64_t Valuations::getClassOfEntity(uint64_t entity) const {
     }
 }
 
-ValuationClassDescription Valuations::getClassDescription(uint64_t classIndex) const {
+ValuationClassDescription ValuationsStorage::getClassDescription(uint64_t classIndex) const {
     STORM_LOG_ASSERT(classIndex < numClasses(), "Class index " << classIndex << " out of bounds. Only " << variableClasses.size() << "classes known.");
     ValuationClassDescription res;
     uint64_t currBit = 0;
@@ -242,7 +243,7 @@ ValuationClassDescription Valuations::getClassDescription(uint64_t classIndex) c
             --padding;
         }
         if (padding > 0) {
-            res.variables.push_back(storm::umb::ValuationClassDescription::Padding{.padding = padding});
+            res.variables.push_back(ValuationClassDescription::Padding{.padding = padding});
         }
         res.variables.push_back(varInfo.description);
         currBit = varInfo.bitOffset + varInfo.description.type.bitSize();
@@ -251,12 +252,12 @@ ValuationClassDescription Valuations::getClassDescription(uint64_t classIndex) c
                                                                                             << varInfo.bitOffset << ".");
     }
     if (uint64_t padding = currBit % 8; padding > 0) {
-        res.variables.push_back(storm::umb::ValuationClassDescription::Padding{.padding = 8 - padding});
+        res.variables.push_back(ValuationClassDescription::Padding{.padding = 8 - padding});
     }
     return res;
 }
 
-storm::expressions::ExpressionManager const& Valuations::getManager() const {
+storm::expressions::ExpressionManager const& ValuationsStorage::getManager() const {
     STORM_LOG_ASSERT(!variableClasses.empty(), "No variable classes given, cannot determine expression manager.");
     auto const& manager = variableClasses.front().expressionManager;
     STORM_LOG_THROW(
@@ -265,25 +266,25 @@ storm::expressions::ExpressionManager const& Valuations::getManager() const {
     return *manager;
 }
 
-storm::expressions::ExpressionManager const& Valuations::getManager(uint64_t classIndex) const {
+storm::expressions::ExpressionManager const& ValuationsStorage::getManager(uint64_t classIndex) const {
     STORM_LOG_ASSERT(classIndex < variableClasses.size(),
                      "Class index " << classIndex << " out of bounds. Only " << variableClasses.size() << "classes known.");
     return *variableClasses[classIndex].expressionManager;
 }
 
-Valuations::VariableInformation const& Valuations::getVariableInformation(uint64_t entity, storm::expressions::Variable const& variable) const {
+ValuationsStorage::VariableInformation const& ValuationsStorage::getVariableInformation(uint64_t entity, storm::expressions::Variable const& variable) const {
     auto const& vars = info(entity).variables;
     auto varInfoIt = std::find_if(vars.begin(), vars.end(), [&variable](auto const& varInfo) { return varInfo.expressionVariable == variable; });
     STORM_LOG_ASSERT(varInfoIt != vars.end(), "Can not find unknown variable " << variable.getName() << ".");
     return *varInfoIt;
 }
 
-Valuations::VariableInformation const& Valuations::getVariableInformation(storm::expressions::Variable const& variable) const {
+ValuationsStorage::VariableInformation const& ValuationsStorage::getVariableInformation(storm::expressions::Variable const& variable) const {
     STORM_LOG_ASSERT(numClasses() == 1, "Trying to get variable information but the class is not unique among entities.");
     return getVariableInformation(0, variable);
 }
 
-std::set<storm::expressions::Variable> Valuations::getAllVariables() const {
+std::set<storm::expressions::Variable> ValuationsStorage::getAllVariables() const {
     [[maybe_unused]] auto const& manager = getManager();
     std::set<storm::expressions::Variable> result;
     for (auto const& varClass : variableClasses) {
@@ -296,12 +297,12 @@ std::set<storm::expressions::Variable> Valuations::getAllVariables() const {
     return result;
 }
 
-bool Valuations::entityHasVariable(uint64_t entity, storm::expressions::Variable const& variable) const {
+bool ValuationsStorage::entityHasVariable(uint64_t entity, storm::expressions::Variable const& variable) const {
     auto const& vars = info(entity).variables;
     return std::any_of(vars.begin(), vars.end(), [&variable](auto const& varInfo) { return varInfo.expressionVariable == variable; });
 }
 
-storm::umb::UmbModel::Valuation Valuations::getRawUmbData() const {
+storm::umb::UmbModel::Valuation ValuationsStorage::getRawUmbData() const {
     storm::umb::UmbModel::Valuation result;
     if (entityClassMappings.has_value()) {
         result.valuationToClass = entityClassMappings->toClassMapping;
@@ -314,7 +315,7 @@ storm::umb::UmbModel::Valuation Valuations::getRawUmbData() const {
     return result;
 }
 
-void Valuations::resize(uint64_t newEntityCount, uint64_t const classIndex) {
+void ValuationsStorage::resize(uint64_t newEntityCount, uint64_t const classIndex) {
     if (newEntityCount > size()) {
         // Initialize one new entity with default values. This is required to ensure that valuation data is consistent (e.g. avoid 0/0 for rationals).
         emplaceBack<true>(classIndex, [](auto&&...) {});
@@ -348,7 +349,7 @@ void Valuations::resize(uint64_t newEntityCount, uint64_t const classIndex) {
 }
 
 template<typename RationalValueType>
-void Valuations::setValuesInEvaluator(uint64_t entity, storm::expressions::ExpressionEvaluator<RationalValueType>& evaluator) const {
+void ValuationsStorage::setValuesInEvaluator(uint64_t entity, storm::expressions::ExpressionEvaluator<RationalValueType>& evaluator) const {
     readCallback(entity, [&evaluator](auto, auto const& var, auto const& value) {
         using ValueType = std::remove_cvref_t<decltype(value)>;
         if constexpr (std::is_same_v<ValueType, bool>) {
@@ -366,15 +367,15 @@ void Valuations::setValuesInEvaluator(uint64_t entity, storm::expressions::Expre
     });
 }
 
-template void Valuations::setValuesInEvaluator<double>(uint64_t entity, storm::expressions::ExpressionEvaluator<double>& evaluator) const;
-template void Valuations::setValuesInEvaluator<storm::RationalNumber>(uint64_t entity,
-                                                                      storm::expressions::ExpressionEvaluator<storm::RationalNumber>& evaluator) const;
+template void ValuationsStorage::setValuesInEvaluator<double>(uint64_t entity, storm::expressions::ExpressionEvaluator<double>& evaluator) const;
+template void ValuationsStorage::setValuesInEvaluator<storm::RationalNumber>(uint64_t entity,
+                                                                             storm::expressions::ExpressionEvaluator<storm::RationalNumber>& evaluator) const;
 
-Valuations::VariablesInformation const& Valuations::info(uint64_t entity) const {
+ValuationsStorage::VariablesInformation const& ValuationsStorage::info(uint64_t entity) const {
     return variableClasses[getClassOfEntity(entity)];
 }
 
-std::span<char const> Valuations::getRawBytes(uint64_t entity) const {
+std::span<char const> ValuationsStorage::getRawBytes(uint64_t entity) const {
     STORM_LOG_ASSERT(entity < size(), "Entity index out of bounds: " << entity << " >= " << size() << ".");
     if (entityClassMappings) {
         auto const start = entityClassMappings->toValuationsMapping[entity];
@@ -386,7 +387,7 @@ std::span<char const> Valuations::getRawBytes(uint64_t entity) const {
     }
 }
 
-std::span<char> Valuations::getRawBytes(uint64_t entity) {
+std::span<char> ValuationsStorage::getRawBytes(uint64_t entity) {
     if (entityClassMappings) {
         auto const start = entityClassMappings->toValuationsMapping[entity];
         auto const end = entityClassMappings->toValuationsMapping[entity + 1];
@@ -397,12 +398,12 @@ std::span<char> Valuations::getRawBytes(uint64_t entity) {
     }
 }
 
-bool Valuations::readBit(std::span<char const> bytes, uint64_t const position) const {
+bool ValuationsStorage::readBit(std::span<char const> bytes, uint64_t const position) const {
     STORM_LOG_ASSERT(position < bytes.size() * 8, "Bit position exceeds valuation size.");
     return bytes[position / 8] & (1 << (position % 8));
 }
 
-void Valuations::writeBit(std::span<char> bytes, uint64_t const position, bool value) const {
+void ValuationsStorage::writeBit(std::span<char> bytes, uint64_t const position, bool value) const {
     STORM_LOG_ASSERT(position < bytes.size() * 8, "Bit position exceeds valuation size.");
     char& byte = bytes[position / 8];
     char const pos = (1 << (position % 8));
@@ -413,7 +414,7 @@ void Valuations::writeBit(std::span<char> bytes, uint64_t const position, bool v
     }
 }
 
-uint64_t Valuations::readUint64(std::span<char const> bytes, uint64_t const bitOffset, uint64_t const bitSize) const {
+uint64_t ValuationsStorage::readUint64(std::span<char const> bytes, uint64_t const bitOffset, uint64_t const bitSize) const {
     STORM_LOG_ASSERT(bitOffset < bytes.size() * 8, "Variable offset exceeds valuation size.");
     STORM_LOG_ASSERT(bitSize <= 64, "Invalid bit range.");
     auto const firstByte = bitOffset / 8;
@@ -438,7 +439,7 @@ uint64_t Valuations::readUint64(std::span<char const> bytes, uint64_t const bitO
     return result;
 }
 
-void Valuations::writeUint64(std::span<char> bytes, uint64_t const bitOffset, uint64_t const bitSize, uint64_t const value) const {
+void ValuationsStorage::writeUint64(std::span<char> bytes, uint64_t const bitOffset, uint64_t const bitSize, uint64_t const value) const {
     STORM_LOG_ASSERT(bitOffset < bytes.size() * 8, "Variable offset exceeds valuation size.");
     STORM_LOG_ASSERT(bitSize <= 64, "Invalid bit range.");
     STORM_LOG_THROW(bitSize == 64 || value < (1ull << bitSize), storm::exceptions::OutOfRangeException,
@@ -475,12 +476,12 @@ void Valuations::writeUint64(std::span<char> bytes, uint64_t const bitOffset, ui
 }
 
 template<bool Signed>
-Valuations::Integer Valuations::readInteger(std::span<char const> bytes, uint64_t const bitOffset, uint64_t const bitSize) const {
+ValuationsStorage::Integer ValuationsStorage::readInteger(std::span<char const> bytes, uint64_t const bitOffset, uint64_t const bitSize) const {
     auto const num64BitChunks = (bitSize + 63) / 64;
     auto chunksView = std::ranges::iota_view(0ull, num64BitChunks) | std::ranges::views::transform([this, &bytes, &bitOffset, &bitSize](auto i) -> uint64_t {
                           return readUint64(bytes, bitOffset + i * 64, std::min<uint64_t>(64, bitSize - i * 64));
                       });
-    Integer result = ValueEncoding::decodeArbitraryPrecisionInteger<false>(chunksView);
+    Integer result = storm::umb::ValueEncoding::decodeArbitraryPrecisionInteger<false>(chunksView);
     if constexpr (Signed) {
         // Check if this number is supposed to be negative
         if (result >= storm::utility::pow<Integer>(2, bitSize - 1)) {
@@ -490,16 +491,16 @@ Valuations::Integer Valuations::readInteger(std::span<char const> bytes, uint64_
     return result;
 }
 
-template Valuations::Integer Valuations::readInteger<false>(std::span<char const>, uint64_t, uint64_t) const;
-template Valuations::Integer Valuations::readInteger<true>(std::span<char const>, uint64_t, uint64_t) const;
+template ValuationsStorage::Integer ValuationsStorage::readInteger<false>(std::span<char const>, uint64_t, uint64_t) const;
+template ValuationsStorage::Integer ValuationsStorage::readInteger<true>(std::span<char const>, uint64_t, uint64_t) const;
 
 template<bool Signed>
-void Valuations::writeInteger(std::span<char> bytes, uint64_t bitOffset, uint64_t bitSize, Integer const& value) const {
-    STORM_LOG_THROW(ValueEncoding::getSizeOfIntegerEncoding<Signed>(value) <= bitSize, storm::exceptions::OutOfRangeException,
+void ValuationsStorage::writeInteger(std::span<char> bytes, uint64_t bitOffset, uint64_t bitSize, Integer const& value) const {
+    STORM_LOG_THROW(storm::umb::ValueEncoding::getSizeOfIntegerEncoding<Signed>(value) <= bitSize, storm::exceptions::OutOfRangeException,
                     "Value " << value << " cannot be encoded in " << bitSize << " bits.");
     auto const num64BitChunks = (bitSize + 63) / 64;
     std::vector<uint64_t> uint64Encoding;
-    ValueEncoding::appendEncodedInteger<Signed>(uint64Encoding, value, num64BitChunks);
+    storm::umb::ValueEncoding::appendEncodedInteger<Signed>(uint64Encoding, value, num64BitChunks);
     STORM_LOG_ASSERT(uint64Encoding.size() == num64BitChunks, "Encoding does not fit into the specified bit size.");
     for (auto v : uint64Encoding) {
         if (bitSize >= 64) {
@@ -530,11 +531,11 @@ void Valuations::writeInteger(std::span<char> bytes, uint64_t bitOffset, uint64_
     STORM_LOG_ASSERT(bitSize == 0, "Unexpected integer encoding. Not all bits were written.");
 }
 
-template void Valuations::writeInteger<false>(std::span<char>, uint64_t, uint64_t, Integer const&) const;
-template void Valuations::writeInteger<true>(std::span<char>, uint64_t, uint64_t, Integer const&) const;
+template void ValuationsStorage::writeInteger<false>(std::span<char>, uint64_t, uint64_t, Integer const&) const;
+template void ValuationsStorage::writeInteger<true>(std::span<char>, uint64_t, uint64_t, Integer const&) const;
 
 template<typename ValueType>
-void Valuations::writeValue(std::span<char> bytes, uint64_t bitOffset, uint64_t bitSize, ValueType const& value) {
+void ValuationsStorage::writeValue(std::span<char> bytes, uint64_t bitOffset, uint64_t bitSize, ValueType const& value) {
     if constexpr (std::is_same_v<ValueType, bool>) {
         writeUint64(bytes, bitOffset, bitSize, value ? 1ul : 0ul);
     } else if constexpr (std::is_same_v<ValueType, uint64_t>) {
@@ -574,18 +575,18 @@ void Valuations::writeValue(std::span<char> bytes, uint64_t bitOffset, uint64_t 
     }
 }
 
-template void Valuations::writeValue<bool>(std::span<char>, uint64_t, uint64_t, bool const&);
-template void Valuations::writeValue<uint64_t>(std::span<char>, uint64_t, uint64_t, uint64_t const&);
-template void Valuations::writeValue<int64_t>(std::span<char>, uint64_t, uint64_t, int64_t const&);
-template void Valuations::writeValue<double>(std::span<char>, uint64_t, uint64_t, double const&);
-template void Valuations::writeValue<Valuations::Integer>(std::span<char>, uint64_t, uint64_t, Valuations::Integer const&);
-template void Valuations::writeValue<storm::RationalNumber>(std::span<char>, uint64_t, uint64_t, storm::RationalNumber const&);
-template void Valuations::writeValue<std::string_view>(std::span<char>, uint64_t, uint64_t, std::string_view const&);
-template void Valuations::writeValue<std::string>(std::span<char>, uint64_t, uint64_t, std::string const&);
+template void ValuationsStorage::writeValue<bool>(std::span<char>, uint64_t, uint64_t, bool const&);
+template void ValuationsStorage::writeValue<uint64_t>(std::span<char>, uint64_t, uint64_t, uint64_t const&);
+template void ValuationsStorage::writeValue<int64_t>(std::span<char>, uint64_t, uint64_t, int64_t const&);
+template void ValuationsStorage::writeValue<double>(std::span<char>, uint64_t, uint64_t, double const&);
+template void ValuationsStorage::writeValue<ValuationsStorage::Integer>(std::span<char>, uint64_t, uint64_t, ValuationsStorage::Integer const&);
+template void ValuationsStorage::writeValue<storm::RationalNumber>(std::span<char>, uint64_t, uint64_t, storm::RationalNumber const&);
+template void ValuationsStorage::writeValue<std::string_view>(std::span<char>, uint64_t, uint64_t, std::string_view const&);
+template void ValuationsStorage::writeValue<std::string>(std::span<char>, uint64_t, uint64_t, std::string const&);
 
 template<typename T>
-Valuations Valuations::selectEntities(T const& selectedEntities) const {
-    Valuations result(variableClasses);
+ValuationsStorage ValuationsStorage::selectEntities(T const& selectedEntities) const {
+    ValuationsStorage result(variableClasses);
     result.numEntities = [&selectedEntities]() {
         if constexpr (std::is_same_v<T, storm::storage::BitVector>) {
             return selectedEntities.getNumberOfSetBits();
@@ -616,10 +617,10 @@ Valuations Valuations::selectEntities(T const& selectedEntities) const {
     return result;
 }
 
-template Valuations Valuations::selectEntities<storm::storage::BitVector>(storm::storage::BitVector const&) const;
-template Valuations Valuations::selectEntities<std::vector<uint64_t>>(std::vector<uint64_t> const&) const;
+template ValuationsStorage ValuationsStorage::selectEntities<storm::storage::BitVector>(storm::storage::BitVector const&) const;
+template ValuationsStorage ValuationsStorage::selectEntities<std::vector<uint64_t>>(std::vector<uint64_t> const&) const;
 
-std::size_t Valuations::hash() const {
+std::size_t ValuationsStorage::hash() const {
     // As the valuations are stored as a sequence of chars, we can pretend that this is a string and use  efficient string_view hashing
     auto const hashBytes = std::hash<std::string_view>{};
 
@@ -629,4 +630,4 @@ std::size_t Valuations::hash() const {
     return seed;
 }
 
-}  // namespace storm::umb
+}  // namespace storm::storage::sparse

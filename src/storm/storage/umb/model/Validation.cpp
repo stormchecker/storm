@@ -201,8 +201,8 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
             }
             for (auto const& descr : description->classes) {
                 for (auto const& var : descr.variables) {
-                    if (std::holds_alternative<ValuationClassDescription::Variable>(var)) {
-                        auto const& variable = std::get<ValuationClassDescription::Variable>(var);
+                    if (std::holds_alternative<storm::storage::sparse::ValuationClassDescription::Variable>(var)) {
+                        auto const& variable = std::get<storm::storage::sparse::ValuationClassDescription::Variable>(var);
                         if (variable.name.empty()) {
                             err << "A valuation description has a variable with an empty name.\n";
                             isValid = false;
@@ -496,7 +496,7 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
 
     // Valuations
     auto validateValuation = [&isValid, &err](storm::umb::UmbModel::Valuation const& v, auto const& entityName, uint64_t const numEntity,
-                                              storm::umb::ValuationDescription const& descr) {
+                                              storm::storage::sparse::ValuationDescription const& descr) {
         auto const context = std::string("valuations/") + entityName;
         if (v.valuationToClass.has_value() && v.valuationToClass->size() != numEntity) {
             err << context << "/valuation-to-class has invalid size: " << v.valuationToClass->size() << " != #" << entityName << "=" << numEntity << ".\n";

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "storm/storage/umb/model/ValuationDescription.h"
+#include "storm/storage/valuations/ValuationDescription.h"
 #include "storm/utility/NumberTraits.h"
 
 namespace storm {
@@ -10,7 +10,14 @@ class Variable;
 class ExpressionManager;
 }  // namespace expressions
 
-namespace umb {
+namespace storage::sparse {
+/*!
+ * Helper to incrementally build a ValuationClassDescription, i.e. the description of a class of valuations
+ * as specified by the UMB (Unified Markov Binary) format. The resulting ValuationClassDescription must
+ * stay compliant with the UMB specification.
+ * @see https://pmc-tools.github.io/umb/spec
+ * @see https://arxiv.org/abs/2606.17811
+ */
 class ValuationDescriptionBuilder {
    public:
     using Integer = storm::NumberTraits<storm::RationalNumber>::IntegerType;
@@ -52,12 +59,12 @@ class ValuationDescriptionBuilder {
     /*!
      * Adds the given variable.
      */
-    void addVariable(storm::umb::ValuationClassDescription::Variable const& variable);
+    void addVariable(ValuationClassDescription::Variable const& variable);
 
     /*! Adds all variables from the given description.
      * If addPadding is true, padding entries in the description are added, otherwise they are ignored.
      */
-    void addVariables(storm::umb::ValuationClassDescription const& description, bool addPadding = false);
+    void addVariables(ValuationClassDescription const& description, bool addPadding = false);
 
     /*!
      * Creates the finalized state valuations object.
@@ -67,8 +74,8 @@ class ValuationDescriptionBuilder {
    private:
     void finalize();
     std::shared_ptr<storm::expressions::ExpressionManager const> const manager;
-    storm::umb::ValuationClassDescription descr;
+    ValuationClassDescription descr;
 };
 
-}  // namespace umb
+}  // namespace storage::sparse
 }  // namespace storm

@@ -22,7 +22,7 @@
 #include "storm/storage/jani/traverser/RewardModelInformation.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
-#include "storm/storage/umb/utility/ValuationDescriptionBuilder.h"
+#include "storm/storage/valuations/ValuationDescriptionBuilder.h"
 #include "storm/utility/combinatorics.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -565,7 +565,7 @@ void JaniNextStateGenerator<ValueType, StateType>::unpackTransientVariableValues
 
 template<typename ValueType, typename StateType>
 storm::storage::sparse::Valuations JaniNextStateGenerator<ValueType, StateType>::initializeStateValuations() const {
-    storm::umb::ValuationDescriptionBuilder builder(this->model.getManager().shared_from_this());
+    storm::storage::sparse::ValuationDescriptionBuilder builder(this->model.getManager().shared_from_this());
     if (this->variableInformation.hasOutOfBoundsBit()) {
         builder.addBooleanVariable(this->variableInformation.outOfBoundsBit->variable);
     }
@@ -603,10 +603,10 @@ template<typename ValueType, typename StateType>
 void JaniNextStateGenerator<ValueType, StateType>::addStateValuation(storm::storage::sparse::state_type const& currentStateIndex,
                                                                      storm::storage::sparse::Valuations& valuations) const {
     // Add values for non-transient variables
-    unpackStateAppendToUmbValuations(*this->state, this->variableInformation, valuations.getUmbValuations());
+    unpackStateAppendToValuations(*this->state, this->variableInformation, valuations.getStorage());
 
     auto transientVariableValuation = getTransientVariableValuationAtLocations(getLocations(*this->state), *this->evaluator);
-    transientVariableValuation.setInUmbValuations(currentStateIndex, transientVariableInformation, valuations.getUmbValuations());
+    transientVariableValuation.setInValuations(currentStateIndex, transientVariableInformation, valuations.getStorage());
 }
 
 template<typename ValueType, typename StateType>

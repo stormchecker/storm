@@ -1,27 +1,27 @@
-#include "storm/storage/sparse/Valuations.h"
+#include "storm/storage/valuations/Valuations.h"
 
 #include <boost/algorithm/string/join.hpp>
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/storage/umb/model/Valuations.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 
 namespace storm::storage::sparse {
 
-Valuations::Valuations(storm::umb::ValuationClassDescription const umbValuationDescription,
-                       std::shared_ptr<storm::expressions::ExpressionManager const> const& manager, uint64_t const numEntities)
-    : umbValuations(std::make_unique<storm::umb::Valuations>(umbValuationDescription, manager)) {
+Valuations::Valuations(ValuationClassDescription const umbValuationDescription, std::shared_ptr<storm::expressions::ExpressionManager const> const& manager,
+                       uint64_t const numEntities)
+    : umbValuations(std::make_unique<ValuationsStorage>(umbValuationDescription, manager)) {
     umbValuations->resize(numEntities);
 }
 
-Valuations::Valuations(storm::umb::Valuations&& umbValuations) : umbValuations(std::make_unique<storm::umb::Valuations>(std::move(umbValuations))) {
+Valuations::Valuations(ValuationsStorage&& umbValuations) : umbValuations(std::make_unique<ValuationsStorage>(std::move(umbValuations))) {
     // Intentionally empty
 }
 
-// The type storm::umb::Valuations is incomplete (forward declared) in the header file and complete in this cpp file.
-// The member variable Valuations::umbValuations is of type std::unique_ptr<storm::umb::Valuations>.
-// To re-assign or destruct umbValuations, the type storm::umb::Valuations must be complete (because storm::umb::Valuations::~Valuations must be invoked).
+// The type ValuationsStorage is incomplete (forward declared) in the header file and complete in this cpp file.
+// The member variable Valuations::umbValuations is of type std::unique_ptr<ValuationsStorage>.
+// To re-assign or destruct umbValuations, the type ValuationsStorage must be complete (because ValuationsStorage::~ValuationsStorage must be invoked).
 // We therefore must define the following destructors / constructors / assignment operators in the .cpp file, not the header file.
 Valuations::~Valuations() = default;
 Valuations::Valuations(Valuations&& other) = default;
@@ -30,7 +30,7 @@ Valuations& Valuations::operator=(Valuations&& other) = default;
 Valuations::Valuations(Valuations const& other) {
     if (other.umbValuations) {
         // Create a deep copy
-        umbValuations = std::make_unique<storm::umb::Valuations>(*other.umbValuations);
+        umbValuations = std::make_unique<ValuationsStorage>(*other.umbValuations);
     }
 }
 
@@ -38,7 +38,7 @@ Valuations& Valuations::operator=(Valuations const& other) {
     if (this != &other) {
         if (other.umbValuations) {
             // Create a deep copy
-            umbValuations = std::make_unique<storm::umb::Valuations>(*other.umbValuations);
+            umbValuations = std::make_unique<ValuationsStorage>(*other.umbValuations);
         } else {
             umbValuations.reset();
         }
@@ -50,10 +50,10 @@ storm::expressions::ExpressionManager const& Valuations::getManager() const {
     return umbValuations->getManager();
 }
 
-storm::umb::Valuations const& Valuations::getUmbValuations() const {
+ValuationsStorage const& Valuations::getStorage() const {
     return *umbValuations;
 }
-storm::umb::Valuations& Valuations::getUmbValuations() {
+ValuationsStorage& Valuations::getStorage() {
     return *umbValuations;
 }
 

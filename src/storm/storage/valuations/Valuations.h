@@ -16,22 +16,20 @@ template<typename T>
 class ExpressionEvaluator;
 }
 
-namespace umb {
-struct ValuationClassDescription;
-class Valuations;
-}  // namespace umb
-
 namespace storage::sparse {
+
+struct ValuationClassDescription;
+class ValuationsStorage;
 
 /*!
  * Provides access to valuations of variables for a set of entities (e.g. states / observations).
- * This class serves as a wrapper around the more low-level storm::umb::Valuations class
+ * This class serves as a wrapper around the more low-level storm::storage::sparse::ValuationsStorage class
  */
 class Valuations {
    public:
-    Valuations(storm::umb::ValuationClassDescription const valuationClassDescription,
-               std::shared_ptr<storm::expressions::ExpressionManager const> const& manager = {}, uint64_t const numEntities = 0);
-    Valuations(storm::umb::Valuations&& umbValuations);
+    Valuations(ValuationClassDescription const valuationClassDescription, std::shared_ptr<storm::expressions::ExpressionManager const> const& manager = {},
+               uint64_t const numEntities = 0);
+    Valuations(ValuationsStorage&& umbValuations);
     Valuations(Valuations const& other);
     Valuations(Valuations&& other);
     ~Valuations();
@@ -39,8 +37,8 @@ class Valuations {
     Valuations& operator=(Valuations const& other);
 
     storm::expressions::ExpressionManager const& getManager() const;
-    storm::umb::Valuations const& getUmbValuations() const;
-    storm::umb::Valuations& getUmbValuations();
+    ValuationsStorage const& getStorage() const;
+    ValuationsStorage& getStorage();
 
     /*!
      * @return the numer of entities that this object describes
@@ -134,7 +132,7 @@ class Valuations {
     std::size_t hash() const;
 
    private:
-    std::unique_ptr<storm::umb::Valuations> umbValuations;
+    std::unique_ptr<ValuationsStorage> umbValuations;
 };
 
 }  // namespace storage::sparse

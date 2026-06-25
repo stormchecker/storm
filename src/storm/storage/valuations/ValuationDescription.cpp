@@ -1,6 +1,6 @@
-#include "storm/storage/umb/model/ValuationDescription.h"
+#include "storm/storage/valuations/ValuationDescription.h"
 
-namespace storm::umb {
+namespace storm::storage::sparse {
 uint64_t ValuationClassDescription::sizeInBits() const {
     uint64_t totalSize = 0;
     for (auto const& variable : variables) {
@@ -29,4 +29,4 @@ bool ValuationClassDescription::hasStringVariable() const {
     return false;
 }
 
-}  // namespace storm::umb
+}  // namespace storm::storage::sparse

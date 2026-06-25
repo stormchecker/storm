@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "storm/storage/umb/model/UmbModel.h"
-#include "storm/storage/umb/model/Valuations.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 
 #include "storm/models/ModelType.h"
 #include "storm/storage/BitVector.h"
@@ -266,9 +266,9 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> constructSparseModel(st
         auto const& svData = umbModel.valuations.states.value();
         STORM_LOG_ASSERT(svIndex.numStrings.has_value() == svData.stringMapping.has_value() && svIndex.numStrings.has_value() == svData.strings.has_value(),
                          "String mapping and strings must be given iff there are #strings mentioned in index.");
-        storm::umb::Valuations val(umbModel.index.transitionSystem.numStates, svIndex.classes, svData.valuations.value(),
-                                   svData.stringMapping.value_or(std::vector<uint64_t>()), svData.strings.value_or(std::vector<char>()),
-                                   svData.valuationToClass);
+        storm::storage::sparse::ValuationsStorage val(umbModel.index.transitionSystem.numStates, svIndex.classes, svData.valuations.value(),
+                                                      svData.stringMapping.value_or(std::vector<uint64_t>()), svData.strings.value_or(std::vector<char>()),
+                                                      svData.valuationToClass);
         components.stateValuations.emplace(std::move(val));
     } else {
         STORM_LOG_WARN_COND(!options.buildStateValuations, "State valuations requested but the UMB model does not have any.");
@@ -305,9 +305,9 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> constructSparseModel(st
             auto const& ovData = umbModel.valuations.observations.value();
             STORM_LOG_ASSERT(ovIndex.numStrings.has_value() == ovData.stringMapping.has_value() && ovIndex.numStrings.has_value() == ovData.strings.has_value(),
                              "String mapping and strings must be given iff there are #strings mentioned in index.");
-            storm::umb::Valuations val(umbModel.index.transitionSystem.numObservations, ovIndex.classes, ovData.valuations.value(),
-                                       ovData.stringMapping.value_or(std::vector<uint64_t>()), ovData.strings.value_or(std::vector<char>()),
-                                       ovData.valuationToClass);
+            storm::storage::sparse::ValuationsStorage val(umbModel.index.transitionSystem.numObservations, ovIndex.classes, ovData.valuations.value(),
+                                                          ovData.stringMapping.value_or(std::vector<uint64_t>()), ovData.strings.value_or(std::vector<char>()),
+                                                          ovData.valuationToClass);
             components.observationValuations.emplace(std::move(val));
         } else {
             STORM_LOG_WARN_COND(!options.buildStateValuations, "State valuations requested but the UMB model does not have any.");

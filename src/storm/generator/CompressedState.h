@@ -7,8 +7,8 @@
 #include "storm/storage/BitVector.h"
 
 namespace storm {
-namespace umb {
-class Valuations;
+namespace storage::sparse {
+class ValuationsStorage;
 }
 namespace expressions {
 template<typename ValueType>
@@ -65,13 +65,14 @@ storm::json<ValueType> unpackStateIntoJson(CompressedState const& state, Variabl
  * @param variableInformation The variables.
  * @param valuations the valuations to which the variable values should be appended.
  */
-void unpackStateAppendToUmbValuations(CompressedState const& state, VariableInformation const& variableInformation, storm::umb::Valuations& valuations);
+void unpackStateAppendToValuations(CompressedState const& state, VariableInformation const& variableInformation,
+                                      storm::storage::sparse::ValuationsStorage& valuations);
 
 /*!
  * Sets the values of observable variables and observation expressions to the given observationClassIndex of the given valuations.
  */
-void unpackObservationClassIntoUmbValuations(CompressedState const& observationClass, uint64_t const observationClassIndex,
-                                             VariableInformation const& variableInformation, storm::umb::Valuations& valuations);
+void unpackObservationClassIntoValuations(CompressedState const& observationClass, uint64_t const observationClassIndex,
+                                             VariableInformation const& variableInformation, storm::storage::sparse::ValuationsStorage& valuations);
 
 /*!
  * Returns a (human readable) string representation of the variable valuation encoded by the given state

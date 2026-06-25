@@ -9,7 +9,7 @@
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/SimpleValuation.h"
-#include "storm/storage/umb/model/Valuations.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 
 namespace storm {
 namespace generator {
@@ -78,11 +78,11 @@ CompressedState packStateFromValuation(expressions::SimpleValuation const& valua
 }
 
 namespace detail {
-enum class UnpackStateIntoUmbValuationsMode { State, Observation };
-template<UnpackStateIntoUmbValuationsMode Mode>
-void unpackIntoUmbValuations(CompressedState const& entityEncoding, uint64_t const entityIndex, VariableInformation const& variableInformation,
-                             storm::umb::Valuations& valuations) {
-    using enum UnpackStateIntoUmbValuationsMode;
+enum class UnpackStateIntoValuationsMode { State, Observation };
+template<UnpackStateIntoValuationsMode Mode>
+void unpackIntoValuations(CompressedState const& entityEncoding, uint64_t const entityIndex, VariableInformation const& variableInformation,
+                             storm::storage::sparse::ValuationsStorage& valuations) {
+    using enum UnpackStateIntoValuationsMode;
     STORM_LOG_ASSERT(entityIndex < valuations.size(),
                      "Valuation entity index " << entityIndex << " is out of bounds for valuations of size " << valuations.size() << ".");
     STORM_LOG_ASSERT(Mode != State || entityEncoding.size() == variableInformation.getTotalBitOffset(true),
@@ -128,14 +128,15 @@ void unpackIntoUmbValuations(CompressedState const& entityEncoding, uint64_t con
 
 }  // namespace detail
 
-void unpackStateAppendToUmbValuations(CompressedState const& state, VariableInformation const& variableInformation, storm::umb::Valuations& valuations) {
+void unpackStateAppendToValuations(CompressedState const& state, VariableInformation const& variableInformation,
+                                      storm::storage::sparse::ValuationsStorage& valuations) {
     valuations.resize(valuations.size() + 1);
-    detail::unpackIntoUmbValuations<detail::UnpackStateIntoUmbValuationsMode::State>(state, valuations.size() - 1, variableInformation, valuations);
+    detail::unpackIntoValuations<detail::UnpackStateIntoValuationsMode::State>(state, valuations.size() - 1, variableInformation, valuations);
 }
 
-void unpackObservationClassIntoUmbValuations(CompressedState const& observationClass, uint64_t const observationClassIndex,
-                                             VariableInformation const& variableInformation, storm::umb::Valuations& valuations) {
-    detail::unpackIntoUmbValuations<detail::UnpackStateIntoUmbValuationsMode::Observation>(observationClass, observationClassIndex, variableInformation,
+void unpackObservationClassIntoValuations(CompressedState const& observationClass, uint64_t const observationClassIndex,
+                                             VariableInformation const& variableInformation, storm::storage::sparse::ValuationsStorage& valuations) {
+    detail::unpackIntoValuations<detail::UnpackStateIntoValuationsMode::Observation>(observationClass, observationClassIndex, variableInformation,
                                                                                            valuations);
 }
 

@@ -15,7 +15,7 @@
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/Smg.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
-#include "storm/storage/umb/model/Valuations.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/transformer/MakePOMDPCanonic.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -388,8 +388,8 @@ void setIndexInformation(storm::models::sparse::Model<ValueType> const& model, s
     }
 
     // valuations:
-    auto createDescription = [](storm::umb::Valuations const& valuations) {
-        storm::umb::ValuationDescription descr;
+    auto createDescription = [](storm::storage::sparse::ValuationsStorage const& valuations) {
+        storm::storage::sparse::ValuationDescription descr;
         for (uint64_t classIndex = 0; classIndex < valuations.numClasses(); ++classIndex) {
             descr.classes.push_back(valuations.getClassDescription(classIndex));
         }
@@ -399,7 +399,7 @@ void setIndexInformation(storm::models::sparse::Model<ValueType> const& model, s
         return descr;
     };
     if (model.hasStateValuations()) {
-        index.valuations.emplace().states = createDescription(model.getStateValuations().getUmbValuations());
+        index.valuations.emplace().states = createDescription(model.getStateValuations().getStorage());
     }
     if (model.isPartiallyObservable()) {
         STORM_LOG_ASSERT(model.isOfType(storm::models::ModelType::Pomdp), "Only POMDPs are supported as partially observable models.");
@@ -408,7 +408,7 @@ void setIndexInformation(storm::models::sparse::Model<ValueType> const& model, s
             if (!index.valuations.has_value()) {
                 index.valuations.emplace();
             }
-            index.valuations->observations = createDescription(pomdp->getObservationValuations().getUmbValuations());
+            index.valuations->observations = createDescription(pomdp->getObservationValuations().getStorage());
         }
     }
 }
@@ -449,13 +449,13 @@ void sparseModelToUmb(storm::models::sparse::Model<ValueType> const& model, UmbM
 
     // Valuations
     if (model.hasStateValuations()) {
-        umbModel.valuations.states = model.getStateValuations().getUmbValuations().getRawUmbData();
+        umbModel.valuations.states = model.getStateValuations().getStorage().getRawUmbData();
     }
     if (model.isPartiallyObservable()) {
         STORM_LOG_ASSERT(model.isOfType(storm::models::ModelType::Pomdp), "Only POMDPs are supported as partially observable models.");
         auto pomdp = model.template as<storm::models::sparse::Pomdp<ValueType>>();
         if (pomdp->hasObservationValuations()) {
-            umbModel.valuations.observations = pomdp->getObservationValuations().getUmbValuations().getRawUmbData();
+            umbModel.valuations.observations = pomdp->getObservationValuations().getStorage().getRawUmbData();
         }
     }
 

@@ -10,7 +10,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/storage/sparse/Valuations.h"
+#include "storm/storage/valuations/Valuations.h"
 
 namespace storm {
 

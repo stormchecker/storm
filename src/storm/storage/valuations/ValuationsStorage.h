@@ -12,7 +12,7 @@
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/umb/model/StringEncoding.h"
 #include "storm/storage/umb/model/UmbModel.h"
-#include "storm/storage/umb/model/ValuationDescription.h"
+#include "storm/storage/valuations/ValuationDescription.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/NotSupportedException.h"
@@ -24,7 +24,7 @@ template<typename T>
 class ExpressionEvaluator;
 }
 
-namespace storm::umb {
+namespace storm::storage::sparse {
 
 /*!
  * Concept for a callback used in readCallback / readValue.
@@ -56,7 +56,15 @@ concept ValuationWriteCallback =
     std::invocable<F, uint64_t, storm::expressions::Variable const&, storm::NumberTraits<storm::RationalNumber>::IntegerType&> ||
     std::invocable<F, uint64_t, storm::expressions::Variable const&, std::string&>;
 
-class Valuations {
+/*!
+ * Stores valuations of variables for a set of entities (e.g. states / observations) in the packed,
+ * bit-level binary layout defined by the UMB (Unified Markov Binary) format. The in-memory layout of
+ * this class must therefore stay compliant with the UMB specification so that the raw data obtained via
+ * getRawUmbData() can be written to / read from a UMB file without further conversion.
+ * @see https://pmc-tools.github.io/umb/spec
+ * @see https://arxiv.org/abs/2606.17811
+ */
+class ValuationsStorage {
    public:
     using Integer = storm::NumberTraits<storm::RationalNumber>::IntegerType;
 
@@ -84,13 +92,13 @@ class Valuations {
         uint64_t const sizeInBytes;
     };
 
-    Valuations(Valuations const&) = default;
-    Valuations(Valuations&&) = default;
-    Valuations& operator=(Valuations const&) = default;
-    Valuations& operator=(Valuations&&) = default;
+    ValuationsStorage(ValuationsStorage const&) = default;
+    ValuationsStorage(ValuationsStorage&&) = default;
+    ValuationsStorage& operator=(ValuationsStorage const&) = default;
+    ValuationsStorage& operator=(ValuationsStorage&&) = default;
 
     /*!
-     * Full constructor. Creates a Valuations object from pre-existing packed data.
+     * Full constructor. Creates a ValuationsStorage object from pre-existing packed data.
      * @param numEntities    Number of entities whose valuations are stored.
      * @param descriptions   One ValuationClassDescription per class.
      * @param valuations     Packed valuation bytes for all entities.
@@ -105,12 +113,12 @@ class Valuations {
      *                       If a single non-null pointer is given, it is shared across all classes.
      *                       If one pointer per class is given, each class gets its own manager.
      */
-    Valuations(uint64_t numEntities, std::vector<ValuationClassDescription> const& descriptions, std::vector<char> valuations,
-               std::vector<uint64_t> stringMapping, std::vector<char> strings, std::optional<std::vector<uint32_t>> classes = {},
-               std::vector<std::shared_ptr<storm::expressions::ExpressionManager const>> expressionManagers = {});
+    ValuationsStorage(uint64_t numEntities, std::vector<ValuationClassDescription> const& descriptions, std::vector<char> valuations,
+                      std::vector<uint64_t> stringMapping, std::vector<char> strings, std::optional<std::vector<uint32_t>> classes = {},
+                      std::vector<std::shared_ptr<storm::expressions::ExpressionManager const>> expressionManagers = {});
 
     /*!
-     * Convenience constructor for a single-class Valuations with pre-existing packed data.
+     * Convenience constructor for a single-class ValuationsStorage with pre-existing packed data.
      * Equivalent to the full constructor with a single description, no class mapping, and no
      * string data. Asserts that @p description contains no string variables.
      * @param numEntities       Number of entities.
@@ -118,28 +126,28 @@ class Valuations {
      * @param valuations        Packed valuation bytes.
      * @param expressionManager Expression manager to use; a fresh one is created if null.
      */
-    Valuations(uint64_t numEntities, ValuationClassDescription const& description, std::vector<char> valuations,
-               std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager = {});
+    ValuationsStorage(uint64_t numEntities, ValuationClassDescription const& description, std::vector<char> valuations,
+                      std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager = {});
 
     /*!
-     * Constructs an empty (zero-entity) Valuations ready to receive multiple classes via
+     * Constructs an empty (zero-entity) ValuationsStorage ready to receive multiple classes via
      * emplaceBack / resize.
      * @param descriptions      One ValuationClassDescription per class.
      * @param expressionManagers  See full constructor for semantics.
      */
-    Valuations(std::vector<ValuationClassDescription> const& descriptions,
-               std::vector<std::shared_ptr<storm::expressions::ExpressionManager const>> expressionManagers = {});
+    ValuationsStorage(std::vector<ValuationClassDescription> const& descriptions,
+                      std::vector<std::shared_ptr<storm::expressions::ExpressionManager const>> expressionManagers = {});
 
     /*!
-     * Constructs an empty (zero-entity) single-class Valuations ready to receive entities via
+     * Constructs an empty (zero-entity) single-class ValuationsStorage ready to receive entities via
      * emplaceBack / resize.
      * @param description       The single valuation class description.
      * @param expressionManager Expression manager to use; a fresh one is created if null.
      */
-    Valuations(ValuationClassDescription const& description, std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager = {});
+    ValuationsStorage(ValuationClassDescription const& description, std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager = {});
 
     /*!
-     * @return The number of entities (e.g. states) that this Valuations assigns values for.
+     * @return The number of entities (e.g. states) that this ValuationsStorage assigns values for.
      */
     uint64_t size() const;
 
@@ -155,7 +163,7 @@ class Valuations {
     uint64_t numStrings() const;
 
     /*!
-     * @return True iff this Valuations contains at least one string variable (and therefore
+     * @return True iff this ValuationsStorage contains at least one string variable (and therefore
      *         maintains a non-empty string table).
      */
     bool hasStrings() const;
@@ -253,7 +261,7 @@ class Valuations {
     }
 
     /*!
-     * Convenience overload of emplaceBack for single-class Valuations (asserts numClasses() == 1).
+     * Convenience overload of emplaceBack for single-class ValuationsStorage (asserts numClasses() == 1).
      * @tparam AllowOptional  See emplaceBack(classIndex, callback).
      * @tparam AllowedTypes   See emplaceBack(classIndex, callback).
      * @tparam Callback       A type satisfying ValuationWriteCallback.
@@ -266,14 +274,14 @@ class Valuations {
     }
 
     /*!
-     * Constructs a new Valuations containing only the selected entities, in the order they
+     * Constructs a new ValuationsStorage containing only the selected entities, in the order they
      * appear in @p selectedEntities.  The string table is shared (copied) verbatim.
      * @tparam T  Either storm::storage::BitVector or any range of uint64_t entity indices.
      * @param selectedEntities  The set or sequence of entity indices to include.
-     * @return A new Valuations with size() equal to the number of selected entities.
+     * @return A new ValuationsStorage with size() equal to the number of selected entities.
      */
     template<typename T>
-    Valuations selectEntities(T const& selectedEntities) const;
+    ValuationsStorage selectEntities(T const& selectedEntities) const;
 
     /*!
      * Reads all variables of the given entity and invokes @p callback for each one.
@@ -440,7 +448,7 @@ class Valuations {
 
     /*!
      * Computes a hash of the entire valuation data.
-     * Two Valuations objects with the same entities and identical variable values will produce
+     * Two ValuationsStorage objects with the same entities and identical variable values will produce
      * the same hash.
      */
     std::size_t hash() const;
@@ -459,7 +467,7 @@ class Valuations {
     std::vector<uint64_t> stringMapping;
     std::vector<char> strings;
 
-    explicit Valuations(std::vector<VariablesInformation> const& variableClasses);
+    explicit ValuationsStorage(std::vector<VariablesInformation> const& variableClasses);
 
     VariablesInformation const& info(uint64_t entity) const;
     std::span<char const> getRawBytes(uint64_t entity) const;
@@ -554,14 +562,14 @@ class Valuations {
                 case String:
                     STORM_LOG_ASSERT(rawContent < numStrings(), "String index " << rawContent << " out of bounds (> " << numStrings() << ").");
                     // Prefer the string_view callback
-                    if (std::string_view const sv = stringVectorView(strings, stringMapping)[rawContent];
+                    if (std::string_view const sv = storm::umb::stringVectorView(strings, stringMapping)[rawContent];
                         invokeCallback(sv) || invokeCallback(std::string(sv))) {
                         return;
                     }
                     break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                                    "Valuations for variable type '" << varInfo.description.type.toString() << "' are not supported.");
+                                    "ValuationsStorage for variable type '" << varInfo.description.type.toString() << "' are not supported.");
             }
         }
         // reaching this point means that we could not handle the value in the fast path
@@ -603,7 +611,7 @@ class Valuations {
             }
             default:
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                                "Valuations for variable type '" << varInfo.description.type.toString() << "' are not supported.");
+                                "ValuationsStorage for variable type '" << varInfo.description.type.toString() << "' are not supported.");
         }
 
         STORM_LOG_THROW(false, storm::exceptions::UnexpectedException,
@@ -753,10 +761,10 @@ class Valuations {
                 break;
             default:
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                                "Valuations for variable type '" << varInfo.description.type.toString() << "' are not supported.");
+                                "ValuationsStorage for variable type '" << varInfo.description.type.toString() << "' are not supported.");
         }
         STORM_LOG_THROW(false, storm::exceptions::UnexpectedException,
                         "Variable " << varInfo.description.name << " of type " << varInfo.description.type.toString() << " is not handled.");
     }
 };
-}  // namespace storm::umb
+}  // namespace storm::storage::sparse
