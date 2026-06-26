@@ -11,16 +11,11 @@
 #include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
 
-class ValuationTest : public ::testing::Test {
-   protected:
-    void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
-#endif
-    }
-};
 
-TEST_F(ValuationTest, StateValuationConstruction) {
+TEST(ValuationTest, StateValuationConstruction) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::generator::NextStateGeneratorOptions generatorOptions;
     generatorOptions.setBuildStateValuations();
@@ -66,7 +61,10 @@ TEST_F(ValuationTest, StateValuationConstruction) {
     EXPECT_EQ(1 + 2 + 3 + 4 + 5 + 6, sum);
 }
 
-TEST_F(ValuationTest, StateValuationTransformation) {
+TEST(ValuationTest, StateValuationTransformation) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::generator::NextStateGeneratorOptions generatorOptions;
     generatorOptions.setBuildStateValuations();
