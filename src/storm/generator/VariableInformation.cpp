@@ -12,6 +12,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
 #include <cmath>
@@ -94,15 +95,8 @@ uint64_t getBitWidthLowerUpperBound(bool const& hasLowerBound, int64_t& lowerBou
 
 VariableInformation::VariableInformation(storm::prism::Program const& program, uint64_t reservedBitsForUnboundedVariables, bool outOfBoundsState)
     : totalBitOffset(0) {
-    auto getFreshName = [&program](std::string const& baseName) {
-        std::string name = baseName;
-        while (program.getManager().hasVariable(name)) {
-            name += "_";
-        }
-        return name;
-    };
     if (outOfBoundsState) {
-        outOfBoundsBit.emplace(program.getManager().declareBooleanVariable(getFreshName("_OutOfBoundsBit")), totalBitOffset, true, false);
+        outOfBoundsBit.emplace(program.getManager().declareBooleanVariable("_OutOfBoundsBit"), totalBitOffset, true, false);
         ++totalBitOffset;
     }
     for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
@@ -145,13 +139,15 @@ VariableInformation::VariableInformation(storm::prism::Program const& program, u
         }
     }
     for (auto const& oblab : program.getObservationLabels()) {
-        if (oblab.getStatePredicateExpression().hasBooleanType()) {
-            observationLabels.emplace_back(program.getManager().declareBooleanVariable(getFreshName(oblab.getName())));
+        storm::expressions::Variable obVar;
+        if (program.getManager().hasVariable(oblab.getName())) {
+            obVar = program.getManager().getVariable(oblab.getName());
+            auto const& obPredicate = oblab.getStatePredicateExpression();
+            STORM_LOG_THROW(obPredicate.isVariable() && obPredicate.getBaseExpression().asVariableExpression().getVariable() == obVar, storm::exceptions::NotSupportedException, "Observation valuations for label '" << oblab << " is not supported since a variable '" << oblab.getName() << "' is already known and the expression '" << oblab.getStatePredicateExpression() << "' is not equal to it.");
         } else {
-            STORM_LOG_ASSERT(oblab.getStatePredicateExpression().hasIntegerType(),
-                             "Unexpected type of observation label expression " << oblab.getStatePredicateExpression() << ".");
-            observationLabels.emplace_back(program.getManager().declareIntegerVariable(getFreshName(oblab.getName())));
+            obVar = program.getManager().declareVariable(oblab.getName(), oblab.getStatePredicateExpression().getType());
         }
+        observationLabels.emplace_back(obVar);
     }
 
     sortVariables();

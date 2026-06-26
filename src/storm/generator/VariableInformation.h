@@ -1,8 +1,6 @@
 #ifndef STORM_GENERATOR_VARIABLEINFORMATION_H_
 #define STORM_GENERATOR_VARIABLEINFORMATION_H_
 
-#include <boost/container/flat_map.hpp>
-#include <boost/optional/optional.hpp>
 #include <unordered_map>
 #include <vector>
 
