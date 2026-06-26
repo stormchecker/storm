@@ -10,9 +10,9 @@
 #include "storm/storage/jani/eliminator/ArrayEliminator.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
 #include <cmath>
@@ -143,7 +143,11 @@ VariableInformation::VariableInformation(storm::prism::Program const& program, u
         if (program.getManager().hasVariable(oblab.getName())) {
             obVar = program.getManager().getVariable(oblab.getName());
             auto const& obPredicate = oblab.getStatePredicateExpression();
-            STORM_LOG_THROW(obPredicate.isVariable() && obPredicate.getBaseExpression().asVariableExpression().getVariable() == obVar, storm::exceptions::NotSupportedException, "Observation valuations for label '" << oblab << " is not supported since a variable '" << oblab.getName() << "' is already known and the expression '" << oblab.getStatePredicateExpression() << "' is not equal to it.");
+            STORM_LOG_THROW(obPredicate.isVariable() && obPredicate.getBaseExpression().asVariableExpression().getVariable() == obVar,
+                            storm::exceptions::NotSupportedException,
+                            "Observation valuations for label '" << oblab << " is not supported since a variable '" << oblab.getName()
+                                                                 << "' is already known and the expression '" << oblab.getStatePredicateExpression()
+                                                                 << "' is not equal to it.");
         } else {
             obVar = program.getManager().declareVariable(oblab.getName(), oblab.getStatePredicateExpression().getType());
         }

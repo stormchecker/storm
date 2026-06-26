@@ -71,7 +71,7 @@ struct TransientVariableValuation {
     void setInEvaluator(storm::expressions::ExpressionEvaluator<ValueType>& evaluator, bool explorationChecks) const;
 
     void setInValuations(uint64_t const stateIndex, TransientVariableInformation<ValueType> const& info,
-                            storm::storage::sparse::ValuationsStorage& valuations) const;
+                         storm::storage::sparse::ValuationsStorage& valuations) const;
 };
 
 // A structure storing information about the used variables of the program.

@@ -80,7 +80,7 @@ void TransientVariableValuation<ValueType>::setInEvaluator(storm::expressions::E
 
 template<typename ValueType>
 void TransientVariableValuation<ValueType>::setInValuations(uint64_t const stateIndex, TransientVariableInformation<ValueType> const& info,
-                                                               storm::storage::sparse::ValuationsStorage& valuations) const {
+                                                            storm::storage::sparse::ValuationsStorage& valuations) const {
     auto writeValues = [stateIndex, &valuations](auto const& varInfos, auto const& varValues) {
         auto varIt = varValues.begin();
         auto const varIte = varValues.end();

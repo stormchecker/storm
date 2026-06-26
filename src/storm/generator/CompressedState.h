@@ -66,13 +66,13 @@ storm::json<ValueType> unpackStateIntoJson(CompressedState const& state, Variabl
  * @param valuations the valuations to which the variable values should be appended.
  */
 void unpackStateAppendToValuations(CompressedState const& state, VariableInformation const& variableInformation,
-                                      storm::storage::sparse::ValuationsStorage& valuations);
+                                   storm::storage::sparse::ValuationsStorage& valuations);
 
 /*!
  * Sets the values of observable variables and observation expressions to the given observationClassIndex of the given valuations.
  */
 void unpackObservationClassIntoValuations(CompressedState const& observationClass, uint64_t const observationClassIndex,
-                                             VariableInformation const& variableInformation, storm::storage::sparse::ValuationsStorage& valuations);
+                                          VariableInformation const& variableInformation, storm::storage::sparse::ValuationsStorage& valuations);
 
 /*!
  * Returns a (human readable) string representation of the variable valuation encoded by the given state

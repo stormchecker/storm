@@ -81,7 +81,7 @@ namespace detail {
 enum class UnpackStateIntoValuationsMode { State, Observation };
 template<UnpackStateIntoValuationsMode Mode>
 void unpackIntoValuations(CompressedState const& entityEncoding, uint64_t const entityIndex, VariableInformation const& variableInformation,
-                             storm::storage::sparse::ValuationsStorage& valuations) {
+                          storm::storage::sparse::ValuationsStorage& valuations) {
     using enum UnpackStateIntoValuationsMode;
     STORM_LOG_ASSERT(entityIndex < valuations.size(),
                      "Valuation entity index " << entityIndex << " is out of bounds for valuations of size " << valuations.size() << ".");
@@ -129,15 +129,14 @@ void unpackIntoValuations(CompressedState const& entityEncoding, uint64_t const 
 }  // namespace detail
 
 void unpackStateAppendToValuations(CompressedState const& state, VariableInformation const& variableInformation,
-                                      storm::storage::sparse::ValuationsStorage& valuations) {
+                                   storm::storage::sparse::ValuationsStorage& valuations) {
     valuations.resize(valuations.size() + 1);
     detail::unpackIntoValuations<detail::UnpackStateIntoValuationsMode::State>(state, valuations.size() - 1, variableInformation, valuations);
 }
 
 void unpackObservationClassIntoValuations(CompressedState const& observationClass, uint64_t const observationClassIndex,
-                                             VariableInformation const& variableInformation, storm::storage::sparse::ValuationsStorage& valuations) {
-    detail::unpackIntoValuations<detail::UnpackStateIntoValuationsMode::Observation>(observationClass, observationClassIndex, variableInformation,
-                                                                                           valuations);
+                                          VariableInformation const& variableInformation, storm::storage::sparse::ValuationsStorage& valuations) {
+    detail::unpackIntoValuations<detail::UnpackStateIntoValuationsMode::Observation>(observationClass, observationClassIndex, variableInformation, valuations);
 }
 
 std::string toString(CompressedState const& state, VariableInformation const& variableInformation) {
