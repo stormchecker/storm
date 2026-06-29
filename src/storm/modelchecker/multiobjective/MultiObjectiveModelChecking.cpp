@@ -5,6 +5,8 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/modelchecker/multiobjective/MultiObjectivePostprocessing.h"
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbAchievabilityQuery.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsAchievabilityChecker.h"
@@ -29,8 +31,10 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
                                                                 storm::logic::MultiObjectiveFormula const& formula, bool produceScheduler) {
     storm::utility::Stopwatch swTotal(true);
     storm::utility::Stopwatch swPreprocessing(true);
-    STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1,
+    STORM_LOG_THROW(model.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
                      "Multi-objective Model checking on model with multiple initial states is not supported.");
+    STORM_LOG_THROW(formula.isTradeoff(), storm::exceptions::IllegalFunctionCallException, "Invoked multi-objective model checking with a non-tradeoff formula " << formula << ".");
+
 
     // If we consider an MA, ensure that it is closed
     if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {

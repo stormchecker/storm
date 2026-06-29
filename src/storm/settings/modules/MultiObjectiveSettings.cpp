@@ -19,7 +19,6 @@ const std::string MultiObjectiveSettings::maxStepsOptionName = "maxsteps";
 const std::string MultiObjectiveSettings::schedulerRestrictionOptionName = "purescheds";
 const std::string MultiObjectiveSettings::printResultsOptionName = "printres";
 const std::string MultiObjectiveSettings::encodingOptionName = "encoding";
-const std::string MultiObjectiveSettings::lexicographicOptionName = "lex";
 
 MultiObjectiveSettings::MultiObjectiveSettings() : ModuleSettings(moduleName) {
     std::vector<std::string> methods = {"pcaa", "constraintbased"};
@@ -105,10 +104,6 @@ MultiObjectiveSettings::MultiObjectiveSettings() : ModuleSettings(moduleName) {
                                          .setDefaultValueBoolean(false)
                                          .makeOptional()
                                          .build())
-                        .build());
-
-    this->addOption(storm::settings::OptionBuilder(moduleName, lexicographicOptionName, false,
-                                                   "(Deprecated) If set, lexicographic model checking instead of normal multi objective is performed.")
                         .build());
 }
 
@@ -230,15 +225,6 @@ bool MultiObjectiveSettings::isIndicatorConstraintsSet() const {
 
 bool MultiObjectiveSettings::isRedundantBsccConstraintsSet() const {
     return this->getOption(encodingOptionName).getArgumentByName("redundant").getValueAsBoolean();
-}
-
-bool MultiObjectiveSettings::isLexicographicModelCheckingSet() const {
-    return this->getOption(lexicographicOptionName).getHasOptionBeenSet();
-}
-
-void MultiObjectiveSettings::finalize() {
-    STORM_LOG_WARN_COND(!isLexicographicModelCheckingSet(),
-                        "Option '--" << moduleName << ":" << lexicographicOptionName << "' is deprecated. Use a `multilex(..)` formula instead.");
 }
 
 bool MultiObjectiveSettings::check() const {
