@@ -149,15 +149,6 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
                 break;
             }
         }
-
-        // If requested, we store the scheduler for retrieval.
-        if (this->isTrackSchedulerSet()) {
-            if (!auxiliaryRowGroupVector) {
-                auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
-            }
-            this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
-            this->A->multiplyAndReduce(dir, this->A->getRowGroupIndices(), x, &b, *auxiliaryRowGroupVector.get(), &this->schedulerChoices.get());
-        }
     }
 
     if (!this->isCachingEnabled()) {
@@ -229,7 +220,7 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveTrivia
                     storm::NumberTraits<ValueType>::IsExact || !storm::utility::isAlmostZero(denominator) || storm::utility::isZero(denominator),
                     "State " << sccState << " has a selfloop with probability '1-(" << denominator << ")'. This could be an indication for numerical issues.");
                 if (storm::utility::isZero(denominator)) {
-                    // In this case we have a selfloop on this state. This can never an optimal choice:
+                    // In this case we have a selfloop on this state. This can never be an optimal choice:
                     // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
                     // When maximizing, this choice reflects probability zero (non-optimal) or reward infinity (should already be handled during preprocessing).
                     continue;
