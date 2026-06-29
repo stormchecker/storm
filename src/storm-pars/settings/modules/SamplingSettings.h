@@ -23,6 +23,11 @@ class SamplingSettings : public ModuleSettings {
      */
     bool isSampleExactSet() const;
 
+    /*!
+     * Retrieves whether samples are to be from the derivative.
+     */
+    bool isSampleDerivativeSet() const;
+
     static const std::string moduleName;
 };
 
