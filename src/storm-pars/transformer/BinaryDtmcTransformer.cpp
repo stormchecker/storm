@@ -24,7 +24,7 @@ std::shared_ptr<storm::models::sparse::Dtmc<RationalFunction>> BinaryDtmcTransfo
     }
     components.transitionMatrix = std::move(data.simpleMatrix);
     if (keepStateValuations && dtmc.hasStateValuations()) {
-        components.stateValuations = dtmc.getStateValuations().blowup(data.simpleStateToOriginalState);
+        components.stateValuations = dtmc.getStateValuations().selectEntities(data.simpleStateToOriginalState);
     }
 
     return std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(std::move(components.transitionMatrix), std::move(components.stateLabeling),

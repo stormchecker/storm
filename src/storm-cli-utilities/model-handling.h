@@ -612,6 +612,7 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
         storm::umb::ImportOptions options;
         options.buildChoiceLabeling = buildSettings.isBuildChoiceLabelsSet();
         options.buildStateValuations = buildSettings.isBuildStateValuationsSet();
+        options.buildObservationValuations = buildSettings.isBuildObservationValuationsSet();
         if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "RationalFunction currently not supported for UMB models.");
         } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {

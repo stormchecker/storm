@@ -22,5 +22,11 @@ struct ImportOptions {
      * State valuations will only be built if this is set to true *and* the umb model contains appropriate information.
      */
     bool buildStateValuations{true};
+
+    /*!
+     * Controls building of observation valuations.
+     * Observation valuations will only be built if this is set to true *and* the umb model contains appropriate information.
+     */
+    bool buildObservationValuations{true};
 };
 }  // namespace storm::umb

@@ -166,7 +166,7 @@ void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::
         os << '\n';
         // Write state valuations as comments
         if (sparseModel->hasStateValuations()) {
-            os << "//" << sparseModel->getStateValuations().getStateInfo(group) << '\n';
+            os << "//" << sparseModel->getStateValuations().toString(group) << '\n';
         }
 
         // Write probabilities

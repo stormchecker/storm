@@ -7,6 +7,9 @@
 #include "storm/storage/BitVector.h"
 
 namespace storm {
+namespace storage::sparse {
+class ValuationsStorage;
+}
 namespace expressions {
 template<typename ValueType>
 class ExpressionEvaluator;
@@ -56,16 +59,20 @@ template<typename ValueType>
 storm::json<ValueType> unpackStateIntoJson(CompressedState const& state, VariableInformation const& variableInformation, bool onlyObservable);
 
 /*!
- * Appends the values of the given variables in the given state to the corresponding result vectors.
- * locationValues are inserted before integerValues (relevant if both, locationValues and integerValues actually refer to the same vector)
- * @param state The state
- * @param variableInformation The variables
- * @param locationValues
- * @param booleanValues
- * @param integerValues
+ * Appends the values of the variables in the given state to the valuations object.
+ * Assumes that the order of variables in the variableInformation and valuations objects are aligned.
+ * @param state The state.
+ * @param variableInformation The variables.
+ * @param valuations the valuations to which the variable values should be appended.
  */
-void extractVariableValues(CompressedState const& state, VariableInformation const& variableInformation, std::vector<int64_t>& locationValues,
-                           std::vector<bool>& booleanValues, std::vector<int64_t>& integerValues);
+void unpackStateAppendToValuations(CompressedState const& state, VariableInformation const& variableInformation,
+                                   storm::storage::sparse::ValuationsStorage& valuations);
+
+/*!
+ * Sets the values of observable variables and observation expressions to the given observationClassIndex of the given valuations.
+ */
+void unpackObservationClassIntoValuations(CompressedState const& observationClass, uint64_t const observationClassIndex,
+                                          VariableInformation const& variableInformation, storm::storage::sparse::ValuationsStorage& valuations);
 
 /*!
  * Returns a (human readable) string representation of the variable valuation encoded by the given state

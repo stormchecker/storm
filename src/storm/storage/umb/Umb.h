@@ -14,6 +14,11 @@ enum class ModelType;
 class ModelBase;
 }  // namespace models
 
+/*!
+ * Import and export of umb files.
+ * @see https://pmc-tools.github.io/umb/spec
+ * @see https://arxiv.org/abs/2606.17811
+ */
 namespace umb {
 
 template<typename ValueType>

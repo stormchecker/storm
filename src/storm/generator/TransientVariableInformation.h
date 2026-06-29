@@ -26,10 +26,16 @@ template<typename ValueType>
 class ExpressionEvaluator;
 }
 
+namespace storage::sparse {
+class ValuationsStorage;
+}
+
 namespace generator {
 
-// A structure storing information about a transient variable
+template<typename ValueType>
+struct TransientVariableInformation;
 
+// A structure storing information about a transient variable
 template<typename VariableType>
 struct TransientVariableData {
     TransientVariableData(storm::expressions::Variable const& variable, boost::optional<VariableType> const& lowerBound,
@@ -58,35 +64,14 @@ struct TransientVariableValuation {
     std::vector<std::pair<TransientVariableData<int64_t> const*, int64_t>> integerValues;
     std::vector<std::pair<TransientVariableData<ValueType> const*, ValueType>> rationalValues;
 
-    void clear() {
-        booleanValues.clear();
-        integerValues.clear();
-        rationalValues.clear();
-    }
+    void clear();
 
-    bool empty() const {
-        return booleanValues.empty() && integerValues.empty() && rationalValues.empty();
-    }
+    bool empty() const;
 
-    void setInEvaluator(storm::expressions::ExpressionEvaluator<ValueType>& evaluator, bool explorationChecks) const {
-        for (auto const& varValue : booleanValues) {
-            evaluator.setBooleanValue(varValue.first->variable, varValue.second);
-        }
-        for (auto const& varValue : integerValues) {
-            if (explorationChecks) {
-                STORM_LOG_THROW(!varValue.first->lowerBound.is_initialized() || varValue.first->lowerBound.get() <= varValue.second,
-                                storm::exceptions::OutOfRangeException,
-                                "The assigned value for transient variable " << varValue.first->variable.getName() << " is smaller than its lower bound.");
-                STORM_LOG_THROW(!varValue.first->upperBound.is_initialized() || varValue.second <= varValue.first->upperBound.get(),
-                                storm::exceptions::OutOfRangeException,
-                                "The assigned value for transient variable " << varValue.first->variable.getName() << " is higher than its upper bound.");
-            }
-            evaluator.setIntegerValue(varValue.first->variable, varValue.second);
-        }
-        for (auto const& varValue : rationalValues) {
-            evaluator.setRationalValue(varValue.first->variable, varValue.second);
-        }
-    }
+    void setInEvaluator(storm::expressions::ExpressionEvaluator<ValueType>& evaluator, bool explorationChecks) const;
+
+    void setInValuations(uint64_t const stateIndex, TransientVariableInformation<ValueType> const& info,
+                         storm::storage::sparse::ValuationsStorage& valuations) const;
 };
 
 // A structure storing information about the used variables of the program.

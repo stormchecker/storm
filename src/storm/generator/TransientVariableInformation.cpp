@@ -8,6 +8,7 @@
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/eliminator/ArrayEliminator.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -42,6 +43,66 @@ template<typename VariableType>
 TransientVariableData<VariableType>::TransientVariableData(storm::expressions::Variable const& variable, VariableType const& defaultValue, bool global)
     : variable(variable), defaultValue(defaultValue), global(global) {
     // Intentionally left empty.
+}
+
+template<typename ValueType>
+void TransientVariableValuation<ValueType>::clear() {
+    booleanValues.clear();
+    integerValues.clear();
+    rationalValues.clear();
+}
+
+template<typename ValueType>
+bool TransientVariableValuation<ValueType>::empty() const {
+    return booleanValues.empty() && integerValues.empty() && rationalValues.empty();
+}
+
+template<typename ValueType>
+void TransientVariableValuation<ValueType>::setInEvaluator(storm::expressions::ExpressionEvaluator<ValueType>& evaluator, bool explorationChecks) const {
+    for (auto const& varValue : booleanValues) {
+        evaluator.setBooleanValue(varValue.first->variable, varValue.second);
+    }
+    for (auto const& varValue : integerValues) {
+        if (explorationChecks) {
+            STORM_LOG_THROW(!varValue.first->lowerBound.is_initialized() || varValue.first->lowerBound.get() <= varValue.second,
+                            storm::exceptions::OutOfRangeException,
+                            "The assigned value for transient variable " << varValue.first->variable.getName() << " is smaller than its lower bound.");
+            STORM_LOG_THROW(!varValue.first->upperBound.is_initialized() || varValue.second <= varValue.first->upperBound.get(),
+                            storm::exceptions::OutOfRangeException,
+                            "The assigned value for transient variable " << varValue.first->variable.getName() << " is higher than its upper bound.");
+        }
+        evaluator.setIntegerValue(varValue.first->variable, varValue.second);
+    }
+    for (auto const& varValue : rationalValues) {
+        evaluator.setRationalValue(varValue.first->variable, varValue.second);
+    }
+}
+
+template<typename ValueType>
+void TransientVariableValuation<ValueType>::setInValuations(uint64_t const stateIndex, TransientVariableInformation<ValueType> const& info,
+                                                            storm::storage::sparse::ValuationsStorage& valuations) const {
+    auto writeValues = [stateIndex, &valuations](auto const& varInfos, auto const& varValues) {
+        auto varIt = varValues.begin();
+        auto const varIte = varValues.end();
+        for (auto const& varInfo : varInfos) {
+            bool const hasValue = varIt != varIte && varIt->first->variable == varInfo.variable;
+            auto const& value = hasValue ? varIt->second : varInfo.defaultValue;
+            if (hasValue) {
+                ++varIt;
+            }
+            if constexpr (std::is_same_v<std::remove_cvref_t<decltype(value)>, storm::RationalFunction>) {
+                STORM_LOG_THROW(
+                    storm::utility::isConstant(value), storm::exceptions::NotSupportedException,
+                    "Non-constant variable valuations are not supported. Got value " << value << " for variable " << varInfo.variable.getName() << ".");
+                valuations.writeValue(stateIndex, varInfo.variable, storm::utility::convertNumber<storm::RationalNumber>(value));
+            } else {
+                valuations.writeValue(stateIndex, varInfo.variable, value);
+            }
+        }
+    };
+    writeValues(info.booleanVariableInformation, booleanValues);
+    writeValues(info.integerVariableInformation, integerValues);
+    writeValues(info.rationalVariableInformation, rationalValues);
 }
 
 template<typename ValueType>
@@ -166,6 +227,9 @@ void TransientVariableInformation<ValueType>::setDefaultValuesInEvaluator(storm:
     }
 }
 
+template struct TransientVariableValuation<double>;
+template struct TransientVariableValuation<storm::RationalNumber>;
+template struct TransientVariableValuation<storm::RationalFunction>;
 template struct TransientVariableInformation<double>;
 template struct TransientVariableInformation<storm::RationalNumber>;
 template struct TransientVariableInformation<storm::RationalFunction>;

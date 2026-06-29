@@ -6,6 +6,9 @@
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/valuations/ValuationDescriptionBuilder.h"
+#include "storm/storage/valuations/Valuations.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/utility/ConstantsComparator.h"
 
 #undef _VERBOSE_OBSERVATION_UNFOLDING
@@ -42,9 +45,18 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
     std::cout << "build valution builder..\n";
 #endif
-    storm::storage::sparse::StateValuationsBuilder svbuilder;
-    svbuilder.addVariable(svvar);
-    svbuilder.addVariable(tsvar);
+    // Initialize state valuations
+    storm::storage::sparse::ValuationsStorage stateValuations = [this, &observations]() {
+        storm::storage::sparse::ValuationDescriptionBuilder svBuilder(exprManager);
+        svBuilder.addIntegerVariable(svvar, -1, static_cast<int64_t>(model.getNumberOfStates()) - 1);
+        svBuilder.addIntegerVariable(tsvar, -1, observations.size() - 1);
+        return storm::storage::sparse::ValuationsStorage(svBuilder.buildClassDescription(), exprManager);
+    }();
+
+    // Shorthand for adding the next state's valuations with input model state index s and trace step t
+    auto addStateValuation = [this, &stateValuations](int64_t s, int64_t t) {
+        stateValuations.emplaceBack<false, int64_t>([this, s, t](auto, auto const& var, auto& value) { value = var == svvar ? s : t; });
+    };
 
     std::unordered_map<uint64_t, uint64_t> unfoldedToOld;
     std::unordered_map<uint64_t, uint64_t> unfoldedToOldNextStep;
@@ -73,7 +85,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
         // the violated state (only used when no rejection sampling) is a sink state
         transitionMatrixBuilder.newRowGroup(violatedState);
         transitionMatrixBuilder.addNextValue(violatedState, violatedState, storm::utility::one<ValueType>());
-        svbuilder.addState(violatedState, {}, {-1, -1});
+        addStateValuation(-1, -1);
     }
 
     // Now we are starting to build the MDP from the initial state onwards.
@@ -93,7 +105,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
 #endif
             STORM_LOG_ASSERT(step == 0 || newRowCount == transitionMatrixBuilder.getLastRow() + 1,
                              "step " << step << " newRowCount " << newRowCount << " lastRow " << transitionMatrixBuilder.getLastRow());
-            svbuilder.addState(unfoldedToOldEntry.first, {}, {static_cast<int64_t>(unfoldedToOldEntry.second), static_cast<int64_t>(step)});
+            addStateValuation(unfoldedToOldEntry.second, step);
             uint64_t oldRowIndexStart = model.getNondeterministicChoiceIndices()[unfoldedToOldEntry.second];
             uint64_t oldRowIndexEnd = model.getNondeterministicChoiceIndices()[unfoldedToOldEntry.second + 1];
 
@@ -159,8 +171,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     uint64_t sinkState = newStateIndex;
     uint64_t targetState = newStateIndex + 1;
     for (auto const& unfoldedToOldEntry : unfoldedToOldNextStep) {
-        svbuilder.addState(unfoldedToOldEntry.first, {}, {static_cast<int64_t>(unfoldedToOldEntry.second), static_cast<int64_t>(observations.size() - 1)});
-
+        addStateValuation(unfoldedToOldEntry.second, observations.size() - 1);
         transitionMatrixBuilder.newRowGroup(newRowGroupStart);
         STORM_LOG_ASSERT(risk.size() > unfoldedToOldEntry.second, "Must be a state");
         STORM_LOG_ASSERT(storm::utility::isBetween(storm::utility::zero<ValueType>(), risk[unfoldedToOldEntry.second], storm::utility::one<ValueType>()),
@@ -177,13 +188,14 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     // sink state
     transitionMatrixBuilder.newRowGroup(newRowGroupStart);
     transitionMatrixBuilder.addNextValue(newRowGroupStart, sinkState, storm::utility::one<ValueType>());
-    svbuilder.addState(sinkState, {}, {-1, -1});
+    addStateValuation(-1, -1);
 
     newRowGroupStart++;
     transitionMatrixBuilder.newRowGroup(newRowGroupStart);
     // target state
     transitionMatrixBuilder.addNextValue(newRowGroupStart, targetState, storm::utility::one<ValueType>());
-    svbuilder.addState(targetState, {}, {-1, -1});
+    addStateValuation(-1, -1);
+
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
     std::cout << "build matrix...\n";
 #endif
@@ -207,7 +219,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     labeling.addLabel("init");
     labeling.addLabelToState("init", initialState);
     components.stateLabeling = labeling;
-    components.stateValuations = svbuilder.build();
+    components.stateValuations = std::move(stateValuations);
     return std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(components));
 }
 

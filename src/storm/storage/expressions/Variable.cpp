@@ -75,5 +75,9 @@ bool Variable::hasRationalType() const {
 bool Variable::hasNumericalType() const {
     return this->getType().isNumericalType();
 }
+
+bool Variable::hasStringType() const {
+    return this->getType().isStringType();
+}
 }  // namespace expressions
 }  // namespace storm
