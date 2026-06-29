@@ -140,7 +140,7 @@ class MultiObjectiveSettings : public ModuleSettings {
      * @return True if the settings are consistent.
      */
     virtual bool check() const override;
-    
+
     const static std::string moduleName;
 
    private:
