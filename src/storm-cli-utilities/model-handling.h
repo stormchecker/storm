@@ -438,7 +438,7 @@ inline std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicIn
                         "Can not translate properties to multi-objective formula because no properties were specified.");
         // If we come from storm-pars, the following fails as multiObjectiveSettings are not loaded
         auto multiObjSettings = storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>();
-        output.properties = {storm::api::createMultiObjectiveProperty(output.properties, multiObjSettings.isLexicographicModelCheckingSet())};
+        output.properties = {storm::api::createMultiObjectiveProperty(output.properties, false)};
     }
 
     // Substitute constant definitions in symbolic input.
