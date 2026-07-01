@@ -54,7 +54,9 @@ At this point new commits can be added to Storm again.
 A natural next step is to [prepare a stormpy release](https://github.com/stormchecker/stormpy/blob/master/doc/checklist_new_release.md).
 
 9. Update the packages for the supported operating systems:
-   - macOS: Update the [Homebrew formula](https://github.com/moves-rwth/homebrew-storm)
+   - macOS: Update the [Homebrew formula](https://github.com/moves-rwth/homebrew-storm):
+     - Bump the Storrm and carl-storm versions, and update the checksums
+     - After the CI for a PR is successful, add the label `pr-pull`. This automatically creates a new Release with the corresponding homebrew binaries.
    - Archlinux: Update the [stormchecker](https://aur.archlinux.org/packages/stormchecker) package in the AUR.
 
 10. Announce the new Storm version on the [website](http://www.stormchecker.org/news.html).
