@@ -1,0 +1,37 @@
+name: Get Storm version
+on:
+  workflow_call:
+    outputs:
+      version:
+        description: Version from CMakeLists
+        value: ${{ jobs.get-version.outputs.version }}
+      sha:
+        description: Storm commit SHA
+        value: ${{ jobs.get-version.outputs.sha }}
+
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          fetch-depth: 1
+          sparse-checkout: CMakeLists.txt
+
+      - id: sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - id: version
+        run: |
+          VERSION=$(sed -n '/^project(storm$/,/^)/{/^[[:space:]]*VERSION[[:space:]]/s/.*VERSION[[:space:]]*//p}' CMakeLists.txt)
+          BASE=$(echo "$VERSION" | cut -d. -f1-3)
+          if [ -z "$BASE" ]; then
+            echo "Failed to extract version from CMakeLists.txt" >&2
+            exit 1
+          fi
+          echo "version=$BASE" >> "$GITHUB_OUTPUT"
