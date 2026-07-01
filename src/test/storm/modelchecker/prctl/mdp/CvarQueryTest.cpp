@@ -183,8 +183,7 @@ TEST(CvarSspRewardParetoFrontTest, KeepsLowerLeftIncomparablePoints) {
 
 TEST(CvarSspRewardParetoValueIterationOperatorTest, AppliesRewardShiftsAndUnionsActionFronts) {
     using ParetoFront = storm::modelchecker::cvar::SspRewardParetoFront<double>;
-    using ParetoViOperator =
-        storm::modelchecker::cvar::SspParetoValueIterationOperator<double, storm::modelchecker::cvar::SspParetoFrontKind::RewardLowerTail>;
+    using ParetoViOperator = storm::modelchecker::cvar::SspParetoValueIterationOperator<double, storm::modelchecker::cvar::SspParetoFrontKind::RewardLowerTail>;
     using FrontierLayer = std::vector<ParetoFront>;
     using FrontierWindow = std::vector<FrontierLayer>;
 

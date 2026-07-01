@@ -130,8 +130,8 @@ bool normalizeTargetStatesToAbsorbing(storm::storage::SparseMatrix<ValueType>& t
 
 template<typename ValueType>
 void validateRewardAlmostSureReachability(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                          storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                          storm::storage::BitVector const& targetStates, storm::storage::BitVector const& reachableStates) {
+                                          storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates,
+                                          storm::storage::BitVector const& reachableStates) {
     storm::storage::BitVector prob1AStates =
         storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions,
                                              storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), targetStates);

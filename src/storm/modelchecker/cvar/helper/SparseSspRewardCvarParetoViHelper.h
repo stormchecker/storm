@@ -69,7 +69,8 @@ class SparseSspRewardCvarParetoViHelper {
             }
         }
 
-        STORM_LOG_THROW(bestCandidate.has_value(), storm::exceptions::UnexpectedException, "CVaR SSP reward value iteration did not find a feasible candidate.");
+        STORM_LOG_THROW(bestCandidate.has_value(), storm::exceptions::UnexpectedException,
+                        "CVaR SSP reward value iteration did not find a feasible candidate.");
         return {bestCandidate.value(), nullptr};
     }
 
@@ -77,8 +78,7 @@ class SparseSspRewardCvarParetoViHelper {
     FrontierLayer createInitialFrontierLayer(int64_t rewardThreshold) const {
         FrontierLayer baseLayer(paretoViOperator.getStateCount());
         if (rewardThreshold >= 0) {
-            ParetoFront const targetFront =
-                ParetoFront::singleton(storm::utility::one<ValueType>(), storm::utility::convertNumber<ValueType>(rewardThreshold));
+            ParetoFront const targetFront = ParetoFront::singleton(storm::utility::one<ValueType>(), storm::utility::convertNumber<ValueType>(rewardThreshold));
             for (auto state : paretoViOperator.getReachableTargetStates()) {
                 baseLayer[state] = targetFront;
             }
