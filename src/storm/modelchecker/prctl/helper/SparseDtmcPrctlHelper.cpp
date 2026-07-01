@@ -860,7 +860,7 @@ std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, Solu
     } else {
         // Prepare result vector.
         std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::infinity<ValueType>());
-        STORM_LOG_THROW(!conditionStates.empty(), storm::exceptions::NotSupportedException,
+        STORM_LOG_THROW(!conditionStates.empty(), storm::exceptions::InvalidPropertyException,
                         "The condition set has probability 0, so the conditional probability is not defined.");
 
         BaierTransformedModel transformedModel =
@@ -901,7 +901,7 @@ std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, Solu
     if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support computing conditional rewards with interval models.");
     } else {
-        STORM_LOG_THROW(!conditionStates.empty(), storm::exceptions::NotSupportedException,
+        STORM_LOG_THROW(!conditionStates.empty(), storm::exceptions::InvalidPropertyException,
                         "The condition set has probability 0, so the conditional probability is not defined.");
 
         // Prepare result vector.

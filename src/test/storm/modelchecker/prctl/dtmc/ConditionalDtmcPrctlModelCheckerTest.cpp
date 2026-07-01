@@ -7,6 +7,7 @@
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -167,7 +168,7 @@ TYPED_TEST(ConditionalDtmcPrctlModelCheckerTest, Conditional) {
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"target\" || F \"unreachable\"]");
 
-    STORM_SILENT_EXPECT_THROW(checker.check(this->env(), *formula), storm::exceptions::NotSupportedException);
+    STORM_SILENT_EXPECT_THROW(checker.check(this->env(), *formula), storm::exceptions::InvalidPropertyException);
 
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"target\"]");
 
@@ -183,6 +184,6 @@ TYPED_TEST(ConditionalDtmcPrctlModelCheckerTest, Conditional) {
 
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"target\" || F \"unreachable\"]");
 
-    STORM_SILENT_EXPECT_THROW(checker.check(this->env(), *formula), storm::exceptions::NotSupportedException);
+    STORM_SILENT_EXPECT_THROW(checker.check(this->env(), *formula), storm::exceptions::InvalidPropertyException);
 }
 }  // namespace
