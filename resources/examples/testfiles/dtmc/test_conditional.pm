@@ -14,5 +14,6 @@ rewards
 	s=2 : 1;
 endrewards
 
+label "unreachable" = false;
 label "condition" = s=2;
 label "target" = s=3;
