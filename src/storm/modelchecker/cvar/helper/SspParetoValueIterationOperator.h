@@ -21,10 +21,10 @@ namespace cvar {
  * cost-window semantics explicit: each action row reads from the predecessor layer determined by the current
  * cost bound minus that action's integer cost.
  */
-template<typename ValueType>
+template<typename ValueType, SspParetoFrontKind FrontKind = SspParetoFrontKind::CostUpperTail>
 class SspParetoValueIterationOperator {
    public:
-    using ParetoFront = SspParetoFront<ValueType>;
+    using ParetoFront = SspParetoFront<ValueType, FrontKind>;
     using FrontierLayer = std::vector<ParetoFront>;
     using FrontierWindow = std::vector<FrontierLayer>;
 
@@ -37,7 +37,7 @@ class SspParetoValueIterationOperator {
     void apply(uint64_t costBound, FrontierWindow const& frontierWindow, FrontierLayer& outputLayer) const {
         prepareOutputLayer(outputLayer);
 
-        ParetoFront const targetFront = createTargetFrontier();
+        ParetoFront const targetFront = createTargetFrontier(costBound);
         for (auto state : reachableTargetStates) {
             outputLayer[state] = targetFront;
         }
@@ -72,7 +72,15 @@ class SspParetoValueIterationOperator {
     }
 
     static ParetoFront createTargetFrontier() {
-        return ParetoFront::singleton(storm::utility::one<ValueType>(), storm::utility::zero<ValueType>());
+        return createTargetFrontier(0);
+    }
+
+    static ParetoFront createTargetFrontier(uint64_t costBound) {
+        if constexpr (FrontKind == SspParetoFrontKind::CostUpperTail) {
+            return ParetoFront::singleton(storm::utility::one<ValueType>(), storm::utility::zero<ValueType>());
+        } else {
+            return ParetoFront::singleton(storm::utility::one<ValueType>(), storm::utility::convertNumber<ValueType>(costBound));
+        }
     }
 
    private:

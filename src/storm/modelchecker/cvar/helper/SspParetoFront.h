@@ -16,17 +16,23 @@ namespace storm {
 namespace modelchecker {
 namespace cvar {
 
+enum class SspParetoFrontKind { CostUpperTail, RewardLowerTail };
+
 /*!
- * Represents the lower-right boundary of one SSP CVaR Pareto set from the paper.
+ * Represents one SSP CVaR Pareto frontier.
  *
- * For a fixed state and cost bound n, each point (p, E) represents an achievable tradeoff where:
+ * For the cost-side upper-tail algorithm, each point (p, E) represents an achievable tradeoff where:
  *  - p is the probability of reaching the goal within the current cost bound, and
  *  - E is the expected continuation cost beyond that bound.
  *
- * The class only stores extremal boundary points. The upward/leftward closed polygon itself is induced by
- * these points together with convex closure.
+ * For the reward-side lower-tail algorithm, each point (p, e) represents an achievable tradeoff where:
+ *  - p is the probability of accumulating reward at most the current threshold, and
+ *  - e is the expected shortfall below that threshold.
+ *
+ * The class only stores extremal boundary points. The closed polygon itself is induced by these points together
+ * with convex closure. Cost frontiers use the original lower-right order; reward frontiers use lower-left order.
  */
-template<typename ValueType>
+template<typename ValueType, SspParetoFrontKind FrontKind = SspParetoFrontKind::CostUpperTail>
 class SspParetoFront {
    public:
     struct Point {
@@ -41,11 +47,20 @@ class SspParetoFront {
             if (probability == other.probability && expectedCost == other.expectedCost) {
                 return DominanceResult::Equal;
             }
-            if (probability >= other.probability && expectedCost <= other.expectedCost) {
-                return DominanceResult::Dominates;
-            }
-            if (probability <= other.probability && expectedCost >= other.expectedCost) {
-                return DominanceResult::Dominated;
+            if constexpr (FrontKind == SspParetoFrontKind::CostUpperTail) {
+                if (probability >= other.probability && expectedCost <= other.expectedCost) {
+                    return DominanceResult::Dominates;
+                }
+                if (probability <= other.probability && expectedCost >= other.expectedCost) {
+                    return DominanceResult::Dominated;
+                }
+            } else {
+                if (probability <= other.probability && expectedCost <= other.expectedCost) {
+                    return DominanceResult::Dominates;
+                }
+                if (probability >= other.probability && expectedCost >= other.expectedCost) {
+                    return DominanceResult::Dominated;
+                }
             }
             return DominanceResult::Incomparable;
         }
@@ -466,26 +481,48 @@ class SspParetoFront {
             return;
         }
 
-        std::size_t writeIndex = points.size();
-        std::size_t index = points.size();
-        bool hasBestExpectedCostSeenFromRight = false;
-        ValueType bestExpectedCostSeenFromRight{};
-        while (index > 0) {
-            std::size_t const groupEnd = index;
-            ValueType const probability = points[groupEnd - 1].probability;
-            while (index > 0 && points[index - 1].probability == probability) {
-                --index;
-            }
+        if constexpr (FrontKind == SspParetoFrontKind::CostUpperTail) {
+            std::size_t writeIndex = points.size();
+            std::size_t index = points.size();
+            bool hasBestExpectedCostSeenFromRight = false;
+            ValueType bestExpectedCostSeenFromRight{};
+            while (index > 0) {
+                std::size_t const groupEnd = index;
+                ValueType const probability = points[groupEnd - 1].probability;
+                while (index > 0 && points[index - 1].probability == probability) {
+                    --index;
+                }
 
-            Point const& bestPointForProbability = points[index];
-            if (!hasBestExpectedCostSeenFromRight || bestPointForProbability.expectedCost < bestExpectedCostSeenFromRight) {
-                --writeIndex;
-                points[writeIndex] = bestPointForProbability;
-                bestExpectedCostSeenFromRight = bestPointForProbability.expectedCost;
-                hasBestExpectedCostSeenFromRight = true;
+                Point const& bestPointForProbability = points[index];
+                if (!hasBestExpectedCostSeenFromRight || bestPointForProbability.expectedCost < bestExpectedCostSeenFromRight) {
+                    --writeIndex;
+                    points[writeIndex] = bestPointForProbability;
+                    bestExpectedCostSeenFromRight = bestPointForProbability.expectedCost;
+                    hasBestExpectedCostSeenFromRight = true;
+                }
             }
+            points.erase(points.begin(), points.begin() + static_cast<typename container_type::difference_type>(writeIndex));
+        } else {
+            std::size_t writeIndex = 0;
+            std::size_t index = 0;
+            bool hasBestExpectedCostSeenFromLeft = false;
+            ValueType bestExpectedCostSeenFromLeft{};
+            while (index < points.size()) {
+                ValueType const probability = points[index].probability;
+                Point const& bestPointForProbability = points[index];
+                while (index < points.size() && points[index].probability == probability) {
+                    ++index;
+                }
+
+                if (!hasBestExpectedCostSeenFromLeft || bestPointForProbability.expectedCost < bestExpectedCostSeenFromLeft) {
+                    points[writeIndex] = bestPointForProbability;
+                    ++writeIndex;
+                    bestExpectedCostSeenFromLeft = bestPointForProbability.expectedCost;
+                    hasBestExpectedCostSeenFromLeft = true;
+                }
+            }
+            points.resize(writeIndex);
         }
-        points.erase(points.begin(), points.begin() + static_cast<typename container_type::difference_type>(writeIndex));
     }
 
     void removeNonExtremeConvexPoints() {
@@ -501,11 +538,19 @@ class SspParetoFront {
             }
         }
         points.resize(hullSize);
-        STORM_LOG_ASSERT(std::adjacent_find(points.begin(), points.end(),
-                                            [](Point const& left, Point const& right) {
-                                                return left.probability >= right.probability || left.expectedCost >= right.expectedCost;
-                                            }) == points.end(),
-                         "Expected SSP Pareto front points to be strictly ordered by increasing probability and increasing expected cost.");
+        if constexpr (FrontKind == SspParetoFrontKind::CostUpperTail) {
+            STORM_LOG_ASSERT(std::adjacent_find(points.begin(), points.end(),
+                                                [](Point const& left, Point const& right) {
+                                                    return left.probability >= right.probability || left.expectedCost >= right.expectedCost;
+                                                }) == points.end(),
+                             "Expected cost SSP Pareto front points to be strictly ordered by increasing probability and increasing expected cost.");
+        } else {
+            STORM_LOG_ASSERT(std::adjacent_find(points.begin(), points.end(),
+                                                [](Point const& left, Point const& right) {
+                                                    return left.probability >= right.probability || left.expectedCost <= right.expectedCost;
+                                                }) == points.end(),
+                             "Expected reward SSP Pareto front points to be strictly ordered by increasing probability and decreasing expected shortfall.");
+        }
     }
 
     static bool liesOnOrAboveSegment(Point const& left, Point const& middle, Point const& right) {
@@ -519,6 +564,9 @@ class SspParetoFront {
 
     container_type points;
 };
+
+template<typename ValueType>
+using SspRewardParetoFront = SspParetoFront<ValueType, SspParetoFrontKind::RewardLowerTail>;
 
 }  // namespace cvar
 }  // namespace modelchecker
