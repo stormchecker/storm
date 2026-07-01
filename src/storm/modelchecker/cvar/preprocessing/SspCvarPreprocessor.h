@@ -59,7 +59,7 @@ std::vector<typename SparseMdpModelType::ValueType> extractChoiceCostsForSsp(Spa
 
 template<typename ValueType>
 void validatePositiveChoiceCostsOutsideGoals(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& targetStates,
-                                             std::vector<ValueType> const& choiceCosts) {
+                                             std::vector<ValueType> const& choiceCosts, std::string const& valueName = "choice costs") {
     ValueType const zero = storm::utility::zero<ValueType>();
     for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
         if (targetStates[state]) {
@@ -67,14 +67,15 @@ void validatePositiveChoiceCostsOutsideGoals(storm::storage::SparseMatrix<ValueT
         }
         for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
             STORM_LOG_THROW(choiceCosts[row] > zero, storm::exceptions::InvalidPropertyException,
-                            "CVaR SSP preprocessing currently requires strictly positive choice costs outside goal states.");
+                            "CVaR SSP preprocessing currently requires strictly positive " << valueName << " outside goal states.");
         }
     }
 }
 
 template<typename ValueType>
 uint64_t validateAndComputeMaximalChoiceCostOutsideGoals(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                         storm::storage::BitVector const& targetStates, std::vector<ValueType> const& choiceCosts) {
+                                                         storm::storage::BitVector const& targetStates, std::vector<ValueType> const& choiceCosts,
+                                                         std::string const& valueName = "choice costs") {
     uint64_t maximalChoiceCost = 0;
     for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
         if (targetStates[state]) {
@@ -82,7 +83,7 @@ uint64_t validateAndComputeMaximalChoiceCostOutsideGoals(storm::storage::SparseM
         }
         for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
             STORM_LOG_THROW(storm::utility::isInteger(choiceCosts[row]), storm::exceptions::InvalidPropertyException,
-                            "CVaR SSP preprocessing currently requires integer-valued choice costs.");
+                            "CVaR SSP preprocessing currently requires integer-valued " << valueName << ".");
             maximalChoiceCost = std::max(maximalChoiceCost, storm::utility::convertNumber<uint64_t>(choiceCosts[row]));
         }
     }
@@ -98,6 +99,44 @@ std::vector<ValueType> computeExpectedCostsToGoal(Environment const& env, storm:
         env, storm::solver::SolveGoal<ValueType, ValueType>(storm::OptimizationDirection::Minimize), transitionMatrix, backwardTransitions, rewardModel,
         targetStates, false, false);
     return std::move(result.values);
+}
+
+template<typename ValueType>
+bool normalizeTargetStatesToAbsorbing(storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::BitVector const& targetStates) {
+    bool normalizedTargetStatesToAbsorbing = false;
+    for (auto targetState : targetStates) {
+        for (uint64_t row = transitionMatrix.getRowGroupIndices()[targetState], endRow = transitionMatrix.getRowGroupIndices()[targetState + 1]; row < endRow;
+             ++row) {
+            for (auto const& entry : transitionMatrix.getRow(row)) {
+                if (entry.getColumn() != targetState) {
+                    normalizedTargetStatesToAbsorbing = true;
+                    break;
+                }
+            }
+            if (normalizedTargetStatesToAbsorbing) {
+                break;
+            }
+        }
+        if (normalizedTargetStatesToAbsorbing) {
+            break;
+        }
+    }
+    if (normalizedTargetStatesToAbsorbing) {
+        STORM_LOG_INFO("CVaR SSP preprocessing makes target states absorbing to match terminal-goal semantics.");
+        transitionMatrix.makeRowGroupsAbsorbing(targetStates, true);
+    }
+    return normalizedTargetStatesToAbsorbing;
+}
+
+template<typename ValueType>
+void validateRewardAlmostSureReachability(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                          storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                          storm::storage::BitVector const& targetStates, storm::storage::BitVector const& reachableStates) {
+    storm::storage::BitVector prob1AStates =
+        storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions,
+                                             storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), targetStates);
+    STORM_LOG_THROW(reachableStates.isSubsetOf(prob1AStates), storm::exceptions::InvalidPropertyException,
+                    "CVaR SSP reward preprocessing currently requires all reachable states to reach a goal almost surely under all schedulers.");
 }
 
 template<typename SparseMdpModelType>
@@ -126,28 +165,7 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
     }
 
     auto transitionMatrix = model.getTransitionMatrix();
-    bool normalizedTargetStatesToAbsorbing = false;
-    for (auto targetState : targetStates) {
-        for (uint64_t row = transitionMatrix.getRowGroupIndices()[targetState], endRow = transitionMatrix.getRowGroupIndices()[targetState + 1]; row < endRow;
-             ++row) {
-            for (auto const& entry : transitionMatrix.getRow(row)) {
-                if (entry.getColumn() != targetState) {
-                    normalizedTargetStatesToAbsorbing = true;
-                    break;
-                }
-            }
-            if (normalizedTargetStatesToAbsorbing) {
-                break;
-            }
-        }
-        if (normalizedTargetStatesToAbsorbing) {
-            break;
-        }
-    }
-    if (normalizedTargetStatesToAbsorbing) {
-        STORM_LOG_INFO("CVaR SSP preprocessing makes target states absorbing to match terminal-goal semantics.");
-        transitionMatrix.makeRowGroupsAbsorbing(targetStates, true);
-    }
+    bool normalizedTargetStatesToAbsorbing = normalizeTargetStatesToAbsorbing(transitionMatrix, targetStates);
 
     auto backwardTransitions = transitionMatrix.transpose(true);
     auto reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, model.getInitialStates(),
@@ -171,6 +189,57 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
             maximalChoiceCost,
             std::move(choiceCosts),
             std::move(expectedCostsToGoal),
+            std::move(transitionMatrix)};
+}
+
+template<typename SparseMdpModelType>
+SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSspRewardCvar(Environment const&, SparseMdpModelType const& model,
+                                                                                           CvarQueryInformation const& queryInformation,
+                                                                                           storm::storage::BitVector const& targetStates) {
+    using ValueType = typename SparseMdpModelType::ValueType;
+
+    std::string rewardModelName = queryInformation.rewardModelName.value_or("");
+    auto const& rewardModel = model.getRewardModel(rewardModelName);
+    if (rewardModelName.empty()) {
+        rewardModelName = model.getUniqueRewardModelName();
+    }
+
+    STORM_LOG_THROW(queryInformation.optimizationDirection == storm::solver::OptimizationDirection::Maximize, storm::exceptions::InvalidPropertyException,
+                    "CVaR SSP reward preprocessing currently only supports maximizing total rewards.");
+    STORM_LOG_THROW(queryInformation.interpretation == CvarInterpretation::Reward, storm::exceptions::InvalidPropertyException,
+                    "CVaR SSP reward preprocessing requires the reward interpretation.");
+
+    STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotImplementedException,
+                    "CVaR SSP preprocessing does not support transition rewards.");
+
+    bool liftedStateRewardsToChoiceCosts = rewardModel.hasStateRewards() && !rewardModel.hasStateActionRewards();
+    if (liftedStateRewardsToChoiceCosts) {
+        STORM_LOG_INFO("CVaR SSP preprocessing lifts state rewards to equivalent per-choice rewards.");
+    }
+
+    auto transitionMatrix = model.getTransitionMatrix();
+    bool normalizedTargetStatesToAbsorbing = normalizeTargetStatesToAbsorbing(transitionMatrix, targetStates);
+    auto backwardTransitions = transitionMatrix.transpose(true);
+    auto reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, model.getInitialStates(),
+                                                                     storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true),
+                                                                     storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false));
+
+    uint64_t const initialState = *model.getInitialStates().begin();
+    validateRewardAlmostSureReachability(transitionMatrix, backwardTransitions, targetStates, reachableStates);
+
+    auto choiceRewards = extractChoiceCostsForSsp(model, rewardModel, targetStates);
+    validatePositiveChoiceCostsOutsideGoals(transitionMatrix, targetStates, choiceRewards, "choice rewards");
+    uint64_t maximalChoiceReward = validateAndComputeMaximalChoiceCostOutsideGoals(transitionMatrix, targetStates, choiceRewards, "choice rewards");
+
+    return {rewardModelName,
+            initialState,
+            targetStates,
+            std::move(reachableStates),
+            liftedStateRewardsToChoiceCosts,
+            normalizedTargetStatesToAbsorbing,
+            maximalChoiceReward,
+            std::move(choiceRewards),
+            std::vector<ValueType>(),
             std::move(transitionMatrix)};
 }
 
