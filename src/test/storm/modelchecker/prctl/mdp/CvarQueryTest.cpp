@@ -1,6 +1,8 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include <optional>
+
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/adapters/RationalNumberAdapter.h"
@@ -10,6 +12,7 @@
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/CvarFormula.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/cvar/CvarInterpretation.h"
@@ -20,6 +23,7 @@
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/constants.h"
 
 namespace {
@@ -92,7 +96,8 @@ ValueType checkInitialStateValueWithMethodAndInterpretationSelection(CvarTestInp
     return result->template asExplicitQuantitativeCheckResult<ValueType>().getMax();
 }
 
-void expectParetoFrontPoints(storm::modelchecker::cvar::SspParetoFront<double> const& front, std::vector<std::pair<double, double>> const& expectedPoints) {
+template<typename ParetoFront>
+void expectParetoFrontPoints(ParetoFront const& front, std::vector<std::pair<double, double>> const& expectedPoints) {
     auto const& actualPoints = front.getPoints();
     ASSERT_EQ(expectedPoints.size(), actualPoints.size());
     for (std::size_t index = 0; index < expectedPoints.size(); ++index) {
@@ -166,6 +171,38 @@ TEST(CvarSspParetoValueIterationOperatorTest, AppliesActionCostsAndUnionsActionF
     expectParetoFrontPoints(outputLayer[0], {{0.5, 1.0}, {0.8, 4.0}});
     expectParetoFrontPoints(outputLayer[1], {{1.0, 0.0}});
     expectParetoFrontPoints(outputLayer[2], {{1.0, 0.0}});
+}
+
+TEST(CvarSspRewardParetoFrontTest, KeepsLowerLeftIncomparablePoints) {
+    using ParetoFront = storm::modelchecker::cvar::SspRewardParetoFront<double>;
+
+    ParetoFront front({{0.1, 0.9}, {0.5, 0.5}, {0.7, 0.8}, {0.1, 1.1}, {0.9, 0.2}});
+
+    expectParetoFrontPoints(front, {{0.1, 0.9}, {0.5, 0.5}, {0.9, 0.2}});
+}
+
+TEST(CvarSspRewardParetoValueIterationOperatorTest, AppliesRewardShiftsAndUnionsActionFronts) {
+    using ParetoFront = storm::modelchecker::cvar::SspRewardParetoFront<double>;
+    using ParetoViOperator =
+        storm::modelchecker::cvar::SspParetoValueIterationOperator<double, storm::modelchecker::cvar::SspParetoFrontKind::RewardLowerTail>;
+    using FrontierLayer = std::vector<ParetoFront>;
+    using FrontierWindow = std::vector<FrontierLayer>;
+
+    auto preprocessingResult = buildTinySspPreprocessingResult();
+    ParetoViOperator paretoViOperator(preprocessingResult);
+    FrontierWindow frontierWindow(3, FrontierLayer(3));
+    for (uint64_t threshold = 0; threshold < frontierWindow.size(); ++threshold) {
+        frontierWindow[threshold][2] = ParetoViOperator::createTargetFrontier(threshold);
+    }
+    frontierWindow[2][1] = ParetoFront::singleton(0.5, 0.1);
+    frontierWindow[1][1] = ParetoFront::singleton(0.2, 0.5);
+
+    FrontierLayer outputLayer;
+    paretoViOperator.apply(3, frontierWindow, outputLayer);
+
+    expectParetoFrontPoints(outputLayer[0], {{0.2, 0.5}, {0.5, 0.1}});
+    expectParetoFrontPoints(outputLayer[1], {{1.0, 2.0}});
+    expectParetoFrontPoints(outputLayer[2], {{1.0, 3.0}});
 }
 
 TEST(CvarQueryTest, SimpleMdp) {
@@ -370,6 +407,16 @@ TEST(CvarQueryTest, DeterministicSspPathMdp) {
     EXPECT_NEAR(value, 5.0, 1e-10);
 }
 
+TEST(CvarQueryTest, DeterministicRewardSspPathMdp) {
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_deterministic_mdp.nm";
+    auto input = buildCvarInput<double>(modelPath, "R{\"cost\"}max=? [ F \"goal\" ];", "0.5");
+
+    EXPECT_NEAR(checkInitialStateValueWithMethod(input, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 5.0, 1e-10);
+    EXPECT_NEAR(checkInitialStateValueWithMethodAndInterpretationSelection(input, storm::modelchecker::cvar::CvarMethod::SspParetoVi,
+                                                                           storm::modelchecker::cvar::CvarInterpretationSelection::Reward),
+                5.0, 1e-10);
+}
+
 TEST(CvarQueryTest, BranchingSspTradeoffMdp) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_branching_tradeoff_mdp.nm";
 
@@ -378,5 +425,71 @@ TEST(CvarQueryTest, BranchingSspTradeoffMdp) {
 
     auto nineTenthsInput = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", "0.9");
     EXPECT_NEAR(checkInitialStateValueWithMethod(nineTenthsInput, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 16.0 / 3.0, 1e-10);
+}
+
+TEST(CvarQueryTest, SafeRiskyRewardSspMdp) {
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_reward_safe_risky_mdp.nm";
+
+    auto quarterInput = buildCvarInput<double>(modelPath, "R{\"reward\"}max=? [ F \"goal\" ];", "0.25");
+    EXPECT_NEAR(checkInitialStateValueWithMethod(quarterInput, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 6.0, 1e-10);
+
+    auto fourFifthsInput = buildCvarInput<double>(modelPath, "R{\"reward\"}max=? [ F \"goal\" ];", "0.8");
+    EXPECT_NEAR(checkInitialStateValueWithMethod(fourFifthsInput, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 8.0, 1e-10);
+}
+
+TEST(CvarQueryTest, DelayedChallengerRewardSspMdp) {
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_reward_delayed_challenger_mdp.nm";
+    auto input = buildCvarInput<double>(modelPath, "R{\"reward\"}max=? [ F \"goal\" ];", "0.5");
+
+    EXPECT_NEAR(checkInitialStateValueWithMethod(input, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 8.0, 1e-10);
+}
+
+TEST(CvarQueryTest, GeometricRewardSspMdp) {
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_reward_geometric_mdp.nm";
+    auto input = buildCvarInput<double>(modelPath, "R{\"reward\"}max=? [ F \"goal\" ];", "0.8");
+
+    EXPECT_NEAR(checkInitialStateValueWithMethod(input, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 1.4375, 1e-10);
+}
+
+TEST(CvarQueryTest, RejectsRewardSspProb1AChoiceViolation) {
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_reward_prob1a_choice_violation_mdp.nm";
+    auto input = buildCvarInput<double>(modelPath, "R{\"reward\"}max=? [ F \"goal\" ];", "0.5");
+
+    STORM_SILENT_EXPECT_THROW(checkInitialStateValueWithMethod(input, storm::modelchecker::cvar::CvarMethod::SspParetoVi),
+                              storm::exceptions::InvalidPropertyException);
+}
+
+TEST(CvarQueryTest, RejectsRewardSspProb1AProbabilisticViolation) {
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_reward_prob1a_probabilistic_violation_mdp.nm";
+    auto input = buildCvarInput<double>(modelPath, "R{\"reward\"}max=? [ F \"goal\" ];", "0.5");
+
+    STORM_SILENT_EXPECT_THROW(checkInitialStateValueWithMethod(input, storm::modelchecker::cvar::CvarMethod::SspParetoVi),
+                              storm::exceptions::InvalidPropertyException);
+}
+
+TEST(CvarQueryTest, RejectsUnsupportedSspInterpretationCombinations) {
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_deterministic_mdp.nm";
+
+    auto minRewardInput = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", "0.5");
+    STORM_SILENT_EXPECT_THROW(checkInitialStateValueWithMethodAndInterpretationSelection(minRewardInput, storm::modelchecker::cvar::CvarMethod::SspParetoVi,
+                                                                                         storm::modelchecker::cvar::CvarInterpretationSelection::Reward),
+                              storm::exceptions::InvalidPropertyException);
+
+    auto maxCostInput = buildCvarInput<double>(modelPath, "R{\"cost\"}max=? [ F \"goal\" ];", "0.5");
+    STORM_SILENT_EXPECT_THROW(checkInitialStateValueWithMethodAndInterpretationSelection(maxCostInput, storm::modelchecker::cvar::CvarMethod::SspParetoVi,
+                                                                                         storm::modelchecker::cvar::CvarInterpretationSelection::Cost),
+                              storm::exceptions::InvalidPropertyException);
+}
+
+TEST(CvarQueryTest, RejectsSspTransitionRewards) {
+    std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_deterministic_mdp.nm";
+    auto input = buildCvarInput<double>(modelPath, "R{\"cost\"}max=? [ F \"goal\" ];", "0.5");
+
+    storm::models::sparse::StandardRewardModel<double> transitionRewardModel(
+        std::nullopt, std::make_optional(std::vector<double>(input.mdp->getNumberOfChoices(), 1.0)), std::make_optional(input.mdp->getTransitionMatrix()));
+    input.mdp->getRewardModels()["cost"] = std::move(transitionRewardModel);
+
+    STORM_SILENT_EXPECT_THROW(checkInitialStateValueWithMethod(input, storm::modelchecker::cvar::CvarMethod::SspParetoVi),
+                              storm::exceptions::NotImplementedException);
 }
 }  // namespace
