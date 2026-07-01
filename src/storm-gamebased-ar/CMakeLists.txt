@@ -7,7 +7,7 @@ target_sources(storm-gamebased-ar
 		${STORM_GBAR_SOURCES}
 		PUBLIC
 		FILE_SET fs_storm_gbar_headers TYPE HEADERS BASE_DIRS "${PROJECT_SOURCE_DIR}/src" FILES ${STORM_GBAR_HEADERS})
-target_precompile_headers(storm-gamebased-ar REUSE_FROM storm)
+storm_target_precompile_headers(storm-gamebased-ar REUSE_FROM storm)
 set_target_properties(storm-gamebased-ar PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 target_link_libraries(storm-gamebased-ar PUBLIC storm)
 set_target_properties(storm-gamebased-ar PROPERTIES DEFINE_SYMBOL "")  # to avoid problems with pch on linux.

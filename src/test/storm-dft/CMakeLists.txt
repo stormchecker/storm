@@ -12,7 +12,7 @@ foreach (testsuite api bdd simulator storage transformations)
 	target_link_libraries(test-dft-${testsuite} storm-dft storm-parsers)
 	target_link_libraries(test-dft-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
 	target_include_directories(test-dft-${testsuite} PRIVATE "${PROJECT_SOURCE_DIR}/src")
-	target_precompile_headers(test-dft-${testsuite} REUSE_FROM test-builder)
+	storm_target_precompile_headers(test-dft-${testsuite} REUSE_FROM test-builder)
 
 	add_dependencies(test-dft-${testsuite} test-resources)
 	add_test(NAME run-test-dft-${testsuite} COMMAND $<TARGET_FILE:test-dft-${testsuite}>)

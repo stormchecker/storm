@@ -1,7 +1,9 @@
 #ifndef STORM_LOGIC_FORMULA_H_
 #define STORM_LOGIC_FORMULA_H_
 
+#include <functional>
 #include <iosfwd>
+#include <map>
 #include <memory>
 #include <set>
 #include <vector>

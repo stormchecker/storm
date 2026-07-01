@@ -1,7 +1,13 @@
 #ifndef STORM_UTIL_SHORTESTPATHS_H_
 #define STORM_UTIL_SHORTESTPATHS_H_
 
+#include <algorithm>
 #include <boost/optional/optional.hpp>
+#include <cassert>
+#include <iosfwd>
+#include <set>
+#include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 

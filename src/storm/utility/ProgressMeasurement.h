@@ -2,6 +2,7 @@
 
 #include <boost/optional.hpp>
 #include <chrono>
+#include <cstdint>
 #include <ostream>
 
 namespace storm {

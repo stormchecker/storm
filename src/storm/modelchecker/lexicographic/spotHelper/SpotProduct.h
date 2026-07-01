@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "storm/automata/DeterministicAutomaton.h"
 #include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
 #include "storm/logic/MultiObjectiveFormula.h"

@@ -51,6 +51,7 @@ ARG packages=""
 RUN pacman -Syu --noconfirm  # Updates needed as Archlinux is rolling release
 RUN pacman -S --noconfirm \
         base-devel \
+        ccache \
         cmake \
         git \
         boost \
@@ -67,11 +68,16 @@ RUN pacman -S --noconfirm \
 
 # Build Storm
 #############
+ENV CCACHE_DIR=/root/.ccache
 RUN mkdir /opt/storm
 WORKDIR /opt/storm
 
 # Copy the content of the current local Storm repository into the Docker image
 COPY . .
+
+# Seed ccache from the workflow cache directory if available.
+RUN mkdir -p "$CCACHE_DIR" && \
+        if [ -d "/opt/storm/.ci-ccache" ]; then cp -a /opt/storm/.ci-ccache/. "$CCACHE_DIR"/; fi
 
 # Switch to build directory
 RUN mkdir -p /opt/storm/build
@@ -100,6 +106,6 @@ RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
 
 # Build Storm
 # (This can be adapted to only build 'storm' or 'binaries' depending on custom needs)
-RUN make -j $no_threads
+RUN ccache --max-size=3G && ccache --zero-stats && make -j $no_threads && ccache --show-stats --verbose
 
 WORKDIR /opt/storm

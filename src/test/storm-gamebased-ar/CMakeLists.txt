@@ -11,7 +11,7 @@ foreach (testsuite abstraction modelchecker)
 	target_link_libraries(test-gamebased-ar-${testsuite} storm-gamebased-ar storm-parsers)
 	target_link_libraries(test-gamebased-ar-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
 	target_include_directories(test-gamebased-ar-${testsuite} PRIVATE "${PROJECT_SOURCE_DIR}/src")
-	target_precompile_headers(test-gamebased-ar-${testsuite} REUSE_FROM test-builder)
+	storm_target_precompile_headers(test-gamebased-ar-${testsuite} REUSE_FROM test-builder)
 
 	add_dependencies(test-gamebased-ar-${testsuite} test-resources)
 	add_test(NAME run-test-gamebased-ar-${testsuite} COMMAND $<TARGET_FILE:test-gamebased-ar-${testsuite}>)

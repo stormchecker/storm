@@ -1,0 +1,140 @@
+name: CI PR
+# Runs on every pull request commit: compile-flag checks and short tests.
+# All jobs are cached and fail-fast.
+
+on:
+  pull_request:
+
+jobs:
+  buildTests:
+    if: "! contains(github.event.pull_request.labels.*.name, 'ready for review')"
+    strategy:
+      fail-fast: true
+      matrix:
+        config:
+          - {name: "Debug; All dependencies",
+             buildType: "Debug",
+             baseImg: "movesrwth/storm-dependencies:latest",
+             disable_all: false, 
+             ClnExact: false, 
+             ClnRatfunc: false
+          }
+          - {name: "Release; All dependencies",
+             buildType: "Release", 
+             baseImg: "movesrwth/storm-dependencies:latest",
+             disable_all: false, 
+             ClnExact: false, 
+             ClnRatfunc: false
+          }
+          - {name: "Release; GMP; GMP; Minimal dependencies", 
+             buildType: "Release",
+             baseImg: "movesrwth/storm-basesystem:minimal_dependencies",
+             disable_all: true,
+             ClnExact: false,
+             ClnRatfunc: false
+          }
+    uses: ./.github/workflows/test-build.yml
+    with:
+      nr_jobs: "4"
+      name: ${{ matrix.config.name }}
+      baseImg: ${{ matrix.config.baseImg }}
+      buildType: ${{ matrix.config.buildType }}
+      disable_cudd: ${{ matrix.config.disable_all }}
+      disable_glpk: ${{ matrix.config.disable_all }}
+      disable_gmm: ${{ matrix.config.disable_all }}
+      disable_gurobi: ${{ matrix.config.disable_all }}
+      disable_libarchive: ${{ matrix.config.disable_all }}
+      disable_mathsat: ${{ matrix.config.disable_all }}
+      disable_soplex: ${{ matrix.config.disable_all }}
+      disable_spot: ${{ matrix.config.disable_all }}
+      disable_sylvan: ${{ matrix.config.disable_all }}
+      disable_xerces: ${{ matrix.config.disable_all }}
+      disable_z3: ${{ matrix.config.disable_all }}
+      Developer: ${{ matrix.config.buildType == 'Debug' }}
+      ClnExact: ${{ matrix.config.ClnExact }}
+      ClnRatfunc: ${{ matrix.config.ClnRatfunc }}
+      AllSanitizers: false
+      restore_cache: true
+      save_cache: true
+      install: false
+
+  compilerTests:
+    if: "! contains(github.event.pull_request.labels.*.name, 'ready for review')"
+    strategy:
+      fail-fast: true
+      matrix:
+        config:
+          - {name: "GCC",
+             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
+             packages: "",
+             dockerfile: ".github/workflows/Dockerfile.archlinux", 
+             baseImg: "archlinux:latest"
+          }
+          - {name: "Clang", 
+             cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON", 
+             packages: "clang", 
+             dockerfile: ".github/workflows/Dockerfile.archlinux", 
+             baseImg: "archlinux:latest"
+          }
+    uses: ./.github/workflows/test-build.yml
+    with:
+      nr_jobs: "4"
+      name: ${{ matrix.config.name }}
+      buildType: Debug
+      Developer: true
+      baseImg: ${{ matrix.config.baseImg }}
+      cmakeArgs: ${{ matrix.config.cmakeArgs }}
+      packages: ${{ matrix.config.packages }}
+      dockerfile: ${{ matrix.config.dockerfile }}
+      starterProjectCommand: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      restore_cache: true
+      save_cache: true
+      install: false
+
+  linuxTests:
+    if: "! contains(github.event.pull_request.labels.*.name, 'ready for review')"
+    strategy:
+      fail-fast: true
+      matrix:
+        distro: ["debian-12", "ubuntu-24.04"]
+    uses: ./.github/workflows/test-linux.yml
+    with:
+      nr_jobs: "4"
+      distro: ${{ matrix.distro }}
+      buildType: Release
+      runner: ubuntu-latest
+      restore_cache: true
+      save_cache: true
+      install: false
+
+  macTests:
+    if: "! contains(github.event.pull_request.labels.*.name, 'ready for review')"
+    strategy:
+      fail-fast: true
+      matrix:
+        config:
+          - {name: "Mac 14, ARM",   
+             distro: "macos-14",       
+             xcode: "15.4",
+             buildType: "Release"
+          }
+          - {name: "Mac 26, ARM",   
+             distro: "macos-26",       
+             xcode: "latest-stable",
+             buildType: "Release"
+          }
+          - {name: "Mac 26, Intel", 
+             distro: "macos-26-intel", 
+             xcode: "latest-stable",
+             buildType: "Release"
+          }
+    uses: ./.github/workflows/test-mac.yml
+    with:
+      nr_jobs: "4"
+      name: ${{ matrix.config.name }}
+      distro: ${{ matrix.config.distro }}
+      xcode: ${{ matrix.config.xcode }}
+      buildType: ${{ matrix.config.buildType }}
+      restore_cache: true
+      save_cache: true
+      install: false

@@ -1,6 +1,7 @@
 #ifndef STORM_SETTINGS_SETTINGSMANAGER_H_
 #define STORM_SETTINGS_SETTINGSMANAGER_H_
 
+#include <cstdint>
 #include <functional>
 #include <iostream>
 #include <map>

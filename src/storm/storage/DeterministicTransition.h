@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <cstdint>
+#include <utility>
+
 namespace storm {
 namespace storage {
 typedef uint_fast64_t StateId;
