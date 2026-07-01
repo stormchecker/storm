@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       # apply the formatting twice as a workaround for a clang-format bug
       - uses: DoozyX/clang-format-lint-action@v0.20
         with:

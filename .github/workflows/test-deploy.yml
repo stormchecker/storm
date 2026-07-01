@@ -45,7 +45,7 @@ jobs:
       NR_JOBS: ${{ inputs.nr_jobs }}
     steps:
       - name: Git clone
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Git describe
         id: ghd
         uses: proudust/gh-describe@v3

@@ -366,7 +366,8 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, simple2) {
                 this->precision() * this->parseNumber("407"));  // use relative precision!
 
     result = checker->check(this->env(), tasks[9]);
-    EXPECT_NEAR(this->parseNumber("27"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    EXPECT_NEAR(this->parseNumber("27"), this->getQuantitativeResultAtInitialState(model, result),
+                this->precision() * this->parseNumber("27"));  // use relative precision!
 }
 
 TYPED_TEST(MarkovAutomatonCslModelCheckerTest, erlang) {

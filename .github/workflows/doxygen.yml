@@ -22,7 +22,7 @@ jobs:
     if: github.repository_owner == 'stormchecker'
     steps:
       - name: Git clone
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Build Doxygen via Dockerfile
         run: docker build -t movesrwth/storm-doc:latest -f .github/workflows/Dockerfile.doxygen . --build-arg no_threads=${NR_JOBS}
       - name: Run Docker
@@ -46,7 +46,7 @@ jobs:
     if: github.repository_owner == 'stormchecker' && always()
     steps:
       - uses: technote-space/workflow-conclusion-action@v3
-      - uses: dawidd6/action-send-mail@v17
+      - uses: dawidd6/action-send-mail@v18
         with:
           server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
           server_port: 587

@@ -12,6 +12,7 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/SchedulerChoice.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
 
@@ -84,9 +85,13 @@ ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForC
         this->_producedOptimalChoices->resize(this->_transitionMatrix.getRowGroupCount());
     }
 
-    auto trivialResult = this->computeLraForTrivialMec(env, stateRewardsGetter, actionRewardsGetter, component);
-    if (trivialResult.first) {
-        return trivialResult.second;
+    // Catch cases where the component is a single state
+    if (auto const trivialResult = this->computeLraForTrivialMec(env, stateRewardsGetter, actionRewardsGetter, component); trivialResult.has_value()) {
+        return trivialResult.value();
+    }
+    // Catch cases where the component contains another component as a subcomponent with zero reward
+    if (auto const zeroResult = this->computeLraForZeroMec(env, stateRewardsGetter, actionRewardsGetter, component); zeroResult.has_value()) {
+        return zeroResult.value();
     }
 
     // Solve nontrivial MEC with the method specified in the settings
@@ -115,48 +120,168 @@ ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForC
 }
 
 template<typename ValueType>
-std::pair<bool, ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForTrivialMec(
-    Environment const& env, ValueGetter const& stateRewardsGetter, ValueGetter const& actionRewardsGetter,
-    storm::storage::MaximalEndComponent const& component) {
+std::optional<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForTrivialMec(Environment const& env,
+                                                                                                         ValueGetter const& stateRewardsGetter,
+                                                                                                         ValueGetter const& actionRewardsGetter,
+                                                                                                         storm::storage::MaximalEndComponent const& component) {
+    if (component.size() != 1) {
+        return std::nullopt;  // MEC is not trivial
+    }
     // If the component only consists of a single state, we compute the LRA value directly
-    if (component.size() == 1) {
-        auto const& element = *component.begin();
-        uint64_t state = internal::getComponentElementState(element);
-        auto choiceIt = internal::getComponentElementChoicesBegin(element);
-        if (!this->isContinuousTime()) {
-            // This is an MDP.
-            // Find the choice with the highest/lowest reward
-            ValueType bestValue = actionRewardsGetter(*choiceIt);
-            uint64_t bestChoice = *choiceIt;
-            for (++choiceIt; choiceIt != internal::getComponentElementChoicesEnd(element); ++choiceIt) {
-                ValueType currentValue = actionRewardsGetter(*choiceIt);
-                if ((this->minimize() && currentValue < bestValue) || (this->maximize() && currentValue > bestValue)) {
-                    bestValue = std::move(currentValue);
-                    bestChoice = *choiceIt;
+    auto const& element = *component.begin();
+    uint64_t const state = internal::getComponentElementState(element);
+    auto choiceIt = internal::getComponentElementChoicesBegin(element);
+    if (!this->isContinuousTime()) {
+        // This is an MDP.
+        // Find the choice with the highest/lowest reward
+        ValueType bestValue = actionRewardsGetter(*choiceIt);
+        uint64_t bestChoice = *choiceIt;
+        for (++choiceIt; choiceIt != internal::getComponentElementChoicesEnd(element); ++choiceIt) {
+            ValueType currentValue = actionRewardsGetter(*choiceIt);
+            if ((this->minimize() && currentValue < bestValue) || (this->maximize() && currentValue > bestValue)) {
+                bestValue = std::move(currentValue);
+                bestChoice = *choiceIt;
+            }
+        }
+        if (this->isProduceSchedulerSet()) {
+            this->_producedOptimalChoices.get()[state] = bestChoice - this->_transitionMatrix.getRowGroupIndices()[state];
+        }
+        bestValue += stateRewardsGetter(state);
+        return bestValue;
+    } else {
+        // In a Markov Automaton, singleton components have to consist of a Markovian state because of the non-Zenoness assumption. Then, there is just one
+        // possible choice.
+        STORM_LOG_ASSERT(this->_markovianStates != nullptr,
+                         "Nondeterministic continuous time model without Markovian states... Is this a not a Markov Automaton?");
+        STORM_LOG_THROW(this->_markovianStates->get(state), storm::exceptions::InvalidOperationException,
+                        "Markov Automaton has Zeno behavior. Computation of Long Run Average values not supported.");
+        STORM_LOG_ASSERT(internal::getComponentElementChoiceCount(element) == 1, "Markovian state has Nondeterministic behavior.");
+        if (this->isProduceSchedulerSet()) {
+            this->_producedOptimalChoices.get()[state] = 0;
+        }
+        ValueType result = stateRewardsGetter(state) +
+                           (this->isContinuousTime() ? (*this->_exitRates)[state] * actionRewardsGetter(*choiceIt) : actionRewardsGetter(*choiceIt));
+        return result;
+    }
+}
+
+template<typename ValueType>
+std::optional<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForZeroMec(Environment const& env,
+                                                                                                      ValueGetter const& stateRewardsGetter,
+                                                                                                      ValueGetter const& actionRewardsGetter,
+                                                                                                      storm::storage::MaximalEndComponent const& component) {
+    // We first get those component states and choices that do not immediately collect non-zero reward
+    bool hasNonZeroReward = false;
+    std::map<uint64_t, std::set<uint64_t>> zeroLraStatesChoices;
+    for (auto const& [state, choices] : component) {
+        auto const stateReward = stateRewardsGetter(state);
+        if (!storm::utility::isZero(stateReward)) {
+            // If we minimize and see a negative reward, we cannot infer zero long-run average reward for the entire MEC, even if a 0 reward sub-EC exists.
+            // Maximize and seeing a positive reward is similar.
+            if ((stateReward < storm::utility::zero<ValueType>()) == this->minimize()) {
+                // Component has non-zero reward, but in the wrong direction
+                return std::nullopt;
+            }
+            hasNonZeroReward = true;
+            continue;
+        }
+        std::set<uint64_t> zeroLraChoices;
+        for (auto const choice : choices) {
+            auto const actionReward = actionRewardsGetter(choice);
+            if (!storm::utility::isZero(actionReward)) {
+                // Catch non-zero reward in the wrong direction, similar to state rewards above.
+                if ((actionReward < storm::utility::zero<ValueType>()) == this->minimize()) {
+                    return std::nullopt;
                 }
+                hasNonZeroReward = true;
+            } else {
+                zeroLraChoices.insert(choice);
             }
-            if (this->isProduceSchedulerSet()) {
-                this->_producedOptimalChoices.get()[state] = bestChoice - this->_transitionMatrix.getRowGroupIndices()[state];
-            }
-            bestValue += stateRewardsGetter(state);
-            return {true, bestValue};
-        } else {
-            // In a Markov Automaton, singleton components have to consist of a Markovian state because of the non-Zenoness assumption. Then, there is just one
-            // possible choice.
-            STORM_LOG_ASSERT(this->_markovianStates != nullptr,
-                             "Nondeterministic continuous time model without Markovian states... Is this a not a Markov Automaton?");
-            STORM_LOG_THROW(this->_markovianStates->get(state), storm::exceptions::InvalidOperationException,
-                            "Markov Automaton has Zeno behavior. Computation of Long Run Average values not supported.");
-            STORM_LOG_ASSERT(internal::getComponentElementChoiceCount(element) == 1, "Markovian state has Nondeterministic behavior.");
-            if (this->isProduceSchedulerSet()) {
-                this->_producedOptimalChoices.get()[state] = 0;
-            }
-            ValueType result = stateRewardsGetter(state) +
-                               (this->isContinuousTime() ? (*this->_exitRates)[state] * actionRewardsGetter(*choiceIt) : actionRewardsGetter(*choiceIt));
-            return {true, result};
+        }
+        if (!zeroLraChoices.empty()) {
+            zeroLraStatesChoices.emplace(state, std::move(zeroLraChoices));
         }
     }
-    return {false, storm::utility::zero<ValueType>()};
+    // If there are non-zero rewards in this MEC, we have to check whether there is a sub-EC with zero rewards.
+    if (hasNonZeroReward) {
+        this->createBackwardTransitions();
+        std::set<uint64_t> candidates;
+        for (auto const& [state, _] : zeroLraStatesChoices) {
+            candidates.insert(state);
+        }
+        while (!candidates.empty()) {
+            uint64_t const state = *candidates.begin();
+            candidates.erase(candidates.begin());
+            auto& choices = zeroLraStatesChoices.at(state);
+            // We erase some choices while iterating over them, but this is fine for std::set as long as we do it like that
+            for (auto choiceIt = choices.begin(); choiceIt != choices.end();) {
+                auto const row = this->_transitionMatrix.getRow(*choiceIt);
+                if (std::all_of(row.begin(), row.end(),
+                                [&zeroLraStatesChoices](auto const& transition) { return zeroLraStatesChoices.contains(transition.getColumn()); })) {
+                    ++choiceIt;  // keep the choice
+                } else {
+                    // This choice has a transition to a non-zero LRA state, so we erase it
+                    choiceIt = choices.erase(choiceIt);  // Note: erase returns the iterator to the next element
+                }
+            }
+            if (choices.empty()) {
+                // No zero LRA choice for this state, so we erase it and add its predecessors to the stack
+                zeroLraStatesChoices.erase(state);
+                for (auto const& backwardTransition : this->_backwardTransitions->getRow(state)) {
+                    auto const predecessor = backwardTransition.getColumn();
+                    if (zeroLraStatesChoices.contains(predecessor)) {
+                        candidates.insert(predecessor);
+                    }
+                }
+            }
+        }
+    }
+    if (zeroLraStatesChoices.empty()) {
+        // No zero LRA sub-EC, so we cannot infer zero LRA for the entire MEC
+        return std::nullopt;
+    }
+    // We have found a zero LRA sub-EC. We can infer zero LRA
+    if (this->isProduceSchedulerSet()) {
+        // Ensure that all other states get some choice that leads to the zero LRA sub-EC
+        if (zeroLraStatesChoices.size() < component.size()) {
+            this->createBackwardTransitions();
+            std::set<uint64_t> candidates;  // Always contains states with one transition to zeroLraStatesChoices
+            // helper function to add predecessors of a state to the candidate set
+            auto insertPredecessors = [&](uint64_t const state) {
+                for (auto const& backwardTransition : this->_backwardTransitions->getRow(state)) {
+                    auto const predecessor = backwardTransition.getColumn();
+                    if (!zeroLraStatesChoices.contains(predecessor) && component.containsState(predecessor)) {
+                        candidates.insert(predecessor);
+                    }
+                }
+            };
+            for (auto const& [state, _] : zeroLraStatesChoices) {
+                insertPredecessors(state);
+            }
+            while (!candidates.empty()) {
+                uint64_t const state = *candidates.begin();
+                candidates.erase(candidates.begin());
+                for (auto const choice : this->_transitionMatrix.getRowGroupIndices(state)) {
+                    auto const row = this->_transitionMatrix.getRow(choice);
+                    if (std::any_of(row.begin(), row.end(),
+                                    [&zeroLraStatesChoices](auto const& transition) { return zeroLraStatesChoices.contains(transition.getColumn()); })) {
+                        zeroLraStatesChoices.emplace(state, std::set<uint64_t>{choice});
+                    }
+                }
+                STORM_LOG_ASSERT(zeroLraStatesChoices.contains(state), "No suitable choice found for state " << state);
+                insertPredecessors(state);
+            }
+        }
+        // Now all states should have a choice
+        STORM_LOG_ASSERT(component.size() == zeroLraStatesChoices.size(),
+                         "Did not find a choice for all states: " << zeroLraStatesChoices.size() << " / " << component.size() << ".");
+        // Finally, set some choice as optimal
+        for (auto const& [state, choices] : zeroLraStatesChoices) {
+            this->_producedOptimalChoices.get()[state] = *choices.begin() - this->_transitionMatrix.getRowGroupIndices()[state];
+        }
+    }
+
+    return storm::utility::zero<ValueType>();
 }
 
 template<typename ValueType>
@@ -369,7 +494,8 @@ void SparseNondeterministicInfiniteHorizonHelper<ValueType>::constructOptimalCho
         // Check if we are in Case 1 or 2
         if (originalStateChoice.first == std::numeric_limits<uint_fast64_t>::max()) {
             // The optimal choice is to stay in this mec (Case 1)
-            // In this case, no further operations are necessary. The scheduler has already been set to the optimal choices during the call of computeLraForMec.
+            // In this case, no further operations are necessary. The scheduler has already been set to the optimal choices during the call of
+            // computeLraForMec.
             STORM_LOG_ASSERT(sspMatrix.getRow(sspState, sspChoices[sspState]).getNumberOfEntries() == 0, "Expected empty row at choice that stays in MEC.");
         } else {
             // The best choice is to leave this MEC via the selected state and choice. (Case 2)

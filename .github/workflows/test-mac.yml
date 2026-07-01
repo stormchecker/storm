@@ -48,7 +48,7 @@ jobs:
         with:
           xcode-version: ${{ inputs.xcode }}
       - name: Git clone
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Cache Homebrew downloads
         if: inputs.restore_cache
         uses: actions/cache@v4
