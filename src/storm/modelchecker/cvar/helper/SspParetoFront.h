@@ -168,7 +168,7 @@ class SspParetoFront {
             scaledPoints.push_back(Point{factor * point.probability, factor * point.expectedCost});
         }
         if (storm::utility::isPositive(factor)) {
-            return SspParetoFront(std::move(scaledPoints), AlreadyCanonicalTag{});
+            return SspParetoFront(std::move(scaledPoints), AlreadySortedTag{});
         }
         return SspParetoFront(std::move(scaledPoints));
     }
@@ -321,7 +321,7 @@ class SspParetoFront {
         for (auto const& point : points) {
             translatedPoints.push_back(Point{point.probability + offset.probability, point.expectedCost + offset.expectedCost});
         }
-        return SspParetoFront(std::move(translatedPoints), AlreadyCanonicalTag{});
+        return SspParetoFront(std::move(translatedPoints), AlreadySortedTag{});
     }
 
     SspParetoFront scaledTranslated(ValueType const& factor, Point const& offset) const {
@@ -342,7 +342,7 @@ class SspParetoFront {
             scaledTranslatedPoints.push_back(Point{offset.probability + factor * point.probability, offset.expectedCost + factor * point.expectedCost});
         }
         if (storm::utility::isPositive(factor)) {
-            return SspParetoFront(std::move(scaledTranslatedPoints), AlreadyCanonicalTag{});
+            return SspParetoFront(std::move(scaledTranslatedPoints), AlreadySortedTag{});
         }
         return SspParetoFront(std::move(scaledTranslatedPoints));
     }

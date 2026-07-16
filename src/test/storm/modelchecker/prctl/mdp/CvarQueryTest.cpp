@@ -150,6 +150,16 @@ TEST(CvarSspParetoFrontTest, ScaledMinkowskiSumMergesConvexChains) {
     expectParetoFrontPoints(result, {{0.0, 0.0}, {0.125, 0.25}, {0.375, 1.25}, {0.5, 2.0}, {0.75, 4.0}});
 }
 
+TEST(CvarSspParetoFrontTest, CanonicalizesAfterFloatingPointTranslationCollapse) {
+    using ParetoFront = storm::modelchecker::cvar::SspParetoFront<double>;
+
+    ParetoFront front({{0.0, 0.0}, {1e-17, 1.0}});
+
+    auto result = front.minkowskiSum(ParetoFront::singleton(1.0, 0.0));
+
+    expectParetoFrontPoints(result, {{1.0, 0.0}});
+}
+
 TEST(CvarSspParetoValueIterationOperatorTest, AppliesActionCostsAndUnionsActionFronts) {
     using ParetoFront = storm::modelchecker::cvar::SspParetoFront<double>;
     using ParetoViOperator = storm::modelchecker::cvar::SspParetoValueIterationOperator<double>;
