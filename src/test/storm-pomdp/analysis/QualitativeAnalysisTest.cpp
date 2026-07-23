@@ -15,7 +15,7 @@
 
 void graphalgorithm_test(std::string const& path, std::string const& constants, std::string formulaString) {
     storm::prism::Program program = storm::parser::PrismParser::parse(path);
-    program = storm::utility::prism::preprocess(program, constants);
+    program = program.preprocess(constants);
     std::shared_ptr<storm::logic::Formula const> formula = storm::api::parsePropertiesForPrismProgram(formulaString, program).front().getRawFormula();
     std::shared_ptr<storm::models::sparse::Pomdp<double>> pomdp =
         storm::api::buildSparseModel<double>(program, {formula})->as<storm::models::sparse::Pomdp<double>>();
@@ -32,7 +32,7 @@ void graphalgorithm_test(std::string const& path, std::string const& constants, 
 
 void oneshot_test(std::string const& path, std::string const& constants, std::string formulaString, uint64_t lookahead) {
     storm::prism::Program program = storm::parser::PrismParser::parse(path);
-    program = storm::utility::prism::preprocess(program, constants);
+    program = program.preprocess(constants);
     std::shared_ptr<storm::logic::Formula const> formula = storm::api::parsePropertiesForPrismProgram(formulaString, program).front().getRawFormula();
     std::shared_ptr<storm::models::sparse::Pomdp<double>> pomdp =
         storm::api::buildSparseModel<double>(program, {formula})->as<storm::models::sparse::Pomdp<double>>();
@@ -52,7 +52,7 @@ void oneshot_test(std::string const& path, std::string const& constants, std::st
 
 void iterativesearch_test(std::string const& path, std::string const& constants, std::string formulaString, bool wr) {
     storm::prism::Program program = storm::parser::PrismParser::parse(path);
-    program = storm::utility::prism::preprocess(program, constants);
+    program = program.preprocess(constants);
     std::shared_ptr<storm::logic::Formula const> formula = storm::api::parsePropertiesForPrismProgram(formulaString, program).front().getRawFormula();
     std::shared_ptr<storm::models::sparse::Pomdp<double>> pomdp =
         storm::api::buildSparseModel<double>(program, {formula})->as<storm::models::sparse::Pomdp<double>>();
@@ -79,7 +79,7 @@ void iterativesearch_test(std::string const& path, std::string const& constants,
 
 void symbolicbelsup_test(std::string const& path, std::string const& constants, std::string formulaString, bool wr) {
     storm::prism::Program program = storm::parser::PrismParser::parse(path);
-    program = storm::utility::prism::preprocess(program, constants);
+    program = program.preprocess(constants);
     std::shared_ptr<storm::logic::Formula const> formula = storm::api::parsePropertiesForPrismProgram(formulaString, program).front().getRawFormula();
     std::shared_ptr<storm::models::sparse::Pomdp<double>> pomdp =
         storm::api::buildSparseModel<double>(program, {formula})->as<storm::models::sparse::Pomdp<double>>();

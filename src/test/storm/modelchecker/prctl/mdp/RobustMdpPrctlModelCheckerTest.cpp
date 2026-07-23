@@ -113,7 +113,7 @@ void checkModel(std::string const& path, std::string const& formulaString, doubl
 void checkPrismModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double minmin, double minmax, double maxmin, double maxmax,
                                           std::string constantsString) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, constantsString);
+    program = program.preprocess(constantsString);
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::api::buildSparseModel<storm::Interval>(program, formulas);
@@ -194,7 +194,7 @@ TEST(RobustMdpModelCheckerTest, RobotMinMaxTest) {
 
 void makeUncertainAndCheck(std::string const& path, std::string const& formulaString, double amountOfUncertainty) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaString, program));
     std::shared_ptr<storm::models::sparse::Model<double>> modelPtr = storm::api::buildSparseModel<double>(program, formulas);
@@ -228,7 +228,7 @@ void makeUncertainAndCheck(std::string const& path, std::string const& formulaSt
 
 void makeUncertainAndCheckRational(std::string const& path, std::string const& formulaString, storm::RationalNumber amountOfUncertainty) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaString, program));
     std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> modelPtr = storm::api::buildSparseModel<storm::RationalNumber>(program, formulas);

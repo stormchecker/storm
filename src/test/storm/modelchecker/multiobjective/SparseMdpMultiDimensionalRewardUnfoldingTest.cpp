@@ -37,7 +37,7 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_one_dim_walk_sma
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsDef);
+    program = program.preprocess(constantsDef);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp =
@@ -84,7 +84,7 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_one_dim_walk_lar
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsDef);
+    program = program.preprocess(constantsDef);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp =
@@ -121,7 +121,7 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_tiny_ec) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsDef);
+    program = program.preprocess(constantsDef);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp =
@@ -179,7 +179,7 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_zeroconf_dl) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsDef);
+    program = program.preprocess(constantsDef);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
@@ -207,7 +207,7 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_csma) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsDef);
+    program = program.preprocess(constantsDef);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp =
@@ -239,7 +239,7 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_lower_bounds) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsDef);
+    program = program.preprocess(constantsDef);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp =
@@ -302,7 +302,7 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_small) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsDef);
+    program = program.preprocess(constantsDef);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp =
@@ -379,7 +379,7 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_large) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsDef);
+    program = program.preprocess(constantsDef);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp =
@@ -423,7 +423,7 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, tiny_ec) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsDef);
+    program = program.preprocess(constantsDef);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp =
@@ -491,7 +491,7 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, zeroconf_dl) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsDef);
+    program = program.preprocess(constantsDef);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
@@ -520,7 +520,7 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, csma) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsDef);
+    program = program.preprocess(constantsDef);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp =
@@ -558,7 +558,7 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, lower_bounds) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsDef);
+    program = program.preprocess(constantsDef);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp =

@@ -32,7 +32,7 @@ TEST_F(SparseMdpCbMultiObjectiveModelCheckerTest, consensus) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp =
@@ -59,7 +59,7 @@ TEST_F(SparseMdpCbMultiObjectiveModelCheckerTest, zeroconf) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp =
@@ -80,7 +80,7 @@ TEST_F(SparseMdpCbMultiObjectiveModelCheckerTest, team3with3objectives) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
 storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp = storm::api::buildSparseModel<storm::RationalNumber>(program,

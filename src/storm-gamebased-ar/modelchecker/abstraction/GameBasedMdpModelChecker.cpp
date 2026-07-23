@@ -36,7 +36,6 @@
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/prism.h"
 #include "storm/utility/vector.h"
 
 namespace storm::gbar {

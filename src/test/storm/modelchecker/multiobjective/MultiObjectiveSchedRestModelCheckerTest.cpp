@@ -263,7 +263,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, steps) {
 
     // programm, model, formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsString);
+    program = program.preprocess(constantsString);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp =
@@ -316,7 +316,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, mecs) {
     formulasAsString += "\nmulti(R{\"test\"}<=1 [C], P<=1 [F \"t2\"], P>=0.1 [F \"t1\"]);";
     // programm, model, formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsString);
+    program = program.preprocess(constantsString);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp =
@@ -393,7 +393,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     formulasAsString += "\nmulti(R{\"test\"}min=? [C], Pmin=? [F x=2 ], Pmin=? [F x=3]);";
     // programm, model, formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsString);
+    program = program.preprocess(constantsString);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp =
@@ -456,7 +456,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, infrew) {
     std::string formulasAsString = "multi(R{\"one\"}min=? [ F x=2], R{\"two\"}min=? [ C ]);";
     // programm, model, formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsString);
+    program = program.preprocess(constantsString);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp =

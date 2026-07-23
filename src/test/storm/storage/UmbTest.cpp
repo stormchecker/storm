@@ -57,7 +57,7 @@ class UmbRoundTripTest : public ::testing::Test {
 
         // build model from prism file
         storm::prism::Program program = storm::parser::PrismParser::parse(prismfile, true);
-        program = storm::utility::prism::preprocess(program, constants);
+        program = program.preprocess(constants);
         auto builder = storm::builder::ExplicitModelBuilder<ValueType>(program, generatorOptions);
         auto model = builder.build();
 

@@ -12,7 +12,7 @@ namespace {
 
 std::shared_ptr<storm::models::sparse::Pomdp<double>> buildMaze(std::string const& constants = "sl=0.0") {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism");
-    program = storm::utility::prism::preprocess(program, constants);
+    program = program.preprocess(constants);
     auto formula = storm::api::parsePropertiesForPrismProgram("Pmax=? [F \"goal\" ]", program).front().getRawFormula();
     auto model = storm::api::buildSparseModel<double>(program, {formula})->as<storm::models::sparse::Pomdp<double>>();
     storm::transformer::MakePOMDPCanonic<double> makeCanonic(*model);
