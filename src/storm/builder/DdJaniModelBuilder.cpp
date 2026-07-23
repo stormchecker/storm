@@ -34,7 +34,6 @@
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/math.h"
 
 namespace storm {
 namespace builder {

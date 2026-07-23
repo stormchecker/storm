@@ -1,5 +1,9 @@
 #pragma once
 
+#include <bit>
+
+#include "storm/utility/macros.h"
+
 namespace storm::dft {
 namespace storage {
 
@@ -31,7 +35,7 @@ class DFTStateGenerationInfo {
      * @return Number of bits required to store claiming information.
      */
     static size_t getUsageInfoBits(size_t maxSpareChildCount) {
-        return storm::utility::math::uint64_log2(maxSpareChildCount) + 1;
+        return std::bit_width(maxSpareChildCount);
     }
 
     /*!
