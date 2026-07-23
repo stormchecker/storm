@@ -8,6 +8,7 @@
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/solver/SmtSolver.h"
+#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 #include "storm/storage/jani/Automaton.h"
@@ -26,7 +27,6 @@
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/storage/jani/visitor/JSONExporter.h"
 #include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
-#include "storm/utility/cli.h"
 #include "storm/utility/combinatorics.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -1159,7 +1159,7 @@ Model Model::preprocess(std::map<storm::expressions::Variable, storm::expression
 }
 
 Model Model::preprocess(std::string const& constantDefinitionString) const {
-    return this->preprocess(storm::utility::cli::parseConstantDefinitionString(this->getManager(), constantDefinitionString));
+    return this->preprocess(storm::storage::parseConstantDefinitionString(this->getManager(), constantDefinitionString));
 }
 
 std::map<storm::expressions::Variable, storm::expressions::Expression> Model::getConstantsSubstitution() const {

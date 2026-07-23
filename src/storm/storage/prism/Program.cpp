@@ -11,6 +11,7 @@
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/solver/SmtSolver.h"
+#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
@@ -18,7 +19,6 @@
 #include "storm/storage/prism/CompositionVisitor.h"
 #include "storm/storage/prism/Compositions.h"
 #include "storm/storage/prism/ToJaniConverter.h"
-#include "storm/utility/cli.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
@@ -1164,7 +1164,7 @@ Program Program::preprocess(std::map<storm::expressions::Variable, storm::expres
 }
 
 Program Program::preprocess(std::string const& constantDefinitionString) const {
-    return this->preprocess(storm::utility::cli::parseConstantDefinitionString(this->getManager(), constantDefinitionString));
+    return this->preprocess(storm::storage::parseConstantDefinitionString(this->getManager(), constantDefinitionString));
 }
 
 Program Program::labelUnlabelledCommands(std::map<uint64_t, std::string> const& nameSuggestions) const {
