@@ -1,7 +1,6 @@
 #include "storm/storage/SymbolicModelDescription.h"
 
 #include "storm/utility/cli.h"
-#include "storm/utility/jani.h"
 #include "storm/utility/prism.h"
 
 #include "storm/storage/jani/Automaton.h"
@@ -184,14 +183,6 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> SymbolicM
         return storm::utility::cli::parseConstantDefinitionString(this->asJaniModel().getManager(), constantDefinitionString);
     } else {
         return storm::utility::cli::parseConstantDefinitionString(this->asPrismProgram().getManager(), constantDefinitionString);
-    }
-}
-
-void SymbolicModelDescription::requireNoUndefinedConstants() const {
-    if (this->isJaniModel()) {
-        storm::utility::jani::requireNoUndefinedConstants(this->asJaniModel());
-    } else {
-        storm::utility::prism::requireNoUndefinedConstants(this->asPrismProgram());
     }
 }
 
