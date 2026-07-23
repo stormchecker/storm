@@ -19,7 +19,6 @@
 #include "storm/storage/prism/Compositions.h"
 #include "storm/storage/prism/Program.h"
 #include "storm/utility/dd.h"
-#include "storm/utility/prism.h"
 
 namespace storm {
 namespace builder {

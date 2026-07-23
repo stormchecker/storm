@@ -21,8 +21,6 @@
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/storage/sparse/StateStorage.h"
 
-#include "storm/utility/prism.h"
-
 #include "storm/builder/ExplorationOrder.h"
 
 #include "storm/generator/CompressedState.h"
@@ -33,7 +31,6 @@ namespace storm {
 
 namespace builder {
 
-using namespace storm::utility::prism;
 using namespace storm::generator;
 
 // Forward-declare classes.

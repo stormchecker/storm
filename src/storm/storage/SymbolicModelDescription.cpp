@@ -1,14 +1,12 @@
 #include "storm/storage/SymbolicModelDescription.h"
 
-#include "storm/utility/cli.h"
-#include "storm/utility/prism.h"
-
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidTypeException.h"
+#include "storm/utility/cli.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -159,20 +157,15 @@ std::pair<SymbolicModelDescription, std::vector<storm::jani::Property>> Symbolic
 }
 
 SymbolicModelDescription SymbolicModelDescription::preprocess(std::string const& constantDefinitionString) const {
-    std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = parseConstantDefinitions(constantDefinitionString);
-    return preprocess(substitution);
+    return this->preprocess(this->parseConstantDefinitions(constantDefinitionString));
 }
 
 SymbolicModelDescription SymbolicModelDescription::preprocess(
     std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
     if (this->isJaniModel()) {
-        storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(constantDefinitions).substituteConstants();
-        // We intentionally do not eliminate function expressions in jani models at this point because that would also remove the function
-        // declarations from the model. However, those might still be needed to, e.g., process properties that refer to functions.
-        return SymbolicModelDescription(preparedModel);
+        return SymbolicModelDescription(this->asJaniModel().preprocess(constantDefinitions));
     } else if (this->isPrismProgram()) {
-        return SymbolicModelDescription(
-            this->asPrismProgram().defineUndefinedConstants(constantDefinitions).substituteConstantsFormulas().substituteNonStandardPredicates());
+        return SymbolicModelDescription(this->asPrismProgram().preprocess(constantDefinitions));
     }
     return *this;
 }
