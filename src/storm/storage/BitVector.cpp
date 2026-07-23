@@ -866,34 +866,14 @@ uint64_t BitVector::getNextIndexWithValue(uint64_t const* dataPtr, uint64_t star
     // At this point, currentBucket definitely contains a 1-bit and all bits (Backward ? after : before) the currentBitInBucket are zero
     STORM_LOG_ASSERT(currentBucket != 0ull, "Bitvector's getNextIndexWithValue method in invalid state.");
 
-#if (defined(__GNUG__) || defined(__clang__))
-    // Use fast and easy builtin functions to find the correct bit index
     if constexpr (Backward) {
         // take max since the startIndex might point somewhere into the current bucket so the found bit might come before the startIndex
         return std::max<uint64_t>(startingIndex,
-                                  currentBucketIndexOffset + 64ull - __builtin_ctzll(currentBucket));  // make sure to return +1 index after the found 1
+                                  currentBucketIndexOffset + 64ull - std::countr_zero(currentBucket));  // make sure to return +1 index after the found 1
     } else {
         // take min since the endIndex might point somewhere into the current bucket so the found bit might come after the endIndex
-        return std::min<uint64_t>(endIndex, currentBucketIndexOffset + __builtin_clzll(currentBucket));
+        return std::min<uint64_t>(endIndex, currentBucketIndexOffset + std::countl_zero(currentBucket));
     }
-#else
-    // Find the correct bit index manually
-    uint64_t compareMask = 1ull << (63 - currentBitInBucket);  // 000..000'1'000..000 with '1' at currentBitInBucket position
-    while (!static_cast<bool>(currentBucket & compareMask)) {
-        if constexpr (Backward) {
-            compareMask <<= 1ull;
-            --currentBitInBucket;
-        } else {
-            compareMask >>= 1ull;
-            ++currentBitInBucket;
-        }
-    }
-    if constexpr (Backward) {
-        return std::max(startingIndex, currentBucketIndexOffset + currentBitInBucket + 1ull);  // make sure to return +1 index after the found 1
-    } else {
-        return std::min(endIndex, currentBucketIndexOffset + currentBitInBucket);
-    }
-#endif
 }
 
 storm::storage::BitVector BitVector::getAsBitVector(uint64_t start, uint64_t length) const {
