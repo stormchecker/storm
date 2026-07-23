@@ -1,12 +1,12 @@
 #include "storm-cli-utilities/print.h"
 
-#include "resources.h"  // This header knows what to include for memory consumption
-#include "storm-version-info/storm-version.h"
-#include "storm/utility/cli.h"
-#include "storm/utility/macros.h"
-
 #include <boost/algorithm/string/replace.hpp>
 #include <ctime>
+#include <filesystem>
+
+#include "storm-cli-utilities/resources.h"  // This header knows what to include for memory consumption
+#include "storm-version-info/storm-version.h"
+#include "storm/utility/macros.h"
 
 #ifdef STORM_HAVE_GLPK
 #include "glpk.h"
@@ -72,7 +72,7 @@ void printHeader(std::string const& name, const int argc, const char** argv) {
         std::time_t result = std::time(nullptr);
         STORM_PRINT("Date: " << std::ctime(&result));
         STORM_PRINT("Command line arguments:" << commandStream.str() << '\n');
-        STORM_PRINT("Current working directory: " << storm::utility::cli::getCurrentWorkingDirectory() << "\n\n");
+        STORM_PRINT("Current working directory: " << std::filesystem::current_path().string() << "\n\n");
     }
 }
 
