@@ -20,7 +20,6 @@
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/multiplier/Multiplier.h"
-#include "storm/storage/ConsecutiveUint64DynamicPriorityQueue.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
