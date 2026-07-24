@@ -4,6 +4,7 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/generator/PrismNextStateGenerator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/sparse/ValuationTransformer.h"
@@ -391,4 +392,31 @@ TEST(ValuationTest, ValuationsSelectEntities) {
         EXPECT_EQ(e % 2 == 0, valuations.readValue<bool>(e, b)) << " at original entity " << e;
         EXPECT_EQ(static_cast<int64_t>(e), valuations.readValue<int64_t>(e, i)) << " at original entity " << e;
     }
+}
+
+TEST(ValuationTest, RejectsNonCompliantDoubleOrStringSize) {
+    // Double and String fields must always be exactly their default size (64 bits) per the UMB spec
+    // (see storm::umb::validation::validateTypeDeclaration). The addDoubleVariable/addStringVariable
+    // convenience methods can never violate this (they never accept a custom size), but the generic
+    // addVariable(ValuationClassDescription::Variable const&) escape hatch takes a fully custom
+    // SizedType and used to accept a non-compliant size silently, only causing corruption/crashes much
+    // later when the resulting description was actually read or written.
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto const d = manager->declareRationalVariable("d");
+    storm::storage::sparse::ValuationDescriptionBuilder doubleBuilder(manager);
+    storm::storage::sparse::ValuationClassDescription::Variable const badDouble{
+        .name = "d", .isOptional = std::nullopt, .type = {storm::umb::Type::Double, 128}, .lower = {}, .upper = {}, .offset = {}};
+    EXPECT_THROW(doubleBuilder.addVariable(badDouble), storm::exceptions::WrongFormatException);
+
+    auto const s = manager->declareStringVariable("s");
+    storm::storage::sparse::ValuationDescriptionBuilder stringBuilder(manager);
+    storm::storage::sparse::ValuationClassDescription::Variable const badString{
+        .name = "s", .isOptional = std::nullopt, .type = {storm::umb::Type::String, 128}, .lower = {}, .upper = {}, .offset = {}};
+    EXPECT_THROW(stringBuilder.addVariable(badString), storm::exceptions::WrongFormatException);
+
+    // A compliant (default-size) Double field must still be accepted.
+    storm::storage::sparse::ValuationDescriptionBuilder okBuilder(manager);
+    storm::storage::sparse::ValuationClassDescription::Variable const okDouble{
+        .name = "d", .isOptional = std::nullopt, .type = {storm::umb::Type::Double, std::nullopt}, .lower = {}, .upper = {}, .offset = {}};
+    EXPECT_NO_THROW(okBuilder.addVariable(okDouble));
 }

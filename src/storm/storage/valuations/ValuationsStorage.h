@@ -7,6 +7,8 @@
 #include <optional>
 #include <set>
 #include <span>
+#include <sstream>
+#include <typeinfo>
 
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Variable.h"
@@ -454,6 +456,47 @@ class ValuationsStorage {
     std::size_t hash() const;
 
    private:
+    /*!
+     * Returns a human-readable name for one of the value types supported by read/write callbacks, falling
+     * back to the (possibly mangled) typeid name for anything not explicitly listed here.
+     */
+    template<typename T>
+    static std::string typeName() {
+        if constexpr (std::is_same_v<T, bool>) {
+            return "bool";
+        } else if constexpr (std::is_same_v<T, int64_t>) {
+            return "int64_t";
+        } else if constexpr (std::is_same_v<T, uint64_t>) {
+            return "uint64_t";
+        } else if constexpr (std::is_same_v<T, double>) {
+            return "double";
+        } else if constexpr (std::is_same_v<T, storm::RationalNumber>) {
+            return "storm::RationalNumber";
+        } else if constexpr (std::is_same_v<T, Integer>) {
+            return "Integer (arbitrary-precision)";
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            return "std::string";
+        } else if constexpr (std::is_same_v<T, std::string_view>) {
+            return "std::string_view";
+        } else if constexpr (std::is_same_v<T, std::nullopt_t>) {
+            return "std::nullopt_t";
+        } else {
+            return typeid(T).name();
+        }
+    }
+
+    /*!
+     * Builds a comma-separated, human-readable list of the given types' names, for use in error messages
+     * when a read/write callback's requested C++ type(s) don't match a variable's actual storage type.
+     */
+    template<typename... Types>
+    static std::string typeNames() {
+        std::ostringstream oss;
+        [[maybe_unused]] bool first = true;
+        ((oss << (first ? "" : ", ") << typeName<Types>(), first = false), ...);
+        return oss.str();
+    }
+
     uint64_t numEntities;
     std::vector<VariablesInformation> variableClasses;
 
@@ -591,8 +634,16 @@ class ValuationsStorage {
                 break;
             }
             case Double:
-                // Reaching this part should not be possible as varInfo.fits64Bit would be true
-                STORM_LOG_ASSERT(false, "double variables with more than 64 bits are not compliant.");
+                // Reaching this line happens for two different reasons that are otherwise indistinguishable
+                // here: (a) the field is a compliant 64-bit double but the caller's AllowedTypes didn't
+                // include double (a type mismatch, e.g. reading a double-encoded variable via
+                // getRationalValue/getInt64Value/...) -- fits64Bit is true in this case, and we fall through
+                // to the "not handled" throw below, matching how a mismatched read of any other type is
+                // handled; or (b) the field's declared bit size exceeds 64, which violates the UMB spec for
+                // Double and should be impossible: ValuationDescriptionBuilder::addVariable rejects such
+                // descriptions at construction time (see validateTypeDeclaration). Assert against (b)
+                // specifically, not against reaching this line at all.
+                STORM_LOG_ASSERT(varInfo.fits64Bit, "double variables with more than 64 bits are not compliant.");
                 break;
             case Rational: {
                 STORM_LOG_ASSERT(bitSize % 2 == 0, "Rational number bit size must be even.");
@@ -604,18 +655,22 @@ class ValuationsStorage {
                 }
                 break;
             }
-            case String: {
-                // Reaching this part should not be possible as varInfo.fits64Bit would be true
-                STORM_LOG_ASSERT(false, "String variables with more than 64 bits are not compliant.");
+            case String:
+                // Same reasoning as the Double case above: fits64Bit distinguishes a type mismatch (falls
+                // through to the "not handled" throw below) from a genuine >64-bit violation (asserted
+                // against here, since construction-time validation should now make it impossible).
+                STORM_LOG_ASSERT(varInfo.fits64Bit, "String variables with more than 64 bits are not compliant.");
                 break;
-            }
             default:
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                                 "ValuationsStorage for variable type '" << varInfo.description.type.toString() << "' are not supported.");
         }
 
         STORM_LOG_THROW(false, storm::exceptions::UnexpectedException,
-                        "Variable " << varInfo.description.name << " of type " << varInfo.description.type.toString() << " is not handled.");
+                        "Variable " << varInfo.description.name << " is stored as " << varInfo.description.type.toString()
+                                    << ", which cannot be read as any of the requested C++ type(s) [" << typeNames<AllowedTypes...>()
+                                    << "]. Check that you are using the accessor matching the variable's declared storage type (e.g. "
+                                       "getDoubleValue instead of getRationalValue for a variable added via addDoubleVariable).");
     }
 
     template<bool InitializeWithCurrent = false, bool AllowOptional = false, typename... AllowedTypes, ValuationWriteCallback Callback>
@@ -764,7 +819,10 @@ class ValuationsStorage {
                                 "ValuationsStorage for variable type '" << varInfo.description.type.toString() << "' are not supported.");
         }
         STORM_LOG_THROW(false, storm::exceptions::UnexpectedException,
-                        "Variable " << varInfo.description.name << " of type " << varInfo.description.type.toString() << " is not handled.");
+                        "Variable " << varInfo.description.name << " is stored as " << varInfo.description.type.toString()
+                                    << ", which cannot be written as any of the requested C++ type(s) [" << typeNames<AllowedTypes...>()
+                                    << "]. Check that you are using the accessor matching the variable's declared storage type (e.g. "
+                                       "writeDoubleValue instead of writeRationalValue for a variable added via addDoubleVariable).");
     }
 };
 }  // namespace storm::storage::sparse

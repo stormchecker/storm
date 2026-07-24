@@ -1,8 +1,11 @@
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
 
 #include <bit>
+#include <sstream>
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Variable.h"
+#include "storm/storage/umb/model/Validation.h"
 #include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/utility/macros.h"
 
@@ -88,6 +91,9 @@ void ValuationDescriptionBuilder::addStringVariable(storm::expressions::Variable
 
 void ValuationDescriptionBuilder::addVariable(ValuationClassDescription::Variable const& variable) {
     STORM_LOG_ASSERT(manager->hasVariable(variable.name), "Variable " << variable.name << " is not declared in the expression manager.");
+    std::ostringstream errors;
+    STORM_LOG_THROW(storm::umb::validation::validateTypeDeclaration(variable.type, false, errors), storm::exceptions::WrongFormatException,
+                    "Invalid type declaration for variable " << variable.name << ": " << errors.str());
     descr.variables.push_back(variable);
 }
 void ValuationDescriptionBuilder::addVariables(ValuationClassDescription const& description, bool addPadding) {
