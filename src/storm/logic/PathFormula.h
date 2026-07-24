@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_PATHFORMULA_H_
-#define STORM_LOGIC_PATHFORMULA_H_
+#pragma once
 
 #include "storm/logic/Formula.h"
 
@@ -15,5 +14,3 @@ class PathFormula : public Formula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_PATHFORMULA_H_ */

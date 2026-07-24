@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_Z3SMTSOLVER
-#define STORM_SOLVER_Z3SMTSOLVER
+#pragma once
 
 #include "storm-config.h"
 #include "storm/adapters/Z3ExpressionAdapter.h"
@@ -103,4 +102,3 @@ class Z3SmtSolver : public SmtSolver {
 };
 }  // namespace solver
 }  // namespace storm
-#endif  // STORM_SOLVER_Z3SMTSOLVER

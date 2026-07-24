@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_CoreSettings_H_
-#define STORM_SETTINGS_MODULES_CoreSettings_H_
+#pragma once
 
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
@@ -130,5 +129,3 @@ class CoreSettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_CoreSettings_H_ */

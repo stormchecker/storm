@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_MODULECOMPOSITION_H_
-#define STORM_STORAGE_PRISM_MODULECOMPOSITION_H_
+#pragma once
 
 #include <string>
 
@@ -24,5 +23,3 @@ class ModuleComposition : public Composition {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_MODULECOMPOSITION_H_ */

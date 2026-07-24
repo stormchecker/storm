@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_REWARDMODEL_H_
-#define STORM_STORAGE_PRISM_REWARDMODEL_H_
+#pragma once
 
 #include <map>
 #include <string>
@@ -136,5 +135,3 @@ class RewardModel : public LocatedInformation {
 
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_REWARDMODEL_H_ */

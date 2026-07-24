@@ -1,5 +1,4 @@
-#ifndef STORM_PARSER_NONDETERMINISTICSPARSETRANSITIONPARSER_H_
-#define STORM_PARSER_NONDETERMINISTICSPARSETRANSITIONPARSER_H_
+#pragma once
 
 #include "storm/storage/SparseMatrix.h"
 
@@ -95,5 +94,3 @@ class NondeterministicSparseTransitionParser {
 
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_NONDETERMINISTICSPARSETRANSITIONPARSER_H__H_ */

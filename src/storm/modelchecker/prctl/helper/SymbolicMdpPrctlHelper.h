@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_SYMBOLIC_MDP_PRCTL_MODELCHECKER_HELPER_H_
-#define STORM_MODELCHECKER_SYMBOLIC_MDP_PRCTL_MODELCHECKER_HELPER_H_
+#pragma once
 
 #include "storm/models/symbolic/NondeterministicModel.h"
 
@@ -88,5 +87,3 @@ class SymbolicMdpPrctlHelper {
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_SYMBOLIC_MDP_PRCTL_MODELCHECKER_HELPER_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_LONGRUNAVERAGEOPERATORFORMULA_H_
-#define STORM_LOGIC_LONGRUNAVERAGEOPERATORFORMULA_H_
+#pragma once
 
 #include "storm/logic/OperatorFormula.h"
 
@@ -21,5 +20,3 @@ class LongRunAverageOperatorFormula : public OperatorFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_LONGRUNAVERAGEOPERATORFORMULA_H_ */

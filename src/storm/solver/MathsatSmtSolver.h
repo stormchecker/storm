@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_MATHSATSMTSOLVER
-#define STORM_SOLVER_MATHSATSMTSOLVER
+#pragma once
 
 #include <boost/container/flat_map.hpp>
 #include "storm-config.h"
@@ -129,4 +128,3 @@ class MathsatSmtSolver : public SmtSolver {
 };
 }  // namespace solver
 }  // namespace storm
-#endif  // STORM_SOLVER_MATHSATSMTSOLVER

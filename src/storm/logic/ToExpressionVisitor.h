@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_TOEXPRESSIONVISITOR_H_
-#define STORM_LOGIC_TOEXPRESSIONVISITOR_H_
+#pragma once
 
 #include "storm/logic/FormulaVisitor.h"
 
@@ -43,5 +42,3 @@ class ToExpressionVisitor : public FormulaVisitor {
 
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_TOEXPRESSIONVISITOR_H_ */

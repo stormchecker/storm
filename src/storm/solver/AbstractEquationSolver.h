@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_
-#define STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_
+#pragma once
 
 #include <boost/optional.hpp>
 #include <chrono>
@@ -262,5 +261,3 @@ class AbstractEquationSolver {
 
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_ */

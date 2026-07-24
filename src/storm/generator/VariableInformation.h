@@ -1,5 +1,4 @@
-#ifndef STORM_GENERATOR_VARIABLEINFORMATION_H_
-#define STORM_GENERATOR_VARIABLEINFORMATION_H_
+#pragma once
 
 #include <boost/container/flat_map.hpp>
 #include <boost/optional/optional.hpp>
@@ -160,5 +159,3 @@ struct VariableInformation {
 
 }  // namespace generator
 }  // namespace storm
-
-#endif /* STORM_GENERATOR_VARIABLEINFORMATION_H_ */

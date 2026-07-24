@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_STATEACTIONREWARD_H_
-#define STORM_STORAGE_PRISM_STATEACTIONREWARD_H_
+#pragma once
 
 #include <map>
 
@@ -105,5 +104,3 @@ class StateActionReward : public LocatedInformation {
 
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_STATEACTIONREWARD_H_ */

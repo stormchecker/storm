@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_FORMULAINFORMATIONVISITOR_H_
-#define STORM_LOGIC_FORMULAINFORMATIONVISITOR_H_
+#pragma once
 
 #include "storm/logic/FormulaInformation.h"
 #include "storm/logic/FormulaVisitor.h"
@@ -51,5 +50,3 @@ class FormulaInformationVisitor : public FormulaVisitor {
 
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_FORMULAINFORMATIONVISITOR_H_ */

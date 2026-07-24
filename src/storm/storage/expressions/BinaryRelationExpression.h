@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_BINARYRELATIONEXPRESSION_H_
-#define STORM_STORAGE_EXPRESSIONS_BINARYRELATIONEXPRESSION_H_
+#pragma once
 
 #include "storm/storage/expressions/BinaryExpression.h"
 #include "storm/storage/expressions/BinaryRelationType.h"
@@ -52,5 +51,3 @@ class BinaryRelationExpression : public BinaryExpression {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_BINARYRELATIONEXPRESSION_H_ */

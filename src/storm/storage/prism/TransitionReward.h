@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_TRANSITIONREWARD_H_
-#define STORM_STORAGE_PRISM_TRANSITIONREWARD_H_
+#pragma once
 
 #include <map>
 
@@ -117,5 +116,3 @@ class TransitionReward : public LocatedInformation {
 
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_TRANSITIONREWARD_H_ */

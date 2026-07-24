@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_FORMULA_H_
-#define STORM_LOGIC_FORMULA_H_
+#pragma once
 
 #include <iosfwd>
 #include <memory>
@@ -273,5 +272,3 @@ class Formula : public std::enable_shared_from_this<Formula> {
 std::ostream& operator<<(std::ostream& out, Formula const& formula);
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_FORMULA_H_ */

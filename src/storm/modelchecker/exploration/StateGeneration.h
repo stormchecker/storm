@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_STATEGENERATION_H_
-#define STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_STATEGENERATION_H_
+#pragma once
 
 #include "storm/generator/CompressedState.h"
 #include "storm/generator/PrismNextStateGenerator.h"
@@ -53,5 +52,3 @@ class StateGeneration {
 }  // namespace exploration_detail
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_STATEGENERATION_H_ */

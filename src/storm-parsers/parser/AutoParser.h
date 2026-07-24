@@ -1,5 +1,4 @@
-#ifndef STORM_PARSER_AUTOPARSER_H_
-#define STORM_PARSER_AUTOPARSER_H_
+#pragma once
 
 #include "storm/models/sparse/Model.h"
 
@@ -65,5 +64,3 @@ class AutoParser {
 
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_AUTOPARSER_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_UTILITY_PRISM_H_
-#define STORM_UTILITY_PRISM_H_
+#pragma once
 
 #include <map>
 #include <string>
@@ -25,5 +24,3 @@ storm::prism::Program preprocess(storm::prism::Program const& program, std::stri
 }  // namespace prism
 }  // namespace utility
 }  // namespace storm
-
-#endif /* STORM_UTILITY_PRISM_H_ */

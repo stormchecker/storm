@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_ATOMICEXPRESSIONFORMULA_H_
-#define STORM_LOGIC_ATOMICEXPRESSIONFORMULA_H_
+#pragma once
 
 #include "storm/logic/StateFormula.h"
 #include "storm/storage/expressions/Expression.h"
@@ -31,5 +30,3 @@ class AtomicExpressionFormula : public StateFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_ATOMICEXPRESSIONFORMULA_H_ */

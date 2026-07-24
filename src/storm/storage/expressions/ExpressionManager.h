@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSIONMANAGER_H_
-#define STORM_STORAGE_EXPRESSIONS_EXPRESSIONMANAGER_H_
+#pragma once
 
 #include <cstdint>
 #include <iosfwd>
@@ -499,5 +498,3 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
 std::ostream& operator<<(std::ostream& out, ExpressionManager const& manager);
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSIONMANAGER_H_ */

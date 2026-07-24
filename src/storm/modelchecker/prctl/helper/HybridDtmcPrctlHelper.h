@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_HYBRID_DTMC_PRCTL_MODELCHECKER_HELPER_H_
-#define STORM_MODELCHECKER_HYBRID_DTMC_PRCTL_MODELCHECKER_HELPER_H_
+#pragma once
 
 #include "storm/models/symbolic/Model.h"
 
@@ -62,5 +61,3 @@ class HybridDtmcPrctlHelper {
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_HYBRID_DTMC_PRCTL_MODELCHECKER_HELPER_H_ */

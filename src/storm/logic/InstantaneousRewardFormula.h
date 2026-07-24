@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_INSTANTANEOUSREWARDFORMULA_H_
-#define STORM_LOGIC_INSTANTANEOUSREWARDFORMULA_H_
+#pragma once
 
 #include "storm/logic/PathFormula.h"
 
@@ -45,5 +44,3 @@ class InstantaneousRewardFormula : public PathFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_INSTANTANEOUSREWARDFORMULA_H_ */

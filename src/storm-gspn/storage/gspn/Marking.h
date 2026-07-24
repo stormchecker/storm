@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_GSPN_MARKING_H_
-#define STORM_STORAGE_GSPN_MARKING_H_
+#pragma once
 
 #include <cmath>
 #include <map>
@@ -75,5 +74,3 @@ class Marking {
 };
 }  // namespace gspn
 }  // namespace storm
-
-#endif  // STORM_STORAGE_GSPN_MARKING_H_

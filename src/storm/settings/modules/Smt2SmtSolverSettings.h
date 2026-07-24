@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_SMT2SMTSOLVERSETTINGS_H_
-#define STORM_SETTINGS_MODULES_SMT2SMTSOLVERSETTINGS_H_
+#pragma once
 
 #include "storm/settings/modules/ModuleSettings.h"
 
@@ -61,5 +60,3 @@ class Smt2SmtSolverSettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_SMT2SMTSOLVERSETTINGS_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_
-#define STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_
+#pragma once
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
@@ -37,5 +36,3 @@ class LinearityCheckVisitor : public ExpressionVisitor {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_ */

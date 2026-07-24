@@ -1,5 +1,4 @@
-#ifndef MDPMODELCHECKINGHELPERRETURNTYPE_H
-#define MDPMODELCHECKINGHELPERRETURNTYPE_H
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -36,5 +35,3 @@ struct MDPSparseModelCheckingHelperReturnType {
 
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* MDPMODELCHECKINGRETURNTYPE_H */

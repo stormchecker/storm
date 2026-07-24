@@ -1,5 +1,4 @@
-#ifndef STORM_ADAPTERS_MATHSATEXPRESSIONADAPTER_H_
-#define STORM_ADAPTERS_MATHSATEXPRESSIONADAPTER_H_
+#pragma once
 
 #include "storm-config.h"
 
@@ -379,5 +378,3 @@ class MathsatExpressionAdapter : public storm::expressions::ExpressionVisitor {
 #endif
 }  // namespace adapters
 }  // namespace storm
-
-#endif /* STORM_ADAPTERS_MATHSATEXPRESSIONADAPTER_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_BOOLEANVARIABLE_H_
-#define STORM_STORAGE_PRISM_BOOLEANVARIABLE_H_
+#pragma once
 
 #include <map>
 
@@ -43,5 +42,3 @@ class BooleanVariable : public Variable {
 
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_BOOLEANVARIABLE_H_ */

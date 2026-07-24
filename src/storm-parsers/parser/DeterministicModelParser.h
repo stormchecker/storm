@@ -1,5 +1,4 @@
-#ifndef STORM_PARSER_DETERMINISTICMODELPARSER_H_
-#define STORM_PARSER_DETERMINISTICMODELPARSER_H_
+#pragma once
 
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
@@ -81,5 +80,3 @@ class DeterministicModelParser {
 
 } /* namespace parser */
 } /* namespace storm */
-
-#endif /* STORM_PARSER_DETERMINISTICMODELPARSER_H_ */

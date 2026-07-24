@@ -1,5 +1,4 @@
-#ifndef STORM_DERIVATIVEEVALUATIONHELPER_H
-#define STORM_DERIVATIVEEVALUATIONHELPER_H
+#pragma once
 
 #include <cstdint>
 #include <map>
@@ -111,5 +110,3 @@ class SignedGradientDescentTerminationCondition : public solver::TerminationCond
 };
 }  // namespace derivative
 }  // namespace storm
-
-#endif  // STORM_DERIVATIVEEVALUATIONHELPER_H

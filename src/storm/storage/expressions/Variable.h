@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_VARIABLE_H_
-#define STORM_STORAGE_EXPRESSIONS_VARIABLE_H_
+#pragma once
 
 #include <cstdint>
 #include <functional>
@@ -154,5 +153,3 @@ struct hash<storm::expressions::Variable> {
     }
 };
 }  // namespace std
-
-#endif /* STORM_STORAGE_EXPRESSIONS_VARIABLE_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_SYMBOLICMINMAXLINEAREQUATIONSOLVER_H_
-#define STORM_SOLVER_SYMBOLICMINMAXLINEAREQUATIONSOLVER_H_
+#pragma once
 
 #include <boost/optional.hpp>
 #include <memory>
@@ -281,5 +280,3 @@ class GeneralSymbolicMinMaxLinearEquationSolverFactory : public SymbolicMinMaxLi
 
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_SYMBOLICMINMAXLINEAREQUATIONSOLVER_H_ */

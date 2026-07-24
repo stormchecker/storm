@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_SPARSEPROPOSITIONALMODELCHECKER_H_
-#define STORM_MODELCHECKER_SPARSEPROPOSITIONALMODELCHECKER_H_
+#pragma once
 
 #include "storm/adapters/IntervalForward.h"
 #include "storm/modelchecker/AbstractModelChecker.h"
@@ -37,5 +36,3 @@ class SparsePropositionalModelChecker : public AbstractModelChecker<SparseModelT
 };
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_SPARSEPROPOSITIONALMODELCHECKER_H_ */

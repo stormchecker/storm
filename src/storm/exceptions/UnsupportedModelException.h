@@ -1,5 +1,4 @@
-#ifndef STORM_UNSUPPORTEDMODELEXCEPTION_H
-#define STORM_UNSUPPORTEDMODELEXCEPTION_H
+#pragma once
 
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/ExceptionMacros.h"
@@ -11,4 +10,3 @@ STORM_NEW_EXCEPTION(UnsupportedModelException)
 
 }  // namespace exceptions
 }  // namespace storm
-#endif  // STORM_UNSUPPORTEDMODELEXCEPTION_H

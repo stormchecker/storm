@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_CUMULATIVEREWARDFORMULA_H_
-#define STORM_LOGIC_CUMULATIVEREWARDFORMULA_H_
+#pragma once
 
 #include "storm/logic/PathFormula.h"
 
@@ -67,5 +66,3 @@ class CumulativeRewardFormula : public PathFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_CUMULATIVEREWARDFORMULA_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_PARSER_DETERMINISTICSPARSETRANSITIONPARSER_H_
-#define STORM_PARSER_DETERMINISTICSPARSETRANSITIONPARSER_H_
+#pragma once
 
 #include "storm/storage/SparseMatrix.h"
 
@@ -89,5 +88,3 @@ class DeterministicSparseTransitionParser {
 
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_DETERMINISTICSPARSETRANSITIONPARSER_H_ */

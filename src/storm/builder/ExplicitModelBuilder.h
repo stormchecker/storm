@@ -1,5 +1,4 @@
-#ifndef STORM_BUILDER_EXPLICITMODELBUILDER_H
-#define STORM_BUILDER_EXPLICITMODELBUILDER_H
+#pragma once
 
 #include <boost/container/flat_map.hpp>
 #include <boost/functional/hash.hpp>
@@ -182,5 +181,3 @@ class ExplicitModelBuilder {
 
 }  // namespace builder
 }  // namespace storm
-
-#endif /* STORM_BUILDER_EXPLICITMODELBUILDER_H */

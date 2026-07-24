@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPECONVERSION_QUICKHULL_H_
-#define STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPECONVERSION_QUICKHULL_H_
+#pragma once
 
 #include <set>
 
@@ -151,5 +150,3 @@ class QuickHull {
 }  // namespace geometry
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPECONVERSION_QUICKHULL_H_ */

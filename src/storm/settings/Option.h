@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_OPTION_H_
-#define STORM_SETTINGS_OPTION_H_
+#pragma once
 
 #include <cstdint>
 #include <iostream>
@@ -264,5 +263,3 @@ class Option {
 };
 }  // namespace settings
 }  // namespace storm
-
-#endif  // STORM_SETTINGS_OPTION_H_

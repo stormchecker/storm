@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_DISTRIBUTION_H_
-#define STORM_STORAGE_DISTRIBUTION_H_
+#pragma once
 
 #include <boost/container/flat_map.hpp>
 #include <iosfwd>
@@ -178,5 +177,3 @@ struct hash<storm::storage::Distribution<ValueType>> {
 };
 
 }  // namespace std
-
-#endif /* STORM_STORAGE_DISTRIBUTION_H_ */

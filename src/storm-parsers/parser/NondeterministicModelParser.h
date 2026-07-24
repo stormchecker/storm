@@ -1,5 +1,4 @@
-#ifndef STORM_PARSER_NONDETERMINISTICMODELPARSER_H_
-#define STORM_PARSER_NONDETERMINISTICMODELPARSER_H_
+#pragma once
 
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -58,5 +57,3 @@ class NondeterministicModelParser {
 
 } /* namespace parser */
 } /* namespace storm */
-
-#endif /* STORM_PARSER_NONDETERMINISTICMODELPARSER_H_ */

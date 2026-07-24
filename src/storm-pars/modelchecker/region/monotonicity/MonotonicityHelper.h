@@ -1,5 +1,4 @@
-#ifndef STORM_MONOTONICITYHELPER_H
-#define STORM_MONOTONICITYHELPER_H
+#pragma once
 
 #include <map>
 #include "AssumptionMaker.h"
@@ -162,4 +161,3 @@ class MonotonicityHelper {
 };
 }  // namespace analysis
 }  // namespace storm
-#endif  // STORM_MONOTONICITYHELPER_H

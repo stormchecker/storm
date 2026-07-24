@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_LABELSUBSTITUTIONVISITOR_H_
-#define STORM_LOGIC_LABELSUBSTITUTIONVISITOR_H_
+#pragma once
 
 #include <map>
 
@@ -26,5 +25,3 @@ class LabelSubstitutionVisitor : public CloneVisitor {
 
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_FORMULAINFORMATIONVISITOR_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_VARIABLE_H_
-#define STORM_STORAGE_PRISM_VARIABLE_H_
+#pragma once
 
 #include <map>
 
@@ -115,5 +114,3 @@ class Variable : public LocatedInformation {
 
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_VARIABLE_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_UNARYBOOLEANPATHFORMULA_H_
-#define STORM_LOGIC_UNARYBOOLEANPATHFORMULA_H_
+#pragma once
 
 #include "storm/logic/FormulaContext.h"
 #include "storm/logic/UnaryBooleanOperatorType.h"
@@ -36,5 +35,3 @@ class UnaryBooleanPathFormula : public UnaryPathFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_UNARYBOOLEANPATHFORMULA_H_ */

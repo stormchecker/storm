@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_GSPN_PLACE_H_
-#define STORM_STORAGE_GSPN_PLACE_H_
+#pragma once
 
 #include <string>
 #include "boost/optional.hpp"
@@ -87,5 +86,3 @@ class Place {
 };
 }  // namespace gspn
 }  // namespace storm
-
-#endif  // STORM_STORAGE_GSPN_PLACE_H_

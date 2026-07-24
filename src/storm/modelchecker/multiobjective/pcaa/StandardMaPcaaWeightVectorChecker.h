@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEMAPCAAWEIGHTVECTORCHECKER_H_
-#define STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEMAPCAAWEIGHTVECTORCHECKER_H_
+#pragma once
 
 #include <type_traits>
 #include <vector>
@@ -175,5 +174,3 @@ class StandardMaPcaaWeightVectorChecker : public StandardPcaaWeightVectorChecker
 }  // namespace multiobjective
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEMAPCAAWEIGHTVECTORCHECKER_H_ */

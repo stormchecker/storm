@@ -1,5 +1,4 @@
-#ifndef STORM_EXCEPTIONS_EXPRESSIONEVALUATIONEXCEPTION_H_
-#define STORM_EXCEPTIONS_EXPRESSIONEVALUATIONEXCEPTION_H_
+#pragma once
 
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/ExceptionMacros.h"
@@ -11,5 +10,3 @@ STORM_NEW_EXCEPTION(ExpressionEvaluationException)
 
 }  // namespace exceptions
 }  // namespace storm
-
-#endif /* STORM_EXCEPTIONS_EXPRESSIONEVALUATIONEXCEPTION_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_BLOCK_H_
-#define STORM_STORAGE_BLOCK_H_
+#pragma once
 
 #include <ostream>
 
@@ -175,5 +174,3 @@ class StateBlock {
 std::ostream& operator<<(std::ostream& out, StateBlock const& block);
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_BLOCK_H_ */

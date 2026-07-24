@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_MULTIOBJECTIVESETTINGS_H_
-#define STORM_SETTINGS_MODULES_MULTIOBJECTIVESETTINGS_H_
+#pragma once
 
 #include "storm/modelchecker/multiobjective/MultiObjectiveModelCheckingMethod.h"
 #include "storm/settings/modules/ModuleSettings.h"
@@ -165,5 +164,3 @@ class MultiObjectiveSettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_MULTIOBJECTIVESETTINGS_H_ */

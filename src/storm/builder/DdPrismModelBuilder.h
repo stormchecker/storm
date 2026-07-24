@@ -1,5 +1,4 @@
-#ifndef STORM_BUILDER_DDPRISMMODELBUILDER_H_
-#define STORM_BUILDER_DDPRISMMODELBUILDER_H_
+#pragma once
 
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
@@ -303,5 +302,3 @@ class DdPrismModelBuilder {
 
 }  // namespace builder
 }  // namespace storm
-
-#endif /* STORM_BUILDER_DDPRISMMODELBUILDER_H_ */

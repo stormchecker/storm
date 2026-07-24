@@ -1,5 +1,4 @@
-#ifndef STORM_UTILITY_MACROS_H_
-#define STORM_UTILITY_MACROS_H_
+#pragma once
 
 #include "storm/utility/logging.h"
 
@@ -70,5 +69,3 @@
         STORM_LOG_INFO(message);     \
         STORM_PRINT(message);        \
     } while (false)
-
-#endif /* STORM_UTILITY_MACROS_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_ARGUMENT_H_
-#define STORM_SETTINGS_ARGUMENT_H_
+#pragma once
 
 #include <functional>
 #include <iostream>
@@ -144,5 +143,3 @@ class Argument : public ArgumentBase {
 };
 }  // namespace settings
 }  // namespace storm
-
-#endif  // STORM_SETTINGS_ARGUMENT_H_

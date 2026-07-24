@@ -1,5 +1,4 @@
-#ifndef EXTENDSETTINGENUMWITHSELECTIONFIELD_H
-#define EXTENDSETTINGENUMWITHSELECTIONFIELD_H
+#pragma once
 
 #include <cassert>
 #include <string>
@@ -19,5 +18,3 @@
             return toString(convert(e));                         \
         }                                                        \
     }
-
-#endif /* EXTENDSETTINGENUMWITHSELECTIONFIELD_H */

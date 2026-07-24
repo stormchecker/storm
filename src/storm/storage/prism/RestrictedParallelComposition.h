@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_RESTRICTEDPARALLELCOMPOSITION_H_
-#define STORM_STORAGE_PRISM_RESTRICTEDPARALLELCOMPOSITION_H_
+#pragma once
 
 #include <set>
 #include <string>
@@ -25,5 +24,3 @@ class RestrictedParallelComposition : public ParallelComposition {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_RESTRICTEDPARALLELCOMPOSITION_H_ */

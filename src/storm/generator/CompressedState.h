@@ -1,5 +1,4 @@
-#ifndef STORM_GENERATOR_COMPRESSEDSTATE_H_
-#define STORM_GENERATOR_COMPRESSEDSTATE_H_
+#pragma once
 
 #include <map>
 #include <unordered_map>
@@ -103,5 +102,3 @@ CompressedState packStateFromValuation(expressions::SimpleValuation const& valua
 
 }  // namespace generator
 }  // namespace storm
-
-#endif /* STORM_GENERATOR_COMPRESSEDSTATE_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_CUDDSETTINGS_H_
-#define STORM_SETTINGS_MODULES_CUDDSETTINGS_H_
+#pragma once
 
 #include "storm/settings/modules/ModuleSettings.h"
 
@@ -81,5 +80,3 @@ class CuddSettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_CUDDSETTINGS_H_ */

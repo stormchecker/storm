@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_BINARYPATHFORMULA_H_
-#define STORM_LOGIC_BINARYPATHFORMULA_H_
+#pragma once
 
 #include <memory>
 
@@ -34,5 +33,3 @@ class BinaryPathFormula : public PathFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_BINARYPATHFORMULA_H_ */

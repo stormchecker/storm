@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_GUROBILPSOLVER
-#define STORM_SOLVER_GUROBILPSOLVER
+#pragma once
 
 #include <map>
 #include <optional>
@@ -173,5 +172,3 @@ std::vector<GurobiSolverMethod> getGurobiSolverMethods();
 
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_GUROBILPSOLVER */

@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_NATIVEEQUATIONSOLVERSETTINGS_H_
-#define STORM_SETTINGS_MODULES_NATIVEEQUATIONSOLVERSETTINGS_H_
+#pragma once
 
 #include "storm/settings/modules/ModuleSettings.h"
 
@@ -125,5 +124,3 @@ class NativeEquationSolverSettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_NATIVEEQUATIONSOLVERSETTINGS_H_ */

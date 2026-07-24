@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_BASEEXPRESSION_H_
-#define STORM_STORAGE_EXPRESSIONS_BASEEXPRESSION_H_
+#pragma once
 
 #include <cstdint>
 #include <iosfwd>
@@ -311,5 +310,3 @@ class BaseExpression : public std::enable_shared_from_this<BaseExpression> {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_BASEEXPRESSION_H_ */

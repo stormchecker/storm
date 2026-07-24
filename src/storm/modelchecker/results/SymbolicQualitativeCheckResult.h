@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_SYMBOLICQUALITATIVECHECKRESULT_H_
-#define STORM_MODELCHECKER_SYMBOLICQUALITATIVECHECKRESULT_H_
+#pragma once
 
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/storage/dd/Bdd.h"
@@ -54,5 +53,3 @@ class SymbolicQualitativeCheckResult : public QualitativeCheckResult {
 };
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_SYMBOLICQUALITATIVECHECKRESULT_H_ */

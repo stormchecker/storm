@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_PROGRAM_H_
-#define STORM_STORAGE_PRISM_PROGRAM_H_
+#pragma once
 
 #include <boost/optional.hpp>
 #include <map>
@@ -903,5 +902,3 @@ std::ostream& operator<<(std::ostream& out, Program::ModelType const& type);
 
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_PROGRAM_H_ */
