@@ -429,8 +429,8 @@ PrismParserGrammar::PrismParserGrammar(std::string const& filename, Iterator fir
     qi::on_success(assignmentDefinition, setLocationInfoFunction);
 
     // Enable error reporting.
-    qi::on_error<qi::fail>(
-        start, (phoenix::bind(&PrismParserGrammar::reportRejectedKeywordIdentifier, phoenix::ref(*this)), handler(qi::_1, qi::_2, qi::_3, qi::_4)));
+    qi::on_error<qi::fail>(start,
+                           (phoenix::bind(&PrismParserGrammar::reportRejectedKeywordIdentifier, phoenix::ref(*this)), handler(qi::_1, qi::_2, qi::_3, qi::_4)));
 }
 
 void PrismParserGrammar::moveToSecondRun() {
@@ -525,8 +525,7 @@ bool PrismParserGrammar::isValidIdentifier(std::string const& identifier) {
     if (this->keywords_.find(identifier) != nullptr) {
         // "player"/"endplayer" are only meaningful (and thus only reserved) for SMGs; the model type is
         // already known at this point since it is always the first thing parsed in the file.
-        if ((identifier == "player" || identifier == "endplayer") &&
-            this->globalProgramInformation.modelType != storm::prism::Program::ModelType::SMG) {
+        if ((identifier == "player" || identifier == "endplayer") && this->globalProgramInformation.modelType != storm::prism::Program::ModelType::SMG) {
             return true;
         }
         // Do not log here: this check also fires on harmless speculative backtracking during a successful parse.
