@@ -26,7 +26,7 @@ class DFTStateGenerationInfo {
         : mUsageInfoBits(getUsageInfoBits(maxSpareChildCount)),
           stateIndexSize(getStateVectorSize(nrElements, nrOfSpares, nrRepresentatives, maxSpareChildCount)),
           mIdToStateIndex(nrElements) {
-        STORM_LOG_ASSERT(maxSpareChildCount < pow(2, mUsageInfoBits), "Bit length incorrect.");
+        STORM_LOG_ASSERT(maxSpareChildCount < std::pow(2, mUsageInfoBits), "Bit length incorrect.");
     }
 
     /*!
