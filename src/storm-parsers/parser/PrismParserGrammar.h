@@ -127,6 +127,15 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
         }
     };
 
+    // Same as keywordsStruct, without "player"/"endplayer" (see expressionKeywords_).
+    struct expressionKeywordsStruct : qi::symbols<char, uint_fast64_t> {
+        expressionKeywordsStruct() {
+            add("dtmc", 1)("ctmc", 2)("mdp", 3)("ctmdp", 4)("ma", 5)("pomdp", 6)("pta", 7)("smg", 8)("const", 9)("int", 10)("bool", 11)("module", 12)(
+                "endmodule", 13)("rewards", 14)("endrewards", 15)("true", 16)("false", 17)("min", 18)("max", 19)("floor", 20)("ceil", 21)("init", 22)(
+                "atLeastOneOf", 23)("atMostOneOf", 24)("exactlyOneOf", 25)("endinit", 26)("invariant", 27)("endinvariant", 28);
+        }
+    };
+
     // Functor used for annotating entities with line number information.
     class PositionAnnotation {
        public:
@@ -185,6 +194,11 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
      * @return The name of the file currently being parsed.
      */
     std::string const& getFilename() const;
+
+    // Name of the last identifier that was rejected for coinciding with a reserved keyword.
+    // Only meaningful for diagnosing an actual parse failure, since valid parses may speculatively
+    // (and harmlessly) try identifiers that collide with keywords while exploring grammar alternatives.
+    std::string lastRejectedKeywordIdentifier;
 
     mutable std::set<std::string> observables;
 
@@ -316,6 +330,9 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
 
     // Parsers that recognize special keywords and model types.
     storm::parser::PrismParserGrammar::keywordsStruct keywords_;
+    // Same as keywords_, but without "player"/"endplayer" (only reserved for SMGs, not inside expressions
+    // in general -- the model type is not statically known here, so this is deliberately unconditional).
+    storm::parser::PrismParserGrammar::expressionKeywordsStruct expressionKeywords_;
     storm::parser::PrismParserGrammar::modelTypeStruct modelType_;
     qi::symbols<char, storm::expressions::Expression> identifiers_;
 
@@ -325,6 +342,8 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
 
     // Helper methods used in the grammar.
     bool isValidIdentifier(std::string const& identifier);
+    // Logs the last keyword collision recorded by isValidIdentifier, if any. Called from the top-level error handler.
+    void reportRejectedKeywordIdentifier();
     bool isFreshIdentifier(std::string const& identifier);
     bool isKnownModuleName(std::string const& moduleName, bool inSecondRun);
     bool isFreshModuleName(std::string const& moduleName);
