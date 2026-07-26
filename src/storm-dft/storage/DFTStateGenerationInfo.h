@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bit>
+#include <cmath>
 
 #include "storm/utility/macros.h"
 
