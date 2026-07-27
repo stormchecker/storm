@@ -2,6 +2,7 @@
 #define STORM_LOGIC_FORMULA_H_
 
 #include <iosfwd>
+#include <map>
 #include <memory>
 #include <set>
 #include <vector>
