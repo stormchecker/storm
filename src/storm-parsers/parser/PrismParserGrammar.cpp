@@ -90,10 +90,6 @@ PrismParserGrammar::PrismParserGrammar(std::string const& filename, Iterator fir
       filename(filename),
       annotate(first),
       manager(new storm::expressions::ExpressionManager()),
-      // "player"/"endplayer" are only reserved for SMGs (see isValidIdentifier), so they must not be
-      // blanket-rejected as identifiers inside expressions either. Note: qi::symbols' copy constructor
-      // aliases the underlying trie (shared_ptr), so expressionKeywords_ is built independently, not by
-      // copying keywords_ and removing entries (that would mutate keywords_ too).
       expressionParser(new ExpressionParser(*manager, expressionKeywords_, false, false)) {
     ExpressionParser& expression_ = *expressionParser;
     boolExpression = (expression_[qi::_val = qi::_1])[qi::_pass = phoenix::bind(&PrismParserGrammar::isOfBoolType, phoenix::ref(*this), qi::_val)];
@@ -523,9 +519,13 @@ std::string const& PrismParserGrammar::getFilename() const {
 
 bool PrismParserGrammar::isValidIdentifier(std::string const& identifier) {
     if (this->keywords_.find(identifier) != nullptr) {
-        // "player"/"endplayer" are only meaningful (and thus only reserved) for SMGs; the model type is
-        // already known at this point since it is always the first thing parsed in the file.
-        if ((identifier == "player" || identifier == "endplayer") && this->globalProgramInformation.modelType != storm::prism::Program::ModelType::SMG) {
+        // "player"/"endplayer" and "invariant"/"endinvariant" are only meaningful (and thus only reserved) for
+        // SMGs resp. PTAs; the model type is already known at this point since it is always the first thing
+        // parsed in the file.
+        auto const modelType = this->globalProgramInformation.modelType;
+        bool const isExemptSmgKeyword = (identifier == "player" || identifier == "endplayer") && modelType != storm::prism::Program::ModelType::SMG;
+        bool const isExemptPtaKeyword = (identifier == "invariant" || identifier == "endinvariant") && modelType != storm::prism::Program::ModelType::PTA;
+        if (isExemptSmgKeyword || isExemptPtaKeyword) {
             return true;
         }
         // Do not log here: this check also fires on harmless speculative backtracking during a successful parse.

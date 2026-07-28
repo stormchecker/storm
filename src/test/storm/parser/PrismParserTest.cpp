@@ -115,6 +115,23 @@ TEST(PrismParser, NonReservedPlayerKeywordTest) {
     EXPECT_EQ("player", result.getModule("test").getIntegerVariables().front().getName());
 }
 
+TEST(PrismParser, NonReservedInvariantKeywordTest) {
+    // Regression test for #955 review feedback: "invariant"/"endinvariant" are only reserved for PTAs.
+    std::string testInput =
+        R"(mdp
+
+        module test
+            invariant : [0..5] init 0;
+            [] invariant < 5 -> (invariant'=invariant+1);
+        endmodule)";
+
+    storm::prism::Program result;
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
+    ASSERT_TRUE(result.hasModule("test"));
+    ASSERT_EQ(1ul, result.getModule("test").getNumberOfIntegerVariables());
+    EXPECT_EQ("invariant", result.getModule("test").getIntegerVariables().front().getName());
+}
+
 TEST(PrismParser, ComplexTest) {
     std::string testInput =
         R"(ma
@@ -405,6 +422,16 @@ TEST(PrismParser, IllegalInputTest) {
     module test
         player : [0..5] init 0;
         [] player < 5 -> (player'=player+1);
+    endmodule)";
+
+    STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
+
+    // Regression test for #955 review feedback: "invariant" remains reserved for PTAs.
+    testInput =
+        R"(pta
+
+    module test
+        invariant : [0..5] init 0;
     endmodule)";
 
     STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
