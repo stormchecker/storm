@@ -282,7 +282,16 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> parseCons
                         throw storm::exceptions::WrongFormatException() << "Illegal value for boolean constant: " << value << ".";
                     }
                 } else if (variable.hasIntegerType()) {
-                    int_fast64_t integerValue = std::stoll(value);
+                    std::size_t position = 0;
+                    int_fast64_t integerValue = 0;
+                    bool valid = true;
+                    try {
+                        integerValue = std::stoll(value, &position);
+                    } catch (std::exception&) {
+                        valid = false;
+                    }
+                    STORM_LOG_THROW(valid && position == value.size(), storm::exceptions::WrongFormatException,
+                                    "Illegal value for integer constant: " << value << ".");
                     constantDefinitions[variable] = manager.integer(integerValue);
                 } else if (variable.hasRationalType()) {
                     try {
