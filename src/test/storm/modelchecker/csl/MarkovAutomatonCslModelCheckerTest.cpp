@@ -160,7 +160,7 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
     buildModelFormulas(std::string const& pathToPrismFile, std::string const& formulasAsString, std::string const& constantDefinitionString = "") const {
         std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
         storm::prism::Program program = storm::api::parseProgram(pathToPrismFile);
-        program = storm::utility::prism::preprocess(program, constantDefinitionString);
+        program = program.preprocess(constantDefinitionString);
         if (TestType::engine == MaEngine::PrismSparse) {
             result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
@@ -178,7 +178,7 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
     buildModelFormulas(std::string const& pathToPrismFile, std::string const& formulasAsString, std::string const& constantDefinitionString = "") const {
         std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
         storm::prism::Program program = storm::api::parseProgram(pathToPrismFile);
-        program = storm::utility::prism::preprocess(program, constantDefinitionString);
+        program = program.preprocess(constantDefinitionString);
         auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
         result.second = storm::api::extractFormulasFromProperties(janiData.second);
         result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(janiData.first, result.second)->template as<MT>();

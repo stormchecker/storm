@@ -74,7 +74,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_LEQ) {
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -135,7 +135,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_GEQ) {
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -196,7 +196,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_LEQ_Incr) {
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -257,7 +257,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_GEQ_Incr) {
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -318,7 +318,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Parametric_Die_Mon) {
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -373,7 +373,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Simple1_Mon) {
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -414,7 +414,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Casestudy1_Mon) {
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -455,7 +455,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Casestudy2_Mon) {
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -496,7 +496,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Casestudy3_Mon) {
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =

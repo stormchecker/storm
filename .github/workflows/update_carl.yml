@@ -10,7 +10,7 @@ on:
         type: string
         default: 'x.y'
     secrets:
-      # needs permissions 'pull-request' and 'workflows'
+      # needs write permissions for 'contents' and 'pull-request'
       personal_access_token:
         required: true
 

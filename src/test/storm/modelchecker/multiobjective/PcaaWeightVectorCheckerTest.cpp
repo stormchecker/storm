@@ -89,7 +89,7 @@ class PcaaWeightVectorCheckerTest : public ::testing::Test {
     std::pair<std::shared_ptr<storm::models::sparse::Mdp<ValueType>>, std::vector<std::shared_ptr<storm::logic::Formula const>>> getMdpAndFormulasFromPrism(
         std::string const& prismFileString, std::string const& constantsString, std::string const& formulasString) const {
         auto program = storm::api::parseProgram(prismFileString);
-        program = storm::utility::prism::preprocess(program, constantsString);
+        program = program.preprocess(constantsString);
         auto formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasString, program));
         auto mdp = storm::api::buildSparseModel<ValueType>(program, formulas)->template as<storm::models::sparse::Mdp<ValueType>>();
         return std::pair(std::move(mdp), std::move(formulas));

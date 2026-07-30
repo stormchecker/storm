@@ -90,7 +90,7 @@ PrismParserGrammar::PrismParserGrammar(std::string const& filename, Iterator fir
       filename(filename),
       annotate(first),
       manager(new storm::expressions::ExpressionManager()),
-      expressionParser(new ExpressionParser(*manager, keywords_, false, false)) {
+      expressionParser(new ExpressionParser(*manager, expressionKeywords_, false, false)) {
     ExpressionParser& expression_ = *expressionParser;
     boolExpression = (expression_[qi::_val = qi::_1])[qi::_pass = phoenix::bind(&PrismParserGrammar::isOfBoolType, phoenix::ref(*this), qi::_val)];
     boolExpression.name("boolean expression");
@@ -425,7 +425,8 @@ PrismParserGrammar::PrismParserGrammar(std::string const& filename, Iterator fir
     qi::on_success(assignmentDefinition, setLocationInfoFunction);
 
     // Enable error reporting.
-    qi::on_error<qi::fail>(start, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+    qi::on_error<qi::fail>(start,
+                           (phoenix::bind(&PrismParserGrammar::reportRejectedKeywordIdentifier, phoenix::ref(*this)), handler(qi::_1, qi::_2, qi::_3, qi::_4)));
 }
 
 void PrismParserGrammar::moveToSecondRun() {
@@ -518,9 +519,28 @@ std::string const& PrismParserGrammar::getFilename() const {
 
 bool PrismParserGrammar::isValidIdentifier(std::string const& identifier) {
     if (this->keywords_.find(identifier) != nullptr) {
+        // "player"/"endplayer" and "invariant"/"endinvariant" are only meaningful (and thus only reserved) for
+        // SMGs resp. PTAs; the model type is already known at this point since it is always the first thing
+        // parsed in the file.
+        auto const modelType = this->globalProgramInformation.modelType;
+        bool const isExemptSmgKeyword = (identifier == "player" || identifier == "endplayer") && modelType != storm::prism::Program::ModelType::SMG;
+        bool const isExemptPtaKeyword = (identifier == "invariant" || identifier == "endinvariant") && modelType != storm::prism::Program::ModelType::PTA;
+        if (isExemptSmgKeyword || isExemptPtaKeyword) {
+            return true;
+        }
+        // Do not log here: this check also fires on harmless speculative backtracking during a successful parse.
+        // Recorded for diagnostics in case parsing ultimately fails, see reportRejectedKeywordIdentifier.
+        this->lastRejectedKeywordIdentifier = identifier;
         return false;
     }
     return true;
+}
+
+void PrismParserGrammar::reportRejectedKeywordIdentifier() {
+    if (!this->lastRejectedKeywordIdentifier.empty()) {
+        STORM_LOG_ERROR("Parsing error in " << this->getFilename() << ": '" << this->lastRejectedKeywordIdentifier
+                                            << "' is a reserved keyword and cannot be used as an identifier.");
+    }
 }
 
 bool PrismParserGrammar::isKnownModuleName(std::string const& moduleName, bool inSecondRun) {

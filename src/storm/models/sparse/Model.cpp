@@ -86,8 +86,8 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
         !this->hasChoiceLabeling() || this->getChoiceLabeling().getNumberOfItems() == choiceCount, storm::exceptions::IllegalArgumentException,
         "Invalid choice count of choice labeling (choices: " << choiceCount << " vs. labeling:" << this->getChoiceLabeling().getNumberOfItems() << ").");
     STORM_LOG_THROW(
-        !this->hasStateValuations() || this->getStateValuations().getNumberOfStates() == stateCount, storm::exceptions::IllegalArgumentException,
-        "Invalid state count for state valuations (states: " << stateCount << " vs. valuations:" << this->getStateValuations().getNumberOfStates() << ").");
+        !this->hasStateValuations() || this->getStateValuations().getNumberOfEntities() == stateCount, storm::exceptions::IllegalArgumentException,
+        "Invalid state count for state valuations (states: " << stateCount << " vs. valuations:" << this->getStateValuations().getNumberOfEntities() << ").");
     STORM_LOG_THROW(
         !this->hasChoiceOrigins() || this->getChoiceOrigins()->getNumberOfChoices() == choiceCount, storm::exceptions::IllegalArgumentException,
         "Invalid choice count for choice origins. (choices: " << choiceCount << " vs. origins:" << this->getChoiceOrigins()->getNumberOfChoices() << ").");
@@ -352,17 +352,17 @@ bool Model<ValueType, RewardModelType>::hasStateValuations() const {
 }
 
 template<typename ValueType, typename RewardModelType>
-storm::storage::sparse::StateValuations const& Model<ValueType, RewardModelType>::getStateValuations() const {
+storm::storage::sparse::Valuations const& Model<ValueType, RewardModelType>::getStateValuations() const {
     return stateValuations.value();
 }
 
 template<typename ValueType, typename RewardModelType>
-std::optional<storm::storage::sparse::StateValuations> const& Model<ValueType, RewardModelType>::getOptionalStateValuations() const {
+std::optional<storm::storage::sparse::Valuations> const& Model<ValueType, RewardModelType>::getOptionalStateValuations() const {
     return stateValuations;
 }
 
 template<typename ValueType, typename RewardModelType>
-std::optional<storm::storage::sparse::StateValuations>& Model<ValueType, RewardModelType>::getOptionalStateValuations() {
+std::optional<storm::storage::sparse::Valuations>& Model<ValueType, RewardModelType>::getOptionalStateValuations() {
     return stateValuations;
 }
 
@@ -470,7 +470,7 @@ void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream
                 if (includeLabeling || firstValue != nullptr || secondValue != nullptr || hasStateValuations()) {
                     outStream << "label = \"" << state;
                     if (hasStateValuations()) {
-                        std::string stateInfo = getStateValuations().getStateInfo(state);
+                        std::string stateInfo = getStateValuations().toString(state);
                         std::vector<std::string> results;
                         boost::split(results, stateInfo, [](char c) { return c == ','; });
                         storm::io::outputFixedWidth(outStream, results, maxWidthLabel);

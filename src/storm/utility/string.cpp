@@ -1,5 +1,8 @@
 #include "storm/utility/string.h"
+
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 namespace storm {
 namespace utility {
@@ -68,6 +71,17 @@ uint64_t levenshteinDistance(std::string const& lhs, std::string const& rhs, boo
         }
     }
     return d.back().back();
+}
+
+std::vector<std::string> parseCommaSeparatedStrings(std::string const& input) {
+    std::vector<std::string> result;
+    if (!input.empty()) {
+        boost::split(result, input, boost::is_any_of(","));
+        for (auto& entry : result) {
+            boost::trim(entry);
+        }
+    }
+    return result;
 }
 }  // namespace string
 }  // namespace utility

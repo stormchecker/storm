@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iosfwd>
+#include <map>
 #include <memory>
 #include <set>
 #include <vector>

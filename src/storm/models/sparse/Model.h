@@ -13,7 +13,7 @@
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/storage/sparse/StateValuations.h"
+#include "storm/storage/valuations/Valuations.h"
 
 namespace storm {
 namespace storage {
@@ -271,21 +271,21 @@ class Model : public storm::models::Model<CValueType> {
      *
      * @return The valuations of the states of the model.
      */
-    storm::storage::sparse::StateValuations const& getStateValuations() const;
+    storm::storage::sparse::Valuations const& getStateValuations() const;
 
     /*!
      * Retrieves an optional value that contains the state valuations if there are some.
      *
      * @return The state valuations, if they're saved.
      */
-    std::optional<storm::storage::sparse::StateValuations> const& getOptionalStateValuations() const;
+    std::optional<storm::storage::sparse::Valuations> const& getOptionalStateValuations() const;
 
     /*!
      * Retrieves an optional value that contains the state valuations if there are some.
      *
      * @return The state valuations, if they're saved.
      */
-    std::optional<storm::storage::sparse::StateValuations>& getOptionalStateValuations();
+    std::optional<storm::storage::sparse::Valuations>& getOptionalStateValuations();
 
     /*!
      * Retrieves whether this model was build with choice origins.
@@ -440,7 +440,7 @@ class Model : public storm::models::Model<CValueType> {
     std::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
 
     // if set, retrieves for each state the variable valuation that this state represents
-    std::optional<storm::storage::sparse::StateValuations> stateValuations;
+    std::optional<storm::storage::sparse::Valuations> stateValuations;
 
     // if set, gives information about where each choice originates w.r.t. the input model description
     std::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;

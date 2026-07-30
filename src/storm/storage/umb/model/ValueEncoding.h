@@ -127,7 +127,11 @@ class ValueEncoding {
     template<bool Signed>
     static void appendEncodedInteger(std::vector<uint64_t>& result, typename storm::NumberTraits<storm::RationalNumber>::IntegerType const& value,
                                      uint64_t uint64BucketsPerInteger) {
-        if constexpr (Signed) {
+        using IntegerType = typename storm::NumberTraits<storm::RationalNumber>::IntegerType;
+        if (uint64BucketsPerInteger == 0) {
+            STORM_LOG_ASSERT(value == storm::utility::zero<IntegerType>(), "Unexpected non-zero value for zero bucket size.");
+            // nothing to do
+        } else if constexpr (Signed) {
             if (value < 0) {
                 // Two's complement representation (e.g. -3 is 1111...1101)
                 // We encode the corresponding positive value and then invert the bits.
@@ -144,7 +148,6 @@ class ValueEncoding {
                                  "Encoding error for positive signed integer: most significant bit is set. Not enough uint64 buckets allocated?");
             }
         } else {
-            using IntegerType = typename storm::NumberTraits<storm::RationalNumber>::IntegerType;
             auto const twoTo64 = storm::utility::pow<IntegerType>(2, 64);
             // We assume a little endian representation, so we start with the least significant bits.
 
@@ -158,6 +161,9 @@ class ValueEncoding {
                 ++buckets;
             }
             // fill remaining buckets with zeros
+            STORM_LOG_ASSERT(uint64BucketsPerInteger >= buckets, "Not enough uint64 buckets allocated for encoding integer value "
+                                                                     << value << " (" << uint64BucketsPerInteger << " buckets allocated but " << buckets
+                                                                     << " needed).");
             result.resize(result.size() + (uint64BucketsPerInteger - buckets), 0ull);
         }
     }

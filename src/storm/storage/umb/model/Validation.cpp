@@ -20,14 +20,16 @@ bool validateCsr(auto const& csr, std::string_view const name, uint64_t numMappe
             err_reason << "CSR has unexpected size: " << csr->size() << " != " << (numMappedElements + 1) << ".";
         }
         if (csr.value()[0] != 0) {
-            err_reason << "CSR has unexpected first entry: " << csr.value()[0] << " != 0" << ".";
+            err_reason << "CSR has unexpected first entry: " << csr.value()[0] << " != 0"
+                       << ".";
         }
         if (expectedlastEntry.has_value() && csr.value()[numMappedElements] != expectedlastEntry.value()) {
             err_reason << "CSR has unexpected last entry: " << csr.value()[numMappedElements] << " != " << expectedlastEntry.value() << ".";
         }
     } else if (expectedlastEntry.has_value() && numMappedElements != expectedlastEntry.value()) {  // we assume a 1:1 mapping
         err_reason << "CSR is not given and the default 1:1 mapping {0, ... ," << numMappedElements << "} does not match. Expected the mapping to end with '"
-                   << expectedlastEntry.value() << "'" << ".";
+                   << expectedlastEntry.value() << "'"
+                   << ".";
     }
     if (!err_reason.view().empty()) {
         err << "Validation error in CSR mapping '" << name << "':\n\t" << err_reason.str() << "\n";
@@ -201,8 +203,8 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
             }
             for (auto const& descr : description->classes) {
                 for (auto const& var : descr.variables) {
-                    if (std::holds_alternative<ValuationClassDescription::Variable>(var)) {
-                        auto const& variable = std::get<ValuationClassDescription::Variable>(var);
+                    if (std::holds_alternative<storm::storage::sparse::ValuationClassDescription::Variable>(var)) {
+                        auto const& variable = std::get<storm::storage::sparse::ValuationClassDescription::Variable>(var);
                         if (variable.name.empty()) {
                             err << "A valuation description has a variable with an empty name.\n";
                             isValid = false;
@@ -496,7 +498,7 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
 
     // Valuations
     auto validateValuation = [&isValid, &err](storm::umb::UmbModel::Valuation const& v, auto const& entityName, uint64_t const numEntity,
-                                              storm::umb::ValuationDescription const& descr) {
+                                              storm::storage::sparse::ValuationDescription const& descr) {
         auto const context = std::string("valuations/") + entityName;
         if (v.valuationToClass.has_value() && v.valuationToClass->size() != numEntity) {
             err << context << "/valuation-to-class has invalid size: " << v.valuationToClass->size() << " != #" << entityName << "=" << numEntity << ".\n";

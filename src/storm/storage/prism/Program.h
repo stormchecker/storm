@@ -693,6 +693,24 @@ class Program : public LocatedInformation {
     Program substituteConstantsFormulas(bool substituteConstants = true, bool substituteFormulas = true) const;
 
     /*!
+     * Preprocesses the program by defining the given constant definitions, substituting constants and formulas,
+     * and substituting non-standard predicates.
+     *
+     * @param constantDefinitions A mapping from undefined constant to the expressions they are supposed to be replaced with.
+     * @return The preprocessed program.
+     */
+    Program preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const;
+
+    /*!
+     * Preprocesses the program by parsing the given constant definition string, defining the constants,
+     * substituting constants and formulas, and substituting non-standard predicates.
+     *
+     * @param constantDefinitionString A string of constant definitions, e.g., "p=0.5, n=10".
+     * @return The preprocessed program.
+     */
+    Program preprocess(std::string const& constantDefinitionString = "") const;
+
+    /*!
      * Replace the initialization in variables by an init-expression. This should not change the semantics of the program and can be a preprocessing step.
      *
      * @return

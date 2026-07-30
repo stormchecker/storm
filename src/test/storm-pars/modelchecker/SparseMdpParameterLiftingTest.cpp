@@ -217,7 +217,7 @@ TYPED_TEST(SparseMdpParameterLiftingTest, brp_Prop) {
     std::string constantsAsString = "TOMsg=0.0,TOAck=0.0";
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> model =
@@ -248,7 +248,7 @@ TYPED_TEST(SparseMdpParameterLiftingTest, brp_Rew) {
     std::string constantsAsString = "pL=0.9,TOAck=0.5";
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> model =
@@ -279,7 +279,7 @@ TYPED_TEST(SparseMdpParameterLiftingTest, brp_Rew_bounded) {
     std::string constantsAsString = "pL=0.9,TOAck=0.5";
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> model =
@@ -309,7 +309,7 @@ TYPED_TEST(SparseMdpParameterLiftingTest, Brp_Rew_Infty) {
     std::string formulaAsString = "R>2.5 [F (s=0&srep=3) ]";
     std::string constantsAsString = "";
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> model =
@@ -332,7 +332,7 @@ TYPED_TEST(SparseMdpParameterLiftingTest, Brp_Rew_4Par) {
     std::string formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
     std::string constantsAsString = "";  //!! this model will have 4 parameters
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> model =

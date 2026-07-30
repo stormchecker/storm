@@ -58,6 +58,11 @@ class SimilarStrings {
  * Levenstein distance to find similar strings
  */
 uint64_t levenshteinDistance(std::string const& lhs, std::string const& rhs, bool caseSensitive = true);
+
+/*!
+ * Splits the input string on commas and trims whitespace from each element.
+ */
+std::vector<std::string> parseCommaSeparatedStrings(std::string const& input);
 }  // namespace string
 }  // namespace utility
 }  // namespace storm

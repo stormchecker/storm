@@ -17,10 +17,11 @@ LABEL org.opencontainers.image.authors="dev@stormchecker.org"
 # --build-arg <arg_name>=<value>
 
 # Specify number of threads to use for parallel compilation
-ARG no_threads=1
+ARG no_threads=4
 # CMake build type
 ARG build_type=Release
-# Carl tag to use
+# Carl repo and tag to use
+ARG carl_repo="https://github.com/stormchecker/carl-storm.git"
 ARG carl_tag="14.35"
 # Specify Storm configuration (ON/OFF)
 ARG disable_cudd="OFF"
@@ -57,6 +58,7 @@ RUN mkdir -p /opt/storm/build \
     && cmake -DCMAKE_BUILD_TYPE=$build_type \
           -DSTORM_PORTABLE=ON \
           -DSTORM_BUILD_TESTS=OFF \
+          -DSTORM_CARL_GIT_REPO=$carl_repo \
           -DSTORM_CARL_GIT_TAG=$carl_tag \
           -DSTORM_DISABLE_CUDD=$disable_cudd \
           -DSTORM_DISABLE_GLPK=$disable_glpk \

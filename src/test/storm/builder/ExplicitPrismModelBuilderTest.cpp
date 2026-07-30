@@ -150,7 +150,7 @@ TEST_F(ExplicitPrismModelBuilderTest, Ma) {
 
 TEST_F(ExplicitPrismModelBuilderTest, POMdp) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism");
-    program = storm::utility::prism::preprocess(program, "slippery=0.4");
+    program = program.preprocess("slippery=0.4");
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(7ul, model->getNumberOfStates());
     EXPECT_EQ(17ul, model->getNumberOfTransitions());
@@ -161,13 +161,13 @@ TEST_F(ExplicitPrismModelBuilderTest, POMdp) {
     EXPECT_EQ(6ul, model->getNumberOfTransitions());
 
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism");
-    program = storm::utility::prism::preprocess(program, "sl=0.4");
+    program = program.preprocess("sl=0.4");
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(15ul, model->getNumberOfStates());
     EXPECT_EQ(91ul, model->getNumberOfTransitions());
 
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism");
-    program = storm::utility::prism::preprocess(program, "N=5");
+    program = program.preprocess("N=5");
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(126ul, model->getNumberOfStates());
     EXPECT_EQ(547ul, model->getNumberOfTransitions());
@@ -175,13 +175,13 @@ TEST_F(ExplicitPrismModelBuilderTest, POMdp) {
 
 TEST_F(ExplicitPrismModelBuilderTest, Imdp) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/imdp/robot.prism");
-    program = storm::utility::prism::preprocess(program, "delta=0.2");
+    program = program.preprocess("delta=0.2");
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> model = storm::builder::ExplicitModelBuilder<storm::Interval>(program).build();
     EXPECT_EQ(6ul, model->getNumberOfStates());
     EXPECT_EQ(17ul, model->getNumberOfTransitions());
 
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/imdp/coin2.prism");
-    program = storm::utility::prism::preprocess(program, "K=2,bias1=0.1");
+    program = program.preprocess("K=2,bias1=0.1");
     model = storm::builder::ExplicitModelBuilder<storm::Interval>(program).build();
     EXPECT_EQ(272ul, model->getNumberOfStates());
     EXPECT_EQ(492ul, model->getNumberOfTransitions());
@@ -189,7 +189,7 @@ TEST_F(ExplicitPrismModelBuilderTest, Imdp) {
 
 TEST_F(ExplicitPrismModelBuilderTest, SMG) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/smg/action_labels.prism");
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(3ul, model->getNumberOfStates());
     EXPECT_EQ(3ul, model->getNumberOfChoices());

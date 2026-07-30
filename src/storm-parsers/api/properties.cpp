@@ -10,7 +10,7 @@
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/prism/Program.h"
-#include "storm/utility/cli.h"
+#include "storm/utility/string.h"
 
 namespace storm {
 namespace api {
@@ -19,7 +19,7 @@ boost::optional<std::set<std::string>> parsePropertyFilter(std::string const& pr
     if (propertyFilter == "all") {
         return boost::none;
     }
-    std::vector<std::string> propertyNames = storm::utility::cli::parseCommaSeparatedStrings(propertyFilter);
+    std::vector<std::string> propertyNames = storm::utility::string::parseCommaSeparatedStrings(propertyFilter);
     std::set<std::string> propertyNameSet(propertyNames.begin(), propertyNames.end());
     return propertyNameSet;
 }

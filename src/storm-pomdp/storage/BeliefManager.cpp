@@ -787,7 +787,7 @@ uint64_t BeliefManager<PomdpType, BeliefValueType, StateType>::getRepresentative
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 std::string BeliefManager<PomdpType, BeliefValueType, StateType>::getObservationLabel(BeliefId const &beliefId) {
     if (pomdp.hasObservationValuations()) {
-        return pomdp.getObservationValuations().getStateInfo(getBeliefObservation(beliefId));
+        return pomdp.getObservationValuations().toString(getBeliefObservation(beliefId));
     } else {
         STORM_LOG_TRACE("Cannot get observation labels as no observation valuation has been defined for the POMDP. Return empty label instead.");
         return "";

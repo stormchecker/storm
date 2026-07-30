@@ -29,7 +29,7 @@ TEST_F(MonotonicityCheckerTest, Simple1_larger_region) {
 
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -78,7 +78,7 @@ TEST_F(MonotonicityCheckerTest, Simple1_small_region) {
 
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -128,7 +128,7 @@ TEST_F(MonotonicityCheckerTest, Casestudy1) {
 
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -182,7 +182,7 @@ TEST_F(MonotonicityCheckerTest, Casestudy2) {
 
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -237,7 +237,7 @@ TEST_F(MonotonicityCheckerTest, Casestudy3) {
 
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =

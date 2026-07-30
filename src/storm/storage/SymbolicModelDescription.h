@@ -1,7 +1,10 @@
 #pragma once
 
 #include <boost/variant.hpp>
+#include <map>
 
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/prism/Program.h"
 
@@ -64,5 +67,13 @@ class SymbolicModelDescription {
 std::ostream& operator<<(std::ostream& out, SymbolicModelDescription const& model);
 
 std::ostream& operator<<(std::ostream& out, SymbolicModelDescription::ModelType const& type);
+
+/*!
+ * Parses a comma-separated string of constant definitions (e.g. "k=5,epsilon=0.01")
+ * into a map from variables to their corresponding expressions.
+ * @throws WrongFormatException if the string is malformed or references unknown constants.
+ */
+std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::expressions::ExpressionManager const& manager,
+                                                                                                     std::string const& constantDefinitionString);
 }  // namespace storage
 }  // namespace storm

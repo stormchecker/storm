@@ -32,7 +32,7 @@ TEST_F(SparseMaCbMultiObjectiveModelCheckerTest, server) {
     formulasAsString += "; multi(T>=16/9 [ F \"error\" ], P>=7/12 [ F \"processB\" ]) ";          // false
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> ma =

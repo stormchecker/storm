@@ -2,6 +2,8 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/Environment.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/utility/macros.h"
 
@@ -13,9 +15,21 @@ template<typename SparseModelType, typename ValueType>
 helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment const&, SparseModelType const& model,
                                                                 CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask,
                                                                 CheckFormulaCallback const& formulaChecker) {
-    STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1,
-                     "Lexicographic Model checking on model with multiple initial states is not supported.");
     storm::logic::MultiObjectiveFormula const& formula = checkTask.getFormula();
+    auto const& subformulas = formula.getSubformulas();
+
+    // Ensure that the query is supported
+    STORM_LOG_THROW(model.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
+                    "Lexicographic Model checking on model with multiple initial states is not supported.");
+    STORM_LOG_THROW(formula.isLexicographic(), storm::exceptions::IllegalFunctionCallException,
+                    "Invoked lexicographic model checking with a non-lexicographic formula " << formula << ".");
+    STORM_LOG_THROW(std::all_of(subformulas.begin(), subformulas.end(),
+                                [](auto const& f) {
+                                    return f->isProbabilityOperatorFormula() && !f->asOperatorFormula().hasBound() &&
+                                           f->asOperatorFormula().hasOptimalityType() && storm::solver::maximize(f->asOperatorFormula().getOptimalityType());
+                                }),
+                    storm::exceptions::NotSupportedException,
+                    "Lexicographic model checking only supports Pmax=? [...]  subformulas. Got " << formula << " as input.");
 
     // Define the helper that contains all functions
     helper::lexicographic::LexicographicModelCheckerHelper<SparseModelType, ValueType, true> lMC =

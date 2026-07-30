@@ -10,8 +10,8 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingMemento.h"
+#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Model.h"
-#include "storm/utility/cli.h"
 
 namespace {
 
@@ -71,7 +71,7 @@ TEST_F(ExplicitJaniModelBuilderTest, Dtmc) {
     EXPECT_EQ(2505ul, model->getNumberOfTransitions());
 
     janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/test_trigonometry.jani").first;
-    auto constants = storm::utility::cli::parseConstantDefinitionString(janiModel.getManager(), "step_size_rad=0.523599");  // step_size = 30 deg
+    auto constants = storm::storage::parseConstantDefinitionString(janiModel.getManager(), "step_size_rad=0.523599");  // step_size = 30 deg
     janiModel = janiModel.defineUndefinedConstants(constants);
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(5ul, model->getNumberOfStates());
@@ -199,7 +199,7 @@ TEST_F(ExplicitJaniModelBuilderTest, Ma) {
     EXPECT_EQ(7ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
 
     janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/ma/ftwc.jani").first;
-    auto constants = storm::utility::cli::parseConstantDefinitionString(janiModel.getManager(), "N=2,TIME_BOUND=1");
+    auto constants = storm::storage::parseConstantDefinitionString(janiModel.getManager(), "N=2,TIME_BOUND=1");
     janiModel = janiModel.defineUndefinedConstants(constants);
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(1536ul, model->getNumberOfStates());

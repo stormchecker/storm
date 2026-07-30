@@ -70,6 +70,68 @@ TEST(PrismParser, expressionTest) {
     EXPECT_EQ(0ll, guard.asBinaryRelationExpression().getSecondOperand()->evaluateAsInt());
 }
 
+TEST(PrismParser, FormulaOrderTest) {
+    // Regression test for #313: a boolean formula referencing an int-typed formula declared afterwards
+    // must not raise a spurious type error while resolving the formula dependency order.
+    std::string testInput =
+        R"(mdp
+
+        formula leader_set = ((A_mark & A_leader = current_min_leader_calc | A_mark = false)?true:false) & ((B_mark & B_leader = current_min_leader_calc | B_mark = false)?true:false);
+
+        formula current_min_leader_calc = min((A_mark?A_leader:8), (B_mark?B_leader:8));
+
+        module whatever
+            A_mark : bool init true;
+            B_mark : bool init true;
+
+            test1 : bool init false;
+
+            A_leader : [0..10] init 1;
+            B_leader : [0..10] init 1;
+
+            [] A_mark = true & leader_set & test1 = false -> (test1'=true);
+        endmodule)";
+
+    storm::prism::Program result;
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
+    ASSERT_TRUE(result.hasModule("whatever"));
+    EXPECT_EQ(1ul, result.getModule("whatever").getNumberOfCommands());
+}
+
+TEST(PrismParser, NonReservedPlayerKeywordTest) {
+    // Regression test for #335: "player"/"endplayer" are only reserved for SMGs.
+    std::string testInput =
+        R"(mdp
+
+        module test
+            player : [0..5] init 0;
+            [] player < 5 -> (player'=player+1);
+        endmodule)";
+
+    storm::prism::Program result;
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
+    ASSERT_TRUE(result.hasModule("test"));
+    ASSERT_EQ(1ul, result.getModule("test").getNumberOfIntegerVariables());
+    EXPECT_EQ("player", result.getModule("test").getIntegerVariables().front().getName());
+}
+
+TEST(PrismParser, NonReservedInvariantKeywordTest) {
+    // Regression test for #955 review feedback: "invariant"/"endinvariant" are only reserved for PTAs.
+    std::string testInput =
+        R"(mdp
+
+        module test
+            invariant : [0..5] init 0;
+            [] invariant < 5 -> (invariant'=invariant+1);
+        endmodule)";
+
+    storm::prism::Program result;
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
+    ASSERT_TRUE(result.hasModule("test"));
+    ASSERT_EQ(1ul, result.getModule("test").getNumberOfIntegerVariables());
+    EXPECT_EQ("invariant", result.getModule("test").getIntegerVariables().front().getName());
+}
+
 TEST(PrismParser, ComplexTest) {
     std::string testInput =
         R"(ma
@@ -339,6 +401,38 @@ TEST(PrismParser, IllegalInputTest) {
     label "test" = c + 1;
     
     )";
+
+    STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
+
+    // Regression test for #319: reserved keyword used as a variable name.
+    testInput =
+        R"(mdp
+
+    module test
+        ma : [0..5] init 0;
+        [] ma < 5 -> (ma'=ma+1);
+    endmodule)";
+
+    STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
+
+    // Regression test for #335: "player" remains reserved for SMGs.
+    testInput =
+        R"(smg
+
+    module test
+        player : [0..5] init 0;
+        [] player < 5 -> (player'=player+1);
+    endmodule)";
+
+    STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
+
+    // Regression test for #955 review feedback: "invariant" remains reserved for PTAs.
+    testInput =
+        R"(pta
+
+    module test
+        invariant : [0..5] init 0;
+    endmodule)";
 
     STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
 }
