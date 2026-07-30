@@ -256,7 +256,7 @@ auto computeProblematicMecs(storm::storage::SparseMatrix<ValueType> const& matri
             }
         }
     }
-    STORM_LOG_DEBUG("Found " << problMecs.size() << " problematic ECs." << std::endl);
+    STORM_LOG_DEBUG("Found " << problMecs.size() << " problematic ECs.");
     return problMecs;
 }
 

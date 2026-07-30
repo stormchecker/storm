@@ -295,8 +295,8 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
         }
     }
 
-    std::cout << "Region partitioning for extremal value terminated after analyzing " << numOfAnalyzedRegions << " regions.\n\t"
-              << progress.getUndiscoveredPercentage() << "% of the parameter space are not covered.\n";
+    STORM_LOG_INFO("Region partitioning for extremal value terminated after analyzing "
+                   << numOfAnalyzedRegions << " regions.\n\t" << progress.getUndiscoveredPercentage() << "% of the parameter space are not covered.");
     return valueValuation;
 }
 
@@ -334,7 +334,7 @@ bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environm
     auto rejectInstance = [&](CoefficientType currentValue) { return !bound.isSatisfied(currentValue); };
 
     auto res = computeExtremalValueHelper(env, region, dir, acceptGlobalBound, rejectInstance).first;
-    std::cout << "Extremal value: " << res << std::endl;
+    STORM_LOG_INFO("Extremal value: " << res);
     return storm::solver::minimize(dir) ? res >= valueToCheck : res <= valueToCheck;
 }
 
