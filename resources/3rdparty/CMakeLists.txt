@@ -225,22 +225,21 @@ list(APPEND STORM_DEP_TARGETS exprTk)
 
 #############################################################
 ##
-##	Parallel Hashmap
+##	gtl (Greg's Template Library)
 ##
 #############################################################
 
-# Use the shipped version of Parallel Hashmap
-message(STATUS "Storm - Including Parallel Hashmap.")
-add_library(phmap INTERFACE) # Not imported, we are in control of the sources.
-# Note that include directory is parallel-hashmap/parallel_hashmap/
-target_include_directories(phmap INTERFACE
-        $<BUILD_INTERFACE:${STORM_3RDPARTY_SOURCE_DIR}/parallel-hashmap>
-        $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/parallel_hashmap>)
-install(TARGETS phmap EXPORT storm_Targets)
-install(DIRECTORY ${STORM_3RDPARTY_SOURCE_DIR}/parallel-hashmap/parallel_hashmap
+# Use the shipped version of gtl
+message(STATUS "Storm - Including gtl.")
+add_library(gtl INTERFACE)
+target_include_directories(gtl INTERFACE
+        $<BUILD_INTERFACE:${STORM_3RDPARTY_SOURCE_DIR}/gtl>
+        $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/gtl>)
+install(TARGETS gtl EXPORT storm_Targets)
+install(DIRECTORY ${STORM_3RDPARTY_SOURCE_DIR}/gtl
         DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}
-        FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
-list(APPEND STORM_DEP_TARGETS phmap)
+        FILES_MATCHING PATTERN "*.hpp" PATTERN ".git" EXCLUDE)
+list(APPEND STORM_DEP_TARGETS gtl)
 
 #############################################################
 ##
