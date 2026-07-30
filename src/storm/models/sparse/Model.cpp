@@ -53,7 +53,7 @@ template<typename ValueType, typename RewardModelType>
 void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) const {
     // More costly checks are only asserted to avoid doing them in release mode.
-    ValueType const stochasticTolerance =
+    [[maybe_unused]] ValueType const stochasticTolerance =
         isExact() ? storm::utility::zero<ValueType>()
                   : storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
@@ -64,7 +64,7 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     STORM_LOG_THROW(this->getTransitionMatrix().getColumnCount() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid column count of transition matrix.");
     {
-        std::string reasonNotProbabilistic [[maybe_unused]];
+        [[maybe_unused]] std::string reasonNotProbabilistic;
         STORM_LOG_ASSERT(components.rateTransitions || this->getTransitionMatrix().isProbabilistic(stochasticTolerance, reasonNotProbabilistic),
                          "The matrix is not probabilistic. " << reasonNotProbabilistic);
     }

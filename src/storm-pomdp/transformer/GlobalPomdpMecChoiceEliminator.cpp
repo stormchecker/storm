@@ -73,7 +73,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPomdpMecChoiceEli
     }
 
     // It should not be possible to clear all choices for an observation since we only consider states that lead outside of its MEC.
-    for (auto& clearedChoices : mecChoicesPerObservation) {
+    for ([[maybe_unused]] auto& clearedChoices : mecChoicesPerObservation) {
         STORM_LOG_ASSERT(clearedChoices.size() == 0 || !clearedChoices.full(), "Tried to clear all choices for an observation.");
     }
 
@@ -115,7 +115,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPomdpMecChoiceEli
     }
 
     // It should not be possible to clear all choices for an observation since we only consider states that lead outside of its MEC.
-    for (auto& clearedChoices : mecChoicesPerObservation) {
+    for ([[maybe_unused]] auto& clearedChoices : mecChoicesPerObservation) {
         STORM_LOG_ASSERT(clearedChoices.size() == 0 || !clearedChoices.full(), "Tried to clear all choices for an observation.");
     }
 

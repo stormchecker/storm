@@ -588,7 +588,7 @@ typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping Be
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping BeliefManager<PomdpType, BeliefValueType, StateType>::clipBeliefToGrid(
     BeliefType const &belief, uint64_t resolution, const storm::storage::BitVector &isInfinite) {
-    uint32_t obs = getBeliefObservation(belief);
+    [[maybe_unused]] uint32_t obs = getBeliefObservation(belief);
     STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
     if (!lpSolver) {
         lpSolver = storm::utility::solver::getLpSolver<BeliefValueType>("POMDP LP Solver");

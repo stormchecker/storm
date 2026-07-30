@@ -77,7 +77,7 @@ uint64_t choiceOriginsToUmb(storm::storage::sparse::ChoiceOrigins const& choiceO
     // We always set a csr, even in cases where it could be omitted.
     auto actionStrings = StringsBuilder(umb.choiceActions->strings.emplace(), umb.choiceActions->stringMapping.emplace());
     // We use the empty action string for choices with no origin, which we want to be the first index.
-    auto const emptyStringIndex = actionStrings.push_back("");
+    [[maybe_unused]] auto const emptyStringIndex = actionStrings.push_back("");
     STORM_LOG_ASSERT(emptyStringIndex == 0, "Action index for empty action string must be 0.");
     // add to the action strings by initializing the csr with {0,0}
     STORM_LOG_ASSERT(choiceOrigins.getIdentifierForChoicesWithNoOrigin() == 0, "Identifier for choices with no origin expected to be 0.");
@@ -117,7 +117,7 @@ uint64_t choiceLabelingToUmb(storm::models::sparse::ChoiceLabeling const& labeli
     // Handle choices without any labels.
     if (!choicesWithAtLeastOneLabel.full()) {
         // For consistency, unlabelled choices shall always have action index 0. So we add the empty action string.
-        auto const emptyStringIndex = actionStrings.push_back("");
+        [[maybe_unused]] auto const emptyStringIndex = actionStrings.push_back("");
         STORM_LOG_ASSERT(emptyStringIndex == 0, "Action index for empty action string must be 0.");
         // nothing else to do for unlabeled choices: we already initialized the choiceToAction mapping with 0s
     }

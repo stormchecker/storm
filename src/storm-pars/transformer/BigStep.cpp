@@ -868,7 +868,7 @@ std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(const std::map
 
             // Create the new state that our parametric transitions will start in
             uint64_t newRow = flexibleMatrix.insertNewRowsAtEnd(1);
-            uint64_t newRowBackwards = backwardsFlexibleMatrix.insertNewRowsAtEnd(1);
+            [[maybe_unused]] uint64_t newRowBackwards = backwardsFlexibleMatrix.insertNewRowsAtEnd(1);
             STORM_LOG_ASSERT(newRow == newRowBackwards, "Internal error: Drifting matrix and backwardsTransitions.");
 
             // Sum of parametric transitions goes to new row
