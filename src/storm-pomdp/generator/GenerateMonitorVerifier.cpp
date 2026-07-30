@@ -281,12 +281,10 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
         }
 
         for (auto const& action : actionsInObs) {
-            // std::cout << "Keeping action obs (" << action << ", " << currentObservation << ")" << std::endl;
             rowsToKeep |= rowActionObservationMap[std::make_pair(action, currentObservation)];
         }
         currentObservation++;
     }
-    // std::cout << "Kept " << rowsToKeep.getNumberOfSetBits() << " out of " << numberOfRows << " rows." << std::endl;
     // rowsToKeep.setMultiple(0, numberOfRows);
     numberOfRows = rowsToKeep.getNumberOfSetBits();
     storm::storage::SparseMatrix<ValueType> reducedTransitionMatrix = transMatrix.restrictRows(rowsToKeep);

@@ -24,11 +24,6 @@ std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::el
     for (auto const& group : decomposition) {
         if (!group.isTrivial()) {
             hasNonTrivialMEC = true;
-            // std::cout << "Non-trivial MEC: ";
-            // for (auto const& state : group) {
-            //     std::cout << state << " ";
-            // }
-            // std::cout << std::endl;
         }
     }
 

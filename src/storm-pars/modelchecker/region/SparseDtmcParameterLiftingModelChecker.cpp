@@ -418,8 +418,6 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
             transformer::IntervalEndComponentPreserver endComponentPreserver;
             auto const& result = endComponentPreserver.eliminateMECs(liftedMatrix, liftedVector);
             if (result) {
-                // std::cout << liftedMatrix << std::endl;
-                // std::cout << *result << std::endl;
                 liftedMatrix = *result;
                 nonTrivialEndComponents = true;
             }

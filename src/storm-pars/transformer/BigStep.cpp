@@ -60,7 +60,6 @@ uint64_t PolynomialCache::lookUpInCache(UniPoly const& f, RationalFunctionVariab
         return it->second;
     }
 
-    // std::cout << f << std::endl;
     uint64_t newIndex = container.second.size();
     container.first[f] = newIndex;
     container.second.push_back(f);
@@ -550,10 +549,6 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
                 continue;
             }
 
-            // for (auto const& [state, annotation] : bottomAnnotations) {
-            //     std::cout << state << ": " << annotation << std::endl;
-            // }
-
             uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
 
             std::vector<std::pair<uint64_t, Annotation>> transitions = findBigStep(bottomAnnotations, parameter, flexibleMatrix, backwardsTransitions,
@@ -728,20 +723,13 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
                 }
                 auto const transition = backwardsEntry.getValue();
 
-                // std::cout << backwardsEntry.getColumn() << "--" << backwardsEntry.getValue() << "->" << goToState << ": ";
-
                 // We add stuff to this annotation
                 auto& targetAnnotation = annotations.at(goToState);
 
-                // std::cout << targetAnnotation << " + ";
-                // std::cout << "(" << transition << " * (" << annotations.at(backwardsEntry.getColumn()) << "))";
-
                 // The core of this big-step algorithm: "value-iterating" on our annotation.
                 if (transition.isConstant()) {
-                    // std::cout << "(constant)";
                     targetAnnotation.addAnnotationTimesConstant(annotations.at(backwardsEntry.getColumn()), transition.constantPart());
                 } else {
-                    // std::cout << "(pol)";
                     // Read transition from DTMC, convert to univariate polynomial
                     STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Only transitions with constant denominator supported but this has "
                                                                                     << transition.denominator() << " in transition " << transition);
@@ -779,10 +767,6 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
     }
     // Delete annotations that are not bottom states
     for (auto const& [state, _successors] : subtree) {
-        // std::cout << "Subtree of " << state << ": ";
-        // for (auto const& entry : _successors) {
-        //     std::cout << entry << " ";
-        // }
         if (!bottomStates.count(state)) {
             annotations.erase(state);
         }
@@ -817,17 +801,6 @@ std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(const std::map
 
     // State affected by big-step
     std::unordered_set<uint64_t> affectedStates;
-
-    // for (auto const& [factors, transitions] : parametricTransitions) {
-    //     std::cout << "Factors: ";
-    //     for (uint64_t i = 0; i < factors.size(); i++) {
-    //         std::cout << polynomialCache->at(parameter).second[i] << ": " << factors[i] << " ";
-    //     }
-    //     std::cout << std::endl;
-    //     for (auto const& [state, info] : transitions) {
-    //         std::cout << "State " << state << " with " << info << std::endl;
-    //     }
-    // }
 
     std::set<std::set<uint64_t>> targetSetStates;
 

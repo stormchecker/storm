@@ -170,7 +170,6 @@ TEST(BitVectorTest, Resize) {
 
     vector.resize(72, true);
 
-    std::cout << vector << std::endl;
     ASSERT_EQ(72ul, vector.size());
     ASSERT_EQ(34ul, vector.getNumberOfSetBits());
 
