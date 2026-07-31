@@ -1260,7 +1260,7 @@ uint64_t Murmur3BitVectorHash<uint64_t>::operator()(storm::storage::BitVector co
     //----------
     // body
 
-    const uint64_t* blocks = (const uint64_t*)(data);
+    uint64_t const* blocks = bv.buckets;
 
     for (int i = 0; i < nblocks; i++) {
         uint64_t k1 = getblock64(blocks, i * 2 + 0);
