@@ -327,8 +327,8 @@ void GlpkLpSolver<ValueType, RawMode>::optimize() const {
                 // Early termination due to achieved MIP Gap. That's fine.
                 error = 0;
             } else if (error == GLP_EBOUND) {
-                throw storm::exceptions::InvalidStateException()
-                    << "The bounds of some variables are illegal. Note that glpk only accepts integer bounds for integer variables.";
+                STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
+                                "The bounds of some variables are illegal. Note that glpk only accepts integer bounds for integer variables.");
             }
         }
     } else {
@@ -348,7 +348,7 @@ template<typename ValueType, bool RawMode>
 bool GlpkLpSolver<ValueType, RawMode>::isInfeasible() const {
 #ifdef STORM_HAVE_GLPK
     if (!this->currentModelHasBeenOptimized) {
-        throw storm::exceptions::InvalidStateException() << "Illegal call to GlpkLpSolver::isInfeasible: model has not been optimized.";
+        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Illegal call to GlpkLpSolver::isInfeasible: model has not been optimized.");
     }
 
     if (this->modelContainsIntegerVariables) {
@@ -367,7 +367,7 @@ template<typename ValueType, bool RawMode>
 bool GlpkLpSolver<ValueType, RawMode>::isUnbounded() const {
 #ifdef STORM_HAVE_GLPK
     if (!this->currentModelHasBeenOptimized) {
-        throw storm::exceptions::InvalidStateException() << "Illegal call to GlpkLpSolver::isUnbounded: model has not been optimized.";
+        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Illegal call to GlpkLpSolver::isUnbounded: model has not been optimized.");
     }
 
     if (this->modelContainsIntegerVariables) {

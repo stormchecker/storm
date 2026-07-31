@@ -40,14 +40,9 @@ void GurobiEnvironment::initialize() {
     // Create the environment.
     int error = GRBloadenv(&env, "");
     if (error || env == nullptr) {
-        if (error == 10009) {
-            STORM_LOG_ERROR("Gurobi License Issue. " << GRBgeterrormsg(env) << ", error code " << error << ").");
-            throw storm::exceptions::GurobiLicenseException()
-                << "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").";
-        }
-        STORM_LOG_ERROR("Could not initialize Gurobi (" << GRBgeterrormsg(env) << ", error code " << error << ").");
-        throw storm::exceptions::InvalidStateException()
-            << "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").";
+        STORM_LOG_THROW(error != 10009, storm::exceptions::GurobiLicenseException, "Gurobi License Issue. Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").";
+        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
+                        "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").");
     }
     setOutput(storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet() ||
               storm::settings::getModule<storm::settings::modules::GurobiSettings>().isOutputSet());
@@ -97,9 +92,8 @@ GurobiLpSolver<ValueType, RawMode>::GurobiLpSolver(std::shared_ptr<GurobiEnviron
     int error = 0;
     error = GRBnewmodel(**environment, &model, name.c_str(), 0, nullptr, nullptr, nullptr, nullptr, nullptr);
     if (error) {
-        STORM_LOG_ERROR("Could not initialize Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
-        throw storm::exceptions::InvalidStateException()
-            << "Could not initialize Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ").";
+        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
+                        "Could not initialize Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
     }
 }
 
@@ -307,7 +301,8 @@ void GurobiLpSolver<ValueType, RawMode>::optimize() const {
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::isInfeasible() const {
     if (!this->currentModelHasBeenOptimized) {
-        throw storm::exceptions::InvalidStateException() << "Illegal call to GurobiLpSolver<ValueType, RawMode>::isInfeasible: model has not been optimized.";
+        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
+                        "Illegal call to GurobiLpSolver<ValueType, RawMode>::isInfeasible: model has not been optimized.");
     }
 
     int optimalityStatus = 0;
@@ -340,7 +335,8 @@ bool GurobiLpSolver<ValueType, RawMode>::isInfeasible() const {
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::isUnbounded() const {
     if (!this->currentModelHasBeenOptimized) {
-        throw storm::exceptions::InvalidStateException() << "Illegal call to GurobiLpSolver<ValueType, RawMode>::isUnbounded: model has not been optimized.";
+        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
+                        "Illegal call to GurobiLpSolver<ValueType, RawMode>::isUnbounded: model has not been optimized.");
     }
 
     int optimalityStatus = 0;
@@ -499,9 +495,8 @@ template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::writeModelToFile(std::string const& filename) const {
     int error = GRBwrite(model, filename.c_str());
     if (error) {
-        STORM_LOG_ERROR("Unable to write Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ") to file.");
-        throw storm::exceptions::InvalidStateException()
-            << "Unable to write Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ") to file.";
+        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
+                        "Unable to write Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ") to file.");
     }
 }
 
