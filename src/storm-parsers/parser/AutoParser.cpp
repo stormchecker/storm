@@ -68,18 +68,18 @@ storm::models::ModelType AutoParser<ValueType, RewardValueType>::analyzeHint(std
     // Open the file.
     MappedFile file(filename.c_str());
 
-    STORM_LOG_THROW(file.getDataSize() >= STORM_PARSER_AUTOPARSER_HINT_LENGTH, storm::exceptions::WrongFormatException, "File too short to be readable.");
+    STORM_LOG_THROW(file.getDataSize() >= hintLength, storm::exceptions::WrongFormatException, "File too short to be readable.");
     char const* fileData = file.getData();
 
-    char filehintBuffer[STORM_PARSER_AUTOPARSER_HINT_LENGTH + 1];
-    memcpy(filehintBuffer, fileData, STORM_PARSER_AUTOPARSER_HINT_LENGTH);
-    filehintBuffer[STORM_PARSER_AUTOPARSER_HINT_LENGTH] = 0;
+    char filehintBuffer[hintLength + 1];
+    memcpy(filehintBuffer, fileData, hintLength);
+    filehintBuffer[hintLength] = 0;
 
     // Find and read in the hint.
-    std::string formatString = "%" + std::to_string(STORM_PARSER_AUTOPARSER_HINT_LENGTH) + "s";
-    char hint[STORM_PARSER_AUTOPARSER_HINT_LENGTH + 1];
-
-    sscanf(filehintBuffer, formatString.c_str(), hint);
+    char hint[hintLength + 1] = {};
+    static_assert(hintLength == 10, "sscanf format width must match the hint length");
+    constexpr const char* hintFormat = "%10s";
+    sscanf(filehintBuffer, hintFormat, hint);
 
     for (char* c = hint; *c != '\0'; c++) {
         *c = toupper(*c);
