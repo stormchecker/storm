@@ -5,6 +5,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
 #include "storm/modelchecker/helper/finitehorizon/SparseStepBoundedHorizonHelper.h"
@@ -281,7 +282,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     ExplicitQualitativeCheckResult<SolutionType> const& leftResult = leftResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
     ExplicitQualitativeCheckResult<SolutionType> const& rightResult = rightResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
     if constexpr (storm::IsIntervalType<ValueType>) {
-        throw exceptions::NotImplementedException() << "Conditional Probabilities are not supported with interval models";
+        STORM_LOG_THROW(false, exceptions::NotSupportedException, "Conditional Probabilities are not supported with interval models");
     } else {
         return storm::modelchecker::computeConditionalProbabilities(env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask),
                                                                     checkTask.isProduceSchedulersSet(), this->getModel().getTransitionMatrix(),

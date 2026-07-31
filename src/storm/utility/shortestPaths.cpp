@@ -6,6 +6,7 @@
 #include <string>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/utility/graph.h"
@@ -321,9 +322,7 @@ void ShortestPathsGenerator<T>::computeNextPath(state_t node, unsigned long k) {
 
 template<typename T>
 void ShortestPathsGenerator<T>::computeKSP(unsigned long k) {
-    if (k == 0) {
-        throw std::invalid_argument("Index 0 is invalid, since we use 1-based indices (sorry)!");
-    }
+    STORM_LOG_THROW(k != 0, storm::exceptions::InvalidArgumentException, "Index 0 is invalid, since we use 1-based indices!");
 
     unsigned long alreadyComputedK = kShortestPaths[metaTarget].size();
 
@@ -334,7 +333,7 @@ void ShortestPathsGenerator<T>::computeKSP(unsigned long k) {
             STORM_LOG_DEBUG("KSP throws (as expected) due to nonexistence -- maybe this is unhandled and causes the Python interface to segfault?");
             STORM_LOG_DEBUG("last existing k-SP has k=" + std::to_string(lastExistingK));
             STORM_LOG_DEBUG("maybe this is unhandled and causes the Python interface to segfault?");
-            throw std::invalid_argument("k-SP does not exist for k=" + std::to_string(k));
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "k-SP does not exist for k=" << k);
         }
     }
 }

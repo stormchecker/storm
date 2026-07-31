@@ -6,6 +6,8 @@
 #include "storm-counterexamples/counterexamples/GuaranteedLabelSet.h"
 #include "storm-counterexamples/counterexamples/HighLevelCounterexample.h"
 #include "storm-counterexamples/settings/modules/CounterexampleGeneratorSettings.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
@@ -891,9 +893,8 @@ class SMTMinimalLabelSetGenerator {
     static void assertReachabilityCuts(storm::models::sparse::Model<T> const& model, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets,
                                        storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation,
                                        RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
-        if (!variableInformation.hasReachabilityVariables) {
-            throw storm::exceptions::InvalidStateException() << "Impossible to assert reachability cuts without the necessary variables.";
-        }
+        STORM_LOG_THROW(variableInformation.hasReachabilityVariables, storm::exceptions::InvalidStateException,
+                        "Impossible to assert reachability cuts without the necessary variables.");
 
         // Get some data from the model for convenient access.
         storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
@@ -1050,7 +1051,7 @@ class SMTMinimalLabelSetGenerator {
         // Sanity check for sizes of input.
         if (in1.size() != in2.size() || in1.size() == 0) {
             STORM_LOG_ERROR("Illegal input to adder (" << in1.size() << ", " << in2.size() << ").");
-            throw storm::exceptions::InvalidArgumentException() << "Illegal input to adder.";
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal input to adder.");
         }
 
         // Prepare result.
@@ -1386,10 +1387,7 @@ class SMTMinimalLabelSetGenerator {
 
         STORM_LOG_DEBUG("Successfully performed reachability analysis.");
 
-        if (targetStateIsReachable) {
-            STORM_LOG_ERROR("Target must be unreachable for this analysis.");
-            throw storm::exceptions::InvalidStateException() << "Target must be unreachable for this analysis.";
-        }
+        STORM_LOG_THROW(!targetStateIsReachable, storm::exceptions::InvalidStateException, "Target must be unreachable for this analysis.");
 
         storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
         storm::storage::BitVector statesThatCanReachTargetStates =

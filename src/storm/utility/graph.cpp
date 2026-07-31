@@ -1843,10 +1843,7 @@ std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<T> const& mat
 
 template<typename T>
 std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates) {
-    if (matrix.getRowCount() != matrix.getColumnCount()) {
-        STORM_LOG_ERROR("Provided matrix is required to be square.");
-        throw storm::exceptions::InvalidArgumentException() << "Provided matrix is required to be square.";
-    }
+    STORM_LOG_THROW(matrix.getRowCount() == matrix.getColumnCount(), storm::exceptions::InvalidArgumentException, "Provided matrix is required to be square.");
 
     uint_fast64_t numberOfStates = matrix.getRowCount();
 

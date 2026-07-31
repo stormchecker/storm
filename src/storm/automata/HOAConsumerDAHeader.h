@@ -5,8 +5,11 @@
 #include "storm/automata/APSet.h"
 #include "storm/automata/DeterministicAutomaton.h"
 #include "storm/automata/HOAHeader.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/utility/macros.h"
 
 #include <boost/optional.hpp>
 #include <exception>
@@ -46,12 +49,10 @@ class HOAConsumerDAHeader : public cpphoafparser::HOAConsumer {
      * @param stateConjunction a list of state indizes, interpreted as a conjunction
      **/
     virtual void addStartStates(const int_list& stateConjunction) {
-        if (header.startState) {
-            throw std::runtime_error("Parsing deterministic HOA automaton: Nondeterministic choice of  start states not supported");
-        }
-        if (stateConjunction.size() != 1) {
-            throw std::runtime_error("Parsing deterministic HOA automaton: Conjunctive choice of  start states not supported");
-        }
+        STORM_LOG_THROW(!header.startState, storm::exceptions::NotSupportedException,
+                        "Parsing deterministic HOA automaton: Nondeterministic choice of start states not supported");
+        STORM_LOG_THROW(stateConjunction.size() == 1, storm::exceptions::NotSupportedException,
+                        "Parsing deterministic HOA automaton: Conjunctive choice of start states not supported");
         header.startState = stateConjunction.at(0);
     }
 
@@ -198,7 +199,7 @@ class HOAConsumerDAHeader : public cpphoafparser::HOAConsumer {
      * (at any time, indicating error, the automaton should be discarded).
      */
     virtual void notifyAbort() {
-        throw std::runtime_error("Parsing deterministic automaton: Automaton is incomplete (abort)");
+        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing deterministic automaton: Automaton is incomplete (abort)");
     }
 
     /**

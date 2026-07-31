@@ -279,7 +279,7 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> parseCons
                     } else if (value == "false") {
                         constantDefinitions[variable] = manager.boolean(false);
                     } else {
-                        throw storm::exceptions::WrongFormatException() << "Illegal value for boolean constant: " << value << ".";
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Illegal value for boolean constant: " << value << ".");
                     }
                 } else if (variable.hasIntegerType()) {
                     std::size_t position = 0;
