@@ -114,10 +114,8 @@ storm::models::sparse::StateLabeling AtomicPropositionLabelingParser::parseAtomi
         state = checked_strtol(buf, &buf);
 
         // If the state has already been read or skipped once there might be a problem with the file (doubled lines, or blocks).
-        if (state <= lastState && lastState != startIndexComparison) {
-            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                            "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
-        }
+        STORM_LOG_THROW(state > lastState || lastState == startIndexComparison, storm::exceptions::WrongFormatException,
+                        "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
 
         while ((buf[0] != '\r') && (buf[0] != '\n') && (buf[0] != '\0')) {
             cnt = skipWord(buf) - buf;
@@ -134,10 +132,8 @@ storm::models::sparse::StateLabeling AtomicPropositionLabelingParser::parseAtomi
                 proposition[cnt] = '\0';
 
                 // Has the label been declared in the header?
-                if (!labeling.containsLabel(proposition)) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                                    "Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.");
-                }
+                STORM_LOG_THROW(labeling.containsLabel(proposition), storm::exceptions::WrongFormatException,
+                                "Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.");
                 labeling.addLabelToState(proposition, state);
                 buf += cnt;
             }

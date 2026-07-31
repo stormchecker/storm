@@ -100,9 +100,7 @@ boost::any ToDiceStringVisitor::visit(BinaryNumericalFunctionExpression const& e
                 shifts++;
             }
             denominator = denominator >> 1;
-            if (denominator > 0) {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Dice does not support division with non-powers of two");
-            }
+            STORM_LOG_THROW(denominator <= 0, storm::exceptions::NotSupportedException, "Dice does not support division with non-powers of two");
             if (shifts > 0) {
                 stream << "(";
                 expression.getFirstOperand()->accept(*this, data);

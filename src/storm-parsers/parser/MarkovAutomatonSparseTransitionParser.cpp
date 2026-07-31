@@ -79,9 +79,7 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult Marko
         buf = skipWord(buf);
 
         if (isMarkovianChoice) {
-            if (stateHasMarkovianChoice) {
-                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "The state " << source << " has multiple Markovian choices.");
-            }
+            STORM_LOG_THROW(!stateHasMarkovianChoice, storm::exceptions::WrongFormatException, "The state " << source << " has multiple Markovian choices.");
             if (stateHasProbabilisticChoice) {
                 STORM_LOG_THROW(
                     false, storm::exceptions::WrongFormatException,
@@ -123,20 +121,15 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult Marko
                 if (target > result.highestStateIndex) {
                     result.highestStateIndex = target;
                 }
-                if (hasSuccessorState && target <= lastSuccessorState) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Illegal transition order for source state " << source << ".");
-                }
+                STORM_LOG_THROW(!hasSuccessorState || target > lastSuccessorState, storm::exceptions::WrongFormatException,
+                                "Illegal transition order for source state " << source << ".");
 
                 // And the corresponding probability/rate.
                 double val = checked_strtod(buf, &buf);
-                if (val < 0.0) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                                    "Illegal negative probability/rate value for transition from " << source << " to " << target << ": " << val << ".");
-                }
-                if (!isMarkovianChoice && val > 1.0) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                                    "Illegal probability value for transition from " << source << " to " << target << ": " << val << ".");
-                }
+                STORM_LOG_THROW(val >= 0.0, storm::exceptions::WrongFormatException,
+                                "Illegal negative probability/rate value for transition from " << source << " to " << target << ": " << val << ".");
+                STORM_LOG_THROW(isMarkovianChoice || val <= 1.0, storm::exceptions::WrongFormatException,
+                                "Illegal probability value for transition from " << source << " to " << target << ": " << val << ".");
 
                 // We need to record that we found at least one successor state for the current choice.
                 hasSuccessorState = true;

@@ -200,20 +200,16 @@ void SoplexLpSolver<ValueType, RawMode>::optimize() const {
 
 template<typename ValueType, bool RawMode>
 bool SoplexLpSolver<ValueType, RawMode>::isInfeasible() const {
-    if (!this->currentModelHasBeenOptimized) {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
-                        "Illegal call to SoplexLpSolver<ValueType, RawMode>::isInfeasible: model has not been optimized.");
-    }
+    STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException,
+                    "Illegal call to SoplexLpSolver<ValueType, RawMode>::isInfeasible: model has not been optimized.");
 
     return (status == soplex::SPxSolver::INFEASIBLE);
 }
 
 template<typename ValueType, bool RawMode>
 bool SoplexLpSolver<ValueType, RawMode>::isUnbounded() const {
-    if (!this->currentModelHasBeenOptimized) {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
-                        "Illegal call to SoplexLpSolver<ValueType, RawMode>::isUnbounded: model has not been optimized.");
-    }
+    STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException,
+                    "Illegal call to SoplexLpSolver<ValueType, RawMode>::isUnbounded: model has not been optimized.");
 
     return (status == soplex::SPxSolver::UNBOUNDED);
 }

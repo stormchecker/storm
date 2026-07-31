@@ -325,10 +325,8 @@ std::map<std::string, storm::storage::PlayerIndex> NextStateGenerator<ValueType,
 
 template<typename ValueType, typename StateType>
 void NextStateGenerator<ValueType, StateType>::remapStateIds(std::function<StateType(StateType const&)> const& /*remapping*/) {
-    if (overlappingGuardStates != boost::none) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                        "Remapping of Ids during model building is not supported for overlapping guard statements.");
-    }
+    STORM_LOG_THROW(overlappingGuardStates == boost::none, storm::exceptions::NotImplementedException,
+                    "Remapping of Ids during model building is not supported for overlapping guard statements.");
     // Nothing to be done.
 }
 

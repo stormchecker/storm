@@ -300,7 +300,7 @@ void processOptions() {
 
     // Branch on the type of input
     auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
-    STORM_LOG_THROW(!(input.isPrismInputSet() && input.isJaniInputSet()), storm::exceptions::InvalidSettingsException, "Multiple input options were set.");
+    STORM_LOG_THROW(!input.isPrismInputSet() || !input.isJaniInputSet(), storm::exceptions::InvalidSettingsException, "Multiple input options were set.");
     if (input.isPrismInputSet()) {
         processPrismInput();
     } else if (input.isJaniInputSet()) {

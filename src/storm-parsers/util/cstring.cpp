@@ -20,10 +20,8 @@ namespace cstring {
  */
 uint_fast64_t checked_strtol(char const* str, char const** end) {
     uint_fast64_t res = strtol(str, const_cast<char**>(end), 10);
-    if (str == *end) {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                        "Error while parsing integer. Next input token is not a number.\n\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
-    }
+    STORM_LOG_THROW(str != *end, storm::exceptions::WrongFormatException,
+                    "Error while parsing integer. Next input token is not a number.\n\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
     return res;
 }
 
@@ -37,10 +35,8 @@ uint_fast64_t checked_strtol(char const* str, char const** end) {
  */
 double checked_strtod(char const* str, char const** end) {
     double res = strtod(str, const_cast<char**>(end));
-    if (str == *end) {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                        "Error while parsing floating point. Next input token is not a number.\n\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
-    }
+    STORM_LOG_THROW(str != *end, storm::exceptions::WrongFormatException,
+                    "Error while parsing floating point. Next input token is not a number.\n\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
     return res;
 }
 

@@ -162,10 +162,11 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initialize
             for (uint64_t dim = 0; dim < subformula.getDimension(); ++dim) {
                 Dimension<ValueType> dimension;
                 dimension.formula = subformula.restrictToDimension(dim);
-                STORM_LOG_THROW(!(dimension.formula->asCumulativeRewardFormula().getBound().isVariable() &&
-                                  infinityBoundVariables.count(
-                                      dimension.formula->asCumulativeRewardFormula().getBound().getBaseExpression().asVariableExpression().getVariable()) > 0),
-                                storm::exceptions::NotSupportedException, "Letting cumulative reward bounds approach infinite is not supported.");
+                STORM_LOG_THROW(
+                    !dimension.formula->asCumulativeRewardFormula().getBound().isVariable() ||
+                        infinityBoundVariables.count(
+                            dimension.formula->asCumulativeRewardFormula().getBound().getBaseExpression().asVariableExpression().getVariable()) == 0,
+                    storm::exceptions::NotSupportedException, "Letting cumulative reward bounds approach infinite is not supported.");
                 dimension.objectiveIndex = objIndex;
                 dimension.boundType = DimensionBoundType::UpperBound;
                 if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {

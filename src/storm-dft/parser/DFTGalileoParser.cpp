@@ -287,14 +287,11 @@ void DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std
         STORM_LOG_WARN("Interval is not supported and will be ignored for basic element '" << name << "'.");
     }
     value = parseValue("repair", input);
-    if (!value.empty()) {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Repairs are not supported and will be ignored for basic element '" << name << "'.");
-    }
+    STORM_LOG_THROW(value.empty(), storm::exceptions::NotSupportedException,
+                    "Repairs are not supported and will be ignored for basic element '" << name << "'.");
 
     boost::trim(input);
-    if (input != "") {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Unknown arguments for basic element '" << name << "': " << input);
-    }
+    STORM_LOG_THROW(input == "", storm::exceptions::WrongFormatException, "Unknown arguments for basic element '" << name << "': " << input);
 
     // Create BE with given distribution
     STORM_LOG_THROW(distribution.has_value(), storm::exceptions::WrongFormatException, "No failure distribution is defined for BE '" << name << "'.");

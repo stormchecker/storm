@@ -253,9 +253,7 @@ std::vector<typename QuickHull<ValueType>::Facet> QuickHull<ValueType>::computeI
     std::vector<Facet> result;
     result.reserve(dimension + 1);
     storm::storage::geometry::SubsetEnumerator<> subsetEnum(verticesOfInitialPolytope.size(), dimension);
-    if (!subsetEnum.setToFirstSubset()) {
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Could not find an initial subset.");
-    }
+    STORM_LOG_THROW(subsetEnum.setToFirstSubset(), storm::exceptions::UnexpectedException, "Could not find an initial subset.");
     do {
         Facet newFacet;
         // set the points that lie on the new facet

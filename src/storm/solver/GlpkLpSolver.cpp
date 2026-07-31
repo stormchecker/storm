@@ -347,9 +347,8 @@ void GlpkLpSolver<ValueType, RawMode>::optimize() const {
 template<typename ValueType, bool RawMode>
 bool GlpkLpSolver<ValueType, RawMode>::isInfeasible() const {
 #ifdef STORM_HAVE_GLPK
-    if (!this->currentModelHasBeenOptimized) {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Illegal call to GlpkLpSolver::isInfeasible: model has not been optimized.");
-    }
+    STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException,
+                    "Illegal call to GlpkLpSolver::isInfeasible: model has not been optimized.");
 
     if (this->modelContainsIntegerVariables) {
         return isInfeasibleFlag;
@@ -366,9 +365,8 @@ bool GlpkLpSolver<ValueType, RawMode>::isInfeasible() const {
 template<typename ValueType, bool RawMode>
 bool GlpkLpSolver<ValueType, RawMode>::isUnbounded() const {
 #ifdef STORM_HAVE_GLPK
-    if (!this->currentModelHasBeenOptimized) {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Illegal call to GlpkLpSolver::isUnbounded: model has not been optimized.");
-    }
+    STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException,
+                    "Illegal call to GlpkLpSolver::isUnbounded: model has not been optimized.");
 
     if (this->modelContainsIntegerVariables) {
         return isUnboundedFlag;

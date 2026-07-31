@@ -69,9 +69,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
 
     if (allowModelSimplifications) {
         auto simplifier = storm::transformer::SparseParametricMdpSimplifier<SparseModelType>(*mdp);
-        if (!simplifier.simplify(checkTask.getFormula())) {
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-        }
+        STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         this->parametricModel = simplifier.getSimplifiedModel();
         this->specifyFormula(env, checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
     } else {

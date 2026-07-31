@@ -165,9 +165,7 @@ std::shared_ptr<storm::models::ModelBase> simplifyModel(std::shared_ptr<storm::m
         std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
         STORM_LOG_THROW(formulas.begin() != formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported");
 
-        if (!simplifier.simplify(*(formulas[0]))) {
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-        }
+        STORM_LOG_THROW(simplifier.simplify(*(formulas[0])), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         result = simplifier.getSimplifiedModel();
     } else if (model->isOfType(storm::models::ModelType::Mdp)) {
         storm::transformer::SparseParametricMdpSimplifier<storm::models::sparse::Mdp<ValueType>> simplifier(
@@ -176,9 +174,7 @@ std::shared_ptr<storm::models::ModelBase> simplifyModel(std::shared_ptr<storm::m
         std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
         STORM_LOG_THROW(formulas.begin() != formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported");
 
-        if (!simplifier.simplify(*(formulas[0]))) {
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-        }
+        STORM_LOG_THROW(simplifier.simplify(*(formulas[0])), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         result = simplifier.getSimplifiedModel();
     } else {
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform monotonicity analysis on the provided model type.");

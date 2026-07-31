@@ -194,7 +194,7 @@ void DeterministicSchedsObjectiveHelper<ModelType>::initialize() {
         storm::utility::graph::checkIfECWithChoiceExists(model.getTransitionMatrix(), backwardTransitions, getMaybeStates(), negativeRewardChoices);
     bool hasPositiveEc =
         storm::utility::graph::checkIfECWithChoiceExists(model.getTransitionMatrix(), backwardTransitions, getMaybeStates(), positiveRewardChoices);
-    STORM_LOG_THROW(!(hasNegativeEC && hasPositiveEc), storm::exceptions::NotSupportedException,
+    STORM_LOG_THROW(!hasNegativeEC || !hasPositiveEc, storm::exceptions::NotSupportedException,
                     "Objective is not convergent: Infinite positive and infinite negative reward is possible.");
     infinityCase = hasNegativeEC ? InfinityCase::HasNegativeInfinite : (hasPositiveEc ? InfinityCase::HasPositiveInfinite : InfinityCase::AlwaysFinite);
 

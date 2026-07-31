@@ -808,9 +808,7 @@ void exportModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
                                            !ioSettings.isExplicitExportPlaceholdersDisabled());
     }
 
-    if (ioSettings.isExportDdSet()) {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exporting in drdd format is only supported for DDs.");
-    }
+    STORM_LOG_THROW(!ioSettings.isExportDdSet(), storm::exceptions::NotSupportedException, "Exporting in drdd format is only supported for DDs.");
 
     if (ioSettings.isExportDotSet()) {
         storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
@@ -837,9 +835,8 @@ void exportModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueTyp
 
     // TODO: The following options are depreciated and shall be removed at some point:
 
-    if (ioSettings.isExportExplicitSet()) {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exporting in drn format is only supported for sparse models.");
-    }
+    STORM_LOG_THROW(!ioSettings.isExportExplicitSet(), storm::exceptions::NotSupportedException,
+                    "Exporting in drn format is only supported for sparse models.");
 
     if (ioSettings.isExportDdSet()) {
         storm::api::exportSymbolicModelAsDrdd(model, ioSettings.getExportDdFilename());

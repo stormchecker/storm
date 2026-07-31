@@ -56,16 +56,12 @@ void ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType
         auto dtmcOrMdp = parametricModel->template as<SparseModelType>();
         if constexpr (IsMDP) {
             auto simplifier = storm::transformer::SparseParametricMdpSimplifier<SparseModelType>(*dtmcOrMdp);
-            if (!simplifier.simplify(checkTask.getFormula())) {
-                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-            }
+            STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
             auto simplifiedTask = checkTask.substituteFormula(*simplifier.getSimplifiedFormula());
             specifyUnderlyingCheckers(simplifier.getSimplifiedModel(), simplifiedTask);
         } else {
             auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*dtmcOrMdp);
-            if (!simplifier.simplify(checkTask.getFormula())) {
-                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-            }
+            STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
             auto simplifiedTask = checkTask.substituteFormula(*simplifier.getSimplifiedFormula());
             specifyUnderlyingCheckers(simplifier.getSimplifiedModel(), simplifiedTask);
         }

@@ -138,14 +138,10 @@ void GspnBuilder::addNormalArc(std::string const& from, std::string const& to, u
         addOutputArc(transitionNames.at(from), placeNames.at(to), multiplicity);
     } else {
         // No suitable combination. Provide error message:
-        if (placeNames.count(from) > 0) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
-                            "Expected a transition with name " << to << " for arc from '" << from << "' to '" << to << "'.");
-        }
-        if (transitionNames.count(from) > 0) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
-                            "Expected a place named " << to << " for arc from '" << from << "' to '" << to << "'.");
-        }
+        STORM_LOG_THROW(placeNames.count(from) == 0, storm::exceptions::InvalidArgumentException,
+                        "Expected a transition with name " << to << " for arc from '" << from << "' to '" << to << "'.");
+        STORM_LOG_THROW(transitionNames.count(from) == 0, storm::exceptions::InvalidArgumentException,
+                        "Expected a place named " << to << " for arc from '" << from << "' to '" << to << "'.");
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
                         "Expected a place named " << from << " for arc from '" << from << "' to '" << to << "'.");
     }

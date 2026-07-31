@@ -33,9 +33,8 @@ class CompositionValidityChecker : public CompositionVisitor {
 
     void check(Composition const& composition) {
         composition.accept(*this, boost::any());
-        if (appearingModules.size() != program.getNumberOfModules()) {
-            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Not every module is used in the system composition.");
-        }
+        STORM_LOG_THROW(appearingModules.size() == program.getNumberOfModules(), storm::exceptions::WrongFormatException,
+                        "Not every module is used in the system composition.");
     }
 
     virtual boost::any visit(ModuleComposition const& composition, boost::any const&) override {
@@ -1805,20 +1804,16 @@ void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
                 }
             }
             for (auto const& entry : globalIVarsWrittenToByCommandInThisModule) {
-                if (globalIVarsWrittenToByCommand.find(entry) != globalIVarsWrittenToByCommand.end()) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                                    "Error in " << module.getFilename() << ", line " << module.getLineNumber()
-                                                << ": assignment of (possibly) synchronizing command with label '" << entry.second
-                                                << "' writes to global variable '" << entry.first << "'.");
-                }
+                STORM_LOG_THROW(globalIVarsWrittenToByCommand.find(entry) == globalIVarsWrittenToByCommand.end(), storm::exceptions::WrongFormatException,
+                                "Error in " << module.getFilename() << ", line " << module.getLineNumber()
+                                            << ": assignment of (possibly) synchronizing command with label '" << entry.second
+                                            << "' writes to global variable '" << entry.first << "'.");
             }
             for (auto const& entry : globalBVarsWrittenToByCommandInThisModule) {
-                if (globalBVarsWrittenToByCommand.find(entry) != globalBVarsWrittenToByCommand.end()) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                                    "Error in " << module.getFilename() << ", line " << module.getLineNumber()
-                                                << ": assignment of (possibly) synchronizing command with label '" << entry.second
-                                                << "' writes to global variable '" << entry.first << "'.");
-                }
+                STORM_LOG_THROW(globalBVarsWrittenToByCommand.find(entry) == globalBVarsWrittenToByCommand.end(), storm::exceptions::WrongFormatException,
+                                "Error in " << module.getFilename() << ", line " << module.getLineNumber()
+                                            << ": assignment of (possibly) synchronizing command with label '" << entry.second
+                                            << "' writes to global variable '" << entry.first << "'.");
             }
         }
     }

@@ -928,7 +928,7 @@ storm::jani::FunctionDefinition JaniParser<ValueType>::parseFunctionDefinition(J
                     "Function definition '" + functionName + "' (scope: " + scope.description + ") must have a (single) type-declaration.");
     auto type = parseType(functionDefinitionStructure.at("type"), functionName, scope);
     STORM_LOG_THROW(
-        !(type.first->isClockType() || type.first->isContinuousType()), storm::exceptions::InvalidJaniException,
+        !type.first->isClockType() && !type.first->isContinuousType(), storm::exceptions::InvalidJaniException,
         "Function definition '" + functionName + "' (scope: " + scope.description + ") uses illegal type '" + type.first->getStringRepresentation() + "'.");
 
     std::unordered_map<std::string, storm::expressions::Variable> parameterNameToVariableMap;
@@ -949,7 +949,7 @@ storm::jani::FunctionDefinition JaniParser<ValueType>::parseFunctionDefinition(J
             auto parameterType =
                 parseType(parameterStructure.at("type"), parameterName,
                           scope.refine("parameter declaration of parameter " + std::to_string(parameters.size()) + " of Function definition " + functionName));
-            STORM_LOG_THROW(!(parameterType.first->isClockType() || parameterType.first->isContinuousType()), storm::exceptions::InvalidJaniException,
+            STORM_LOG_THROW(!parameterType.first->isClockType() && !parameterType.first->isContinuousType(), storm::exceptions::InvalidJaniException,
                             "Type of parameter " + std::to_string(parameters.size()) + " of function definition '" + functionName +
                                 "' (scope: " + scope.description + ") uses illegal type '" + parameterType.first->getStringRepresentation() + "'.");
             STORM_LOG_WARN_COND(!parameterType.first->isBoundedType(),

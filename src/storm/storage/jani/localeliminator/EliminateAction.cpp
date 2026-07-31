@@ -69,9 +69,7 @@ void EliminateAction::doAction(JaniLocalEliminator::Session& session) {
         if (!edge.getGuard().containsVariables() && !edge.getGuard().evaluateAsBool())
             continue;
         for (const EdgeDestination& dest : edge.getDestinations()) {
-            if (dest.getLocationIndex() == locIndex) {
-                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Could not eliminate location");
-            }
+            STORM_LOG_THROW(dest.getLocationIndex() != locIndex, storm::exceptions::IllegalArgumentException, "Could not eliminate location");
         }
     }
 }

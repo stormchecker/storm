@@ -184,24 +184,17 @@ class SFTBDDPropertyFormulaAdapter {
                     auto const boundedUntil{std::static_pointer_cast<storm::logic::BoundedUntilFormula const>(subFormula)};
 
                     auto const leftSide{boundedUntil->getLeftSubformula().asSharedPointer()};
-                    if (!leftSide->isTrueFormula()) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Left side is not a TrueFormula.");
-                    }
+                    STORM_LOG_THROW(leftSide->isTrueFormula(), storm::exceptions::NotSupportedException, "Left side is not a TrueFormula.");
 
                     auto const rightSide{boundedUntil->getRightSubformula().asSharedPointer()};
-                    if (!rightSide->isStateFormula()) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Right side is not a StateFormula.");
-                    }
+                    STORM_LOG_THROW(rightSide->isStateFormula(), storm::exceptions::NotSupportedException, "Right side is not a StateFormula.");
 
                     if (!boundedUntil->hasUpperBound()) {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "UpperBound must be set.");
                     } else if (boundedUntil->hasUpperBound() && boundedUntil->hasLowerBound()) {
                         // Check if '[F = x phi]' was used.
-                        if (boundedUntil->getUpperBound().evaluateAsDouble() != boundedUntil->getLowerBound().evaluateAsDouble()) {
-                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                                            "upperBound is set wrongly. "
-                                            "Only lowerBound == upperBound is Supported.");
-                        }
+                        STORM_LOG_THROW(boundedUntil->getUpperBound().evaluateAsDouble() == boundedUntil->getLowerBound().evaluateAsDouble(),
+                                        storm::exceptions::NotSupportedException, "UpperBound is set wrongly. Only lowerBound == upperBound is Supported.");
                     }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SubFormula is not a BoundedUntilFormula.");

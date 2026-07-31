@@ -91,10 +91,8 @@ GurobiLpSolver<ValueType, RawMode>::GurobiLpSolver(std::shared_ptr<GurobiEnviron
     // Create the model.
     int error = 0;
     error = GRBnewmodel(**environment, &model, name.c_str(), 0, nullptr, nullptr, nullptr, nullptr, nullptr);
-    if (error) {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
-                        "Could not initialize Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
-    }
+    STORM_LOG_THROW(!error, storm::exceptions::InvalidStateException,
+                    "Could not initialize Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
 }
 
 template<typename ValueType, bool RawMode>
@@ -300,10 +298,8 @@ void GurobiLpSolver<ValueType, RawMode>::optimize() const {
 
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::isInfeasible() const {
-    if (!this->currentModelHasBeenOptimized) {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
-                        "Illegal call to GurobiLpSolver<ValueType, RawMode>::isInfeasible: model has not been optimized.");
-    }
+    STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException,
+                    "Illegal call to GurobiLpSolver<ValueType, RawMode>::isInfeasible: model has not been optimized.");
 
     int optimalityStatus = 0;
 
@@ -334,10 +330,8 @@ bool GurobiLpSolver<ValueType, RawMode>::isInfeasible() const {
 
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::isUnbounded() const {
-    if (!this->currentModelHasBeenOptimized) {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
-                        "Illegal call to GurobiLpSolver<ValueType, RawMode>::isUnbounded: model has not been optimized.");
-    }
+    STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException,
+                    "Illegal call to GurobiLpSolver<ValueType, RawMode>::isUnbounded: model has not been optimized.");
 
     int optimalityStatus = 0;
 
@@ -494,10 +488,8 @@ ValueType GurobiLpSolver<ValueType, RawMode>::getObjectiveValue() const {
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::writeModelToFile(std::string const& filename) const {
     int error = GRBwrite(model, filename.c_str());
-    if (error) {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
-                        "Unable to write Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ") to file.");
-    }
+    STORM_LOG_THROW(!error, storm::exceptions::InvalidStateException,
+                    "Unable to write Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ") to file.");
 }
 
 template<typename ValueType, bool RawMode>
