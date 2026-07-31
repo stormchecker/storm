@@ -112,9 +112,8 @@ void SparseItemLabelingParser::parseLabelNames(std::string const& filename, stor
 
         if (cnt >= sizeof(proposition)) {
             // if token is longer than our buffer, the following strncpy code might get risky...
-            STORM_LOG_ERROR("Error while parsing " << filename << ": Atomic proposition with length > " << (sizeof(proposition) - 1) << " was found.");
-            throw storm::exceptions::WrongFormatException()
-                << "Error while parsing " << filename << ": Atomic proposition with length > " << (sizeof(proposition) - 1) << " was found.";
+            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                            "Error while parsing " << filename << ": Atomic proposition with length > " << (sizeof(proposition) - 1) << " was found.");
 
         } else if (cnt > 0) {
             // If the next token is #DECLARATION: Just skip it.
@@ -155,9 +154,8 @@ void SparseItemLabelingParser::parseDeterministicLabelAssignments(std::string co
 
         // If the state has already been read or skipped once there might be a problem with the file (doubled lines, or blocks).
         if (state <= lastState && lastState != startIndexComparison) {
-            STORM_LOG_ERROR("Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
-            throw storm::exceptions::WrongFormatException()
-                << "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.";
+            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                            "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
         }
 
         while ((buf[0] != '\r') && (buf[0] != '\n') && (buf[0] != '\0')) {
@@ -176,9 +174,8 @@ void SparseItemLabelingParser::parseDeterministicLabelAssignments(std::string co
 
                 // Has the label been declared in the header?
                 if (!labeling.containsLabel(proposition)) {
-                    STORM_LOG_ERROR("Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.");
-                    throw storm::exceptions::WrongFormatException()
-                        << "Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.";
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                                    "Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.");
                 }
                 if (labeling.isStateLabeling()) {
                     labeling.asStateLabeling().addLabelToState(proposition, state);
