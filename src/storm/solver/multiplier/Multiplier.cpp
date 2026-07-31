@@ -138,11 +138,12 @@ std::unique_ptr<Multiplier<ValueType, SolutionType>> MultiplierFactory<ValueType
         case MultiplierType::ViOperator:
             if constexpr (std::is_same_v<ValueType, storm::RationalFunction> || (storm::IsIntervalType<ValueType> && storm::IsIntervalType<SolutionType>)) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "VI Operator multiplier not supported with given value type.");
-            }
-            if (matrix.hasTrivialRowGrouping()) {
-                return std::make_unique<ViOperatorMultiplier<ValueType, true, SolutionType>>(matrix);
             } else {
-                return std::make_unique<ViOperatorMultiplier<ValueType, false, SolutionType>>(matrix);
+                if (matrix.hasTrivialRowGrouping()) {
+                    return std::make_unique<ViOperatorMultiplier<ValueType, true, SolutionType>>(matrix);
+                } else {
+                    return std::make_unique<ViOperatorMultiplier<ValueType, false, SolutionType>>(matrix);
+                }
             }
         case MultiplierType::Native:
             if constexpr (std::is_same_v<ValueType, SolutionType>) {
