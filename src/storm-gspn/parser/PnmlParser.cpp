@@ -195,11 +195,11 @@ void PnmlParser::traverseTransition(xercesc::DOMNode const* const node) {
     }
 
     // build transition and add it to the GSPN
-    STORM_LOG_THROW(timed.first, storm::exceptions::UnexpectedException, "Unknown transition type (transition=" + id + ")");
+    STORM_LOG_THROW(timed.first, storm::exceptions::UnexpectedException, "Unknown transition type (transition=" + id + ").");
 
     if (timed.second) {
         // no information about the rate is found -> abort the parsing
-        STORM_LOG_THROW(value.first, storm::exceptions::UnexpectedException, "unknown transition rate (transition=" + id + ")");
+        STORM_LOG_THROW(value.first, storm::exceptions::UnexpectedException, "Unknown transition rate (transition=" + id + ").");
         builder.addTimedTransition(priority, std::stod(value.second), id);
     } else {
         if (!value.first) {
@@ -261,9 +261,9 @@ void PnmlParser::traverseArc(xercesc::DOMNode const* const node) {
 
     // check if all necessary information where stored in the pnml file
     // could not find start of the arc -> abort parsing
-    STORM_LOG_THROW(source.first, storm::exceptions::UnexpectedException, "unknown arc source (arc=" + id + ")");
+    STORM_LOG_THROW(source.first, storm::exceptions::UnexpectedException, "Unknown arc source (arc=" + id + ").");
     // could not find the target of the arc -> abort parsing
-    STORM_LOG_THROW(target.first, storm::exceptions::UnexpectedException, "unknown arc target (arc=" + id + ")");
+    STORM_LOG_THROW(target.first, storm::exceptions::UnexpectedException, "Unknown arc target (arc=" + id + ").");
     if (!multiplicity.first) {
         // no information about the multiplicity of the arc
         // continue and use the default multiplicity

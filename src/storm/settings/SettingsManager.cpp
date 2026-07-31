@@ -504,7 +504,7 @@ void SettingsManager::setOptionArguments(std::string const& optionName, std::sha
         bool conversionOk = argument.setFromStringValue(argumentCache[i]);
         STORM_LOG_THROW(conversionOk, storm::exceptions::OptionParserException,
                         "Value '" << argumentCache[i] << "' is invalid for argument <" << argument.getName() << "> of option:\n"
-                                  << *option);
+                                  << *option << ".");
     }
 
     // In case there are optional arguments that were not set, we set them to their default value.
@@ -512,7 +512,7 @@ void SettingsManager::setOptionArguments(std::string const& optionName, std::sha
         ArgumentBase& argument = option->getArgument(i);
         STORM_LOG_THROW(argument.getIsOptional(), storm::exceptions::OptionParserException,
                         "Non-optional argument <" << argument.getName() << "> of option:\n"
-                                                  << *option);
+                                                  << *option << ".");
         argument.setFromDefaultValue();
     }
 

@@ -118,7 +118,7 @@ std::shared_ptr<storm::models::ModelBase> eliminateScc(std::shared_ptr<storm::mo
 
                 if (entryStates.size() != 1) {
                     STORM_LOG_THROW(entryStates.size() > 1, storm::exceptions::NotImplementedException,
-                                    "state elimination not implemented for scc with more than 1 entry points");
+                                    "State elimination not implemented for scc with more than 1 entry points.");
                 }
             }
         }
@@ -147,7 +147,7 @@ std::shared_ptr<storm::models::ModelBase> eliminateScc(std::shared_ptr<storm::mo
         result->printModelInformationToStream(std::cout);
     } else if (model->isOfType(storm::models::ModelType::Mdp)) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                        "Unable to perform SCC elimination for monotonicity analysis on MDP: Not mplemented");
+                        "Unable to perform SCC elimination for monotonicity analysis on MDP: Not mplemented.");
     } else {
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform monotonicity analysis on the provided model type.");
     }
@@ -163,7 +163,7 @@ std::shared_ptr<storm::models::ModelBase> simplifyModel(std::shared_ptr<storm::m
             *(model->template as<storm::models::sparse::Dtmc<ValueType>>()));
 
         std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
-        STORM_LOG_THROW(formulas.begin() != formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported");
+        STORM_LOG_THROW(formulas.begin() != formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported.");
 
         STORM_LOG_THROW(simplifier.simplify(*(formulas[0])), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         result = simplifier.getSimplifiedModel();
@@ -172,7 +172,7 @@ std::shared_ptr<storm::models::ModelBase> simplifyModel(std::shared_ptr<storm::m
             *(model->template as<storm::models::sparse::Mdp<ValueType>>()));
 
         std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
-        STORM_LOG_THROW(formulas.begin() != formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported");
+        STORM_LOG_THROW(formulas.begin() != formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported.");
 
         STORM_LOG_THROW(simplifier.simplify(*(formulas[0])), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         result = simplifier.getSimplifiedModel();
@@ -199,7 +199,7 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
     // TODO: why only simplify in these modes
     if (parametricSettings.getOperationMode() == storm::pars::utility::ParametricMode::Monotonicity ||
         parametricSettings.getOperationMode() == storm::pars::utility::ParametricMode::Feasibility) {
-        STORM_LOG_THROW(!input.properties.empty(), storm::exceptions::InvalidSettingsException, "Simplification requires property to be specified");
+        STORM_LOG_THROW(!input.properties.empty(), storm::exceptions::InvalidSettingsException, "Simplification requires property to be specified.");
         result.model = storm::pars::simplifyModel<ValueType>(result.model, input);
         result.changed = true;
     }
@@ -450,7 +450,7 @@ void processInput(cli::SymbolicInput&& input, storm::cli::ModelProcessingInforma
 
     STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse || mpi.engine == storm::utility::Engine::Hybrid || mpi.engine == storm::utility::Engine::Dd,
                     storm::exceptions::InvalidSettingsException, "The selected engine is not supported for parametric models.");
-    STORM_LOG_THROW(parSettings.hasOperationModeBeenSet(), storm::exceptions::InvalidSettingsException, "An operation mode must be selected with --mode");
+    STORM_LOG_THROW(parSettings.hasOperationModeBeenSet(), storm::exceptions::InvalidSettingsException, "An operation mode must be selected with --mode.");
     std::shared_ptr<storm::models::ModelBase> model;
     if (!buildSettings.isNoBuildModelSet()) {
         model = storm::cli::buildModel(input, ioSettings, mpi);
@@ -515,7 +515,7 @@ void processInput(cli::SymbolicInput&& input, storm::cli::ModelProcessingInforma
     if (mode == storm::pars::utility::ParametricMode::SolutionFunction) {
         STORM_LOG_INFO("Solution function mode started.");
         STORM_LOG_THROW(regions.empty(), storm::exceptions::InvalidSettingsException,
-                        "Solution function computations cannot be restricted to specific regions");
+                        "Solution function computations cannot be restricted to specific regions.");
         STORM_LOG_ERROR_COND(!regionSettings.isAssumeGraphPreservingSet(), "Solution function computations assume graph preservation.");
 
         if (model->isSparseModel()) {

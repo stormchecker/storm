@@ -81,7 +81,7 @@ typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType SparseMul
         data.objectives.back()->originalFormula = subFormula;
         data.finiteRewardCheckObjectives.resize(data.objectives.size(), false);
         STORM_LOG_THROW(data.objectives.back()->originalFormula->isOperatorFormula(), storm::exceptions::InvalidPropertyException,
-                        "Could not preprocess the subformula " << *subFormula << " of " << originalFormula << " because it is not supported");
+                        "Could not preprocess the subformula " << *subFormula << " of " << originalFormula << " because it is not supported.");
         preprocessOperatorFormula(data.objectives.back()->originalFormula->asOperatorFormula(), data);
     }
 
@@ -119,7 +119,7 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::removeIrrelevantStates(s
         // Compute a set of states from which we can make any subset absorbing without affecting this subformula
         storm::storage::BitVector absorbingStatesForSubformula;
         STORM_LOG_THROW(opFormula->isOperatorFormula(), storm::exceptions::InvalidPropertyException,
-                        "Could not preprocess the subformula " << *opFormula << " of " << originalFormula << " because it is not supported");
+                        "Could not preprocess the subformula " << *opFormula << " of " << originalFormula << " because it is not supported.");
         auto const& pathFormula = opFormula->asOperatorFormula().getSubformula();
         if (opFormula->isProbabilityOperatorFormula()) {
             if (pathFormula.isUntilFormula()) {
@@ -230,7 +230,7 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::removeIrrelevantStates(s
                                                                                 backwardTransitions, ~lraStates, forallGloballyNotLraStates);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException,
-                            "Could not preprocess the subformula " << *opFormula << " of " << originalFormula << " because it is not supported");
+                            "Could not preprocess the subformula " << *opFormula << " of " << originalFormula << " because it is not supported.");
         }
         absorbingStates &= absorbingStatesForSubformula;
         if (absorbingStates.empty()) {
@@ -301,7 +301,7 @@ storm::logic::OperatorInformation getOperatorInformation(storm::logic::OperatorF
                     opInfo.bound->comparisonType = storm::logic::ComparisonType::GreaterEqual;
                     break;
                 default:
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Current objective " << formula << " has unexpected comparison type");
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Current objective " << formula << " has unexpected comparison type.");
             }
         }
         if (storm::logic::isLowerBound(opInfo.bound->comparisonType)) {
@@ -318,7 +318,7 @@ storm::logic::OperatorInformation getOperatorInformation(storm::logic::OperatorF
             opInfo.optimalityType = storm::solver::invert(opInfo.optimalityType.get());
         }
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Objective " << formula << " does not specify whether to minimize or maximize");
+        STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Objective " << formula << " does not specify whether to minimize or maximize.");
     }
     return opInfo;
 }
@@ -342,7 +342,8 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessOperatorFormul
     } else if (formula.isLongRunAverageOperatorFormula()) {
         preprocessLongRunAverageOperatorFormula(formula.asLongRunAverageOperatorFormula(), opInfo, data);
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Could not preprocess the objective " << formula << " because it is not supported");
+        STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException,
+                        "Could not preprocess the objective " << formula << " because it is not supported.");
     }
 }
 
@@ -375,7 +376,7 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessRewardOperator
     if (formula.hasRewardModelName()) {
         rewardModelName = formula.getRewardModelName();
         STORM_LOG_THROW(data.model->hasRewardModel(rewardModelName), storm::exceptions::InvalidPropertyException,
-                        "The reward model specified by formula " << formula << " does not exist in the model");
+                        "The reward model specified by formula " << formula << " does not exist in the model.");
     } else {
         // We have to assert that a unique reward model exists, and we need to find its name.
         // However, we might have added auxiliary reward models for other objectives which we have to filter out here.
@@ -524,7 +525,7 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessBoundedUntilFo
         preprocessUntilFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()),
                                opInfo, data, subformula);
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Property " << formula << "is not supported");
+        STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Property " << formula << "is not supported.");
     }
 }
 

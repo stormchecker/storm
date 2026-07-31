@@ -494,7 +494,7 @@ void sparseModelToUmb(storm::models::sparse::Model<ValueType> const& model, UmbM
                             "Exporting SMG to UMB with zero or one players. The model will be recognized as MDP or DTMC on import.");
     } else {
         STORM_LOG_THROW(model.isOfType(Dtmc) || model.isOfType(Mdp), storm::exceptions::NotSupportedException,
-                        "Unexpected model type for UMB export: " << model.getType());
+                        "Unexpected model type for UMB export: " << model.getType() << ".");
     }
 }
 

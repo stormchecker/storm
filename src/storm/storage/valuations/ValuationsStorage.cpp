@@ -362,7 +362,7 @@ void ValuationsStorage::setValuesInEvaluator(uint64_t entity, storm::expressions
         } else {
             STORM_LOG_THROW(
                 (std::is_same_v<ValueType, std::string_view> || std::is_same_v<ValueType, std::string> || std::is_same_v<ValueType, std::nullopt_t>),
-                storm::exceptions::NotSupportedException, "Unsupported variable value type when reading state values: " << typeid(ValueType).name());
+                storm::exceptions::NotSupportedException, "Unsupported variable value type when reading state values: " << typeid(ValueType).name() << ".");
         }
     });
 }
@@ -443,7 +443,7 @@ void ValuationsStorage::writeUint64(std::span<char> bytes, uint64_t const bitOff
     STORM_LOG_ASSERT(bitOffset < bytes.size() * 8, "Variable offset exceeds valuation size.");
     STORM_LOG_ASSERT(bitSize <= 64, "Invalid bit range.");
     STORM_LOG_THROW(bitSize == 64 || value < (1ull << bitSize), storm::exceptions::OutOfRangeException,
-                    "Invalid value " << value << " for bit size " << bitSize);
+                    "Invalid value " << value << " for bit size " << bitSize << ".");
     uint64_t const firstByte = bitOffset / 8;
     uint8_t const bitOffsetWithinByte = bitOffset % 8;
     uint8_t const numBytes = (bitOffsetWithinByte + bitSize + 7) / 8;

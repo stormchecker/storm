@@ -283,7 +283,7 @@ class SFTBDDPropertyFormulaAdapter {
             return name;
         }
 
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal AtomicLabelFormula: " << formula->toString());
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal AtomicLabelFormula: " << formula->toString() << ".");
         return "__ERROR__";
     }
 
@@ -296,7 +296,7 @@ class SFTBDDPropertyFormulaAdapter {
             return StateFormulaToBdd(std::static_pointer_cast<storm::logic::StateFormula const>(formula));
         }
 
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal Formula: " << formula->toString());
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal Formula: " << formula->toString() << ".");
         return getSylvanBddManager()->getZero();
     }
 
@@ -313,7 +313,7 @@ class SFTBDDPropertyFormulaAdapter {
             return unaryStateFormulaToBdd(std::static_pointer_cast<storm::logic::UnaryBooleanStateFormula const>(formula), enableNot);
         }
 
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal StateFormula: " << formula->toString());
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal StateFormula: " << formula->toString() << ".");
         return getSylvanBddManager()->getZero();
     }
 
@@ -331,7 +331,7 @@ class SFTBDDPropertyFormulaAdapter {
             return leftBdd | rightBdd;
         }
 
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal BinaryStateFormula: " << formula->toString());
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal BinaryStateFormula: " << formula->toString() << ".");
         return getSylvanBddManager()->getZero();
     }
 
@@ -347,7 +347,7 @@ class SFTBDDPropertyFormulaAdapter {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                             "Illegal UnaryStateFormula: \"" << formula->toString()
                                                             << "\". Can only use negation with a formula "
-                                                               "of the form 'P=? [F = x phi]'");
+                                                               "of the form 'P=? [F = x phi]'.");
             return getSylvanBddManager()->getZero();
         }
         auto const subBdd{FormulaToBdd(formula->getSubformula().asSharedPointer())};
@@ -356,7 +356,7 @@ class SFTBDDPropertyFormulaAdapter {
             return !subBdd;
         }
 
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal UnaryStateFormula: " << formula->toString());
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal UnaryStateFormula: " << formula->toString() << ".");
         return getSylvanBddManager()->getZero();
     }
 

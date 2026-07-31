@@ -356,7 +356,7 @@ class SMTMinimalLabelSetGenerator {
         //
         if (addBackwardImplications) {
             STORM_LOG_THROW(!symbolicModel.isJaniModel() || !symbolicModel.asJaniModel().usesAssignmentLevels(), storm::exceptions::NotSupportedException,
-                            "Counterexample generation with backward implications is not supported for indexed assignments");
+                            "Counterexample generation with backward implications is not supported for indexed assignments.");
         }
 
         storm::storage::FlatSet<uint_fast64_t> initialLabels;
@@ -1738,7 +1738,7 @@ class SMTMinimalLabelSetGenerator {
 #ifdef STORM_HAVE_Z3
         STORM_LOG_THROW(propertyThreshold.size() > 0, storm::exceptions::InvalidArgumentException, "At least one threshold has to be specified.");
         STORM_LOG_THROW(propertyThreshold.size() == 1 || (rewardName && rewardName.get().size() == propertyThreshold.size()),
-                        storm::exceptions::InvalidArgumentException, "Multiple thresholds is only supported for multiple reward structures");
+                        storm::exceptions::InvalidArgumentException, "Multiple thresholds is only supported for multiple reward structures.");
         std::vector<storm::storage::FlatSet<uint_fast64_t>> result;
         // Set up all clocks used for time measurement.
         auto totalClock = std::chrono::high_resolution_clock::now();
@@ -2101,7 +2101,7 @@ class SMTMinimalLabelSetGenerator {
         storm::storage::BitVector psiStates;
 
         void addRewardThresholdCombination(std::string reward, double thresh) {
-            STORM_LOG_THROW(rewardName, storm::exceptions::InvalidOperationException, "Can only add more reward names if a reward name is already set");
+            STORM_LOG_THROW(rewardName, storm::exceptions::InvalidOperationException, "Can only add more reward names if a reward name is already set.");
             rewardName.get().push_back(reward);
             threshold.push_back(thresh);
         }

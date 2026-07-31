@@ -68,7 +68,7 @@ bool SparseCbAchievabilityQuery<SparseModelType>::checkAchievability() {
             // std::cout << "}\n";
             return false;
         default:
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "SMT solver yielded an unexpected result");
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "SMT solver yielded an unexpected result.");
     }
 
     return false;
@@ -176,7 +176,7 @@ void SparseCbAchievabilityQuery<SparseModelType>::addObjectiveConstraints() {
                 solver->add(objValue <= threshold);
                 break;
             default:
-                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "One or more objectives have an invalid comparison type");
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "One or more objectives have an invalid comparison type.");
         }
     }
 }

@@ -612,7 +612,7 @@ Model Model::flattenComposition(std::shared_ptr<storm::utility::solver::SmtSolve
 
 uint64_t Model::addAction(Action const& action) {
     auto it = actionToIndex.find(action.getName());
-    STORM_LOG_THROW(it == actionToIndex.end(), storm::exceptions::WrongFormatException, "Action with name '" << action.getName() << "' already exists");
+    STORM_LOG_THROW(it == actionToIndex.end(), storm::exceptions::WrongFormatException, "Action with name '" << action.getName() << "' already exists.");
     actionToIndex.emplace(action.getName(), actions.size());
     actions.push_back(action);
     if (action.getName() != SILENT_ACTION_NAME) {

@@ -119,7 +119,7 @@ template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const& name, Variable indicatorVariable, bool indicatorValue,
                                                             Constraint const& constraint) {
     if constexpr (RawMode) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Indicator constraints not implemented in RawMode");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Indicator constraints not implemented in RawMode.");
     } else {
         // binary variables are encoded as integer variables with domain {0,1}.
         STORM_LOG_THROW(indicatorVariable.hasIntegerType(), storm::exceptions::InvalidArgumentException,

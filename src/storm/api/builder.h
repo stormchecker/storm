@@ -93,7 +93,7 @@ storm::builder::ExplicitModelBuilder<ValueType> makeExplicitModelBuilder(storm::
     if (model.isPrismProgram()) {
         generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(model.asPrismProgram(), options, actionMask);
     } else if (model.isJaniModel()) {
-        STORM_LOG_THROW(actionMask == nullptr, storm::exceptions::NotSupportedException, "Action masks for JANI are not yet supported");
+        STORM_LOG_THROW(actionMask == nullptr, storm::exceptions::NotSupportedException, "Action masks for JANI are not yet supported.");
         if constexpr (storm::IsIntervalType<ValueType>) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot build JANI models with interval value type.");
         } else {

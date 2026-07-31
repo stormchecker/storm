@@ -291,7 +291,7 @@ typename ParameterLifter<ParametricType, ConstantType>::AbstractValuation Parame
             result.addParameterUnspecified(p);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException,
-                            "Tried to obtain a subvaluation for parameters that are not specified by this valuation");
+                            "Tried to obtain a subvaluation for parameters that are not specified by this valuation.");
         }
     }
     return result;

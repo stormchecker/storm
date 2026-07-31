@@ -151,7 +151,7 @@ std::unique_ptr<Multiplier<ValueType, SolutionType>> MultiplierFactory<ValueType
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Native multiplier not implemented for unequal ValueType and SolutionType.");
             }
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown MultiplierType");
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown MultiplierType.");
 }
 
 template class Multiplier<double>;

@@ -121,13 +121,13 @@ void PrismNextStateGenerator<ValueType, StateType>::checkValid() const {
             stream << constant.get().getName() << " (" << constant.get().getType() << ")";
         }
         stream << ".";
-        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
+        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str() + ".");
     } else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.undefinedConstantsAreGraphPreserving()) {
         auto undef = program.getUndefinedConstantsAsString();
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
                         "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, "
                         "which is not admitted. Undefined constants are: "
-                            << undef);
+                            << undef << ".");
     }
 }
 

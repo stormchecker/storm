@@ -299,7 +299,7 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> parseCons
                         constantDefinitions[variable] = manager.rational(rationalValue);
                     } catch (std::exception& e) {
                         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                                        "Illegal constant definition string '" << constantName << "=" << value << "': " << e.what());
+                                        "Illegal constant definition string '" << constantName << "=" << value << "': " << e.what() << ".");
                     }
                 }
             } else {

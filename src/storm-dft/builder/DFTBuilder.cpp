@@ -312,7 +312,7 @@ void DFTBuilder<ValueType>::addMutex(std::string const& name, std::vector<std::s
 
 template<typename ValueType>
 void DFTBuilder<ValueType>::setTopLevel(std::string const& tle) {
-    STORM_LOG_THROW(mTopLevelName.empty(), storm::exceptions::WrongFormatException, "Top level element was already set");
+    STORM_LOG_THROW(mTopLevelName.empty(), storm::exceptions::WrongFormatException, "Top level element was already set.");
     STORM_LOG_THROW(nameInUse(tle), storm::exceptions::InvalidArgumentException, "Element with name '" << tle << "' not known.");
     mTopLevelName = tle;
 }

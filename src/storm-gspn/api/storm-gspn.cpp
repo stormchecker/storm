@@ -99,7 +99,7 @@ std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const&
     while (storm::io::getline(stream, line)) {
         std::vector<std::string> strs;
         boost::split(strs, line, boost::is_any_of("\t "));
-        STORM_LOG_THROW(strs.size() == 2, storm::exceptions::WrongFormatException, "Expect key value pairs");
+        STORM_LOG_THROW(strs.size() == 2, storm::exceptions::WrongFormatException, "Expect key value pairs.");
         storm::expressions::Expression expr = expressionParser.parseFromString(strs[1]);
         if (!gspn.getConstantsSubstitution().empty()) {
             expr = expr.substitute(gspn.getConstantsSubstitution());

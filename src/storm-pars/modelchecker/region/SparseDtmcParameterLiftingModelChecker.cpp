@@ -145,7 +145,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
     storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
     STORM_LOG_THROW(propositionalChecker.canHandle(checkTask.getFormula().getLeftSubformula()) &&
                         propositionalChecker.canHandle(checkTask.getFormula().getRightSubformula()),
-                    storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported");
+                    storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported.");
     storm::storage::BitVector phiStates = std::move(propositionalChecker.check(checkTask.getFormula().getLeftSubformula())
                                                         ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
                                                         .getTruthValuesVector());
@@ -189,7 +189,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
     storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
     STORM_LOG_THROW(propositionalChecker.canHandle(checkTask.getFormula().getLeftSubformula()) &&
                         propositionalChecker.canHandle(checkTask.getFormula().getRightSubformula()),
-                    storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported");
+                    storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported.");
     storm::storage::BitVector phiStates = std::move(propositionalChecker.check(checkTask.getFormula().getLeftSubformula())
                                                         ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
                                                         .getTruthValuesVector());
@@ -263,7 +263,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
     // get the results for the subformula
     storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
     STORM_LOG_THROW(propositionalChecker.canHandle(checkTask.getFormula().getSubformula()), storm::exceptions::NotSupportedException,
-                    "Parameter lifting with non-propositional subformulas is not supported");
+                    "Parameter lifting with non-propositional subformulas is not supported.");
     storm::storage::BitVector targetStates = std::move(propositionalChecker.check(checkTask.getFormula().getSubformula())
                                                            ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
                                                            .getTruthValuesVector());

@@ -26,7 +26,8 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
 
     // Check well-formedness of DFT
     auto wellFormedResult = storm::dft::api::isWellFormed(origDft, true);
-    STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::InvalidModelException, "DFT is not well-formed for analysis: " << wellFormedResult.second);
+    STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::InvalidModelException,
+                    "DFT is not well-formed for analysis: " << wellFormedResult.second << ".");
 
     // Optimizing DFT for modularisation
     storm::dft::storage::DFT<ValueType> dft = origDft;
@@ -212,7 +213,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
             explorationTimer.stop();
 
             STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Ctmc), storm::exceptions::NotSupportedException,
-                            "Parallel composition only applicable for CTMCs");
+                            "Parallel composition only applicable for CTMCs.");
             std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
 
             // Apply bisimulation to new CTMC
@@ -272,7 +273,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
         }
         explorationTimer.stop();
         STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Ctmc), storm::exceptions::NotSupportedException,
-                        "Parallel composition only applicable for CTMCs");
+                        "Parallel composition only applicable for CTMCs.");
         return model->template as<storm::models::sparse::Ctmc<ValueType>>();
     }
 }

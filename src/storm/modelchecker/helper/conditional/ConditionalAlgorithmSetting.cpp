@@ -18,7 +18,7 @@ std::ostream& operator<<(std::ostream& stream, ConditionalAlgorithmSetting const
         case ConditionalAlgorithmSetting::PolicyIteration:
             return stream << "pi";
     }
-    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unknown conditional algorithm");
+    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unknown conditional algorithm.");
     return stream;
 }
 
@@ -38,7 +38,7 @@ ConditionalAlgorithmSetting conditionalAlgorithmSettingFromString(std::string co
     } else if (algorithm == "pi") {
         return ConditionalAlgorithmSetting::PolicyIteration;
     }
-    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unknown conditional algorithm: " << algorithm);
+    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unknown conditional algorithm: " << algorithm << ".");
 }
 
 }  // namespace storm

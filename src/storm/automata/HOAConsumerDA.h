@@ -57,7 +57,8 @@ class HOAConsumerDA : public HOAConsumerDAHeader {
      * Called by the parser to notify that the BODY of the automaton has started [mandatory, once].
      */
     virtual void notifyBodyStart() {
-        STORM_LOG_THROW(header.numberOfStates, storm::exceptions::WrongFormatException, "Parsing deterministic HOA automaton: Missing number-of-states header");
+        STORM_LOG_THROW(header.numberOfStates, storm::exceptions::WrongFormatException,
+                        "Parsing deterministic HOA automaton: Missing number-of-states header.");
 
         acceptance = header.getAcceptanceCondition();
         da.reset(new DeterministicAutomaton(header.apSet, *header.numberOfStates, *header.startState, acceptance));
@@ -86,7 +87,7 @@ class HOAConsumerDA : public HOAConsumerDAHeader {
         }
 
         STORM_LOG_THROW(labelExpr.get() == nullptr, storm::exceptions::NotSupportedException,
-                        "Parsing deterministic HOA automaton: State-labeled automata not supported");
+                        "Parsing deterministic HOA automaton: State-labeled automata not supported.");
 
         helper->startOfState(id);
     }
@@ -107,10 +108,10 @@ class HOAConsumerDA : public HOAConsumerDAHeader {
         std::size_t edgeIndex = helper->nextImplicitEdge();
 
         STORM_LOG_THROW(conjSuccessors.size() == 1, storm::exceptions::NotSupportedException,
-                        "Parsing deterministic HOA automaton: Does not support alternation (conjunction of successor states)");
+                        "Parsing deterministic HOA automaton: Does not support alternation (conjunction of successor states).");
 
         STORM_LOG_THROW(!accSignature, storm::exceptions::NotSupportedException,
-                        "Parsing deterministic HOA automaton: Does not support transition-based acceptance");
+                        "Parsing deterministic HOA automaton: Does not support transition-based acceptance.");
 
         da->setSuccessor(stateId, edgeIndex, conjSuccessors.at(0));
         markEdgeAsSeen(stateId, edgeIndex);
@@ -127,10 +128,10 @@ class HOAConsumerDA : public HOAConsumerDAHeader {
      */
     virtual void addEdgeWithLabel(unsigned int stateId, label_expr::ptr labelExpr, const int_list& conjSuccessors, std::shared_ptr<int_list> accSignature) {
         STORM_LOG_THROW(conjSuccessors.size() == 1, storm::exceptions::NotSupportedException,
-                        "Parsing deterministic HOA automaton: Does not support alternation (conjunction of successor states)");
+                        "Parsing deterministic HOA automaton: Does not support alternation (conjunction of successor states).");
 
         STORM_LOG_THROW(!accSignature, storm::exceptions::NotSupportedException,
-                        "Parsing deterministic HOA automaton: Does not support transition-based acceptance");
+                        "Parsing deterministic HOA automaton: Does not support transition-based acceptance.");
 
         std::size_t successor = conjSuccessors.at(0);
 
@@ -149,7 +150,7 @@ class HOAConsumerDA : public HOAConsumerDAHeader {
             // require: edge already exists -> same successor
             STORM_LOG_THROW(!alreadyHaveEdge(stateId, edgeIndex) || da->getSuccessor(stateId, edgeIndex) == successor,
                             storm::exceptions::InvalidOperationException,
-                            "HOA automaton: multiple definitions of successor for state " << stateId << " and edge " << edgeIndex);
+                            "HOA automaton: multiple definitions of successor for state " << stateId << " and edge " << edgeIndex << ".");
 
             // std::cout << stateId << " -(" << edgeIndex << ")-> " << successor << '\n';
             da->setSuccessor(stateId, edgeIndex, successor);
@@ -181,7 +182,7 @@ class HOAConsumerDA : public HOAConsumerDAHeader {
      * (at any time, indicating error, the automaton should be discarded).
      */
     virtual void notifyAbort() {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing deterministic automaton: Automaton is incomplete (abort)");
+        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing deterministic automaton: Automaton is incomplete (abort).");
     }
 
     /**
@@ -209,11 +210,11 @@ class HOAConsumerDA : public HOAConsumerDAHeader {
             case label_expr::EXP_ATOM: {
                 unsigned int apIndex = labelExpr->getAtom().getAPIndex();
                 STORM_LOG_THROW(apIndex < apVariables.size(), storm::exceptions::OutOfRangeException,
-                                "HOA automaton refers to non-existing atomic proposition");
+                                "HOA automaton refers to non-existing atomic proposition.");
                 return apVariables.at(apIndex).getExpression();
             }
         }
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unknown label expression operator");
+        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unknown label expression operator.");
     }
 
     bool alreadyHaveEdge(std::size_t stateId, std::size_t edgeIndex) {

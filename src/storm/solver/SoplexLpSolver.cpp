@@ -145,14 +145,14 @@ void SoplexLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, 
     SoplexValueType l, r;
     switch (relationType) {
         case storm::expressions::RelationType::Less:
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex only supports nonstrict inequalities");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex only supports nonstrict inequalities.");
             break;
         case storm::expressions::RelationType::LessOrEqual:
             l = -soplex::infinity;
             r = rhs;
             break;
         case storm::expressions::RelationType::Greater:
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex only supports nonstrict inequalities");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex only supports nonstrict inequalities.");
             break;
         case storm::expressions::RelationType::GreaterOrEqual:
             l = rhs;
@@ -191,9 +191,9 @@ void SoplexLpSolver<ValueType, RawMode>::optimize() const {
     status = solver.optimize();
     STORM_LOG_TRACE("soplex status " << status);
     if (status == soplex::SPxSolver::ERROR) {
-        STORM_LOG_THROW(false, storm::exceptions::InternalException, "Soplex failed");
+        STORM_LOG_THROW(false, storm::exceptions::InternalException, "Soplex failed.");
     } else if (status == soplex::SPxSolver::UNKNOWN) {
-        STORM_LOG_THROW(false, storm::exceptions::InternalException, "Soplex gives up on this problem");
+        STORM_LOG_THROW(false, storm::exceptions::InternalException, "Soplex gives up on this problem.");
     }
     this->currentModelHasBeenOptimized = true;
 }
@@ -283,12 +283,12 @@ void SoplexLpSolver<ValueType, RawMode>::writeModelToFile(std::string const& fil
 
 template<typename ValueType, bool RawMode>
 void SoplexLpSolver<ValueType, RawMode>::push() {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Push/Pop not supported on SoPlex");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Push/Pop not supported on SoPlex.");
 }
 
 template<typename ValueType, bool RawMode>
 void SoplexLpSolver<ValueType, RawMode>::pop() {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Push/Pop not supported on SoPlex");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Push/Pop not supported on SoPlex.");
 }
 
 #else
@@ -412,12 +412,12 @@ void SoplexLpSolver<ValueType, RawMode>::pop() {
 
 template<typename ValueType, bool RawMode>
 int_fast64_t SoplexLpSolver<ValueType, RawMode>::getIntegerValue(Variable const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support integer variables");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support integer variables.");
 }
 
 template<typename ValueType, bool RawMode>
 bool SoplexLpSolver<ValueType, RawMode>::getBinaryValue(Variable const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support binary variables");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support binary variables.");
 }
 
 template<typename ValueType, bool RawMode>

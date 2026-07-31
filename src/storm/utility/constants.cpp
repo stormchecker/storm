@@ -1007,7 +1007,7 @@ storm::RationalFunction minimum(std::map<uint64_t, storm::RationalFunction> cons
 
 template<>
 storm::RationalFunction maximum(std::map<uint64_t, storm::RationalFunction> const&) {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Maximum for rational functions is not defined");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Maximum for rational functions is not defined.");
 }
 
 template<>

@@ -1011,7 +1011,7 @@ void DftToGspnTransformator<ValueType>::translatePDEP(std::shared_ptr<storm::dft
 template<typename ValueType>
 void DftToGspnTransformator<ValueType>::translateSeq(std::shared_ptr<storm::dft::storage::elements::DFTSeq<ValueType> const> dftSeq) {
     STORM_LOG_THROW(dftSeq->allChildrenBEs(), storm::exceptions::NotImplementedException,
-                    "Sequence enforcers with gates as children are currently not supported");
+                    "Sequence enforcers with gates as children are currently not supported.");
     double xcenter = mDft.getElementLayoutInfo(dftSeq->id()).x;
     double ycenter = mDft.getElementLayoutInfo(dftSeq->id()).y;
     uint64_t failedPlace = 0;

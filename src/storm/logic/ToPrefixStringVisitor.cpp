@@ -16,7 +16,7 @@ std::string ToPrefixStringVisitor::toPrefixString(Formula const& f) const {
 }
 
 boost::any ToPrefixStringVisitor::visit(AtomicExpressionFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(AtomicLabelFormula const& f, boost::any const&) const {
@@ -90,7 +90,7 @@ boost::any ToPrefixStringVisitor::visit(BoundedUntilFormula const& f, boost::any
     if (f.hasUpperBound()) {
         uint64_t upperBound = f.getNonStrictUpperBound<uint64_t>();
         STORM_LOG_THROW(upperBound >= lowerBound, storm::exceptions::InvalidPropertyException,
-                        "step-bounded formula " << f << " considers an empty step-range.");
+                        "Step-bounded formula " << f << " considers an empty step-range.");
         repeat(upperBound - lowerBound, "| " + right + " & " + left + " X ");  // ( right | ( left & X [..] ) )
         out << right + " ";
     } else if (lTrue) {
@@ -102,11 +102,11 @@ boost::any ToPrefixStringVisitor::visit(BoundedUntilFormula const& f, boost::any
 }
 
 boost::any ToPrefixStringVisitor::visit(ConditionalFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(CumulativeRewardFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {
@@ -115,7 +115,7 @@ boost::any ToPrefixStringVisitor::visit(EventuallyFormula const& f, boost::any c
 }
 
 boost::any ToPrefixStringVisitor::visit(TimeOperatorFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(GloballyFormula const& f, boost::any const& data) const {
@@ -124,27 +124,27 @@ boost::any ToPrefixStringVisitor::visit(GloballyFormula const& f, boost::any con
 }
 
 boost::any ToPrefixStringVisitor::visit(GameFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(InstantaneousRewardFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(LongRunAverageOperatorFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(LongRunAverageRewardFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(MultiObjectiveFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(QuantileFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(NextFormula const& f, boost::any const& data) const {
@@ -153,15 +153,15 @@ boost::any ToPrefixStringVisitor::visit(NextFormula const& f, boost::any const& 
 }
 
 boost::any ToPrefixStringVisitor::visit(ProbabilityOperatorFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(RewardOperatorFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(TotalRewardFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(UnaryBooleanStateFormula const& f, boost::any const& data) const {
@@ -191,15 +191,15 @@ boost::any ToPrefixStringVisitor::visit(UntilFormula const& f, boost::any const&
 }
 
 boost::any ToPrefixStringVisitor::visit(HOAPathFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(DiscountedCumulativeRewardFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 
 boost::any ToPrefixStringVisitor::visit(DiscountedTotalRewardFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }
 }  // namespace logic
 }  // namespace storm

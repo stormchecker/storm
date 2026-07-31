@@ -244,7 +244,7 @@ bool Polytope<ValueType>::isNativePolytope() const {
 
 template<typename ValueType>
 std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::clean() {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not implemented for this polytope type.");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented for this polytope type.");
     return nullptr;
 }
 

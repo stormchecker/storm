@@ -51,7 +51,7 @@ void processOptions() {
 
     // Check well-formedness of DFT
     auto wellFormedResult = storm::dft::api::isWellFormed(*dft, false);
-    STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::UnmetRequirementException, "DFT is not well-formed: " << wellFormedResult.second);
+    STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::UnmetRequirementException, "DFT is not well-formed: " << wellFormedResult.second << ".");
     // Warn about potential modeling issues
     auto modelingIssues = storm::dft::api::hasPotentialModelingIssues(*dft);
     STORM_LOG_WARN_COND(!modelingIssues.first, modelingIssues.second);

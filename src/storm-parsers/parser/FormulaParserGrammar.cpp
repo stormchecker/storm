@@ -660,7 +660,7 @@ std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiBo
     std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
     for (auto const& subformula : subformulas) {
         STORM_LOG_THROW(subformula->isBoundedUntilFormula(), storm::exceptions::WrongFormatException,
-                        "multi-path formulas require bounded until (or eventually) subformulae. Got '" << *subformula << "' instead.");
+                        "Multi-path formulas require bounded until (or eventually) subformulae. Got '" << *subformula << "' instead.");
         auto const& f = subformula->asBoundedUntilFormula();
         STORM_LOG_THROW(!f.isMultiDimensional(), storm::exceptions::WrongFormatException,
                         "Composition of multidimensional bounded until formula must consist of single dimension subformulas. Got '" << f << "' instead.");

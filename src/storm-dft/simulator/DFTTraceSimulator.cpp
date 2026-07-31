@@ -151,7 +151,7 @@ SimulationTraceResult DFTTraceSimulator<ValueType>::simulateNextStep(double time
     if (stepResult == SimulationStepResult::INVALID) {
         // No next state can be reached, because the state is invalid.
         STORM_LOG_TRACE("Invalid state " << dft.getStateString(state) << " was reached.");
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Handling of invalid states is not supported for simulation");
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Handling of invalid states is not supported for simulation.");
         return SimulationTraceResult::INVALID;
     } else if (stepResult == SimulationStepResult::UNSUCCESSFUL) {
         STORM_LOG_TRACE("No next state possible in state " << dft.getStateString(state) << " because no further failures are possible.");

@@ -80,7 +80,7 @@ SolverRequirement const& MinMaxLinearEquationSolverRequirements::get(Element con
             return upperBounds();
             break;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ElementType");
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ElementType.");
 }
 
 void MinMaxLinearEquationSolverRequirements::clearAcyclic() {

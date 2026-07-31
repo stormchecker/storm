@@ -24,19 +24,19 @@ SmtlibSmtSolver::SmtlibModelReference::SmtlibModelReference(storm::expressions::
 }
 
 bool SmtlibSmtSolver::SmtlibModelReference::getBooleanValue(storm::expressions::Variable const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not (yet) implemented.");
 }
 
 int_fast64_t SmtlibSmtSolver::SmtlibModelReference::getIntegerValue(storm::expressions::Variable const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not (yet) implemented.");
 }
 
 double SmtlibSmtSolver::SmtlibModelReference::getRationalValue(storm::expressions::Variable const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not (yet) implemented.");
 }
 
 std::string SmtlibSmtSolver::SmtlibModelReference::toString() const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not (yet) implemented.");
 }
 
 SmtlibSmtSolver::SmtlibSmtSolver(storm::expressions::ExpressionManager& manager, bool useCarlExpressions)
@@ -76,16 +76,16 @@ void SmtlibSmtSolver::pop(uint_fast64_t n) {
 }
 
 void SmtlibSmtSolver::reset() {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not (yet) implemented.");
 }
 
 void SmtlibSmtSolver::add(storm::expressions::Expression const&) {
-    STORM_LOG_THROW(!useCarlExpressions, storm::exceptions::IllegalFunctionCallException, "This solver was initialized without allowing carl expressions");
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+    STORM_LOG_THROW(!useCarlExpressions, storm::exceptions::IllegalFunctionCallException, "This solver was initialized without allowing carl expressions.");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not (yet) implemented.");
 }
 
 void SmtlibSmtSolver::add(storm::RationalFunction const& leftHandSide, storm::CompareRelation const& relation, storm::RationalFunction const& rightHandSide) {
-    STORM_LOG_THROW(useCarlExpressions, storm::exceptions::IllegalFunctionCallException, "This solver was initialized without allowing carl expressions");
+    STORM_LOG_THROW(useCarlExpressions, storm::exceptions::IllegalFunctionCallException, "This solver was initialized without allowing carl expressions.");
     // if some of the occurring variables are not declared yet, we will have to.
     std::set<storm::RationalFunctionVariable> variables;
     leftHandSide.gatherVariables(variables);
@@ -121,7 +121,7 @@ SmtSolver::CheckResult SmtlibSmtSolver::check() {
         auto solverOutput = readSolverOutput();
         STORM_LOG_THROW(
             solverOutput.size() == 1, storm::exceptions::UnexpectedException,
-            "expected a single line of output after smt2 command ( check-sat ). Got " + std::to_string(solverOutput.size()) + " lines of output instead.");
+            "Expected a single line of output after smt2 command ( check-sat ). Got " + std::to_string(solverOutput.size()) + " lines of output instead.");
         solverOutput[0].erase(std::remove_if(solverOutput[0].begin(), solverOutput[0].end(), ::isspace), solverOutput[0].end());  // remove spaces
         if (solverOutput[0] == "sat")
             return SmtSolver::CheckResult::Sat;
@@ -139,11 +139,11 @@ SmtSolver::CheckResult SmtlibSmtSolver::check() {
 }
 
 SmtSolver::CheckResult SmtlibSmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const&) {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not (yet) implemented.");
 }
 
 SmtSolver::CheckResult SmtlibSmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const&) {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not (yet) implemented.");
 }
 
 void SmtlibSmtSolver::init() {
@@ -169,11 +169,11 @@ void SmtlibSmtSolver::init() {
         int pipeOut[2];
         const int READ = 0;
         const int WRITE = 1;
-        STORM_LOG_THROW(pipe(pipeIn) == 0 && pipe(pipeOut) == 0, storm::exceptions::UnexpectedException, "Could not open pipe to new process");
+        STORM_LOG_THROW(pipe(pipeIn) == 0 && pipe(pipeOut) == 0, storm::exceptions::UnexpectedException, "Could not open pipe to new process.");
 
         // now start the child process, i.e., the solver
         pid_t pid = fork();
-        STORM_LOG_THROW(pid >= 0, storm::exceptions::UnexpectedException, "Could not start new process for the smt solver");
+        STORM_LOG_THROW(pid >= 0, storm::exceptions::UnexpectedException, "Could not start new process for the smt solver.");
         if (pid == 0) {
             // Child process
             // duplicate the fd so that standard input and output will be send to our pipes
@@ -188,7 +188,7 @@ void SmtlibSmtSolver::init() {
 
             execv(solverCommandVec[0].c_str(), solverArgs);  //"-smt2 -in"
             // if we reach this point, execl was not successful
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Could not execute the solver correctly");
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Could not execute the solver correctly.");
         }
         // Parent Process
         toSolver = pipeIn[WRITE];
@@ -230,11 +230,11 @@ void SmtlibSmtSolver::writeCommand(std::string smt2Command, bool expectSuccess) 
         if (expectSuccess) {
             auto output = readSolverOutput();
             STORM_LOG_THROW(output.size() == 1, storm::exceptions::UnexpectedException,
-                            "expected a single success response after smt2 command " + smt2Command + ". Got " + std::to_string(output.size()) +
+                            "Expected a single success response after smt2 command " + smt2Command + ". Got " + std::to_string(output.size()) +
                                 " lines of output instead.");
             output[0].erase(std::remove_if(output[0].begin(), output[0].end(), ::isspace), output[0].end());
             STORM_LOG_THROW(output[0] == "success", storm::exceptions::UnexpectedException,
-                            "expected <<success>> response after smt2 command " + smt2Command + ". Got <<" + output[0] + ">> instead");
+                            "Expected <<success>> response after smt2 command " + smt2Command + ". Got <<" + output[0] + ">> instead.");
         }
     }
 }
@@ -256,7 +256,7 @@ std::vector<std::string> SmtlibSmtSolver::readSolverOutput(bool waitForOutput) {
     char chunk[MAX_CHUNK_SIZE];
     while (bytesReadable > 0) {
         ssize_t chunkSize = read(fromSolver, chunk, MAX_CHUNK_SIZE);
-        STORM_LOG_THROW(chunkSize >= 0, storm::exceptions::UnexpectedException, "failed to read solver output");
+        STORM_LOG_THROW(chunkSize >= 0, storm::exceptions::UnexpectedException, "Failed to read solver output.");
         solverOutput += std::string(chunk, chunkSize);
         if (ioctl(fromSolver, FIONREAD, &bytesReadable) < 0) {  // obtain the new amount of readable bytes
             STORM_LOG_ERROR("Could not check if the solver has output");

@@ -166,7 +166,7 @@ void Odd::exportToDot(std::string const& filename) const {
 }
 
 void Odd::exportToText(std::string const& filename) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
 void getEncodingRec(Odd const& odd, uint64_t index, uint64_t offset, storm::storage::BitVector& result) {

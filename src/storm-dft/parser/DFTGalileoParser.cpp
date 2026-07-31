@@ -144,7 +144,7 @@ storm::dft::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const 
             }
         }
     } catch (storm::exceptions::BaseException const& exception) {
-        STORM_LOG_THROW(false, storm::exceptions::FileIoException, "A parsing exception occurred in line " << lineNo << ": " << exception.what());
+        STORM_LOG_THROW(false, storm::exceptions::FileIoException, "A parsing exception occurred in line " << lineNo << ": " << exception.what() << ".");
     }
     builder.setTopLevel(toplevelId);
     storm::io::closeFile(file);
@@ -159,7 +159,7 @@ std::string DFTGalileoParser<ValueType>::parseName(std::string const& name) {
     if (firstQuots != std::string::npos) {
         // Remove quotation marks
         size_t secondQuots = name.find("\"", firstQuots + 1);
-        STORM_LOG_THROW(secondQuots != std::string::npos, storm::exceptions::WrongFormatException, "No ending quotation mark found in " << name);
+        STORM_LOG_THROW(secondQuots != std::string::npos, storm::exceptions::WrongFormatException, "No ending quotation mark found in " << name << ".");
         return name.substr(firstQuots + 1, secondQuots - 1);
     } else {
         return name;
@@ -291,7 +291,7 @@ void DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std
                     "Repairs are not supported and will be ignored for basic element '" << name << "'.");
 
     boost::trim(input);
-    STORM_LOG_THROW(input == "", storm::exceptions::WrongFormatException, "Unknown arguments for basic element '" << name << "': " << input);
+    STORM_LOG_THROW(input == "", storm::exceptions::WrongFormatException, "Unknown arguments for basic element '" << name << "': " << input << ".");
 
     // Create BE with given distribution
     STORM_LOG_THROW(distribution.has_value(), storm::exceptions::WrongFormatException, "No failure distribution is defined for BE '" << name << "'.");

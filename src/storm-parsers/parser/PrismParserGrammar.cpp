@@ -433,7 +433,7 @@ void PrismParserGrammar::moveToSecondRun() {
     // In the second run, we actually need to parse the commands instead of just skipping them,
     // so we adapt the rule for parsing commands.
     STORM_LOG_THROW(observables.empty(), storm::exceptions::WrongFormatException,
-                    "Some variables marked as observable, but never declared, e.g. " << *observables.begin());
+                    "Some variables marked as observable, but never declared, e.g. " << *observables.begin() << ".");
 
     commandDefinition =
         (((qi::lit("[") > -identifier > qi::lit("]")) | (qi::lit("<") > -identifier > qi::lit(">")[qi::_a = true])) > *expressionParser > qi::lit("->") >
@@ -459,7 +459,7 @@ void PrismParserGrammar::moveToSecondRun() {
 
 void PrismParserGrammar::createFormulaIdentifiers(std::vector<storm::prism::Formula> const& formulas) {
     STORM_LOG_THROW(formulas.size() == this->formulaExpressions.size(), storm::exceptions::UnexpectedException,
-                    "Unexpected number of formulas and formula expressions");
+                    "Unexpected number of formulas and formula expressions.");
     this->formulaOrder.clear();
     storm::storage::BitVector unprocessed(formulas.size(), true);
     // It might be that formulas are declared in a weird order.
@@ -491,7 +491,7 @@ void PrismParserGrammar::createFormulaIdentifiers(std::vector<storm::prism::Form
                 } catch (storm::exceptions::InvalidArgumentException const&) {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                                     "Parsing error in " << this->getFilename() << ": illegal identifier '" << formulas[formulaIndex].getName() << "' at line '"
-                                                        << formulas[formulaIndex].getLineNumber());
+                                                        << formulas[formulaIndex].getLineNumber() << ".");
                 }
                 this->expressionParser->setIdentifierMapping(&this->identifiers_);
             }
@@ -503,7 +503,7 @@ void PrismParserGrammar::createFormulaIdentifiers(std::vector<storm::prism::Form
                                                 << "' at line '" << formulas[formulaIndex].getLineNumber() << "':\n\t" << formulaExpressions[formulaIndex]);
         }
         STORM_LOG_THROW(unprocessed.getNumberOfSetBits() == 1, storm::exceptions::WrongFormatException,
-                        "Unable to parse expressions for " << unprocessed.getNumberOfSetBits() << " formulas. This could be due to circular dependencies");
+                        "Unable to parse expressions for " << unprocessed.getNumberOfSetBits() << " formulas. This could be due to circular dependencies.");
         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                         "Unable to parse expression for formula '" << formulas[unprocessed.getNextSetIndex(0)].getName() << "'.");
     }

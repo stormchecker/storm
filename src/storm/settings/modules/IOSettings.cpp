@@ -616,13 +616,13 @@ bool IOSettings::check() const {
     numSymbolicInputs += isQvbsInputSet() ? 1 : 0;
     STORM_LOG_THROW(numSymbolicInputs <= 1, storm::exceptions::InvalidSettingsException, "Multiple symbolic input models.");
     STORM_LOG_THROW(!isExportJaniDotSet() || isJaniInputSet() || isQvbsInputSet(), storm::exceptions::InvalidSettingsException,
-                    "Jani-to-dot export is only available for jani models");
+                    "Jani-to-dot export is only available for jani models.");
 
     // Ensure that not two explicit input models were given.
     uint64_t numExplicitInputs = isExplicitSet() ? 1 : 0;
     numExplicitInputs += isExplicitDRNSet() ? 1 : 0;
     numExplicitInputs += isExplicitIMCASet() ? 1 : 0;
-    STORM_LOG_THROW(numExplicitInputs <= 1, storm::exceptions::InvalidSettingsException, "Multiple explicit input models");
+    STORM_LOG_THROW(numExplicitInputs <= 1, storm::exceptions::InvalidSettingsException, "Multiple explicit input models.");
 
     // Ensure that the model was given either symbolically or explicitly.
     STORM_LOG_THROW(numSymbolicInputs + numExplicitInputs <= 1, storm::exceptions::InvalidSettingsException,

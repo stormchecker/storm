@@ -37,8 +37,9 @@ uint64_t ArrayVariableReplacementInformation::getVariableInformationIndex(std::v
     auto const* replInfo = this;
     for (auto const& i : arrayIndexVector) {
         STORM_LOG_ASSERT(!replInfo->isInformationIndex(), "unexpected array replacement information.");
-        STORM_LOG_THROW(i < replInfo->getNumberOfChildren(), storm::exceptions::OutOfRangeException,
-                        "Array access evaluates to array index " << i << " which is out of bounds as the array size is " << replInfo->getNumberOfChildren());
+        STORM_LOG_THROW(
+            i < replInfo->getNumberOfChildren(), storm::exceptions::OutOfRangeException,
+            "Array access evaluates to array index " << i << " which is out of bounds as the array size is " << replInfo->getNumberOfChildren() << ".");
         replInfo = &replInfo->getChild(i);
     }
     STORM_LOG_ASSERT(replInfo->isInformationIndex(), "unexpected array replacement information.");

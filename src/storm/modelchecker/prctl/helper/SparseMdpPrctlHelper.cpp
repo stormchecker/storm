@@ -515,7 +515,7 @@ QualitativeStateSetsUntilProbabilities getQualitativeStateSetsUntilProbabilities
             result.statesWithProbability1.set(state, true);
         } else {
             STORM_LOG_THROW(storm::utility::isZero(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException,
-                            "Expected that the result hint specifies probabilities in {0,1} for non-maybe states");
+                            "Expected that the result hint specifies probabilities in {0,1} for non-maybe states.");
             result.statesWithProbability0.set(state, true);
         }
     }
@@ -1110,7 +1110,7 @@ QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewar
             result.rewardZeroStates.set(state, true);
         } else {
             STORM_LOG_THROW(storm::utility::isInfinity(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException,
-                            "Expected that the result hint specifies probabilities in {0,infinity} for non-maybe states");
+                            "Expected that the result hint specifies probabilities in {0,infinity} for non-maybe states.");
             result.infinityStates.set(state, true);
         }
     }

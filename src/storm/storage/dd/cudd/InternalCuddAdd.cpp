@@ -132,7 +132,7 @@ InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::ceil(
 
 template<typename ValueType>
 InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, ValueType>::sharpenKwekMehlhorn(size_t /*precision*/) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
 template<typename ValueType>
@@ -158,7 +158,7 @@ template<typename TargetValueType>
 typename std::enable_if<!std::is_same<ValueType, TargetValueType>::value, InternalAdd<DdType::CUDD, TargetValueType>>
 
     ::type InternalAdd<DdType::CUDD, ValueType>::toValueType() const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
 template<typename ValueType>
@@ -413,7 +413,7 @@ void InternalAdd<DdType::CUDD, ValueType>::exportToDot(std::string const& filena
 
 template<typename ValueType>
 void InternalAdd<DdType::CUDD, ValueType>::exportToText(std::string const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
 template<typename ValueType>
@@ -871,7 +871,7 @@ template<>
 DdNode* InternalAdd<DdType::CUDD, storm::RationalNumber>::fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel,
                                                                         uint_fast64_t maxLevel, std::vector<storm::RationalNumber> const& values,
                                                                         Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
 #else

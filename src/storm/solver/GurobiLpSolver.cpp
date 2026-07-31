@@ -40,7 +40,8 @@ void GurobiEnvironment::initialize() {
     // Create the environment.
     int error = GRBloadenv(&env, "");
     if (error || env == nullptr) {
-        STORM_LOG_THROW(error != 10009, storm::exceptions::GurobiLicenseException, "Gurobi License Issue. Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").";
+        STORM_LOG_THROW(error != 10009, storm::exceptions::GurobiLicenseException,
+                        "Gurobi License Issue. Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").");
         STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
                         "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").");
     }
@@ -986,7 +987,7 @@ std::string toString(GurobiSolverMethod const& method) {
         case GurobiSolverMethod::DETCONCURRENTSIMPLEX:
             return "deterministic-concurrent-simplex";
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unknown solver method");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unknown solver method.");
 }
 
 std::optional<GurobiSolverMethod> gurobiSolverMethodFromString(std::string const& method) {

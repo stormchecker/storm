@@ -1222,7 +1222,7 @@ Program Program::replaceVariableInitializationByInitExpression() const {
 Program Program::replaceConstantByVariable(Constant const& c, expressions::Expression const& lowerBound, expressions::Expression const& upperBound,
                                            bool observable) const {
     STORM_LOG_THROW(this->getModelType() == ModelType::POMDP || observable, storm::exceptions::InvalidArgumentException,
-                    "Variables can only be unobservable in POMDPs");
+                    "Variables can only be unobservable in POMDPs.");
     std::vector<BooleanVariable> newBooleanVariables = globalBooleanVariables;
     std::vector<IntegerVariable> newIntegerVariables = globalIntegerVariables;
     std::vector<Constant> newConstants = constants;

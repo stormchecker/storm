@@ -2018,7 +2018,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
                 ActionIdentification identificationWithoutSynchVector(actionIndex, markovian);
 
                 STORM_LOG_THROW(containedActions.find(identificationWithoutSynchVector) == containedActions.end(), storm::exceptions::WrongFormatException,
-                                "Duplicate action " << actionInformation.getActionName(actionIndex));
+                                "Duplicate action " << actionInformation.getActionName(actionIndex) << ".");
                 containedActions.insert(identificationWithoutSynchVector);
                 illegalFragment |= action.second.illegalFragment;
                 addMissingGlobalVariableIdentities(action.second);
@@ -2049,7 +2049,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
             std::unordered_set<uint64_t> actionIndices;
             for (auto& action : automaton.actions) {
                 STORM_LOG_THROW(actionIndices.find(action.first.actionIndex) == actionIndices.end(), storm::exceptions::WrongFormatException,
-                                "Duplication action " << actionInformation.getActionName(action.first.actionIndex));
+                                "Duplication action " << actionInformation.getActionName(action.first.actionIndex) << ".");
                 actionIndices.insert(action.first.actionIndex);
                 illegalFragment |= action.second.illegalFragment;
                 addMissingGlobalVariableIdentities(action.second);

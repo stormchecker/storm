@@ -50,9 +50,9 @@ class HOAConsumerDAHeader : public cpphoafparser::HOAConsumer {
      **/
     virtual void addStartStates(const int_list& stateConjunction) {
         STORM_LOG_THROW(!header.startState, storm::exceptions::NotSupportedException,
-                        "Parsing deterministic HOA automaton: Nondeterministic choice of start states not supported");
+                        "Parsing deterministic HOA automaton: Nondeterministic choice of start states not supported.");
         STORM_LOG_THROW(stateConjunction.size() == 1, storm::exceptions::NotSupportedException,
-                        "Parsing deterministic HOA automaton: Conjunctive choice of start states not supported");
+                        "Parsing deterministic HOA automaton: Conjunctive choice of start states not supported.");
         header.startState = stateConjunction.at(0);
     }
 
@@ -199,7 +199,7 @@ class HOAConsumerDAHeader : public cpphoafparser::HOAConsumer {
      * (at any time, indicating error, the automaton should be discarded).
      */
     virtual void notifyAbort() {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing deterministic automaton: Automaton is incomplete (abort)");
+        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing deterministic automaton: Automaton is incomplete (abort).");
     }
 
     /**

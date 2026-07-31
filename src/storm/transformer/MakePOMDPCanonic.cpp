@@ -126,7 +126,7 @@ void actionIdentifiersToStream(std::ostream& stream, std::map<ActionIdentifier, 
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> MakePOMDPCanonic<ValueType>::transform() const {
     STORM_LOG_THROW(pomdp.hasChoiceLabeling(), storm::exceptions::InvalidArgumentException,
-                    "Model must have been built with choice labels (--buildchoicelab for command line users)");
+                    "Model must have been built with choice labels (--buildchoicelab for command line users).");
     std::vector<uint64_t> permutation = computeCanonicalPermutation();
     return applyPermutationOnPomdp(permutation);
 }

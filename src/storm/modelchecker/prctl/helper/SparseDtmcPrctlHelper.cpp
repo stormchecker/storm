@@ -193,7 +193,7 @@ std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, Solu
                 result[state] = storm::utility::one<SolutionType>();
             } else {
                 STORM_LOG_THROW(storm::utility::isZero(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException,
-                                "Expected that the result hint specifies probabilities in {0,1} for non-maybe states");
+                                "Expected that the result hint specifies probabilities in {0,1} for non-maybe states.");
             }
         }
 

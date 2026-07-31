@@ -410,7 +410,7 @@ class FunctionEliminatorTraverser : public JaniTraverser {
 
     void traverse(storm::expressions::Expression const& expression, boost::any const&) override {
         STORM_LOG_THROW(getOccurringFunctionCalls(expression).empty(), storm::exceptions::UnexpectedException,
-                        "Did not translate functions in expression " << expression);
+                        "Did not translate functions in expression " << expression << ".");
     }
 };
 }  // namespace detail

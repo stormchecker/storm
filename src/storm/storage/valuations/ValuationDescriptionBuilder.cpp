@@ -93,7 +93,7 @@ void ValuationDescriptionBuilder::addVariable(ValuationClassDescription::Variabl
     STORM_LOG_ASSERT(manager->hasVariable(variable.name), "Variable " << variable.name << " is not declared in the expression manager.");
     std::ostringstream errors;
     STORM_LOG_THROW(storm::umb::validation::validateTypeDeclaration(variable.type, false, errors), storm::exceptions::WrongFormatException,
-                    "Invalid type declaration for variable " << variable.name << ": " << errors.str());
+                    "Invalid type declaration for variable " << variable.name << ": " << errors.str() << ".");
     descr.variables.push_back(variable);
 }
 void ValuationDescriptionBuilder::addVariables(ValuationClassDescription const& description, bool addPadding) {

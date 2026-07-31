@@ -519,7 +519,7 @@ template<typename ValueType, bool RawMode>
 void GlpkLpSolver<ValueType, RawMode>::push() {
 #ifdef STORM_HAVE_GLPK
     if constexpr (RawMode) {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Incremental LP solving not supported in raw mode");
+        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Incremental LP solving not supported in raw mode.");
     } else {
         IncrementalLevel lvl;
         lvl.firstConstraintIndex = glp_get_num_rows(this->lp) + 1;
@@ -536,7 +536,7 @@ template<typename ValueType, bool RawMode>
 void GlpkLpSolver<ValueType, RawMode>::pop() {
 #ifdef STORM_HAVE_GLPK
     if constexpr (RawMode) {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Incremental LP solving not supported in raw mode");
+        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Incremental LP solving not supported in raw mode.");
     } else {
         if (incrementalData.empty()) {
             STORM_LOG_ERROR("Tried to pop from a solver without pushing before.");

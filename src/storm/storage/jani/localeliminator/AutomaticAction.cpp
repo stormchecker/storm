@@ -90,7 +90,7 @@ void AutomaticAction::unfoldGroupAndDependencies(JaniLocalEliminator::Session &s
     for (auto dependency : orderedDependencies) {
         auto variables = dependencyGraph.variableGroups[dependency].variables;
         STORM_LOG_THROW(variables.size() == 1, storm::exceptions::NotImplementedException,
-                        "Unfolding variables with circular dependencies is currently not implemented");
+                        "Unfolding variables with circular dependencies is currently not implemented.");
         for (const auto &variable : variables) {
             if (variable.isGlobal) {
                 // We currently always have to specify an automaton name, regardless of whether the

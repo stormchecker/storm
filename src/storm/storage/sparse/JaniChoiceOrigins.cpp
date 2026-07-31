@@ -14,7 +14,7 @@ JaniChoiceOrigins::JaniChoiceOrigins(std::shared_ptr<storm::jani::Model const> c
                                      std::vector<EdgeIndexSet> const& identifierToEdgeIndexSetMapping)
     : ChoiceOrigins(indexToIdentifierMapping), model(janiModel), identifierToEdgeIndexSet(identifierToEdgeIndexSetMapping) {
     STORM_LOG_THROW(identifierToEdgeIndexSet[this->getIdentifierForChoicesWithNoOrigin()].empty(), storm::exceptions::InvalidArgumentException,
-                    "The given edge set for the choices without origin is non-empty");
+                    "The given edge set for the choices without origin is non-empty.");
 }
 
 bool JaniChoiceOrigins::isJaniChoiceOrigins() const {

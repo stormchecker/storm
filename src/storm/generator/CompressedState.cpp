@@ -55,7 +55,7 @@ storm::expressions::SimpleValuation unpackStateIntoValuation(CompressedState con
 
 CompressedState packStateFromValuation(expressions::SimpleValuation const& valuation, VariableInformation const& variableInformation, bool checkOutOfBounds) {
     CompressedState result(variableInformation.getTotalBitOffset(true));
-    STORM_LOG_THROW(variableInformation.locationVariables.size() == 0, storm::exceptions::NotImplementedException, "Support for JANI is not implemented");
+    STORM_LOG_THROW(variableInformation.locationVariables.size() == 0, storm::exceptions::NotImplementedException, "Support for JANI is not implemented.");
     for (auto const& booleanVariable : variableInformation.booleanVariables) {
         result.set(booleanVariable.bitOffset, valuation.getBooleanValue(booleanVariable.variable));
     }
@@ -271,7 +271,7 @@ CompressedState createCompressedState(VariableInformation const& varInfo,
                                                                           << assignedValue << ").");
     }
 
-    STORM_LOG_THROW(varInfo.locationVariables.size() == 0, storm::exceptions::NotImplementedException, "Support for JANI is not implemented");
+    STORM_LOG_THROW(varInfo.locationVariables.size() == 0, storm::exceptions::NotImplementedException, "Support for JANI is not implemented.");
     return result;
 }
 

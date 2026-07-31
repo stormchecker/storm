@@ -79,7 +79,7 @@ bool Automaton::hasTransientVariable() const {
 FunctionDefinition const& Automaton::addFunctionDefinition(FunctionDefinition const& functionDefinition) {
     auto insertionRes = functionDefinitions.emplace(functionDefinition.getName(), functionDefinition);
     STORM_LOG_THROW(insertionRes.second, storm::exceptions::InvalidArgumentException,
-                    " a function with the name " << functionDefinition.getName() << " already exists in this automaton (" << this->getName() << ")");
+                    "A function with the name " << functionDefinition.getName() << " already exists in this automaton (" << this->getName() << ").");
     return insertionRes.first->second;
 }
 

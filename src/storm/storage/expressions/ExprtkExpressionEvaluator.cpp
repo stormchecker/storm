@@ -54,7 +54,7 @@ typename ExprtkExpressionEvaluatorBase<RationalType>::CompiledExpressionType con
         compiledExpression.register_symbol_table(*symbolTable);
         bool parsingOk = parser->compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
         STORM_LOG_THROW(parsingOk, storm::exceptions::UnexpectedException,
-                        "Expression was not properly parsed by ExprTk: " << expression << ". (Returned error: " << parser->error() << ")");
+                        "Expression was not properly parsed by ExprTk: " << expression << ". (Returned error: " << parser->error() << ").");
         expression.setCompiledExpression(std::make_shared<ExprtkCompiledExpression>(compiledExpression));
     }
     return expression.getCompiledExpression().asExprtkCompiledExpression().getCompiledExpression();

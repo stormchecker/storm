@@ -273,7 +273,7 @@ std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialS
                     STORM_LOG_THROW(variableValue >= integerVariable.lowerBound, storm::exceptions::WrongFormatException,
                                     "The initial value for variable " << integerVariable.variable.getName() << " is lower than the lower bound.");
                     STORM_LOG_THROW(variableValue <= integerVariable.upperBound, storm::exceptions::WrongFormatException,
-                                    "The initial value for variable " << integerVariable.variable.getName() << " is higher than the upper bound");
+                                    "The initial value for variable " << integerVariable.variable.getName() << " is higher than the upper bound.");
                 }
                 storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
                 blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
@@ -1407,7 +1407,7 @@ void JaniNextStateGenerator<ValueType, StateType>::checkValid() const {
             stream << constant.get().getName() << " (" << constant.get().getType() << ")";
         }
         stream << ".";
-        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
+        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str() + ".");
     } else if (std::is_same<ValueType, storm::RationalFunction>::value && !model.undefinedConstantsAreGraphPreserving()) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
                         "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");

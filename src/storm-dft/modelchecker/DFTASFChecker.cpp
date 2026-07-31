@@ -48,7 +48,7 @@ void DFTASFChecker::convert() {
                         auto be = std::static_pointer_cast<storm::dft::storage::elements::BEConst<double> const>(element);
                         if (be->failed()) {
                             STORM_LOG_THROW(!failedBeIsSet, storm::exceptions::NotSupportedException,
-                                            "DFTs containing more than one constantly failed BE are not supported");
+                                            "DFTs containing more than one constantly failed BE are not supported.");
                             notFailed = dft.nrBasicElements();
                             failedBeVariables = varNames.size() - 1;
                             failedBeIsSet = true;

@@ -214,7 +214,7 @@ storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::l
     }
     if (this->options.isAddOverlappingGuardLabelSet()) {
         STORM_LOG_THROW(!result.containsLabel("overlap_guards"), storm::exceptions::WrongFormatException,
-                        "Label 'overlap_guards' is reserved when adding overlapping guard labels");
+                        "Label 'overlap_guards' is reserved when adding overlapping guard labels.");
         addSpecialLabel("overlap_guards", overlappingGuardStates.get());
     }
     if (this->options.isAddOutOfBoundsStateSet() && stateStorage.stateToId.contains(outOfBoundsState)) {
@@ -320,7 +320,7 @@ uint32_t NextStateGenerator<ValueType, StateType>::observabilityClass(Compressed
 
 template<typename ValueType, typename StateType>
 std::map<std::string, storm::storage::PlayerIndex> NextStateGenerator<ValueType, StateType>::getPlayerNameToIndexMap() const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Generating player mappings is not supported for this model input format");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Generating player mappings is not supported for this model input format.");
 }
 
 template<typename ValueType, typename StateType>

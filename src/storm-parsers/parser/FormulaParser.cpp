@@ -94,7 +94,7 @@ std::vector<storm::jani::Property> FormulaParser::parseFromString(std::string co
         // Start parsing.
         bool succeeded = qi::phrase_parse(
             iter, last, *grammar, storm::spirit_encoding::space_type() | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
-        STORM_LOG_THROW(succeeded, storm::exceptions::WrongFormatException, "Could not parse formula: " << formulaString);
+        STORM_LOG_THROW(succeeded, storm::exceptions::WrongFormatException, "Could not parse formula: " << formulaString << ".");
         STORM_LOG_DEBUG("Parsed formula successfully.");
     } catch (qi::expectation_failure<PositionIteratorType> const& e) {
         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, e.what_);

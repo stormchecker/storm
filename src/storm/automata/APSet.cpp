@@ -22,11 +22,12 @@ std::size_t APSet::alphabetSize() const {
 }
 
 void APSet::add(const std::string& ap) {
-    STORM_LOG_THROW(size() < MAX_APS, storm::exceptions::UnexpectedException, "Set of atomic proposition size is limited to " << std::to_string(MAX_APS));
+    STORM_LOG_THROW(size() < MAX_APS, storm::exceptions::UnexpectedException,
+                    "Set of atomic proposition size is limited to " << std::to_string(MAX_APS) << ".");
 
     unsigned int index = size();
     bool fresh = ap_to_index.insert(std::make_pair(ap, index)).second;
-    STORM_LOG_THROW(fresh, storm::exceptions::UnexpectedException, "Duplicate atomic proposition '" << ap << "' in APSet");
+    STORM_LOG_THROW(fresh, storm::exceptions::UnexpectedException, "Duplicate atomic proposition '" << ap << "' in APSet.");
 
     index_to_ap.push_back(ap);
 }
@@ -54,7 +55,7 @@ APSet::alphabet_element APSet::elementAllFalse() const {
 }
 
 APSet::alphabet_element APSet::elementAddAP(alphabet_element element, unsigned int ap) const {
-    STORM_LOG_THROW(ap < size(), storm::exceptions::UnexpectedException, "AP out of range");
+    STORM_LOG_THROW(ap < size(), storm::exceptions::UnexpectedException, "AP out of range.");
 
     return element | (1ul << ap);
 }

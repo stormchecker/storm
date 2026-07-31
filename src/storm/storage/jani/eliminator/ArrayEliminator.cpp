@@ -264,7 +264,7 @@ class ArrayReplacementsCollectorExpressionVisitor : public storm::expressions::E
                 arrayVariableAccessHelper(indexStack, *current.first, varIt->second, *current.second);
             }
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected kind of array access expression");
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected kind of array access expression.");
         }
     }
 
@@ -327,7 +327,7 @@ class ArrayReplacementsCollectorExpressionVisitor : public storm::expressions::E
                     break;
             }
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unhandled base type for array of type " << currentVar->getType());
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unhandled base type for array of type " << currentVar->getType() << ".");
         }
 
         auto janiVar = storm::jani::Variable::makeVariable(name, baseType, exprVariable, initValue, currentVar->isTransient());
@@ -1071,9 +1071,9 @@ class ArrayVariableReplacer : public JaniTraverser {
                 auto otherRhs = findIt->second.getAssignedExpression();
                 // Deal with cases like 'a[0]:=x; a:=b' or 'a:=b; a[0]:=x'
                 STORM_LOG_THROW(condition.isInitialized(), storm::exceptions::InvalidOperationException,
-                                "Found conflicting array assignments to " << var.getName());
+                                "Found conflicting array assignments to " << var.getName() << ".");
                 STORM_LOG_THROW(otherRhs.getBaseExpression().isIfThenElseExpression(), storm::exceptions::InvalidOperationException,
-                                "Found conflicting array assignments to " << var.getName());
+                                "Found conflicting array assignments to " << var.getName() << ".");
                 rhs = storm::expressions::ite(condition, rhs, otherRhs);
                 findIt->second.setAssignedExpression(rhs);
             }
@@ -1125,7 +1125,7 @@ class ArrayVariableReplacer : public JaniTraverser {
                 }
             }
         }
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "unhandled variable type");
+        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled variable type.");
         return storm::expressions::Expression();
     }
 

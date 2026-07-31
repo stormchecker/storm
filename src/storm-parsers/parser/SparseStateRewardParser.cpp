@@ -44,7 +44,7 @@ std::vector<ValueType> SparseStateRewardParser<ValueType>::parseSparseStateRewar
             STORM_LOG_ERROR("Error while parsing " << filename << ": Found reward for a state of an invalid index \"" << state << "\". The model has only "
                                                    << stateCount << " states.");
             STORM_LOG_THROW(false, storm::exceptions::OutOfRangeException,
-                            "Error while parsing " << filename << ": Found reward for a state of an invalid index \"" << state << "\"");
+                            "Error while parsing " << filename << ": Found reward for a state of an invalid index \"" << state << "\".");
         }
 
         // Parse reward value.

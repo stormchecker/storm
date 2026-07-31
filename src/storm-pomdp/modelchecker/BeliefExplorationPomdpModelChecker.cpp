@@ -184,7 +184,7 @@ BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPTyp
                     pomdp().getTransitionMatrix(), formulaInfo.getSinkStates().states, formulaInfo.getSinkStates().states, ~formulaInfo.getSinkStates().states);
                 reachableFromSinkStates &= ~formulaInfo.getSinkStates().states;
                 STORM_LOG_THROW(reachableFromSinkStates.empty(), storm::exceptions::NotSupportedException,
-                                "There are sink states that can reach non-sink states. This is currently not supported");
+                                "There are sink states that can reach non-sink states. This is currently not supported.");
             }
         } else {
             // Expected reward formula!

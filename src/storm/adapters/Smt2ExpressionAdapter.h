@@ -34,7 +34,7 @@ class Smt2ExpressionAdapter {
      * @return An equivalent expression for Smt2.
      */
     std::string translateExpression(storm::expressions::Expression const&) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not (yet) implemented.");
     }
 
     /*!
@@ -71,7 +71,7 @@ class Smt2ExpressionAdapter {
      * @return An equivalent expression for smt2.
      */
     std::string translateExpression(storm::expressions::Variable const&) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not (yet) implemented.");
     }
 
     /*!
@@ -81,7 +81,7 @@ class Smt2ExpressionAdapter {
      * @return The equivalent counterpart.
      */
     storm::expressions::Variable const& getVariable(std::string const&) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not (yet) implemented.");
     }
 
     void increaseScope(uint_fast64_t n = 1) {
@@ -129,7 +129,7 @@ class Smt2ExpressionAdapter {
                         varDeclaration += "Int";
                         break;
                     default:
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "The type of the variable is not supported");
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "The type of the variable is not supported.");
                 }
                 varDeclaration += " )";
                 result.push_back(varDeclaration);

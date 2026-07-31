@@ -51,7 +51,8 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
         if (!spotPrefixLtl.errors.empty()) {
             std::ostringstream errorMsg;
             spotPrefixLtl.format_errors(errorMsg);
-            STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Spot could not parse formula: " << prefixLtl << ": " << errorMsg.str());
+            STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException,
+                            "Spot could not parse formula: " << prefixLtl << ": " << errorMsg.str() << ".");
         }
         spot::formula spotFormula = spotPrefixLtl.f;
 

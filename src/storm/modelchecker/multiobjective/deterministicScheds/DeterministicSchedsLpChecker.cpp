@@ -776,7 +776,7 @@ typename DeterministicSchedsLpChecker<ModelType, GeometryValueType>::Point Deter
             for (auto choice : choices) {
                 assert(choiceVariables[choice].isVariable());
                 if (lpModel->getBinaryValue(choiceVariables[choice].getBaseExpression().asVariableExpression().getVariable())) {
-                    STORM_LOG_THROW(!choiceFound, storm::exceptions::UnexpectedException, "Multiple choices selected at state " << state);
+                    STORM_LOG_THROW(!choiceFound, storm::exceptions::UnexpectedException, "Multiple choices selected at state " << state << ".");
                     selectedChoices.set(choice, true);
                     choiceFound = true;
                 }

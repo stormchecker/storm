@@ -118,7 +118,7 @@ std::vector<std::shared_ptr<storm::logic::Formula const>> ContinuousToDiscreteTi
 template<typename ValueType, typename RewardModelType>
 std::shared_ptr<storm::models::sparse::Mdp<ValueType, RewardModelType>> ContinuousToDiscreteTimeModelTransformer<ValueType, RewardModelType>::transform(
     storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType> const& ma, boost::optional<std::string> const& timeRewardModelName) {
-    STORM_LOG_THROW(ma.isClosed(), storm::exceptions::InvalidArgumentException, "Transformation of MA to its underlying MDP is only possible for closed MAs");
+    STORM_LOG_THROW(ma.isClosed(), storm::exceptions::InvalidArgumentException, "Transformation of MA to its underlying MDP is only possible for closed MAs.");
 
     // Init the mdp components
     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> mdpComponents(ma.getTransitionMatrix(), ma.getStateLabeling(), ma.getRewardModels());
@@ -161,7 +161,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType, RewardModelType>> Continuo
 template<typename ValueType, typename RewardModelType>
 std::shared_ptr<storm::models::sparse::Mdp<ValueType, RewardModelType>> ContinuousToDiscreteTimeModelTransformer<ValueType, RewardModelType>::transform(
     storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>&& ma, boost::optional<std::string> const& timeRewardModelName) {
-    STORM_LOG_THROW(ma.isClosed(), storm::exceptions::InvalidArgumentException, "Transformation of MA to its underlying MDP is only possible for closed MAs");
+    STORM_LOG_THROW(ma.isClosed(), storm::exceptions::InvalidArgumentException, "Transformation of MA to its underlying MDP is only possible for closed MAs.");
     std::vector<ValueType>& exitRates = ma.getExitRates();
 
     // Init the mdp components

@@ -1299,7 +1299,7 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
     STORM_LOG_THROW(goal.hasRelevantValues(), storm::exceptions::NotSupportedException,
                     "No initial state given. Conditional probabilities can only be computed for models with a single initial state.");
     STORM_LOG_THROW(goal.relevantValues().hasUniqueSetBit(), storm::exceptions::NotSupportedException,
-                    "Only one initial state is supported for conditional probabilities");
+                    "Only one initial state is supported for conditional probabilities.");
     STORM_LOG_TRACE("Computing conditional probabilities for a model with " << transitionMatrix.getRowGroupCount() << " states and "
                                                                             << transitionMatrix.getEntryCount() << " transitions.");
     auto normalFormData = internal::obtainNormalForm(normalFormConstructionEnv, goal.direction(), produceSchedulers, transitionMatrix, backwardTransitions,
@@ -1366,7 +1366,7 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
                 break;
             }
             default: {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Unknown conditional probability algorithm: " << alg);
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Unknown conditional probability algorithm: " << alg << ".");
             }
         }
         initialStateValue = result.initialStateValue;

@@ -113,7 +113,7 @@ std::set<std::string> ItemLabeling::getLabelsOfItem(uint64_t item) const {
 }
 
 void ItemLabeling::permuteItems(std::vector<uint64_t> const& inversePermutation) {
-    STORM_LOG_THROW(inversePermutation.size() == itemCount, storm::exceptions::InvalidArgumentException, "Permutation does not match number of items");
+    STORM_LOG_THROW(inversePermutation.size() == itemCount, storm::exceptions::InvalidArgumentException, "Permutation does not match number of items.");
     std::vector<storm::storage::BitVector> newLabelings;
     for (storm::storage::BitVector const& source : this->labelings) {
         newLabelings.push_back(source.permute(inversePermutation));
@@ -125,7 +125,7 @@ void ItemLabeling::permuteItems(std::vector<uint64_t> const& inversePermutation)
 void ItemLabeling::addLabel(std::string const& label, storage::BitVector const& labeling) {
     STORM_LOG_THROW(!this->containsLabel(label), storm::exceptions::InvalidArgumentException, "Label '" << label << "' already exists.");
     STORM_LOG_THROW(labeling.size() == itemCount, storm::exceptions::InvalidArgumentException,
-                    "Labeling vector has invalid size. Expected: " << itemCount << " Actual: " << labeling.size());
+                    "Labeling vector has invalid size. Expected: " << itemCount << " Actual: " << labeling.size() << ".");
     nameToLabelingIndexMap.emplace(label, labelings.size());
     labelings.push_back(labeling);
 }
@@ -133,7 +133,7 @@ void ItemLabeling::addLabel(std::string const& label, storage::BitVector const& 
 void ItemLabeling::addLabel(std::string const& label, storage::BitVector&& labeling) {
     STORM_LOG_THROW(!this->containsLabel(label), storm::exceptions::InvalidArgumentException, "Label '" << label << "' already exists.");
     STORM_LOG_THROW(labeling.size() == itemCount, storm::exceptions::InvalidArgumentException,
-                    "Labeling vector has invalid size. Expected: " << itemCount << " Actual: " << labeling.size());
+                    "Labeling vector has invalid size. Expected: " << itemCount << " Actual: " << labeling.size() << ".");
     nameToLabelingIndexMap.emplace(label, labelings.size());
     labelings.emplace_back(std::move(labeling));
 }

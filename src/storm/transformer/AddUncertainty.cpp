@@ -79,7 +79,7 @@ typename AddUncertainty<ValueType>::IntervalType AddUncertainty<ValueType>::addU
     if (utility::isOne(vt)) {
         return IntervalType(storm::utility::one<ValueType>(), storm::utility::one<ValueType>());
     }
-    STORM_LOG_THROW(vt >= minimalValue, storm::exceptions::InvalidArgumentException, "Transition probability is smaller than minimal value");
+    STORM_LOG_THROW(vt >= minimalValue, storm::exceptions::InvalidArgumentException, "Transition probability is smaller than minimal value.");
     ValueType const lowerBound = storm::utility::max<ValueType>(vt - additiveUncertainty, minimalValue);
     ValueType const upperBound = storm::utility::min<ValueType>(vt + additiveUncertainty, storm::utility::one<ValueType>() - minimalValue);
     STORM_LOG_ASSERT(storm::utility::isPositive(lowerBound), "Lower bound must be strictly above zero.");

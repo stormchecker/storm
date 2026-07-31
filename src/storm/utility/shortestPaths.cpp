@@ -333,7 +333,7 @@ void ShortestPathsGenerator<T>::computeKSP(unsigned long k) {
             STORM_LOG_DEBUG("KSP throws (as expected) due to nonexistence -- maybe this is unhandled and causes the Python interface to segfault?");
             STORM_LOG_DEBUG("last existing k-SP has k=" + std::to_string(lastExistingK));
             STORM_LOG_DEBUG("maybe this is unhandled and causes the Python interface to segfault?");
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "k-SP does not exist for k=" << k);
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "K-SP does not exist for k=" << k << ".");
         }
     }
 }

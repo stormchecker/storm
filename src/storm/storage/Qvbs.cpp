@@ -34,7 +34,8 @@ std::string getString(storm::json<storm::RationalNumber> const& structure, std::
     } else if (structure.is_boolean()) {
         return structure.get<bool>() ? "true" : "false";
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Expected a string, number, or bool, got '" << structure.dump() << "' " << errorInfo);
+        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                        "Expected a string, number, or bool, got '" << structure.dump() << "' " << errorInfo << ".");
     }
     return "";
 }
@@ -54,7 +55,7 @@ std::string findModelPath(std::string const& modelName) {
             similarNames.add(currModelName);
         }
     }
-    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "QVBS model '" + modelName + "' was not found. " + similarNames.toDidYouMeanString());
+    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "QVBS model '" + modelName + "' was not found. " + similarNames.toDidYouMeanString() + ".");
     return "";
 }
 

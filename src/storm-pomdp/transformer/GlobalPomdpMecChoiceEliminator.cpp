@@ -19,7 +19,7 @@ GlobalPomdpMecChoiceEliminator<ValueType>::GlobalPomdpMecChoiceEliminator(storm:
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPomdpMecChoiceEliminator<ValueType>::transform(storm::logic::Formula const& formula) const {
     // check whether the property is minimizing or maximizing
-    STORM_LOG_THROW(formula.isOperatorFormula(), storm::exceptions::InvalidPropertyException, "Expected an operator formula");
+    STORM_LOG_THROW(formula.isOperatorFormula(), storm::exceptions::InvalidPropertyException, "Expected an operator formula.");
     STORM_LOG_THROW(formula.asOperatorFormula().hasOptimalityType() || formula.asOperatorFormula().hasBound(), storm::exceptions::InvalidPropertyException,
                     "The formula " << formula << " does not specify whether to minimize or maximize.");
     bool minimizes = (formula.asOperatorFormula().hasOptimalityType() && storm::solver::minimize(formula.asOperatorFormula().getOptimalityType())) ||
@@ -41,7 +41,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPomdpMecChoiceEli
             return transformMinReward(subformula->asEventuallyFormula());
         }
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Mec elimination is not supported for the property " << formula);
+    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Mec elimination is not supported for the property " << formula << ".");
     return nullptr;
 }
 
@@ -233,7 +233,7 @@ template<typename ValueType>
 storm::storage::BitVector GlobalPomdpMecChoiceEliminator<ValueType>::checkPropositionalFormula(storm::logic::Formula const& propositionalFormula) const {
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(pomdp);
     STORM_LOG_THROW(mc.canHandle(propositionalFormula), storm::exceptions::InvalidPropertyException,
-                    "Propositional model checker can not handle formula " << propositionalFormula);
+                    "Propositional model checker can not handle formula " << propositionalFormula << ".");
     return mc.check(propositionalFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
 }
 
