@@ -85,7 +85,8 @@ class HOAConsumerDA : public HOAConsumerDAHeader {
             }
         }
 
-        STORM_LOG_THROW(!labelExpr, storm::exceptions::NotSupportedException, "Parsing deterministic HOA automaton: State-labeled automata not supported");
+        STORM_LOG_THROW(labelExpr.get() == nullptr, storm::exceptions::NotSupportedException,
+                        "Parsing deterministic HOA automaton: State-labeled automata not supported");
 
         helper->startOfState(id);
     }
