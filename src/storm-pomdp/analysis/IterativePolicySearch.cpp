@@ -419,7 +419,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
     }
 
 #ifndef NDEBUG
-    for (auto const& state : targetStates) {
+    for (auto state : targetStates) {
         STORM_LOG_ASSERT(winningRegion.isWinning(pomdp.getObservation(state), getOffsetFromObservation(state, pomdp.getObservation(state))),
                          "Target state " << state << " , observation " << pomdp.getObservation(state) << " is not reflected as winning.");
     }
@@ -463,7 +463,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
                 assert(obs < schedulerForObs.size());
                 ++(schedulerForObs[obs]);
                 auto constant = expressionManager->integer(schedulerForObs[obs]);
-                for (auto const& stateOffset : ~winningSet) {
+                for (auto stateOffset : ~winningSet) {
                     uint64_t state = statesForObservation[stateOffset];
                     STORM_LOG_TRACE("State " << state << " with observation " << obs << " does not allow scheduler " << constant);
                     smtSolver->add(!(continuationVarExpressions[state] && (schedulerVariableExpressions[obs] == constant)));
