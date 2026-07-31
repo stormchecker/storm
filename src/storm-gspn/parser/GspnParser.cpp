@@ -2,6 +2,7 @@
 #include "storm-config.h"
 #include "storm-gspn/adapters/XercesAdapter.h"
 
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
@@ -74,7 +75,7 @@ storm::gspn::GSPN* GspnParser::parse(std::string const& filename, std::string co
     delete errHandler;
     xercesc::XMLPlatformUtils::Terminate();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Storm is not compiled with XML support: " << filename << " can not be parsed");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is not compiled with XML support: " << filename << " can not be parsed");
 #endif
 }
 }  // namespace parser

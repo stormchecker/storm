@@ -6,6 +6,7 @@
 #include "storm-counterexamples/counterexamples/GuaranteedLabelSet.h"
 #include "storm-counterexamples/counterexamples/HighLevelCounterexample.h"
 #include "storm-counterexamples/settings/modules/CounterexampleGeneratorSettings.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
@@ -2001,7 +2002,8 @@ class SMTMinimalLabelSetGenerator {
 
         return result;
 #else
-        throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since storm has been compiled without support for Z3.";
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This functionality is unavailable since storm has been compiled without support for Z3.");
 #endif
     }
 
@@ -2252,7 +2254,8 @@ class SMTMinimalLabelSetGenerator {
             return std::make_shared<HighLevelCounterexample>(symbolicModel.asJaniModel().restrictEdges(labelSets[0]));
         }
 #else
-        throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since storm has been compiled without support for Z3.";
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This functionality is unavailable since storm has been compiled without support for Z3.");
         return nullptr;
 #endif
     }

@@ -4,7 +4,7 @@
 
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/FileIoException.h"
-#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/logic/Formula.h"
 #include "storm/utility/macros.h"
 
@@ -53,7 +53,7 @@ std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daSpot(s
 #else
     (void)f;
     (void)dnf;
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Spot support.");
 #endif
 }
 
