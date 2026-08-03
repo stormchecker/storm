@@ -62,7 +62,7 @@ const std::string IOSettings::propertiesAsMultiOptionName = "propsasmulti";
 
 const std::string IOSettings::uncertaintyResolutionModeName = "uncertainty-resolution";
 
-std::string preventDRNPlaceholderOptionName = "no-drn-placeholders";
+const std::string preventDRNPlaceholderOptionName = "no-drn-placeholders";
 
 IOSettings::IOSettings() : ModuleSettings(moduleName) {
     this->addOption(
