@@ -56,6 +56,7 @@ if (STORM_DEVELOPER)
         if (CLANG)
             # Enable strictly every warning and then disable selected ones.
             add_compile_options(-Weverything)
+
             add_compile_options(-Wno-c++98-compat -Wno-c++98-compat-pedantic)
             add_compile_options(-Wno-old-style-cast)
             add_compile_options(-Wno-reserved-id-macro)
@@ -69,40 +70,36 @@ if (STORM_DEVELOPER)
             add_compile_options(-Wno-padded)
             add_compile_options(-Wno-float-equal)
             add_compile_options(-Wno-unused-local-typedef)
-            add_compile_options(-Wno-missing-variable-declarations)
             add_compile_options(-Wno-undefined-func-template)
             add_compile_options(-Wno-double-promotion)
 
-            # Reenable soon
+            # Suppress warnings that currently leak through -Weverything and are too noisy or originate in 3rd-party headers
+            add_compile_options(-Wno-unsafe-buffer-usage)
+            add_compile_options(-Wno-switch-default)
+            add_compile_options(-Wno-reserved-identifier)
+            add_compile_options(-Wno-nrvo)
+            add_compile_options(-Wno-implicit-int-conversion)
+            add_compile_options(-Wno-implicit-int-float-conversion)
+
+            # Too noisy or not useful at the moment
             add_compile_options(-Wno-non-virtual-dtor)
             add_compile_options(-Wno-conditional-uninitialized)
             add_compile_options(-Wno-float-conversion)
-            add_compile_options(-Wno-unreachable-code-break)
-            add_compile_options(-Wno-ctad-maybe-unsupported)
-            add_compile_options(-Wno-unused-template)
-
-            # Requires adapter
-            add_compile_options(-Wno-comma)
-            add_compile_options(-Wno-used-but-marked-unused)
 
             # Requires adapter for gmock
             add_compile_options(-Wno-undef)
 
+            # Emitted from the LP solver stubs and other throw-only functions; requires annotating many declarations
+            add_compile_options(-Wno-missing-noreturn)
 
-            # Conflicts with warnings in gcc
-            add_compile_options(-Wno-unreachable-code-return)
-
-            # ?? unclear semantics
-            add_compile_options(-Wno-ctad-maybe-unsupported)
+            # Emitted for many translation unit-local free functions across the codebase; requires adding prototypes or static qualifiers
+            add_compile_options(-Wno-missing-prototypes)
 
             # Potentially useful, but just too many right now
-            add_compile_options(-Wno-unused-exception-parameter)
-            add_compile_options(-Wno-zero-as-null-pointer-constant)
             add_compile_options(-Wno-shadow-field-in-constructor)
             add_compile_options(-Wno-inconsistent-missing-destructor-override)
             add_compile_options(-Wno-suggest-destructor-override)
             add_compile_options(-Wno-deprecated-dynamic-exception-spec)
-            add_compile_options(-Wno-extra-semi)
             add_compile_options(-Wno-shorten-64-to-32)
             add_compile_options(-Wno-sign-conversion)
             add_compile_options(-Wno-suggest-override)
@@ -110,8 +107,6 @@ if (STORM_DEVELOPER)
             add_compile_options(-Wno-shadow-field)
             add_compile_options(-Wno-shadow)
             add_compile_options(-Wno-documentation-unknown-command)
-            add_compile_options(-Wno-missing-noreturn)
-            add_compile_options(-Wno-missing-prototypes)
         endif ()
     else ()
         add_compile_options(-Wall -Wextra)
