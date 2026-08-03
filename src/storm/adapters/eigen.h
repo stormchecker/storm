@@ -7,6 +7,7 @@
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Walloca"
+#pragma clang diagnostic ignored "-Wunknown-warning-option"  // AppleClang 15 does not recognize -Wdeprecated-redundant-constexpr-static-def
 #pragma clang diagnostic ignored "-Wdeprecated-redundant-constexpr-static-def"
 #pragma clang diagnostic ignored "-Wextra-semi"
 #pragma clang diagnostic ignored "-Wextra-semi-stmt"
