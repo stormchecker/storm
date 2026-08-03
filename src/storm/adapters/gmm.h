@@ -3,11 +3,9 @@
 
 #ifdef STORM_HAVE_GMM
 
-#if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #pragma clang diagnostic ignored "-Wextra-semi"  // emitted by gmm_vector.h
-#endif
 
 #include <gmm/gmm_kernel.h>
 
@@ -20,8 +18,6 @@
 #include <gmm/gmm_solver_gmres.h>
 #include <gmm/gmm_solver_qmr.h>
 
-#if defined(__clang__)
 #pragma clang diagnostic pop
-#endif
 
 #endif

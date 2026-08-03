@@ -18,11 +18,9 @@
 #pragma clang diagnostic ignored "-Wextra-semi"  // emitted by SparseCholesky
 #elif defined(__GNUC__)
 #pragma GCC diagnostic push
-#if __GNUC__ > 8
 #pragma GCC diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #pragma GCC diagnostic ignored "-Walloc-size-larger-than="
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
 #endif
 
 // Finally include the parts of Eigen we need.
