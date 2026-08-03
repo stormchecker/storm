@@ -146,7 +146,7 @@ VOID_TASK_3(sylvan_rehash, size_t, first, size_t, count, InternalSylvanSignature
         uint64_t hash = sylvan_hash(a, b);
         uint64_t pos = hash % refiner->currentCapacity;
 
-        volatile uint64_t* ptr = 0;
+        volatile uint64_t* ptr = nullptr;
         for (;;) {
             ptr = refiner->table.data() + pos * 3;
             if (*ptr == 0) {
@@ -193,7 +193,7 @@ static uint64_t sylvan_search_or_insert(uint64_t sig, uint64_t previous_block, I
     uint64_t hash = sylvan_hash(sig, previous_block);
     uint64_t pos = hash % refiner->currentCapacity;
 
-    volatile uint64_t* ptr = 0;
+    volatile uint64_t* ptr = nullptr;
     uint64_t a, b, c;
     int count = 0;
     for (;;) {
