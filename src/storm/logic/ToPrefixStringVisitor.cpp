@@ -54,7 +54,6 @@ boost::any ToPrefixStringVisitor::visit(BooleanLiteralFormula const& f, boost::a
     } else {
         return std::string("f ");
     }
-    return result;
 }
 
 boost::any ToPrefixStringVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {

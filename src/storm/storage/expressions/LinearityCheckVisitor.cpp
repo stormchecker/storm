@@ -121,9 +121,6 @@ boost::any LinearityCheckVisitor::visit(UnaryBooleanFunctionExpression const& ex
     } else {
         return LinearityStatus::NonLinear;
     }
-
-    // Boolean function applications are not allowed in linear expressions.
-    return LinearityStatus::NonLinear;
 }
 
 boost::any LinearityCheckVisitor::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
