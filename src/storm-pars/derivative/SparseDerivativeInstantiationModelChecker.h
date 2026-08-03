@@ -90,7 +90,7 @@ class SparseDerivativeInstantiationModelChecker {
 template<typename ValueType>
 class SignedGradientDescentTerminationCondition : public solver::TerminationCondition<ValueType> {
    public:
-    SignedGradientDescentTerminationCondition(uint64_t initialState) : initialState(initialState) {};
+    SignedGradientDescentTerminationCondition(uint64_t initialState) : initialState(initialState) {}
 
     bool terminateNow(std::function<ValueType(uint64_t const&)> const& valueGetter, solver::SolverGuarantee const& guarantee) const {
         if (guarantee == solver::SolverGuarantee::GreaterOrEqual && valueGetter(initialState) > utility::convertNumber<ValueType>(1e-6)) {
@@ -100,7 +100,7 @@ class SignedGradientDescentTerminationCondition : public solver::TerminationCond
             return true;
         }
         return false;
-    };
+    }
     bool requiresGuarantee(solver::SolverGuarantee const& guarantee) const {
         return guarantee == solver::SolverGuarantee::LessOrEqual || guarantee == solver::SolverGuarantee::GreaterOrEqual;
     }

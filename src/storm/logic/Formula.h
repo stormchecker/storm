@@ -32,7 +32,7 @@ class Formula : public std::enable_shared_from_this<Formula> {
     // Make the destructor virtual to allow deletion of objects of subclasses via a pointer to this class.
     virtual ~Formula() {
         // Intentionally left empty.
-    };
+    }
 
     friend std::ostream& operator<<(std::ostream& out, Formula const& formula);
 

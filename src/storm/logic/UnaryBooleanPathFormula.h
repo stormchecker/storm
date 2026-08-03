@@ -14,7 +14,7 @@ class UnaryBooleanPathFormula : public UnaryPathFormula {
 
     virtual ~UnaryBooleanPathFormula() {
         // Intentionally left empty.
-    };
+    }
 
     FormulaContext const& getContext() const;
 

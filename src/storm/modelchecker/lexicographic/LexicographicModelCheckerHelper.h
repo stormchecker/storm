@@ -30,7 +30,7 @@ class LexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHe
 
     // init
     LexicographicModelCheckerHelper(storm::logic::MultiObjectiveFormula const& formula, storm::storage::SparseMatrix<ValueType> const& transitionMatrix)
-        : _transitionMatrix(transitionMatrix), formula(formula) {};
+        : _transitionMatrix(transitionMatrix), formula(formula) {}
 
     /*!
      * Returns the product of a model and the product-automaton of all sub-formulae of the multi-objective formula

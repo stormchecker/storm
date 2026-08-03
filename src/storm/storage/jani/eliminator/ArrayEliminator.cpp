@@ -30,7 +30,7 @@ class ArrayReplacementsCollectorExpressionVisitor : public storm::expressions::E
     typedef typename ArrayEliminatorData::Replacement Replacement;
     typedef std::unordered_map<storm::expressions::Variable, Replacement> ReplMap;
 
-    ArrayReplacementsCollectorExpressionVisitor(Model& model) : model(model), converged(false), declaringAutomaton(nullptr) {};
+    ArrayReplacementsCollectorExpressionVisitor(Model& model) : model(model), converged(false), declaringAutomaton(nullptr) {}
     virtual ~ArrayReplacementsCollectorExpressionVisitor() = default;
 
     /*!
@@ -480,10 +480,10 @@ class ArrayExpressionEliminationVisitor : public storm::expressions::ExpressionV
         BaseExprPtr& expr() {
             STORM_LOG_ASSERT(!isArrayOutOfBounds(), "Tried to get the result expression, but the expression is out-of-bounds");
             return expression;
-        };
+        }
         bool isArrayOutOfBounds() {
             return expression.get() == nullptr;
-        };
+        }
 
        private:
         BaseExprPtr expression;

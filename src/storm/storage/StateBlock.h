@@ -85,7 +85,7 @@ class StateBlock {
      */
     const_iterator cbegin() const {
         return this->begin();
-    };
+    }
 
     /*!
      * Returns an iterator that points one past the end of the states in this SCC.
@@ -108,7 +108,7 @@ class StateBlock {
      */
     const_iterator cend() const {
         return this->end();
-    };
+    }
 
     /*!
      * Retrieves whether the given state is in the SCC.

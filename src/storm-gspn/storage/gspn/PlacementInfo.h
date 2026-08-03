@@ -3,8 +3,8 @@
 namespace storm {
 namespace gspn {
 struct LayoutInfo {
-    LayoutInfo() {};
-    LayoutInfo(double x, double y, double rotation = 0.0) : x(x), y(y), rotation(rotation) {};
+    LayoutInfo() {}
+    LayoutInfo(double x, double y, double rotation = 0.0) : x(x), y(y), rotation(rotation) {}
 
     // x location
     double x = 0.0;

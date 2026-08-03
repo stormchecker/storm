@@ -24,7 +24,7 @@ class MultiplierBackend {
    public:
     MultiplierBackend()
         requires(!TrackChoices)
-        : choiceTracking(std::nullopt) {};
+        : choiceTracking(std::nullopt) {}
 
     MultiplierBackend(std::vector<uint64_t>& choices, std::vector<uint64_t> const& rowGroupIndices)
         requires TrackChoices
@@ -108,7 +108,7 @@ class MultiplierBackend {
 template<typename ValueType>
 class PlainMultiplicationBackend {
    public:
-    PlainMultiplicationBackend(std::vector<ValueType>& rowResults) : rowResults(rowResults) {};
+    PlainMultiplicationBackend(std::vector<ValueType>& rowResults) : rowResults(rowResults) {}
 
     void startNewIteration() {
         // intentionally left empty.

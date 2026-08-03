@@ -4,7 +4,6 @@
 
 #ifdef STORM_HAVE_SYLVAN
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wextra-semi"
 #pragma clang diagnostic ignored "-Wzero-length-array"
 #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #pragma clang diagnostic ignored "-Wdeprecated-register"
