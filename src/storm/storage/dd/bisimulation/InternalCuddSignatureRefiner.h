@@ -3,7 +3,10 @@
 #include "storm-config.h"
 
 #include <boost/optional.hpp>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcomma"
 #include <gtl/phmap.hpp>
+#pragma clang diagnostic pop
 #include <set>
 
 #include "storm/storage/dd/Bdd.h"
