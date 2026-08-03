@@ -9,9 +9,12 @@
 #ifdef STORM_HAVE_SYLVAN
 #include "sylvan_cache.h"
 
+#pragma clang diagnostic push
 // The cas macro from storm/adapters/sylvan.h and the direct __sync_fetch_and_add expand to __sync_* builtins
 // -Watomic-implicit-seq-cst fires at these use sites, so suppress it here.
 #pragma clang diagnostic ignored "-Watomic-implicit-seq-cst"
+
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
 #endif
 
 namespace storm {
@@ -124,8 +127,6 @@ static uint64_t sylvan_hash(uint64_t a, uint64_t b) {
  * nondeterminism variables.
  */
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc99-extensions"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 
@@ -183,7 +184,7 @@ VOID_TASK_1(sylvan_grow, InternalSylvanSignatureRefinerBase*, refiner) {
         refiner->resizeFlag = 0;
     } else {
         /* wait for new frame to appear */
-        while (ATOMIC_READ(lace_newframe.t) == 0) {
+        while (ATOMIC_READ(lace_newframe.t) == nullptr) {
         }
         lace_yield(__lace_worker, __lace_dq_head);
     }
@@ -252,7 +253,10 @@ TASK_3(BDD, sylvan_assign_block, BDD, sig, BDD, previous_block, InternalSylvanSi
     assert(previous_block != mtbdd_false);  // if so, incorrect call!
 
     // maybe do garbage collection
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wextra-semi-stmt"
     sylvan_gc_test();
+#pragma clang diagnostic pop
 
     if (sig == sylvan_false) {
         // slightly different handling because sylvan_false == 0
@@ -304,7 +308,10 @@ TASK_5(BDD, sylvan_refine_partition, BDD, dd, BDD, previous_partition, BDD, nond
         return result;
     }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wextra-semi-stmt"
     sylvan_gc_test();
+#pragma clang diagnostic pop
 
     /* vars != sylvan_false */
     /* dd cannot be sylvan_true - if vars != sylvan_true, then dd is in a,B */

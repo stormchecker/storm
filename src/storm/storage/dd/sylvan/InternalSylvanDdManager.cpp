@@ -14,8 +14,9 @@ namespace dd {
 
 #ifdef STORM_HAVE_SYLVAN
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-length-array"
 #pragma clang diagnostic ignored "-Wc99-extensions"
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
+#pragma clang diagnostic ignored "-Wzero-length-array"
 
 #ifndef NDEBUG
 VOID_TASK_0(gc_start) {
@@ -235,12 +236,18 @@ void InternalDdManager<DdType::Sylvan>::execute(std::function<void()> const& f) 
     if (suspended) {
         lace_resume();
         suspended = false;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
         RUN(execute_sylvan, &f, &e);
+#pragma clang diagnostic pop
         lace_suspend();
         suspended = true;
     } else {
         // The sylvan threads are already running, don't suspend afterwards.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
         RUN(execute_sylvan, &f, &e);
+#pragma clang diagnostic pop
     }
     if (e) {
         std::rethrow_exception(e);
