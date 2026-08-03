@@ -15,6 +15,7 @@
 #pragma clang diagnostic ignored "-Wused-but-marked-unused"
 #pragma clang diagnostic ignored "-Wanon-enum-enum-conversion"
 #pragma clang diagnostic ignored "-Wdeprecated-anon-enum-enum-conversion"
+#pragma clang diagnostic ignored "-Wextra-semi"  // emitted by SparseCholesky
 #elif defined(__GNUC__)
 #pragma GCC diagnostic push
 #if __GNUC__ > 8
