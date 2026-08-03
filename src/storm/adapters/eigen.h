@@ -11,6 +11,7 @@
 #pragma clang diagnostic ignored "-Wextra-semi"
 #pragma clang diagnostic ignored "-Wextra-semi-stmt"
 #pragma clang diagnostic ignored "-Wunused-template"
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
 #pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #elif defined(__GNUC__)
 #pragma GCC diagnostic push
