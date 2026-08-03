@@ -1,7 +1,12 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wthread-safety-negative"
+#pragma clang diagnostic ignored "-Wundefined-reinterpret-cast"
+#pragma clang diagnostic ignored "-Wunused-template"
 #include <carl/util/stringparser.h>
+#pragma clang diagnostic pop
 
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"

@@ -1,6 +1,11 @@
 #include "storm-pars/transformer/BinaryDtmcTransformer.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wthread-safety-negative"
+#pragma clang diagnostic ignored "-Wundefined-reinterpret-cast"
+#pragma clang diagnostic ignored "-Wunused-template"
 #include <carl/formula/Constraint.h>
+#pragma clang diagnostic pop
 #include <queue>
 
 #include "storm-pars/utility/parametric.h"
