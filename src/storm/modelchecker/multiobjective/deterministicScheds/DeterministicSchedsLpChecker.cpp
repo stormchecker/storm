@@ -448,7 +448,7 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
             allZeroRewardChoices.set(rew.first, false);
         }
     }
-    storm::storage::MaximalEndComponentDecomposition mecs(matrix, backwardTransitions, anyMaybeStates, allZeroRewardChoices);
+    storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(matrix, backwardTransitions, anyMaybeStates, allZeroRewardChoices);
     storm::storage::BitVector mecStates(matrix.getRowGroupCount(), false);
     for (auto const& mec : mecs) {
         for (auto const& sc : mec) {

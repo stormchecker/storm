@@ -636,7 +636,7 @@ typename DeterministicSchedsObjectiveHelper<ModelType>::ValueType DeterministicS
     if (!bsccCandidates.empty()) {
         storm::storage::StronglyConnectedComponentDecompositionOptions bsccOptions;
         bsccOptions.onlyBottomSccs(true).subsystem(bsccCandidates);
-        storm::storage::StronglyConnectedComponentDecomposition bsccs(selectedMatrix, bsccOptions);
+        storm::storage::StronglyConnectedComponentDecomposition<ValueType> bsccs(selectedMatrix, bsccOptions);
         for (auto const& bscc : bsccs) {
             for (auto const& s : bscc) {
                 subMaybeStates.set(s, false);

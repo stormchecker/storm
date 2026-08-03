@@ -90,7 +90,7 @@ template<typename ValueType>
 std::vector<ValueType> VisitingTimesHelper<ValueType>::computeUpperBoundsOnExpectedVisitingTimes(
     storm::storage::BitVector const& subsystem, storm::storage::SparseMatrix<ValueType> const& transitions,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
-    storm::storage::MaximalEndComponentDecomposition mecs(transitions, backwardTransitions, subsystem);
+    storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(transitions, backwardTransitions, subsystem);
     storm::storage::BitVector allStates(subsystem.size(), true);
     auto quotientData = storm::transformer::EndComponentEliminator<ValueType>::transform(transitions, mecs, subsystem, subsystem);
     auto notSubsystem = ~subsystem;
