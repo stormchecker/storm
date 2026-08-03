@@ -8,6 +8,10 @@
 
 #ifdef STORM_HAVE_SYLVAN
 #include "sylvan_cache.h"
+
+// The cas macro from storm/adapters/sylvan.h and the direct __sync_fetch_and_add expand to __sync_* builtins
+// -Watomic-implicit-seq-cst fires at these use sites, so suppress it here.
+#pragma clang diagnostic ignored "-Watomic-implicit-seq-cst"
 #endif
 
 namespace storm {
