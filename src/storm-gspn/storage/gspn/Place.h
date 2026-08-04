@@ -1,7 +1,7 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <string>
-#include "boost/optional.hpp"
 
 namespace storm {
 namespace gspn {

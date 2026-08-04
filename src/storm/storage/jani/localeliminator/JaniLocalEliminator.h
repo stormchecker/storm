@@ -1,7 +1,7 @@
 #pragma once
 
+#include <boost/variant.hpp>
 #include <queue>
-#include "boost/variant.hpp"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 
