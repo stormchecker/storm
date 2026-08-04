@@ -1,5 +1,7 @@
 #include "storm/utility/threads.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <thread>
 

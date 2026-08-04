@@ -1,9 +1,11 @@
+#include "storm/storage/BitVector.h"
+
 #include <algorithm>
 #include <bit>
 #include <bitset>
+#include <boost/functional/hash.hpp>
 #include <iostream>
 
-#include "storm/storage/BitVector.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/utility/macros.h"
 

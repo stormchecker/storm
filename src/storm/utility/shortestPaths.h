@@ -1,6 +1,13 @@
 #pragma once
 
+#include <algorithm>
 #include <boost/optional/optional.hpp>
+#include <cassert>
+#include <cstdint>
+#include <iosfwd>
+#include <set>
+#include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
