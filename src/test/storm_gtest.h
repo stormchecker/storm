@@ -9,7 +9,7 @@
 #endif
 #endif
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 #if defined(__clang__)
 #pragma clang diagnostic pop

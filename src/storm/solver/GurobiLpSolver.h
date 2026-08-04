@@ -8,7 +8,7 @@
 
 #ifdef STORM_HAVE_GUROBI
 extern "C" {
-#include "gurobi_c.h"
+#include <gurobi_c.h>
 
 int __stdcall GRBislp(GRBenv**, const char*, const char*, const char*, const char*);
 }

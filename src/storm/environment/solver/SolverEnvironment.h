@@ -21,6 +21,7 @@ class MultiplierEnvironment;
 class GameSolverEnvironment;
 class TopologicalSolverEnvironment;
 class OviSolverEnvironment;
+class EliminationSolverEnvironment;
 
 class SolverEnvironment {
    public:
@@ -47,6 +48,8 @@ class SolverEnvironment {
     GameSolverEnvironment const& game() const;
     TopologicalSolverEnvironment& topological();
     TopologicalSolverEnvironment const& topological() const;
+    EliminationSolverEnvironment& elimination();
+    EliminationSolverEnvironment const& elimination() const;
 
     bool isForceSoundness() const;
     void setForceSoundness(bool value);
@@ -73,6 +76,7 @@ class SolverEnvironment {
     SubEnvironment<MinMaxSolverEnvironment> minMaxSolverEnvironment;
     SubEnvironment<MultiplierEnvironment> multiplierEnvironment;
     SubEnvironment<OviSolverEnvironment> oviSolverEnvironment;
+    SubEnvironment<EliminationSolverEnvironment> eliminationSolverEnvironment;
 
     storm::solver::EquationSolverType linearEquationSolverType;
     bool linearEquationSolverTypeSetFromDefault;

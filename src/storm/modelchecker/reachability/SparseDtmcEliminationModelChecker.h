@@ -53,32 +53,33 @@ class SparseDtmcEliminationModelChecker : public SparsePropositionalModelChecker
                                                                             CheckTask<storm::logic::StateFormula, SolutionType> const& checkTask) override;
 
     // Static helper methods
-    static std::unique_ptr<CheckResult> computeUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix,
+    static std::unique_ptr<CheckResult> computeUntilProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& probabilityMatrix,
                                                                   storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                   storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates,
                                                                   storm::storage::BitVector const& psiStates, bool computeForInitialStatesOnly);
 
-    static std::unique_ptr<CheckResult> computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix,
+    static std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env, storm::storage::SparseMatrix<ValueType> const& probabilityMatrix,
                                                                    storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                    storm::storage::BitVector const& initialStates,
                                                                    storm::storage::BitVector const& targetStates, std::vector<ValueType>& stateRewardValues,
                                                                    bool computeForInitialStatesOnly);
 
    private:
-    static std::vector<SolutionType> computeLongRunValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+    static std::vector<SolutionType> computeLongRunValues(Environment const& env, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                           storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                           storm::storage::BitVector const& initialStates, storm::storage::BitVector const& maybeStates,
                                                           bool computeResultsForInitialStatesOnly, std::vector<ValueType>& stateValues);
 
     static std::unique_ptr<CheckResult> computeReachabilityRewards(
-        storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-        storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates,
+        Environment const& env, storm::storage::SparseMatrix<ValueType> const& probabilityMatrix,
+        storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates,
+        storm::storage::BitVector const& targetStates,
         std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const&
             totalStateRewardVectorGetter,
         bool computeForInitialStatesOnly);
 
-    static std::vector<ValueType> computeReachabilityValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& values,
-                                                            storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+    static std::vector<ValueType> computeReachabilityValues(Environment const& env, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                            std::vector<ValueType>& values, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                             storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly,
                                                             std::vector<ValueType> const& oneStepProbabilitiesToTarget);
 
@@ -87,20 +88,20 @@ class SparseDtmcEliminationModelChecker : public SparsePropositionalModelChecker
                                                    storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<ValueType>& values,
                                                    storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly);
 
-    static void performOrdinaryStateElimination(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix,
+    static void performOrdinaryStateElimination(Environment const& env, storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix,
                                                 storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions,
                                                 storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates,
                                                 bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values,
                                                 boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities);
 
-    static uint_fast64_t performHybridStateElimination(storm::storage::SparseMatrix<ValueType> const& forwardTransitions,
+    static uint_fast64_t performHybridStateElimination(Environment const& env, storm::storage::SparseMatrix<ValueType> const& forwardTransitions,
                                                        storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix,
                                                        storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions,
                                                        storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates,
                                                        bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values,
                                                        boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities);
 
-    static uint_fast64_t treatScc(storm::storage::FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& values,
+    static uint_fast64_t treatScc(Environment const& env, storm::storage::FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& values,
                                   storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc,
                                   storm::storage::BitVector const& initialStates, storm::storage::SparseMatrix<ValueType> const& forwardTransitions,
                                   storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level,

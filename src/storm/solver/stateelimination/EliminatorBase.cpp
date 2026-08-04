@@ -2,15 +2,13 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidStateException.h"
+#include "storm/solver/stateelimination/StateEliminationUtility.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/stateelimination.h"
 
 namespace storm {
 namespace solver {
 namespace stateelimination {
-
-using namespace storm::utility::stateelimination;
 
 template<typename ValueType, ScalingMode Mode>
 EliminatorBase<ValueType, Mode>::EliminatorBase(storm::storage::FlexibleSparseMatrix<ValueType>& matrix,

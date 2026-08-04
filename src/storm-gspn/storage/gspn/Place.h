@@ -1,8 +1,8 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <cstdint>
 #include <string>
-#include "boost/optional.hpp"
 
 namespace storm {
 namespace gspn {
