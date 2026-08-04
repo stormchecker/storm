@@ -115,7 +115,7 @@ uint64_t choiceLabelingToUmb(storm::models::sparse::ChoiceLabeling const& labeli
     }
 
     // Handle choices without any labels.
-    if (!choicesWithAtLeastOneLabel.full()) {
+    if (choicesWithAtLeastOneLabel.size() == 0 || !choicesWithAtLeastOneLabel.full()) {
         // For consistency, unlabelled choices shall always have action index 0. So we add the empty action string.
         [[maybe_unused]] auto const emptyStringIndex = actionStrings.push_back("");
         STORM_LOG_ASSERT(emptyStringIndex == 0, "Action index for empty action string must be 0.");

@@ -1,6 +1,5 @@
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
 
-#include <bit>
 #include <sstream>
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -113,7 +112,6 @@ void ValuationDescriptionBuilder::finalize() {
 }
 
 ValuationClassDescription ValuationDescriptionBuilder::buildClassDescription() {
-    STORM_LOG_ASSERT(!descr.variables.empty(), "At least one variable must be added to the valuation description.");
     finalize();
     return descr;
 }

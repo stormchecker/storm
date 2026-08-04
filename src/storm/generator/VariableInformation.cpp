@@ -143,11 +143,23 @@ VariableInformation::VariableInformation(storm::prism::Program const& program, u
         if (program.getManager().hasVariable(oblab.getName())) {
             obVar = program.getManager().getVariable(oblab.getName());
             auto const& obPredicate = oblab.getStatePredicateExpression();
-            STORM_LOG_THROW(obPredicate.isVariable() && obPredicate.getBaseExpression().asVariableExpression().getVariable() == obVar,
-                            storm::exceptions::NotSupportedException,
-                            "Observation valuations for label '" << oblab << " is not supported since a variable '" << oblab.getName()
-                                                                 << "' is already known and the expression '" << oblab.getStatePredicateExpression()
-                                                                 << "' is not equal to it.");
+            // Reaching this point means that the observation label is already known as a variable.
+            if (program.hasFormula(oblab.getName())) {
+                STORM_LOG_ASSERT(!program.getAllExpressionVariables(true).contains(obVar), "Observation label variable and formula do not match.");
+                // The variable is actually a formula; We just need to check whether the type matches
+                // If the type doesn't match, we cannot use the expression variable for both, the formula and the observation label.
+                auto const& f = program.getFormula(oblab.getName());
+                STORM_LOG_THROW(f.getType() == obPredicate.getType(), storm::exceptions::NotSupportedException,
+                                "Observation valuations for '"
+                                    << oblab
+                                    << " is not supported since a formula with the same name is already known and its expression has a different type.");
+            } else {
+                STORM_LOG_THROW(obPredicate.isVariable() && obPredicate.getBaseExpression().asVariableExpression().getVariable() == obVar,
+                                storm::exceptions::NotSupportedException,
+                                "Observation valuations for '" << oblab << " is not supported since a variable '" << oblab.getName()
+                                                               << "' is already known and the expression '" << oblab.getStatePredicateExpression()
+                                                               << "' is not equal to it.");
+            }
         } else {
             obVar = program.getManager().declareVariable(oblab.getName(), oblab.getStatePredicateExpression().getType());
         }
