@@ -3,7 +3,7 @@ add_executable(storm-gspn-cli ${PROJECT_SOURCE_DIR}/src/storm-gspn-cli/storm-gsp
 target_link_libraries(storm-gspn-cli storm-gspn storm-cli-utilities)
 set_target_properties(storm-gspn-cli PROPERTIES OUTPUT_NAME "storm-gspn")
 set_target_properties(storm-gspn-cli PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
-target_precompile_headers(storm-gspn-cli REUSE_FROM storm-cli)
+storm_target_precompile_headers(storm-gspn-cli REUSE_FROM storm-cli)
 
 add_dependencies(binaries storm-gspn-cli)
 

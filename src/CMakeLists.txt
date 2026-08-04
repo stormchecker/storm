@@ -34,6 +34,13 @@ if (STORM_COMPILE_WITH_ADDRESS_SANITIZER)
     add_link_options(-fsanitize=address)
 endif()
 
+# Allow for disabling pre compiled headers
+function(storm_target_precompile_headers target)
+	if(NOT CMAKE_DISABLE_PRECOMPILE_HEADERS)
+		target_precompile_headers(${target} ${ARGN})
+	endif()
+endfunction()
+
 # In release mode, we turn on even more optimizations if we do not have to provide a portable binary.
 if (NOT STORM_PORTABLE AND (NOT APPLE_SILICON OR (STORM_COMPILER_CLANG AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0)))
     add_compile_options($<$<CONFIG:RELEASE>:-march=native>)
