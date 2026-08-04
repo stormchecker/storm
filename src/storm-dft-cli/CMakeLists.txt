@@ -3,7 +3,7 @@ add_executable(storm-dft-cli ${PROJECT_SOURCE_DIR}/src/storm-dft-cli/storm-dft.c
 target_link_libraries(storm-dft-cli storm-dft storm-cli-utilities)
 set_target_properties(storm-dft-cli PROPERTIES OUTPUT_NAME "storm-dft")
 set_target_properties(storm-dft-cli PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
-target_precompile_headers(storm-dft-cli REUSE_FROM storm-cli)
+storm_target_precompile_headers(storm-dft-cli REUSE_FROM storm-cli)
 
 add_dependencies(binaries storm-dft-cli)
 

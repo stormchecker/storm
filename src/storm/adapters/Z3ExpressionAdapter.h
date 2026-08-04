@@ -7,8 +7,8 @@
 
 // Include the headers of Z3 only if it is available.
 #ifdef STORM_HAVE_Z3
-#include "z3++.h"
-#include "z3.h"
+#include <z3++.h>
+#include <z3.h>
 #endif
 
 #include "storm/storage/expressions/ExpressionVisitor.h"

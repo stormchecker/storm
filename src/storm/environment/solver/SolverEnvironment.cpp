@@ -96,6 +96,14 @@ TopologicalSolverEnvironment const& SolverEnvironment::topological() const {
     return topologicalSolverEnvironment.get();
 }
 
+EliminationSolverEnvironment& SolverEnvironment::elimination() {
+    return eliminationSolverEnvironment.get();
+}
+
+EliminationSolverEnvironment const& SolverEnvironment::elimination() const {
+    return eliminationSolverEnvironment.get();
+}
+
 OviSolverEnvironment& SolverEnvironment::ovi() {
     return oviSolverEnvironment.get();
 }

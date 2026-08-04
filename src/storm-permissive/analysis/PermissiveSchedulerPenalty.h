@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <unordered_map>
 
 #include "storm/storage/StateActionPair.h"

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "storm/modelchecker/results/CheckResult.h"
 
 namespace storm {

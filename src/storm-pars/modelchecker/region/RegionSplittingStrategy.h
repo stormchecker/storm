@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <iosfwd>
+#include <limits>
 #include <optional>
 
 #include "RegionSplitEstimateKind.h"

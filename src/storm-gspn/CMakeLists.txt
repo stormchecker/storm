@@ -7,7 +7,7 @@ target_sources(storm-gspn
 		${STORM_GSPN_SOURCES}
 		PUBLIC
 		FILE_SET fs_storm_gspn_headers TYPE HEADERS BASE_DIRS "${PROJECT_SOURCE_DIR}/src" FILES ${STORM_GSPN_HEADERS})
-target_precompile_headers(storm-gspn REUSE_FROM storm)
+storm_target_precompile_headers(storm-gspn REUSE_FROM storm)
 set_target_properties(storm-gspn PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 target_link_libraries(storm-gspn PUBLIC storm storm-conv storm-parsers ${STORM_GSPN_LINK_LIBRARIES})
 set_target_properties(storm-gspn PROPERTIES DEFINE_SYMBOL "")  # to avoid problems with pch on linux.

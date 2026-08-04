@@ -53,6 +53,7 @@ template class SubEnvironment<MultiObjectiveModelCheckerEnvironment>;
 template class SubEnvironment<ModelCheckerEnvironment>;
 
 template class SubEnvironment<SolverEnvironment>;
+template class SubEnvironment<EliminationSolverEnvironment>;
 template class SubEnvironment<EigenSolverEnvironment>;
 template class SubEnvironment<GmmxxSolverEnvironment>;
 template class SubEnvironment<NativeSolverEnvironment>;

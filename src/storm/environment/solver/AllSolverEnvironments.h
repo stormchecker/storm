@@ -1,6 +1,7 @@
 #pragma once
 
 #include "storm/environment/solver/EigenSolverEnvironment.h"
+#include "storm/environment/solver/EliminationSolverEnvironment.h"
 #include "storm/environment/solver/GameSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"

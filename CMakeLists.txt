@@ -48,6 +48,8 @@ option(STORM_FORCE_POPCNT "Sets whether the popcnt instruction is forced to be u
 MARK_AS_ADVANCED(STORM_FORCE_POPCNT)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache [if found]" ON)
 mark_as_advanced(STORM_COMPILE_WITH_CCACHE)
+option(STORM_COMPILE_WITH_PCH "Enable pre-compiled headers" ON)
+mark_as_advanced(STORM_COMPILE_WITH_PCH)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
 option(STORM_COMPILE_WITH_ADDRESS_SANITIZER "Sets whether to compile with AddressSanitizer enabled" OFF)
 option(STORM_COMPILE_WITH_ALL_SANITIZERS "Sets whether to compile with all sanitizers enabled" OFF)
@@ -307,6 +309,11 @@ endif ()
 ##	Set precompiled headers
 ##
 #############################################################
+
+if(NOT STORM_COMPILE_WITH_PCH)
+	set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
+	message(STATUS "Storm - Disabling precompiled headers.")
+endif()
 
 # Selection is based on (relatively extensive, but ad-hoc) compilation profiling in late 2023.
 # As changes mean recompilations of the complete code base, we only use std libraries and boost libraries here for now.

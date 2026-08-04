@@ -2,7 +2,7 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundef"
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #pragma clang diagnostic pop
 
 #include <boost/optional/optional_io.hpp>
