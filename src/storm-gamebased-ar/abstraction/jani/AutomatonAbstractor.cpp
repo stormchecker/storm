@@ -14,8 +14,6 @@ namespace storm::gbar {
 namespace abstraction {
 namespace jani {
 
-using storm::settings::modules::AbstractionSettings;
-
 template<storm::dd::DdType DdType, typename ValueType>
 AutomatonAbstractor<DdType, ValueType>::AutomatonAbstractor(storm::jani::Automaton const& automaton, AbstractionInformation<DdType>& abstractionInformation,
                                                             std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,

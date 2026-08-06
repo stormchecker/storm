@@ -47,7 +47,6 @@ using storm::gbar::abstraction::ExplicitQuantitativeResult;
 using storm::gbar::abstraction::ExplicitQuantitativeResultMinMax;
 using storm::gbar::abstraction::SymbolicQuantitativeGameResult;
 using storm::gbar::abstraction::SymbolicQuantitativeGameResultMinMax;
-using storm::storage::ExplicitGameStrategyPair;
 
 template<storm::dd::DdType Type, typename ModelType>
 GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model,

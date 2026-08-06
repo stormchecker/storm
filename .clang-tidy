@@ -2,6 +2,7 @@
 # Disable everything first, then enable individual checks.
 Checks: >-
   -*,
+  misc-unused-using-decls,
   readability-braces-around-statements,
   readability-static-accessed-through-instance
 # Candidate checks that are not (yet) enabled:
@@ -24,7 +25,6 @@ Checks: >-
 # misc-misplaced-const,
 # misc-static-assert,
 # misc-throw-by-value-catch-by-reference,
-# misc-unused-using-decls,
 # modernize-deprecated-headers,
 # modernize-make-shared,
 # modernize-make-unique,
