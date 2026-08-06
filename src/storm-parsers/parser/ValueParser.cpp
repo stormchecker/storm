@@ -14,11 +14,26 @@
 namespace storm {
 namespace parser {
 
+class RationalFunctionParseCache {
+   public:
+    std::unordered_map<std::string, storm::RationalFunction> map;
+};
+
 template<typename ValueType>
 ValueParser<ValueType>::ParametricData::ParametricData()
     : manager(new storm::expressions::ExpressionManager()),
       parser(std::make_unique<ExpressionParser>(*manager)),
       evaluator(new storm::expressions::ExpressionEvaluator<storm::RationalFunction>(*manager)) {
+    // Set empty mapping to enable expression creation even without parameters
+    parser->setIdentifierMapping(identifierMapping);
+}
+
+template<>
+ValueParser<storm::RationalFunction>::ParametricData::ParametricData()
+    : manager(new storm::expressions::ExpressionManager()),
+      parser(std::make_unique<ExpressionParser>(*manager)),
+      evaluator(new storm::expressions::ExpressionEvaluator<storm::RationalFunction>(*manager)),
+      cache(std::make_unique<RationalFunctionParseCache>()) {
     // Set empty mapping to enable expression creation even without parameters
     parser->setIdentifierMapping(identifierMapping);
 }
@@ -36,13 +51,21 @@ void ValueParser<storm::RationalFunction>::addParameter(std::string const& param
     storm::expressions::Variable var = data.manager->declareRationalVariable(parameter);
     data.identifierMapping.emplace(var.getName(), var);
     data.parser->setIdentifierMapping(data.identifierMapping);
+    if (data.cache) {
+        data.cache->map.clear();
+    }
     STORM_LOG_TRACE("Added parameter: " << var.getName());
 }
 
 template<>
 storm::RationalFunction ValueParser<storm::RationalFunction>::parseValue(std::string const& value) const {
+    auto it = data.cache->map.find(value);
+    if (it != data.cache->map.end()) {
+        return it->second;
+    }
     storm::RationalFunction rationalFunction = data.evaluator->asRational(data.parser->parseFromString(value));
     STORM_LOG_TRACE("Parsed expression: " << rationalFunction);
+    data.cache->map.emplace(value, rationalFunction);
     return rationalFunction;
 }
 
