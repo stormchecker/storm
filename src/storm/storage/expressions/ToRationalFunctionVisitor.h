@@ -33,6 +33,9 @@ class ToRationalFunctionVisitor : public ExpressionVisitor {
     void setMapping(storm::expressions::Variable const& variable, RationalFunctionType const& value);
 
    private:
+    // Direct evaluation that avoids boost::any overhead.
+    RationalFunctionType evaluate(BaseExpression const& expression);
+
     template<typename TP = typename RationalFunctionType::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
     RationalFunctionType convertVariableToPolynomial(storm::RationalFunctionVariable const& variable) {
         return RationalFunctionType(typename RationalFunctionType::PolyType(typename RationalFunctionType::PolyType::PolyType(variable), cache));
