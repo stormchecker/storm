@@ -1,6 +1,7 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
@@ -120,8 +121,12 @@ class LpSolverTest : public ::testing::Test {
         return TestType::solverSelection;
     }
 
+    storm::Environment env() const {
+        return storm::Environment();
+    }
+
     std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> factory() const {
-        return storm::utility::solver::getLpSolverFactory<ValueType>(solverSelection());
+        return storm::utility::solver::getLpSolverFactory<ValueType>(env(), solverSelection());
     }
 
     ValueType parseNumber(std::string const& input) const {
@@ -172,7 +177,7 @@ typedef ::testing::Types<DefaultEnvironment
 TYPED_TEST_SUITE(LpSolverTest, TestingTypes, );
 
 TYPED_TEST(LpSolverTest, LPOptimizeMax) {
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -199,7 +204,7 @@ TYPED_TEST(LpSolverTest, LPOptimizeMax) {
 
 TYPED_TEST(LpSolverTest, LPOptimizeMaxRaw) {
     typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->createRaw("");
+    auto solver = this->factory()->createRaw(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     ASSERT_EQ(0u, solver->addBoundedContinuousVariable("x", 0, 1, -1));
     ASSERT_EQ(1u, solver->addLowerBoundedContinuousVariable("y", 0, 2));
@@ -236,7 +241,7 @@ TYPED_TEST(LpSolverTest, LPOptimizeMaxRaw) {
 }
 
 TYPED_TEST(LpSolverTest, LPOptimizeMin) {
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -264,7 +269,7 @@ TYPED_TEST(LpSolverTest, LPOptimizeMin) {
 
 TYPED_TEST(LpSolverTest, LPOptimizeMinRaw) {
     typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->createRaw("");
+    auto solver = this->factory()->createRaw(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Minimize);
 
     ASSERT_EQ(0u, solver->addBoundedContinuousVariable("x", 0, 1, -1));
@@ -306,7 +311,7 @@ TYPED_TEST(LpSolverTest, MILPOptimizeMax) {
     if (!this->supportsInteger()) {
         GTEST_SKIP();
     }
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -336,7 +341,7 @@ TYPED_TEST(LpSolverTest, MILPOptimizeMaxRaw) {
         GTEST_SKIP();
     }
     typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->createRaw("");
+    auto solver = this->factory()->createRaw(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -379,7 +384,7 @@ TYPED_TEST(LpSolverTest, MILPOptimizeMin) {
     if (!this->supportsInteger()) {
         GTEST_SKIP();
     }
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -414,7 +419,7 @@ TYPED_TEST(LpSolverTest, MILPOptimizeMin) {
 }
 
 TYPED_TEST(LpSolverTest, LPInfeasible) {
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -448,7 +453,7 @@ TYPED_TEST(LpSolverTest, MILPInfeasible) {
     if (!this->supportsInteger()) {
         GTEST_SKIP();
     }
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -479,7 +484,7 @@ TYPED_TEST(LpSolverTest, MILPInfeasible) {
 }
 
 TYPED_TEST(LpSolverTest, LPUnbounded) {
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -507,7 +512,7 @@ TYPED_TEST(LpSolverTest, MILPUnbounded) {
     if (!this->supportsInteger()) {
         GTEST_SKIP();
     }
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -535,7 +540,7 @@ TYPED_TEST(LpSolverTest, Incremental) {
     if (!this->supportsIncremental()) {
         GTEST_SKIP();
     }
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x, y, z;
     ASSERT_NO_THROW(x = solver->addUnboundedContinuousVariable("x", 1));

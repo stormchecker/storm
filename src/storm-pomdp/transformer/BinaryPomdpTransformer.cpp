@@ -27,7 +27,7 @@ PomdpTransformationResult<ValueType> BinaryPomdpTransformer<ValueType>::transfor
     components.transitionMatrix = std::move(data.simpleMatrix);
     components.observabilityClasses = std::move(data.simpleObservations);
     if (keepStateValuations && pomdp.hasStateValuations()) {
-        components.stateValuations = pomdp.getStateValuations().blowup(data.simpleStateToOriginalState);
+        components.stateValuations = pomdp.getStateValuations().selectEntities(data.simpleStateToOriginalState);
     }
     PomdpTransformationResult<ValueType> result;
     result.transformedPomdp = std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components), true);

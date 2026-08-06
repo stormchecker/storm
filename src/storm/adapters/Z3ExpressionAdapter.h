@@ -1,5 +1,4 @@
-#ifndef STORM_ADAPTERS_Z3EXPRESSIONADAPTER_H_
-#define STORM_ADAPTERS_Z3EXPRESSIONADAPTER_H_
+#pragma once
 
 #include <unordered_map>
 #include <vector>
@@ -8,8 +7,8 @@
 
 // Include the headers of Z3 only if it is available.
 #ifdef STORM_HAVE_Z3
-#include "z3++.h"
-#include "z3.h"
+#include <z3++.h>
+#include <z3.h>
 #endif
 
 #include "storm/storage/expressions/ExpressionVisitor.h"
@@ -110,5 +109,3 @@ class Z3ExpressionAdapter : public storm::expressions::ExpressionVisitor {
 #endif
 }  // namespace adapters
 }  // namespace storm
-
-#endif /* STORM_ADAPTERS_Z3EXPRESSIONADAPTER_H_ */

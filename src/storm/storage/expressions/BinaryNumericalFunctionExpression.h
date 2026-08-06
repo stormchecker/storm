@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_BINARYNUMERICALFUNCTIONEXPRESSION_H_
-#define STORM_STORAGE_EXPRESSIONS_BINARYNUMERICALFUNCTIONEXPRESSION_H_
+#pragma once
 
 #include "storm/storage/expressions/BinaryExpression.h"
 #include "storm/utility/OsDetection.h"
@@ -58,5 +57,3 @@ class BinaryNumericalFunctionExpression : public BinaryExpression {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_BINARYNUMERICALFUNCTIONEXPRESSION_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_UNARYSTATEFORMULA_H_
-#define STORM_LOGIC_UNARYSTATEFORMULA_H_
+#pragma once
 
 #include "storm/logic/StateFormula.h"
 
@@ -27,5 +26,3 @@ class UnaryStateFormula : public StateFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_UNARYSTATEFORMULA_H_ */

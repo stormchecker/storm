@@ -1,5 +1,4 @@
-#ifndef STORM_GENERATOR_CHOICE_H_
-#define STORM_GENERATOR_CHOICE_H_
+#pragma once
 
 #include <cstdint>
 #include <functional>
@@ -217,5 +216,3 @@ std::ostream& operator<<(std::ostream& out, Choice<ValueType, StateType> const& 
 
 }  // namespace generator
 }  // namespace storm
-
-#endif /* STORM_GENERATOR_CHOICE_H_ */

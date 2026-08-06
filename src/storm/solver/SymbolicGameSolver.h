@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_SYMBOLICGAMESOLVER_H_
-#define STORM_SOLVER_SYMBOLICGAMESOLVER_H_
+#pragma once
 
 #include <set>
 #include <vector>
@@ -128,5 +127,3 @@ class SymbolicGameSolverFactory {
 
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_SYMBOLICGAMESOLVER_H_ */

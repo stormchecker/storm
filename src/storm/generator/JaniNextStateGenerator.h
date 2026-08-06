@@ -46,14 +46,13 @@ class JaniNextStateGenerator : public NextStateGenerator<ValueType, StateType> {
     virtual bool isPartiallyObservable() const override;
     virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
 
-    /// Initializes a builder for state valuations by adding the appropriate variables.
-    virtual storm::storage::sparse::StateValuationsBuilder initializeStateValuationsBuilder() const override;
+    /// Initializes state valuations by adding the appropriate variables.
+    virtual storm::storage::sparse::Valuations initializeStateValuations() const override;
 
     virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
 
     /// Adds the valuation for the currently loaded state to the given builder
-    virtual void addStateValuation(storm::storage::sparse::state_type const& currentStateIndex,
-                                   storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const override;
+    virtual void addStateValuation(storm::storage::sparse::state_type const& currentStateIndex, storm::storage::sparse::Valuations& valuations) const override;
 
     virtual std::size_t getNumberOfRewardModels() const override;
     virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const override;

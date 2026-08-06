@@ -10,7 +10,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/storage/sparse/StateValuations.h"
+#include "storm/storage/valuations/Valuations.h"
 
 namespace storm {
 
@@ -69,7 +69,7 @@ class ExplicitQualitativeCheckResult : public QualitativeCheckResult {
     storm::storage::Scheduler<ValueType>& getScheduler();
 
     template<typename JsonRationalType>
-    storm::json<JsonRationalType> toJson(std::optional<storm::storage::sparse::StateValuations> const& stateValuations = std::nullopt,
+    storm::json<JsonRationalType> toJson(std::optional<storm::storage::sparse::Valuations> const& stateValuations = std::nullopt,
                                          std::optional<storm::models::sparse::StateLabeling> const& stateLabels = std::nullopt) const;
 
    private:

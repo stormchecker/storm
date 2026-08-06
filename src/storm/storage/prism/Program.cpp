@@ -4,9 +4,6 @@
 #include <boost/algorithm/string/join.hpp>
 #include <sstream>
 
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/Property.h"
-
 #include "storm/exceptions/InternalException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -14,17 +11,17 @@
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/solver/SmtSolver.h"
+#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
-#include "storm/utility/macros.h"
-#include "storm/utility/solver.h"
-#include "storm/utility/vector.h"
-
 #include "storm/storage/prism/CompositionVisitor.h"
 #include "storm/storage/prism/Compositions.h"
 #include "storm/storage/prism/ToJaniConverter.h"
-
 #include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace prism {
@@ -1160,6 +1157,14 @@ Program Program::substituteConstantsFormulas(bool substituteConstants, bool subs
     return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, this->getPlayers(), newModules,
                    this->getActionNameToIndexMapping(), newRewardModels, newLabels, newObservationLabels, newInitialConstruct,
                    this->getOptionalSystemCompositionConstruct(), prismCompatibility);
+}
+
+Program Program::preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
+    return this->defineUndefinedConstants(constantDefinitions).substituteConstantsFormulas().substituteNonStandardPredicates();
+}
+
+Program Program::preprocess(std::string const& constantDefinitionString) const {
+    return this->preprocess(storm::storage::parseConstantDefinitionString(this->getManager(), constantDefinitionString));
 }
 
 Program Program::labelUnlabelledCommands(std::map<uint64_t, std::string> const& nameSuggestions) const {

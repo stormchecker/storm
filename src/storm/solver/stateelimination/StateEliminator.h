@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_STATEELIMINATION_STATEELIMINATOR_H_
-#define STORM_SOLVER_STATEELIMINATION_STATEELIMINATOR_H_
+#pragma once
 
 #include "storm/solver/stateelimination/EliminatorBase.h"
 
@@ -18,5 +17,3 @@ class StateEliminator : public EliminatorBase<ValueType, ScalingMode::DivideOneM
 }  // namespace stateelimination
 }  // namespace solver
 }  // namespace storm
-
-#endif  // STORM_SOLVER_STATEELIMINATION_STATEELIMINATOR_H_

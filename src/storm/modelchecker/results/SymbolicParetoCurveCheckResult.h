@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_SYMBOLICPARETOCURVECHECKRESULT_H_
-#define STORM_MODELCHECKER_SYMBOLICPARETOCURVECHECKRESULT_H_
+#pragma once
 
 #include <vector>
 
@@ -41,5 +40,3 @@ class SymbolicParetoCurveCheckResult : public ParetoCurveCheckResult<ValueType> 
 };
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_SYMBOLICPARETOCURVECHECKRESULT_H_ */

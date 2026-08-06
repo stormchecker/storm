@@ -159,7 +159,7 @@ bool LpMinMaxLinearEquationSolver<ValueType>::solveEquationsLp(Environment const
     bool const useBounds = lower || upper;
 
     // Set up the LP solver
-    auto solver = lpSolverFactory->createRaw("");
+    auto solver = lpSolverFactory->createRaw(env, "");
     solver->setOptimizationDirection(invert(dir));
     using VariableIndex = typename LpSolver<ValueType, true>::Variable;
     std::map<VariableIndex, ValueType> constantRowGroups;  // Keep track of the rows that are known to be constants

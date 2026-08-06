@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_ELIMINATIONLINEAREQUATIONSOLVER_H_
-#define STORM_SOLVER_ELIMINATIONLINEAREQUATIONSOLVER_H_
+#pragma once
 
 #include "storm/solver/LinearEquationSolver.h"
 
@@ -48,5 +47,3 @@ class EliminationLinearEquationSolverFactory : public LinearEquationSolverFactor
 };
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_ELIMINATIONLINEAREQUATIONSOLVER_H_ */

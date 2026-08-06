@@ -25,7 +25,7 @@ inline std::string XMLtoString(const XMLCh* xmlString) {
 inline std::string getName(xercesc::DOMNode const* node) {
     switch (node->getNodeType()) {
         case xercesc::DOMNode::NodeType::ELEMENT_NODE: {
-            auto elementNode = (xercesc::DOMElement*)node;
+            auto elementNode = static_cast<xercesc::DOMElement const*>(node);
             return XMLtoString(elementNode->getTagName());
         }
         case xercesc::DOMNode::NodeType::TEXT_NODE:

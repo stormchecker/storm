@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_SMTSOLVER
-#define STORM_SOLVER_SMTSOLVER
+#pragma once
 
 #include <cstdint>
 
@@ -307,5 +306,3 @@ class SmtSolver {
 };
 }  // namespace solver
 }  // namespace storm
-
-#endif  // STORM_SOLVER_SMTSOLVER

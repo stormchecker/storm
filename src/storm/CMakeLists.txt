@@ -29,7 +29,6 @@ target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS} ${STORM_DEP_IMP_TARGETS}
 list(APPEND STORM_TARGETS storm)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
-
 # installation
 install(TARGETS storm
         EXPORT storm_Targets

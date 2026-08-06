@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_BOOLEANLITERALEXPRESSION_H_
-#define STORM_STORAGE_EXPRESSIONS_BOOLEANLITERALEXPRESSION_H_
+#pragma once
 
 #include "storm/storage/expressions/BaseExpression.h"
 #include "storm/utility/OsDetection.h"
@@ -50,5 +49,3 @@ class BooleanLiteralExpression : public BaseExpression {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_BOOLEANLITERALEXPRESSION_H_ */

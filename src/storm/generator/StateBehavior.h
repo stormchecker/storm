@@ -1,5 +1,4 @@
-#ifndef STORM_GENERATOR_PRISM_STATEBEHAVIOR_H_
-#define STORM_GENERATOR_PRISM_STATEBEHAVIOR_H_
+#pragma once
 
 #include <cstdint>
 
@@ -89,5 +88,3 @@ class StateBehavior {
 
 }  // namespace generator
 }  // namespace storm
-
-#endif /* STORM_GENERATOR_PRISM_STATEBEHAVIOR_H_ */

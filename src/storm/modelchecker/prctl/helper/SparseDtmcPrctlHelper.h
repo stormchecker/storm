@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_SPARSE_DTMC_PRCTL_MODELCHECKER_HELPER_H_
-#define STORM_MODELCHECKER_SPARSE_DTMC_PRCTL_MODELCHECKER_HELPER_H_
+#pragma once
 
 #include <vector>
 
@@ -135,5 +134,3 @@ class SparseDtmcPrctlHelper {
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_SPARSE_DTMC_PRCTL_MODELCHECKER_HELPER_H_ */

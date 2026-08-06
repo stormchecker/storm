@@ -1,5 +1,4 @@
-#ifndef STORM_UTILITY_STOPWATCH_H_
-#define STORM_UTILITY_STOPWATCH_H_
+#pragma once
 
 #include <chrono>
 
@@ -92,5 +91,3 @@ class Stopwatch {
 std::ostream& operator<<(std::ostream& out, Stopwatch const& stopwatch);
 }  // namespace utility
 }  // namespace storm
-
-#endif /* STORM_UTILITY_STOPWATCH_H_ */

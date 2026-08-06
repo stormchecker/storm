@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_DEBUGSETTINGS_H_
-#define STORM_SETTINGS_MODULES_DEBUGSETTINGS_H_
+#pragma once
 
 #include "storm/settings/modules/ModuleSettings.h"
 
@@ -32,13 +31,6 @@ class DebugSettings : public ModuleSettings {
     bool isTraceSet() const;
 
     /*!
-     * Retrieves whether additional checks on the input should be performed.
-     *
-     * @return True iff additoinal checks on the input should be performed.
-     */
-    bool isAdditionalChecksSet() const;
-
-    /*!
      * Retrieves whether the logfile option was set.
      *
      * @return True iff the logfile option was set.
@@ -67,7 +59,6 @@ class DebugSettings : public ModuleSettings {
     // Define the string names of the options as constants.
     static const std::string debugOptionName;
     static const std::string traceOptionName;
-    static const std::string additionalChecksOptionName;
     static const std::string logfileOptionName;
     static const std::string logfileOptionShortName;
     static const std::string testOptionName;
@@ -76,5 +67,3 @@ class DebugSettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_DEBUGSETTINGS_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_VARIABLEEXPRESSION_H_
-#define STORM_STORAGE_EXPRESSIONS_VARIABLEEXPRESSION_H_
+#pragma once
 
 #include "storm/storage/expressions/BaseExpression.h"
 #include "storm/storage/expressions/Variable.h"
@@ -61,5 +60,3 @@ class VariableExpression : public BaseExpression {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_VARIABLEEXPRESSION_H_ */

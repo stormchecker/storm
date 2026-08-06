@@ -434,6 +434,7 @@ std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::clean() {
         switch (solver->check()) {
             case storm::solver::SmtSolver::CheckResult::Sat:
                 keptConstraints.set(row, true);
+                break;
             case storm::solver::SmtSolver::CheckResult::Unsat:
                 break;
             default:

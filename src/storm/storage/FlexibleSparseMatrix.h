@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_FLEXIBLESPARSEMATRIX_H_
-#define STORM_STORAGE_FLEXIBLESPARSEMATRIX_H_
+#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -229,5 +228,3 @@ class FlexibleSparseMatrix {
 };
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_FLEXIBLESPARSEMATRIX_H_ */

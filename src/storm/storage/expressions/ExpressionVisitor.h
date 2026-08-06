@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSIONVISITOR_H_
-#define STORM_STORAGE_EXPRESSIONS_EXPRESSIONVISITOR_H_
+#pragma once
 
 #include <boost/any.hpp>
 #include <boost/none.hpp>
@@ -37,5 +36,3 @@ class ExpressionVisitor {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSIONVISITOR_H_ */

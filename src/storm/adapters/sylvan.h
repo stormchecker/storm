@@ -5,13 +5,6 @@
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_SYLVAN
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wextra-semi"
-#pragma clang diagnostic ignored "-Wzero-length-array"
-#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
-#pragma clang diagnostic ignored "-Wdeprecated-register"
-#pragma clang diagnostic ignored "-Wc99-extensions"
-#pragma clang diagnostic ignored "-Wunknown-pragmas"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 
@@ -51,6 +44,5 @@ bool sylvan_mtbdd_matches_variable_index(MTBDD node, uint64_t variableIndex, int
 }  // namespace storm
 
 #pragma GCC diagnostic pop
-#pragma clang diagnostic pop
 
 #endif

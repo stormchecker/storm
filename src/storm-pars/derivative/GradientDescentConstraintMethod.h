@@ -1,5 +1,4 @@
-#ifndef STORM_DERIVATIVEGRADIENTDESCENTCONSTRAINTMETHOD_H
-#define STORM_DERIVATIVEGRADIENTDESCENTCONSTRAINTMETHOD_H
+#pragma once
 #include <boost/optional.hpp>
 #include <string>
 namespace storm {
@@ -18,4 +17,3 @@ enum class GradientDescentConstraintMethod {
 };
 }  // namespace derivative
 }  // namespace storm
-#endif

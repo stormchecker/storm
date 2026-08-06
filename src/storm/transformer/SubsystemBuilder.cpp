@@ -150,7 +150,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
         components.choiceLabeling = originalModel.getChoiceLabeling().getSubLabeling(keptActions);
     }
     if (originalModel.hasStateValuations()) {
-        components.stateValuations = originalModel.getStateValuations().selectStates(subsystemStates);
+        components.stateValuations = originalModel.getStateValuations().selectEntities(subsystemStates);
     }
     if (originalModel.hasChoiceOrigins()) {
         components.choiceOrigins = originalModel.getChoiceOrigins()->selectChoices(keptActions);

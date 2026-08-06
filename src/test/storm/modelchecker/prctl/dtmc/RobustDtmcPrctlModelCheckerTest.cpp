@@ -61,7 +61,7 @@ void expectThrow(std::string const& path, std::string const& formulaString,
 
 void expectThrowPrism(std::string const& path, std::string const& formulaString) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::api::buildSparseModel<storm::Interval>(program, formulas);
@@ -101,7 +101,7 @@ void checkExplicitModelForQuantitativeResult(std::string const& path, std::strin
 
 void checkPrismModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double min, double max) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::api::buildSparseModel<storm::Interval>(program, formulas);
@@ -225,7 +225,7 @@ void checkExplicitModelForQuantitativeResultRational(std::string const& path, st
 void checkPrismModelForQuantitativeResultRational(std::string const& path, std::string const& formulaString, storm::RationalNumber min,
                                                   storm::RationalNumber max) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> modelPtr = storm::api::buildSparseModel<storm::RationalInterval>(program, formulas);
@@ -251,7 +251,7 @@ void checkPrismModelForQuantitativeResultRational(std::string const& path, std::
 
 void makeUncertainAndCheckRational(std::string const& path, std::string const& formulaString, storm::RationalNumber amountOfUncertainty) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaString, program));
     std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> modelPtr = storm::api::buildSparseModel<storm::RationalNumber>(program, formulas);

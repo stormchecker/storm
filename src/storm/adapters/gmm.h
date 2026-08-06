@@ -3,10 +3,10 @@
 
 #ifdef STORM_HAVE_GMM
 
-#if defined(__clang__)
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-parameter"
-#endif
+#pragma clang diagnostic ignored "-Wextra-semi"
+#pragma clang diagnostic ignored "-Wextra-semi-stmt"
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 
 #include <gmm/gmm_kernel.h>
 
@@ -19,8 +19,6 @@
 #include <gmm/gmm_solver_gmres.h>
 #include <gmm/gmm_solver_qmr.h>
 
-#if defined(__clang__)
 #pragma clang diagnostic pop
-#endif
 
 #endif

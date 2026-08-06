@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_PARETOCURVECHECKRESULT_H_
-#define STORM_MODELCHECKER_PARETOCURVECHECKRESULT_H_
+#pragma once
 
 #include <vector>
 
@@ -42,5 +41,3 @@ class ParetoCurveCheckResult : public CheckResult {
 };
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_PARETOCURVECHECKRESULT_H_ */

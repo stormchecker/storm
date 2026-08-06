@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATORBASE_H_
-#define STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATORBASE_H_
+#pragma once
 
 #include "storm/storage/expressions/Expression.h"
 
@@ -33,5 +32,3 @@ class ExpressionEvaluatorBase {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATORBASE_H_ */

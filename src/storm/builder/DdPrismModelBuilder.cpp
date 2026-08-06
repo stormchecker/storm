@@ -2,30 +2,23 @@
 
 #include <boost/algorithm/string/join.hpp>
 
+#include "storm/adapters/AddExpressionAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-
 #include "storm/settings/SettingsManager.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotSupportedException.h"
-
-#include "storm/utility/dd.h"
-#include "storm/utility/math.h"
-#include "storm/utility/prism.h"
-
-#include "storm/adapters/AddExpressionAdapter.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/prism/Compositions.h"
 #include "storm/storage/prism/Program.h"
+#include "storm/utility/dd.h"
 
 namespace storm {
 namespace builder {

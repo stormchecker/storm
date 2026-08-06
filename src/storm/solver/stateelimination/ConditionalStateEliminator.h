@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_STATEELIMINATION_CONDITIONALSTATEELIMINATOR_H_
-#define STORM_SOLVER_STATEELIMINATION_CONDITIONALSTATEELIMINATOR_H_
+#pragma once
 
 #include "storm/solver/stateelimination/StateEliminator.h"
 
@@ -40,5 +39,3 @@ class ConditionalStateEliminator : public StateEliminator<ValueType> {
 }  // namespace stateelimination
 }  // namespace solver
 }  // namespace storm
-
-#endif  // STORM_SOLVER_STATEELIMINATION_CONDITIONALSTATEELIMINATOR_H_

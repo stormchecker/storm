@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_COMPOSITION_H_
-#define STORM_STORAGE_PRISM_COMPOSITION_H_
+#pragma once
 
 #include <ostream>
 
@@ -23,5 +22,3 @@ class Composition {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_COMPOSITION_H_ */

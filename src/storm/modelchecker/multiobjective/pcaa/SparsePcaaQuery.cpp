@@ -71,7 +71,7 @@ std::unique_ptr<CheckResult> SparsePcaaQuery<SparseModelType, GeometryValueType>
                                                                                                              << " refinement steps.\n");
             }
             return std::move(std::get<0>(answerOrWeights));
-        };
+        }
         auto [weightVector, epsilonWso] = std::get<1>(answerOrWeights);
         // Normalize the weight vector to make sure that its magnitude does not influence the accuracy of the weighted sum optimization
         GeometryValueType normalizationFactor =

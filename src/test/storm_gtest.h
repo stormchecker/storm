@@ -1,21 +1,9 @@
 #pragma once
-#if defined(__clang__)
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundef"
-#elif defined(__GNUC__)
-#pragma GCC diagnostic push
-#if __GNUC__ > 8
-
-#endif
-#endif
-
-#include "gtest/gtest.h"
-
-#if defined(__clang__)
+#include <gtest/gtest.h>
 #pragma clang diagnostic pop
-#elif defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
 
 #include <boost/optional/optional_io.hpp>
 

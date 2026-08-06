@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_SETTINGMEMENTO_H_
-#define STORM_SETTINGS_SETTINGMEMENTO_H_
+#pragma once
 
 #include <memory>
 #include <string>
@@ -45,5 +44,3 @@ class SettingMemento {
 
 }  // namespace settings
 }  // namespace storm
-
-#endif  // STORM_SETTINGS_SETTINGMEMENTO_H_

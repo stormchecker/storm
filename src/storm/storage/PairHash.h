@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PAIRHASH_H_
-#define STORM_STORAGE_PAIRHASH_H_
+#pragma once
 
 #include <boost/functional/hash.hpp>
 #include <cstdint>
@@ -15,5 +14,3 @@ struct hash<std::pair<uint_fast64_t, uint_fast64_t>> {
     }
 };
 }  // namespace std
-
-#endif /* STORM_STORAGE_PAIRHASH_H_ */

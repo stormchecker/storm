@@ -2,15 +2,13 @@
 
 #include <cmath>
 
+#include "storm/environment/solver/GlpkSolverEnvironment.h"
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/GlpkSettings.h"
 #include "storm/storage/expressions/BinaryRelationType.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/LinearCoefficientVisitor.h"
@@ -23,11 +21,14 @@ namespace solver {
 
 #ifdef STORM_HAVE_GLPK
 template<typename ValueType, bool RawMode>
-GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(std::string const& name, OptimizationDirection const& optDir)
+GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(storm::GlpkSolverEnvironment const& glpkSettings, bool debug, std::string const& name,
+                                               OptimizationDirection const& optDir)
     : LpSolver<ValueType, RawMode>(optDir),
       lp(nullptr),
       variableToIndexMap(),
       modelContainsIntegerVariables(false),
+      integerTolerance(glpkSettings.getIntegerTolerance()),
+      milpPresolverEnabled(glpkSettings.isMILPPresolverEnabled()),
       isInfeasibleFlag(false),
       isUnboundedFlag(false) {
     // Create the LP problem for glpk.
@@ -37,10 +38,7 @@ GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(std::string const& name, Optimiza
     glp_set_prob_name(lp, name.c_str());
 
     // Set whether the glpk output shall be printed to the command line.
-    glp_term_out(storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet() ||
-                         storm::settings::getModule<storm::settings::modules::GlpkSettings>().isOutputSet()
-                     ? GLP_ON
-                     : GLP_OFF);
+    glp_term_out(debug || glpkSettings.isOutputSet() ? GLP_ON : GLP_OFF);
 
     // Set the maximal allowed MILP gap to its default value
     glp_iocp* defaultParameters = new glp_iocp();
@@ -52,23 +50,26 @@ GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(std::string const& name, Optimiza
 #else
 
 template<typename ValueType, bool RawMode>
-GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(std::string const&, OptimizationDirection const&) {
+GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(storm::GlpkSolverEnvironment const&, bool, std::string const&, OptimizationDirection const&) {
     // Throw nothing in a constructor.
 }
 #endif
 
 template<typename ValueType, bool RawMode>
-GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(std::string const& name) : GlpkLpSolver(name, OptimizationDirection::Minimize) {
+GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(storm::GlpkSolverEnvironment const& glpkSettings, bool debug, std::string const& name)
+    : GlpkLpSolver(glpkSettings, debug, name, OptimizationDirection::Minimize) {
     // Intentionally left empty.
 }
 
 template<typename ValueType, bool RawMode>
-GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver() : GlpkLpSolver("", OptimizationDirection::Minimize) {
+GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(storm::GlpkSolverEnvironment const& glpkSettings, bool debug)
+    : GlpkLpSolver(glpkSettings, debug, "", OptimizationDirection::Minimize) {
     // Intentionally left empty.
 }
 
 template<typename ValueType, bool RawMode>
-GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(OptimizationDirection const& optDir) : GlpkLpSolver("", optDir) {
+GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(storm::GlpkSolverEnvironment const& glpkSettings, bool debug, OptimizationDirection const& optDir)
+    : GlpkLpSolver(glpkSettings, debug, "", optDir) {
     // Intentionally left empty.
 }
 
@@ -205,15 +206,13 @@ void GlpkLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Co
     // Determine the type of the constraint and add it properly.
     switch (relationType) {
         case storm::expressions::RelationType::Less:
-            glp_set_row_bnds(this->lp, constraintIndex, GLP_UP, 0,
-                             rhs - storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance());
+            glp_set_row_bnds(this->lp, constraintIndex, GLP_UP, 0, rhs - this->integerTolerance);
             break;
         case storm::expressions::RelationType::LessOrEqual:
             glp_set_row_bnds(this->lp, constraintIndex, GLP_UP, 0, rhs);
             break;
         case storm::expressions::RelationType::Greater:
-            glp_set_row_bnds(this->lp, constraintIndex, GLP_LO,
-                             rhs + storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(), 0);
+            glp_set_row_bnds(this->lp, constraintIndex, GLP_LO, rhs + this->integerTolerance, 0);
             break;
         case storm::expressions::RelationType::GreaterOrEqual:
             glp_set_row_bnds(this->lp, constraintIndex, GLP_LO, rhs, 0);
@@ -274,9 +273,9 @@ void GlpkLpSolver<ValueType, RawMode>::optimize() const {
     if (this->modelContainsIntegerVariables) {
         glp_iocp* parameters = new glp_iocp();
         glp_init_iocp(parameters);
-        parameters->tol_int = storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance();
+        parameters->tol_int = this->integerTolerance;
         this->isInfeasibleFlag = false;
-        if (storm::settings::getModule<storm::settings::modules::GlpkSettings>().isMILPPresolverEnabled()) {
+        if (this->milpPresolverEnabled) {
             parameters->presolve = GLP_ON;
         } else {
             // Without presolving, we solve the relaxed model first. This is required because
@@ -429,7 +428,7 @@ int64_t GlpkLpSolver<ValueType, RawMode>::getIntegerValue(Variable const& variab
 
     double roundedValue = std::round(value);
     double diff = std::abs(roundedValue - value);
-    STORM_LOG_ERROR_COND(diff <= storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(),
+    STORM_LOG_ERROR_COND(diff <= this->integerTolerance,
                          "Illegal value for integer variable in GLPK solution (" << value << "). Difference to nearest int is " << diff);
     return static_cast<int_fast64_t>(roundedValue);
 #else
@@ -457,12 +456,10 @@ bool GlpkLpSolver<ValueType, RawMode>::getBinaryValue(Variable const& variable) 
     }
 
     if (value > 0.5) {
-        STORM_LOG_ERROR_COND(std::abs(value - 1.0) <= storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(),
-                             "Illegal value for binary variable in GLPK solution (" << value << ").");
+        STORM_LOG_ERROR_COND(std::abs(value - 1.0) <= this->integerTolerance, "Illegal value for binary variable in GLPK solution (" << value << ").");
         return true;
     } else {
-        STORM_LOG_ERROR_COND(std::abs(value) <= storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(),
-                             "Illegal value for binary variable in GLPK solution (" << value << ").");
+        STORM_LOG_ERROR_COND(std::abs(value) <= this->integerTolerance, "Illegal value for binary variable in GLPK solution (" << value << ").");
         return false;
     }
 
@@ -499,7 +496,7 @@ ValueType GlpkLpSolver<ValueType, RawMode>::getObjectiveValue() const {
 template<typename ValueType, bool RawMode>
 void GlpkLpSolver<ValueType, RawMode>::writeModelToFile(std::string const& filename) const {
 #ifdef STORM_HAVE_GLPK
-    glp_write_lp(this->lp, 0, filename.c_str());
+    glp_write_lp(this->lp, nullptr, filename.c_str());
 #else
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
                                                           "requires this support. Please choose a version with GLPK support.";

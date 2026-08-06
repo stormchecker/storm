@@ -29,10 +29,8 @@ boost::any ToPrefixStringVisitor::visit(BinaryBooleanStateFormula const& f, boos
     switch (f.getOperator()) {
         case BinaryBooleanStateFormula::OperatorType::And:
             return std::string("& ") + left + " " + right;
-            break;
         case BinaryBooleanStateFormula::OperatorType::Or:
             return std::string("| ") + left + " " + right;
-            break;
     }
     return boost::any();
 }
@@ -43,10 +41,8 @@ boost::any ToPrefixStringVisitor::visit(BinaryBooleanPathFormula const& f, boost
     switch (f.getOperator()) {
         case BinaryBooleanPathFormula::OperatorType::And:
             return std::string("& ") + left + " " + right;
-            break;
         case BinaryBooleanPathFormula::OperatorType::Or:
             return std::string("| ") + left + " " + right;
-            break;
     }
     return boost::any();
 }
@@ -58,7 +54,6 @@ boost::any ToPrefixStringVisitor::visit(BooleanLiteralFormula const& f, boost::a
     } else {
         return std::string("f ");
     }
-    return result;
 }
 
 boost::any ToPrefixStringVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {
@@ -169,7 +164,6 @@ boost::any ToPrefixStringVisitor::visit(UnaryBooleanStateFormula const& f, boost
     switch (f.getOperator()) {
         case UnaryBooleanStateFormula::OperatorType::Not:
             return std::string("! ") + subexpression;
-            break;
     }
     return boost::any();
 }
@@ -179,7 +173,6 @@ boost::any ToPrefixStringVisitor::visit(UnaryBooleanPathFormula const& f, boost:
     switch (f.getOperator()) {
         case UnaryBooleanPathFormula::OperatorType::Not:
             return std::string("! ") + subexpression;
-            break;
     }
     return boost::any();
 }

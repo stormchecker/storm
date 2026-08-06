@@ -1,14 +1,12 @@
 #include "storm/api/properties.h"
 
 #include <boost/algorithm/string.hpp>
+
+#include "storm/logic/Formula.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/prism/Program.h"
-
-#include "storm/logic/Formula.h"
-
-#include "storm/utility/cli.h"
 
 namespace storm {
 namespace api {

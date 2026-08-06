@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPECONVERSION_HYPERPLANEENUMERATION_H_
-#define STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPECONVERSION_HYPERPLANEENUMERATION_H_
+#pragma once
 
 #include <vector>
 #include "storm/adapters/EigenAdapter.h"
@@ -61,5 +60,3 @@ class HyperplaneEnumeration {
 }  // namespace geometry
 }  // namespace storage
 }  // namespace storm
-
-#endif /* "STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPECONVERSION_HYPERPLANEENUMERATION_H_" */

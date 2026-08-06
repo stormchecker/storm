@@ -324,6 +324,11 @@ endif ()
 ##
 #############################################################
 
+if(NOT STORM_COMPILE_WITH_PCH)
+	set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
+	message(STATUS "Storm - Disabling precompiled headers.")
+endif()
+
 # Selection is based on (relatively extensive, but ad-hoc) compilation profiling in late 2023.
 # As changes mean recompilations of the complete code base, we only use std libraries and boost libraries here for now.
 SET(STORM_PRECOMPILED_HEADERS "<any>" "<map>" "<vector>" "<unordered_set>" "<forward_list>"

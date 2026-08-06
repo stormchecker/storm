@@ -36,7 +36,7 @@ TEST_F(AssumptionMakerTest, Brp_without_bisimulation) {
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -87,7 +87,7 @@ TEST_F(AssumptionMakerTest, Simple1) {
     std::string constantsAsString = "";
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -140,7 +140,7 @@ TEST_F(AssumptionMakerTest, Casestudy1) {
     std::string constantsAsString = "";
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =

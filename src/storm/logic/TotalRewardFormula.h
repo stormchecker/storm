@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_TOTALREWARDFORMULA_H_
-#define STORM_LOGIC_TOTALREWARDFORMULA_H_
+#pragma once
 
 #include <boost/optional.hpp>
 
@@ -31,5 +30,3 @@ class TotalRewardFormula : public PathFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_TOTALREWARDFORMULA_H_ */

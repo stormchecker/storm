@@ -36,7 +36,6 @@
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/prism.h"
 #include "storm/utility/vector.h"
 
 namespace storm::gbar {
@@ -512,7 +511,7 @@ ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(
     for (auto state : maybeStates) {
         subPlayer1Groups[position] = previousPlayer2States;
 
-        bool hasMaybePlayer2Successor = false;
+        [[maybe_unused]] bool hasMaybePlayer2Successor = false;
         for (uint64_t player2State = player1Groups[state]; player2State < player1Groups[state + 1]; ++player2State) {
             if (!player2Prob0States.get(player2State) && !player2Prob1States.get(player2State)) {
                 player2MaybeStates.set(player2State);
@@ -588,7 +587,7 @@ ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(
     uint64_t previousPlayer2MaybeStates = 0;
     for (auto state : maybeStates) {
         uint64_t previousPlayer2MaybeStatesForState = 0;
-        bool madePlayer1Choice = false;
+        [[maybe_unused]] bool madePlayer1Choice = false;
         for (uint64_t player2State = player1Groups[state]; player2State < player1Groups[state + 1]; ++player2State) {
             if (player1Scheduler[previousPlayer1MaybeStates] == previousPlayer2MaybeStatesForState) {
                 strategyPair.getPlayer1Strategy().setChoice(state, player2State);

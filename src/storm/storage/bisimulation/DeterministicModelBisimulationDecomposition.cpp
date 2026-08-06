@@ -661,7 +661,6 @@ void DeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() {
                     probIterator->second += getTransitionValue(entry, representativeState);
                 } else {
                     blockProbability[targetBlock] = getTransitionValue(entry, representativeState);
-                    ;
                 }
             }
 

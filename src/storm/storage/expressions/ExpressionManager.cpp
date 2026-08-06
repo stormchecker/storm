@@ -185,6 +185,10 @@ Variable ExpressionManager::declareArrayVariable(std::string const& name, Type c
     return this->declareVariable(name, this->getArrayType(elementType), auxiliary);
 }
 
+Variable ExpressionManager::declareStringVariable(std::string const& name, bool auxiliary) {
+    return this->declareVariable(name, this->getStringType(), auxiliary);
+}
+
 Variable ExpressionManager::declareOrGetVariable(std::string const& name, storm::expressions::Type const& variableType, bool auxiliary) {
     return declareOrGetVariable(name, variableType, auxiliary, true);
 }

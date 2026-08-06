@@ -1,5 +1,4 @@
-#ifndef STORM_ADAPTERS_DDEXPRESSIONADAPTER_H_
-#define STORM_ADAPTERS_DDEXPRESSIONADAPTER_H_
+#pragma once
 
 #include <memory>
 
@@ -49,5 +48,3 @@ class AddExpressionAdapter : public storm::expressions::ExpressionVisitor {
 
 }  // namespace adapters
 }  // namespace storm
-
-#endif /* STORM_ADAPTERS_DDEXPRESSIONADAPTER_H_ */

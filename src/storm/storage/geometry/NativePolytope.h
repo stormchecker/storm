@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPE_H_
-#define STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPE_H_
+#pragma once
 
 #include <memory>
 #include "storm/adapters/EigenAdapter.h"
@@ -157,5 +156,3 @@ class NativePolytope : public Polytope<ValueType> {
 }  // namespace geometry
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPE_H_ */

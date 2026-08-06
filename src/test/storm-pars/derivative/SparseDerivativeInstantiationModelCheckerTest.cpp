@@ -166,7 +166,7 @@ TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Simple) {
 
     // We have to create the dtmc and formulas here, because we need its parameters to create the polynomial
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -194,7 +194,7 @@ TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Simple2) {
 
     // We have to create the dtmc and formulas here, because we need its parameters to create the polynomial
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -224,7 +224,7 @@ TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Brp162) {
 
     // We have to create the dtmc and formulas here, because we need its parameters to create the polynomial
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =

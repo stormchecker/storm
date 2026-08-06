@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_SYSTEMCOMPOSITIONCONSTRUCT_H_
-#define STORM_STORAGE_PRISM_SYSTEMCOMPOSITIONCONSTRUCT_H_
+#pragma once
 
 #include <memory>
 #include <string>
@@ -36,5 +35,3 @@ class SystemCompositionConstruct : public LocatedInformation {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_SYSTEMCOMPOSITIONCONSTRUCT_H_ */

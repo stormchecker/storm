@@ -1,5 +1,4 @@
-#ifndef OPTIMIZATIONDIRECTIONSETTING_H
-#define OPTIMIZATIONDIRECTIONSETTING_H
+#pragma once
 
 #include <iostream>
 
@@ -29,5 +28,3 @@ OptimizationDirectionSetting convert(OptimizationDirection d);
 
 using OptimizationDirection = solver::OptimizationDirection;
 }  // namespace storm
-
-#endif /* OPTIMIZATIONDIRECTIONSETTING_H */

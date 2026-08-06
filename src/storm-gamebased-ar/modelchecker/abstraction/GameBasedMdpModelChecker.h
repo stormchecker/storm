@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_GAMEBASEDMDPMODELCHECKER_H_
-#define STORM_MODELCHECKER_GAMEBASEDMDPMODELCHECKER_H_
+#pragma once
 
 #include "storm/modelchecker/AbstractModelChecker.h"
 
@@ -224,5 +223,3 @@ class GameBasedMdpModelChecker : public storm::modelchecker::AbstractModelChecke
 };
 }  // namespace modelchecker
 }  // namespace storm::gbar
-
-#endif /* STORM_MODELCHECKER_GAMEBASEDMDPMODELCHECKER_H_ */

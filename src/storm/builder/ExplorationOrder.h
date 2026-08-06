@@ -1,5 +1,4 @@
-#ifndef STORM_BUILDER_EXPLORATIONORDER_H_
-#define STORM_BUILDER_EXPLORATIONORDER_H_
+#pragma once
 
 #include <ostream>
 
@@ -13,5 +12,3 @@ std::ostream& operator<<(std::ostream& out, ExplorationOrder const& order);
 
 }  // namespace builder
 }  // namespace storm
-
-#endif /* STORM_BUILDER_EXPLORATIONORDER_H_ */

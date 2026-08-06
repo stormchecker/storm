@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_EXPLORATIONINFORMATION_H_
-#define STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_EXPLORATIONINFORMATION_H_
+#pragma once
 
 #include <limits>
 #include <unordered_map>
@@ -124,5 +123,3 @@ class ExplorationInformation {
 }  // namespace exploration_detail
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_EXPLORATIONINFORMATION_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_MULTIOBJECTIVEFORMULA_H_
-#define STORM_LOGIC_MULTIOBJECTIVEFORMULA_H_
+#pragma once
 
 #include <cstdint>
 
@@ -43,5 +42,3 @@ class MultiObjectiveFormula : public StateFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_MULTIOBJECTIVEFORMULA_H_ */

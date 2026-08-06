@@ -42,14 +42,14 @@ TEST(MilpPermissiveSchedulerTest, DieSelection) {
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp =
         storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
 
-    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms = storm::ps::computePermissiveSchedulerViaMILP<>(*mdp, formula02);
+    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms = storm::ps::computePermissiveSchedulerViaMILP<>(env, *mdp, formula02);
     EXPECT_TRUE(perms.is_initialized());
-    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms2 = storm::ps::computePermissiveSchedulerViaMILP<>(*mdp, formula001);
+    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms2 = storm::ps::computePermissiveSchedulerViaMILP<>(env, *mdp, formula001);
     EXPECT_FALSE(perms2.is_initialized());
 
-    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms3 = storm::ps::computePermissiveSchedulerViaMILP<>(*mdp, formula02b);
+    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms3 = storm::ps::computePermissiveSchedulerViaMILP<>(env, *mdp, formula02b);
     EXPECT_FALSE(perms3.is_initialized());
-    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms4 = storm::ps::computePermissiveSchedulerViaMILP<>(*mdp, formula001b);
+    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms4 = storm::ps::computePermissiveSchedulerViaMILP<>(env, *mdp, formula001b);
     EXPECT_TRUE(perms4.is_initialized());
 
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker0(*mdp);

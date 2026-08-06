@@ -1,5 +1,4 @@
-#ifndef STORM_UTILITY_MODELINSTANTIATOR_H
-#define STORM_UTILITY_MODELINSTANTIATOR_H
+#pragma once
 
 #include <memory>
 #include <type_traits>
@@ -188,4 +187,3 @@ class ModelInstantiator {
 };
 }  // Namespace utility
 }  // namespace storm
-#endif /* STORM_UTILITY_MODELINSTANTIATOR_H */

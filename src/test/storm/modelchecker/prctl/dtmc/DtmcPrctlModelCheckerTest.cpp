@@ -555,7 +555,7 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
     buildModelFormulas(std::string const& pathToPrismFile, std::string const& formulasAsString, std::string const& constantDefinitionString = "") const {
         std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
         storm::prism::Program program = storm::api::parseProgram(pathToPrismFile);
-        program = storm::utility::prism::preprocess(program, constantDefinitionString);
+        program = program.preprocess(constantDefinitionString);
         if (TestType::engine == DtmcEngine::PrismSparse) {
             result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
@@ -574,7 +574,7 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
     buildModelFormulas(std::string const& pathToPrismFile, std::string const& formulasAsString, std::string const& constantDefinitionString = "") const {
         std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
         storm::prism::Program program = storm::api::parseProgram(pathToPrismFile);
-        program = storm::utility::prism::preprocess(program, constantDefinitionString);
+        program = program.preprocess(constantDefinitionString);
         if (TestType::engine == DtmcEngine::Hybrid || TestType::engine == DtmcEngine::PrismDd) {
             result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(program, result.second)->template as<MT>();

@@ -1,7 +1,5 @@
-#ifndef STORM_SETTINGS_MODULES_MODULESETTINGS_H_
-#define STORM_SETTINGS_MODULES_MODULESETTINGS_H_
+#pragma once
 
-#include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -144,5 +142,3 @@ class ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_MODULESETTINGS_H_ */

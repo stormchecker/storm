@@ -966,7 +966,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                     expandedAtLeastOneAction = true;
                     if (!truncateAllActions) {
                         // Cases 1.1, 2.1, or 3.1
-                        auto successorGridPoints = beliefManager->expandAndTriangulate(currId, action, observationResolutionVector);
+                        auto successorGridPoints = beliefManager->expandAndTriangulate(env, currId, action, observationResolutionVector);
                         for (auto const& successor : successorGridPoints) {
                             overApproximation->addTransitionToBelief(action, successor.first, successor.second, false);
                         }
@@ -977,7 +977,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                         // Cases 1.2 or 2.2
                         auto truncationProbability = storm::utility::zero<ValueType>();
                         auto truncationValueBound = storm::utility::zero<ValueType>();
-                        auto successorGridPoints = beliefManager->expandAndTriangulate(currId, action, observationResolutionVector);
+                        auto successorGridPoints = beliefManager->expandAndTriangulate(env, currId, action, observationResolutionVector);
                         for (auto const& successor : successorGridPoints) {
                             bool added = overApproximation->addTransitionToBelief(action, successor.first, successor.second, true);
                             if (!added) {
@@ -1137,14 +1137,14 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
             if (clipBelief && !underApproximation->isMarkedAsGridBelief(currId)) {
                 // Use a belief grid as clipping candidates
                 if (!options.useStateEliminationCutoff) {
-                    bool successfulClip = clipToGridExplicitly(currId, computeRewards, beliefManager, underApproximation, 0);
+                    bool successfulClip = clipToGridExplicitly(env, currId, computeRewards, beliefManager, underApproximation, 0);
                     // Set again as the current belief might have been detected to be a grid belief
                     stopExploration = !underApproximation->isMarkedAsGridBelief(currId);
                     if (successfulClip) {
                         addedActions += 1;
                     }
                 } else {
-                    clipToGrid(currId, computeRewards, min, beliefManager, underApproximation);
+                    clipToGrid(env, currId, computeRewards, min, beliefManager, underApproximation);
                     addedActions += beliefManager->getBeliefNumberOfChoices(currId);
                 }
             }  // end Clipping Procedure
@@ -1172,7 +1172,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                     } else {
                         auto truncationProbability = storm::utility::zero<ValueType>();
                         auto truncationValueBound = storm::utility::zero<ValueType>();
-                        auto successors = beliefManager->expand(currId, action);
+                        auto successors = beliefManager->expand(env, currId, action);
                         for (auto const& successor : successors) {
                             bool added = underApproximation->addTransitionToBelief(addedActions + action, successor.first, successor.second, stopExploration);
                             if (!added) {
@@ -1298,14 +1298,15 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
 }
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGrid(uint64_t clippingStateId, bool computeRewards, bool min,
+void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGrid(storm::Environment const& env, uint64_t clippingStateId,
+                                                                                                    bool computeRewards, bool min,
                                                                                                     std::shared_ptr<BeliefManagerType>& beliefManager,
                                                                                                     std::shared_ptr<ExplorerType>& beliefExplorer) {
     // Add all transitions to states which are already in the MDP, clip all others to a grid
     // To make the resulting MDP smaller, we eliminate intermediate successor states when clipping is applied
     for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(clippingStateId); action < numActions; ++action) {
         auto rewardBound = utility::zero<BeliefValueType>();
-        auto successors = beliefManager->expand(clippingStateId, action);
+        auto successors = beliefManager->expand(env, clippingStateId, action);
         auto absDelta = utility::zero<BeliefValueType>();
         for (auto const& successor : successors) {
             // Add transition if successor is in explored space.
@@ -1315,8 +1316,9 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
             if (!added) {
                 // The successor is not in the explored space. Clip it
                 statistics.nrClippingAttempts = statistics.nrClippingAttempts.value() + 1;
-                auto clipping = beliefManager->clipBeliefToGrid(
-                    successor.first, options.clippingGridRes, computeRewards ? beliefExplorer->getStateExtremeBoundIsInfinite() : storm::storage::BitVector());
+                auto clipping =
+                    beliefManager->clipBeliefToGrid(env, successor.first, options.clippingGridRes,
+                                                    computeRewards ? beliefExplorer->getStateExtremeBoundIsInfinite() : storm::storage::BitVector());
                 if (clipping.isClippable) {
                     // The belief is not on the grid and there is a candidate with finite reward
                     statistics.nrClippedStates = statistics.nrClippedStates.value() + 1;
@@ -1372,12 +1374,13 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
 }
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards,
+bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(storm::Environment const& env,
+                                                                                                              uint64_t clippingStateId, bool computeRewards,
                                                                                                               std::shared_ptr<BeliefManagerType>& beliefManager,
                                                                                                               std::shared_ptr<ExplorerType>& beliefExplorer,
                                                                                                               uint64_t localActionIndex) {
     statistics.nrClippingAttempts = statistics.nrClippingAttempts.value() + 1;
-    auto clipping = beliefManager->clipBeliefToGrid(clippingStateId, options.clippingGridRes,
+    auto clipping = beliefManager->clipBeliefToGrid(env, clippingStateId, options.clippingGridRes,
                                                     computeRewards ? beliefExplorer->getStateExtremeBoundIsInfinite() : storm::storage::BitVector());
     if (clipping.isClippable) {
         // The belief is not on the grid and there is a candidate with finite reward

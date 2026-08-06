@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_EXPLORATION_SPARSEEXPLORATIONMODELCHECKER_H_
-#define STORM_MODELCHECKER_EXPLORATION_SPARSEEXPLORATIONMODELCHECKER_H_
+#pragma once
 
 #include <random>
 
@@ -115,5 +114,3 @@ class SparseExplorationModelChecker : public AbstractModelChecker<ModelType> {
 };
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_EXPLORATION_SPARSEEXPLORATIONMODELCHECKER_H_ */

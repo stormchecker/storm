@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_SYMBOLICQUANTITATIVECHECKRESULT_H_
-#define STORM_MODELCHECKER_SYMBOLICQUANTITATIVECHECKRESULT_H_
+#pragma once
 
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/storage/dd/Add.h"
@@ -66,5 +65,3 @@ class SymbolicQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
 };
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_SYMBOLICQUANTITATIVECHECKRESULT_H_ */

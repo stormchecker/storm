@@ -1,24 +1,24 @@
 #include "storm-cli-utilities/print.h"
 
-#include "resources.h"  // This header knows what to include for memory consumption
-#include "storm-version-info/storm-version.h"
-#include "storm/utility/cli.h"
-#include "storm/utility/macros.h"
-
 #include <boost/algorithm/string/replace.hpp>
 #include <ctime>
+#include <filesystem>
+
+#include "storm-cli-utilities/resources.h"  // This header knows what to include for memory consumption
+#include "storm-version-info/storm-version.h"
+#include "storm/utility/macros.h"
 
 #ifdef STORM_HAVE_GLPK
-#include "glpk.h"
+#include <glpk.h>
 #endif
 #ifdef STORM_HAVE_GUROBI
-#include "gurobi_c.h"
+#include <gurobi_c.h>
 #endif
 #ifdef STORM_HAVE_MATHSAT
-#include "mathsat.h"
+#include <mathsat.h>
 #endif
 #ifdef STORM_HAVE_SOPLEX
-#include "soplex.h"
+#include <soplex.h>
 #endif
 #ifdef STORM_HAVE_SPOT
 #include <spot/misc/version.hh>
@@ -27,7 +27,7 @@
 #include <xercesc/util/XercesVersion.hpp>
 #endif
 #ifdef STORM_HAVE_Z3
-#include "z3.h"
+#include <z3.h>
 #endif
 
 namespace storm {
@@ -72,7 +72,7 @@ void printHeader(std::string const& name, const int argc, const char** argv) {
         std::time_t result = std::time(nullptr);
         STORM_PRINT("Date: " << std::ctime(&result));
         STORM_PRINT("Command line arguments:" << commandStream.str() << '\n');
-        STORM_PRINT("Current working directory: " << storm::utility::cli::getCurrentWorkingDirectory() << "\n\n");
+        STORM_PRINT("Current working directory: " << std::filesystem::current_path().string() << "\n\n");
     }
 }
 

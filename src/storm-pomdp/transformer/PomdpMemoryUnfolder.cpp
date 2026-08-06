@@ -39,7 +39,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> PomdpMemoryUnfolder<Val
             for (uint64_t newState = 0; newState < newToOldStates.size(); newState++) {
                 newToOldStates[newState] = getModelState(newState);
             }
-            components.stateValuations = pomdp.getStateValuations().blowup(newToOldStates).selectStates(reachableStates);
+            components.stateValuations = pomdp.getStateValuations().selectEntities(newToOldStates).selectEntities(reachableStates);
         }
     }
 
@@ -72,7 +72,7 @@ storm::storage::SparseMatrix<ValueType> PomdpMemoryUnfolder<ValueType>::transfor
             builder.newRowGroup(row);
             for (uint64_t origRow = origTransitions.getRowGroupIndices()[modelState]; origRow < origTransitions.getRowGroupIndices()[modelState + 1];
                  ++origRow) {
-                for (auto const& memStatePrime : memory.getTransitions(memState)) {
+                for (auto memStatePrime : memory.getTransitions(memState)) {
                     for (auto const& entry : origTransitions.getRow(origRow)) {
                         builder.addNextValue(row, getUnfoldingState(entry.getColumn(), memStatePrime), entry.getValue());
                     }

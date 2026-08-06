@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_GEOMETRY_HYPERRECTANGLE_H_
-#define STORM_STORAGE_GEOMETRY_HYPERRECTANGLE_H_
+#pragma once
 
 #include <iomanip>
 #include <iostream>
@@ -85,5 +84,3 @@ class Hyperrectangle {
 }  // namespace geometry
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_GEOMETRY_HYPERRECTANGLE_H_ */

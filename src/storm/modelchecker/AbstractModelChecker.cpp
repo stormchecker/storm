@@ -290,7 +290,7 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkStateFormula(
         return this->checkGameFormula(env, checkTask.substituteFormula(stateFormula.asGameFormula()));
     } else if (stateFormula.isMultiObjectiveFormula()) {
         auto const& mof = stateFormula.asMultiObjectiveFormula();
-        if (mof.isLexicographic() || env.modelchecker().multi().isLexicographicModelCheckingSet()) {
+        if (mof.isLexicographic()) {
             return this->checkLexObjectiveFormula(env, checkTask.substituteFormula(mof));
         } else {
             STORM_LOG_ASSERT(mof.isTradeoff(), "Unexpected multi-objective formula type.");

@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_VALUATION_H_
-#define STORM_STORAGE_EXPRESSIONS_VALUATION_H_
+#pragma once
 
 #include <cstdint>
 #include <memory>
@@ -121,5 +120,3 @@ class Valuation {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_VALUATION_H_ */

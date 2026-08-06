@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_FORMULAVISITOR_H_
-#define STORM_LOGIC_FORMULAVISITOR_H_
+#pragma once
 
 #include "storm/logic/FormulasForwardDeclarations.h"
 namespace boost {
@@ -44,5 +43,3 @@ class FormulaVisitor {
 
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_FORMULAVISITOR_H_ */

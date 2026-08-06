@@ -1,5 +1,4 @@
-#ifndef SOLVERSELECTIONOPTIONS_H
-#define SOLVERSELECTIONOPTIONS_H
+#pragma once
 
 #include "storm/utility/ExtendSettingEnumWithSelectionField.h"
 
@@ -23,5 +22,3 @@ ExtendEnumsWithSelectionField(MinMaxMethod, ValueIteration, PolicyIteration, Lin
                                             ExtendEnumsWithSelectionField(EigenLinearEquationSolverPreconditioner, Ilu, Diagonal, None)
 }
 }  // namespace storm
-
-#endif

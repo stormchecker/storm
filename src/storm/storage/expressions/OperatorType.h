@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_OPERATORTYPE_H_
-#define STORM_STORAGE_EXPRESSIONS_OPERATORTYPE_H_
+#pragma once
 
 #include <iosfwd>
 
@@ -41,5 +40,3 @@ enum class OperatorType {
 std::ostream& operator<<(std::ostream& stream, OperatorType const& operatorType);
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_OPERATORTYPE_H_ */

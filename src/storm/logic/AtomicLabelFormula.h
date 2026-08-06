@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_ATOMICLABELFORMULA_H_
-#define STORM_LOGIC_ATOMICLABELFORMULA_H_
+#pragma once
 
 #include <string>
 
@@ -30,5 +29,3 @@ class AtomicLabelFormula : public StateFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_ATOMICLABELFORMULA_H_ */

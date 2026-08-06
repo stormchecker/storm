@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_GLOBALLYFORMULA_H_
-#define STORM_LOGIC_GLOBALLYFORMULA_H_
+#pragma once
 
 #include "storm/logic/UnaryPathFormula.h"
 
@@ -22,5 +21,3 @@ class GloballyFormula : public UnaryPathFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_GLOBALLYFORMULA_H_ */

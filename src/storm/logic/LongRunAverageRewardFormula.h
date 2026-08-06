@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_LONGRUNAVERAGEREWARDFORMULA_H_
-#define STORM_LOGIC_LONGRUNAVERAGEREWARDFORMULA_H_
+#pragma once
 
 #include <boost/optional.hpp>
 #include "storm/logic/PathFormula.h"
@@ -30,5 +29,3 @@ class LongRunAverageRewardFormula : public PathFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_LONGRUNAVERAGEREWARDFORMULA_H_ */

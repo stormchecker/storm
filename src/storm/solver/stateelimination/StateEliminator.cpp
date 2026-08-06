@@ -2,14 +2,12 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/solver/stateelimination/StateEliminationUtility.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/stateelimination.h"
 
 namespace storm {
 namespace solver {
 namespace stateelimination {
-
-using namespace storm::utility::stateelimination;
 
 template<typename ValueType>
 StateEliminator<ValueType>::StateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix,

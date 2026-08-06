@@ -302,7 +302,7 @@ std::shared_ptr<SparseModelType> SparseParametricMdpSimplifier<SparseModelType>:
     SparseModelType const& model, storm::storage::BitVector const& ignoredStates, boost::optional<std::string> const& rewardModelName) {
     // Get the actions that can be part of an EC
     storm::storage::BitVector possibleECActions(model.getNumberOfChoices(), true);
-    for (auto const& state : ignoredStates) {
+    for (auto state : ignoredStates) {
         for (uint_fast64_t actionIndex = model.getTransitionMatrix().getRowGroupIndices()[state];
              actionIndex < model.getTransitionMatrix().getRowGroupIndices()[state + 1]; ++actionIndex) {
             possibleECActions.set(actionIndex, false);

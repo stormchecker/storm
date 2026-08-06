@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_UPDATE_H_
-#define STORM_STORAGE_PRISM_UPDATE_H_
+#pragma once
 
 #include <vector>
 
@@ -149,5 +148,3 @@ class Update : public LocatedInformation {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_UPDATE_H_ */

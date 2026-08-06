@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_ASSIGNMENT_H_
-#define STORM_STORAGE_PRISM_ASSIGNMENT_H_
+#pragma once
 
 #include <map>
 
@@ -78,5 +77,3 @@ class Assignment : public LocatedInformation {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_ASSIGNMENT_H_ */

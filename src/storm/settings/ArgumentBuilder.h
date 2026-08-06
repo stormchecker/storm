@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_ARGUMENTBUILDER_H_
-#define STORM_SETTINGS_ARGUMENTBUILDER_H_
+#pragma once
 
 #include <functional>
 #include <iostream>
@@ -238,5 +237,3 @@ class ArgumentBuilder {
 };
 }  // namespace settings
 }  // namespace storm
-
-#endif  // STORM_SETTINGS_ARGUMENTBUILDER_H_

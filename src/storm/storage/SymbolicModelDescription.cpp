@@ -1,15 +1,15 @@
 #include "storm/storage/SymbolicModelDescription.h"
 
-#include "storm/utility/cli.h"
-#include "storm/utility/jani.h"
-#include "storm/utility/prism.h"
+#include <boost/algorithm/string.hpp>
 
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/InvalidTypeException.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -160,20 +160,15 @@ std::pair<SymbolicModelDescription, std::vector<storm::jani::Property>> Symbolic
 }
 
 SymbolicModelDescription SymbolicModelDescription::preprocess(std::string const& constantDefinitionString) const {
-    std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = parseConstantDefinitions(constantDefinitionString);
-    return preprocess(substitution);
+    return this->preprocess(this->parseConstantDefinitions(constantDefinitionString));
 }
 
 SymbolicModelDescription SymbolicModelDescription::preprocess(
     std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
     if (this->isJaniModel()) {
-        storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(constantDefinitions).substituteConstants();
-        // We intentionally do not eliminate function expressions in jani models at this point because that would also remove the function
-        // declarations from the model. However, those might still be needed to, e.g., process properties that refer to functions.
-        return SymbolicModelDescription(preparedModel);
+        return SymbolicModelDescription(this->asJaniModel().preprocess(constantDefinitions));
     } else if (this->isPrismProgram()) {
-        return SymbolicModelDescription(
-            this->asPrismProgram().defineUndefinedConstants(constantDefinitions).substituteConstantsFormulas().substituteNonStandardPredicates());
+        return SymbolicModelDescription(this->asPrismProgram().preprocess(constantDefinitions));
     }
     return *this;
 }
@@ -181,17 +176,9 @@ SymbolicModelDescription SymbolicModelDescription::preprocess(
 std::map<storm::expressions::Variable, storm::expressions::Expression> SymbolicModelDescription::parseConstantDefinitions(
     std::string const& constantDefinitionString) const {
     if (this->isJaniModel()) {
-        return storm::utility::cli::parseConstantDefinitionString(this->asJaniModel().getManager(), constantDefinitionString);
+        return parseConstantDefinitionString(this->asJaniModel().getManager(), constantDefinitionString);
     } else {
-        return storm::utility::cli::parseConstantDefinitionString(this->asPrismProgram().getManager(), constantDefinitionString);
-    }
-}
-
-void SymbolicModelDescription::requireNoUndefinedConstants() const {
-    if (this->isJaniModel()) {
-        storm::utility::jani::requireNoUndefinedConstants(this->asJaniModel());
-    } else {
-        storm::utility::prism::requireNoUndefinedConstants(this->asPrismProgram());
+        return parseConstantDefinitionString(this->asPrismProgram().getManager(), constantDefinitionString);
     }
 }
 
@@ -252,6 +239,77 @@ std::ostream& operator<<(std::ostream& out, SymbolicModelDescription::ModelType 
             break;
     }
     return out;
+}
+
+std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::expressions::ExpressionManager const& manager,
+                                                                                                     std::string const& constantDefinitionString) {
+    std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions;
+    std::set<storm::expressions::Variable> definedConstants;
+
+    if (!constantDefinitionString.empty()) {
+        std::vector<std::string> definitions;
+        boost::split(definitions, constantDefinitionString, boost::is_any_of(","));
+        for (auto& definition : definitions) {
+            boost::trim(definition);
+
+            std::size_t positionOfAssignmentOperator = definition.find('=');
+            STORM_LOG_THROW(positionOfAssignmentOperator != std::string::npos, storm::exceptions::WrongFormatException,
+                            "Illegal constant definition string: syntax error.");
+
+            std::string constantName = definition.substr(0, positionOfAssignmentOperator);
+            boost::trim(constantName);
+            std::string value = definition.substr(positionOfAssignmentOperator + 1);
+            boost::trim(value);
+
+            if (manager.hasVariable(constantName)) {
+                auto const& variable = manager.getVariable(constantName);
+                STORM_LOG_THROW(definedConstants.find(variable) == definedConstants.end(), storm::exceptions::WrongFormatException,
+                                "Illegally trying to define constant '" << constantName << "' twice.");
+                definedConstants.insert(variable);
+
+                if (manager.hasVariable(value)) {
+                    auto const& valueVariable = manager.getVariable(value);
+                    STORM_LOG_THROW(
+                        variable.getType() == valueVariable.getType(), storm::exceptions::WrongFormatException,
+                        "Illegally trying to define constant '" << constantName << "' by constant '" << valueVariable.getName() << " of different type.");
+                    constantDefinitions[variable] = valueVariable.getExpression();
+                } else if (variable.hasBooleanType()) {
+                    if (value == "true") {
+                        constantDefinitions[variable] = manager.boolean(true);
+                    } else if (value == "false") {
+                        constantDefinitions[variable] = manager.boolean(false);
+                    } else {
+                        throw storm::exceptions::WrongFormatException() << "Illegal value for boolean constant: " << value << ".";
+                    }
+                } else if (variable.hasIntegerType()) {
+                    std::size_t position = 0;
+                    int_fast64_t integerValue = 0;
+                    bool valid = true;
+                    try {
+                        integerValue = std::stoll(value, &position);
+                    } catch (std::exception&) {
+                        valid = false;
+                    }
+                    STORM_LOG_THROW(valid && position == value.size(), storm::exceptions::WrongFormatException,
+                                    "Illegal value for integer constant: " << value << ".");
+                    constantDefinitions[variable] = manager.integer(integerValue);
+                } else if (variable.hasRationalType()) {
+                    try {
+                        storm::RationalNumber rationalValue = storm::utility::convertNumber<storm::RationalNumber>(value);
+                        constantDefinitions[variable] = manager.rational(rationalValue);
+                    } catch (std::exception& e) {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                                        "Illegal constant definition string '" << constantName << "=" << value << "': " << e.what());
+                    }
+                }
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                                "Illegal constant definition string: unknown undefined constant '" << constantName << "'.");
+            }
+        }
+    }
+
+    return constantDefinitions;
 }
 }  // namespace storage
 }  // namespace storm

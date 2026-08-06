@@ -11,6 +11,9 @@
 #endif
 
 namespace storm {
+
+class GlpkSolverEnvironment;
+
 namespace solver {
 /*!
  * A class that implements the LpSolver interface using glpk as the background solver.
@@ -30,7 +33,7 @@ class GlpkLpSolver : public LpSolver<ValueType, RawMode> {
      * @param optDir A value indicating whether the value of the objective function is to be minimized or
      * maximized.
      */
-    GlpkLpSolver(std::string const& name, OptimizationDirection const& optDir);
+    GlpkLpSolver(storm::GlpkSolverEnvironment const& glpkSettings, bool debug, std::string const& name, OptimizationDirection const& optDir);
 
     /*!
      * Constructs a solver with the given name. By default the objective function is assumed to be minimized,
@@ -38,7 +41,7 @@ class GlpkLpSolver : public LpSolver<ValueType, RawMode> {
      *
      * @param name The name of the LP problem.
      */
-    GlpkLpSolver(std::string const& name);
+    GlpkLpSolver(storm::GlpkSolverEnvironment const& glpkSettings, bool debug, std::string const& name);
 
     /*!
      * Constructs a solver without a name and the given model sense.
@@ -46,13 +49,13 @@ class GlpkLpSolver : public LpSolver<ValueType, RawMode> {
      * @param optDir A value indicating whether the value of the objective function is to be minimized or
      * maximized.
      */
-    GlpkLpSolver(OptimizationDirection const& optDir);
+    GlpkLpSolver(storm::GlpkSolverEnvironment const& glpkSettings, bool debug, OptimizationDirection const& optDir);
 
     /*!
      * Constructs a solver without a name. By default the objective function is assumed to be minimized,
      * but this may be altered later using a call to setOptimizationDirection.
      */
-    GlpkLpSolver();
+    GlpkLpSolver(storm::GlpkSolverEnvironment const& glpkSettings, bool debug);
 
     /*!
      * Destructs a solver by freeing the pointers to glpk's structures.
@@ -101,6 +104,12 @@ class GlpkLpSolver : public LpSolver<ValueType, RawMode> {
 
     // A flag storing whether the model is an LP or an MILP.
     bool modelContainsIntegerVariables;
+
+    // The tolerance used when checking whether integer/binary variables have (near-)integral values.
+    double integerTolerance;
+
+    // Whether glpk's built-in MILP presolver should be used.
+    bool milpPresolverEnabled;
 
     // Flags that store whether the MILP was found to be infeasible or unbounded.
     mutable bool isInfeasibleFlag;

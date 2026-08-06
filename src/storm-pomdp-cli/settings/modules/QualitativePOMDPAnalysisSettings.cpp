@@ -25,7 +25,7 @@ const std::string exportWinningRegionOption = "exportwinningregion";
 const std::string preventGraphPreprocessing = "nographprocessing";
 const std::string beliefSupportMCOption = "belsupmc";
 const std::string memlessSearchOption = "memlesssearch";
-std::vector<std::string> memlessSearchMethods = {"one-shot", "iterative"};
+const std::vector<std::string> memlessSearchMethods = {"one-shot", "iterative"};
 
 QualitativePOMDPAnalysisSettings::QualitativePOMDPAnalysisSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, memlessSearchOption, false, "Search for a qualitative memoryless scheduler")

@@ -1,5 +1,4 @@
-#ifndef STORM_UTILITY_PARAMETERLIFTING_H
-#define STORM_UTILITY_PARAMETERLIFTING_H
+#pragma once
 
 #include <vector>
 
@@ -162,5 +161,3 @@ static bool validateParameterLiftingSound(storm::models::sparse::Model<ValueType
 }  // namespace parameterlifting
 }  // namespace utility
 }  // namespace storm
-
-#endif /* STORM_UTILITY_PARAMETERLIFTING_H */

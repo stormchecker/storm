@@ -237,7 +237,7 @@ class BeliefExplorationPomdpModelCheckerTest : public ::testing::Test {
     Input buildPrism(std::string const& programFile, std::string const& formulaAsString, std::string const& constantsAsString = "") const {
         // Parse and build input
         storm::prism::Program program = storm::api::parseProgram(programFile);
-        program = storm::utility::prism::preprocess(program, constantsAsString);
+        program = program.preprocess(constantsAsString);
         Input input;
         input.formula = storm::api::parsePropertiesForPrismProgram(formulaAsString, program).front().getRawFormula();
         input.model = storm::api::buildSparseModel<ValueType>(program, {input.formula})->template as<storm::models::sparse::Pomdp<ValueType>>();

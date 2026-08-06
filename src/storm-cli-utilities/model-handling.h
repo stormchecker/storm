@@ -25,7 +25,6 @@
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
@@ -438,7 +437,7 @@ inline std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicIn
                         "Can not translate properties to multi-objective formula because no properties were specified.");
         // If we come from storm-pars, the following fails as multiObjectiveSettings are not loaded
         auto multiObjSettings = storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>();
-        output.properties = {storm::api::createMultiObjectiveProperty(output.properties, multiObjSettings.isLexicographicModelCheckingSet())};
+        output.properties = {storm::api::createMultiObjectiveProperty(output.properties, false)};
     }
 
     // Substitute constant definitions in symbolic input.
@@ -612,6 +611,7 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
         storm::umb::ImportOptions options;
         options.buildChoiceLabeling = buildSettings.isBuildChoiceLabelsSet();
         options.buildStateValuations = buildSettings.isBuildStateValuationsSet();
+        options.buildObservationValuations = buildSettings.isBuildObservationValuationsSet();
         if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "RationalFunction currently not supported for UMB models.");
         } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
@@ -663,12 +663,11 @@ template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseMarkovAutomaton(
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const& model) {
     auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
-    auto debugSettings = storm::settings::getModule<storm::settings::modules::DebugSettings>();
+    auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
 
     std::shared_ptr<storm::models::sparse::Model<ValueType>> result = model;
     model->close();
-    STORM_LOG_WARN_COND(!debugSettings.isAdditionalChecksSet() || !model->containsZenoCycle(),
-                        "MA contains a Zeno cycle. Model checking results cannot be trusted.");
+    STORM_LOG_WARN_COND(!buildSettings.isCheckZenoSet() || !model->containsZenoCycle(), "MA contains a Zeno cycle. Model checking results cannot be trusted.");
 
     if (model->isConvertibleToCtmc()) {
         STORM_LOG_WARN_COND(false, "MA is convertible to a CTMC, consider using a CTMC instead.");

@@ -662,7 +662,7 @@ TEST(BitVectorTest, ZeroSized) {
     EXPECT_EQ(0ul, v.getNextSetIndex(0));
     EXPECT_EQ(v, v);
     EXPECT_EQ(v, ~v);
-    for (auto const& entry : v) {
+    for (auto entry : v) {
         FAIL() << "Should not iterate over an empty bit vector.";
         ASSERT_FALSE(entry);
     }

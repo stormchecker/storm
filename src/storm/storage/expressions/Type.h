@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSIONRETURNTYPE_H_
-#define STORM_STORAGE_EXPRESSIONS_EXPRESSIONRETURNTYPE_H_
+#pragma once
 
 #include <cstdint>
 #include <iosfwd>
@@ -307,5 +306,3 @@ struct hash<storm::expressions::Type> {
     }
 };
 }  // namespace std
-
-#endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSIONRETURNTYPE_H_ */

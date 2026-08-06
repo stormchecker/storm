@@ -17,11 +17,11 @@ TEST(LexicographicModelCheckingTest, prob_sched1) {
     GTEST_SKIP() << "Spot not available.";
 #endif
     typedef double ValueType;
-    std::string formulasString = "multi(Pmax=? [GF y=2], Pmax=? [GF y=1], Pmax=? [GF y=3]);";
+    std::string formulasString = "multilex(Pmax=? [GF y=2], Pmax=? [GF y=1], Pmax=? [GF y=3]);";
     std::string pathToPrismFile = STORM_TEST_RESOURCES_DIR "/mdp/prob_sched.prism";
     std::pair<std::shared_ptr<storm::models::sparse::Mdp<ValueType>>, std::vector<std::shared_ptr<storm::logic::Formula const>>> modelFormulas;
     storm::prism::Program program = storm::api::parseProgram(pathToPrismFile);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     modelFormulas.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasString, program));
     modelFormulas.first = storm::api::buildSparseModel<ValueType>(program, modelFormulas.second)->template as<storm::models::sparse::Mdp<ValueType>>();
 
@@ -53,11 +53,11 @@ TEST(LexicographicModelCheckingTest, prob_sched2) {
     GTEST_SKIP() << "Spot not available.";
 #endif
     typedef double ValueType;
-    std::string formulasString = "multi(Pmax=? [GF y=1], Pmax=? [GF y=2], Pmax=? [GF y=3]);";
+    std::string formulasString = "multilex(Pmax=? [GF y=1], Pmax=? [GF y=2], Pmax=? [GF y=3]);";
     std::string pathToPrismFile = STORM_TEST_RESOURCES_DIR "/mdp/prob_sched.prism";
     std::pair<std::shared_ptr<storm::models::sparse::Mdp<ValueType>>, std::vector<std::shared_ptr<storm::logic::Formula const>>> modelFormulas;
     storm::prism::Program program = storm::api::parseProgram(pathToPrismFile);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     modelFormulas.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasString, program));
     modelFormulas.first = storm::api::buildSparseModel<ValueType>(program, modelFormulas.second)->template as<storm::models::sparse::Mdp<ValueType>>();
 

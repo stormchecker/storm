@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_VARIABLE_H_
-#define STORM_STORAGE_EXPRESSIONS_VARIABLE_H_
+#pragma once
 
 #include <cstdint>
 #include <functional>
@@ -124,16 +123,23 @@ class Variable {
     /*!
      * Checks whether the variable is of rational type.
      *
-     * @return True iff the variable if of rational type.
+     * @return True iff the variable is of rational type.
      */
     bool hasRationalType() const;
 
     /*!
      * Checks whether the variable is of numerical type.
      *
-     * @return True iff the variable if of numerical type.
+     * @return True iff the variable is of numerical type.
      */
     bool hasNumericalType() const;
+
+    /*!
+     * Checks whether the variable is of string type.
+     *
+     * @return True iff the variable is of string type.
+     */
+    bool hasStringType() const;
 
    private:
     // The manager that is responsible for this variable.
@@ -154,5 +160,3 @@ struct hash<storm::expressions::Variable> {
     }
 };
 }  // namespace std
-
-#endif /* STORM_STORAGE_EXPRESSIONS_VARIABLE_H_ */

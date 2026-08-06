@@ -1,5 +1,4 @@
-#ifndef STORM_PARSER_SPARSESTATEREWARDPARSER_H_
-#define STORM_PARSER_SPARSESTATEREWARDPARSER_H_
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -26,5 +25,3 @@ class SparseStateRewardParser {
 
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_SPARSESTATEREWARDPARSER_H_ */

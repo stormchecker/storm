@@ -1,11 +1,8 @@
-#ifndef STORM_PARSER_AUTOPARSER_H_
-#define STORM_PARSER_AUTOPARSER_H_
+#pragma once
 
 #include "storm/models/sparse/Model.h"
 
 #include <string>
-
-#define STORM_PARSER_AUTOPARSER_HINT_LENGTH (10ull)
 
 namespace storm {
 
@@ -52,7 +49,7 @@ class AutoParser {
 
    private:
     // Define the maximal length of a hint in the file.
-    static uint_fast64_t hintLength;
+    static constexpr std::size_t hintLength = 10;
 
     /*!
      *	Opens the given file and parses the file format hint.
@@ -65,5 +62,3 @@ class AutoParser {
 
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_AUTOPARSER_H_ */

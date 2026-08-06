@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
 

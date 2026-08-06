@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_OPERATORFORMULA_H_
-#define STORM_LOGIC_OPERATORFORMULA_H_
+#pragma once
 
 #include <boost/optional.hpp>
 
@@ -63,5 +62,3 @@ class OperatorFormula : public UnaryStateFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_OPERATORFORMULA_H_ */

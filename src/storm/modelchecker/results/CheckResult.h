@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_CHECKRESULT_H_
-#define STORM_MODELCHECKER_CHECKRESULT_H_
+#pragma once
 
 #include <iosfwd>
 #include <memory>
@@ -147,5 +146,3 @@ class CheckResult {
 std::ostream& operator<<(std::ostream& out, CheckResult const& checkResult);
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_CHECKRESULT_H_ */

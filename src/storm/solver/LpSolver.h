@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_LPSOLVER
-#define STORM_SOLVER_LPSOLVER
+#pragma once
 
 #include <cstdint>
 #include <memory>
@@ -399,5 +398,3 @@ class LpSolver {
 };
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_LPSOLVER */

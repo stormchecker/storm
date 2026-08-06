@@ -15,6 +15,7 @@
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/Smg.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/transformer/MakePOMDPCanonic.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -76,7 +77,7 @@ uint64_t choiceOriginsToUmb(storm::storage::sparse::ChoiceOrigins const& choiceO
     // We always set a csr, even in cases where it could be omitted.
     auto actionStrings = StringsBuilder(umb.choiceActions->strings.emplace(), umb.choiceActions->stringMapping.emplace());
     // We use the empty action string for choices with no origin, which we want to be the first index.
-    auto const emptyStringIndex = actionStrings.push_back("");
+    [[maybe_unused]] auto const emptyStringIndex = actionStrings.push_back("");
     STORM_LOG_ASSERT(emptyStringIndex == 0, "Action index for empty action string must be 0.");
     // add to the action strings by initializing the csr with {0,0}
     STORM_LOG_ASSERT(choiceOrigins.getIdentifierForChoicesWithNoOrigin() == 0, "Identifier for choices with no origin expected to be 0.");
@@ -116,7 +117,7 @@ uint64_t choiceLabelingToUmb(storm::models::sparse::ChoiceLabeling const& labeli
     // Handle choices without any labels.
     if (!choicesWithAtLeastOneLabel.full()) {
         // For consistency, unlabelled choices shall always have action index 0. So we add the empty action string.
-        auto const emptyStringIndex = actionStrings.push_back("");
+        [[maybe_unused]] auto const emptyStringIndex = actionStrings.push_back("");
         STORM_LOG_ASSERT(emptyStringIndex == 0, "Action index for empty action string must be 0.");
         // nothing else to do for unlabeled choices: we already initialized the choiceToAction mapping with 0s
     }
@@ -146,7 +147,7 @@ uint64_t choiceLabelingToUmb(storm::models::sparse::ChoiceLabeling const& labeli
     }
 
     // Handle choices with multiple labels.
-    for (auto const& choice : choicesWithMultipleLabels) {
+    for (auto choice : choicesWithMultipleLabels) {
         std::string action;
         for (auto const& label : labeling.getLabelsOfChoice(choice)) {
             if (!action.empty()) {
@@ -385,6 +386,31 @@ void setIndexInformation(storm::models::sparse::Model<ValueType> const& model, s
             apIndex.appliesTo.push_back(storm::umb::ModelIndex::Annotation::AppliesTo::States);
         }
     }
+
+    // valuations:
+    auto createDescription = [](storm::storage::sparse::ValuationsStorage const& valuations) {
+        storm::storage::sparse::ValuationDescription descr;
+        for (uint64_t classIndex = 0; classIndex < valuations.numClasses(); ++classIndex) {
+            descr.classes.push_back(valuations.getClassDescription(classIndex));
+        }
+        if (valuations.hasStrings()) {
+            descr.numStrings = valuations.numStrings();
+        }
+        return descr;
+    };
+    if (model.hasStateValuations()) {
+        index.valuations.emplace().states = createDescription(model.getStateValuations().getStorage());
+    }
+    if (model.isPartiallyObservable()) {
+        STORM_LOG_ASSERT(model.isOfType(storm::models::ModelType::Pomdp), "Only POMDPs are supported as partially observable models.");
+        auto pomdp = model.template as<storm::models::sparse::Pomdp<ValueType>>();
+        if (pomdp->hasObservationValuations()) {
+            if (!index.valuations.has_value()) {
+                index.valuations.emplace();
+            }
+            index.valuations->observations = createDescription(pomdp->getObservationValuations().getStorage());
+        }
+    }
 }
 
 template<typename ValueType, typename TargetValueType>
@@ -421,9 +447,16 @@ void sparseModelToUmb(storm::models::sparse::Model<ValueType> const& model, UmbM
         umbModel.index.transitionSystem.numChoiceActions = numActions;
     }
 
-    // State valuations
+    // Valuations
     if (model.hasStateValuations()) {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "State valuations are not yet supported for UMB export.");
+        umbModel.valuations.states = model.getStateValuations().getStorage().getRawUmbData();
+    }
+    if (model.isPartiallyObservable()) {
+        STORM_LOG_ASSERT(model.isOfType(storm::models::ModelType::Pomdp), "Only POMDPs are supported as partially observable models.");
+        auto pomdp = model.template as<storm::models::sparse::Pomdp<ValueType>>();
+        if (pomdp->hasObservationValuations()) {
+            umbModel.valuations.observations = pomdp->getObservationValuations().getStorage().getRawUmbData();
+        }
     }
 
     // Transition matrix

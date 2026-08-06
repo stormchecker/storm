@@ -192,7 +192,7 @@ class ConditionalMdpPrctlModelCheckerTest : public ::testing::Test {
     std::pair<std::shared_ptr<SparseModelType>, std::vector<std::shared_ptr<storm::logic::Formula const>>> buildModelFormulas(
         storm::prism::Program const& inputProgram, std::string const& formulasAsString, std::string const& constantDefinitionString = "") const {
         std::pair<std::shared_ptr<SparseModelType>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
-        auto program = storm::utility::prism::preprocess(inputProgram, constantDefinitionString);
+        auto program = inputProgram.preprocess(constantDefinitionString);
         result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
         result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<SparseModelType>();
         return result;

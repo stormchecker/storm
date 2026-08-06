@@ -2,14 +2,12 @@
 
 #include <numeric>
 
+#include "storm/environment/solver/GurobiSolverEnvironment.h"
 #include "storm/exceptions/GurobiLicenseException.h"
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/GurobiSettings.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/LinearCoefficientVisitor.h"
@@ -35,7 +33,8 @@ GRBenv* GurobiEnvironment::operator*() {
 }
 #endif
 
-void GurobiEnvironment::initialize() {
+void GurobiEnvironment::initialize(storm::GurobiSolverEnvironment const& gurobiSettings, bool debug) {
+    integerTolerance = gurobiSettings.getIntegerTolerance();
 #ifdef STORM_HAVE_GUROBI
     // Create the environment.
     int error = GRBloadenv(&env, "");
@@ -49,32 +48,35 @@ void GurobiEnvironment::initialize() {
         throw storm::exceptions::InvalidStateException()
             << "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").";
     }
-    setOutput(storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet() ||
-              storm::settings::getModule<storm::settings::modules::GurobiSettings>().isOutputSet());
+    setOutput(debug || gurobiSettings.isOutputSet());
 
-    error = GRBsetintparam(env, "Method", static_cast<int>(storm::settings::getModule<storm::settings::modules::GurobiSettings>().getMethod()));
+    error = GRBsetintparam(env, "Method", static_cast<int>(gurobiSettings.getMethod()));
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
                     "Unable to set Gurobi Parameter Method (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 
     // Enable the following line to restrict Gurobi to one thread only.
-    error = GRBsetintparam(env, "Threads", storm::settings::getModule<storm::settings::modules::GurobiSettings>().getNumberOfThreads());
+    error = GRBsetintparam(env, "Threads", gurobiSettings.getNumberOfThreads());
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
                     "Unable to set Gurobi Parameter Threads (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 
-    error = GRBsetintparam(env, "MIPFocus", storm::settings::getModule<storm::settings::modules::GurobiSettings>().getMIPFocus());
+    error = GRBsetintparam(env, "MIPFocus", gurobiSettings.getMIPFocus());
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
                     "Unable to set Gurobi Parameter MIPFocus (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 
-    error = GRBsetintparam(env, "ConcurrentMIP", storm::settings::getModule<storm::settings::modules::GurobiSettings>().getNumberOfConcurrentMipThreads());
+    error = GRBsetintparam(env, "ConcurrentMIP", gurobiSettings.getNumberOfConcurrentMipThreads());
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
                     "Unable to set Gurobi Parameter ConcurrentMIP (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 
     // Enable the following line to force Gurobi to be as precise about the binary variables as required by the given precision option.
-    error = GRBsetdblparam(env, "IntFeasTol", storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance());
+    error = GRBsetdblparam(env, "IntFeasTol", gurobiSettings.getIntegerTolerance());
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
                     "Unable to set Gurobi Parameter IntFeasTol (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 #endif
     initialized = true;
+}
+
+double GurobiEnvironment::getIntegerTolerance() const {
+    return integerTolerance;
 }
 
 void GurobiEnvironment::setOutput(bool set) {
@@ -191,7 +193,7 @@ struct GurobiConstraint {
 
 template<typename ValueType, bool RawMode>
 GurobiConstraint createConstraint(typename GurobiLpSolver<ValueType, RawMode>::Constraint const& constraint,
-                                  std::map<storm::expressions::Variable, int> const& variableToIndexMap) {
+                                  std::map<storm::expressions::Variable, int> const& variableToIndexMap, double integerTolerance) {
     GurobiConstraint gurobiConstraint;
     storm::expressions::RelationType relationType;
     if constexpr (RawMode) {
@@ -225,14 +227,14 @@ GurobiConstraint createConstraint(typename GurobiLpSolver<ValueType, RawMode>::C
     switch (relationType) {
         case storm::expressions::RelationType::Less:
             gurobiConstraint.sense = GRB_LESS_EQUAL;
-            gurobiConstraint.rhs -= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance();
+            gurobiConstraint.rhs -= integerTolerance;
             break;
         case storm::expressions::RelationType::LessOrEqual:
             gurobiConstraint.sense = GRB_LESS_EQUAL;
             break;
         case storm::expressions::RelationType::Greater:
             gurobiConstraint.sense = GRB_GREATER_EQUAL;
-            gurobiConstraint.rhs += storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance();
+            gurobiConstraint.rhs += integerTolerance;
             break;
         case storm::expressions::RelationType::GreaterOrEqual:
             gurobiConstraint.sense = GRB_GREATER_EQUAL;
@@ -255,7 +257,7 @@ void GurobiLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, 
     }
 
     // Extract constraint data
-    auto grbConstr = createConstraint<ValueType, RawMode>(constraint, this->variableToIndexMap);
+    auto grbConstr = createConstraint<ValueType, RawMode>(constraint, this->variableToIndexMap, environment->getIntegerTolerance());
     int error = GRBaddconstr(model, grbConstr.variableIndices.size(), grbConstr.variableIndices.data(), grbConstr.coefficients.data(), grbConstr.sense,
                              grbConstr.rhs, name == "" ? nullptr : name.c_str());
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
@@ -278,7 +280,7 @@ void GurobiLpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string cons
         indVar = this->variableToIndexMap.at(indicatorVariable);
     }
     int indVal = indicatorValue ? 1 : 0;
-    auto grbConstr = createConstraint<ValueType, RawMode>(constraint, this->variableToIndexMap);
+    auto grbConstr = createConstraint<ValueType, RawMode>(constraint, this->variableToIndexMap, environment->getIntegerTolerance());
     // Gurobi considers indicator constraints as a certain kind of what they call "general constraints".
     int error = GRBaddgenconstrIndicator(model, name == "" ? nullptr : name.c_str(), indVar, indVal, grbConstr.variableIndices.size(),
                                          grbConstr.variableIndices.data(), grbConstr.coefficients.data(), grbConstr.sense, grbConstr.rhs);
@@ -436,7 +438,7 @@ int_fast64_t GurobiLpSolver<ValueType, RawMode>::getIntegerValue(Variable const&
                     "Unable to get Gurobi solution (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
     double roundedValue = std::round(value);
     double diff = std::abs(roundedValue - value);
-    STORM_LOG_ERROR_COND(diff <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(),
+    STORM_LOG_ERROR_COND(diff <= environment->getIntegerTolerance(),
                          "Illegal value for integer variable in Gurobi solution (" << value << "). Difference to nearest int is " << diff);
     return static_cast<int_fast64_t>(roundedValue);
 }
@@ -466,12 +468,11 @@ bool GurobiLpSolver<ValueType, RawMode>::getBinaryValue(Variable const& variable
                     "Unable to get Gurobi solution (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
 
     if (value > 0.5) {
-        STORM_LOG_ERROR_COND(std::abs(value - 1.0) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(),
+        STORM_LOG_ERROR_COND(std::abs(value - 1.0) <= environment->getIntegerTolerance(),
                              "Illegal value for binary variable in Gurobi solution (" << value << ").");
         return true;
     } else {
-        STORM_LOG_ERROR_COND(std::abs(value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(),
-                             "Illegal value for binary variable in Gurobi solution (" << value << ").");
+        STORM_LOG_ERROR_COND(std::abs(value) <= environment->getIntegerTolerance(), "Illegal value for binary variable in Gurobi solution (" << value << ").");
         return false;
     }
 }
@@ -638,7 +639,7 @@ int_fast64_t GurobiLpSolver<ValueType, RawMode>::getIntegerValue(Variable const&
                     "Unable to get Gurobi solution (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
     double roundedValue = std::round(value);
     double diff = std::abs(roundedValue - value);
-    STORM_LOG_ERROR_COND(diff <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(),
+    STORM_LOG_ERROR_COND(diff <= environment->getIntegerTolerance(),
                          "Illegal value for integer variable in Gurobi solution (" << value << "). Difference to nearest int is " << diff);
     return static_cast<int_fast64_t>(roundedValue);
 }
@@ -669,12 +670,11 @@ bool GurobiLpSolver<ValueType, RawMode>::getBinaryValue(Variable const& variable
                     "Unable to get Gurobi solution (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
 
     if (value > 0.5) {
-        STORM_LOG_ERROR_COND(std::abs(value - 1) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(),
+        STORM_LOG_ERROR_COND(std::abs(value - 1) <= environment->getIntegerTolerance(),
                              "Illegal value for integer variable in Gurobi solution (" << value << ").");
         return true;
     } else {
-        STORM_LOG_ERROR_COND(std::abs(value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(),
-                             "Illegal value for integer variable in Gurobi solution (" << value << ").");
+        STORM_LOG_ERROR_COND(std::abs(value) <= environment->getIntegerTolerance(), "Illegal value for integer variable in Gurobi solution (" << value << ").");
         return false;
     }
 }

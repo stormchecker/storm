@@ -10,7 +10,7 @@
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/storage/sparse/StateValuations.h"
+#include "storm/storage/valuations/Valuations.h"
 
 namespace storm {
 
@@ -77,7 +77,7 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
     storm::storage::Scheduler<ValueType> const& getScheduler() const;
     storm::storage::Scheduler<ValueType>& getScheduler();
 
-    storm::json<ValueType> toJson(std::optional<storm::storage::sparse::StateValuations> const& stateValuations = std::nullopt,
+    storm::json<ValueType> toJson(std::optional<storm::storage::sparse::Valuations> const& stateValuations = std::nullopt,
                                   std::optional<storm::models::sparse::StateLabeling> const& stateLabels = std::nullopt) const;
 
    private:

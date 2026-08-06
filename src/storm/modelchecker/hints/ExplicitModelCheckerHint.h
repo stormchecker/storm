@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_HINTS_EXPLICITMODELCHECKERHINT_H
-#define STORM_MODELCHECKER_HINTS_EXPLICITMODELCHECKERHINT_H
+#pragma once
 
 #include <boost/optional.hpp>
 #include <vector>
@@ -66,5 +65,3 @@ class ExplicitModelCheckerHint : public ModelCheckerHint {
 
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_HINTS_EXPLICITMODELCHECKERHINT_H */

@@ -261,7 +261,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinM
         if constexpr (storm::IsIntervalType<ValueType>) {
             STORM_LOG_ERROR("LP method not implemented for ValueType==Interval.");
         } else {
-            result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(storm::utility::solver::getLpSolverFactory<ValueType>());
+            result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(storm::utility::solver::getLpSolverFactory<ValueType>(env));
         }
     } else if (method == MinMaxMethod::Acyclic) {
         if constexpr (storm::IsIntervalType<ValueType>) {
@@ -287,7 +287,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMax
         result = std::make_unique<IterativeMinMaxLinearEquationSolver<storm::RationalNumber>>(
             std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>());
     } else if (method == MinMaxMethod::LinearProgramming || method == MinMaxMethod::ViToLp) {
-        result = std::make_unique<LpMinMaxLinearEquationSolver<storm::RationalNumber>>(storm::utility::solver::getLpSolverFactory<storm::RationalNumber>());
+        result = std::make_unique<LpMinMaxLinearEquationSolver<storm::RationalNumber>>(storm::utility::solver::getLpSolverFactory<storm::RationalNumber>(env));
     } else if (method == MinMaxMethod::Acyclic) {
         result = std::make_unique<AcyclicMinMaxLinearEquationSolver<storm::RationalNumber>>();
     } else if (method == MinMaxMethod::Topological) {

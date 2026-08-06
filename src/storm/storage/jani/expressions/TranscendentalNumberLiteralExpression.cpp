@@ -17,10 +17,8 @@ double TranscendentalNumberLiteralExpression::evaluateAsDouble(Valuation const*)
     switch (value) {
         case TranscendentalNumber::PI:
             return M_PI;
-            break;
         case TranscendentalNumber::E:
             return std::exp(1.0);
-            break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected constant value.");
             break;

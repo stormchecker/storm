@@ -1,7 +1,5 @@
-#ifndef STORM_SETTINGS_SETTINGSMANAGER_H_
-#define STORM_SETTINGS_SETTINGSMANAGER_H_
+#pragma once
 
-#include <cstdint>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -324,5 +322,3 @@ storm::settings::modules::AbstractionSettings& mutableAbstractionSettings();
 
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_SETTINGSMANAGER_H_ */

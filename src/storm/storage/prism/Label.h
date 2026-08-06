@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_LABEL_H_
-#define STORM_STORAGE_PRISM_LABEL_H_
+#pragma once
 
 #include <map>
 
@@ -103,5 +102,3 @@ class ObservationLabel : public Label {
 
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_LABEL_H_ */

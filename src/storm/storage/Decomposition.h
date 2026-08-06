@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_DECOMPOSITION_H_
-#define STORM_STORAGE_DECOMPOSITION_H_
+#pragma once
 
 #include <cstdint>
 #include <ostream>
@@ -148,5 +147,3 @@ class Decomposition {
 };
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_DECOMPOSITION_H_ */
