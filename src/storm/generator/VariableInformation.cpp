@@ -145,7 +145,8 @@ VariableInformation::VariableInformation(storm::prism::Program const& program, u
             auto const& obPredicate = oblab.getStatePredicateExpression();
             // Reaching this point means that the observation label is already known as a variable.
             if (program.hasFormula(oblab.getName())) {
-                STORM_LOG_ASSERT(!program.getAllExpressionVariables(true).contains(obVar), "Observation label variable and formula do not match.");
+                STORM_LOG_ASSERT(!program.getAllExpressionVariables(true).contains(obVar),
+                                 "There appears to be a formula and a variable with the same name " << obVar.getName() << " which is not expected.");
                 // The variable is actually a formula; We just need to check whether the type matches
                 // If the type doesn't match, we cannot use the expression variable for both, the formula and the observation label.
                 auto const& f = program.getFormula(oblab.getName());
@@ -154,6 +155,8 @@ VariableInformation::VariableInformation(storm::prism::Program const& program, u
                                     << oblab
                                     << " is not supported since a formula with the same name is already known and its expression has a different type.");
             } else {
+                // There is already a known variable with the same name as the observation label. The only case we accept is a declaration of the form
+                // `observable "x" = x;`
                 STORM_LOG_THROW(obPredicate.isVariable() && obPredicate.getBaseExpression().asVariableExpression().getVariable() == obVar,
                                 storm::exceptions::NotSupportedException,
                                 "Observation valuations for '" << oblab << " is not supported since a variable '" << oblab.getName()
