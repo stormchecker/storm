@@ -11,6 +11,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # GitHub runners currently have 4 cores
+  NR_JOBS: "4"
+
 jobs:
   lint-full:
     name: clang-format & clang-tidy (full codebase)
@@ -27,6 +31,9 @@ jobs:
             -DSTORM_PORTABLE=ON \
             -DSTORM_DEVELOPER=ON \
             -DSTORM_COMPILE_WITH_PCH=OFF
+
+      - name: Build external resources to populate include directories
+        run: cmake --build build --target storm_resources -j ${NR_JOBS}
 
       - name: Run cpp-linter
         id: cpp-linter

@@ -12,6 +12,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # GitHub runners currently have 4 cores
+  NR_JOBS: "4"
+
 jobs:
   lint-check:
     name: clang-format & clang-tidy
@@ -28,6 +32,9 @@ jobs:
             -DSTORM_PORTABLE=ON \
             -DSTORM_DEVELOPER=ON \
             -DSTORM_COMPILE_WITH_PCH=OFF
+
+      - name: Build external resources to populate include directories
+        run: cmake --build build --target storm_resources -j ${NR_JOBS}
 
       - name: Run cpp-linter
         id: cpp-linter
@@ -47,8 +54,7 @@ jobs:
           tidy-review: true
           passive-reviews: true
           no-lgtm: true
-          ignore-format: 'build|resources|.github'
-          ignore-tidy: 'resources/3rdparty'
+          ignore: 'build|resources|.github'
 
       - name: Fail on lint errors
         if: steps.cpp-linter.outputs.checks-failed != 0
