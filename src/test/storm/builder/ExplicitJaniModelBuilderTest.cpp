@@ -11,6 +11,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingMemento.h"
 #include "storm/storage/SymbolicModelDescription.h"
+#include "storm/storage/jani/Compositions.h"
 #include "storm/storage/jani/Model.h"
 
 namespace {
@@ -227,5 +228,58 @@ TEST_F(ExplicitJaniModelBuilderTest, enumerateInitial) {
     EXPECT_EQ(94ul, model->getNumberOfStates());
     EXPECT_EQ(145ul, model->getNumberOfTransitions());
     EXPECT_EQ(72ul, model->getInitialStates().getNumberOfSetBits());
+}
+
+TEST_F(ExplicitJaniModelBuilderTest, SynchronizationVectorOutputActionIndex) {
+    auto janiModel = getJaniModelFromPrism("/mdp/SmallPrismTest.nm");
+
+    std::vector<std::shared_ptr<storm::jani::Composition>> automataCompositions;
+    automataCompositions.push_back(std::make_shared<storm::jani::AutomatonComposition>("one"));
+    automataCompositions.push_back(std::make_shared<storm::jani::AutomatonComposition>("two"));
+    automataCompositions.push_back(std::make_shared<storm::jani::AutomatonComposition>("three"));
+
+    std::vector<storm::jani::SynchronizationVector> synchronizationVectors;
+    std::vector<std::string> inputVector;
+    inputVector.push_back("a");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector, "d");
+    inputVector.clear();
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back("b");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back("c");
+    synchronizationVectors.emplace_back(inputVector);
+
+    janiModel.setSystemComposition(std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors));
+
+    storm::generator::JaniNextStateGenerator<double> generator(janiModel);
+    std::vector<storm::generator::CompressedState> states;
+    auto stateToIdCallback = [&states](storm::generator::CompressedState const& state) {
+        for (uint32_t index = 0; index < states.size(); ++index) {
+            if (states[index] == state) {
+                return index;
+            }
+        }
+        states.push_back(state);
+        return static_cast<uint32_t>(states.size() - 1);
+    };
+
+    auto initialStates = generator.getInitialStates(stateToIdCallback);
+    ASSERT_EQ(1ul, initialStates.size());
+    generator.load(states[initialStates.front()]);
+
+    auto behavior = generator.expand(stateToIdCallback);
+    ASSERT_EQ(3ul, behavior.getNumberOfChoices());
+
+    std::set<std::string> actionNames;
+    for (auto const& choice : behavior.getChoices()) {
+        actionNames.insert(janiModel.getAction(choice.getActionIndex()).getName());
+    }
+    EXPECT_EQ(std::set<std::string>({"b", "c", "d"}), actionNames);
 }
 }  // namespace
