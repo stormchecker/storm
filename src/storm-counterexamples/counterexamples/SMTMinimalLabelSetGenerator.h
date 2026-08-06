@@ -526,7 +526,7 @@ class SMTMinimalLabelSetGenerator {
 
                         for (uint_fast64_t edgeIndex = 0; edgeIndex < automaton.getNumberOfEdges(); ++edgeIndex) {
                             // If the current edge is one of the edges we need to consider, add its guard.
-                            if (labelSetAndPrecedingLabelSetsPair.first.find(janiModel.encodeAutomatonAndEdgeIndices(automatonIndex, edgeIndex)) !=
+                            if (labelSetAndPrecedingLabelSetsPair.first.find(storm::jani::Model::encodeAutomatonAndEdgeIndices(automatonIndex, edgeIndex)) !=
                                 labelSetAndPrecedingLabelSetsPair.first.end()) {
                                 storm::jani::Edge const& edge = automaton.getEdge(edgeIndex);
 
@@ -604,7 +604,8 @@ class SMTMinimalLabelSetGenerator {
 
                                 for (uint_fast64_t edgeIndex = 0; edgeIndex < automaton.getNumberOfEdges(); ++edgeIndex) {
                                     // If the current command is one of the commands we need to consider, store a reference to it in the container.
-                                    if (precedingLabelSet.find(janiModel.encodeAutomatonAndEdgeIndices(automatonIndex, edgeIndex)) != precedingLabelSet.end()) {
+                                    if (precedingLabelSet.find(storm::jani::Model::encodeAutomatonAndEdgeIndices(automatonIndex, edgeIndex)) !=
+                                        precedingLabelSet.end()) {
                                         storm::jani::Edge const& edge = automaton.getEdge(edgeIndex);
 
                                         preceedingGuardConjunction = preceedingGuardConjunction && edge.getGuard();

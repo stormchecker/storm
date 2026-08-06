@@ -837,7 +837,7 @@ void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribut
     for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
         if (this->getOptions().isBuildChoiceOriginsSet()) {
             auto automatonIndex = model.getAutomatonIndex(parallelAutomata[edgeCombination[i].first].get().getName());
-            edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(automatonIndex, iteratorList[i]->first));
+            edgeIndices.insert(storm::jani::Model::encodeAutomatonAndEdgeIndices(automatonIndex, iteratorList[i]->first));
         }
         storm::jani::Edge const& edge = *iteratorList[i]->second;
         lowestDestinationAssignmentLevel = std::min(lowestDestinationAssignmentLevel, edge.getLowestAssignmentLevel());
@@ -1060,7 +1060,7 @@ std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::get
 
                     if (this->getOptions().isBuildChoiceOriginsSet()) {
                         auto modelAutomatonIndex = model.getAutomatonIndex(parallelAutomata[automatonIndex].get().getName());
-                        EdgeIndexSet edgeIndex{model.encodeAutomatonAndEdgeIndices(modelAutomatonIndex, indexAndEdge.first)};
+                        EdgeIndexSet edgeIndex{storm::jani::Model::encodeAutomatonAndEdgeIndices(modelAutomatonIndex, indexAndEdge.first)};
                         result.back().addOriginData(boost::any(std::move(edgeIndex)));
                     }
 

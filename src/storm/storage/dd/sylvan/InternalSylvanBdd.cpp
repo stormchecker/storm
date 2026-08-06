@@ -537,8 +537,8 @@ InternalBdd<DdType::Sylvan>::toExpression(storm::expressions::ExpressionManager&
     bool negated = bdd_isnegated(this->getSylvanBdd().GetBDD());
 
     // Translate from the top node downwards.
-    storm::expressions::Variable topVariable = this->toExpressionRec(bdd_regular(this->getSylvanBdd().GetBDD()), manager, result.first, result.second,
-                                                                     countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
+    storm::expressions::Variable topVariable = storm::dd::InternalBdd<storm::dd::DdType::Sylvan>::toExpressionRec(
+        bdd_regular(this->getSylvanBdd().GetBDD()), manager, result.first, result.second, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
 
     // Create the final expression.
     if (negated) {

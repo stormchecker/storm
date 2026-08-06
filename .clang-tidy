@@ -2,7 +2,8 @@
 # Disable everything first, then enable individual checks.
 Checks: >-
   -*,
-  readability-braces-around-statements
+  readability-braces-around-statements,
+  readability-static-accessed-through-instance
 # Candidate checks that are not (yet) enabled:
 # bugprone-branch-clone,
 # bugprone-copy-constructor-init,
@@ -43,7 +44,6 @@ Checks: >-
 # readability-redundant-smartptr-get,
 # readability-redundant-string-cstr,
 # readability-simplify-boolean-expr,
-# readability-static-accessed-through-instance
 
 # Only report diagnostics in src/ but not third-party or system headers.
 # The regex also matches storm-*

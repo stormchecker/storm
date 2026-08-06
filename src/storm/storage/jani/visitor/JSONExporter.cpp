@@ -300,7 +300,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::CumulativeRewardFormula const&
 boost::any FormulaToJaniJson::visit(storm::logic::EventuallyFormula const& f, boost::any const& data) const {
     ExportJsonType opDecl;
     opDecl["op"] = "U";
-    opDecl["left"] = anyToJson(f.getTrueFormula()->accept(*this, data));
+    opDecl["left"] = anyToJson(storm::logic::EventuallyFormula::getTrueFormula()->accept(*this, data));
     opDecl["right"] = anyToJson(f.getSubformula().accept(*this, data));
     return opDecl;
 }
@@ -471,7 +471,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::QuantileFormula const&, boost:
 boost::any FormulaToJaniJson::visit(storm::logic::NextFormula const& f, boost::any const& data) const {
     ExportJsonType opDecl;
     opDecl["op"] = "U";
-    opDecl["left"] = anyToJson(f.getTrueFormula()->accept(*this, data));
+    opDecl["left"] = anyToJson(storm::logic::NextFormula::getTrueFormula()->accept(*this, data));
     opDecl["right"] = anyToJson(f.getSubformula().accept(*this, data));
     auto intervalExpressionManager = std::make_shared<storm::expressions::ExpressionManager>();
     opDecl["step-bounds"] = constructPropertyInterval(intervalExpressionManager->integer(1), false, intervalExpressionManager->integer(1), false);

@@ -536,8 +536,9 @@ std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_f
     bool negated = Cudd_Regular(this->getCuddDdNode()) != this->getCuddDdNode();
 
     // Translate from the top node downwards.
-    storm::expressions::Variable topVariable = this->toExpressionRec(Cudd_Regular(this->getCuddDdNode()), ddManager->getCuddManager(), manager, result.first,
-                                                                     result.second, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
+    storm::expressions::Variable topVariable = storm::dd::InternalBdd<storm::dd::DdType::CUDD>::toExpressionRec(
+        Cudd_Regular(this->getCuddDdNode()), ddManager->getCuddManager(), manager, result.first, result.second, countIndexToVariablePair, nodeToCounterMap,
+        nextCounterForIndex);
 
     // Create the final expression.
     if (negated) {

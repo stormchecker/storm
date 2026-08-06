@@ -455,7 +455,7 @@ void SettingsManager::addOption(std::shared_ptr<Option> const& option) {
     // not required for this option, we have to add both versions to our mappings, the prefixed one and the
     // non-prefixed one.
     if (!option->getRequiresModulePrefix()) {
-        bool isCompatible = this->isCompatible(option, option->getLongName(), this->longNameToOptions);
+        bool isCompatible = storm::settings::SettingsManager::isCompatible(option, option->getLongName(), this->longNameToOptions);
         STORM_LOG_THROW(isCompatible, storm::exceptions::IllegalFunctionCallException,
                         "Unable to add option '" << option->getLongName() << "', because an option with the same name is incompatible with it.");
         addOptionToMap(option->getLongName(), option, this->longNameToOptions);
@@ -466,7 +466,7 @@ void SettingsManager::addOption(std::shared_ptr<Option> const& option) {
 
     if (option->getHasShortName()) {
         if (!option->getRequiresModulePrefix()) {
-            bool isCompatible = this->isCompatible(option, option->getShortName(), this->shortNameToOptions);
+            bool isCompatible = storm::settings::SettingsManager::isCompatible(option, option->getShortName(), this->shortNameToOptions);
             STORM_LOG_THROW(isCompatible, storm::exceptions::IllegalFunctionCallException,
                             "Unable to add option '" << option->getLongName() << "', because an option with the same name is incompatible with it.");
             addOptionToMap(option->getShortName(), option, this->shortNameToOptions);
@@ -607,7 +607,7 @@ std::map<std::string, std::vector<std::string>> SettingsManager::parseConfigFile
             // and c are the values that are supposed to be assigned to the arguments of the option.
             std::size_t assignmentSignIndex = line.find("=");
             bool containsAssignment = false;
-            if (assignmentSignIndex != line.npos) {
+            if (assignmentSignIndex != std::string::npos) {
                 containsAssignment = true;
             }
 

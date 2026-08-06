@@ -90,7 +90,7 @@ bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForUntilProbabiliti
 
     // Eliminate the end components that do not contain a target or a sink state (only required if the probability is maximized)
     if (!minimizing) {
-        this->simplifiedModel = this->eliminateNeutralEndComponents(
+        this->simplifiedModel = SparseParametricMdpSimplifier<SparseModelType>::eliminateNeutralEndComponents(
             *this->simplifiedModel, this->simplifiedModel->getStates(targetLabel) | this->simplifiedModel->getStates(sinkLabel));
     }
 
@@ -248,9 +248,9 @@ bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForReachabilityRewa
 
     // Eliminate the end components in which no reward is collected (only required if rewards are minimized)
     if (minimizing) {
-        this->simplifiedModel = this->eliminateNeutralEndComponents(*this->simplifiedModel,
-                                                                    this->simplifiedModel->getStates(targetLabel) | this->simplifiedModel->getStates(sinkLabel),
-                                                                    rewardModelNameAsVector.front());
+        this->simplifiedModel = SparseParametricMdpSimplifier<SparseModelType>::eliminateNeutralEndComponents(
+            *this->simplifiedModel, this->simplifiedModel->getStates(targetLabel) | this->simplifiedModel->getStates(sinkLabel),
+            rewardModelNameAsVector.front());
     }
     return true;
 }
