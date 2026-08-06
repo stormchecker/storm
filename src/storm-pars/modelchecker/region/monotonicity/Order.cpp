@@ -613,7 +613,7 @@ void Order::dotOutputToFile(std::ofstream& dotOutfile) const {
     // Vertices of the digraph
     storm::storage::BitVector stateCoverage = storm::storage::BitVector(numberOfStates, true);
     for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i != numberOfStates; i = stateCoverage.getNextSetIndex(i + 1)) {
-        if (getNode(i) == NULL) {
+        if (getNode(i) == nullptr) {
             continue;
         }
         for (uint_fast64_t j = i + 1; j < numberOfStates; j++) {
@@ -629,7 +629,7 @@ void Order::dotOutputToFile(std::ofstream& dotOutfile) const {
     for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i != numberOfStates; i = stateCoverage.getNextSetIndex(i + 1)) {
         storm::storage::BitVector v = storm::storage::BitVector(numberOfStates, false);
         Node* currentNode = getNode(i);
-        if (currentNode == NULL) {
+        if (currentNode == nullptr) {
             continue;
         }
 

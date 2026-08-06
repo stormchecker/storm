@@ -275,9 +275,9 @@ void SoplexLpSolver<ValueType, RawMode>::ensureSolved() const {
 template<typename ValueType, bool RawMode>
 void SoplexLpSolver<ValueType, RawMode>::writeModelToFile(std::string const& filename) const {
     if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
-        solver.writeFileRational(filename.c_str(), NULL, NULL, NULL);
+        solver.writeFileRational(filename.c_str(), nullptr, nullptr, nullptr);
     } else {
-        solver.writeFileReal(filename.c_str(), NULL, NULL, NULL);
+        solver.writeFileReal(filename.c_str(), nullptr, nullptr, nullptr);
     }
 }
 

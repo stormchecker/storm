@@ -3,6 +3,7 @@
 Checks: >-
   -*,
   misc-unused-using-decls,
+  modernize-use-nullptr,
   readability-braces-around-statements,
   readability-static-accessed-through-instance
 # Candidate checks that are not (yet) enabled:
@@ -30,7 +31,6 @@ Checks: >-
 # modernize-make-unique,
 # modernize-return-braced-init-list,
 # modernize-use-default-member-init,
-# modernize-use-nullptr,
 # modernize-use-using,
 # performance-for-range-copy,
 # performance-implicit-conversion-in-loop,
