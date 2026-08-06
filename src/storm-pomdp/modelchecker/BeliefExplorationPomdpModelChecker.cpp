@@ -747,16 +747,21 @@ BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPTyp
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
 int64_t BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getStatus() {
-    if (unfoldingStatus == Status::Uninitialized)
+    if (unfoldingStatus == Status::Uninitialized) {
         return 0;
-    if (unfoldingStatus == Status::Exploring)
+    }
+    if (unfoldingStatus == Status::Exploring) {
         return 1;
-    if (unfoldingStatus == Status::ModelExplorationFinished)
+    }
+    if (unfoldingStatus == Status::ModelExplorationFinished) {
         return 2;
-    if (unfoldingStatus == Status::ResultAvailable)
+    }
+    if (unfoldingStatus == Status::ResultAvailable) {
         return 3;
-    if (unfoldingStatus == Status::Terminated)
+    }
+    if (unfoldingStatus == Status::Terminated) {
         return 4;
+    }
 
     return -1;
 }

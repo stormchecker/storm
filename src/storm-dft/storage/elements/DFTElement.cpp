@@ -88,8 +88,9 @@ std::vector<size_t> DFTElement<ValueType>::independentSubDft(bool blockParents, 
 template<typename ValueType>
 void DFTElement<ValueType>::extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents,
                                          bool sparesAsLeaves) const {
-    if (elemsInSubtree.count(this->id()) > 0)
+    if (elemsInSubtree.count(this->id()) > 0) {
         return;
+    }
     if (std::find(parentsOfSubRoot.begin(), parentsOfSubRoot.end(), mId) != parentsOfSubRoot.end()) {
         // This is a parent of the suspected root, thus it is not a subdft.
         elemsInSubtree.clear();

@@ -38,10 +38,11 @@ std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePrioritie
         // Set priority for PDEP and FDEP according to Monolithic MA semantics
         uint64_t dependency_priority = 2;
         for (std::size_t i = 0; i < mDft.nrElements(); i++) {
-            if (mDft.getElement(i)->type() == storm::dft::storage::elements::DFTElementType::PDEP)
+            if (mDft.getElement(i)->type() == storm::dft::storage::elements::DFTElementType::PDEP) {
                 priorities[i] = dependency_priority;
-            else
+            } else {
                 priorities[i] = (-(mDft.getElement(i)->rank()) + mDft.maxRank()) * 2 + 5;
+            }
         }
     } else {
         // Define some variables
@@ -237,8 +238,9 @@ void DftToGspnTransformator<ValueType>::translateBEExponential(std::shared_ptr<s
         builder.addOutputArc(tPassive, unavailablePlace);
     }
 
-    if (extendedPriorities)
+    if (extendedPriorities) {
         dontCarePriority++;
+    }
 }
 
 template<typename ValueType>
@@ -343,8 +345,9 @@ void DftToGspnTransformator<ValueType>::translateAND(std::shared_ptr<storm::dft:
         builder.addInputArc(getFailedPlace(child), tFailed);
         builder.addOutputArc(tFailed, getFailedPlace(child));
     }
-    if (extendedPriorities)
+    if (extendedPriorities) {
         dontCarePriority++;
+    }
 }
 
 template<typename ValueType>
@@ -416,10 +419,11 @@ void DftToGspnTransformator<ValueType>::translateOR(std::shared_ptr<storm::dft::
     for (size_t i = 0; i < dftOr->nrChildren(); ++i) {
         auto const &child = dftOr->children().at(i);
         uint64_t tFailed = 0;
-        if (extendedPriorities)
+        if (extendedPriorities) {
             tFailed = builder.addImmediateTransition(getFailPriority(dftOr) + i, 0.0, dftOr->name() + STR_FAILING + std::to_string(i));
-        else
+        } else {
             tFailed = builder.addImmediateTransition(getFailPriority(dftOr), 0.0, dftOr->name() + STR_FAILING + std::to_string(i));
+        }
         builder.setTransitionLayoutInfo(tFailed, storm::gspn::LayoutInfo(xcenter - 5.0 + i * 3.0, ycenter + 3.0));
         builder.addInhibitionArc(failedPlace, tFailed);
         builder.addOutputArc(tFailed, failedPlace);
@@ -429,8 +433,9 @@ void DftToGspnTransformator<ValueType>::translateOR(std::shared_ptr<storm::dft::
         builder.addInputArc(getFailedPlace(child), tFailed);
         builder.addOutputArc(tFailed, getFailedPlace(child));
     }
-    if (extendedPriorities)
+    if (extendedPriorities) {
         dontCarePriority++;
+    }
 }
 
 template<typename ValueType>
@@ -459,10 +464,11 @@ void DftToGspnTransformator<ValueType>::translateVOT(std::shared_ptr<storm::dft:
         auto const &child = dftVot->children().at(i);
         uint64_t childNextPlace = builder.addPlace(defaultCapacity, 1, dftVot->name() + "_child_next" + std::to_string(i));
         uint64_t tCollect;
-        if (extendedPriorities)
+        if (extendedPriorities) {
             tCollect = builder.addImmediateTransition(getFailPriority(dftVot) + i, 0.0, dftVot->name() + "_child_collect" + std::to_string(i));
-        else
+        } else {
             tCollect = builder.addImmediateTransition(getFailPriority(dftVot), 0.0, dftVot->name() + "_child_collect" + std::to_string(i));
+        }
         builder.addOutputArc(tCollect, collectorPlace);
         builder.addInputArc(childNextPlace, tCollect);
         builder.addInputArc(getFailedPlace(child), tCollect);
@@ -521,8 +527,9 @@ void DftToGspnTransformator<ValueType>::translateVOT(std::shared_ptr<storm::dft:
             }
         }
     }
-    if (extendedPriorities)
+    if (extendedPriorities) {
         dontCarePriority++;
+    }
 }
 
 template<typename ValueType>
@@ -635,8 +642,9 @@ void DftToGspnTransformator<ValueType>::translatePAND(std::shared_ptr<storm::dft
             }
         }
     }
-    if (extendedPriorities)
+    if (extendedPriorities) {
         dontCarePriority++;
+    }
 }
 
 template<typename ValueType>
@@ -749,8 +757,9 @@ void DftToGspnTransformator<ValueType>::translatePOR(std::shared_ptr<storm::dft:
             }
         }
     }
-    if (extendedPriorities)
+    if (extendedPriorities) {
         dontCarePriority++;
+    }
 }
 
 template<typename ValueType>
@@ -896,8 +905,9 @@ void DftToGspnTransformator<ValueType>::translateSPARE(std::shared_ptr<storm::df
         builder.addOutputArc(tNextConsiders.back(), unavailablePlace);
         builder.addOutputArc(tNextClaims.back(), unavailablePlace);
     }
-    if (extendedPriorities)
+    if (extendedPriorities) {
         dontCarePriority++;
+    }
 }
 
 template<typename ValueType>
@@ -1004,8 +1014,9 @@ void DftToGspnTransformator<ValueType>::translatePDEP(std::shared_ptr<storm::dft
     if (failedPlace == 0) {
         failedPlaces.push_back(failedPlace);
     }
-    if (extendedPriorities)
+    if (extendedPriorities) {
         dontCarePriority++;
+    }
 }
 
 template<typename ValueType>

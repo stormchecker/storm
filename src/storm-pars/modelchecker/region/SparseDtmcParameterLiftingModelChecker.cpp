@@ -442,8 +442,9 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         solver->setHasNoEndComponents();
         // Uncertainty is not robust (=adversarial)
         solver->setUncertaintyResolutionMode(UncertaintyResolutionMode::Cooperative);
-        if (lowerResultBound)
+        if (lowerResultBound) {
             solver->setLowerBound(lowerResultBound.value());
+        }
         if (upperResultBound) {
             solver->setUpperBound(upperResultBound.value());
         } else if (solvingRequiresUpperRewardBounds) {

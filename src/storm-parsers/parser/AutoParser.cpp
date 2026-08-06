@@ -86,16 +86,17 @@ storm::models::ModelType AutoParser<ValueType, RewardValueType>::analyzeHint(std
     }
 
     // Check if the hint value is known and store the appropriate enum value.
-    if (strcmp(hint, "DTMC") == 0)
+    if (strcmp(hint, "DTMC") == 0) {
         hintType = storm::models::ModelType::Dtmc;
-    else if (strcmp(hint, "CTMC") == 0)
+    } else if (strcmp(hint, "CTMC") == 0) {
         hintType = storm::models::ModelType::Ctmc;
-    else if (strcmp(hint, "MDP") == 0)
+    } else if (strcmp(hint, "MDP") == 0) {
         hintType = storm::models::ModelType::Mdp;
-    else if (strcmp(hint, "MA") == 0)
+    } else if (strcmp(hint, "MA") == 0) {
         hintType = storm::models::ModelType::MarkovAutomaton;
-    else
+    } else {
         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Unable to find model hint in explicit input.");
+    }
 
     return hintType;
 }

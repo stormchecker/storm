@@ -177,10 +177,11 @@ class SVIBackend {
     template<SVIStage NewStage>
     auto createBackendForNextStage() const {
         std::optional<ValueType> d;
-        if (NewStage == SVIStage::b_eq_d && !bValue.empty())
+        if (NewStage == SVIStage::b_eq_d && !bValue.empty()) {
             d = *bValue;
-        else if (NewStage != SVIStage::Initial && !dValue.empty())
+        } else if (NewStage != SVIStage::Initial && !dValue.empty()) {
             d = *dValue;
+        }
         return SVIBackend<ValueType, Dir, NewStage, TrivialRowGrouping>(currRowValues, a(), b(), d);
     }
 
@@ -258,10 +259,12 @@ template<typename ValueType, bool TrivialRowGrouping>
 bool SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::checkConvergence(uint64_t& convergenceCheckState,
                                                                                          std::function<void()> const& getNextConvergenceCheckState,
                                                                                          bool relative, ValueType const& precision) const {
-    if (!a.has_value() || !b.has_value())
+    if (!a.has_value() || !b.has_value()) {
         return false;
-    if (*a == *b)
+    }
+    if (*a == *b) {
         return true;
+    }
     if (relative) {
         auto [min, max] = std::minmax(*a, *b);
         if (min >= storm::utility::zero<ValueType>()) {

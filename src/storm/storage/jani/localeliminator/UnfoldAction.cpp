@@ -35,8 +35,9 @@ void UnfoldAction::doAction(JaniLocalEliminator::Session &session) {
     auto automaton = session.getModel().getAutomaton(automatonName);
     for (uint64_t i = 0; i < automaton.getNumberOfLocations(); i++) {
         partOfProp[i] = session.isPartOfProp(automatonName, i);
-        if (partOfProp[i])
+        if (partOfProp[i]) {
             partOfPropCount += 1;
+        }
     }
 
     STORM_LOG_TRACE("\t\t" + std::to_string(partOfPropCount) + " old locations potentially satisfy property");

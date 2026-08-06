@@ -228,8 +228,9 @@ BitVector& BitVector::operator=(BitVector&& other) {
 
 bool BitVector::operator==(BitVector const& other) const {
     // If the lengths of the vectors do not match, they are considered unequal.
-    if (this->bitCount != other.bitCount)
+    if (this->bitCount != other.bitCount) {
         return false;
+    }
 
     // If the lengths match, we compare the buckets one by one.
     return std::equal(this->buckets, this->buckets + this->bucketCount(), other.buckets);
@@ -1385,12 +1386,13 @@ BitVector BitVector::load(std::string const& description) {
     std::string field;
     char ws_delim;
     while (true) {
-        if (ss >> field)
+        if (ss >> field) {
             splitted.push_back(field);
-        else if (ss.eof())
+        } else if (ss.eof()) {
             break;
-        else
+        } else {
             splitted.push_back(std::string());
+        }
         ss.clear();
         ss >> ws_delim;
     }

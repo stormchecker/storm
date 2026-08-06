@@ -112,15 +112,17 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
             while (!todo.empty()) {
                 auto top = todo.front();
                 todo.pop_front();
-                for (auto& l : left->out(top.first.first))
+                for (auto& l : left->out(top.first.first)) {
                     for (auto& r : right->out(top.first.second)) {
                         auto cond = l.cond & r.cond;
-                        if (cond == bddfalse)
+                        if (cond == bddfalse) {
                             continue;
+                        }
                         auto dst = new_state(l.dst, r.dst);
                         res->new_edge(top.second, dst, cond, merge_acc(l.acc, r.acc));
                         // If right is deterministic, we can abort immediately!
                     }
+                }
             }
 
             if (res->acc().is_f()) {
@@ -133,18 +135,24 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
             } else {
                 // The product of two non-deterministic automata could be
                 // deterministic.  Likewise for non-complete automata.
-                if (left->prop_universal() && right->prop_universal())
+                if (left->prop_universal() && right->prop_universal()) {
                     res->prop_universal(true);
-                if (left->prop_complete() && right->prop_complete())
+                }
+                if (left->prop_complete() && right->prop_complete()) {
                     res->prop_complete(true);
-                if (left->prop_stutter_invariant() && right->prop_stutter_invariant())
+                }
+                if (left->prop_stutter_invariant() && right->prop_stutter_invariant()) {
                     res->prop_stutter_invariant(true);
-                if (left->prop_inherently_weak() && right->prop_inherently_weak())
+                }
+                if (left->prop_inherently_weak() && right->prop_inherently_weak()) {
                     res->prop_inherently_weak(true);
-                if (left->prop_weak() && right->prop_weak())
+                }
+                if (left->prop_weak() && right->prop_weak()) {
                     res->prop_weak(true);
-                if (left->prop_terminal() && right->prop_terminal())
+                }
+                if (left->prop_terminal() && right->prop_terminal()) {
                     res->prop_terminal(true);
+                }
                 res->prop_state_acc(left->prop_state_acc() && right->prop_state_acc());
             }
             productAutomaton = res;

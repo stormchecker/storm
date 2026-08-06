@@ -384,8 +384,9 @@ class DFT {
    private:
     bool elementIndicesCorrect() const {
         for (size_t i = 0; i < mElements.size(); ++i) {
-            if (mElements[i]->id() != i)
+            if (mElements[i]->id() != i) {
                 return false;
+            }
         }
         return true;
     }

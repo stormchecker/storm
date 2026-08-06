@@ -1791,8 +1791,9 @@ void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
             std::set<std::pair<std::string, std::string>> globalBVarsWrittenToByCommandInThisModule;
             std::set<std::pair<std::string, std::string>> globalIVarsWrittenToByCommandInThisModule;
             for (auto const& command : module.getCommands()) {
-                if (!command.isLabeled())
+                if (!command.isLabeled()) {
                     continue;
+                }
                 for (auto const& update : command.getUpdates()) {
                     for (auto const& assignment : update.getAssignments()) {
                         if (this->globalBooleanVariableExists(assignment.getVariable().getName())) {

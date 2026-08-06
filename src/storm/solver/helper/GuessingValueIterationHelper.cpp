@@ -196,10 +196,11 @@ template<typename ValueType, bool TrivialRowGrouping>
 SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::solveEquations(
     std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations, ValueType precision,
     std::optional<storm::solver::OptimizationDirection> dir, std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
-    if (!dir.has_value() || minimize(dir.value()))
+    if (!dir.has_value() || minimize(dir.value())) {
         return solveEquations<OptimizationDirection::Minimize>(lowerX, upperX, b, numIterations, precision, iterationCallback);
-    else
+    } else {
         return solveEquations<OptimizationDirection::Maximize>(lowerX, upperX, b, numIterations, precision, iterationCallback);
+    }
 }
 
 template<typename ValueType, bool TrivialRowGrouping>
@@ -209,16 +210,18 @@ SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::solveE
     std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
     // do n iterations first
     auto status = doIterations<Dir>(lowerX, upperX, b, numIterations, lowerX.size(), precision, iterationCallback);
-    if (status != SolverStatus::InProgress)
+    if (status != SolverStatus::InProgress) {
         return status;
+    }
     while (status == SolverStatus::InProgress) {
         auto rowGroupToGuess = selectRowGroupToGuess(lowerX, upperX);
         bool didVerify = false;
         // try verification using different fractions of the interval
         for (int den = 2; den < 30 && !didVerify; ++den) {
             for (int num = 1; num < den; num++) {
-                if (std::gcd(num, den) != 1)
+                if (std::gcd(num, den) != 1) {
                     continue;
+                }
                 auto guessValue = (lowerX[rowGroupToGuess] * num + upperX[rowGroupToGuess] * (den - num)) / den;
                 auto [verifyResult, verifyStatus] = tryVerify<Dir>(lowerX, upperX, b, numIterations, rowGroupToGuess, guessValue, precision, iterationCallback);
                 status = verifyStatus;
@@ -229,8 +232,9 @@ SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::solveE
             }
         }
         if (didVerify) {
-            if (iterationHelper.getMaxLength(lowerX, upperX) < 2 * precision)
+            if (iterationHelper.getMaxLength(lowerX, upperX) < 2 * precision) {
                 return SolverStatus::Converged;
+            }
         } else {
             break;
         }
@@ -276,8 +280,9 @@ SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::doIter
         }
     }
 
-    if (iterationHelper.getMaxLength(lowerX, upperX) < 2 * precision)
+    if (iterationHelper.getMaxLength(lowerX, upperX) < 2 * precision) {
         return SolverStatus::Converged;
+    }
     return status;
 }
 

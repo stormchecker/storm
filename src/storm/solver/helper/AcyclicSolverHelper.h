@@ -31,8 +31,9 @@ boost::optional<std::vector<uint64_t>> computeTopologicalGroupOrdering(storm::st
     while (startState > 0) {
         --startState;
         // skip already processed states
-        if (processed.get(startState))
+        if (processed.get(startState)) {
             continue;
+        }
 
         // Now do a dfs from start state.
         stack.push_back(startState);

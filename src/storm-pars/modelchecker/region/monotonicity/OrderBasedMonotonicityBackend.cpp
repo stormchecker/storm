@@ -109,10 +109,11 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::initializeMono
     annotation.localMonotonicityResult = std::make_shared<storm::analysis::LocalMonotonicityResult<VariableType>>(annotation.stateOrder->getNumberOfStates());
 
     for (auto& [var, kind] : this->globallyKnownMonotonicityInformation) {
-        if (kind == MonotonicityKind::Incr || kind == MonotonicityKind::Constant)
+        if (kind == MonotonicityKind::Incr || kind == MonotonicityKind::Constant) {
             annotation.localMonotonicityResult->setMonotoneIncreasing(var);
-        else if (kind == MonotonicityKind::Decr)
+        } else if (kind == MonotonicityKind::Decr) {
             annotation.localMonotonicityResult->setMonotoneDecreasing(var);
+        }
     }
 
     detail::extendLocalMonotonicityResult(region.region, annotation.stateOrder, *annotation.localMonotonicityResult, *this->monotonicityChecker,

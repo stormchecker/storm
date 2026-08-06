@@ -196,10 +196,12 @@ typename DeterministicSparseTransitionParser<ValueType>::FirstPassResult Determi
         }
 
         // Check if a higher state id was found.
-        if (row > result.highestStateIndex)
+        if (row > result.highestStateIndex) {
             result.highestStateIndex = row;
-        if (col > result.highestStateIndex)
+        }
+        if (col > result.highestStateIndex) {
             result.highestStateIndex = col;
+        }
 
         ++result.numberOfNonzeroEntries;
 

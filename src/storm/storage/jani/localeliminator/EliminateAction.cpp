@@ -66,8 +66,9 @@ void EliminateAction::doAction(JaniLocalEliminator::Session& session) {
     // The elimination is now complete. To make sure nothing went wrong, we go over all the edges one more
     // time. If any are still incident to the location we want to eliminate, something went wrong.
     for (Edge& edge : automaton.getEdges()) {
-        if (!edge.getGuard().containsVariables() && !edge.getGuard().evaluateAsBool())
+        if (!edge.getGuard().containsVariables() && !edge.getGuard().evaluateAsBool()) {
             continue;
+        }
         for (const EdgeDestination& dest : edge.getDestinations()) {
             STORM_LOG_THROW(dest.getLocationIndex() != locIndex, storm::exceptions::IllegalArgumentException, "Could not eliminate location.");
         }
@@ -84,8 +85,9 @@ void EliminateAction::eliminateDestination(JaniLocalEliminator::Session& session
         newEdges;  // Don't add the new edges immediately -- we cannot safely iterate over the outgoing edges while adding new edges to the structure
 
     for (Edge& outEdge : outgoing) {
-        if (!outEdge.getGuard().containsVariables() && !outEdge.getGuard().evaluateAsBool())
+        if (!outEdge.getGuard().containsVariables() && !outEdge.getGuard().evaluateAsBool()) {
             continue;
+        }
 
         expressions::Expression newGuard = session.getNewGuard(edge, dest, outEdge);
         std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(newGuard);
@@ -103,8 +105,9 @@ void EliminateAction::eliminateDestination(JaniLocalEliminator::Session& session
         // Add remaining destinations back to the edge:
         uint64_t destCount = edge.getNumberOfDestinations();
         for (uint64_t i = 0; i < destCount; i++) {
-            if (i == destIndex)
+            if (i == destIndex) {
                 continue;
+            }
             const EdgeDestination& unchangedDest = edge.getDestination(i);
             OrderedAssignments oa(unchangedDest.getOrderedAssignments().clone());
             TemplateEdgeDestination templateEdgeDestination(oa);

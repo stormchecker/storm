@@ -324,17 +324,21 @@ std::vector<ConstantType> SparseMdpParameterLiftingModelChecker<SparseModelType,
 
     // Set up the solver
     auto solver = solverFactory->create(env, player1Matrix, parameterLifter->getMatrix());
-    if (lowerResultBound)
+    if (lowerResultBound) {
         solver->setLowerBound(lowerResultBound.value());
-    if (upperResultBound)
+    }
+    if (upperResultBound) {
         solver->setUpperBound(upperResultBound.value());
+    }
     if (applyPreviousResultAsHint) {
         solver->setTrackSchedulers(true);
         x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-        if (storm::solver::minimize(dirForParameters) && minSchedChoices && player1SchedChoices)
+        if (storm::solver::minimize(dirForParameters) && minSchedChoices && player1SchedChoices) {
             solver->setSchedulerHints(std::move(player1SchedChoices.value()), std::move(minSchedChoices.value()));
-        if (storm::solver::maximize(dirForParameters) && maxSchedChoices && player1SchedChoices)
+        }
+        if (storm::solver::maximize(dirForParameters) && maxSchedChoices && player1SchedChoices) {
             solver->setSchedulerHints(std::move(player1SchedChoices.value()), std::move(maxSchedChoices.value()));
+        }
     } else {
         x.assign(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
     }

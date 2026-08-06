@@ -79,8 +79,9 @@ void EliminateAutomaticallyAction::doAction(JaniLocalEliminator::Session& sessio
                 uint64_t minNewEdges = 18446744073709551615U;  // max value of uint64
                 int bestLocIndex = -1;
                 for (const auto& loc : automaton->getLocations()) {
-                    if (uneliminable[loc.getName()])
+                    if (uneliminable[loc.getName()]) {
                         continue;
+                    }
 
                     auto locIndex = automaton->getLocationIndex(loc.getName());
                     uint64_t outgoing = automaton->getEdgesFromLocation(locIndex).size();

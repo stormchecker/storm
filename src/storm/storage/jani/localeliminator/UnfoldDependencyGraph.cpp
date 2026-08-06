@@ -21,8 +21,9 @@ void UnfoldDependencyGraph::VariableGroup::addVariable(UnfoldDependencyGraph::Va
 std::string UnfoldDependencyGraph::VariableGroup::getVariablesAsString() {
     std::string res = "";
     for (auto var : variables) {
-        if (res != "")
+        if (res != "") {
             res += ", ";
+        }
         res += var.janiVariableName;
     }
     return res;
@@ -37,13 +38,15 @@ void UnfoldDependencyGraph::markUnfolded(uint32_t groupIndex) {
 
     // Now that one group has been unfolded, update which groups can be unfolded
     for (uint64_t i = 0; i < variableGroups.size(); i++) {
-        if (variableGroups[i].allDependenciesUnfolded)
+        if (variableGroups[i].allDependenciesUnfolded) {
             continue;
+        }
         if (variableGroups[i].dependencies.count(i) != 0) {
             bool allUnfolded = true;
             for (uint32_t dep : variableGroups[i].dependencies) {
-                if (!variableGroups[dep].unfolded)
+                if (!variableGroups[dep].unfolded) {
                     allUnfolded = false;
+                }
             }
             variableGroups[i].allDependenciesUnfolded = allUnfolded;
         }
@@ -51,10 +54,13 @@ void UnfoldDependencyGraph::markUnfolded(uint32_t groupIndex) {
 }
 
 uint32_t UnfoldDependencyGraph::findGroupIndex(std::string expressionVariableName) {
-    for (uint32_t i = 0; i < variableGroups.size(); i++)
-        for (auto variable : variableGroups[i].variables)
-            if (variable.expressionVariableName == expressionVariableName)
+    for (uint32_t i = 0; i < variableGroups.size(); i++) {
+        for (auto variable : variableGroups[i].variables) {
+            if (variable.expressionVariableName == expressionVariableName) {
                 return i;
+            }
+        }
+    }
 
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException,
                     "The UnfoldDependencyGraph does not contain the variable " + expressionVariableName + ".");
@@ -73,8 +79,9 @@ std::vector<uint32_t> UnfoldDependencyGraph::getOrderedDependencies(uint32_t gro
             isLeaf = true;
             // Find dependency that is not yet listed in res:
             for (auto dep : variableGroups[current].dependencies) {
-                if (variableGroups[dep].unfolded)
+                if (variableGroups[dep].unfolded) {
                     continue;
+                }
                 if (closedSet.count(dep) == 0 && current != dep) {
                     isLeaf = false;
                     current = dep;
@@ -83,8 +90,9 @@ std::vector<uint32_t> UnfoldDependencyGraph::getOrderedDependencies(uint32_t gro
             }
         }
         closedSet.insert(current);
-        if (includeSelf || current != groupIndex)
+        if (includeSelf || current != groupIndex) {
             res.push_back(current);
+        }
     }
 
     return res;
@@ -100,9 +108,11 @@ uint32_t UnfoldDependencyGraph::getTotalBlowup(std::vector<uint32_t> groups) {
 
 std::set<uint32_t> UnfoldDependencyGraph::getGroupsWithNoDependencies() {
     std::set<uint32_t> res;
-    for (uint64_t i = 0; i < variableGroups.size(); i++)
-        if (!variableGroups[i].unfolded && variableGroups[i].allVariablesUnfoldable && variableGroups[i].allDependenciesUnfolded)
+    for (uint64_t i = 0; i < variableGroups.size(); i++) {
+        if (!variableGroups[i].unfolded && variableGroups[i].allVariablesUnfoldable && variableGroups[i].allDependenciesUnfolded) {
             res.insert(i);
+        }
+    }
 
     return res;
 }
@@ -111,7 +121,9 @@ void UnfoldDependencyGraph::buildGroups(Model &model) {
     std::vector<std::pair<std::string, VariableSet *>> variableSets;
     // Use "" for the global set, as automata must not have an empty name according to the Jani spec
     variableSets.emplace_back("", &model.getGlobalVariables());
-    for (auto &automaton : model.getAutomata()) variableSets.emplace_back(automaton.getName(), &automaton.getVariables());
+    for (auto &automaton : model.getAutomata()) {
+        variableSets.emplace_back(automaton.getName(), &automaton.getVariables());
+    }
 
     std::vector<VariableInfo> variables;
 
@@ -159,8 +171,9 @@ void UnfoldDependencyGraph::buildGroups(Model &model) {
                         uint64_t rIndex = std::distance(variables.begin(), std::find_if(variables.begin(), variables.end(), [rightName](VariableInfo &v) {
                                                             return v.expressionVariableName == rightName;
                                                         }));
-                        if (rIndex == lIndex)
+                        if (rIndex == lIndex) {
                             continue;
+                        }
                         if (rIndex !=
                             variables.size()) {  // TODO If the condition is false, we're probably dealing with a constant. This should be handled properly.
                             if (!edge(lIndex, rIndex, graph).second) {
@@ -226,15 +239,17 @@ void UnfoldDependencyGraph::printGroups() {
         std::cout << "\tVariables:\n";
         for (const auto &var : group.variables) {
             std::cout << "\t\t" << var.expressionVariableName;
-            if (var.isConstBoundedInteger)
+            if (var.isConstBoundedInteger) {
                 std::cout << " (const-bounded integer with domain size " << var.domainSize << ")\n";
-            else
+            } else {
                 std::cout << " (not a const-bounded integer)\n";
+            }
         }
-        if (group.dependencies.empty())
+        if (group.dependencies.empty()) {
             std::cout << "\tNo Dependencies\n";
-        else
+        } else {
             std::cout << "\tDependencies:\n";
+        }
         for (auto dep : group.dependencies) {
             std::cout << "\t\t" << dep << '\n';
         }
@@ -258,12 +273,15 @@ std::string UnfoldDependencyGraph::toString() {
         res += "{" + group.getVariablesAsString() + "}:";
         if (!group.dependencies.empty()) {
             res += "\n\tDepends on ";
-            for (uint32_t dep : group.dependencies) res += "{" + variableGroups[dep].getVariablesAsString() + "}, ";
+            for (uint32_t dep : group.dependencies) {
+                res += "{" + variableGroups[dep].getVariablesAsString() + "}, ";
+            }
             if (allDependencies.size() > group.dependencies.size()) {
                 res += "(";
                 for (uint32_t dep : allDependencies) {
-                    if (group.dependencies.count(dep) == 0)
+                    if (group.dependencies.count(dep) == 0) {
                         res += "{" + variableGroups[dep].getVariablesAsString() + "}, ";
+                    }
                 }
                 res = res.substr(0, res.length() - 2);  // Remove trailing comma
                 res += ")";
@@ -272,15 +290,16 @@ std::string UnfoldDependencyGraph::toString() {
             }
         }
         res += "\n\t";
-        if (group.unfolded)
+        if (group.unfolded) {
             res += "Unfolded\n";
-        else if (group.allVariablesUnfoldable && areDependenciesUnfoldable(i))
+        } else if (group.allVariablesUnfoldable && areDependenciesUnfoldable(i)) {
             res += "Can be unfolded\n";
-        else {
+        } else {
             res += "Can't be unfolded:\n";
             for (const auto &var : group.variables) {
-                if (!var.isConstBoundedInteger)
+                if (!var.isConstBoundedInteger) {
                     res += "\t\tVariable " + var.expressionVariableName + " is not a const-bounded integer\n";
+                }
             }
             for (auto dep : allDependencies) {
                 if (!variableGroups[dep].allVariablesUnfoldable) {
