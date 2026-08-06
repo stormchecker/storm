@@ -3,6 +3,7 @@
 Checks: >-
   -*,
   misc-unused-using-decls,
+  modernize-deprecated-headers,
   modernize-use-nullptr,
   readability-braces-around-statements,
   readability-static-accessed-through-instance
@@ -26,7 +27,6 @@ Checks: >-
 # misc-misplaced-const,
 # misc-static-assert,
 # misc-throw-by-value-catch-by-reference,
-# modernize-deprecated-headers,
 # modernize-make-shared,
 # modernize-make-unique,
 # modernize-return-braced-init-list,
