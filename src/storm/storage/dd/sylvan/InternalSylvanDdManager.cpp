@@ -13,9 +13,12 @@ namespace storm {
 namespace dd {
 
 #ifdef STORM_HAVE_SYLVAN
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc99-extensions"
 #pragma clang diagnostic ignored "-Wused-but-marked-unused"
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #pragma clang diagnostic ignored "-Wzero-length-array"
 
 #ifndef NDEBUG
@@ -37,6 +40,7 @@ VOID_TASK_2(execute_sylvan, std::function<void()> const*, f, std::exception_ptr*
 }
 
 #pragma clang diagnostic pop
+#pragma GCC diagnostic pop
 
 uint_fast64_t InternalDdManager<DdType::Sylvan>::numberOfInstances = 0;
 bool InternalDdManager<DdType::Sylvan>::suspended = false;
