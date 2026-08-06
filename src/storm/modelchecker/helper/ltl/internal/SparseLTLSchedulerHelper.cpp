@@ -114,7 +114,7 @@ void SparseLTLSchedulerHelper<ValueType, Nondeterministic>::saveProductEcChoices
     }
 
     //  Save the InfSets into the _accInfSets for states in this MEC
-    for (auto const& mecState : acceptingEcStates) {
+    for (auto mecState : acceptingEcStates) {
         STORM_LOG_ASSERT(!_accInfSets[mecState].is_initialized(), "accepting inf sets were already defined for a MEC state which is not expected.");
         _accInfSets[mecState].emplace(infSetIds);
     }

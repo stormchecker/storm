@@ -28,7 +28,7 @@ typename GoalStateMerger<SparseModelType>::ReturnType GoalStateMerger<SparseMode
     std::vector<std::string> const& selectedRewardModels, boost::optional<storm::storage::BitVector> const& choiceFilter) const {
     STORM_LOG_THROW(maybeStates.isDisjointFrom(targetStates) && targetStates.isDisjointFrom(sinkStates) && sinkStates.isDisjointFrom(maybeStates),
                     storm::exceptions::InvalidArgumentException,
-                    "maybestates, targetstates, and sinkstates are assumed to be disjoint when creating the submodel. However, this is not the case.");
+                    "Maybestates, targetstates, and sinkstates are assumed to be disjoint when creating the submodel. However, this is not the case.");
 
     auto result = initialize(maybeStates, targetStates, sinkStates, choiceFilter);
 

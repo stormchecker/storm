@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSIONMANAGER_H_
-#define STORM_STORAGE_EXPRESSIONS_EXPRESSIONMANAGER_H_
+#pragma once
 
 #include <cstdint>
 #include <iosfwd>
@@ -239,6 +238,14 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
      * Declares a new array variable with the given name and the given element type.
      */
     Variable declareArrayVariable(std::string const& name, Type const& elementType, bool auxiliary = false);
+
+    /*!
+     * Declares a new string variable with the given name
+     *
+     * @param name The name of the variable.
+     * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
+     */
+    Variable declareStringVariable(std::string const& name, bool auxiliary = false);
 
     /*!
      * Declares a variable with the given name if it does not yet exist.
@@ -499,5 +506,3 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
 std::ostream& operator<<(std::ostream& out, ExpressionManager const& manager);
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSIONMANAGER_H_ */

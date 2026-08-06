@@ -173,7 +173,7 @@ std::pair<ValueType, ValueType> ExplicitQuantitativeCheckResult<ValueType>::getM
 
 template<typename ValueType>
 ValueType ExplicitQuantitativeCheckResult<ValueType>::sum() const {
-    STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Sum of empty set is not defined");
+    STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Sum of empty set is not defined.");
 
     ValueType sum = storm::utility::zero<ValueType>();
     if (this->isResultForAllStates()) {
@@ -194,7 +194,7 @@ ValueType ExplicitQuantitativeCheckResult<ValueType>::sum() const {
 
 template<typename ValueType>
 ValueType ExplicitQuantitativeCheckResult<ValueType>::average() const {
-    STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Average of empty set is not defined");
+    STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Average of empty set is not defined.");
 
     ValueType sum = storm::utility::zero<ValueType>();
     if (this->isResultForAllStates()) {
@@ -458,7 +458,7 @@ void ExplicitQuantitativeCheckResult<ValueType>::oneMinus() {
 
 template<typename ValueType>
 void insertJsonEntry(storm::json<ValueType>& json, uint64_t const& id, ValueType const& value,
-                     std::optional<storm::storage::sparse::StateValuations> const& stateValuations = std::nullopt,
+                     std::optional<storm::storage::sparse::Valuations> const& stateValuations = std::nullopt,
                      std::optional<storm::models::sparse::StateLabeling> const& stateLabels = std::nullopt) {
     typename storm::json<ValueType> entry;
     if (stateValuations) {
@@ -475,7 +475,7 @@ void insertJsonEntry(storm::json<ValueType>& json, uint64_t const& id, ValueType
 }
 
 template<typename ValueType>
-storm::json<ValueType> ExplicitQuantitativeCheckResult<ValueType>::toJson(std::optional<storm::storage::sparse::StateValuations> const& stateValuations,
+storm::json<ValueType> ExplicitQuantitativeCheckResult<ValueType>::toJson(std::optional<storm::storage::sparse::Valuations> const& stateValuations,
                                                                           std::optional<storm::models::sparse::StateLabeling> const& stateLabels) const {
     storm::json<ValueType> result;
     if (this->isResultForAllStates()) {
@@ -494,7 +494,7 @@ storm::json<ValueType> ExplicitQuantitativeCheckResult<ValueType>::toJson(std::o
 
 template<>
 storm::json<storm::RationalFunction> ExplicitQuantitativeCheckResult<storm::RationalFunction>::toJson(
-    std::optional<storm::storage::sparse::StateValuations> const&, std::optional<storm::models::sparse::StateLabeling> const&) const {
+    std::optional<storm::storage::sparse::Valuations> const&, std::optional<storm::models::sparse::StateLabeling> const&) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export of Check results is not supported for Rational Functions.");
 }
 

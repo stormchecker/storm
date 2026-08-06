@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_GAMEFORMULA_H_
-#define STORM_LOGIC_GAMEFORMULA_H_
+#pragma once
 
 #include <memory>
 #include "storm/logic/PlayerCoalition.h"
@@ -29,5 +28,3 @@ class GameFormula : public UnaryStateFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_GAMEFORMULA_H_ */

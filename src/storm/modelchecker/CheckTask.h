@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_CHECKTASK_H_
-#define STORM_MODELCHECKER_CHECKTASK_H_
+#pragma once
 
 #include <boost/optional.hpp>
 #include <memory>
@@ -396,5 +395,3 @@ class CheckTask {
 
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_CHECKTASK_H_ */

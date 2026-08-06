@@ -320,7 +320,7 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
                         formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
                 checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
             } else {
-                STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula");
+                STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula.");
             }
 
             auto quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<ConstantType>();
@@ -352,7 +352,7 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
 template<typename ValueType, typename ConstantType>
 void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model,
                                                                              uint_fast64_t numberOfSamples) {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Checking monotonicity on samples not implemented for mdps");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Checking monotonicity on samples not implemented for mdps.");
 }
 
 template class MonotonicityHelper<RationalFunction, double>;

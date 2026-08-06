@@ -4,7 +4,7 @@
 
 #include "storm/adapters/SpotAdapter.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
-#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/utility/macros.h"
@@ -20,7 +20,7 @@ struct product_state_hash {
     }
 #else
     size_t operator()(product_state) const {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Spot support.");
     }
 #endif
 };
@@ -51,7 +51,8 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
         if (!spotPrefixLtl.errors.empty()) {
             std::ostringstream errorMsg;
             spotPrefixLtl.format_errors(errorMsg);
-            STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Spot could not parse formula: " << prefixLtl << ": " << errorMsg.str());
+            STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException,
+                            "Spot could not parse formula: " << prefixLtl << ": " << errorMsg.str() << ".");
         }
         spot::formula spotFormula = spotPrefixLtl.f;
 
@@ -164,7 +165,7 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
 
     return da;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Spot support.");
     (void)formula;
     (void)extracted;
     (void)acceptanceConditions;

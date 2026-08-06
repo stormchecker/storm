@@ -63,7 +63,7 @@ const std::string IOSettings::cvarOptionName = "cvar";
 
 const std::string IOSettings::uncertaintyResolutionModeName = "uncertainty-resolution";
 
-std::string preventDRNPlaceholderOptionName = "no-drn-placeholders";
+const std::string preventDRNPlaceholderOptionName = "no-drn-placeholders";
 
 IOSettings::IOSettings() : ModuleSettings(moduleName) {
     this->addOption(
@@ -134,7 +134,7 @@ IOSettings::IOSettings() : ModuleSettings(moduleName) {
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file.").build())
                         .build());
     this->addOption(
-        storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, "",
+        storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, false,
                                        "If given, the loaded model will be written to the specified file in the drn format.")
             .setIsAdvanced()
             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build())
@@ -143,7 +143,7 @@ IOSettings::IOSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .build());
     this->addOption(
-        storm::settings::OptionBuilder(moduleName, exportDdOptionName, "",
+        storm::settings::OptionBuilder(moduleName, exportDdOptionName, false,
                                        "If given, the loaded model will be written to the specified file in the drdd format.")
             .setIsAdvanced()
             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build())
@@ -629,13 +629,13 @@ bool IOSettings::check() const {
     numSymbolicInputs += isQvbsInputSet() ? 1 : 0;
     STORM_LOG_THROW(numSymbolicInputs <= 1, storm::exceptions::InvalidSettingsException, "Multiple symbolic input models.");
     STORM_LOG_THROW(!isExportJaniDotSet() || isJaniInputSet() || isQvbsInputSet(), storm::exceptions::InvalidSettingsException,
-                    "Jani-to-dot export is only available for jani models");
+                    "Jani-to-dot export is only available for jani models.");
 
     // Ensure that not two explicit input models were given.
     uint64_t numExplicitInputs = isExplicitSet() ? 1 : 0;
     numExplicitInputs += isExplicitDRNSet() ? 1 : 0;
     numExplicitInputs += isExplicitIMCASet() ? 1 : 0;
-    STORM_LOG_THROW(numExplicitInputs <= 1, storm::exceptions::InvalidSettingsException, "Multiple explicit input models");
+    STORM_LOG_THROW(numExplicitInputs <= 1, storm::exceptions::InvalidSettingsException, "Multiple explicit input models.");
 
     // Ensure that the model was given either symbolically or explicitly.
     STORM_LOG_THROW(numSymbolicInputs + numExplicitInputs <= 1, storm::exceptions::InvalidSettingsException,

@@ -61,7 +61,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
                                                                                    bool allowModelSimplifications, bool graphPreserving) {
     STORM_LOG_THROW(this->canHandle(parametricModel, checkTask), storm::exceptions::NotSupportedException,
                     "Combination of model " << parametricModel->getType() << " and formula '" << checkTask.getFormula() << "' is not supported.");
-    STORM_LOG_THROW(graphPreserving, storm::exceptions::NotImplementedException, "Non-graph-preserving regions not implemented for MDPs");
+    STORM_LOG_THROW(graphPreserving, storm::exceptions::NotImplementedException, "Non-graph-preserving regions not implemented for MDPs.");
     this->specifySplitEstimates(generateRegionSplitEstimates, checkTask);
     this->specifyMonotonicity(monotonicityBackend, checkTask);
     auto mdp = parametricModel->template as<SparseModelType>();
@@ -69,9 +69,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
 
     if (allowModelSimplifications) {
         auto simplifier = storm::transformer::SparseParametricMdpSimplifier<SparseModelType>(*mdp);
-        if (!simplifier.simplify(checkTask.getFormula())) {
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-        }
+        STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         this->parametricModel = simplifier.getSimplifiedModel();
         this->specifyFormula(env, checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
     } else {
@@ -107,7 +105,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
     STORM_LOG_THROW(propositionalChecker.canHandle(checkTask.getFormula().getLeftSubformula()) &&
                         propositionalChecker.canHandle(checkTask.getFormula().getRightSubformula()),
-                    storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported");
+                    storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported.");
     storm::storage::BitVector phiStates = std::move(propositionalChecker.check(checkTask.getFormula().getLeftSubformula())
                                                         ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
                                                         .getTruthValuesVector());
@@ -152,7 +150,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
     STORM_LOG_THROW(propositionalChecker.canHandle(checkTask.getFormula().getLeftSubformula()) &&
                         propositionalChecker.canHandle(checkTask.getFormula().getRightSubformula()),
-                    storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported");
+                    storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported.");
     storm::storage::BitVector phiStates = std::move(propositionalChecker.check(checkTask.getFormula().getLeftSubformula())
                                                         ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
                                                         .getTruthValuesVector());
@@ -205,7 +203,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     // get the results for the subformula
     storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
     STORM_LOG_THROW(propositionalChecker.canHandle(checkTask.getFormula().getSubformula()), storm::exceptions::NotSupportedException,
-                    "Parameter lifting with non-propositional subformulas is not supported");
+                    "Parameter lifting with non-propositional subformulas is not supported.");
     storm::storage::BitVector targetStates = std::move(propositionalChecker.check(checkTask.getFormula().getSubformula())
                                                            ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
                                                            .getTruthValuesVector());
@@ -377,7 +375,7 @@ std::vector<ConstantType> SparseMdpParameterLiftingModelChecker<SparseModelType,
     // Get the result for the complete model (including maybestates)
     std::vector<ConstantType> result = resultsForNonMaybeStates;
     auto maybeStateResIt = x.begin();
-    for (auto const& maybeState : maybeStates) {
+    for (auto maybeState : maybeStates) {
         result[maybeState] = *maybeStateResIt;
         ++maybeStateResIt;
     }
@@ -392,7 +390,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::compu
         // only count selected rows
         n = selectedRows->getNumberOfSetBits();
     } else {
-        for (auto const& maybeState : maybeStates) {
+        for (auto maybeState : maybeStates) {
             n += this->parametricModel->getTransitionMatrix().getRowGroupSize(maybeState);
         }
     }

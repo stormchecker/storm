@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_SUBSTITUTIONVISITOR_H_
-#define STORM_STORAGE_EXPRESSIONS_SUBSTITUTIONVISITOR_H_
+#pragma once
 
 #include <stack>
 
@@ -46,5 +45,3 @@ class SubstitutionVisitor : public ExpressionVisitor {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_SUBSTITUTIONVISITOR_H_ */

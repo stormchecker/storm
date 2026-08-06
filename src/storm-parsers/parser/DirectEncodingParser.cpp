@@ -93,7 +93,7 @@ bool isCompatibleValueType(DirectEncodingValueType fileValueType) {
     } else if constexpr (std::is_same_v<OutputValueType, storm::RationalFunction>) {
         return fileValueType == Double || fileValueType == Rational || fileValueType == Parametric;
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected output value type." << toString(fileValueType));
+        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected output value type." << toString(fileValueType) << ".");
     }
 }
 
@@ -118,7 +118,7 @@ DrnHeader parseHeader(std::istream& file) {
 
         if (line.starts_with("@type: ")) {
             // Parse model type
-            STORM_LOG_THROW(!sawModelType, storm::exceptions::WrongFormatException, "Type declared twice");
+            STORM_LOG_THROW(!sawModelType, storm::exceptions::WrongFormatException, "Type declared twice.");
             header.modelType = storm::models::getModelType(line.substr(7));
             STORM_LOG_TRACE("Model type: " << header.modelType);
             STORM_LOG_THROW(header.modelType != storm::models::ModelType::S2pg, storm::exceptions::NotSupportedException,
@@ -126,11 +126,11 @@ DrnHeader parseHeader(std::istream& file) {
             sawModelType = true;
         } else if (line.starts_with("@value_type: ")) {
             // Parse value type
-            STORM_LOG_THROW(header.valueType == DirectEncodingValueType::Default, storm::exceptions::WrongFormatException, "Value type declared twice");
+            STORM_LOG_THROW(header.valueType == DirectEncodingValueType::Default, storm::exceptions::WrongFormatException, "Value type declared twice.");
             header.valueType = valueTypeFromString(line.substr(13));
         } else if (line == "@parameters") {
             // Parse parameters
-            STORM_LOG_THROW(!sawParameters, storm::exceptions::WrongFormatException, "Parameters declared twice");
+            STORM_LOG_THROW(!sawParameters, storm::exceptions::WrongFormatException, "Parameters declared twice.");
             storm::io::getline(file, line);
             if (line != "") {
                 boost::split(header.parameters, line, boost::is_any_of(" "));
@@ -153,16 +153,16 @@ DrnHeader parseHeader(std::istream& file) {
             }
         } else if (line == "@reward_models") {
             // Parse reward models
-            STORM_LOG_THROW(header.rewardModelNames.empty(), storm::exceptions::WrongFormatException, "Reward model names declared twice");
+            STORM_LOG_THROW(header.rewardModelNames.empty(), storm::exceptions::WrongFormatException, "Reward model names declared twice.");
             storm::io::getline(file, line);
             boost::split(header.rewardModelNames, line, boost::is_any_of("\t "));
         } else if (line == "@nr_states") {
             // Parse no. of states
-            STORM_LOG_THROW(header.nrStates == 0, storm::exceptions::WrongFormatException, "Number states declared twice");
+            STORM_LOG_THROW(header.nrStates == 0, storm::exceptions::WrongFormatException, "Number states declared twice.");
             storm::io::getline(file, line);
             header.nrStates = parseNumber<size_t>(line);
         } else if (line == "@nr_choices") {
-            STORM_LOG_THROW(header.nrChoices == 0, storm::exceptions::WrongFormatException, "Number of actions declared twice");
+            STORM_LOG_THROW(header.nrChoices == 0, storm::exceptions::WrongFormatException, "Number of actions declared twice.");
             storm::io::getline(file, line);
             header.nrChoices = parseNumber<size_t>(line);
         } else if (line == "@model") {
@@ -295,7 +295,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseM
 
             if (continuousTime) {
                 // Parse exit rate for CTMC or MA
-                STORM_LOG_THROW(line.starts_with("!"), storm::exceptions::WrongFormatException, "Exit rate missing in " << lineNumber);
+                STORM_LOG_THROW(line.starts_with("!"), storm::exceptions::WrongFormatException, "Exit rate missing in " << lineNumber << ".");
                 line = line.substr(1);  // Remove "!"
                 curString = line;
                 posEnd = line.find(" ");
@@ -322,12 +322,13 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseM
                     line = line.substr(posEndObservation + 1);
                     if (!line.empty()) {
                         STORM_LOG_THROW(line.starts_with(" "), storm::exceptions::WrongFormatException,
-                                        "Expected whitespace after observation in line " << lineNumber);
+                                        "Expected whitespace after observation in line " << lineNumber << ".");
 
                         line = line.substr(1);
                     }
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Expected an observation for state " << state << " in line " << lineNumber);
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                                    "Expected an observation for state " << state << " in line " << lineNumber << ".");
                 }
             }
 
@@ -454,7 +455,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseM
             ValueType value = parseValue(valueStr, placeholders, valueParser);
             STORM_LOG_TRACE("Transition " << row << " -> " << target << ": " << value);
             STORM_LOG_THROW(target < nrStates, storm::exceptions::WrongFormatException,
-                            "In line " << lineNumber << " target state " << target << " is greater than state size " << nrStates);
+                            "In line " << lineNumber << " target state " << target << " is greater than state size " << nrStates << ".");
             builder.addNextValue(row, target, value);
         }
 
@@ -525,6 +526,8 @@ std::shared_ptr<storm::models::ModelBase> parseModel(DirectEncodingValueType val
             return parseModel<storm::RationalNumber>(file, header, options);
         case DoubleInterval:
             return parseModel<storm::Interval>(file, header, options);
+        case RationalInterval:
+            return parseModel<storm::RationalInterval>(file, header, options);
         case Parametric:
             return parseModel<storm::RationalFunction>(file, header, options);
         default:

@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_HYBRIDQUANTITATIVECHECKRESULT_H_
-#define STORM_MODELCHECKER_HYBRIDQUANTITATIVECHECKRESULT_H_
+#pragma once
 
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/storage/dd/Add.h"
@@ -82,5 +81,3 @@ class HybridQuantitativeCheckResult : public QuantitativeCheckResult<ValueType> 
 };
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_HYBRIDQUANTITATIVECHECKRESULT_H_ */

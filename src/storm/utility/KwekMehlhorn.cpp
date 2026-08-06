@@ -3,6 +3,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/PrecisionExceededException.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace utility {
@@ -39,9 +40,8 @@ std::pair<typename NumberTraits<RationalType>::IntegerType, typename NumberTrait
 template<typename RationalType>
 std::pair<typename NumberTraits<RationalType>::IntegerType, typename NumberTraits<RationalType>::IntegerType> truncateToRational(double const& value,
                                                                                                                                  uint64_t precision) {
-    if (precision > std::numeric_limits<double>::max_digits10) {
-        throw storm::exceptions::PrecisionExceededException() << "Exceeded precision of double, consider switching to rational numbers.";
-    }
+    STORM_LOG_THROW(precision <= std::numeric_limits<double>::max_digits10, storm::exceptions::PrecisionExceededException,
+                    "Exceeded precision of double, consider switching to rational numbers.");
 
     double powerOfTen = std::pow(10, precision);
     auto truncated = storm::utility::trunc<double>(value * powerOfTen);

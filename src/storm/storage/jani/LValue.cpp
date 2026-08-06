@@ -13,7 +13,7 @@ LValue::LValue(storm::jani::Variable const& variable) : variable(&variable) {
 }
 
 LValue::LValue(storm::jani::Variable const& variable, std::vector<storm::expressions::Expression> const& index) : variable(&variable), arrayIndexVector(index) {
-    STORM_LOG_THROW(variable.getType().isArrayType(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
+    STORM_LOG_THROW(variable.getType().isArrayType(), storm::exceptions::NotSupportedException, "Expecting an array Variable.");
     // Intentionally left empty
 }
 

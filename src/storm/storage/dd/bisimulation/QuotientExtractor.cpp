@@ -1,9 +1,9 @@
 #include "storm/storage/dd/bisimulation/QuotientExtractor.h"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#include <parallel_hashmap/phmap.h>
-#pragma GCC diagnostic pop
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcomma"
+#include <gtl/phmap.hpp>
+#pragma clang diagnostic pop
 #include <numeric>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -160,7 +160,7 @@ class InternalRepresentativeComputer<storm::dd::DdType::CUDD> : public InternalR
     }
 
     ::DdManager* ddman;
-    phmap::flat_hash_map<DdNode const*, bool> visitedNodes;
+    gtl::flat_hash_map<DdNode const*, bool> visitedNodes;
 #endif
 };
 
@@ -254,7 +254,7 @@ class InternalRepresentativeComputer<storm::dd::DdType::Sylvan> : public Interna
         }
     }
 
-    phmap::flat_hash_map<BDD, bool> visitedNodes;
+    gtl::flat_hash_map<BDD, bool> visitedNodes;
 #endif
 };
 
@@ -717,7 +717,7 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::CUDD, ValueType> : publ
     ::DdManager* ddman;
 
     // A mapping from blocks (stored in terms of a DD node) to the offset of the corresponding block.
-    phmap::flat_hash_map<DdNode const*, uint64_t> blockToOffset;
+    gtl::flat_hash_map<DdNode const*, uint64_t> blockToOffset;
 #endif
 };
 
@@ -960,7 +960,7 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType, Expo
     }
 
     // A mapping from blocks (stored in terms of a DD node) to the offset of the corresponding block.
-    phmap::flat_hash_map<BDD, uint64_t> blockToOffset;
+    gtl::flat_hash_map<BDD, uint64_t> blockToOffset;
 #endif
 };
 

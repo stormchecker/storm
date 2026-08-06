@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_GEOMETRY_HALFSPACE_H_
-#define STORM_STORAGE_GEOMETRY_HALFSPACE_H_
+#pragma once
 
 #include <iomanip>
 #include <iostream>
@@ -132,5 +131,3 @@ class Halfspace {
 }  // namespace geometry
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_GEOMETRY_HALFSPACE_H_ */

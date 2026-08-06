@@ -91,7 +91,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initialize
         auto const& formula = *this->objectives[objIndex].formula;
         if (formula.isProbabilityOperatorFormula()) {
             STORM_LOG_THROW(formula.getSubformula().isBoundedUntilFormula(), storm::exceptions::NotSupportedException,
-                            "Unexpected type of subformula for formula " << formula);
+                            "Unexpected type of subformula for formula " << formula << ".");
             auto const& subformula = formula.getSubformula().asBoundedUntilFormula();
             for (uint64_t dim = 0; dim < subformula.getDimension(); ++dim) {
                 Dimension<ValueType> dimension;
@@ -162,10 +162,11 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initialize
             for (uint64_t dim = 0; dim < subformula.getDimension(); ++dim) {
                 Dimension<ValueType> dimension;
                 dimension.formula = subformula.restrictToDimension(dim);
-                STORM_LOG_THROW(!(dimension.formula->asCumulativeRewardFormula().getBound().isVariable() &&
-                                  infinityBoundVariables.count(
-                                      dimension.formula->asCumulativeRewardFormula().getBound().getBaseExpression().asVariableExpression().getVariable()) > 0),
-                                storm::exceptions::NotSupportedException, "Letting cumulative reward bounds approach infinite is not supported.");
+                STORM_LOG_THROW(
+                    !dimension.formula->asCumulativeRewardFormula().getBound().isVariable() ||
+                        infinityBoundVariables.count(
+                            dimension.formula->asCumulativeRewardFormula().getBound().getBaseExpression().asVariableExpression().getVariable()) == 0,
+                    storm::exceptions::NotSupportedException, "Letting cumulative reward bounds approach infinite is not supported.");
                 dimension.objectiveIndex = objIndex;
                 dimension.boundType = DimensionBoundType::UpperBound;
                 if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
@@ -306,7 +307,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::translateL
             "Letting lower bounds approach infinity is only supported in single objective mode.");  // It most likely also works with multiple objectives with
                                                                                                     // the same shape. However, we haven't checked this yet.
         STORM_LOG_THROW(objectives.front().formula->isProbabilityOperatorFormula(), storm::exceptions::NotSupportedException,
-                        "Letting lower bounds approach infinity is only supported for probability operator formulas");
+                        "Letting lower bounds approach infinity is only supported for probability operator formulas.");
         auto const& probabilityOperatorFormula = objectives.front().formula->asProbabilityOperatorFormula();
         STORM_LOG_THROW(probabilityOperatorFormula.getSubformula().isBoundedUntilFormula(), storm::exceptions::NotSupportedException,
                         "Letting lower bounds approach infinity is only supported for bounded until probabilities.");
@@ -842,8 +843,8 @@ boost::optional<ValueType> MultiDimensionalRewardUnfolding<ValueType, SingleObje
                         for (auto row : ecElimRes.newToOldRowMapping) {
                             rewards.push_back(actionRewards[row]);
                         }
-                        storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType> baier(ecElimRes.matrix, rewards, rew0StateProbs);
-                        objective.upperResultBound = baier.computeUpperBound();
+                        storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType> baier(ecElimRes.matrix, rew0StateProbs);
+                        objective.upperResultBound = baier.computeTotalRewardBounds(rewards).upper;
                     }
                 }
             }

@@ -958,7 +958,7 @@ class MILPMinimalLabelSetGenerator {
         ChoiceInformation choiceInformation = determineRelevantAndProblematicChoices(mdp, labelSets, stateInformation, psiStates);
 
         // (4) Encode resulting system as MILP problem.
-        std::shared_ptr<storm::solver::LpSolver<double>> solver = storm::utility::solver::getLpSolver<double>("MinimalLabelSetCounterexample");
+        std::shared_ptr<storm::solver::LpSolver<double>> solver = storm::utility::solver::getLpSolver<double>(env, "MinimalLabelSetCounterexample");
 
         //  (4.1) Create variables.
         VariableInformation variableInformation = createVariables(*solver, mdp, stateInformation, choiceInformation);

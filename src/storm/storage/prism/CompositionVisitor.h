@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_COMPOSITIONVISITOR_H_
-#define STORM_STORAGE_PRISM_COMPOSITIONVISITOR_H_
+#pragma once
 
 #include <boost/any.hpp>
 
@@ -26,5 +25,3 @@ class CompositionVisitor {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_COMPOSITIONVISITOR_H_ */

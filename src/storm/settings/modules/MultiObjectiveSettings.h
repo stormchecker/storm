@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_MULTIOBJECTIVESETTINGS_H_
-#define STORM_SETTINGS_MODULES_MULTIOBJECTIVESETTINGS_H_
+#pragma once
 
 #include "storm/modelchecker/multiobjective/MultiObjectiveModelCheckingMethod.h"
 #include "storm/settings/modules/ModuleSettings.h"
@@ -130,11 +129,6 @@ class MultiObjectiveSettings : public ModuleSettings {
     bool isIndicatorConstraintsSet() const;
 
     /*!
-     * Retrieves whether lexicographic model checking has been set
-     */
-    bool isLexicographicModelCheckingSet() const;
-
-    /*!
      * Retrieves whether redundant BSCC constraints are to be added
      */
     bool isRedundantBsccConstraintsSet() const;
@@ -145,8 +139,6 @@ class MultiObjectiveSettings : public ModuleSettings {
      * @return True if the settings are consistent.
      */
     virtual bool check() const override;
-
-    virtual void finalize() override;
 
     const static std::string moduleName;
 
@@ -159,11 +151,8 @@ class MultiObjectiveSettings : public ModuleSettings {
     const static std::string schedulerRestrictionOptionName;
     const static std::string printResultsOptionName;
     const static std::string encodingOptionName;
-    const static std::string lexicographicOptionName;
 };
 
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_MULTIOBJECTIVESETTINGS_H_ */

@@ -9,12 +9,14 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/umb/export/SparseModelToUmb.h"
 #include "storm/storage/umb/export/UmbExport.h"
 #include "storm/storage/umb/import/SparseModelFromUmb.h"
 #include "storm/storage/umb/import/UmbImport.h"
 #include "storm/storage/umb/model/UmbModel.h"
 #include "storm/storage/umb/model/ValueEncoding.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/utility/constants.h"
 #include "test/storm_gtest.h"
 /*!
@@ -53,11 +55,12 @@ class UmbRoundTripTest : public ::testing::Test {
         generatorOptions.setBuildChoiceOrigins(exportOptions.allowChoiceOriginsAsActions);
         generatorOptions.setBuildAllRewardModels();
         generatorOptions.setBuildAllLabels();
-        // TODO: valuations
+        generatorOptions.setBuildStateValuations(true);
+        generatorOptions.setBuildObservationValuations(true);
 
         // build model from prism file
         storm::prism::Program program = storm::parser::PrismParser::parse(prismfile, true);
-        program = storm::utility::prism::preprocess(program, constants);
+        program = program.preprocess(constants);
         auto builder = storm::builder::ExplicitModelBuilder<ValueType>(program, generatorOptions);
         auto model = builder.build();
 
@@ -92,6 +95,33 @@ class UmbRoundTripTest : public ::testing::Test {
                     ASSERT_TRUE(otherRewardModel.hasTransitionRewards());
                     EXPECT_EQ(rewardModel.getTransitionRewardMatrix(), otherRewardModel.getTransitionRewardMatrix());
                 }
+            }
+            auto assertEqualValuations = [](auto const& v, auto const& other_v) {
+                ASSERT_EQ(v.size(), other_v.size());
+                EXPECT_EQ(0, v.numStrings());
+                EXPECT_EQ(0, other_v.numStrings());
+                ASSERT_EQ(1, v.numClasses());
+                ASSERT_EQ(1, other_v.numClasses());
+                ASSERT_EQ(v.getClassDescription().sizeInBits(), other_v.getClassDescription().sizeInBits());
+                storm::umb::UmbModel::Valuation data = v.getRawUmbData();
+                storm::umb::UmbModel::Valuation other_data = other_v.getRawUmbData();
+                EXPECT_EQ(data.valuations, other_data.valuations);
+                EXPECT_EQ(data.stringMapping, other_data.stringMapping);
+                EXPECT_EQ(data.strings == other_data.strings, true);
+                EXPECT_EQ(data.valuationToClass, other_data.valuationToClass);
+            };
+            ASSERT_TRUE(model->hasStateValuations());
+            ASSERT_TRUE(otherModelPtr->hasStateValuations());
+            assertEqualValuations(model->getStateValuations().getStorage(), otherModelPtr->getStateValuations().getStorage());
+            // POMDP specific things
+            if (model->isPartiallyObservable()) {
+                ASSERT_TRUE(model->isOfType(storm::models::ModelType::Pomdp));
+                auto pomdp = model->template as<storm::models::sparse::Pomdp<ValueType>>();
+                auto otherPomdp = otherModelPtr->template as<storm::models::sparse::Pomdp<ValueType>>();
+                EXPECT_EQ(pomdp->getObservations(), otherPomdp->getObservations());
+                ASSERT_TRUE(pomdp->hasObservationValuations());
+                ASSERT_TRUE(otherPomdp->hasObservationValuations());
+                assertEqualValuations(pomdp->getObservationValuations().getStorage(), otherPomdp->getObservationValuations().getStorage());
             }
         };
 
@@ -133,6 +163,7 @@ TEST_F(UmbRoundTripTest, brp_dtmc) {
     run<double>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
     run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
     run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
+    run<storm::RationalInterval>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
     options.compression = storm::io::CompressionMode::Gzip;
     run<double>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
     options.compression = storm::io::CompressionMode::Xz;
@@ -146,6 +177,7 @@ TEST_F(UmbRoundTripTest, embedded_ctmc) {
     run<double>(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "", options);
     run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
     run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
+    run<storm::RationalInterval>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
 }
 
 TEST_F(UmbRoundTripTest, firewire_mdp) {
@@ -153,6 +185,7 @@ TEST_F(UmbRoundTripTest, firewire_mdp) {
     run<double>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
     run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
     run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
+    run<storm::RationalInterval>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
     options.allowChoiceOriginsAsActions = true;
     options.allowChoiceLabelingAsActions = false;
     run<double>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
@@ -163,11 +196,13 @@ TEST_F(UmbRoundTripTest, polling_ma) {
     run<double>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
     run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
     run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
+    run<storm::RationalInterval>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
 }
 
 TEST_F(UmbRoundTripTest, robot_imdp) {
     storm::umb::ExportOptions options;
     run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/imdp/robot.prism", "delta=0.5", options);
+    run<storm::RationalInterval>(STORM_TEST_RESOURCES_DIR "/imdp/robot.prism", "delta=0.5", options);
 }
 
 TEST_F(UmbRoundTripTest, maze_pomdp) {
@@ -175,6 +210,7 @@ TEST_F(UmbRoundTripTest, maze_pomdp) {
     run<double>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.5", options);
     run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.5", options);
     run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.5", options);
+    run<storm::RationalInterval>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.5", options);
 }
 
 }  // namespace

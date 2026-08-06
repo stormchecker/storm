@@ -145,7 +145,7 @@ DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::stor
                     }
                 } else {
                     STORM_LOG_ASSERT(restr->isMutex(), "Restriction " << *restr << " is neither SEQ nor MUTEX.");
-                    bool found = false;
+                    [[maybe_unused]] bool found = false;
                     for (auto it = restr->children().cbegin(); it != restr->children().cend(); ++it) {
                         if ((*it)->id() != elem->id()) {
                             mutexRestrictionElements.push_back((*it)->id());
@@ -197,7 +197,7 @@ DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::stor
                 STORM_LOG_ASSERT(symmetricElements.size() == noSymmetricElements, "No. of symmetric elements do not coincide.");
                 if (visited[symmetricElements[1]]) {
                     // Elements already mirrored
-                    for (size_t index : symmetricElements) {
+                    for ([[maybe_unused]] size_t index : symmetricElements) {
                         STORM_LOG_ASSERT(visited[index], "Element not mirrored.");
                     }
                     continue;

@@ -45,9 +45,11 @@ void exportModelToUmb(storm::models::sparse::Model<ValueType> const& model, std:
 template std::shared_ptr<storm::models::sparse::Model<double>> buildModelFromUmb(std::filesystem::path const&, ImportOptions const&);
 template std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> buildModelFromUmb(std::filesystem::path const&, ImportOptions const&);
 template std::shared_ptr<storm::models::sparse::Model<storm::Interval>> buildModelFromUmb(std::filesystem::path const&, ImportOptions const&);
+template std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> buildModelFromUmb(std::filesystem::path const&, ImportOptions const&);
 
 template void exportModelToUmb(storm::models::sparse::Model<double> const&, std::filesystem::path const&, ExportOptions const&);
 template void exportModelToUmb(storm::models::sparse::Model<storm::RationalNumber> const&, std::filesystem::path const&, ExportOptions const&);
 template void exportModelToUmb(storm::models::sparse::Model<storm::Interval> const&, std::filesystem::path const&, ExportOptions const&);
+template void exportModelToUmb(storm::models::sparse::Model<storm::RationalInterval> const&, std::filesystem::path const&, ExportOptions const&);
 
 }  // namespace storm::umb

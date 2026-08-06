@@ -35,7 +35,7 @@ MappedFile::MappedFile(const char* filename) {
     if (this->data == MAP_FAILED) {
         close(this->file);
         STORM_LOG_ERROR("Error in mmap(" << filename << "): " << std::strerror(errno));
-        throw exceptions::FileIoException() << "MappedFile Error in mmap(): " << std::strerror(errno);
+        STORM_LOG_THROW(false, storm::exceptions::FileIoException, "MappedFile Error in mmap(): " << std::strerror(errno) << ".");
     }
     this->dataEnd = this->data + this->st.st_size;
 }

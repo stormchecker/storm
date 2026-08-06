@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_BOOLEANLITERALFORMULA_H_
-#define STORM_LOGIC_BOOLEANLITERALFORMULA_H_
+#pragma once
 
 #include "storm/logic/StateFormula.h"
 
@@ -26,5 +25,3 @@ class BooleanLiteralFormula : public StateFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_BOOLEANLITERALFORMULA_H_ */

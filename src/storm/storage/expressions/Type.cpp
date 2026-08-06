@@ -305,7 +305,6 @@ Type Type::ite(Type const& thenType, Type const& elseType) const {
                         "Operator 'ite' requires proper types.");
         return std::max(thenType, elseType);
     }
-    return thenType;
 }
 
 Type Type::floorCeil() const {

@@ -83,7 +83,7 @@ std::unordered_map<uint32_t, std::vector<storm::RationalFunction>> ApplyFiniteSc
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> ApplyFiniteSchedulerToPomdp<ValueType>::transform(
     PomdpFscApplicationMode applicationMode) const {
-    STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::IllegalArgumentException, "POMDP needs to be canonic");
+    STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::IllegalArgumentException, "POMDP needs to be canonic.");
     storm::storage::sparse::ModelComponents<storm::RationalFunction> modelComponents;
 
     uint64_t nrStates = pomdp.getNumberOfStates();

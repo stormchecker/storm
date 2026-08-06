@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_GMMXXLINEAREQUATIONSOLVER_H_
-#define STORM_SOLVER_GMMXXLINEAREQUATIONSOLVER_H_
+#pragma once
 
 #include <ostream>
 
@@ -58,5 +57,3 @@ class GmmxxLinearEquationSolverFactory : public LinearEquationSolverFactory<Valu
 
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_GMMXXLINEAREQUATIONSOLVER_H_ */

@@ -10,7 +10,6 @@
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
-#include "storm/storage/PairHash.h"
 
 namespace storm::dft {
 namespace modelchecker {

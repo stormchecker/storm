@@ -1,5 +1,4 @@
-#ifndef STORM_ASSUMPTIONMAKER_H
-#define STORM_ASSUMPTIONMAKER_H
+#pragma once
 
 #include "AssumptionChecker.h"
 #include "Order.h"
@@ -71,4 +70,3 @@ class AssumptionMaker {
 };
 }  // namespace analysis
 }  // namespace storm
-#endif  // STORM_ASSUMPTIONMAKER_H

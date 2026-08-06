@@ -11,7 +11,7 @@
 #include "storm/storage/PlayerIndex.h"
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
-#include "storm/storage/sparse/StateValuations.h"
+#include "storm/storage/valuations/Valuations.h"
 
 namespace storm {
 namespace builder {
@@ -50,7 +50,12 @@ class StateAndChoiceInformationBuilder {
 
     void setBuildStateValuations(bool value);
     bool isBuildStateValuations() const;
-    storm::storage::sparse::StateValuationsBuilder& stateValuationsBuilder();
+    void initializeStateValuations(storm::storage::sparse::Valuations&& valuations);
+    /*!
+     * @return a reference to the state valuations. Must only be called if buildStateValuations() is true and initializeStateValuations() has been called
+     * before.
+     */
+    storm::storage::sparse::Valuations& stateValuations();
 
    private:
     bool _buildChoiceLabels;
@@ -66,7 +71,7 @@ class StateAndChoiceInformationBuilder {
     storm::storage::BitVector _markovianStates;
 
     bool _buildStateValuations;
-    storm::storage::sparse::StateValuationsBuilder _stateValuationsBuilder;
+    std::optional<storm::storage::sparse::Valuations> _stateValuations;
 };
 }  // namespace builder
 }  // namespace storm

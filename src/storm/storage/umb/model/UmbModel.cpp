@@ -105,6 +105,8 @@ void UmbModel::encodeRationals() {
     auto getSize = [](storm::umb::GenericVector& v) -> uint64_t {
         if (v.isType<storm::RationalNumber>()) {
             return ValueEncoding::getMinimalRationalSize(v.template get<storm::RationalNumber>(), true);
+        } else if (v.isType<storm::RationalInterval>()) {
+            return ValueEncoding::getMinimalRationalIntervalSize(v.template get<storm::RationalInterval>(), true);
         }
         return 0ull;
     };
@@ -112,10 +114,13 @@ void UmbModel::encodeRationals() {
         if (v.isType<storm::RationalNumber>()) {
             auto values = ValueEncoding::createUint64FromRationalRange(v.template get<storm::RationalNumber>(), size);
             v.template set<uint64_t>(std::move(values));
+        } else if (v.isType<storm::RationalInterval>()) {
+            auto values = ValueEncoding::createUint64FromRationalIntervalRange(v.template get<storm::RationalInterval>(), size);
+            v.template set<uint64_t>(std::move(values));
         }
     };
     auto encode = [&getSize, &encodeForSize](storm::umb::GenericVector& v, std::optional<uint64_t>& size) {
-        if (v.isType<storm::RationalNumber>()) {
+        if (v.isType<storm::RationalNumber>() || v.isType<storm::RationalInterval>()) {
             size = getSize(v);
             encodeForSize(v, size.value());
         }
@@ -179,6 +184,10 @@ void UmbModel::decodeRationals() {
             auto valueView = ValueEncoding::uint64ToRationalRangeView(v.template get<uint64_t>(), type->bitSize());
             std::vector<storm::RationalNumber> values(valueView.begin(), valueView.end());
             v.template set<storm::RationalNumber>(std::move(values));
+        } else if (type.has_value() && type->type == Type::RationalInterval && v.isType<uint64_t>()) {
+            auto valueView = ValueEncoding::uint64ToRationalIntervalRangeView(v.template get<uint64_t>(), type->bitSize());
+            std::vector<storm::RationalInterval> values(valueView.begin(), valueView.end());
+            v.template set<storm::RationalInterval>(std::move(values));
         }
     };
 

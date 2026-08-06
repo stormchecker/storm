@@ -1,5 +1,4 @@
-#ifndef STORM_BUILDER_EXPLICITMODELBUILDER_H
-#define STORM_BUILDER_EXPLICITMODELBUILDER_H
+#pragma once
 
 #include <boost/container/flat_map.hpp>
 #include <boost/functional/hash.hpp>
@@ -21,8 +20,6 @@
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/storage/sparse/StateStorage.h"
 
-#include "storm/utility/prism.h"
-
 #include "storm/builder/ExplorationOrder.h"
 
 #include "storm/generator/CompressedState.h"
@@ -33,7 +30,6 @@ namespace storm {
 
 namespace builder {
 
-using namespace storm::utility::prism;
 using namespace storm::generator;
 
 // Forward-declare classes.
@@ -182,5 +178,3 @@ class ExplicitModelBuilder {
 
 }  // namespace builder
 }  // namespace storm
-
-#endif /* STORM_BUILDER_EXPLICITMODELBUILDER_H */

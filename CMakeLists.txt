@@ -1,11 +1,8 @@
-cmake_minimum_required (VERSION 3.23)
-if (NOT ${CMAKE_VERSION} VERSION_LESS 3.24)
-	cmake_policy(VERSION 3.24)
-endif()
+cmake_minimum_required (VERSION 3.25)
 
 # Set project name
 project(storm
-	VERSION 1.12.0.1
+	VERSION 1.13.0.1
 	# Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
 	LANGUAGES CXX C
 	DESCRIPTION "Storm - A Modern Probabilistic Model Checker"
@@ -51,6 +48,8 @@ option(STORM_FORCE_POPCNT "Sets whether the popcnt instruction is forced to be u
 MARK_AS_ADVANCED(STORM_FORCE_POPCNT)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache [if found]" ON)
 mark_as_advanced(STORM_COMPILE_WITH_CCACHE)
+option(STORM_COMPILE_WITH_PCH "Enable pre-compiled headers" ON)
+mark_as_advanced(STORM_COMPILE_WITH_PCH)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
 option(STORM_COMPILE_WITH_ADDRESS_SANITIZER "Sets whether to compile with AddressSanitizer enabled" OFF)
 option(STORM_COMPILE_WITH_ALL_SANITIZERS "Sets whether to compile with all sanitizers enabled" OFF)
@@ -74,7 +73,7 @@ MARK_AS_ADVANCED(STORM_QVBS_ROOT)
 
 ## Configuring dependencies
 set(STORM_CARL_GIT_REPO "https://github.com/stormchecker/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
-option(STORM_CARL_GIT_TAG "For fetching carl: which git tag to use" "14.34")
+option(STORM_CARL_GIT_TAG "For fetching carl: which git tag to use" "14.35")
 MARK_AS_ADVANCED(STORM_CARL_GIT_TAG)
 option(STORM_DISABLE_CUDD "Sets whether linking with CUDD should be disabled." OFF)
 option(STORM_DISABLE_GLPK "Sets whether linking with GLPK should be disabled." OFF)
@@ -310,6 +309,11 @@ endif ()
 ##	Set precompiled headers
 ##
 #############################################################
+
+if(NOT STORM_COMPILE_WITH_PCH)
+	set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
+	message(STATUS "Storm - Disabling precompiled headers.")
+endif()
 
 # Selection is based on (relatively extensive, but ad-hoc) compilation profiling in late 2023.
 # As changes mean recompilations of the complete code base, we only use std libraries and boost libraries here for now.

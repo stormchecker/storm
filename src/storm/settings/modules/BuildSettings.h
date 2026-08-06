@@ -76,6 +76,11 @@ class BuildSettings : public ModuleSettings {
     bool isApplyNoMaximumProgressAssumptionSet() const;
 
     /*!
+     * Retrieves whether Markov automata should be checked for the presence of Zeno cycles after building.
+     */
+    bool isCheckZenoSet() const;
+
+    /*!
      * Retrieves whether the choice labels should be build
      */
     bool isBuildChoiceLabelsSet() const;

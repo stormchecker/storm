@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_ARGUMENTTYPE_H_
-#define STORM_SETTINGS_ARGUMENTTYPE_H_
+#pragma once
 
 #include <iostream>
 
@@ -15,5 +14,3 @@ std::ostream& operator<<(std::ostream& out, ArgumentType& argumentType);
 
 }  // namespace settings
 }  // namespace storm
-
-#endif  // STORM_SETTINGS_ARGUMENTTYPE_H_

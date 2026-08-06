@@ -1,5 +1,4 @@
-#ifndef STORM_PARSER_SPIRITPARSERDEFINITIONS_H_
-#define STORM_PARSER_SPIRITPARSERDEFINITIONS_H_
+#pragma once
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-W#pragma-messages"
@@ -27,5 +26,3 @@ namespace spirit_encoding = boost::spirit::unicode;
 }
 
 typedef BOOST_TYPEOF(storm::spirit_encoding::space_type() | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi)) Skipper;
-
-#endif /* STORM_PARSER_SPIRITPARSERDEFINITIONS_H_ */

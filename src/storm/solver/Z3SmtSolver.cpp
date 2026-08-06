@@ -1,7 +1,7 @@
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -21,7 +21,7 @@ bool Z3SmtSolver::Z3ModelReference::getBooleanValue(storm::expressions::Variable
     z3::expr z3ExprValuation = model.eval(z3Expr, true);
     return this->expressionAdapter.translateExpression(z3ExprValuation).isTrue();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -32,7 +32,7 @@ int_fast64_t Z3SmtSolver::Z3ModelReference::getIntegerValue(storm::expressions::
     z3::expr z3ExprValuation = model.eval(z3Expr, true);
     return this->expressionAdapter.translateExpression(z3ExprValuation).evaluateAsInt();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -43,7 +43,7 @@ double Z3SmtSolver::Z3ModelReference::getRationalValue(storm::expressions::Varia
     z3::expr z3ExprValuation = model.eval(z3Expr, true);
     return this->expressionAdapter.translateExpression(z3ExprValuation).evaluateAsDouble();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -53,7 +53,7 @@ std::string Z3SmtSolver::Z3ModelReference::toString() const {
     sstr << model;
     return sstr.str();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -85,7 +85,7 @@ void Z3SmtSolver::push() {
 #ifdef STORM_HAVE_Z3
     this->solver->push();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -93,7 +93,7 @@ void Z3SmtSolver::pop() {
 #ifdef STORM_HAVE_Z3
     this->solver->pop();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -101,7 +101,7 @@ void Z3SmtSolver::pop(uint_fast64_t n) {
 #ifdef STORM_HAVE_Z3
     this->solver->pop(static_cast<unsigned int>(n));
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -109,7 +109,7 @@ void Z3SmtSolver::reset() {
 #ifdef STORM_HAVE_Z3
     this->solver->reset();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -117,7 +117,7 @@ void Z3SmtSolver::add(storm::expressions::Expression const& assertion) {
 #ifdef STORM_HAVE_Z3
     this->solver->add(expressionAdapter->translateExpression(assertion));
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -147,7 +147,7 @@ void Z3SmtSolver::addNotCurrentModel(bool performSolverReset) {
     }
     this->solver->add(!notThisModel);
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -167,7 +167,7 @@ SmtSolver::CheckResult Z3SmtSolver::check() {
     }
     return this->lastResult;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -193,7 +193,7 @@ SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::set<storm::express
     }
     return this->lastResult;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -219,7 +219,7 @@ SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::initializer_list<s
     }
     return this->lastResult;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -229,7 +229,7 @@ storm::expressions::SimpleValuation Z3SmtSolver::getModelAsValuation() {
                     "Unable to create model for formula that was not determined to be satisfiable.");
     return this->convertZ3ModelToValuation(this->solver->get_model());
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -239,7 +239,7 @@ std::shared_ptr<SmtSolver::ModelReference> Z3SmtSolver::getModel() {
                     "Unable to create model for formula that was not determined to be satisfiable.");
     return std::shared_ptr<SmtSolver::ModelReference>(new Z3ModelReference(this->getManager(), this->solver->get_model(), *this->expressionAdapter));
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -277,7 +277,7 @@ std::vector<storm::expressions::SimpleValuation> Z3SmtSolver::allSat(std::vector
                                 }));
     return valuations;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -320,7 +320,7 @@ uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Variable> cons
     this->pop();
     return numberOfModels;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -361,7 +361,7 @@ uint_fast64_t Z3SmtSolver::allSat(std::vector<storm::expressions::Variable> cons
     this->pop();
     return numberOfModels;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -381,7 +381,7 @@ std::vector<storm::expressions::Expression> Z3SmtSolver::getUnsatAssumptions() {
 
     return unsatAssumptions;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -392,7 +392,7 @@ bool Z3SmtSolver::setTimeout(uint_fast64_t milliseconds) {
     solver->set(paramObject);
     return true;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -403,7 +403,7 @@ bool Z3SmtSolver::unsetTimeout() {
     solver->set(paramObject);
     return true;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
@@ -411,7 +411,7 @@ std::string Z3SmtSolver::getSmtLibString() const {
 #ifdef STORM_HAVE_Z3
     return solver->to_smt2();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 

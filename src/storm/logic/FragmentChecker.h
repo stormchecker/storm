@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_FRAGMENTCHECKER_H_
-#define STORM_LOGIC_FRAGMENTCHECKER_H_
+#pragma once
 
 #include "storm/logic/FormulaVisitor.h"
 
@@ -44,5 +43,3 @@ class FragmentChecker : public FormulaVisitor {
 
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_FRAGMENTCHECKER_H_ */

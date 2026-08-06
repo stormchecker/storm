@@ -74,7 +74,10 @@ BDD InternalBdd<DdType::Sylvan>::fromVectorRec(uint_fast64_t& currentOffset, uin
         BDD currentVar = sylvan_ithvar(static_cast<BDDVAR>(ddVariableIndices[currentLevel]));
         bdd_refs_push(currentVar);
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
         BDD result = sylvan_ite(currentVar, thenSuccessor, elseSuccessor);
+#pragma clang diagnostic pop
 
         // Dispose of the intermediate results.
         bdd_refs_pop(3);

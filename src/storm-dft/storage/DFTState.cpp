@@ -321,7 +321,7 @@ bool DFTState<ValueType>::updateFailableInRestrictions(size_t id) {
                 }
             }
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Restriction must be SEQ or MUTEX");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Restriction must be SEQ or MUTEX.");
         }
     }
     return addedFailableEvent;

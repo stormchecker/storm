@@ -1,12 +1,12 @@
+#include "storm/storage/BitVector.h"
+
 #include <algorithm>
 #include <bit>
 #include <bitset>
+#include <boost/functional/hash.hpp>
 #include <iostream>
 
-#include "storm/storage/BitVector.h"
-
 #include "storm/storage/BoostTypes.h"
-#include "storm/utility/Hash.h"
 #include "storm/utility/macros.h"
 
 // Uncomment the following line to enable additional assertions for debugging bitvector operations.
@@ -866,34 +866,14 @@ uint64_t BitVector::getNextIndexWithValue(uint64_t const* dataPtr, uint64_t star
     // At this point, currentBucket definitely contains a 1-bit and all bits (Backward ? after : before) the currentBitInBucket are zero
     STORM_LOG_ASSERT(currentBucket != 0ull, "Bitvector's getNextIndexWithValue method in invalid state.");
 
-#if (defined(__GNUG__) || defined(__clang__))
-    // Use fast and easy builtin functions to find the correct bit index
     if constexpr (Backward) {
         // take max since the startIndex might point somewhere into the current bucket so the found bit might come before the startIndex
         return std::max<uint64_t>(startingIndex,
-                                  currentBucketIndexOffset + 64ull - __builtin_ctzll(currentBucket));  // make sure to return +1 index after the found 1
+                                  currentBucketIndexOffset + 64ull - std::countr_zero(currentBucket));  // make sure to return +1 index after the found 1
     } else {
         // take min since the endIndex might point somewhere into the current bucket so the found bit might come after the endIndex
-        return std::min<uint64_t>(endIndex, currentBucketIndexOffset + __builtin_clzll(currentBucket));
+        return std::min<uint64_t>(endIndex, currentBucketIndexOffset + std::countl_zero(currentBucket));
     }
-#else
-    // Find the correct bit index manually
-    uint64_t compareMask = 1ull << (63 - currentBitInBucket);  // 000..000'1'000..000 with '1' at currentBitInBucket position
-    while (!static_cast<bool>(currentBucket & compareMask)) {
-        if constexpr (Backward) {
-            compareMask <<= 1ull;
-            --currentBitInBucket;
-        } else {
-            compareMask >>= 1ull;
-            ++currentBitInBucket;
-        }
-    }
-    if constexpr (Backward) {
-        return std::max(startingIndex, currentBucketIndexOffset + currentBitInBucket + 1ull);  // make sure to return +1 index after the found 1
-    } else {
-        return std::min(endIndex, currentBucketIndexOffset + currentBitInBucket);
-    }
-#endif
 }
 
 storm::storage::BitVector BitVector::getAsBitVector(uint64_t start, uint64_t length) const {
@@ -1282,7 +1262,7 @@ uint64_t Murmur3BitVectorHash<uint64_t>::operator()(storm::storage::BitVector co
     //----------
     // body
 
-    const uint64_t* blocks = (const uint64_t*)(data);
+    uint64_t const* blocks = bv.buckets;
 
     for (int i = 0; i < nblocks; i++) {
         uint64_t k1 = getblock64(blocks, i * 2 + 0);
@@ -1319,51 +1299,51 @@ uint64_t Murmur3BitVectorHash<uint64_t>::operator()(storm::storage::BitVector co
     switch (len & 15) {
         case 15:
             k2 ^= ((uint64_t)tail[14]) << 48;
-            // fallthrough
+            [[fallthrough]];
         case 14:
             k2 ^= ((uint64_t)tail[13]) << 40;
-            // fallthrough
+            [[fallthrough]];
         case 13:
             k2 ^= ((uint64_t)tail[12]) << 32;
-            // fallthrough
+            [[fallthrough]];
         case 12:
             k2 ^= ((uint64_t)tail[11]) << 24;
-            // fallthrough
+            [[fallthrough]];
         case 11:
             k2 ^= ((uint64_t)tail[10]) << 16;
-            // fallthrough
+            [[fallthrough]];
         case 10:
             k2 ^= ((uint64_t)tail[9]) << 8;
-            // fallthrough
+            [[fallthrough]];
         case 9:
             k2 ^= ((uint64_t)tail[8]) << 0;
             k2 *= c2;
             k2 = rotl64(k2, 33);
             k2 *= c1;
             h2 ^= k2;
-            // fallthrough
+            [[fallthrough]];
 
         case 8:
             k1 ^= ((uint64_t)tail[7]) << 56;
-            // fallthrough
+            [[fallthrough]];
         case 7:
             k1 ^= ((uint64_t)tail[6]) << 48;
-            // fallthrough
+            [[fallthrough]];
         case 6:
             k1 ^= ((uint64_t)tail[5]) << 40;
-            // fallthrough
+            [[fallthrough]];
         case 5:
             k1 ^= ((uint64_t)tail[4]) << 32;
-            // fallthrough
+            [[fallthrough]];
         case 4:
             k1 ^= ((uint64_t)tail[3]) << 24;
-            // fallthrough
+            [[fallthrough]];
         case 3:
             k1 ^= ((uint64_t)tail[2]) << 16;
-            // fallthrough
+            [[fallthrough]];
         case 2:
             k1 ^= ((uint64_t)tail[1]) << 8;
-            // fallthrough
+            [[fallthrough]];
         case 1:
             k1 ^= ((uint64_t)tail[0]) << 0;
             // fallthrough

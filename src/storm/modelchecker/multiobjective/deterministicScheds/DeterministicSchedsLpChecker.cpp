@@ -1,13 +1,12 @@
 #include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsLpChecker.h"
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/VisitingTimesHelper.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/solver.h"
@@ -448,7 +447,7 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
             allZeroRewardChoices.set(rew.first, false);
         }
     }
-    storm::storage::MaximalEndComponentDecomposition mecs(matrix, backwardTransitions, anyMaybeStates, allZeroRewardChoices);
+    storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(matrix, backwardTransitions, anyMaybeStates, allZeroRewardChoices);
     storm::storage::BitVector mecStates(matrix.getRowGroupCount(), false);
     for (auto const& mec : mecs) {
         for (auto const& sc : mec) {
@@ -581,10 +580,9 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initializeLpMod
     uint64_t initialState = *model.getInitialStates().begin();
     auto backwardTransitions = model.getBackwardTransitions();
     auto backwardChoices = model.getTransitionMatrix().transpose();
-    STORM_LOG_WARN_COND(!storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue() ||
-                            storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver() == storm::solver::LpSolverType::Gurobi,
+    STORM_LOG_WARN_COND(!env.solver().isLpSolverTypeSetFromDefaultValue() || env.solver().getLpSolverType() == storm::solver::LpSolverType::Gurobi,
                         "The selected MILP solver might not perform well. Consider installing / using Gurobi.");
-    lpModel = storm::utility::solver::getLpSolver<ValueType>("model");
+    lpModel = storm::utility::solver::getLpSolver<ValueType>(env, "model");
 
     lpModel->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
     initialStateResults.clear();
@@ -776,7 +774,7 @@ typename DeterministicSchedsLpChecker<ModelType, GeometryValueType>::Point Deter
             for (auto choice : choices) {
                 assert(choiceVariables[choice].isVariable());
                 if (lpModel->getBinaryValue(choiceVariables[choice].getBaseExpression().asVariableExpression().getVariable())) {
-                    STORM_LOG_THROW(!choiceFound, storm::exceptions::UnexpectedException, "Multiple choices selected at state " << state);
+                    STORM_LOG_THROW(!choiceFound, storm::exceptions::UnexpectedException, "Multiple choices selected at state " << state << ".");
                     selectedChoices.set(choice, true);
                     choiceFound = true;
                 }

@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_BINARYBOOLEANSTATEFORMULA_H_
-#define STORM_LOGIC_BINARYBOOLEANSTATEFORMULA_H_
+#pragma once
 
 #include <map>
 
@@ -17,7 +16,7 @@ class BinaryBooleanStateFormula : public BinaryStateFormula {
 
     virtual ~BinaryBooleanStateFormula() {
         // Intentionally left empty.
-    };
+    }
 
     virtual bool isBinaryBooleanStateFormula() const override;
 
@@ -35,5 +34,3 @@ class BinaryBooleanStateFormula : public BinaryStateFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_BINARYBOOLEANSTATEFORMULA_H_ */

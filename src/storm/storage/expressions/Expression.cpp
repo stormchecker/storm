@@ -478,22 +478,22 @@ Expression round(Expression const& first) {
 }
 
 Expression abs(Expression const& first) {
-    STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Abs is only defined for numerical operands");
+    STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Abs is only defined for numerical operands.");
     return ite(first < 0, -first, first);
 }
 
 Expression sign(Expression const& first) {
-    STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Sign is only defined for numerical operands");
+    STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Sign is only defined for numerical operands.");
     return ite(first > 0, first.getManager().integer(1), ite(first < 0, first.getManager().integer(0), first.getManager().integer(0)));
 }
 
 Expression truncate(Expression const& first) {
-    STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Truncate is only defined for numerical operands");
+    STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Truncate is only defined for numerical operands.");
     return ite(first < 0, floor(first), ceil(first));
 }
 
 Expression atLeastOneOf(std::vector<Expression> const& expressions) {
-    STORM_LOG_THROW(expressions.size() > 0, storm::exceptions::InvalidArgumentException, "AtLeastOneOf requires arguments");
+    STORM_LOG_THROW(expressions.size() > 0, storm::exceptions::InvalidArgumentException, "AtLeastOneOf requires arguments.");
     std::vector<std::shared_ptr<BaseExpression const>> baseexpressions;
     for (auto const& expr : expressions) {
         baseexpressions.push_back(expr.getBaseExpressionPointer());
@@ -504,7 +504,7 @@ Expression atLeastOneOf(std::vector<Expression> const& expressions) {
 }
 
 Expression atMostOneOf(std::vector<Expression> const& expressions) {
-    STORM_LOG_THROW(expressions.size() > 0, storm::exceptions::InvalidArgumentException, "AtMostOneOf requires arguments");
+    STORM_LOG_THROW(expressions.size() > 0, storm::exceptions::InvalidArgumentException, "AtMostOneOf requires arguments.");
     std::vector<std::shared_ptr<BaseExpression const>> baseexpressions;
     for (auto const& expr : expressions) {
         baseexpressions.push_back(expr.getBaseExpressionPointer());
@@ -515,7 +515,7 @@ Expression atMostOneOf(std::vector<Expression> const& expressions) {
 }
 
 Expression exactlyOneOf(std::vector<Expression> const& expressions) {
-    STORM_LOG_THROW(expressions.size() > 0, storm::exceptions::InvalidArgumentException, "ExactlyOneOf requires arguments");
+    STORM_LOG_THROW(expressions.size() > 0, storm::exceptions::InvalidArgumentException, "ExactlyOneOf requires arguments.");
     std::vector<std::shared_ptr<BaseExpression const>> baseexpressions;
     for (auto const& expr : expressions) {
         baseexpressions.push_back(expr.getBaseExpressionPointer());

@@ -82,7 +82,7 @@ endif()
 #############################################################
 
 if(NOT STORM_DISABLE_GMM)
-    set(GMM_VERSION "5.4.4")
+    set(GMM_VERSION "5.5")
     message(STATUS "Storm - Including gmm ${GMM_VERSION}.")
     ExternalProject_Add(
             gmm_src
@@ -90,7 +90,7 @@ if(NOT STORM_DISABLE_GMM)
             SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/gmm
             # Try to apply patch and otherwise check that patch was already applied
             # Needed because while -N ignores already applied patches it still returns with exit code 1
-            PATCH_COMMAND patch -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm544.patch || patch --dry-run -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm544.patch | grep "Reversed (or previously applied) patch detected!"
+            PATCH_COMMAND patch -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch || patch --dry-run -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch | grep "Reversed (or previously applied) patch detected!"
             UPDATE_COMMAND ""
             CONFIGURE_COMMAND ""
             BUILD_COMMAND ""
@@ -225,22 +225,21 @@ list(APPEND STORM_DEP_TARGETS exprTk)
 
 #############################################################
 ##
-##	Parallel Hashmap
+##	gtl (Greg's Template Library)
 ##
 #############################################################
 
-# Use the shipped version of Parallel Hashmap
-message(STATUS "Storm - Including Parallel Hashmap.")
-add_library(phmap INTERFACE) # Not imported, we are in control of the sources.
-# Note that include directory is parallel-hashmap/parallel_hashmap/
-target_include_directories(phmap INTERFACE
-        $<BUILD_INTERFACE:${STORM_3RDPARTY_SOURCE_DIR}/parallel-hashmap>
-        $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/parallel_hashmap>)
-install(TARGETS phmap EXPORT storm_Targets)
-install(DIRECTORY ${STORM_3RDPARTY_SOURCE_DIR}/parallel-hashmap/parallel_hashmap
+# Use the shipped version of gtl
+message(STATUS "Storm - Including gtl.")
+add_library(gtl INTERFACE)
+target_include_directories(gtl INTERFACE
+        $<BUILD_INTERFACE:${STORM_3RDPARTY_SOURCE_DIR}/gtl>
+        $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/gtl>)
+install(TARGETS gtl EXPORT storm_Targets)
+install(DIRECTORY ${STORM_3RDPARTY_SOURCE_DIR}/gtl
         DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}
-        FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
-list(APPEND STORM_DEP_TARGETS phmap)
+        FILES_MATCHING PATTERN "*.hpp" PATTERN ".git" EXCLUDE)
+list(APPEND STORM_DEP_TARGETS gtl)
 
 #############################################################
 ##
@@ -437,8 +436,8 @@ FETCHCONTENT_DECLARE(
 )
 
 # Configure carl
-SET(CARL_EXCLUDE_TESTS_FROM_ALL ON)  #carl without tests
-SET(CARL_THREAD_SAFE ON) #carl thread safe code
+SET(CARL_BUILD_TESTS OFF)
+SET(CARL_THREAD_SAFE ON)
 SET(CARL_USE_CLN_NUMBERS ${SHIPPED_CARL_USE_CLN_NUMBERS})
 SET(CARL_USE_GINAC ${SHIPPED_CARL_USE_GINAC})
 SET(CARL_EIGEN_GIT_TAG ${STORM_EIGEN_GIT_TAG})

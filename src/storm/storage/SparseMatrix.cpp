@@ -917,10 +917,8 @@ void SparseMatrix<ValueType>::makeRowDirac(index_type row, index_type column, bo
 
     // If the row has no elements in it, we cannot make it absorbing, because we would need to move all elements
     // in the vector of nonzeros otherwise.
-    if (columnValuePtr >= columnValuePtrEnd) {
-        throw storm::exceptions::InvalidStateException()
-            << "Illegal call to SparseMatrix::makeRowDirac: cannot make row " << row << " absorbing, because there is no entry in this row.";
-    }
+    STORM_LOG_THROW(columnValuePtr < columnValuePtrEnd, storm::exceptions::InvalidStateException,
+                    "Illegal call to SparseMatrix::makeRowDirac: cannot make row " << row << " absorbing, because there is no entry in this row.");
     iterator lastColumnValuePtr = this->end(row) - 1;
 
     // If there is at least one entry in this row, we can set it to one, modify its column value to the
@@ -1605,9 +1603,8 @@ void SparseMatrix<ValueType>::invertDiagonal() {
         }
 
         // Throw an exception if a row did not have an element on the diagonal.
-        if (!foundDiagonalElement) {
-            throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrix::invertDiagonal: matrix is missing diagonal entries.";
-        }
+        STORM_LOG_THROW(foundDiagonalElement, storm::exceptions::InvalidArgumentException,
+                        "Illegal call to SparseMatrix::invertDiagonal: matrix is missing diagonal entries.");
     }
 }
 
@@ -2338,18 +2335,11 @@ template<typename ValueType>
 template<typename OtherValueType>
 bool SparseMatrix<ValueType>::isSubmatrixOf(SparseMatrix<OtherValueType> const& matrix) const {
     // Check for matching sizes.
-    if (this->getRowCount() != matrix.getRowCount())
+    if (this->getRowCount() != matrix.getRowCount() || this->getColumnCount() != matrix.getColumnCount() ||
+        this->hasTrivialRowGrouping() != matrix.hasTrivialRowGrouping() ||
+        (!this->hasTrivialRowGrouping() && this->getRowGroupIndices() != matrix.getRowGroupIndices())) {
         return false;
-    if (this->getColumnCount() != matrix.getColumnCount())
-        return false;
-    if (this->hasTrivialRowGrouping() && !matrix.hasTrivialRowGrouping())
-        return false;
-    if (!this->hasTrivialRowGrouping() && matrix.hasTrivialRowGrouping())
-        return false;
-    if (!this->hasTrivialRowGrouping() && !matrix.hasTrivialRowGrouping() && this->getRowGroupIndices() != matrix.getRowGroupIndices())
-        return false;
-    if (this->getRowGroupIndices() != matrix.getRowGroupIndices())
-        return false;
+    }
 
     // Check the subset property for all rows individually.
     for (index_type row = 0; row < this->getRowCount(); ++row) {

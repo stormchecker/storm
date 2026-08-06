@@ -113,7 +113,7 @@ void checkModel(std::string const& path, std::string const& formulaString, doubl
 void checkPrismModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double minmin, double minmax, double maxmin, double maxmax,
                                           std::string constantsString) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, constantsString);
+    program = program.preprocess(constantsString);
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::api::buildSparseModel<storm::Interval>(program, formulas);
@@ -194,7 +194,7 @@ TEST(RobustMdpModelCheckerTest, RobotMinMaxTest) {
 
 void makeUncertainAndCheck(std::string const& path, std::string const& formulaString, double amountOfUncertainty) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaString, program));
     std::shared_ptr<storm::models::sparse::Model<double>> modelPtr = storm::api::buildSparseModel<double>(program, formulas);
@@ -214,7 +214,7 @@ void makeUncertainAndCheck(std::string const& path, std::string const& formulaSt
 
     storm::Environment envIntervals;
     envIntervals.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-    auto transformer = storm::transformer::AddUncertainty(modelPtr);
+    auto transformer = storm::transformer::AddUncertainty<double>(modelPtr);
     auto imdp = transformer.transform(amountOfUncertainty)->as<storm::models::sparse::Mdp<storm::Interval>>();
     auto ichecker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>(*imdp);
     auto iresultMin = checker.check(env, task);
@@ -228,7 +228,7 @@ void makeUncertainAndCheck(std::string const& path, std::string const& formulaSt
 
 void makeUncertainAndCheckRational(std::string const& path, std::string const& formulaString, storm::RationalNumber amountOfUncertainty) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaString, program));
     std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> modelPtr = storm::api::buildSparseModel<storm::RationalNumber>(program, formulas);
@@ -273,7 +273,21 @@ TEST(RobustMDPModelCheckingTest, Tiny03maxmin) {
 }
 
 TEST(RobustMDPModelCheckingTest, BoundedTiny03maxmin) {
-    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", 0.4, 0.6, 0.5, 0.3, true);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=1 \"target\"];Pmin=? [ F<=1 \"target\"]", 0.4, 0.6, 0.5, 0.3, true);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F[1,1] \"target\"];Pmin=? [ F[1,1] \"target\"]", 0.4, 0.6, 0.5, 0.3, true);
+}
+
+TEST(RobustMDPModelCheckingTest, BoundedMaxmin) {
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F<=4 \"target\"];Pmin=? [ F<=4 \"target\"]", 0.6528, 0.81, 0.81, 0.6528, true);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F[0,4] \"target\"];Pmin=? [ F[0,4] \"target\"]", 0.6528, 0.81, 0.81, 0.6528, true);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F[4,4] \"target\"];Pmin=? [ F[4,4] \"target\"]", 0.1952, 0.324, 0.324, 0.1952,
+               true);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F[4,5] \"target\"];Pmin=? [ F[4,5] \"target\"]", 0.3236, 0.50292, 0.50292, 0.3236,
+               true);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F[4,6] \"target\"];Pmin=? [ F[4,6] \"target\"]", 0.37928, 0.57888, 0.57888, 0.37928,
+               true);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F[2,2] \"target\"];Pmin=? [ F[2,2] \"target\"]", 0.32, 0.45, 0.45, 0.32, true);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F<=2 \"target\"];Pmin=? [ F<=2 \"target\"]", 0.32, 0.45, 0.45, 0.32, true);
 }
 
 TEST(RobustMDPModelCheckingTest, Tiny04maxmin) {
@@ -307,8 +321,32 @@ TEST(RobustRationalMDPModelCheckingTest, Tiny03maxmin) {
 }
 
 TEST(RobustRationalMDPModelCheckingTest, BoundedTiny03maxmin) {
-    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", storm::RationalNumber("2/5"),
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=1 \"target\"];Pmin=? [ F<=1 \"target\"]", storm::RationalNumber("2/5"),
                        storm::RationalNumber("3/5"), storm::RationalNumber("1/2"), storm::RationalNumber("3/10"), true);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F[1,1] \"target\"];Pmin=? [ F[1,1] \"target\"]", storm::RationalNumber("2/5"),
+                       storm::RationalNumber("3/5"), storm::RationalNumber("1/2"), storm::RationalNumber("3/10"), true);
+}
+
+TEST(RobustRationalMDPModelCheckingTest, BoundedMaxmin) {
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F<=4 \"target\"];Pmin=? [ F<=4 \"target\"]",
+                       storm::RationalNumber("408/625"), storm::RationalNumber("81/100"), storm::RationalNumber("81/100"), storm::RationalNumber("408/625"),
+                       true);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F[0,4] \"target\"];Pmin=? [ F[0,4] \"target\"]",
+                       storm::RationalNumber("408/625"), storm::RationalNumber("81/100"), storm::RationalNumber("81/100"), storm::RationalNumber("408/625"),
+                       true);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F[4,4] \"target\"];Pmin=? [ F[4,4] \"target\"]",
+                       storm::RationalNumber("122/625"), storm::RationalNumber("81/250"), storm::RationalNumber("81/250"), storm::RationalNumber("122/625"),
+                       true);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F[4,5] \"target\"];Pmin=? [ F[4,5] \"target\"]",
+                       storm::RationalNumber("809/2500"), storm::RationalNumber("12573/25000"), storm::RationalNumber("12573/25000"),
+                       storm::RationalNumber("809/2500"), true);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F[4,6] \"target\"];Pmin=? [ F[4,6] \"target\"]",
+                       storm::RationalNumber("4741/12500"), storm::RationalNumber("1809/3125"), storm::RationalNumber("1809/3125"),
+                       storm::RationalNumber("4741/12500"), true);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F[2,2] \"target\"];Pmin=? [ F[2,2] \"target\"]",
+                       storm::RationalNumber("8/25"), storm::RationalNumber("9/20"), storm::RationalNumber("9/20"), storm::RationalNumber("8/25"), true);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-bounded.drn", "Pmax=? [ F<=2 \"target\"];Pmin=? [ F<=2 \"target\"]", storm::RationalNumber("8/25"),
+                       storm::RationalNumber("9/20"), storm::RationalNumber("9/20"), storm::RationalNumber("8/25"), true);
 }
 
 TEST(RobustRationalMDPModelCheckingTest, Tiny04maxmin) {

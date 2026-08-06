@@ -101,7 +101,7 @@ class PcaaWeightVectorChecker {
     /*!
      * Computes the weighted lower or upper bounds for the provided set of objectives.
      * @param lower if true, lower result bounds are computed. otherwise upper result bounds
-     * @param weightVector the weight vector ooof the current check
+     * @param weightVector the weight vector of the current check
      */
     boost::optional<ValueType> computeWeightedResultBound(bool lower, std::vector<ValueType> const& weightVector,
                                                           storm::storage::BitVector const& objectiveFilter) const;

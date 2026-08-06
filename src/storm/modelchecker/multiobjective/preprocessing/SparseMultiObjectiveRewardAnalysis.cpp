@@ -205,12 +205,10 @@ void SparseMultiObjectiveRewardAnalysis<SparseModelType>::computeUpperResultBoun
                         rewards.push_back(actionRewards[row]);
                     }
 
-                    storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType> baier(ecElimRes.matrix, rewards, rew0StateProbs);
-                    if (objective.upperResultBound) {
-                        objective.upperResultBound = std::min(objective.upperResultBound.get(), baier.computeUpperBound());
-                    } else {
-                        objective.upperResultBound = baier.computeUpperBound();
-                    }
+                    auto bounds = storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>(ecElimRes.matrix, rew0StateProbs)
+                                      .computeTotalRewardBounds(rewards);
+                    objective.lowerResultBound = std::max(objective.lowerResultBound.value_or(bounds.lower), bounds.lower);
+                    objective.upperResultBound = std::min(objective.upperResultBound.value_or(bounds.upper), bounds.upper);
                 }
             }
         }

@@ -1,5 +1,4 @@
-#ifndef STORM_PARSER_FORMULAPARSER_H_
-#define STORM_PARSER_FORMULAPARSER_H_
+#pragma once
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/jani/Property.h"
@@ -72,5 +71,3 @@ class FormulaParser {
 
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_FORMULAPARSER_H_ */

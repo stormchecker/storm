@@ -108,7 +108,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
         }
         if (hasDeadlock) {
             STORM_LOG_THROW(options.fixDeadlocks, storm::exceptions::InvalidOperationException,
-                            "Expected that in each state, at least one action is selected. Got a deadlock state instead. (violated at " << subsysState << ")");
+                            "Expected that in each state, at least one action is selected. Got a deadlock state instead. (violated at " << subsysState << ").");
             if (options.buildActionMapping) {
                 result.newToOldActionIndexMapping.push_back(std::numeric_limits<uint64_t>::max());
             }
@@ -150,7 +150,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
         components.choiceLabeling = originalModel.getChoiceLabeling().getSubLabeling(keptActions);
     }
     if (originalModel.hasStateValuations()) {
-        components.stateValuations = originalModel.getStateValuations().selectStates(subsystemStates);
+        components.stateValuations = originalModel.getStateValuations().selectEntities(subsystemStates);
     }
     if (originalModel.hasChoiceOrigins()) {
         components.choiceOrigins = originalModel.getChoiceOrigins()->selectChoices(keptActions);
@@ -206,7 +206,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> buildSubsystem(storm::mod
                                                                       SubsystemBuilderOptions options) {
     STORM_LOG_DEBUG("Invoked subsystem builder on model with " << originalModel.getNumberOfStates() << " states.");
     storm::storage::BitVector initialStates = originalModel.getInitialStates() & subsystemStates;
-    STORM_LOG_THROW(!initialStates.empty(), storm::exceptions::InvalidArgumentException, "The subsystem would not contain any initial states");
+    STORM_LOG_THROW(!initialStates.empty(), storm::exceptions::InvalidArgumentException, "The subsystem would not contain any initial states.");
 
     STORM_LOG_THROW(!subsystemStates.empty(), storm::exceptions::InvalidArgumentException, "Invoked SubsystemBuilder for an empty subsystem.");
     if (keepUnreachableStates) {

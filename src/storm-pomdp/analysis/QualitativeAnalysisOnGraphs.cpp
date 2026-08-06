@@ -34,7 +34,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProbSma
                     "The formula " << formula << " does not specify whether to minimize or maximize.");
     bool minimizes = (formula.hasOptimalityType() && storm::solver::minimize(formula.getOptimalityType())) ||
                      (formula.hasBound() && storm::logic::isLowerBound(formula.getBound().comparisonType));
-    STORM_LOG_THROW(!minimizes, storm::exceptions::NotImplementedException, "This operation is only supported when maximizing");
+    STORM_LOG_THROW(!minimizes, storm::exceptions::NotImplementedException, "This operation is only supported when maximizing.");
     std::shared_ptr<storm::logic::Formula const> subformula = formula.getSubformula().asSharedPointer();
     std::shared_ptr<storm::logic::UntilFormula> untilSubformula;
     // If necessary, convert the subformula to a more general case
@@ -53,7 +53,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProbSma
 template<typename ValueType>
 storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb0or1(storm::logic::ProbabilityOperatorFormula const& formula, bool prob0) const {
     // check whether the property is minimizing or maximizing
-    STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::IllegalArgumentException, "POMDP needs to be canonic");
+    STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::IllegalArgumentException, "POMDP needs to be canonic.");
     STORM_LOG_THROW(formula.hasOptimalityType() || formula.hasBound(), storm::exceptions::InvalidPropertyException,
                     "The formula " << formula << " does not specify whether to minimize or maximize.");
     bool minimizes = (formula.hasOptimalityType() && storm::solver::minimize(formula.getOptimalityType())) ||
@@ -77,7 +77,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb0or
             return analyseProb1Max(subformula->asUntilFormula());
         }
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Prob0or1 analysis is not supported for the property " << formula);
+    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Prob0or1 analysis is not supported for the property " << formula << ".");
 }
 
 template<typename ValueType>
@@ -200,7 +200,7 @@ template<typename ValueType>
 storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::checkPropositionalFormula(storm::logic::Formula const& propositionalFormula) const {
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(pomdp);
     STORM_LOG_THROW(mc.canHandle(propositionalFormula), storm::exceptions::InvalidPropertyException,
-                    "Propositional model checker can not handle formula " << propositionalFormula);
+                    "Propositional model checker can not handle formula " << propositionalFormula << ".");
     return mc.check(propositionalFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
 }
 

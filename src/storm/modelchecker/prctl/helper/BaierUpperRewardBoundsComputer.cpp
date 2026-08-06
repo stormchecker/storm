@@ -14,27 +14,20 @@ namespace storm::modelchecker::helper {
 template<typename ValueType>
 BaierUpperRewardBoundsComputer<ValueType>::BaierUpperRewardBoundsComputer(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                           storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                          std::vector<ValueType> const& rewards,
                                                                           std::vector<ValueType> const& oneStepTargetProbabilities,
                                                                           std::function<uint64_t(uint64_t)> const& stateToScc)
     : transitionMatrix(transitionMatrix),
       backwardTransitions(&backwardTransitions),
       stateToScc(stateToScc),
-      rewards(rewards),
       oneStepTargetProbabilities(oneStepTargetProbabilities) {
     // Intentionally left empty.
 }
 
 template<typename ValueType>
 BaierUpperRewardBoundsComputer<ValueType>::BaierUpperRewardBoundsComputer(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                          std::vector<ValueType> const& rewards,
                                                                           std::vector<ValueType> const& oneStepTargetProbabilities,
                                                                           std::function<uint64_t(uint64_t)> const& stateToScc)
-    : transitionMatrix(transitionMatrix),
-      backwardTransitions(nullptr),
-      stateToScc(stateToScc),
-      rewards(rewards),
-      oneStepTargetProbabilities(oneStepTargetProbabilities) {
+    : transitionMatrix(transitionMatrix), backwardTransitions(nullptr), stateToScc(stateToScc), oneStepTargetProbabilities(oneStepTargetProbabilities) {
     // Intentionally left empty.
 }
 
@@ -181,7 +174,8 @@ std::vector<ValueType> BaierUpperRewardBoundsComputer<ValueType>::computeUpperBo
 }
 
 template<typename ValueType>
-ValueType BaierUpperRewardBoundsComputer<ValueType>::computeUpperBound() {
+typename BaierUpperRewardBoundsComputer<ValueType>::Bounds BaierUpperRewardBoundsComputer<ValueType>::computeTotalRewardBounds(
+    std::vector<ValueType> const& rewards) {
     STORM_LOG_TRACE("Computing upper reward bounds using variant-2 of Baier et al.");
 
     // Ensure backward transitions are available.
@@ -205,30 +199,39 @@ ValueType BaierUpperRewardBoundsComputer<ValueType>::computeUpperBound() {
 
     auto expVisits = computeUpperBoundOnExpectedVisitingTimes(transitionMatrix, backwardTransRef, oneStepTargetProbabilities, stateToSccFct);
 
-    ValueType upperBound = storm::utility::zero<ValueType>();
+    Bounds result{.lower = storm::utility::zero<ValueType>(), .upper = storm::utility::zero<ValueType>()};
     for (uint64_t state = 0; state < expVisits.size(); ++state) {
-        // Get the maximum reward that can be collected in the state.
+        // Get the maximum / minimum reward that can be collected in the state.
         // We distinguish between choices that surely exit the current SCC and those that do not.
         // The former can only be taken at most once so we do not have to multiply with the upper bound on the expected visits.
         auto const currScc = stateToSccFct(state);
-        auto maxRewardExit = storm::utility::zero<ValueType>();
-        auto maxRewardStay = storm::utility::zero<ValueType>();
+        storm::utility::Maximum<ValueType> maxReward(storm::utility::zero<ValueType>()), maxRewardStay;
+        storm::utility::Minimum<ValueType> minReward(storm::utility::zero<ValueType>()), minRewardStay;
         // By starting the maxRewards with zero, negative rewards are essentially ignored which is necessary to provide a valid upper bound
         for (auto rowIndex : transitionMatrix.getRowGroupIndices(state)) {
             auto const row = transitionMatrix.getRow(rowIndex);
             bool const exitingChoice =
                 std::all_of(row.begin(), row.end(), [&stateToSccFct, &currScc](auto const& entry) { return currScc != stateToSccFct(entry.getColumn()); });
             if (exitingChoice) {
-                maxRewardExit = std::max(maxRewardExit, rewards[rowIndex]);
+                maxReward &= rewards[rowIndex];
+                minReward &= rewards[rowIndex];
             } else {
-                maxRewardStay = std::max(maxRewardStay, rewards[rowIndex]);
+                maxRewardStay &= rewards[rowIndex];
+                minRewardStay &= rewards[rowIndex];
             }
         }
-        upperBound += std::max<ValueType>(expVisits[state] * maxRewardStay, maxRewardExit);
+        if (!maxRewardStay.empty()) {
+            maxReward &= (*maxRewardStay * expVisits[state]);
+        }
+        result.upper += *maxReward;
+        if (!minRewardStay.empty()) {
+            minReward &= (*minRewardStay * expVisits[state]);
+        }
+        result.lower += *minReward;
     }
 
-    STORM_LOG_TRACE("Baier algorithm for reward bound computation (variant 2) computed bound " << upperBound << ".");
-    return upperBound;
+    STORM_LOG_TRACE("Baier algorithm for reward bound computation (variant 2) computed bounds [" << result.lower << ", " << result.upper << "].");
+    return result;
 }
 
 template class BaierUpperRewardBoundsComputer<double>;

@@ -30,7 +30,7 @@ std::unique_ptr<storm::modelchecker::RegionCheckResult<ParametricType>> RegionMo
     Environment const& env, std::vector<storm::storage::ParameterRegion<ParametricType>> const& regions, std::vector<RegionResultHypothesis> const& hypotheses,
     bool sampleVerticesOfRegion) {
     STORM_LOG_THROW(regions.size() == hypotheses.size(), storm::exceptions::InvalidArgumentException,
-                    "The number of regions and the number of hypotheses do not match");
+                    "The number of regions and the number of hypotheses do not match.");
     std::vector<std::pair<storm::storage::ParameterRegion<ParametricType>, storm::modelchecker::RegionResult>> result;
     auto hypothesisIt = hypotheses.begin();
     for (auto const& region : regions) {

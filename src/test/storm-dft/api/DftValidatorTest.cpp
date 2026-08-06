@@ -1,4 +1,4 @@
-#include "gmock/gmock.h"
+#include <gmock/gmock.h>
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 

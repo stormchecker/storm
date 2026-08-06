@@ -29,6 +29,7 @@ const std::string dontFixDeadlockOptionShortName = "ndl";
 const std::string noBuildOptionName = "nobuild";
 const std::string fullModelBuildOptionName = "buildfull";
 const std::string applyNoMaxProgAssumptionOptionName = "nomaxprog";
+const std::string checkZenoOptionName = "check-zeno";
 const std::string buildChoiceLabelOptionName = "buildchoicelab";
 const std::string buildChoiceOriginsOptionName = "buildchoiceorig";
 const std::string buildStateValuationsOptionName = "buildstateval";
@@ -57,6 +58,9 @@ BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
                                                    "If set, the maximum progress assumption is not applied while building the model (relevant for MAs)")
                         .setIsAdvanced()
                         .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, checkZenoOptionName, false, "If set, the built Markov automaton is checked for the presence of Zeno cycles.")
+            .build());
     this->addOption(
         storm::settings::OptionBuilder(moduleName, buildChoiceLabelOptionName, false, "If set, also build the choice labels").setIsAdvanced().build());
     this->addOption(
@@ -151,6 +155,10 @@ bool BuildSettings::isNoBuildModelSet() const {
 
 bool BuildSettings::isApplyNoMaximumProgressAssumptionSet() const {
     return this->getOption(applyNoMaxProgAssumptionOptionName).getHasOptionBeenSet();
+}
+
+bool BuildSettings::isCheckZenoSet() const {
+    return this->getOption(checkZenoOptionName).getHasOptionBeenSet();
 }
 
 bool BuildSettings::isBuildChoiceLabelsSet() const {

@@ -18,17 +18,17 @@ void ParameterRegionParser<ParametricType>::parseParameterBoundaries(Valuation& 
                                                                      std::set<VariableType> const& consideredVariables) {
     std::string::size_type positionOfFirstRelation = parameterBoundariesString.find("<=");
     STORM_LOG_THROW(positionOfFirstRelation != std::string::npos, storm::exceptions::InvalidArgumentException,
-                    "When parsing the region" << parameterBoundariesString << " I could not find a '<=' after the first number");
+                    "When parsing the region" << parameterBoundariesString << " I could not find a '<=' after the first number.");
     std::string::size_type positionOfSecondRelation = parameterBoundariesString.find("<=", positionOfFirstRelation + 2);
     STORM_LOG_THROW(positionOfSecondRelation != std::string::npos, storm::exceptions::InvalidArgumentException,
-                    "When parsing the region" << parameterBoundariesString << " I could not find a '<=' after the parameter");
+                    "When parsing the region" << parameterBoundariesString << " I could not find a '<=' after the parameter.");
 
     std::string parameter = parameterBoundariesString.substr(positionOfFirstRelation + 2, positionOfSecondRelation - (positionOfFirstRelation + 2));
 
     // removes all whitespaces from the parameter string:
     parameter.erase(std::remove_if(parameter.begin(), parameter.end(), ::isspace), parameter.end());
     STORM_LOG_THROW(parameter.length() > 0, storm::exceptions::InvalidArgumentException,
-                    "When parsing the region" << parameterBoundariesString << " I could not find a parameter");
+                    "When parsing the region" << parameterBoundariesString << " I could not find a parameter.");
 
     std::unique_ptr<VariableType> var;
     for (auto const& v : consideredVariables) {

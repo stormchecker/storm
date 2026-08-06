@@ -457,7 +457,7 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
                 }
             } else {
                 STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException,
-                                "Unexpected type of formula " << formula);
+                                "Unexpected type of formula " << formula << ".");
             }
             if (rewardCollectedInEpoch) {
                 objectiveRewards.push_back(rewModel.getTotalRewardVector(getProduct().getTransitionMatrix()));
@@ -465,7 +465,7 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
                 objectiveRewards.emplace_back(getProduct().getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
             }
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula);
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula << ".");
         }
     }
 

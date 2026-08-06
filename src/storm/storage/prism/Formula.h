@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_FORMULA_H_
-#define STORM_STORAGE_PRISM_FORMULA_H_
+#pragma once
 
 #include <boost/optional.hpp>
 #include <map>
@@ -107,5 +106,3 @@ class Formula : public LocatedInformation {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_FORMULA_H_ */

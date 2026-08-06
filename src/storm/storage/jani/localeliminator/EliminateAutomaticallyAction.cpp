@@ -22,7 +22,7 @@ void EliminateAutomaticallyAction::doAction(JaniLocalEliminator::Session& sessio
     switch (eliminationOrder) {
         case EliminationOrder::Arbitrary: {
             STORM_LOG_THROW(!restrictToUnnamedActions, storm::exceptions::NotImplementedException,
-                            "Cannot perform automatic elimination if restrictToUnnamedActions is true and elimination order is arbitrary");
+                            "Cannot perform automatic elimination if restrictToUnnamedActions is true and elimination order is arbitrary.");
 
             for (const auto& loc : automaton->getLocations()) {
                 if (session.isEliminable(automatonName, loc.getName())) {
@@ -141,7 +141,7 @@ void EliminateAutomaticallyAction::doAction(JaniLocalEliminator::Session& sessio
             break;
         }
         default: {
-            STORM_LOG_THROW(true, storm::exceptions::NotImplementedException, "This elimination order is not yet implemented");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This elimination order is not yet implemented.");
             break;
         }
     }

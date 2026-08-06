@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_GENERALSETTINGS_H_
-#define STORM_SETTINGS_MODULES_GENERALSETTINGS_H_
+#pragma once
 
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
@@ -154,5 +153,3 @@ class GeneralSettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_GENERALSETTINGS_H_ */

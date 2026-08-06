@@ -184,24 +184,17 @@ class SFTBDDPropertyFormulaAdapter {
                     auto const boundedUntil{std::static_pointer_cast<storm::logic::BoundedUntilFormula const>(subFormula)};
 
                     auto const leftSide{boundedUntil->getLeftSubformula().asSharedPointer()};
-                    if (!leftSide->isTrueFormula()) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Left side is not a TrueFormula.");
-                    }
+                    STORM_LOG_THROW(leftSide->isTrueFormula(), storm::exceptions::NotSupportedException, "Left side is not a TrueFormula.");
 
                     auto const rightSide{boundedUntil->getRightSubformula().asSharedPointer()};
-                    if (!rightSide->isStateFormula()) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Right side is not a StateFormula.");
-                    }
+                    STORM_LOG_THROW(rightSide->isStateFormula(), storm::exceptions::NotSupportedException, "Right side is not a StateFormula.");
 
                     if (!boundedUntil->hasUpperBound()) {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "UpperBound must be set.");
                     } else if (boundedUntil->hasUpperBound() && boundedUntil->hasLowerBound()) {
                         // Check if '[F = x phi]' was used.
-                        if (boundedUntil->getUpperBound().evaluateAsDouble() != boundedUntil->getLowerBound().evaluateAsDouble()) {
-                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                                            "upperBound is set wrongly. "
-                                            "Only lowerBound == upperBound is Supported.");
-                        }
+                        STORM_LOG_THROW(boundedUntil->getUpperBound().evaluateAsDouble() == boundedUntil->getLowerBound().evaluateAsDouble(),
+                                        storm::exceptions::NotSupportedException, "UpperBound is set wrongly. Only lowerBound == upperBound is Supported.");
                     }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SubFormula is not a BoundedUntilFormula.");
@@ -290,7 +283,7 @@ class SFTBDDPropertyFormulaAdapter {
             return name;
         }
 
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal AtomicLabelFormula: " << formula->toString());
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal AtomicLabelFormula: " << formula->toString() << ".");
         return "__ERROR__";
     }
 
@@ -303,7 +296,7 @@ class SFTBDDPropertyFormulaAdapter {
             return StateFormulaToBdd(std::static_pointer_cast<storm::logic::StateFormula const>(formula));
         }
 
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal Formula: " << formula->toString());
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal Formula: " << formula->toString() << ".");
         return getSylvanBddManager()->getZero();
     }
 
@@ -320,7 +313,7 @@ class SFTBDDPropertyFormulaAdapter {
             return unaryStateFormulaToBdd(std::static_pointer_cast<storm::logic::UnaryBooleanStateFormula const>(formula), enableNot);
         }
 
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal StateFormula: " << formula->toString());
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal StateFormula: " << formula->toString() << ".");
         return getSylvanBddManager()->getZero();
     }
 
@@ -338,7 +331,7 @@ class SFTBDDPropertyFormulaAdapter {
             return leftBdd | rightBdd;
         }
 
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal BinaryStateFormula: " << formula->toString());
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal BinaryStateFormula: " << formula->toString() << ".");
         return getSylvanBddManager()->getZero();
     }
 
@@ -354,7 +347,7 @@ class SFTBDDPropertyFormulaAdapter {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                             "Illegal UnaryStateFormula: \"" << formula->toString()
                                                             << "\". Can only use negation with a formula "
-                                                               "of the form 'P=? [F = x phi]'");
+                                                               "of the form 'P=? [F = x phi]'.");
             return getSylvanBddManager()->getZero();
         }
         auto const subBdd{FormulaToBdd(formula->getSubformula().asSharedPointer())};
@@ -363,7 +356,7 @@ class SFTBDDPropertyFormulaAdapter {
             return !subBdd;
         }
 
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal UnaryStateFormula: " << formula->toString());
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Illegal UnaryStateFormula: " << formula->toString() << ".");
         return getSylvanBddManager()->getZero();
     }
 

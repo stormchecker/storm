@@ -93,7 +93,7 @@ std::vector<std::shared_ptr<Variable>>& VariableSet::getVariableVectorForType(Ja
     } else if (type.isContinuousType()) {
         return continuousVariables;
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unhandled variable type" << type);
+    STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unhandled variable type" << type << ".");
 }
 
 Variable const& VariableSet::addVariable(Variable const& variable) {

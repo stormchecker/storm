@@ -112,7 +112,7 @@ class SparseWeightedReachabilityCvarLpHelper {
         auto candidateRange = computeCandidateRange(env);
         for (uint64_t thresholdIndex = candidateRange.first; thresholdIndex < candidateRange.second; ++thresholdIndex) {
             auto thresholdData = createThresholdData(thresholdIndex);
-            auto thresholdResult = buildLpForThreshold(thresholdData, false);
+            auto thresholdResult = buildLpForThreshold(env, thresholdData, false);
             if (!thresholdResult.has_value()) {
                 continue;
             }
@@ -131,7 +131,7 @@ class SparseWeightedReachabilityCvarLpHelper {
         if (produceScheduler) {
             STORM_LOG_ASSERT(bestThresholdIndex.has_value(), "Expected a threshold index for the best CVaR LP value.");
             auto thresholdData = createThresholdData(bestThresholdIndex.value());
-            auto thresholdResult = buildLpForThreshold(thresholdData, true);
+            auto thresholdResult = buildLpForThreshold(env, thresholdData, true);
             STORM_LOG_THROW(thresholdResult.has_value(), storm::exceptions::UnexpectedException,
                             "The previously optimal CVaR LP threshold became infeasible when extracting a scheduler.");
             bestScheduler = std::move(thresholdResult->scheduler);
@@ -316,12 +316,13 @@ class SparseWeightedReachabilityCvarLpHelper {
         return {firstNotTooLow, lower};
     }
 
-    std::optional<CvarComputationResult<ValueType>> buildLpForThreshold(CvarThresholdData<ValueType> const& thresholdData, bool produceScheduler) const {
+    std::optional<CvarComputationResult<ValueType>> buildLpForThreshold(Environment const& env, CvarThresholdData<ValueType> const& thresholdData,
+                                                                        bool produceScheduler) const {
         using RawLpSolver = storm::solver::LpSolver<ValueType, true>;
         using RawLpConstraint = storm::solver::RawLpConstraint<ValueType>;
 
-        auto lpSolverFactory = storm::utility::solver::getLpSolverFactory<ValueType>();
-        auto solver = lpSolverFactory->createRaw("cvar");
+        auto lpSolverFactory = storm::utility::solver::getLpSolverFactory<ValueType>(env);
+        auto solver = lpSolverFactory->createRaw(env, "cvar");
         solver->setOptimizationDirection(lpData.optimizationDirection);
 
         std::vector<typename RawLpSolver::Variable> actionFlowVariables;

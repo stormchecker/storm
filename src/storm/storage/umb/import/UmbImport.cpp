@@ -102,7 +102,7 @@ void importGenericVector(typename storm::io::ArchiveReader::ArchiveReadEntry& sr
             break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                            "Type " << type.toString() << " for vector located in '" << getFilePath(src) << "' is not handled");
+                            "Type " << type.toString() << " for vector located in '" << getFilePath(src) << "' is not handled.");
     }
 }
 
@@ -213,7 +213,7 @@ bool importVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src, stor
         } else {
             // reaching this point means that we have found the right field
             STORM_LOG_THROW(fieldPath == getFilePath(src), storm::exceptions::WrongFormatException,
-                            "Unexpected file paths: " << fieldPath << " != " << getFilePath(src));
+                            "Unexpected file paths: " << fieldPath << " != " << getFilePath(src) << ".");
             found = true;
             if constexpr (std::is_same_v<FieldType, GenericVector>) {
                 importGenericVector(src, index, field);

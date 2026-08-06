@@ -501,7 +501,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::restoreOldBehaviorAtCurrentS
                         }
                         break;
                     default:
-                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet");
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet.");
                 }
                 mdpStatesToExploreStatePrio[transition.getColumn()] = currentPrio;
                 mdpStatesToExplorePrioState.emplace(currentPrio, transition.getColumn());
@@ -1205,7 +1205,7 @@ typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpEx
                         }
                         break;
                     default:
-                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet");
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet.");
                 }
                 mdpStatesToExploreStatePrio[findRes->second] = currentPrio;
                 mdpStatesToExplorePrioState.emplace(currentPrio, findRes->second);
@@ -1241,7 +1241,7 @@ typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpEx
                 }
                 break;
             default:
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet");
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet.");
         }
         mdpStatesToExploreStatePrio[result] = currentPrio;
         mdpStatesToExplorePrioState.emplace(currentPrio, result);

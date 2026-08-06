@@ -228,7 +228,7 @@ void InternalBdd<DdType::CUDD>::exportToDot(std::string const& filename, std::ve
 }
 
 void InternalBdd<DdType::CUDD>::exportToText(std::string const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
 cudd::BDD InternalBdd<DdType::CUDD>::getCuddBdd() const {

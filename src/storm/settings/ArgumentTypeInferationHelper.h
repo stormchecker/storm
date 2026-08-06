@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_ARGUMENTTYPEINFERATIONHELPER_H_
-#define STORM_SETTINGS_ARGUMENTTYPEINFERATIONHELPER_H_
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -51,5 +50,3 @@ template<>
 bool inferToBoolean(ArgumentType const& argumentType, bool const& value);
 }  // namespace settings
 }  // namespace storm
-
-#endif  // STORM_SETTINGS_ARGUMENTTYPEINFERATIONHELPER_H_

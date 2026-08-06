@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_UNARYEXPRESSION_H_
-#define STORM_STORAGE_EXPRESSIONS_UNARYEXPRESSION_H_
+#pragma once
 
 #include "storm/storage/expressions/BaseExpression.h"
 #include "storm/utility/OsDetection.h"
@@ -44,5 +43,3 @@ class UnaryExpression : public BaseExpression {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_UNARYEXPRESSION_H_ */

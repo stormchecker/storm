@@ -82,7 +82,7 @@ void WinningRegionQueryInterface<ValueType>::validate() const {
                     break;
                 }
             }
-            STORM_LOG_THROW(safeActionExists, storm::exceptions::UnexpectedException, "Observation " << obs << " , support " << states);
+            STORM_LOG_THROW(safeActionExists, storm::exceptions::UnexpectedException, "Observation " << obs << " , support " << states << ".");
         }
     }
 }
@@ -115,7 +115,7 @@ void WinningRegionQueryInterface<ValueType>::validateIsMaximal(storm::storage::B
                     }
                 }
 
-                STORM_LOG_THROW(!safeActionExists, storm::exceptions::UnexpectedException, "Observation " << obs << ", support " << states);
+                STORM_LOG_THROW(!safeActionExists, storm::exceptions::UnexpectedException, "Observation " << obs << ", support " << states << ".");
             }
         }
         STORM_LOG_DEBUG("All listed belief supports for observation " << obs << " are maximal. Continue with single states.");
@@ -138,7 +138,7 @@ void WinningRegionQueryInterface<ValueType>::validateIsMaximal(storm::storage::B
                 }
             }
 
-            STORM_LOG_THROW(!safeActionExists, storm::exceptions::UnexpectedException, "Observation " << obs << "  , support " << states);
+            STORM_LOG_THROW(!safeActionExists, storm::exceptions::UnexpectedException, "Observation " << obs << "  , support " << states << ".");
         }
     }
 }

@@ -3,20 +3,19 @@
 #include <numeric>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/EliminationSettings.h"
+#include "storm/environment/solver/EliminationSolverEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/solver/stateelimination/PrioritizedStateEliminator.h"
+#include "storm/solver/stateelimination/StateEliminationUtility.h"
 #include "storm/solver/stateelimination/StatePriorityQueue.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/stateelimination.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
 namespace solver {
 
 using namespace stateelimination;
-using namespace storm::utility::stateelimination;
 
 template<typename ValueType>
 EliminationLinearEquationSolver<ValueType>::EliminationLinearEquationSolver() {
@@ -68,21 +67,19 @@ bool EliminationLinearEquationSolver<ValueType>::internalSolveEquations(Environm
 
     boost::optional<std::vector<uint_fast64_t>> distanceBasedPriorities;
 
-    // TODO: get the order from the environment
-    storm::settings::modules::EliminationSettings::EliminationOrder order =
-        storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder();
+    EliminationOrder order = env.solver().elimination().getOrder();
 
     if (eliminationOrderNeedsDistances(order)) {
         // Since we have no initial states at this point, we determine a representative of every BSCC regarding
         // the backward transitions, because this means that every row is reachable from this set of rows, which
         // we require to make sure we cover every row.
         storm::storage::BitVector initialRows = storm::utility::graph::getBsccCover(backwardTransitions);
-        distanceBasedPriorities = getDistanceBasedPriorities(transitionMatrix, backwardTransitions, initialRows, b,
+        distanceBasedPriorities = getDistanceBasedPriorities(order, transitionMatrix, backwardTransitions, initialRows, b,
                                                              eliminationOrderNeedsForwardDistances(order), eliminationOrderNeedsReversedDistances(order));
     }
 
-    std::shared_ptr<StatePriorityQueue> priorityQueue =
-        createStatePriorityQueue<ValueType>(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, b, storm::storage::BitVector(x.size(), true));
+    std::shared_ptr<StatePriorityQueue> priorityQueue = createStatePriorityQueue<ValueType>(
+        order, distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, b, storm::storage::BitVector(x.size(), true));
 
     // Create a state eliminator to perform the actual elimination.
     PrioritizedStateEliminator<ValueType> eliminator(flexibleMatrix, flexibleBackwardTransitions, priorityQueue, x);

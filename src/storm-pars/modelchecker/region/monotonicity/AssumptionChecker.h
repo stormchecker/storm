@@ -1,5 +1,4 @@
-#ifndef STORM_ASSUMPTIONCHECKER_H
-#define STORM_ASSUMPTIONCHECKER_H
+#pragma once
 
 #include "Order.h"
 #include "storm-pars/storage/ParameterRegion.h"
@@ -91,4 +90,3 @@ class AssumptionChecker {
 };
 }  // namespace analysis
 }  // namespace storm
-#endif  // STORM_ASSUMPTIONCHECKER_H

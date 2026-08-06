@@ -135,6 +135,22 @@ TEST(DirectEncodingParserTest, IntervalDtmcTest) {
     EXPECT_TRUE(modelPtr->hasUncertainty());
 }
 
+TEST(DirectEncodingParserTest, RationalIntervalDtmcTest) {
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> modelPtr =
+        storm::parser::parseDirectEncodingModel<storm::RationalInterval>(STORM_TEST_RESOURCES_DIR "/idtmc/rational-brp-16-2.drn");
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalInterval>> dtmc = modelPtr->as<storm::models::sparse::Dtmc<storm::RationalInterval>>();
+    ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
+    ASSERT_EQ(613ul, dtmc->getNumberOfStates());
+    EXPECT_TRUE(modelPtr->hasUncertainty());
+
+    std::shared_ptr<storm::models::ModelBase> modelBasePtr =
+        storm::parser::parseDirectEncodingModel(STORM_TEST_RESOURCES_DIR "/idtmc/rational-brp-16-2.drn", storm::parser::DirectEncodingValueType::Default);
+    ASSERT_EQ(storm::models::ModelType::Dtmc, modelBasePtr->getType());
+    dtmc = modelBasePtr->as<storm::models::sparse::Dtmc<storm::RationalInterval>>();
+    ASSERT_EQ(613ul, dtmc->getNumberOfStates());
+    EXPECT_TRUE(modelPtr->hasUncertainty());
+}
+
 TEST(DirectEncodingParserTest, PomdpParsing) {
     std::shared_ptr<storm::models::sparse::Model<double>> modelPtr =
         storm::parser::parseDirectEncodingModel<double>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2_sl0.drn");

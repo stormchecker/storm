@@ -3,10 +3,7 @@
 #include "storm/adapters/RationalNumberForward.h"
 
 #if defined(STORM_HAVE_CLN)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmismatched-tags"
 #include <cln/cln.h>
-#pragma clang diagnostic pop
 #endif
 
 #if defined(STORM_HAVE_GMP)
@@ -28,7 +25,11 @@
 
 #endif
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundefined-reinterpret-cast"
+#pragma clang diagnostic ignored "-Wunused-template"
 #include <carl/numbers/numbers.h>
+#pragma clang diagnostic pop
 
 #if defined(STORM_HAVE_CLN)
 namespace cln {

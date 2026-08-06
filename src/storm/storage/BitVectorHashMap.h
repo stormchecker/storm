@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_BITVECTORHASHMAP_H_
-#define STORM_STORAGE_BITVECTORHASHMAP_H_
+#pragma once
 
 #include <cstdint>
 #include <functional>
@@ -214,5 +213,3 @@ class BitVectorHashMap {
 
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_BITVECTORHASHMAP_H_ */

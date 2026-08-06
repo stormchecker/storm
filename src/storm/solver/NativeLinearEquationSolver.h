@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_NATIVELINEAREQUATIONSOLVER_H_
-#define STORM_SOLVER_NATIVELINEAREQUATIONSOLVER_H_
+#pragma once
 
 #include <ostream>
 
@@ -126,5 +125,3 @@ class NativeLinearEquationSolverFactory : public LinearEquationSolverFactory<Val
 };
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_NATIVELINEAREQUATIONSOLVER_H_ */

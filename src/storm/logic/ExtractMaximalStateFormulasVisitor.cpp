@@ -41,7 +41,7 @@ boost::any ExtractMaximalStateFormulasVisitor::visit(BoundedUntilFormula const& 
     }
 
     STORM_LOG_THROW(!f.hasMultiDimensionalSubformulas(), storm::exceptions::InvalidOperationException,
-                    "Can not extract maximal state formulas for multi-dimensional bounded until");
+                    "Can not extract maximal state formulas for multi-dimensional bounded until.");
 
     std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
     if (left->hasQualitativeResult()) {

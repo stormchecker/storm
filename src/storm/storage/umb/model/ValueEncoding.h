@@ -73,6 +73,17 @@ class ValueEncoding {
                });
     }
 
+    template<std::ranges::input_range InputRange>
+        requires std::same_as<std::ranges::range_value_t<InputRange>, uint64_t>
+    static auto uint64ToRationalIntervalRangeView(InputRange&& input, uint64_t const numberSize) {
+        STORM_LOG_ASSERT(numberSize % 256ull == 0ull && numberSize > 0ull,
+                         "Type size must be a positive multiple of 256 for rational interval representation.");
+        auto rationalView = uint64ToRationalRangeView(input, numberSize / 2);
+        return std::ranges::iota_view(0ull, std::ranges::size(rationalView) / 2) | std::views::transform([rationalView](auto i) -> storm::RationalInterval {
+                   return storm::RationalInterval{rationalView[2 * i], rationalView[2 * i + 1]};
+               });
+    }
+
     template<bool Signed>
     static uint64_t getSizeOfIntegerEncoding(typename storm::NumberTraits<storm::RationalNumber>::IntegerType const& value) {
         // The bitsize method returns the smallest n with -2^n <= x < 2^n.
@@ -107,10 +118,20 @@ class ValueEncoding {
         return minimalIntegerSize * 2ull;
     }
 
+    template<std::ranges::input_range InputRange>
+        requires std::same_as<std::ranges::range_value_t<InputRange>, storm::RationalInterval>
+    static uint64_t getMinimalRationalIntervalSize(InputRange&& input, bool multiplesOf64) {
+        return getMinimalRationalSize(intervalToBaseRangeView<storm::RationalNumber>(input), multiplesOf64) * 2ull;
+    }
+
     template<bool Signed>
     static void appendEncodedInteger(std::vector<uint64_t>& result, typename storm::NumberTraits<storm::RationalNumber>::IntegerType const& value,
                                      uint64_t uint64BucketsPerInteger) {
-        if constexpr (Signed) {
+        using IntegerType = typename storm::NumberTraits<storm::RationalNumber>::IntegerType;
+        if (uint64BucketsPerInteger == 0) {
+            STORM_LOG_ASSERT(value == storm::utility::zero<IntegerType>(), "Unexpected non-zero value for zero bucket size.");
+            // nothing to do
+        } else if constexpr (Signed) {
             if (value < 0) {
                 // Two's complement representation (e.g. -3 is 1111...1101)
                 // We encode the corresponding positive value and then invert the bits.
@@ -127,7 +148,6 @@ class ValueEncoding {
                                  "Encoding error for positive signed integer: most significant bit is set. Not enough uint64 buckets allocated?");
             }
         } else {
-            using IntegerType = typename storm::NumberTraits<storm::RationalNumber>::IntegerType;
             auto const twoTo64 = storm::utility::pow<IntegerType>(2, 64);
             // We assume a little endian representation, so we start with the least significant bits.
 
@@ -141,6 +161,9 @@ class ValueEncoding {
                 ++buckets;
             }
             // fill remaining buckets with zeros
+            STORM_LOG_ASSERT(uint64BucketsPerInteger >= buckets, "Not enough uint64 buckets allocated for encoding integer value "
+                                                                     << value << " (" << uint64BucketsPerInteger << " buckets allocated but " << buckets
+                                                                     << " needed).");
             result.resize(result.size() + (uint64BucketsPerInteger - buckets), 0ull);
         }
     }
@@ -170,6 +193,14 @@ class ValueEncoding {
     }
 
     template<std::ranges::input_range InputRange>
+        requires storm::IsIntervalType<std::ranges::range_value_t<InputRange>>
+    static std::vector<uint64_t> createUint64FromRationalIntervalRange(InputRange&& input, uint64_t const numberSize) {
+        STORM_LOG_ASSERT(numberSize % 256ull == 0ull && numberSize > 0ull,
+                         "Type size must be a positive multiple of 256 for rational interval representation.");
+        return createUint64FromRationalRange(intervalToBaseRangeView<storm::RationalNumber>(input), numberSize / 2);
+    }
+
+    template<std::ranges::input_range InputRange>
         requires std::same_as<std::ranges::range_value_t<InputRange>, double>
     static auto doubleToIntervalRangeView(InputRange&& input) {
         STORM_LOG_ASSERT(std::ranges::size(input) % 2 == 0, "Input size is not even: " << std::ranges::size(input));
@@ -177,14 +208,14 @@ class ValueEncoding {
                std::views::transform([&input](auto i) -> storm::Interval { return storm::Interval{input[2 * i], input[2 * i + 1]}; });
     }
 
-    template<std::ranges::input_range InputRange>
-        requires std::same_as<std::ranges::range_value_t<InputRange>, storm::Interval>
-    static auto intervalToDoubleRangeView(InputRange&& input) {
-        return std::ranges::iota_view(0ull, std::ranges::size(input) * 2) | std::views::transform([&input](auto i) {
+    template<typename BaseType, std::ranges::input_range InputRange>
+        requires storm::IsIntervalType<std::ranges::range_value_t<InputRange>>
+    static auto intervalToBaseRangeView(InputRange&& input) {
+        return std::ranges::iota_view(0ull, std::ranges::size(input) * 2) | std::views::transform([&input](auto i) -> BaseType {
                    if (i % 2 == 0) {
-                       return storm::utility::convertNumber<double>(input[i / 2].lower());
+                       return storm::utility::convertNumber<BaseType>(input[i / 2].lower());
                    } else {
-                       return storm::utility::convertNumber<double>(input[i / 2].upper());
+                       return storm::utility::convertNumber<BaseType>(input[i / 2].upper());
                    }
                });
     }
@@ -228,22 +259,40 @@ class ValueEncoding {
                     return func(conversionView(input.template get<storm::RationalNumber>()));
                 } else {
                     STORM_LOG_ASSERT(input.template isType<uint64_t>(), "Unexpected type for rational representation. Expected uint64.");
-                    // Only this case requires the source type size. It is optional in all other cases.
                     return func(conversionView(uint64ToRationalRangeView(input.template get<uint64_t>(), sourceType.bitSize())));
                 }
             case DoubleInterval:
-                // For intervals, there is no suitable value conversion since we would drop the uncertainty
-                if constexpr (!std::is_same_v<ValueType, storm::Interval>) {
+                // For intervals, there is no suitable value conversion to non-interval types since we would drop the uncertainty
+                if constexpr (!storm::IsIntervalType<ValueType>) {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                                     "Some values are given as double intervals but a model with a non-interval type is requested.");
                     return func(std::ranges::empty_view<ValueType>{});
                 } else {
-                    STORM_LOG_ASSERT(sourceType.bitSize() == 128ull, "Unexpected source type size for double representation. Expected 64.");
+                    STORM_LOG_WARN_COND(
+                        !storm::NumberTraits<ValueType>::IsExact,
+                        "Some values are given in type double but will be converted to an exact (arbitrary precision) type. Rounding errors may occur.");
+                    STORM_LOG_ASSERT(sourceType.bitSize() == 128ull, "Unexpected source type size for double interval representation. Expected 128.");
                     if (input.template isType<storm::Interval>()) {
-                        return func(input.template get<storm::Interval>());
+                        return func(conversionView(input.template get<storm::Interval>()));
                     } else {
                         STORM_LOG_ASSERT(input.template isType<double>(), "Unexpected type for double interval representation. Expected double.");
-                        return func(doubleToIntervalRangeView(input.template get<double>()));
+                        return func(conversionView(doubleToIntervalRangeView(input.template get<double>())));
+                    }
+                }
+            case RationalInterval:
+                // For intervals, there is no suitable value conversion to non-interval types since we would drop the uncertainty
+                if constexpr (!storm::IsIntervalType<ValueType>) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                                    "Some values are given as rational intervals but a model with a non-interval type is requested.");
+                    return func(std::ranges::empty_view<ValueType>{});
+                } else {
+                    STORM_LOG_WARN_COND(storm::NumberTraits<ValueType>::IsExact,
+                                        "Some values are given in an exact type but converted to an inexact type. Rounding errors may occur.");
+                    if (input.template isType<storm::RationalInterval>()) {
+                        return func(conversionView(input.template get<storm::RationalInterval>()));
+                    } else {
+                        STORM_LOG_ASSERT(input.template isType<uint64_t>(), "Unexpected type for rational interval representation. Expected uint64.");
+                        return func(conversionView(uint64ToRationalIntervalRangeView(input.template get<uint64_t>(), sourceType.bitSize())));
                     }
                 }
             default:

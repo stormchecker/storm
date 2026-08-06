@@ -100,7 +100,7 @@ std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> Preproce
 
     auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(env, scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
     STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
-    STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
+    STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type.");
     std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
     return std::make_pair(pomdpSchedulerResult, pomdpScheduler);
 }
@@ -136,7 +136,7 @@ std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> Preproce
     auto scheduledModel = underlyingMdp->applyScheduler(pomdpScheduler, false);
     auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(env, scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
     STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
-    STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
+    STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type.");
     std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
 
     // Take the optimal value in ANY of the unfolded states for a POMDP state as the resulting state value
@@ -176,7 +176,7 @@ PreprocessingPomdpValueBoundsModelChecker<ValueType>::computeValuesForRandomMemo
 
     auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(env, scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
     STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
-    STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
+    STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type.");
     std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
 
     STORM_LOG_DEBUG("Initial Value for guessed Policy: " << pomdpSchedulerResult[pomdp.getInitialStates().getNextSetIndex(0)]);
@@ -197,7 +197,7 @@ typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ValueBounds Prepr
         std::make_shared<storm::models::sparse::Mdp<ValueType>>(pomdp.getTransitionMatrix(), pomdp.getStateLabeling(), pomdp.getRewardModels());
     auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(env, underlyingMdp, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
     STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
-    STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
+    STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type.");
     std::vector<ValueType> fullyObservableResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
 
     std::vector<ValueType> actionBasedRewards;
@@ -331,7 +331,7 @@ typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ExtremeValueBound
         std::make_shared<storm::models::sparse::Mdp<ValueType>>(pomdp.getTransitionMatrix(), pomdp.getStateLabeling(), pomdp.getRewardModels());
     auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(env, underlyingMdp, storm::api::createTask<ValueType>(formulaPtr, false));
     STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
-    STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
+    STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type.");
     std::vector<ValueType> resultVec = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
     ExtremeValueBound res;
     if (info.minimize()) {

@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_OPTIONBUILDER_H_
-#define STORM_SETTINGS_OPTIONBUILDER_H_
+#pragma once
 
 #include <boost/algorithm/string.hpp>
 #include <cstdint>
@@ -155,5 +154,3 @@ class OptionBuilder {
 };
 }  // namespace settings
 }  // namespace storm
-
-#endif  // STORM_SETTINGS_OPTIONBUILDER_H_

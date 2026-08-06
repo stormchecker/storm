@@ -115,7 +115,7 @@ bool StandardGameSolver<ValueType>::solveGame(Environment const& env, Optimizati
         case GameMethod::PolicyIteration:
             return solveGamePolicyIteration(env, player1Dir, player2Dir, x, b, player1Choices, player2Choices);
         default:
-            STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "This solver does not implement the selected solution method");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "This solver does not implement the selected solution method.");
     }
     return false;
 }

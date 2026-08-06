@@ -1,5 +1,4 @@
-#ifndef STORM_GENERATOR_PRISMNEXTSTATEGENERATOR_H_
-#define STORM_GENERATOR_PRISMNEXTSTATEGENERATOR_H_
+#pragma once
 
 #include "storm/generator/NextStateGenerator.h"
 
@@ -152,5 +151,3 @@ class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> 
 
 }  // namespace generator
 }  // namespace storm
-
-#endif /* STORM_GENERATOR_PRISMNEXTSTATEGENERATOR_H_ */

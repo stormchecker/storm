@@ -116,9 +116,15 @@ bool StateAndChoiceInformationBuilder::isBuildStateValuations() const {
     return _buildStateValuations;
 }
 
-storm::storage::sparse::StateValuationsBuilder& StateAndChoiceInformationBuilder::stateValuationsBuilder() {
+void StateAndChoiceInformationBuilder::initializeStateValuations(storm::storage::sparse::Valuations&& valuations) {
     STORM_LOG_ASSERT(_buildStateValuations, "Building StateValuations was not enabled.");
-    return _stateValuationsBuilder;
+    _stateValuations = std::move(valuations);
+}
+
+storm::storage::sparse::Valuations& StateAndChoiceInformationBuilder::stateValuations() {
+    STORM_LOG_ASSERT(_buildStateValuations, "Building StateValuations was not enabled.");
+    STORM_LOG_ASSERT(_stateValuations.has_value(), "State valuations not initialized.");
+    return _stateValuations.value();
 }
 
 }  // namespace builder

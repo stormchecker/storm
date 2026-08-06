@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_UNTILFORMULA_H_
-#define STORM_LOGIC_UNTILFORMULA_H_
+#pragma once
 
 #include "storm/logic/BinaryPathFormula.h"
 
@@ -22,5 +21,3 @@ class UntilFormula : public BinaryPathFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_UNTILFORMULA_H_ */

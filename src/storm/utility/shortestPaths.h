@@ -1,7 +1,13 @@
-#ifndef STORM_UTIL_SHORTESTPATHS_H_
-#define STORM_UTIL_SHORTESTPATHS_H_
+#pragma once
 
+#include <algorithm>
 #include <boost/optional/optional.hpp>
+#include <cassert>
+#include <cstdint>
+#include <iosfwd>
+#include <set>
+#include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -246,5 +252,3 @@ class ShortestPathsGenerator {
 }  // namespace ksp
 }  // namespace utility
 }  // namespace storm
-
-#endif  // STORM_UTIL_SHORTESTPATHS_H_

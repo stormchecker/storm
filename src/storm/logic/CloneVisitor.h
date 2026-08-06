@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_CLONEVISITOR_H_
-#define STORM_LOGIC_CLONEVISITOR_H_
+#pragma once
 
 #include <memory>
 
@@ -44,5 +43,3 @@ class CloneVisitor : public FormulaVisitor {
 
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_CLONEVISITOR_H_ */

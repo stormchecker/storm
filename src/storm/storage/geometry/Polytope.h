@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_GEOMETRY_POLYTOPE_H_
-#define STORM_STORAGE_GEOMETRY_POLYTOPE_H_
+#pragma once
 
 #include <boost/optional.hpp>
 #include <memory>
@@ -192,5 +191,3 @@ class Polytope {
 }  // namespace geometry
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_GEOMETRY_POLYTOPE_H_ */

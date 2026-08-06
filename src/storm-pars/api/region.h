@@ -383,7 +383,7 @@ template<typename ValueType>
 bool verifyRegion(RefinementOptions<ValueType> settings, storm::storage::ParameterRegion<ValueType> const& region) {
     Environment env;
     STORM_LOG_THROW(settings.task.getFormula().isProbabilityOperatorFormula() || settings.task.getFormula().isRewardOperatorFormula(),
-                    storm::exceptions::NotSupportedException, "Only probability and reward operators supported");
+                    storm::exceptions::NotSupportedException, "Only probability and reward operators supported.");
     STORM_LOG_THROW(settings.task.getFormula().asOperatorFormula().hasBound(), storm::exceptions::NotSupportedException,
                     "Verification requires a bounded operator formula.");
 

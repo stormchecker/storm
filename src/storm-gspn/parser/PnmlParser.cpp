@@ -22,7 +22,7 @@ storm::gspn::GSPN* PnmlParser::parse(xercesc::DOMElement const* elementRoot) {
         traversePnmlElement(elementRoot);
     } else {
         // If the top-level node is not a "pnml" or "" node, then throw an exception.
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Failed to identify the root element.\n");
+        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Failed to identify the root element.");
     }
     return builder.buildGspn();
 }
@@ -194,25 +194,16 @@ void PnmlParser::traverseTransition(xercesc::DOMNode const* const node) {
         }
     }
 
-    // build transition and add it to the gspn
-    if (!timed.first) {
-        // found unknown transition type
-        // abort parsing
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "unknown transition type (transition=" + id + ")\n");
-        return;
-    }
+    // build transition and add it to the GSPN
+    STORM_LOG_THROW(timed.first, storm::exceptions::UnexpectedException, "Unknown transition type (transition=" + id + ").");
 
     if (timed.second) {
-        if (!value.first) {
-            // no information about the rate is found
-            // abort the parsing
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "unknown transition rate (transition=" + id + ")\n");
-        }
+        // no information about the rate is found -> abort the parsing
+        STORM_LOG_THROW(value.first, storm::exceptions::UnexpectedException, "Unknown transition rate (transition=" + id + ").");
         builder.addTimedTransition(priority, std::stod(value.second), id);
     } else {
         if (!value.first) {
-            // no information about the weight is found
-            // continue with the default weight
+            // no information about the weight is found -> continue with the default weight
             STORM_PRINT_AND_LOG("unknown transition weight (transition=" + id + ")\n");
         }
         builder.addImmediateTransition(priority, std::stod(value.second), id);
@@ -269,16 +260,10 @@ void PnmlParser::traverseArc(xercesc::DOMNode const* const node) {
     }
 
     // check if all necessary information where stored in the pnml file
-    if (!source.first) {
-        // could not find start of the arc
-        // abort parsing
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "unknown arc source (arc=" + id + ")\n");
-    }
-    if (!target.first) {
-        // could not find the target of the arc
-        // abort parsing
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "unknown arc target (arc=" + id + ")\n");
-    }
+    // could not find start of the arc -> abort parsing
+    STORM_LOG_THROW(source.first, storm::exceptions::UnexpectedException, "Unknown arc source (arc=" + id + ").");
+    // could not find the target of the arc -> abort parsing
+    STORM_LOG_THROW(target.first, storm::exceptions::UnexpectedException, "Unknown arc target (arc=" + id + ").");
     if (!multiplicity.first) {
         // no information about the multiplicity of the arc
         // continue and use the default multiplicity

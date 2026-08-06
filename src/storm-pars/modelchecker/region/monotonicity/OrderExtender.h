@@ -1,5 +1,4 @@
-#ifndef STORM_ORDEREXTENDER_H
-#define STORM_ORDEREXTENDER_H
+#pragma once
 
 #include <boost/container/flat_set.hpp>
 #include "storm/logic/Formula.h"
@@ -138,5 +137,3 @@ class OrderExtender {
 };
 }  // namespace analysis
 }  // namespace storm
-
-#endif  // STORM_ORDEREXTENDER_H

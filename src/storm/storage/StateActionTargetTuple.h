@@ -1,7 +1,6 @@
+#pragma once
 
-#ifndef STATEACTIONTARGETTUPLE_H
-#define STATEACTIONTARGETTUPLE_H
-
+#include <cstdint>
 #include <memory>
 
 namespace storm {
@@ -32,5 +31,3 @@ struct hash<storm::storage::StateActionTarget> {
 };
 
 }  // namespace std
-
-#endif /* STATEACTIONTARGETTUPLE_H */

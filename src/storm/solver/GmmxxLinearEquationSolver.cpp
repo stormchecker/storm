@@ -5,7 +5,7 @@
 #include "storm/adapters/GmmxxAdapter.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/exceptions/AbortException.h"
-#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
@@ -34,8 +34,8 @@ void GmmxxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatri
     gmmxxA = storm::adapters::GmmxxAdapter<ValueType>::toGmmxxSparseMatrix(A);
     clearCache();
 #else
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GMM. Yet, a method was called that "
-                                                          "requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for GMM. Yet, a method was called that requires this support.");
 #endif
 }
 
@@ -45,8 +45,8 @@ void GmmxxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatri
     gmmxxA = storm::adapters::GmmxxAdapter<ValueType>::toGmmxxSparseMatrix(A);
     clearCache();
 #else
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GMM. Yet, a method was called that "
-                                                          "requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for GMM. Yet, a method was called that requires this support.");
 #endif
 }
 
@@ -138,8 +138,8 @@ bool GmmxxLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
     STORM_LOG_ERROR("Selected method is not available");
     return false;
 #else
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GMM. Yet, a method was called that "
-                                                          "requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for GMM. Yet, a method was called that requires this support.");
 #endif
 }
 
@@ -155,8 +155,8 @@ void GmmxxLinearEquationSolver<ValueType>::clearCache() const {
     diagonalPreconditioner.reset();
     LinearEquationSolver<ValueType>::clearCache();
 #else
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GMM. Yet, a method was called that "
-                                                          "requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for GMM. Yet, a method was called that requires this support.");
 #endif
 }
 
@@ -165,8 +165,8 @@ uint64_t GmmxxLinearEquationSolver<ValueType>::getMatrixRowCount() const {
 #ifdef STORM_HAVE_GMM
     return gmmxxA->nr;
 #else
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GMM. Yet, a method was called that "
-                                                          "requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for GMM. Yet, a method was called that requires this support.");
 #endif
 }
 
@@ -175,8 +175,8 @@ uint64_t GmmxxLinearEquationSolver<ValueType>::getMatrixColumnCount() const {
 #ifdef STORM_HAVE_GMM
     return gmmxxA->nc;
 #else
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GMM. Yet, a method was called that "
-                                                          "requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for GMM. Yet, a method was called that requires this support.");
 #endif
 }
 

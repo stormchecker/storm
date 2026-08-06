@@ -1,7 +1,8 @@
-#ifndef STORM_LOGIC_FORMULA_H_
-#define STORM_LOGIC_FORMULA_H_
+#pragma once
 
+#include <functional>
 #include <iosfwd>
+#include <map>
 #include <memory>
 #include <set>
 #include <vector>
@@ -32,7 +33,7 @@ class Formula : public std::enable_shared_from_this<Formula> {
     // Make the destructor virtual to allow deletion of objects of subclasses via a pointer to this class.
     virtual ~Formula() {
         // Intentionally left empty.
-    };
+    }
 
     friend std::ostream& operator<<(std::ostream& out, Formula const& formula);
 
@@ -277,5 +278,3 @@ class Formula : public std::enable_shared_from_this<Formula> {
 std::ostream& operator<<(std::ostream& out, Formula const& formula);
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_FORMULA_H_ */

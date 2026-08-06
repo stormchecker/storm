@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_STRONGLYCONNECTEDCOMPONENT_H_
-#define STORM_STORAGE_STRONGLYCONNECTEDCOMPONENT_H_
+#pragma once
 
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/StateBlock.h"
@@ -40,5 +39,3 @@ class StronglyConnectedComponent : public StateBlock {
 
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_STRONGLYCONNECTEDCOMPONENT_H_ */

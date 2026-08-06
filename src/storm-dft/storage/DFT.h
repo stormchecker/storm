@@ -1,23 +1,20 @@
 #pragma once
 
+#include <boost/iterator/counting_iterator.hpp>
 #include <list>
 #include <map>
 #include <memory>
 #include <unordered_map>
 #include <vector>
 
-#include <boost/iterator/counting_iterator.hpp>
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/storage/BitVector.h"
-#include "storm/utility/macros.h"
-#include "storm/utility/math.h"
-
 #include "storm-dft/storage/DFTLayoutInfo.h"
 #include "storm-dft/storage/DFTStateGenerationInfo.h"
 #include "storm-dft/storage/DftModule.h"
 #include "storm-dft/storage/DftSymmetries.h"
 #include "storm-dft/storage/elements/DFTElements.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/BitVector.h"
+#include "storm/utility/macros.h"
 
 namespace storm::dft {
 

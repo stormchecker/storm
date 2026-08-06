@@ -61,7 +61,7 @@ void expectThrow(std::string const& path, std::string const& formulaString,
 
 void expectThrowPrism(std::string const& path, std::string const& formulaString) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::api::buildSparseModel<storm::Interval>(program, formulas);
@@ -101,7 +101,7 @@ void checkExplicitModelForQuantitativeResult(std::string const& path, std::strin
 
 void checkPrismModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double min, double max) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::api::buildSparseModel<storm::Interval>(program, formulas);
@@ -225,7 +225,7 @@ void checkExplicitModelForQuantitativeResultRational(std::string const& path, st
 void checkPrismModelForQuantitativeResultRational(std::string const& path, std::string const& formulaString, storm::RationalNumber min,
                                                   storm::RationalNumber max) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> modelPtr = storm::api::buildSparseModel<storm::RationalInterval>(program, formulas);
@@ -251,7 +251,7 @@ void checkPrismModelForQuantitativeResultRational(std::string const& path, std::
 
 void makeUncertainAndCheckRational(std::string const& path, std::string const& formulaString, storm::RationalNumber amountOfUncertainty) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaString, program));
     std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> modelPtr = storm::api::buildSparseModel<storm::RationalNumber>(program, formulas);
@@ -362,6 +362,29 @@ TEST(RobustDtmcModelCheckerTest, TinyO2Propositional) {
     expectedResults.push_back(result1);
 
     checkModelForQualitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-02.drn", "\"target\";!\"target\"", expectedResults);
+}
+
+TEST(RobustDtmcModelCheckerTest, Tiny05StepBounded) {
+    // Maxima bounded reachability probabilities using explicit format.
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-05.drn", "P=? [ F<=0 \"a\"];P=? [ F<=0 \"a\"]", 0, 0);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-05.drn", "P=? [ F<=1 \"a\"];P=? [ F<=1 \"a\"]", 0.2, 0.2);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-05.drn", "P=? [ F<=2 \"a\"];P=? [ F<=2 \"a\"]", 0.36, 0.366);
+}
+
+TEST(RobustDtmcModelCheckerTest, BoundedMaxmin) {
+    // Maxima bounded reachability probabilities using explicit format.
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-bounded.drn", "P=? [ F<=4 \"target\"];P=? [ F<=4 \"target\"]", 0.6528, 0.81);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-bounded.drn", "P=? [ F[0,4] \"target\"];P=? [ F[0,4] \"target\"]", 0.6528,
+                                            0.81);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-bounded.drn", "P=? [ F[4,4] \"target\"];P=? [ F[4,4] \"target\"]", 0.1952,
+                                            0.324);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-bounded.drn", "P=? [ F[4,5] \"target\"];P=? [ F[4,5] \"target\"]", 0.3236,
+                                            0.50292);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-bounded.drn", "P=? [ F[4,6] \"target\"];P=? [ F[4,6] \"target\"]", 0.37928,
+                                            0.57888);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-bounded.drn", "P=? [ F[2,2] \"target\"];P=? [ F[2,2] \"target\"]", 0.32,
+                                            0.45);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-bounded.drn", "P=? [ F<=2 \"target\"];P=? [ F<=2 \"target\"]", 0.32, 0.45);
 }
 
 // ---- RationalInterval tests (exact arithmetic) ----

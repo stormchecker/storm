@@ -220,7 +220,7 @@ storm::storage::BitVector OrderBasedMonotonicityBackend<ParametricType, Constant
         // point at which we start with rows for this state
 
         STORM_LOG_THROW(variables.size() <= 1, storm::exceptions::NotImplementedException,
-                        "Using localMonRes not yet implemented for states with 2 or more variables, please run without --use-monotonicity");
+                        "Using localMonRes not yet implemented for states with 2 or more variables, please run without --use-monotonicity.");
 
         bool allMonotone = true;
         for (auto var : variables) {

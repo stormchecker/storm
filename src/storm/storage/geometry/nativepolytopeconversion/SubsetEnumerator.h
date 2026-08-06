@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPECONVERSION_SUBSETENUMERATOR_H_
-#define STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPECONVERSION_SUBSETENUMERATOR_H_
+#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -62,5 +61,3 @@ class SubsetEnumerator {
 }  // namespace geometry
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPECONVERSION_SUBSETENUMERATOR_H_ */

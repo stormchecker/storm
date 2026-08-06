@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_SYMBOLICPROPOSITIONALMODELCHECKER_H_
-#define STORM_MODELCHECKER_SYMBOLICPROPOSITIONALMODELCHECKER_H_
+#pragma once
 
 #include "storm/modelchecker/AbstractModelChecker.h"
 
@@ -47,5 +46,3 @@ class SymbolicPropositionalModelChecker : public AbstractModelChecker<ModelType>
 
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_SYMBOLICPROPOSITIONALMODELCHECKER_H_ */

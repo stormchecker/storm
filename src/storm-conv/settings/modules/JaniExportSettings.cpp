@@ -100,7 +100,7 @@ std::vector<std::pair<std::string, std::string>> JaniExportSettings::getLocation
             std::vector<std::string> keyvaluepair;
             boost::split(keyvaluepair, pair, boost::is_any_of("."));
             STORM_LOG_THROW(keyvaluepair.size() == 2, storm::exceptions::IllegalArgumentException,
-                            "Expected a name of the form AUTOMATON.VARIABLE (with no further dots) but got " << pair);
+                            "Expected a name of the form AUTOMATON.VARIABLE (with no further dots) but got " << pair << ".");
             result.emplace_back(keyvaluepair.at(0), keyvaluepair.at(1));
         }
     }

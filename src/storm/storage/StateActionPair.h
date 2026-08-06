@@ -1,6 +1,6 @@
-#ifndef STATEACTIONPAIR_H
-#define STATEACTIONPAIR_H
+#pragma once
 
+#include <cstdint>
 #include <memory>
 
 namespace storm {
@@ -44,5 +44,3 @@ struct hash<storm::storage::StateActionPair> {
 };
 
 }  // namespace std
-
-#endif /* STATEACTIONPAIR_H */

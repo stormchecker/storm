@@ -1,12 +1,11 @@
-#ifndef STORM_ADAPTERS_MATHSATEXPRESSIONADAPTER_H_
-#define STORM_ADAPTERS_MATHSATEXPRESSIONADAPTER_H_
+#pragma once
 
 #include "storm-config.h"
 
 #include <stack>
 
 #ifdef STORM_HAVE_MATHSAT
-#include "mathsat.h"
+#include <mathsat.h>
 #endif
 
 #include "storm/exceptions/ExpressionEvaluationException.h"
@@ -63,7 +62,7 @@ class MathsatExpressionAdapter : public storm::expressions::ExpressionVisitor {
         if (MSAT_ERROR_TERM(result)) {
             std::string errorMessage(msat_last_error_message(env));
             STORM_LOG_THROW(!MSAT_ERROR_TERM(result), storm::exceptions::ExpressionEvaluationException,
-                            "Could not translate expression to MathSAT's format. (Message: " << errorMessage << ")");
+                            "Could not translate expression to MathSAT's format. (Message: " << errorMessage << ").");
         }
 
         return result;
@@ -379,5 +378,3 @@ class MathsatExpressionAdapter : public storm::expressions::ExpressionVisitor {
 #endif
 }  // namespace adapters
 }  // namespace storm
-
-#endif /* STORM_ADAPTERS_MATHSATEXPRESSIONADAPTER_H_ */

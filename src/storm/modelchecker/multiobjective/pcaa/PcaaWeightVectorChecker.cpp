@@ -42,18 +42,20 @@ boost::optional<typename SparseModelType::ValueType> PcaaWeightVectorChecker<Spa
     bool lower, std::vector<ValueType> const& weightVector, storm::storage::BitVector const& objectiveFilter) const {
     ValueType result = storm::utility::zero<ValueType>();
     for (auto objIndex : objectiveFilter) {
-        boost::optional<ValueType> const& objBound = (lower == storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()))
-                                                         ? this->objectives[objIndex].upperResultBound
-                                                         : this->objectives[objIndex].lowerResultBound;
-        if (objBound) {
-            if (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) {
-                result -= objBound.get() * weightVector[objIndex];
-            } else {
-                result += objBound.get() * weightVector[objIndex];
-            }
+        // get the actual weight for this objective, i.e., negate it if this is a minimizing objective
+        auto const weight = storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
+        if (storm::utility::isZero(weight)) {
+            continue;  // this objective is not relevant for the weighted sum, so we can skip it
         } else {
-            // If there is an objective without the corresponding bound we can not give guarantees for the weighted sum
-            return boost::none;
+            // Choose the requested, relevant bound (lower or upper). Invert the choice for negative weights.
+            boost::optional<ValueType> const& objBound = (lower == (weight > storm::utility::zero<ValueType>())) ? this->objectives[objIndex].lowerResultBound
+                                                                                                                 : this->objectives[objIndex].upperResultBound;
+            if (objBound) {
+                result += objBound.get() * weight;
+            } else {
+                // If there is an objective without the corresponding bound we can not give guarantees for the weighted sum
+                return boost::none;
+            }
         }
     }
     return result;

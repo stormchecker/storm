@@ -14,7 +14,7 @@ EventuallyFormula::EventuallyFormula(std::shared_ptr<Formula const> const& subfo
     STORM_LOG_THROW(context == FormulaContext::Probability || context == FormulaContext::Reward || context == FormulaContext::Time,
                     storm::exceptions::InvalidPropertyException, "Invalid context for formula.");
     STORM_LOG_THROW(context != FormulaContext::Probability || !rewardAccumulation.is_initialized(), storm::exceptions::InvalidPropertyException,
-                    "Reward accumulations should only be given for time- and reward formulas");
+                    "Reward accumulations should only be given for time- and reward formulas.");
 }
 
 FormulaContext const& EventuallyFormula::getContext() const {

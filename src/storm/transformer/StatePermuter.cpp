@@ -77,4 +77,6 @@ template std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> 
     storm::models::sparse::Model<storm::RationalFunction> const& originalModel, std::vector<uint64_t> const& permutation);
 template std::shared_ptr<storm::models::sparse::Model<storm::Interval>> permuteStates(storm::models::sparse::Model<storm::Interval> const& originalModel,
                                                                                       std::vector<uint64_t> const& permutation);
+template std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> permuteStates(
+    storm::models::sparse::Model<storm::RationalInterval> const& originalModel, std::vector<uint64_t> const& permutation);
 }  // namespace storm::transformer

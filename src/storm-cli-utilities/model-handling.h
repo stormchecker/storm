@@ -25,7 +25,6 @@
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
@@ -363,12 +362,18 @@ auto castAndApply(std::shared_ptr<storm::models::ModelBase> const& model, auto c
     // branch on type of value representation
     if (model->supportsParameters()) {
         return castAndApplyVT.template operator()<storm::RationalFunction>();
-    } else if (model->isExact()) {
-        return castAndApplyVT.template operator()<storm::RationalNumber>();
     } else if (model->supportsUncertainty()) {
-        return castAndApplyVT.template operator()<storm::Interval>();
+        if (model->isExact()) {
+            return castAndApplyVT.template operator()<storm::RationalInterval>();
+        } else {
+            return castAndApplyVT.template operator()<storm::Interval>();
+        }
     } else {
-        return castAndApplyVT.template operator()<double>();
+        if (model->isExact()) {
+            return castAndApplyVT.template operator()<storm::RationalNumber>();
+        } else {
+            return castAndApplyVT.template operator()<double>();
+        }
     }
 }
 
@@ -435,7 +440,7 @@ inline std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicIn
                         "Can not translate properties to multi-objective formula because no properties were specified.");
         // If we come from storm-pars, the following fails as multiObjectiveSettings are not loaded
         auto multiObjSettings = storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>();
-        output.properties = {storm::api::createMultiObjectiveProperty(output.properties, multiObjSettings.isLexicographicModelCheckingSet())};
+        output.properties = {storm::api::createMultiObjectiveProperty(output.properties, false)};
     }
 
     if (ioSettings.isCvarSet()) {
@@ -574,12 +579,16 @@ inline storm::builder::BuilderOptions createBuildOptionsSparseFromSettings(Symbo
 
 template<typename ValueType>
 std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::builder::BuilderOptions const& options) {
-    // Adapt the ValueType if it does not support intervals and the input is an interval model
+    // If the input is an interval model, we might need to change the ValueType to an interval type.
     if (!storm::IsIntervalType<ValueType> && input.model.is_initialized() && input.model->isPrismProgram() &&
         input.model->asPrismProgram().hasIntervalUpdates()) {
-        STORM_LOG_THROW((std::is_same_v<ValueType, storm::IntervalBaseType<storm::Interval>>), storm::exceptions::NotSupportedException,
+        // Get the right interval type for the given ValueType
+        bool constexpr IsDoubleInterval = std::is_same_v<ValueType, storm::IntervalBaseType<storm::Interval>>;
+        bool constexpr IsRationalInterval = std::is_same_v<ValueType, storm::IntervalBaseType<storm::RationalInterval>>;
+        STORM_LOG_THROW(IsDoubleInterval || IsRationalInterval, storm::exceptions::NotSupportedException,
                         "Can not build interval model for the provided value type.");
-        return storm::api::buildSparseModel<storm::Interval>(input.model.get(), options);
+        using IntervalType = std::conditional_t<IsDoubleInterval, storm::Interval, storm::RationalInterval>;
+        return storm::api::buildSparseModel<IntervalType>(input.model.get(), options);
     } else {
         return storm::api::buildSparseModel<ValueType>(input.model.get(), options);
     }
@@ -613,6 +622,7 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
         storm::umb::ImportOptions options;
         options.buildChoiceLabeling = buildSettings.isBuildChoiceLabelsSet();
         options.buildStateValuations = buildSettings.isBuildStateValuationsSet();
+        options.buildObservationValuations = buildSettings.isBuildObservationValuationsSet();
         if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "RationalFunction currently not supported for UMB models.");
         } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
@@ -664,12 +674,11 @@ template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseMarkovAutomaton(
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const& model) {
     auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
-    auto debugSettings = storm::settings::getModule<storm::settings::modules::DebugSettings>();
+    auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
 
     std::shared_ptr<storm::models::sparse::Model<ValueType>> result = model;
     model->close();
-    STORM_LOG_WARN_COND(!debugSettings.isAdditionalChecksSet() || !model->containsZenoCycle(),
-                        "MA contains a Zeno cycle. Model checking results cannot be trusted.");
+    STORM_LOG_WARN_COND(!buildSettings.isCheckZenoSet() || !model->containsZenoCycle(), "MA contains a Zeno cycle. Model checking results cannot be trusted.");
 
     if (model->isConvertibleToCtmc()) {
         STORM_LOG_WARN_COND(false, "MA is convertible to a CTMC, consider using a CTMC instead.");
@@ -810,9 +819,7 @@ void exportModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
                                            !ioSettings.isExplicitExportPlaceholdersDisabled());
     }
 
-    if (ioSettings.isExportDdSet()) {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exporting in drdd format is only supported for DDs.");
-    }
+    STORM_LOG_THROW(!ioSettings.isExportDdSet(), storm::exceptions::NotSupportedException, "Exporting in drdd format is only supported for DDs.");
 
     if (ioSettings.isExportDotSet()) {
         storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
@@ -839,9 +846,8 @@ void exportModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueTyp
 
     // TODO: The following options are depreciated and shall be removed at some point:
 
-    if (ioSettings.isExportExplicitSet()) {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exporting in drn format is only supported for sparse models.");
-    }
+    STORM_LOG_THROW(!ioSettings.isExportExplicitSet(), storm::exceptions::NotSupportedException,
+                    "Exporting in drn format is only supported for sparse models.");
 
     if (ioSettings.isExportDdSet()) {
         storm::api::exportSymbolicModelAsDrdd(model, ioSettings.getExportDdFilename());

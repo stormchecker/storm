@@ -85,6 +85,12 @@ class GenericVector {
                 } else if (isType<storm::RationalNumber>()) {
                     auto convertedView = convertFromTo<storm::RationalNumber, T>();
                     return std::vector<T>(convertedView.begin(), convertedView.end());
+                } else if (isType<storm::Interval>()) {
+                    auto convertedView = convertFromTo<storm::Interval, T>();
+                    return std::vector<T>(convertedView.begin(), convertedView.end());
+                } else if (isType<storm::RationalInterval>()) {
+                    auto convertedView = convertFromTo<storm::RationalInterval, T>();
+                    return std::vector<T>(convertedView.begin(), convertedView.end());
                 }
             }
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type.");
@@ -102,6 +108,8 @@ class GenericVector {
     }
 
    private:
-    std::variant<std::monostate, Vec<bool>, Vec<uint64_t>, Vec<int64_t>, Vec<double>, Vec<storm::RationalNumber>, Vec<storm::Interval>> data;
+    std::variant<std::monostate, Vec<bool>, Vec<uint64_t>, Vec<int64_t>, Vec<double>, Vec<storm::RationalNumber>, Vec<storm::Interval>,
+                 Vec<storm::RationalInterval>>
+        data;
 };
 }  // namespace storm::umb

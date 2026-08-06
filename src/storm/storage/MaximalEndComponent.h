@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_MAXIMALENDCOMPONENT_H_
-#define STORM_STORAGE_MAXIMALENDCOMPONENT_H_
+#pragma once
 
 #include <unordered_map>
 
@@ -179,5 +178,3 @@ class MaximalEndComponent {
 };
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_MAXIMALENDCOMPONENT_H_ */

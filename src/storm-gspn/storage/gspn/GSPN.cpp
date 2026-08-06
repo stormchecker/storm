@@ -146,7 +146,7 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> const& GS
 void GSPN::setCapacities(std::unordered_map<std::string, uint64_t> const& mapping) {
     for (auto const& entry : mapping) {
         storm::gspn::Place* place = getPlace(entry.first);
-        STORM_LOG_THROW(place != nullptr, storm::exceptions::InvalidArgumentException, "No place with name " << entry.first);
+        STORM_LOG_THROW(place != nullptr, storm::exceptions::InvalidArgumentException, "No place with name " << entry.first << ".");
         place->setCapacity(entry.second);
     }
 }

@@ -283,7 +283,7 @@ storm::Environment SparseDeterministicVisitingTimesHelper<ValueType>::getEnviron
             // the precision is relevant (e.g. not the case for elimination, sparselu etc.)
             ValueType min = *std::min_element(exitRates->begin(), exitRates->end());
             STORM_LOG_THROW(!storm::utility::isZero(min), storm::exceptions::InvalidOperationException,
-                            "An error occurred during the adjustment of the precision. Min. rate = " << min);
+                            "An error occurred during the adjustment of the precision. Min. rate = " << min << ".");
             newEnv.solver().setLinearEquationSolverPrecision(
                 static_cast<storm::RationalNumber>(prec.first.get() * storm::utility::convertNumber<storm::RationalNumber>(min)));
         }

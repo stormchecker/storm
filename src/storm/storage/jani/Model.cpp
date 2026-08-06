@@ -2,11 +2,18 @@
 
 #include <algorithm>
 
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/solver/SmtSolver.h"
+#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-
-#include "Compositions.h"
+#include "storm/storage/expressions/LinearityCheckVisitor.h"
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/AutomatonComposition.h"
+#include "storm/storage/jani/Compositions.h"
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/EdgeDestination.h"
 #include "storm/storage/jani/Location.h"
@@ -20,20 +27,9 @@
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/storage/jani/visitor/JSONExporter.h"
 #include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
-
-#include "storm/storage/expressions/LinearityCheckVisitor.h"
-
 #include "storm/utility/combinatorics.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/InvalidTypeException.h"
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/solver/SmtSolver.h"
 
 namespace storm {
 namespace jani {
@@ -616,7 +612,7 @@ Model Model::flattenComposition(std::shared_ptr<storm::utility::solver::SmtSolve
 
 uint64_t Model::addAction(Action const& action) {
     auto it = actionToIndex.find(action.getName());
-    STORM_LOG_THROW(it == actionToIndex.end(), storm::exceptions::WrongFormatException, "Action with name '" << action.getName() << "' already exists");
+    STORM_LOG_THROW(it == actionToIndex.end(), storm::exceptions::WrongFormatException, "Action with name '" << action.getName() << "' already exists.");
     actionToIndex.emplace(action.getName(), actions.size());
     actions.push_back(action);
     if (action.getName() != SILENT_ACTION_NAME) {
@@ -1154,6 +1150,16 @@ Model Model::substituteConstantsFunctionsTranscendentals() const {
     result.substituteConstantsInPlace(true);
     result.substituteFunctions();
     return result;
+}
+
+Model Model::preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
+    // We intentionally do not eliminate function expressions in jani models at this point because that would also remove the function
+    // declarations from the model. However, those might still be needed to, e.g., process properties that refer to functions.
+    return this->defineUndefinedConstants(constantDefinitions).substituteConstants();
+}
+
+Model Model::preprocess(std::string const& constantDefinitionString) const {
+    return this->preprocess(storm::storage::parseConstantDefinitionString(this->getManager(), constantDefinitionString));
 }
 
 std::map<storm::expressions::Variable, storm::expressions::Expression> Model::getConstantsSubstitution() const {

@@ -1,5 +1,4 @@
-#ifndef STORM_EXCEPTIONS_BASEEXCEPTION_H_
-#define STORM_EXCEPTIONS_BASEEXCEPTION_H_
+#pragma once
 
 #include <exception>
 #include <sstream>
@@ -62,5 +61,3 @@ class BaseException : public std::exception {
 
 }  // namespace exceptions
 }  // namespace storm
-
-#endif  // STORM_EXCEPTIONS_BASEEXCEPTION_H_

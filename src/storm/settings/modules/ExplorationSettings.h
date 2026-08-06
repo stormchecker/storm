@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_EXPLORATIONSETTINGS_H_
-#define STORM_SETTINGS_MODULES_EXPLORATIONSETTINGS_H_
+#pragma once
 
 #include "storm/settings/modules/ModuleSettings.h"
 
@@ -96,5 +95,3 @@ class ExplorationSettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_EXPLORATIONSETTINGS_H_ */

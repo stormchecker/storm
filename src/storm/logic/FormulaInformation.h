@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_FORMULAINFORMATION_H_
-#define STORM_LOGIC_FORMULAINFORMATION_H_
+#pragma once
 
 namespace storm {
 namespace logic {
@@ -49,5 +48,3 @@ class FormulaInformation {
 
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_FORMULAINFORMATION_H_ */

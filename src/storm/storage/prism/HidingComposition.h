@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_HIDINGCOMPOSITION_H_
-#define STORM_STORAGE_PRISM_HIDINGCOMPOSITION_H_
+#pragma once
 
 #include <memory>
 #include <set>
@@ -30,5 +29,3 @@ class HidingComposition : public Composition {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_HIDINGCOMPOSITION_H_ */

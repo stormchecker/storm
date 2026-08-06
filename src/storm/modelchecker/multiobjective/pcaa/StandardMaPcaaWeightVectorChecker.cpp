@@ -39,7 +39,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initializeModelTypeSp
     for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
         auto const& formula = *this->objectives[objIndex].formula;
         STORM_LOG_THROW(formula.isRewardOperatorFormula() && formula.asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::UnexpectedException,
-                        "Unexpected type of operator formula: " << formula);
+                        "Unexpected type of operator formula: " << formula << ".");
         typename SparseMaModelType::RewardModelType const& rewModel = model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
         STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
         this->actionRewards[objIndex] = rewModel.hasStateActionRewards()
@@ -61,7 +61,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initializeModelTypeSp
         } else {
             STORM_LOG_THROW(formula.getSubformula().isCumulativeRewardFormula() &&
                                 formula.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isTimeBound(),
-                            storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
+                            storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula() << ".");
             STORM_LOG_THROW(!rewModel.hasStateRewards(), storm::exceptions::InvalidPropertyException,
                             "Found state rewards for time bounded objective " << this->objectives[objIndex].originalFormula << ". This is not supported.");
             STORM_LOG_WARN_COND(

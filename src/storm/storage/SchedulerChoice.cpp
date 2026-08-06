@@ -44,7 +44,7 @@ bool SchedulerChoice<ValueType>::isDeterministic() const {
 template<typename ValueType>
 uint_fast64_t SchedulerChoice<ValueType>::getDeterministicChoice() const {
     STORM_LOG_THROW(isDeterministic(), storm::exceptions::InvalidOperationException,
-                    "Tried to obtain the deterministic choice of a scheduler, but the choice is not deterministic");
+                    "Tried to obtain the deterministic choice of a scheduler, but the choice is not deterministic.");
     return distribution.begin()->first;
 }
 

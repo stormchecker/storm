@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_MODULE_H_
-#define STORM_STORAGE_PRISM_MODULE_H_
+#pragma once
 
 #include <map>
 #include <memory>
@@ -361,5 +360,3 @@ class Module : public LocatedInformation {
 
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_MODULE_H_ */

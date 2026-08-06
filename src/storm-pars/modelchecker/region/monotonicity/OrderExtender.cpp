@@ -95,7 +95,7 @@ std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getBottomTopOrder
     if (bottomTopOrder == nullptr) {
         assert(model != nullptr);
         STORM_LOG_THROW(matrix.getRowCount() == matrix.getColumnCount(), exceptions::NotSupportedException,
-                        "Creating order not supported for non-square matrix");
+                        "Creating order not supported for non-square matrix.");
         modelchecker::SparsePropositionalModelChecker<models::sparse::Model<ValueType>> propositionalChecker(*model);
         storage::BitVector phiStates;
         storage::BitVector psiStates;
@@ -120,8 +120,8 @@ std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getBottomTopOrder
         storage::BitVector topStates = statesWithProbability01.second;
         storage::BitVector bottomStates = statesWithProbability01.first;
 
-        STORM_LOG_THROW(topStates.begin() != topStates.end(), exceptions::NotSupportedException, "Formula yields to no 1 states");
-        STORM_LOG_THROW(bottomStates.begin() != bottomStates.end(), exceptions::NotSupportedException, "Formula yields to no zero states");
+        STORM_LOG_THROW(topStates.begin() != topStates.end(), exceptions::NotSupportedException, "Formula yields to no 1 states.");
+        STORM_LOG_THROW(bottomStates.begin() != bottomStates.end(), exceptions::NotSupportedException, "Formula yields to no zero states.");
         auto& matrix = this->model->getTransitionMatrix();
         std::vector<uint64_t> firstStates;
 
@@ -685,7 +685,7 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
                 std::make_shared<storm::logic::ProbabilityOperatorFormula>(formula->asProbabilityOperatorFormula().getSubformula().asSharedPointer(), opInfo);
             checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*newFormula);
         }
-        STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask.get()), exceptions::NotSupportedException, "Cannot handle this formula");
+        STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask.get()), exceptions::NotSupportedException, "Cannot handle this formula.");
         bool const allowModelSimplification = false;  // make sure that the results align with the input model
         plaModelChecker.specify(env, model, checkTask.get(), std::nullopt, nullptr, allowModelSimplification);
 

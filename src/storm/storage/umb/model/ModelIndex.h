@@ -7,7 +7,7 @@
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/JsonSerializationAdapter.h"
 #include "storm/storage/umb/model/Type.h"
-#include "storm/storage/umb/model/ValuationDescription.h"
+#include "storm/storage/valuations/ValuationDescription.h"
 #include "storm/utility/OptionalRef.h"
 
 namespace storm::umb {
@@ -109,7 +109,7 @@ struct ModelIndex {
     std::optional<std::map<std::string, AnnotationMap>> annotations;
 
     struct Valuations {
-        std::optional<ValuationDescription> states, choices, branches, observations, players;
+        std::optional<storm::storage::sparse::ValuationDescription> states, choices, branches, observations, players;
         auto static constexpr JsonKeys = {"states", "choices", "branches", "observations", "players"};
         using JsonSerialization = storm::JsonSerialization;
     };

@@ -203,7 +203,7 @@ void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<stor
     bool const choiceOriginsGiven = model != nullptr && model->hasChoiceOrigins();
     uint_fast64_t widthOfStates = std::to_string(schedulerChoices.front().size()).length();
     if (stateValuationsGiven) {
-        widthOfStates += model->getStateValuations().getStateInfo(schedulerChoices.front().size() - 1).length() + 5;
+        widthOfStates += model->getStateValuations().toString(schedulerChoices.front().size() - 1).length() + 5;
     }
     widthOfStates = std::max(widthOfStates, (uint_fast64_t)12);
     uint_fast64_t numOfSkippedStatesWithUniqueChoice = 0;
@@ -228,7 +228,7 @@ void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<stor
 
         // Print the state info
         if (stateValuationsGiven) {
-            out << std::setw(widthOfStates) << (std::to_string(state) + ": " + model->getStateValuations().getStateInfo(state));
+            out << std::setw(widthOfStates) << (std::to_string(state) + ": " + model->getStateValuations().toString(state));
         } else {
             out << std::setw(widthOfStates) << state;
         }

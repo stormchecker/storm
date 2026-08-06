@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_COMPARISONTYPE_H_
-#define STORM_LOGIC_COMPARISONTYPE_H_
+#pragma once
 
 #include <iosfwd>
 
@@ -52,5 +51,3 @@ inline ComparisonType invertPreserveStrictness(ComparisonType t) {
 std::ostream& operator<<(std::ostream& out, ComparisonType const& comparisonType);
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_COMPARISONTYPE_H_ */

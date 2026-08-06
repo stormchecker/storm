@@ -349,7 +349,7 @@ std::pair<WinningRegion, std::string> WinningRegion::loadFromFile(std::string co
             continue;
         }
         if (state == 0) {
-            STORM_LOG_THROW(line == ":preamble", storm::exceptions::WrongFormatException, "Expected to see :preamble");
+            STORM_LOG_THROW(line == ":preamble", storm::exceptions::WrongFormatException, "Expected to see :preamble.");
             state = 1;  // state = 1: preamble
         } else if (state == 1) {
             if (line == ":winningregion") {

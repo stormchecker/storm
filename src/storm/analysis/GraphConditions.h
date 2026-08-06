@@ -5,6 +5,9 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmacro-redefined"  // clash for likely() macro between Ginac and Sylvan
+#pragma clang diagnostic ignored "-Wthread-safety-negative"
+#pragma clang diagnostic ignored "-Wundefined-reinterpret-cast"
+#pragma clang diagnostic ignored "-Wunused-template"
 #include <carl/formula/Formula.h>
 #pragma clang diagnostic pop
 

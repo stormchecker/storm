@@ -31,7 +31,7 @@ GreatSpnEditorProjectParser::GreatSpnEditorProjectParser(std::string const& cons
             std::vector<std::string> keyvaluepair;
             boost::split(keyvaluepair, pair, boost::is_any_of("="));
             STORM_LOG_THROW(keyvaluepair.size() == 2, storm::exceptions::WrongFormatException,
-                            "Expected a constant definition of the form N=42 but got " << pair);
+                            "Expected a constant definition of the form N=42 but got " << pair << ".");
             constantDefinitions.emplace(keyvaluepair.at(0), keyvaluepair.at(1));
         }
     }
@@ -425,9 +425,9 @@ void GreatSpnEditorProjectParser::traverseArcElement(xercesc::DOMNode const* con
         }
     }
 
-    STORM_LOG_THROW(head.compare("____NOT_SET____") != 0, storm::exceptions::WrongFormatException, "Arc must have a head");
-    STORM_LOG_THROW(tail.compare("____NOT_SET____") != 0, storm::exceptions::WrongFormatException, "Arc must have a tail");
-    STORM_LOG_THROW(kind.compare("____NOT_SET____") != 0, storm::exceptions::WrongFormatException, "Arc must have a kind");
+    STORM_LOG_THROW(head.compare("____NOT_SET____") != 0, storm::exceptions::WrongFormatException, "Arc must have a head.");
+    STORM_LOG_THROW(tail.compare("____NOT_SET____") != 0, storm::exceptions::WrongFormatException, "Arc must have a tail.");
+    STORM_LOG_THROW(kind.compare("____NOT_SET____") != 0, storm::exceptions::WrongFormatException, "Arc must have a kind.");
 
     if (kind.compare("INPUT") == 0) {
         builder.addInputArc(tail, head, mult);

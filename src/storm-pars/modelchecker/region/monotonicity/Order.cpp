@@ -436,7 +436,7 @@ std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> O
 
 std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> Order::sortStatesUnorderedPair(const std::vector<uint_fast64_t>* states) {
     assert(states != nullptr);
-    uint_fast64_t numberOfStatesToSort = states->size();
+    [[maybe_unused]] uint_fast64_t numberOfStatesToSort = states->size();
     std::vector<uint_fast64_t> result;
     // Go over all states
     for (auto state : *states) {

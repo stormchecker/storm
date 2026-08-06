@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_ARGUMENTBASE_H_
-#define STORM_SETTINGS_ARGUMENTBASE_H_
+#pragma once
 
 #include <cstdint>
 #include <iostream>
@@ -170,5 +169,3 @@ class ArgumentBase {
 };
 }  // namespace settings
 }  // namespace storm
-
-#endif  // STORM_SETTINGS_ARGUMENTBASE_H_

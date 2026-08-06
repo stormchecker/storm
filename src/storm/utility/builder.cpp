@@ -35,7 +35,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> buildM
         case storm::models::ModelType::Smg:
             return std::make_shared<storm::models::sparse::Smg<ValueType, RewardModelType>>(std::move(components));
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidModelException, "Unknown model type");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidModelException, "Unknown model type.");
 }
 
 template std::shared_ptr<storm::models::sparse::Model<double>> buildModelFromComponents(storm::models::ModelType modelType,

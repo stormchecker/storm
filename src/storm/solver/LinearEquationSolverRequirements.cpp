@@ -52,7 +52,7 @@ SolverRequirement const& LinearEquationSolverRequirements::get(Element const& el
         case Element::UpperBounds:
             return upperBounds();
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ElementType");
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ElementType.");
 }
 
 void LinearEquationSolverRequirements::clearAcyclic() {

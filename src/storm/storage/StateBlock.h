@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_BLOCK_H_
-#define STORM_STORAGE_BLOCK_H_
+#pragma once
 
 #include <ostream>
 
@@ -86,7 +85,7 @@ class StateBlock {
      */
     const_iterator cbegin() const {
         return this->begin();
-    };
+    }
 
     /*!
      * Returns an iterator that points one past the end of the states in this SCC.
@@ -109,7 +108,7 @@ class StateBlock {
      */
     const_iterator cend() const {
         return this->end();
-    };
+    }
 
     /*!
      * Retrieves whether the given state is in the SCC.
@@ -175,5 +174,3 @@ class StateBlock {
 std::ostream& operator<<(std::ostream& out, StateBlock const& block);
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_BLOCK_H_ */

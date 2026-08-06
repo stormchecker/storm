@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_LOCATEDINFORMATION_H_
-#define STORM_STORAGE_PRISM_LOCATEDINFORMATION_H_
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -60,5 +59,3 @@ class LocatedInformation {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_LOCATEDINFORMATION_H_ */

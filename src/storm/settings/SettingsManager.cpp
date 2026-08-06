@@ -39,7 +39,6 @@
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm/settings/modules/OviSolverSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
-#include "storm/settings/modules/Smt2SmtSolverSettings.h"
 #include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/TimeBoundedSolverSettings.h"
 #include "storm/settings/modules/TopologicalEquationSolverSettings.h"
@@ -129,8 +128,26 @@ void SettingsManager::setFromExplodedString(std::vector<std::string> const& comm
     for (uint_fast64_t i = 0; i < commandLineArguments.size(); ++i) {
         std::string const& currentArgument = commandLineArguments[i];
 
-        // Check if the given argument is a new option or belongs to a previously given option.
-        if (!currentArgument.empty() && currentArgument.at(0) == '-') {
+        // Check if the given argument is a new option or belongs to a previously given option. An argument that
+        // starts with '-' is normally considered a new option. However, if an option is currently active and still
+        // expects a mandatory (non-optional) argument, a leading '-' may also be part of the argument's value,
+        // e.g. for negative numbers in a region description.
+        bool isNewOption = !currentArgument.empty() && currentArgument.at(0) == '-';
+        if (isNewOption && optionActive) {
+            auto const& activeOptionMap = activeOptionIsShortName ? shortNameToOptions : longNameToOptions;
+            auto activeOptionIterator = activeOptionMap.find(activeOptionName);
+            bool activeOptionExpectsMandatoryArgument = activeOptionIterator != activeOptionMap.end() && !activeOptionIterator->second.empty() &&
+                                                        argumentCache.size() < activeOptionIterator->second.front()->getArgumentCount() &&
+                                                        !activeOptionIterator->second.front()->getArgument(argumentCache.size()).getIsOptional();
+            bool currentArgumentIsKnownOption = currentArgument.size() > 1 && currentArgument.at(1) == '-'
+                                                    ? longNameToOptions.find(currentArgument.substr(2)) != longNameToOptions.end()
+                                                    : shortNameToOptions.find(currentArgument.substr(1)) != shortNameToOptions.end();
+            if (activeOptionExpectsMandatoryArgument && !currentArgumentIsKnownOption) {
+                isNewOption = false;
+            }
+        }
+
+        if (isNewOption) {
             if (optionActive) {
                 // At this point we know that a new option is about to come. Hence, we need to assign the current
                 // cache content to the option that was active until now.
@@ -142,7 +159,7 @@ void SettingsManager::setFromExplodedString(std::vector<std::string> const& comm
                 optionActive = true;
             }
 
-            if (currentArgument.at(1) == '-') {
+            if (currentArgument.size() > 1 && currentArgument.at(1) == '-') {
                 // In this case, the argument has to be the long name of an option. Try to get all options that
                 // match the long name.
                 std::string optionName = currentArgument.substr(2);
@@ -505,7 +522,7 @@ void SettingsManager::setOptionArguments(std::string const& optionName, std::sha
         bool conversionOk = argument.setFromStringValue(argumentCache[i]);
         STORM_LOG_THROW(conversionOk, storm::exceptions::OptionParserException,
                         "Value '" << argumentCache[i] << "' is invalid for argument <" << argument.getName() << "> of option:\n"
-                                  << *option);
+                                  << *option << ".");
     }
 
     // In case there are optional arguments that were not set, we set them to their default value.
@@ -513,7 +530,7 @@ void SettingsManager::setOptionArguments(std::string const& optionName, std::sha
         ArgumentBase& argument = option->getArgument(i);
         STORM_LOG_THROW(argument.getIsOptional(), storm::exceptions::OptionParserException,
                         "Non-optional argument <" << argument.getName() << "> of option:\n"
-                                                  << *option);
+                                                  << *option << ".");
         argument.setFromDefaultValue();
     }
 
@@ -702,7 +719,6 @@ void initializeAll(std::string const& name, std::string const& executableName) {
     storm::settings::addModule<storm::settings::modules::GlpkSettings>();
     storm::settings::addModule<storm::settings::modules::GurobiSettings>();
     storm::settings::addModule<storm::settings::modules::TopologicalEquationSolverSettings>();
-    storm::settings::addModule<storm::settings::modules::Smt2SmtSolverSettings>();
     storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
     storm::settings::addModule<storm::settings::modules::ResourceSettings>();
     storm::settings::addModule<storm::settings::modules::AbstractionSettings>();

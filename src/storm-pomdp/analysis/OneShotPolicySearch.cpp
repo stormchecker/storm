@@ -140,7 +140,7 @@ bool OneShotPolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVect
     stats.smtCheckTimer.stop();
 
     if (result == storm::solver::SmtSolver::CheckResult::Unknown) {
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "SMT solver yielded an unexpected result");
+        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "SMT solver yielded an unexpected result.");
     } else if (result == storm::solver::SmtSolver::CheckResult::Unsat) {
         STORM_LOG_DEBUG("Unsatisfiable!");
         return false;

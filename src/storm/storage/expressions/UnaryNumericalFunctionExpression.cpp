@@ -58,10 +58,8 @@ int_fast64_t UnaryNumericalFunctionExpression::evaluateAsInt(Valuation const* va
         switch (this->getOperatorType()) {
             case OperatorType::Floor:
                 return static_cast<int_fast64_t>(std::floor(result));
-                break;
             case OperatorType::Ceil:
                 return static_cast<int_fast64_t>(std::ceil(result));
-                break;
             default:
                 STORM_LOG_ASSERT(false, "All other operator types should have been handled before.");
                 return 0;  // Warning suppression.

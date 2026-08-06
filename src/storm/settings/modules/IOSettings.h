@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_IOSETTINGS_H_
-#define STORM_SETTINGS_MODULES_IOSETTINGS_H_
+#pragma once
 
 #include <boost/optional.hpp>
 
@@ -491,5 +490,3 @@ class IOSettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_IOSETTINGS_H_ */

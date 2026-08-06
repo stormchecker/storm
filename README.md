@@ -78,4 +78,4 @@ For an exhaustive list of contributors and more details, see the [GitHub page](h
 
 Citing Storm
 -----------------------------
-If you want to cite Storm, please use the most recent paper in [this category](https://www.stormchecker.org/publications.html).
+If you want to cite Storm, please use the most recent paper in [this category](https://www.stormchecker.org/publications.html#storm-tool-papers).

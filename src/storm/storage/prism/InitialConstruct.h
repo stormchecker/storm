@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_INITIALCONSTRUCT_H_
-#define STORM_STORAGE_PRISM_INITIALCONSTRUCT_H_
+#pragma once
 
 #include <map>
 #include <string>
@@ -56,5 +55,3 @@ class InitialConstruct : public LocatedInformation {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_INITIALCONSTRUCT_H_ */

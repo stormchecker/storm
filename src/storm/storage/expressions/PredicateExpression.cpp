@@ -18,7 +18,7 @@ OperatorType toOperatorType(PredicateExpression::PredicateType tp) {
         case PredicateExpression::PredicateType::ExactlyOneOf:
             return OperatorType::ExactlyOneOf;
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Predicate type not supported");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Predicate type not supported.");
 }
 
 PredicateExpression::PredicateExpression(ExpressionManager const& manager, Type const& type, std::vector<std::shared_ptr<BaseExpression const>> const& operands,
@@ -46,7 +46,7 @@ bool PredicateExpression::evaluateAsBool(Valuation const* valuation) const {
         case PredicateType::AtLeastOneOf:
             return nrTrue >= 1;
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Predicate type not supported");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Predicate type not supported.");
 }
 
 std::shared_ptr<BaseExpression const> PredicateExpression::simplify() const {
