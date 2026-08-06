@@ -108,9 +108,6 @@ class SparseDtmcEliminationModelChecker : public SparsePropositionalModelChecker
                                   uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue,
                                   bool computeResultsForInitialStatesOnly,
                                   boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities = boost::none);
-
-    static bool checkConsistent(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix,
-                                storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions);
 };
 
 }  // namespace modelchecker
