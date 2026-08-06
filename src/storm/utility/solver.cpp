@@ -163,7 +163,7 @@ std::unique_ptr<storm::solver::SmtSolver> MathsatSmtSolverFactory::create(storm:
 }
 
 std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::expressions::ExpressionManager& manager) {
-    std::unique_ptr<storm::utility::solver::SmtSolverFactory> factory(new SmtSolverFactory());
+    std::unique_ptr<storm::utility::solver::SmtSolverFactory> factory = std::make_unique<SmtSolverFactory>();
     return factory->create(manager);
 }
 

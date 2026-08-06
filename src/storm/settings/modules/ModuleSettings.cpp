@@ -1,5 +1,7 @@
 #include "storm/settings/modules/ModuleSettings.h"
 
+#include <memory>
+
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/settings/Option.h"
@@ -58,7 +60,7 @@ std::unique_ptr<storm::settings::SettingMemento> ModuleSettings::overrideOption(
     } else {
         this->unset(name);
     }
-    return std::unique_ptr<storm::settings::SettingMemento>(new storm::settings::SettingMemento(*this, name, currentStatus));
+    return std::make_unique<storm::settings::SettingMemento>(*this, name, currentStatus);
 }
 
 bool ModuleSettings::isSet(std::string const& optionName) const {

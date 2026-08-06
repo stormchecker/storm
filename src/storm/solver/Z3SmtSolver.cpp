@@ -1,4 +1,7 @@
 #include "storm/solver/Z3SmtSolver.h"
+
+#include <memory>
+
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
@@ -71,9 +74,9 @@ Z3SmtSolver::Z3SmtSolver(storm::expressions::ExpressionManager& manager)
 #ifdef STORM_HAVE_Z3
     z3::config config;
     config.set("model", true);
-    context = std::unique_ptr<z3::context>(new z3::context(config));
-    solver = std::unique_ptr<z3::solver>(new z3::solver(*context));
-    expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(this->getManager(), *context));
+    context = std::make_unique<z3::context>(config);
+    solver = std::make_unique<z3::solver>(*context);
+    expressionAdapter = std::make_unique<storm::adapters::Z3ExpressionAdapter>(this->getManager(), *context);
 #endif
 }
 
