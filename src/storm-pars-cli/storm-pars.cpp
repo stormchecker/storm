@@ -147,7 +147,7 @@ std::shared_ptr<storm::models::ModelBase> eliminateScc(std::shared_ptr<storm::mo
         result->printModelInformationToStream(std::cout);
     } else if (model->isOfType(storm::models::ModelType::Mdp)) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                        "Unable to perform SCC elimination for monotonicity analysis on MDP: Not mplemented.");
+                        "Unable to perform SCC elimination for monotonicity analysis on MDP: Not implemented.");
     } else {
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform monotonicity analysis on the provided model type.");
     }

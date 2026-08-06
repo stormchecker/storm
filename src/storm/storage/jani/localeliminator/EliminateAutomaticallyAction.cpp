@@ -141,7 +141,7 @@ void EliminateAutomaticallyAction::doAction(JaniLocalEliminator::Session& sessio
             break;
         }
         default: {
-            STORM_LOG_THROW(true, storm::exceptions::NotImplementedException, "This elimination order is not yet implemented.");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This elimination order is not yet implemented.");
             break;
         }
     }

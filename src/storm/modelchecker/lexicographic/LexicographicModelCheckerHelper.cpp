@@ -177,7 +177,7 @@ LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::g
         accConds.reserve(accConds.size() + distance(rightAccConds.begin(), rightAccConds.end()));
         accConds.insert(accConds.end(), rightAccConds.begin(), rightAccConds.end());
     } else {
-        STORM_LOG_THROW(true, storm::exceptions::NotImplementedException, "Finding StreettPairs - unknown type " + current->toString() + ".");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Finding StreettPairs - unknown type " + current->toString() + ".");
     }
     return accConds;
 }

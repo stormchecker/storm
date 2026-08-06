@@ -184,7 +184,7 @@ JaniLocationExpander::AutomatonAndIndices JaniLocationExpander::transformAutomat
                 }
 
                 if (!useTransientVariables)
-                    STORM_LOG_THROW(true, storm::exceptions::NotImplementedException, "Unfolding without transient variables is not implemented.");
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Unfolding without transient variables is not implemented.");
                 // oa.add(Assignment(*uncastVar, original.getExpressionManager().integer(value)));
 
                 TemplateEdgeDestination ted(oa);
