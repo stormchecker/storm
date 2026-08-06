@@ -6,6 +6,7 @@ Checks: >-
   modernize-deprecated-headers,
   modernize-use-nullptr,
   readability-braces-around-statements,
+  readability-redundant-smartptr-get,
   readability-static-accessed-through-instance
 # Candidate checks that are not (yet) enabled:
 # bugprone-branch-clone,
@@ -41,7 +42,6 @@ Checks: >-
 # readability-else-after-return,
 # readability-non-const-parameter,
 # readability-redundant-member-init,
-# readability-redundant-smartptr-get,
 # readability-redundant-string-cstr,
 # readability-simplify-boolean-expr,
 
