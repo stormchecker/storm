@@ -156,8 +156,9 @@ if (STORM_DEVELOPER)
     set(STORM_DEBUG_SPOT ON)
     set(STORM_DEBUG_SYLVAN ON)
     set(STORM_WARNING_AS_ERROR ON)
-	# Turn off PCH for faster ccache usage on warm caches. PCH compiled files cannot be properly cached currently.
-	set(STORM_COMPILE_WITH_PCH OFF)
+    # Turn off PCH for faster ccache usage on warm caches. PCH compiled files cannot be properly cached currently.
+    # TODO: remove and explicitly set if needed
+    set(STORM_COMPILE_WITH_PCH OFF)
 else()
     set(STORM_LOG_DISABLE_DEBUG ON)
     if (NOT CMAKE_BUILD_TYPE)
@@ -168,24 +169,19 @@ set(CMAKE_COMPILE_WARNING_AS_ERROR ${STORM_WARNING_AS_ERROR})
 
 message(STATUS "Storm - Building ${CMAKE_BUILD_TYPE} version.")
 
-# PCH compiled files cannot be properly cached currently. Thus disabling it is recommended when doing many warm ccache builds.
-if(NOT STORM_COMPILE_WITH_PCH)
-	set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
-	message(STATUS "Storm - Disabling precompiled headers because of ccache compatibility.")
-endif()
-
 if(STORM_COMPILE_WITH_CCACHE)
 	find_program(CCACHE_FOUND ccache)
 	mark_as_advanced(CCACHE_FOUND)
 	if(CCACHE_FOUND)
 		message(STATUS "Storm - Using ccache")
-		# Relax ccache the caching keys, pch_defines tries to ignore precompiled headers (but often does not succeed in our case), 
-		# the time options are commonly used and ignore time macros when calculating the cache key, improving cache hit rates.
+		# Relax the caching keys
+		# pch_defines tries to ignore precompiled headers (but often does not succeed in our case)
+		# the time options ignore time macros when calculating the cache key, improving cache hit rates
 		set(ENV{CCACHE_SLOPPINESS} "pch_defines,time_macros,include_file_mtime,include_file_ctime")
 		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
 
 		if(STORM_COMPILE_WITH_PCH)
-			message(STATUS "STORM - PCH is enabled which will lead to significantly lower ccache hit rates. Consider disabling PCH if you plan to rebuild Storm multiple times.")
+			message(STATUS "Storm - PCH is enabled which will lead to significantly lower ccache hit rates. Consider setting STORM_COMPILE_WITH_PCH=OFF if you plan to rebuild Storm multiple times.")
 		endif()
 	else()
 		message(STATUS "Storm - Could not find ccache.")
