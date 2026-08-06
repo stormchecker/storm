@@ -43,6 +43,15 @@ bool hasExactLpSolver() {
 #endif
 }
 
+class CvarQueryTest : public ::testing::Test {
+   public:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
 template<typename ValueType>
 struct CvarTestInput {
     std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp;
@@ -214,7 +223,7 @@ TEST(CvarSspRewardParetoValueIterationOperatorTest, AppliesRewardShiftsAndUnions
     expectParetoFrontPoints(outputLayer[2], {{1.0, 3.0}});
 }
 
-TEST(CvarQueryTest, SimpleMdp) {
+TEST_F(CvarQueryTest, SimpleMdp) {
     if (!hasLpSolver()) {
         GTEST_SKIP() << "No LP solver available.";
     }
@@ -231,7 +240,7 @@ TEST(CvarQueryTest, SimpleMdp) {
     EXPECT_NEAR(minValue, 2.0, 1e-10);
 }
 
-TEST(CvarQueryTest, ReachableBadMecIsPreprocessedToZeroTerminalReward) {
+TEST_F(CvarQueryTest, ReachableBadMecIsPreprocessedToZeroTerminalReward) {
     if (!hasLpSolver()) {
         GTEST_SKIP() << "No LP solver available.";
     }
@@ -248,7 +257,7 @@ TEST(CvarQueryTest, ReachableBadMecIsPreprocessedToZeroTerminalReward) {
     EXPECT_NEAR(minValue, 4.0, 1e-10);
 }
 
-TEST(CvarQueryTest, TargetReachingMecIsCollapsed) {
+TEST_F(CvarQueryTest, TargetReachingMecIsCollapsed) {
     if (!hasLpSolver()) {
         GTEST_SKIP() << "No LP solver available.";
     }
@@ -262,7 +271,7 @@ TEST(CvarQueryTest, TargetReachingMecIsCollapsed) {
     EXPECT_NEAR(checkInitialStateValue(minInput), 4.0, 1e-10);
 }
 
-TEST(CvarQueryTest, RejectsNonAbsorbingOriginalTargetStates) {
+TEST_F(CvarQueryTest, RejectsNonAbsorbingOriginalTargetStates) {
     std::string alpha = "0.5";
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_nonabsorbing_target_mdp.nm";
 
@@ -274,7 +283,7 @@ TEST(CvarQueryTest, RejectsNonAbsorbingOriginalTargetStates) {
     STORM_SILENT_EXPECT_THROW(checker.check(env, task), storm::exceptions::InvalidPropertyException);
 }
 
-TEST(CvarQueryTest, BranchingTradeoffMdp) {
+TEST_F(CvarQueryTest, BranchingTradeoffMdp) {
     if (!hasLpSolver()) {
         GTEST_SKIP() << "No LP solver available.";
     }
@@ -294,7 +303,7 @@ TEST(CvarQueryTest, BranchingTradeoffMdp) {
     EXPECT_NEAR(checkInitialStateValue(minThreeQuarterInput), 7.0, 1e-10);
 }
 
-TEST(CvarQueryTest, BranchingTradeoffMdpRationalNumbers) {
+TEST_F(CvarQueryTest, BranchingTradeoffMdpRationalNumbers) {
     if (!hasExactLpSolver()) {
         GTEST_SKIP() << "No exact LP solver available.";
     }
@@ -308,7 +317,7 @@ TEST(CvarQueryTest, BranchingTradeoffMdpRationalNumbers) {
     EXPECT_EQ(storm::RationalNumber(7), checkInitialStateValue(minInput));
 }
 
-TEST(CvarQueryTest, InterpretationOverridesOnSimpleMdp) {
+TEST_F(CvarQueryTest, InterpretationOverridesOnSimpleMdp) {
     if (!hasLpSolver()) {
         GTEST_SKIP() << "No LP solver available.";
     }
@@ -332,7 +341,7 @@ TEST(CvarQueryTest, InterpretationOverridesOnSimpleMdp) {
                 5.0 / 3.0, 1e-10);
 }
 
-TEST(CvarQueryTest, InterpretationOverridesOnSimpleMdpRationalNumbers) {
+TEST_F(CvarQueryTest, InterpretationOverridesOnSimpleMdpRationalNumbers) {
     if (!hasExactLpSolver()) {
         GTEST_SKIP() << "No exact LP solver available.";
     }
@@ -356,7 +365,7 @@ TEST(CvarQueryTest, InterpretationOverridesOnSimpleMdpRationalNumbers) {
                                                                          storm::modelchecker::cvar::CvarInterpretationSelection::Reward));
 }
 
-TEST(CvarQueryTest, EquivalentExactAlphaSyntaxes) {
+TEST_F(CvarQueryTest, EquivalentExactAlphaSyntaxes) {
     if (!hasLpSolver()) {
         GTEST_SKIP() << "No LP solver available.";
     }
@@ -372,7 +381,7 @@ TEST(CvarQueryTest, EquivalentExactAlphaSyntaxes) {
     EXPECT_NEAR(checkInitialStateValue(scientificInput), 2.0, 1e-10);
 }
 
-TEST(CvarQueryTest, RejectsInvalidAlphaSyntaxes) {
+TEST(CvarFormulaTest, RejectsInvalidAlphaSyntaxes) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_simple_mdp.nm";
     storm::prism::Program program = storm::api::parseProgram(modelPath);
     auto properties = storm::api::parsePropertiesForPrismProgram("R{\"term\"}max=? [ F \"target\" ];", program);
@@ -382,7 +391,7 @@ TEST(CvarQueryTest, RejectsInvalidAlphaSyntaxes) {
     }
 }
 
-TEST(CvarQueryTest, CvarFormulaValidatesAlphaAndSubformula) {
+TEST(CvarFormulaTest, CvarFormulaValidatesAlphaAndSubformula) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_simple_mdp.nm";
     storm::prism::Program program = storm::api::parseProgram(modelPath);
     auto properties = storm::api::parsePropertiesForPrismProgram("R{\"term\"}max=? [ F \"target\" ];", program);
@@ -394,7 +403,7 @@ TEST(CvarQueryTest, CvarFormulaValidatesAlphaAndSubformula) {
     STORM_SILENT_EXPECT_THROW(storm::logic::CvarFormula(storm::RationalNumber("1/2"), nullptr), storm::exceptions::InvalidArgumentException);
 }
 
-TEST(CvarQueryTest, CheckTaskExtractsWrappedRewardMetadata) {
+TEST_F(CvarQueryTest, CheckTaskExtractsWrappedRewardMetadata) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_simple_mdp.nm";
     auto input = buildCvarInput<double>(modelPath, "R{\"term\"}max=? [ F \"target\" ];", "3/4");
 
@@ -408,7 +417,7 @@ TEST(CvarQueryTest, CheckTaskExtractsWrappedRewardMetadata) {
     EXPECT_FALSE(task.isBoundSet());
 }
 
-TEST(CvarQueryTest, DeterministicSspPathMdp) {
+TEST_F(CvarQueryTest, DeterministicSspPathMdp) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_deterministic_mdp.nm";
     auto input = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", "0.5");
 
@@ -416,7 +425,7 @@ TEST(CvarQueryTest, DeterministicSspPathMdp) {
     EXPECT_NEAR(value, 5.0, 1e-10);
 }
 
-TEST(CvarQueryTest, DeterministicRewardSspPathMdp) {
+TEST_F(CvarQueryTest, DeterministicRewardSspPathMdp) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_deterministic_mdp.nm";
     auto input = buildCvarInput<double>(modelPath, "R{\"cost\"}max=? [ F \"goal\" ];", "0.5");
 
@@ -426,7 +435,7 @@ TEST(CvarQueryTest, DeterministicRewardSspPathMdp) {
                 5.0, 1e-10);
 }
 
-TEST(CvarQueryTest, BranchingSspTradeoffMdp) {
+TEST_F(CvarQueryTest, BranchingSspTradeoffMdp) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_branching_tradeoff_mdp.nm";
 
     auto halfInput = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", "0.5");
@@ -436,7 +445,7 @@ TEST(CvarQueryTest, BranchingSspTradeoffMdp) {
     EXPECT_NEAR(checkInitialStateValueWithMethod(nineTenthsInput, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 16.0 / 3.0, 1e-10);
 }
 
-TEST(CvarQueryTest, SafeRiskyRewardSspMdp) {
+TEST_F(CvarQueryTest, SafeRiskyRewardSspMdp) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_reward_safe_risky_mdp.nm";
 
     auto quarterInput = buildCvarInput<double>(modelPath, "R{\"reward\"}max=? [ F \"goal\" ];", "0.25");
@@ -446,21 +455,21 @@ TEST(CvarQueryTest, SafeRiskyRewardSspMdp) {
     EXPECT_NEAR(checkInitialStateValueWithMethod(fourFifthsInput, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 8.0, 1e-10);
 }
 
-TEST(CvarQueryTest, DelayedChallengerRewardSspMdp) {
+TEST_F(CvarQueryTest, DelayedChallengerRewardSspMdp) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_reward_delayed_challenger_mdp.nm";
     auto input = buildCvarInput<double>(modelPath, "R{\"reward\"}max=? [ F \"goal\" ];", "0.5");
 
     EXPECT_NEAR(checkInitialStateValueWithMethod(input, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 8.0, 1e-10);
 }
 
-TEST(CvarQueryTest, GeometricRewardSspMdp) {
+TEST_F(CvarQueryTest, GeometricRewardSspMdp) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_reward_geometric_mdp.nm";
     auto input = buildCvarInput<double>(modelPath, "R{\"reward\"}max=? [ F \"goal\" ];", "0.8");
 
     EXPECT_NEAR(checkInitialStateValueWithMethod(input, storm::modelchecker::cvar::CvarMethod::SspParetoVi), 1.4375, 1e-10);
 }
 
-TEST(CvarQueryTest, RejectsRewardSspProb1AChoiceViolation) {
+TEST_F(CvarQueryTest, RejectsRewardSspProb1AChoiceViolation) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_reward_prob1a_choice_violation_mdp.nm";
     auto input = buildCvarInput<double>(modelPath, "R{\"reward\"}max=? [ F \"goal\" ];", "0.5");
 
@@ -468,7 +477,7 @@ TEST(CvarQueryTest, RejectsRewardSspProb1AChoiceViolation) {
                               storm::exceptions::InvalidPropertyException);
 }
 
-TEST(CvarQueryTest, RejectsRewardSspProb1AProbabilisticViolation) {
+TEST_F(CvarQueryTest, RejectsRewardSspProb1AProbabilisticViolation) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_reward_prob1a_probabilistic_violation_mdp.nm";
     auto input = buildCvarInput<double>(modelPath, "R{\"reward\"}max=? [ F \"goal\" ];", "0.5");
 
@@ -476,7 +485,7 @@ TEST(CvarQueryTest, RejectsRewardSspProb1AProbabilisticViolation) {
                               storm::exceptions::InvalidPropertyException);
 }
 
-TEST(CvarQueryTest, RejectsUnsupportedSspInterpretationCombinations) {
+TEST_F(CvarQueryTest, RejectsUnsupportedSspInterpretationCombinations) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_deterministic_mdp.nm";
 
     auto minRewardInput = buildCvarInput<double>(modelPath, "R{\"cost\"}min=? [ F \"goal\" ];", "0.5");
@@ -490,7 +499,7 @@ TEST(CvarQueryTest, RejectsUnsupportedSspInterpretationCombinations) {
                               storm::exceptions::InvalidPropertyException);
 }
 
-TEST(CvarQueryTest, RejectsSspTransitionRewards) {
+TEST_F(CvarQueryTest, RejectsSspTransitionRewards) {
     std::string modelPath = STORM_TEST_RESOURCES_DIR "/mdp/cvar_ssp_deterministic_mdp.nm";
     auto input = buildCvarInput<double>(modelPath, "R{\"cost\"}max=? [ F \"goal\" ];", "0.5");
 
