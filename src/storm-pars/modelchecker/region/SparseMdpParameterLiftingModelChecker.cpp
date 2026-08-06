@@ -375,7 +375,7 @@ std::vector<ConstantType> SparseMdpParameterLiftingModelChecker<SparseModelType,
     // Get the result for the complete model (including maybestates)
     std::vector<ConstantType> result = resultsForNonMaybeStates;
     auto maybeStateResIt = x.begin();
-    for (auto const& maybeState : maybeStates) {
+    for (auto maybeState : maybeStates) {
         result[maybeState] = *maybeStateResIt;
         ++maybeStateResIt;
     }
@@ -390,7 +390,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::compu
         // only count selected rows
         n = selectedRows->getNumberOfSetBits();
     } else {
-        for (auto const& maybeState : maybeStates) {
+        for (auto maybeState : maybeStates) {
             n += this->parametricModel->getTransitionMatrix().getRowGroupSize(maybeState);
         }
     }

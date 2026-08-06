@@ -13,11 +13,10 @@ namespace storm {
 namespace dd {
 
 #ifdef STORM_HAVE_SYLVAN
-#if defined(__clang__)
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-length-array"
 #pragma clang diagnostic ignored "-Wc99-extensions"
-#endif
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
+#pragma clang diagnostic ignored "-Wzero-length-array"
 
 #ifndef NDEBUG
 VOID_TASK_0(gc_start) {
@@ -37,9 +36,7 @@ VOID_TASK_2(execute_sylvan, std::function<void()> const*, f, std::exception_ptr*
     }
 }
 
-#if defined(__clang__)
 #pragma clang diagnostic pop
-#endif
 
 uint_fast64_t InternalDdManager<DdType::Sylvan>::numberOfInstances = 0;
 bool InternalDdManager<DdType::Sylvan>::suspended = false;
@@ -239,12 +236,18 @@ void InternalDdManager<DdType::Sylvan>::execute(std::function<void()> const& f) 
     if (suspended) {
         lace_resume();
         suspended = false;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
         RUN(execute_sylvan, &f, &e);
+#pragma clang diagnostic pop
         lace_suspend();
         suspended = true;
     } else {
         // The sylvan threads are already running, don't suspend afterwards.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
         RUN(execute_sylvan, &f, &e);
+#pragma clang diagnostic pop
     }
     if (e) {
         std::rethrow_exception(e);

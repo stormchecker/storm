@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "storm/utility/Engine.h"
 
 namespace storm {

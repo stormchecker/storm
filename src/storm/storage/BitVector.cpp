@@ -1,9 +1,11 @@
+#include "storm/storage/BitVector.h"
+
 #include <algorithm>
 #include <bit>
 #include <bitset>
+#include <boost/functional/hash.hpp>
 #include <iostream>
 
-#include "storm/storage/BitVector.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/utility/macros.h"
 
@@ -1260,7 +1262,7 @@ uint64_t Murmur3BitVectorHash<uint64_t>::operator()(storm::storage::BitVector co
     //----------
     // body
 
-    const uint64_t* blocks = (const uint64_t*)(data);
+    uint64_t const* blocks = bv.buckets;
 
     for (int i = 0; i < nblocks; i++) {
         uint64_t k1 = getblock64(blocks, i * 2 + 0);
@@ -1297,51 +1299,51 @@ uint64_t Murmur3BitVectorHash<uint64_t>::operator()(storm::storage::BitVector co
     switch (len & 15) {
         case 15:
             k2 ^= ((uint64_t)tail[14]) << 48;
-            // fallthrough
+            [[fallthrough]];
         case 14:
             k2 ^= ((uint64_t)tail[13]) << 40;
-            // fallthrough
+            [[fallthrough]];
         case 13:
             k2 ^= ((uint64_t)tail[12]) << 32;
-            // fallthrough
+            [[fallthrough]];
         case 12:
             k2 ^= ((uint64_t)tail[11]) << 24;
-            // fallthrough
+            [[fallthrough]];
         case 11:
             k2 ^= ((uint64_t)tail[10]) << 16;
-            // fallthrough
+            [[fallthrough]];
         case 10:
             k2 ^= ((uint64_t)tail[9]) << 8;
-            // fallthrough
+            [[fallthrough]];
         case 9:
             k2 ^= ((uint64_t)tail[8]) << 0;
             k2 *= c2;
             k2 = rotl64(k2, 33);
             k2 *= c1;
             h2 ^= k2;
-            // fallthrough
+            [[fallthrough]];
 
         case 8:
             k1 ^= ((uint64_t)tail[7]) << 56;
-            // fallthrough
+            [[fallthrough]];
         case 7:
             k1 ^= ((uint64_t)tail[6]) << 48;
-            // fallthrough
+            [[fallthrough]];
         case 6:
             k1 ^= ((uint64_t)tail[5]) << 40;
-            // fallthrough
+            [[fallthrough]];
         case 5:
             k1 ^= ((uint64_t)tail[4]) << 32;
-            // fallthrough
+            [[fallthrough]];
         case 4:
             k1 ^= ((uint64_t)tail[3]) << 24;
-            // fallthrough
+            [[fallthrough]];
         case 3:
             k1 ^= ((uint64_t)tail[2]) << 16;
-            // fallthrough
+            [[fallthrough]];
         case 2:
             k1 ^= ((uint64_t)tail[1]) << 8;
-            // fallthrough
+            [[fallthrough]];
         case 1:
             k1 ^= ((uint64_t)tail[0]) << 0;
             // fallthrough

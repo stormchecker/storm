@@ -44,10 +44,8 @@ storm::expressions::Expression ExpressionCreator::createOrExpression(storm::expr
             switch (operatorType) {
                 case storm::expressions::OperatorType::Or:
                     return e1 || e2;
-                    break;
                 case storm::expressions::OperatorType::Implies:
                     return storm::expressions::implies(e1, e2);
-                    break;
                 default:
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
@@ -67,7 +65,6 @@ storm::expressions::Expression ExpressionCreator::createAndExpression(storm::exp
             switch (operatorType) {
                 case storm::expressions::OperatorType::And:
                     return e1 && e2;
-                    break;
                 default:
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
@@ -87,16 +84,12 @@ storm::expressions::Expression ExpressionCreator::createRelationalExpression(sto
             switch (operatorType) {
                 case storm::expressions::OperatorType::GreaterOrEqual:
                     return e1 >= e2;
-                    break;
                 case storm::expressions::OperatorType::Greater:
                     return e1 > e2;
-                    break;
                 case storm::expressions::OperatorType::LessOrEqual:
                     return e1 <= e2;
-                    break;
                 case storm::expressions::OperatorType::Less:
                     return e1 < e2;
-                    break;
                 default:
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
@@ -116,10 +109,8 @@ storm::expressions::Expression ExpressionCreator::createEqualsExpression(storm::
             switch (operatorType) {
                 case storm::expressions::OperatorType::Equal:
                     return e1.hasBooleanType() && e2.hasBooleanType() ? storm::expressions::iff(e1, e2) : e1 == e2;
-                    break;
                 case storm::expressions::OperatorType::NotEqual:
                     return e1 != e2;
-                    break;
                 default:
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
@@ -139,10 +130,8 @@ storm::expressions::Expression ExpressionCreator::createPlusExpression(storm::ex
             switch (operatorType) {
                 case storm::expressions::OperatorType::Plus:
                     return e1 + e2;
-                    break;
                 case storm::expressions::OperatorType::Minus:
                     return e1 - e2;
-                    break;
                 default:
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
@@ -162,10 +151,8 @@ storm::expressions::Expression ExpressionCreator::createMultExpression(storm::ex
             switch (operatorType) {
                 case storm::expressions::OperatorType::Times:
                     return e1 * e2;
-                    break;
                 case storm::expressions::OperatorType::Divide:
                     return e1 / e2;
-                    break;
                 default:
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
@@ -185,13 +172,10 @@ storm::expressions::Expression ExpressionCreator::createPowerModuloLogarithmExpr
             switch (operatorType) {
                 case storm::expressions::OperatorType::Power:
                     return storm::expressions::pow(e1, e2, true);
-                    break;
                 case storm::expressions::OperatorType::Modulo:
                     return e1 % e2;
-                    break;
                 case storm::expressions::OperatorType::Logarithm:
                     return storm::expressions::logarithm(e1, e2);
-                    break;
                 default:
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
@@ -275,10 +259,8 @@ storm::expressions::Expression ExpressionCreator::createMinimumMaximumExpression
             switch (operatorType) {
                 case storm::expressions::OperatorType::Min:
                     return storm::expressions::minimum(e1, e2);
-                    break;
                 case storm::expressions::OperatorType::Max:
                     return storm::expressions::maximum(e1, e2);
-                    break;
                 default:
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
@@ -297,10 +279,8 @@ storm::expressions::Expression ExpressionCreator::createFloorCeilExpression(stor
             switch (operatorType) {
                 case storm::expressions::OperatorType::Floor:
                     return storm::expressions::floor(e1);
-                    break;
                 case storm::expressions::OperatorType::Ceil:
                     return storm::expressions::ceil(e1);
-                    break;
                 default:
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;

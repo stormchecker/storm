@@ -147,7 +147,7 @@ uint64_t choiceLabelingToUmb(storm::models::sparse::ChoiceLabeling const& labeli
     }
 
     // Handle choices with multiple labels.
-    for (auto const& choice : choicesWithMultipleLabels) {
+    for (auto choice : choicesWithMultipleLabels) {
         std::string action;
         for (auto const& label : labeling.getLabelsOfChoice(choice)) {
             if (!action.empty()) {

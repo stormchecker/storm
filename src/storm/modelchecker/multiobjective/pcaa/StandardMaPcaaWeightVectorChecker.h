@@ -64,10 +64,10 @@ class StandardMaPcaaWeightVectorChecker : public StandardPcaaWeightVectorChecker
 
         uint_fast64_t getNumberOfStates() const {
             return toMS.getRowGroupCount();
-        };
+        }
         uint_fast64_t getNumberOfChoices() const {
             return toMS.getRowCount();
-        };
+        }
     };
 
     /*

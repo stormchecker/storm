@@ -11,7 +11,7 @@ foreach (testsuite derivative modelchecker transformer utility)
 	target_link_libraries(test-pars-${testsuite} storm-pars storm-parsers)
 	target_link_libraries(test-pars-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
 	target_include_directories(test-pars-${testsuite} PRIVATE "${PROJECT_SOURCE_DIR}/src")
-	target_precompile_headers(test-pars-${testsuite} REUSE_FROM test-builder)
+	storm_target_precompile_headers(test-pars-${testsuite} REUSE_FROM test-builder)
 
 	add_dependencies(test-pars-${testsuite} test-resources)
 	add_test(NAME run-test-pars-${testsuite} COMMAND $<TARGET_FILE:test-pars-${testsuite}>)

@@ -5,6 +5,7 @@
 #endif
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/GurobiLicenseException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GurobiSettings.h"
@@ -52,7 +53,8 @@ bool testGurobiLicense() {
         return true;  // Gurobi not relevant for this test suite
     }
     try {
-        auto lpSolver = storm::utility::solver::getLpSolver<double>("test", storm::solver::LpSolverTypeSelection::Gurobi);
+        storm::Environment env;
+        auto lpSolver = storm::utility::solver::getLpSolver<double>(env, "test", storm::solver::LpSolverTypeSelection::Gurobi);
     } catch (storm::exceptions::GurobiLicenseException const&) {
         return false;
     }

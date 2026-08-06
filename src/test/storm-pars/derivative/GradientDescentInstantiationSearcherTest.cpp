@@ -17,7 +17,7 @@
 using namespace storm::pars;
 
 namespace {
-class RationalGmmxxEnvironment {
+/*class RationalGmmxxEnvironment {
    public:
     typedef storm::RationalFunction FunctionType;
     typedef storm::RationalNumber ConstantType;
@@ -26,7 +26,7 @@ class RationalGmmxxEnvironment {
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
         return env;
     }
-};
+};*/
 class DoubleGmmxxEnvironment {
    public:
     typedef storm::RationalFunction FunctionType;
@@ -37,7 +37,7 @@ class DoubleGmmxxEnvironment {
         return env;
     }
 };
-class RationalEigenEnvironment {
+/*class RationalEigenEnvironment {
    public:
     typedef storm::RationalFunction FunctionType;
     typedef storm::RationalNumber ConstantType;
@@ -46,7 +46,7 @@ class RationalEigenEnvironment {
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
         return env;
     }
-};
+};*/
 class DoubleEigenEnvironment {
    public:
     typedef storm::RationalFunction FunctionType;

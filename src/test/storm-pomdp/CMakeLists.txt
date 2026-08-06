@@ -11,7 +11,7 @@ foreach (testsuite analysis api modelchecker tracking transformation generator)
 	target_link_libraries(test-pomdp-${testsuite} storm-pomdp storm-parsers)
 	target_link_libraries(test-pomdp-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
 	target_include_directories(test-pomdp-${testsuite} PRIVATE "${PROJECT_SOURCE_DIR}/src")
-	target_precompile_headers(test-pomdp-${testsuite} REUSE_FROM test-builder)
+	storm_target_precompile_headers(test-pomdp-${testsuite} REUSE_FROM test-builder)
 
 	add_dependencies(test-pomdp-${testsuite} test-resources)
 	add_test(NAME run-test-pomdp-${testsuite} COMMAND $<TARGET_FILE:test-pomdp-${testsuite}>)

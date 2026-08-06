@@ -229,8 +229,9 @@ PrismParserGrammar::PrismParserGrammar(std::string const& filename, Iterator fir
          qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParserGrammar::addInitialStatesConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
     initialStatesConstruct.name("initial construct");
 
-    observablesConstruct = (qi::lit("observables") > (identifier % qi::lit(",")) >
-                            qi::lit("endobservables"))[phoenix::bind(&PrismParserGrammar::createObservablesList, phoenix::ref(*this), qi::_1)];
+    observablesConstruct =
+        (qi::lit("observables") > (identifier % qi::lit(",")) >
+         qi::lit("endobservables"))[qi::_pass = phoenix::bind(&PrismParserGrammar::addObservablesConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
     observablesConstruct.name("observables construct");
 
     invariantConstruct = (qi::lit("invariant") > boolExpression > qi::lit("endinvariant"))[qi::_val = qi::_1];
@@ -381,8 +382,8 @@ PrismParserGrammar::PrismParserGrammar(std::string const& filename, Iterator fir
     start =
         (qi::eps[phoenix::bind(&PrismParserGrammar::removeInitialConstruct, phoenix::ref(*this), phoenix::ref(globalProgramInformation))] >
          modelTypeDefinition[phoenix::bind(&PrismParserGrammar::setModelType, phoenix::ref(*this), phoenix::ref(globalProgramInformation), qi::_1)] >
-         -observablesConstruct >
-         *(definedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, phoenix::ref(globalProgramInformation)), qi::_1)] |
+         *(observablesConstruct(phoenix::ref(globalProgramInformation)) |
+           definedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, phoenix::ref(globalProgramInformation)), qi::_1)] |
            undefinedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, phoenix::ref(globalProgramInformation)),
                                                           qi::_1)] |
            formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, phoenix::ref(globalProgramInformation)), qi::_1)] |
@@ -938,9 +939,16 @@ storm::prism::ClockVariable PrismParserGrammar::createClockVariable(std::string 
     return storm::prism::ClockVariable(manager->getVariable(variableName), observable, this->getFilename());
 }
 
-void PrismParserGrammar::createObservablesList(std::vector<std::string> const& observables) {
-    this->observables.insert(observables.begin(), observables.end());
+bool PrismParserGrammar::addObservablesConstruct(std::vector<std::string> const& observables, GlobalProgramInformation& globalProgramInformation) {
+    STORM_LOG_THROW(!globalProgramInformation.hasObservablesConstruct, storm::exceptions::WrongFormatException,
+                    "Parsing error in " << this->getFilename() << ": Program must not define two observables constructs.");
+    if (globalProgramInformation.hasObservablesConstruct) {
+        return false;
+    }
+    globalProgramInformation.hasObservablesConstruct = true;
     // We need this list to be filled in both runs.
+    this->observables.insert(observables.begin(), observables.end());
+    return true;
 }
 
 storm::prism::Player PrismParserGrammar::createPlayer(std::string const& playerName, std::vector<std::string> const& moduleNames,

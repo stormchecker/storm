@@ -7,7 +7,7 @@
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_SOPLEX
-#include "soplex.h"
+#include <soplex.h>
 #endif
 
 namespace storm::solver {

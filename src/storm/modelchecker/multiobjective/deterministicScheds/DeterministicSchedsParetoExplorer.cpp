@@ -12,9 +12,6 @@
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/geometry/coordinates.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
-
 #include "storm/io/export.h"
 #include "storm/utility/solver.h"
 

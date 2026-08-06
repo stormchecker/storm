@@ -2,6 +2,9 @@
 
 #include "storm/settings/modules/ModuleSettings.h"
 
+#include "storm/solver/stateelimination/EliminationMethod.h"
+#include "storm/solver/stateelimination/EliminationOrder.h"
+
 namespace storm {
 namespace settings {
 namespace modules {
@@ -12,16 +15,6 @@ namespace modules {
 class EliminationSettings : public ModuleSettings {
    public:
     /*!
-     * An enum that contains all available state elimination orders.
-     */
-    enum class EliminationOrder { Forward, ForwardReversed, Backward, BackwardReversed, Random, StaticPenalty, DynamicPenalty, RegularExpression };
-
-    /*!
-     * An enum that contains all available elimination methods.
-     */
-    enum class EliminationMethod { State, Scc, Hybrid };
-
-    /*!
      * Creates a new set of parametric model checking settings.
      */
     EliminationSettings();
@@ -31,14 +24,14 @@ class EliminationSettings : public ModuleSettings {
      *
      * @return The selected elimination method.
      */
-    EliminationMethod getEliminationMethod() const;
+    storm::solver::stateelimination::EliminationMethod getEliminationMethod() const;
 
     /*!
      * Retrieves the selected elimination order.
      *
      * @return The selected elimination order.
      */
-    EliminationOrder getEliminationOrder() const;
+    storm::solver::stateelimination::EliminationOrder getEliminationOrder() const;
 
     /*!
      * Retrieves whether the option to eliminate entry states in the very end is set.

@@ -85,15 +85,16 @@ class BeliefManager {
 
     BeliefId getNumberOfBeliefIds() const;
 
-    std::vector<std::pair<BeliefId, ValueType>> expandAndTriangulate(BeliefId const &beliefId, uint64_t actionIndex,
+    std::vector<std::pair<BeliefId, ValueType>> expandAndTriangulate(storm::Environment const &env, BeliefId const &beliefId, uint64_t actionIndex,
                                                                      std::vector<BeliefValueType> const &observationResolutions);
 
-    std::vector<std::pair<BeliefId, ValueType>> expandAndClip(BeliefId const &beliefId, uint64_t actionIndex,
+    std::vector<std::pair<BeliefId, ValueType>> expandAndClip(storm::Environment const &env, BeliefId const &beliefId, uint64_t actionIndex,
                                                               std::vector<uint64_t> const &observationResolutions);
 
-    std::vector<std::pair<BeliefId, ValueType>> expand(BeliefId const &beliefId, uint64_t actionIndex);
+    std::vector<std::pair<BeliefId, ValueType>> expand(storm::Environment const &env, BeliefId const &beliefId, uint64_t actionIndex);
 
-    BeliefClipping clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite = storm::storage::BitVector());
+    BeliefClipping clipBeliefToGrid(storm::Environment const &env, BeliefId const &beliefId, uint64_t resolution,
+                                    storm::storage::BitVector isInfinite = storm::storage::BitVector());
 
     std::string getObservationLabel(BeliefId const &beliefId);
 
@@ -104,7 +105,7 @@ class BeliefManager {
 
     std::vector<BeliefValueType> getBeliefAsVector(const BeliefType &belief);
 
-    BeliefClipping clipBeliefToGrid(BeliefType const &belief, uint64_t resolution, const storm::storage::BitVector &isInfinite);
+    BeliefClipping clipBeliefToGrid(storm::Environment const &env, BeliefType const &belief, uint64_t resolution, const storm::storage::BitVector &isInfinite);
 
     template<typename DistributionType>
     void adjustDistribution(DistributionType &distr);
@@ -146,7 +147,8 @@ class BeliefManager {
     Triangulation triangulateBelief(BeliefType const &belief, BeliefValueType const &resolution);
 
     std::vector<std::pair<BeliefId, ValueType>> expandInternal(
-        BeliefId const &beliefId, uint64_t actionIndex, std::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions = std::nullopt,
+        storm::Environment const &env, BeliefId const &beliefId, uint64_t actionIndex,
+        std::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions = std::nullopt,
         std::optional<std::vector<uint64_t>> const &observationGridClippingResolutions = std::nullopt);
 
     BeliefId computeInitialBelief();

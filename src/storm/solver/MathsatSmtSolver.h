@@ -6,7 +6,7 @@
 #include "storm/solver/SmtSolver.h"
 
 #ifdef STORM_HAVE_MATHSAT
-#include "mathsat.h"
+#include <mathsat.h>
 #endif
 
 namespace storm {

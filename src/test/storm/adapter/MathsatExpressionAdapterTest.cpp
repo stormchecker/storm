@@ -2,7 +2,7 @@
 #include "test/storm_gtest.h"
 
 #ifdef STORM_HAVE_MATHSAT
-#include "mathsat.h"
+#include <mathsat.h>
 #include "storm/adapters/MathsatExpressionAdapter.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/storage/expressions/OperatorType.h"

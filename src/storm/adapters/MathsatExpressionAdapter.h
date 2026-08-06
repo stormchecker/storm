@@ -5,7 +5,7 @@
 #include <stack>
 
 #ifdef STORM_HAVE_MATHSAT
-#include "mathsat.h"
+#include <mathsat.h>
 #endif
 
 #include "storm/exceptions/ExpressionEvaluationException.h"

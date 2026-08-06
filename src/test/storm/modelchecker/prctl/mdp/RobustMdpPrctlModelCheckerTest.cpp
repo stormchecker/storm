@@ -214,7 +214,7 @@ void makeUncertainAndCheck(std::string const& path, std::string const& formulaSt
 
     storm::Environment envIntervals;
     envIntervals.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-    auto transformer = storm::transformer::AddUncertainty(modelPtr);
+    auto transformer = storm::transformer::AddUncertainty<double>(modelPtr);
     auto imdp = transformer.transform(amountOfUncertainty)->as<storm::models::sparse::Mdp<storm::Interval>>();
     auto ichecker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>(*imdp);
     auto iresultMin = checker.check(env, task);

@@ -1,6 +1,9 @@
 #include "storm/storage/dd/bisimulation/QuotientExtractor.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcomma"
 #include <gtl/phmap.hpp>
+#pragma clang diagnostic pop
 #include <numeric>
 
 #include "storm/adapters/RationalFunctionAdapter.h"

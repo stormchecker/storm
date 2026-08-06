@@ -317,7 +317,7 @@ ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForM
                                                                                      ValueGetter const& actionRewardsGetter,
                                                                                      storm::storage::MaximalEndComponent const& mec) {
     // Create an LP solver
-    auto solver = storm::utility::solver::getLpSolver<ValueType>("LRA for MEC");
+    auto solver = storm::utility::solver::getLpSolver<ValueType>(env, "LRA for MEC");
 
     // Now build the LP formulation as described in:
     // Guck et al.: Modelling and Analysis of Markov Reward Automata (ATVA'14), https://doi.org/10.1007/978-3-319-11936-6_13

@@ -6,6 +6,9 @@
 #include "storm/transformer/ChoiceSelector.h"
 
 namespace storm {
+
+class Environment;
+
 namespace ps {
 
 class PermissiveScheduler {
@@ -74,7 +77,8 @@ class SubMDPPermissiveScheduler : public PermissiveScheduler {
 };
 
 template<typename RM = storm::models::sparse::StandardRewardModel<double>>
-boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMILP(storm::models::sparse::Mdp<double, RM> const& mdp,
+boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMILP(storm::Environment const& env,
+                                                                                 storm::models::sparse::Mdp<double, RM> const& mdp,
                                                                                  storm::logic::ProbabilityOperatorFormula const& safeProp);
 
 template<typename RM>

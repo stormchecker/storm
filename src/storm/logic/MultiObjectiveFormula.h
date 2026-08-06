@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "storm/logic/StateFormula.h"
 
 namespace storm {

@@ -317,7 +317,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
     for (const auto& [labelObsPair, bitvec] : rowActionObservationMap) {
         // Rebuild bitvec with restricted rows
         storm::storage::BitVector newBitVec(numberOfRows);
-        for (const auto& setbit : bitvec) {
+        for (auto setbit : bitvec) {
             if (rowsToKeep[setbit])
                 newBitVec.set(rowMapping[setbit]);
         }

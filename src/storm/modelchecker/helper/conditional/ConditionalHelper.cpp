@@ -985,7 +985,7 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
     bool const relative = env.modelchecker().conditional().isRelativePrecision();
     auto const precision = storm::utility::convertNumber<SolutionType>(env.modelchecker().conditional().getPrecision());
 
-    WeightedReachabilityHelper wrh(initialState, transitionMatrix, normalForm, computeScheduler);
+    WeightedReachabilityHelper<ValueType, SolutionType> wrh(initialState, transitionMatrix, normalForm, computeScheduler);
     SolutionType pMin{storm::utility::zero<SolutionType>()};
     SolutionType pMax{storm::utility::one<SolutionType>()};
 
@@ -1178,7 +1178,7 @@ typename internal::ResultReturnType<ValueType> decideThreshold(Environment const
                                                                NormalFormData<ValueType> const& normalForm) {
     // We currently handle sound model checking incorrectly: we would need the actual lower/upper bounds of the weightedReachabilityHelper
 
-    WeightedReachabilityHelper wrh(initialState, transitionMatrix, normalForm, computeScheduler);
+    WeightedReachabilityHelper<ValueType, SolutionType> wrh(initialState, transitionMatrix, normalForm, computeScheduler);
 
     std::optional<std::vector<uint64_t>> scheduler;
     storm::OptionalRef<std::vector<uint64_t>> schedulerRef;
@@ -1213,7 +1213,7 @@ internal::ResultReturnType<SolutionType> computeViaPolicyIteration(Environment c
                                                                    storm::solver::OptimizationDirection const dir,
                                                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                    NormalFormData<ValueType> const& normalForm) {
-    WeightedReachabilityHelper wrh(initialState, transitionMatrix, normalForm, false);  // scheduler computation not yet implemented.
+    WeightedReachabilityHelper<ValueType, SolutionType> wrh(initialState, transitionMatrix, normalForm, false);  // scheduler computation not yet implemented.
 
     std::vector<uint64_t> scheduler;
     std::vector<SolutionType> targetResults, conditionResults;
