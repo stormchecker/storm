@@ -102,6 +102,7 @@ if(NOT STORM_DISABLE_GMM)
     )
     add_library(gmm INTERFACE) # Not imported, we are in control of the sources.
     add_dependencies(gmm gmm_src)
+    add_dependencies(storm_resources gmm)
     target_include_directories(gmm INTERFACE
             $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}/gmm/include>
             $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}>
