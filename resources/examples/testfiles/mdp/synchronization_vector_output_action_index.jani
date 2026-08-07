@@ -37,50 +37,6 @@
                         }
                     },
                     "location": "l"
-                },
-                {
-                    "action": "c",
-                    "destinations": [
-                        {
-                            "assignments": [
-                                {
-                                    "ref": "s1",
-                                    "value": 2
-                                }
-                            ],
-                            "location": "l"
-                        }
-                    ],
-                    "guard": {
-                        "exp": {
-                            "left": "s1",
-                            "op": "=",
-                            "right": 1
-                        }
-                    },
-                    "location": "l"
-                },
-                {
-                    "action": "d",
-                    "destinations": [
-                        {
-                            "assignments": [
-                                {
-                                    "ref": "s1",
-                                    "value": 3
-                                }
-                            ],
-                            "location": "l"
-                        }
-                    ],
-                    "guard": {
-                        "exp": {
-                            "left": "s1",
-                            "op": "=",
-                            "right": 1
-                        }
-                    },
-                    "location": "l"
                 }
             ],
             "initial-locations": [
@@ -100,7 +56,7 @@
                         "base": "int",
                         "kind": "bounded",
                         "lower-bound": 0,
-                        "upper-bound": 3
+                        "upper-bound": 1
                     }
                 }
             ]
@@ -128,28 +84,6 @@
                         }
                     },
                     "location": "l"
-                },
-                {
-                    "action": "c",
-                    "destinations": [
-                        {
-                            "assignments": [
-                                {
-                                    "ref": "s2",
-                                    "value": 2
-                                }
-                            ],
-                            "location": "l"
-                        }
-                    ],
-                    "guard": {
-                        "exp": {
-                            "left": "s2",
-                            "op": "=",
-                            "right": 1
-                        }
-                    },
-                    "location": "l"
                 }
             ],
             "initial-locations": [
@@ -169,7 +103,7 @@
                         "base": "int",
                         "kind": "bounded",
                         "lower-bound": 0,
-                        "upper-bound": 2
+                        "upper-bound": 1
                     }
                 }
             ]
@@ -216,7 +150,7 @@
                         "base": "int",
                         "kind": "bounded",
                         "lower-bound": 0,
-                        "upper-bound": 2
+                        "upper-bound": 1
                     }
                 }
             ]
