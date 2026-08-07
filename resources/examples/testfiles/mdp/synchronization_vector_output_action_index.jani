@@ -11,6 +11,12 @@
         },
         {
             "name": "d"
+        },
+        {
+            "name": "e"
+        },
+        {
+            "name": "f"
         }
     ],
     "automata": [
@@ -185,7 +191,7 @@
                 ]
             },
             {
-                "result": "b",
+                "result": "e",
                 "synchronise": [
                     null,
                     "b",
@@ -193,7 +199,7 @@
                 ]
             },
             {
-                "result": "c",
+                "result": "f",
                 "synchronise": [
                     null,
                     null,

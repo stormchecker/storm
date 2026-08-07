@@ -255,6 +255,6 @@ TEST_F(ExplicitJaniModelBuilderTest, SynchronizationVectorOutputActionIndex) {
     for (auto const& choice : behavior.getChoices()) {
         actionNames.insert(janiModel.getAction(choice.getActionIndex()).getName());
     }
-    EXPECT_EQ(std::set<std::string>({"b", "c", "d"}), actionNames);
+    EXPECT_EQ(std::set<std::string>({"d", "e", "f"}), actionNames);
 }
 }  // namespace
