@@ -54,18 +54,7 @@
                 }
             ],
             "name": "one",
-            "variables": [
-                {
-                    "initial-value": 0,
-                    "name": "s1",
-                    "type": {
-                        "base": "int",
-                        "kind": "bounded",
-                        "lower-bound": 0,
-                        "upper-bound": 1
-                    }
-                }
-            ]
+            "variables": []
         },
         {
             "edges": [
@@ -101,18 +90,7 @@
                 }
             ],
             "name": "two",
-            "variables": [
-                {
-                    "initial-value": 0,
-                    "name": "s2",
-                    "type": {
-                        "base": "int",
-                        "kind": "bounded",
-                        "lower-bound": 0,
-                        "upper-bound": 1
-                    }
-                }
-            ]
+            "variables": []
         },
         {
             "edges": [
@@ -148,18 +126,7 @@
                 }
             ],
             "name": "three",
-            "variables": [
-                {
-                    "initial-value": 0,
-                    "name": "s3",
-                    "type": {
-                        "base": "int",
-                        "kind": "bounded",
-                        "lower-bound": 0,
-                        "upper-bound": 1
-                    }
-                }
-            ]
+            "variables": []
         }
     ],
     "features": [],
@@ -209,5 +176,36 @@
         ]
     },
     "type": "mdp",
-    "variables": []
+    "variables": [
+        {
+            "initial-value": 0,
+            "name": "s1",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 1
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "s2",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 1
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "s3",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 1
+            }
+        }
+    ]
 }
