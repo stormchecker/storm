@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <unordered_map>
 
-#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
@@ -16,7 +16,6 @@ class ExpressionEvaluator;
 
 namespace parser {
 class ExpressionParser;
-class RationalFunctionParseCache;  // Forward declaration to avoid header include.
 
 /*!
  * Parser for values according to their ValueType.
@@ -48,7 +47,7 @@ class ValueParser {
         std::unique_ptr<storm::parser::ExpressionParser> parser;  // Pointer to avoid header include.
         std::unique_ptr<storm::expressions::ExpressionEvaluator<storm::RationalFunction>> evaluator;
         std::unordered_map<std::string, storm::expressions::Expression> identifierMapping;
-        std::unique_ptr<RationalFunctionParseCache> cache;  // Cache for parsed RationalFunctions, pointer to avoid header include.
+        std::unordered_map<std::string, storm::RationalFunction> rationalFunctionCache;
     };
     std::conditional_t<std::is_same_v<ValueType, storm::RationalFunction>, ParametricData, std::nullptr_t> data;
 };
