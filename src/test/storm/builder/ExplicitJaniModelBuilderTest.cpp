@@ -11,7 +11,6 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingMemento.h"
 #include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/Compositions.h"
 #include "storm/storage/jani/Model.h"
 
 namespace {
@@ -231,31 +230,7 @@ TEST_F(ExplicitJaniModelBuilderTest, enumerateInitial) {
 }
 
 TEST_F(ExplicitJaniModelBuilderTest, SynchronizationVectorOutputActionIndex) {
-    auto janiModel = getJaniModelFromPrism("/mdp/SmallPrismTest.nm");
-
-    std::vector<std::shared_ptr<storm::jani::Composition>> automataCompositions;
-    automataCompositions.push_back(std::make_shared<storm::jani::AutomatonComposition>("one"));
-    automataCompositions.push_back(std::make_shared<storm::jani::AutomatonComposition>("two"));
-    automataCompositions.push_back(std::make_shared<storm::jani::AutomatonComposition>("three"));
-
-    std::vector<storm::jani::SynchronizationVector> synchronizationVectors;
-    std::vector<std::string> inputVector;
-    inputVector.push_back("a");
-    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
-    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
-    synchronizationVectors.emplace_back(inputVector, "d");
-    inputVector.clear();
-    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
-    inputVector.push_back("b");
-    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
-    synchronizationVectors.emplace_back(inputVector);
-    inputVector.clear();
-    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
-    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
-    inputVector.push_back("c");
-    synchronizationVectors.emplace_back(inputVector);
-
-    janiModel.setSystemComposition(std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors));
+    auto janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/synchronization_vector_output_action_index.jani").first;
 
     storm::generator::JaniNextStateGenerator<double> generator(janiModel);
     std::vector<storm::generator::CompressedState> states;
