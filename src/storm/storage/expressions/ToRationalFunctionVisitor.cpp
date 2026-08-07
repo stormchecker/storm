@@ -1,13 +1,7 @@
 #include "storm/storage/expressions/ToRationalFunctionVisitor.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/storage/expressions/BinaryNumericalFunctionExpression.h"
-#include "storm/storage/expressions/IfThenElseExpression.h"
-#include "storm/storage/expressions/IntegerLiteralExpression.h"
 #include "storm/storage/expressions/OperatorType.h"
-#include "storm/storage/expressions/RationalLiteralExpression.h"
-#include "storm/storage/expressions/UnaryNumericalFunctionExpression.h"
-#include "storm/storage/expressions/VariableExpression.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -22,77 +16,12 @@ ToRationalFunctionVisitor<RationalFunctionType>::ToRationalFunctionVisitor(Expre
 
 template<typename RationalFunctionType>
 RationalFunctionType ToRationalFunctionVisitor<RationalFunctionType>::toRationalFunction(Expression const& expression) {
-    return evaluate(expression.getBaseExpression());
-}
-
-template<typename RationalFunctionType>
-RationalFunctionType ToRationalFunctionVisitor<RationalFunctionType>::evaluate(BaseExpression const& expression) {
-    // Check most common node types first to minimise the number of virtual is*() calls per node.
-    if (expression.isBinaryNumericalFunctionExpression()) {
-        BinaryNumericalFunctionExpression const& binExpr = expression.asBinaryNumericalFunctionExpression();
-        RationalFunctionType first = evaluate(*binExpr.getFirstOperand());
-        RationalFunctionType second = evaluate(*binExpr.getSecondOperand());
-        switch (binExpr.getOperatorType()) {
-            case BinaryNumericalFunctionExpression::OperatorType::Plus:
-                return first + second;
-            case BinaryNumericalFunctionExpression::OperatorType::Minus:
-                return first - second;
-            case BinaryNumericalFunctionExpression::OperatorType::Times:
-                return first * second;
-            case BinaryNumericalFunctionExpression::OperatorType::Divide:
-                return first / second;
-            case BinaryNumericalFunctionExpression::OperatorType::Power: {
-                STORM_LOG_THROW(storm::utility::isInteger(second), storm::exceptions::InvalidArgumentException,
-                                "Exponent of power operator must be an integer but is " << second << ".");
-                auto exponentAsInteger = storm::utility::convertNumber<carl::sint>(second);
-                return storm::utility::pow(first, exponentAsInteger);
-            }
-            default:
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational function.");
-        }
-    } else if (expression.isVariableExpression()) {
-        VariableExpression const& varExpr = expression.asVariableExpression();
-        auto valueIt = valueMapping.find(varExpr.getVariable());
-        if (valueIt != valueMapping.end()) {
-            return valueIt->second;
-        }
-        auto variablePair = variableToVariableMap.find(varExpr.getVariable());
-        if (variablePair != variableToVariableMap.end()) {
-            return convertVariableToPolynomial(variablePair->second);
-        } else {
-            storm::RationalFunctionVariable carlVariable = storm::createRFVariable(varExpr.getVariableName());
-            variableToVariableMap.emplace(varExpr.getVariable(), carlVariable);
-            return convertVariableToPolynomial(carlVariable);
-        }
-    } else if (expression.isRationalLiteralExpression()) {
-        return storm::utility::convertNumber<RationalFunctionType>(expression.asRationalLiteralExpression().getValue());
-    } else if (expression.isIntegerLiteralExpression()) {
-        return storm::utility::convertNumber<RationalFunctionType>(expression.asIntegerLiteralExpression().getValue());
-    } else if (expression.isUnaryNumericalFunctionExpression()) {
-        UnaryNumericalFunctionExpression const& unaryExpr = expression.asUnaryNumericalFunctionExpression();
-        RationalFunctionType operand = evaluate(*unaryExpr.getOperand());
-        switch (unaryExpr.getOperatorType()) {
-            case UnaryNumericalFunctionExpression::OperatorType::Minus:
-                return -operand;
-            default:
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational function.");
-        }
-    } else if (expression.isIfThenElseExpression()) {
-        IfThenElseExpression const& iteExpr = expression.asIfThenElseExpression();
-        bool conditionValue = evaluator.asBool(iteExpr.getCondition()->toExpression());
-        if (conditionValue) {
-            return evaluate(*iteExpr.getThenExpression());
-        } else {
-            return evaluate(*iteExpr.getElseExpression());
-        }
-    }
-    STORM_LOG_ERROR("Expression cannot be translated into a rational function.");
-    throw storm::exceptions::InvalidArgumentException() << "Expression cannot be translated into a rational function.";
+    return boost::any_cast<RationalFunctionType>(expression.accept(*this, boost::none));
 }
 
 template<typename RationalFunctionType>
 boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(IfThenElseExpression const& expression, boost::any const& data) {
-    bool conditionValue = evaluator.asBool(expression.getCondition()->toExpression());
+    bool conditionValue = evaluator.asBool(expression.getCondition());
     if (conditionValue) {
         return expression.getThenExpression()->accept(*this, data);
     } else {
