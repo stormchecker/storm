@@ -1,0 +1,194 @@
+name: Build Tests
+
+on:
+  workflow_call:
+    inputs:
+      nr_jobs:
+        description: "Number of parallel build jobs"
+        type: string
+        default: "4"
+      name:
+        description: "Display name for the test configuration"
+        type: string
+        required: true
+      buildType:
+        description: "CMake build type (Debug or Release)"
+        type: string
+        default: "Debug"
+      Developer:
+        description: "Enable developer mode"
+        type: boolean
+        default: true
+      cmakeArgs:
+        description: "Extra CMake arguments"
+        type: string
+        default: "-DSTORM_WARNING_AS_ERROR=ON"
+      dockerfile:
+        description: "Path to the Dockerfile to use"
+        type: string
+        default: "Dockerfile"
+      starterProjectCommand:
+        description: "Command to pass to the starter-project"
+        type: string
+        default: "--help"
+      baseImg:
+        description: "Full base image name (e.g. movesrwth/storm-dependencies:latest or archlinux:latest)"
+        type: string
+        default: "movesrwth/storm-dependencies:latest"
+      disable_cudd:
+        type: boolean
+        default: false
+      disable_glpk:
+        type: boolean
+        default: false
+      disable_gmm:
+        type: boolean
+        default: false
+      disable_gurobi:
+        type: boolean
+        default: false
+      disable_libarchive:
+        type: boolean
+        default: false
+      disable_mathsat:
+        type: boolean
+        default: false
+      disable_soplex:
+        type: boolean
+        default: false
+      disable_spot:
+        type: boolean
+        default: false
+      disable_sylvan:
+        type: boolean
+        default: false
+      disable_xerces:
+        type: boolean
+        default: false
+      disable_z3:
+        type: boolean
+        default: false
+      ClnExact:
+        description: "Use CLN for exact arithmetic"
+        type: boolean
+        default: false
+      ClnRatfunc:
+        description: "Use CLN for rational functions"
+        type: boolean
+        default: false
+      AllSanitizers:
+        description: "Enable all sanitizers"
+        type: boolean
+        default: false
+      packages:
+        description: "Extra packages to install (e.g. clang)"
+        type: string
+        default: ""
+      restore_cache:
+        description: "Restore ccache from cache"
+        type: boolean
+        default: false
+      save_cache:
+        description: "Save ccache to cache"
+        type: boolean
+        default: false
+      install:
+        description: "Run post-build steps: starter project, install, run installed storm"
+        type: boolean
+        default: true
+
+jobs:
+  buildTests:
+    name: Build Tests (${{ inputs.name }}, ${{ inputs.buildType }})
+    runs-on: ubuntu-latest
+    env:
+      NR_JOBS: ${{ inputs.nr_jobs }}
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v7
+      - name: Restore ccache (Docker)
+        id: ccache-restore
+        if: inputs.restore_cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci-ccache
+          key: buildtest-ccache-${{ inputs.name }}-${{ inputs.buildType }}-${{ hashFiles(inputs.dockerfile, 'CMakeLists.txt') }}-${{ github.run_id }}
+          restore-keys: |
+            buildtest-ccache-${{ inputs.name }}-${{ inputs.buildType }}-
+            buildtest-ccache-${{ inputs.name }}-
+      - name: Build storm from Dockerfile
+        run: |
+          mkdir -p .ci-ccache
+          docker build -t movesrwth/storm:ci --file ${{ inputs.dockerfile }} . \
+            --build-arg BASE_IMAGE=${{ inputs.baseImg }} \
+            --build-arg build_type="${{ inputs.buildType }}" \
+            --build-arg disable_cudd="${{ inputs.disable_cudd && 'ON' || 'OFF' }}" \
+            --build-arg disable_glpk="${{ inputs.disable_glpk && 'ON' || 'OFF' }}" \
+            --build-arg disable_gmm="${{ inputs.disable_gmm && 'ON' || 'OFF' }}" \
+            --build-arg disable_gurobi="${{ inputs.disable_gurobi && 'ON' || 'OFF' }}" \
+            --build-arg disable_libarchive="${{ inputs.disable_libarchive && 'ON' || 'OFF' }}" \
+            --build-arg disable_mathsat="${{ inputs.disable_mathsat && 'ON' || 'OFF' }}" \
+            --build-arg disable_soplex="${{ inputs.disable_soplex && 'ON' || 'OFF' }}" \
+            --build-arg disable_spot="${{ inputs.disable_spot && 'ON' || 'OFF' }}" \
+            --build-arg disable_sylvan="${{ inputs.disable_sylvan && 'ON' || 'OFF' }}" \
+            --build-arg disable_xerces="${{ inputs.disable_xerces && 'ON' || 'OFF' }}" \
+            --build-arg disable_z3="${{ inputs.disable_z3 && 'ON' || 'OFF' }}" \
+            --build-arg developer="${{ inputs.Developer && 'ON' || 'OFF' }}" \
+            --build-arg cln_exact="${{ inputs.ClnExact && 'ON' || 'OFF' }}" \
+            --build-arg cln_ratfunc="${{ inputs.ClnRatfunc && 'ON' || 'OFF' }}" \
+            --build-arg all_sanitizers="${{ inputs.AllSanitizers && 'ON' || 'OFF' }}" \
+            --build-arg cmake_args="${{ inputs.cmakeArgs }}" \
+            --build-arg packages="${{ inputs.packages }}" \
+            --build-arg no_threads=${NR_JOBS}
+      - name: Export ccache from Docker image
+        if: inputs.save_cache && always() && steps.ccache-restore.outputs.cache-hit != 'true'
+        run: |
+          rm -rf .ci-ccache
+          mkdir -p .ci-ccache
+          docker create --name ccache-extract movesrwth/storm:ci
+          docker cp ccache-extract:/root/.ccache/. .ci-ccache/ || true
+          docker rm ccache-extract
+      - name: Save ccache (Docker)
+        if: inputs.save_cache && always() && steps.ccache-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .ci-ccache
+          key: buildtest-ccache-${{ inputs.name }}-${{ inputs.buildType }}-${{ hashFiles(inputs.dockerfile, 'CMakeLists.txt') }}-${{ github.run_id }}
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:ci
+      - name: Run storm
+        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ inputs.buildType }}
+          docker: true
+      - name: Run tests
+        # Disabled sanitizer checks for now
+        #run: docker exec ci bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
+        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+      - name: Build starter-project
+        if: inputs.install
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: ${{ inputs.starterProjectCommand }}
+      - name: Install storm
+        if: inputs.install
+        run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Remove build dir
+        if: inputs.install
+        run: |
+          docker exec ci bash -c "rm -rf /opt/storm/build"
+      - name: Run installed storm
+        if: inputs.install
+        run: |
+          docker exec ci bash -c "/usr/local/bin/storm --version"
+      - name: Build starter-project on installed Storm
+        if: inputs.install
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: ${{ inputs.starterProjectCommand }}

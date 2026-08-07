@@ -156,6 +156,9 @@ if (STORM_DEVELOPER)
     set(STORM_DEBUG_SPOT ON)
     set(STORM_DEBUG_SYLVAN ON)
     set(STORM_WARNING_AS_ERROR ON)
+    # Turn off PCH for faster ccache usage on warm caches. PCH compiled files cannot be properly cached currently.
+    # TODO: remove and explicitly set if needed
+    set(STORM_COMPILE_WITH_PCH OFF)
 else()
     set(STORM_LOG_DISABLE_DEBUG ON)
     if (NOT CMAKE_BUILD_TYPE)
@@ -171,8 +174,15 @@ if(STORM_COMPILE_WITH_CCACHE)
 	mark_as_advanced(CCACHE_FOUND)
 	if(CCACHE_FOUND)
 		message(STATUS "Storm - Using ccache")
+		# Relax the caching keys
+		# pch_defines tries to ignore precompiled headers (but often does not succeed in our case)
+		# the time options ignore time macros when calculating the cache key, improving cache hit rates
+		set(ENV{CCACHE_SLOPPINESS} "pch_defines,time_macros,include_file_mtime,include_file_ctime")
 		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-		set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+
+		if(STORM_COMPILE_WITH_PCH)
+			message(STATUS "Storm - PCH is enabled which will lead to significantly lower ccache hit rates. Consider setting STORM_COMPILE_WITH_PCH=OFF if you plan to rebuild Storm multiple times.")
+		endif()
 	else()
 		message(STATUS "Storm - Could not find ccache.")
 	endif()
@@ -320,6 +330,7 @@ endif()
 SET(STORM_PRECOMPILED_HEADERS "<any>" "<map>" "<vector>" "<unordered_set>" "<forward_list>"
 		"<optional>" "<ostream>" "<istream>" "<list>" "<set>" "<fstream>" "<string>" "<boost/optional.hpp>" "<boost/variant.hpp>"
 		"<boost/container/flat_set.hpp>" "<boost/dynamic_bitset.hpp>" "<boost/range/irange.hpp>")
+
 
 #############################################################
 ##
