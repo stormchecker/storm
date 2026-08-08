@@ -125,7 +125,7 @@ class BuilderOptions {
      * Some distributions may not sum to one. This tolerance allows handling this case.
      * @return The tolerance
      */
-    storm::RationalNumber const& getStochasticTolerance() const;
+    double getStochasticTolerance() const;
 
     /**
      * Should all reward models be built? If not set, only required reward models are build.
@@ -215,6 +215,27 @@ class BuilderOptions {
     BuilderOptions& setReservedBitsForUnboundedVariables(uint64_t value);
 
     /**
+     * Sets the tolerance used for checking whether a distribution sums to one.
+     * @param newValue The new tolerance
+     * @return this
+     */
+    BuilderOptions& setStochasticTolerance(double newValue);
+
+    /**
+     * Sets whether the progress of state space exploration should be printed.
+     * @param newValue The new value (default true)
+     * @return this
+     */
+    BuilderOptions& setShowProgress(bool newValue = true);
+
+    /**
+     * Sets the delay (in seconds) between progress reports during state space exploration.
+     * @param newValue The new delay
+     * @return this
+     */
+    BuilderOptions& setShowProgressDelay(uint64_t newValue);
+
+    /**
      * Substitutes all expressions occurring in these options.
      */
     BuilderOptions& substituteExpressions(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction);
@@ -281,7 +302,7 @@ class BuilderOptions {
     uint64_t showProgressDelay;
 
     /// The tolerance that is used for checking whether something is a distribution.
-    storm::RationalNumber stochasticTolerance;
+    double stochasticTolerance;
 };
 
 }  // namespace builder

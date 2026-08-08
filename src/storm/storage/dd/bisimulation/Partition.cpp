@@ -7,8 +7,6 @@
 #include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/models/symbolic/Mdp.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/bisimulation/PreservationInformation.h"
 #include "storm/utility/macros.h"
@@ -97,11 +95,10 @@ Partition<DdType, ValueType>::extractConstraintTargetFormulas(storm::logic::Form
 template<storm::dd::DdType DdType, typename ValueType>
 Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model,
                                                                   storm::storage::BisimulationType const& bisimulationType,
-                                                                  std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
-    auto const& bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
-
+                                                                  std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
+                                                                  BisimulationOptions const& bisimulationOptions) {
     boost::optional<std::pair<std::shared_ptr<storm::logic::Formula const>, std::shared_ptr<storm::logic::Formula const>>> constraintTargetFormulas;
-    if (bisimulationSettings.getInitialPartitionMode() == storm::settings::modules::BisimulationSettings::InitialPartitionMode::Finer && formulas.size() == 1) {
+    if (bisimulationOptions.initialPartitionMode == InitialPartitionMode::Finer && formulas.size() == 1) {
         constraintTargetFormulas = extractConstraintTargetFormulas(*formulas.front());
     }
 

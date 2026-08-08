@@ -17,7 +17,7 @@ template<storm::dd::DdType DdType, typename ValueType>
 class NondeterministicModelPartitionRefiner : public PartitionRefiner<DdType, ValueType> {
    public:
     NondeterministicModelPartitionRefiner(storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model,
-                                          Partition<DdType, ValueType> const& initialStatePartition);
+                                          Partition<DdType, ValueType> const& initialStatePartition, BisimulationOptions const& bisimulationOptions);
 
     /*!
      * Refines the partition.

@@ -9,7 +9,6 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 

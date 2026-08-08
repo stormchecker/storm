@@ -35,10 +35,11 @@ inline storm::jani::ModelFeatures getSupportedJaniFeatures(storm::builder::Build
 template<storm::dd::DdType LibraryType, typename ValueType>
 std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(
     storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
-    bool buildFullModel = false, bool applyMaximumProgress = true) {
+    bool buildFullModel = false, bool applyMaximumProgress = true, bool fixDeadlocks = true) {
     if (model.isPrismProgram()) {
         typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
         options = typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options(formulas);
+        options.fixDeadlocks = fixDeadlocks;
         if (buildFullModel) {
             options.buildAllLabels = true;
             options.buildAllRewardModels = true;
@@ -50,6 +51,7 @@ std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSym
     } else {
         STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Building symbolic model from this model description is unsupported.");
         typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options options(formulas);
+        options.fixDeadlocks = fixDeadlocks;
 
         if (buildFullModel) {
             options.buildAllLabels = true;
@@ -67,13 +69,13 @@ std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSym
 
 template<>
 inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalNumber>> buildSymbolicModel(
-    storm::storage::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool) {
+    storm::storage::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool, bool) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational numbers.");
 }
 
 template<>
 inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalFunction>> buildSymbolicModel(
-    storm::storage::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool) {
+    storm::storage::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool, bool) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational functions.");
 }
 
@@ -86,9 +88,11 @@ inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, s
  * @return A builder
  */
 template<typename ValueType>
-storm::builder::ExplicitModelBuilder<ValueType> makeExplicitModelBuilder(storm::storage::SymbolicModelDescription const& model,
-                                                                         storm::builder::BuilderOptions const& options,
-                                                                         std::shared_ptr<storm::generator::ActionMask<ValueType>> actionMask = nullptr) {
+storm::builder::ExplicitModelBuilder<ValueType> makeExplicitModelBuilder(
+    storm::storage::SymbolicModelDescription const& model, storm::builder::BuilderOptions const& options,
+    std::shared_ptr<storm::generator::ActionMask<ValueType>> actionMask = nullptr,
+    typename storm::builder::ExplicitModelBuilder<ValueType>::Options const& explorationOptions =
+        typename storm::builder::ExplicitModelBuilder<ValueType>::Options()) {
     std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;
     if (model.isPrismProgram()) {
         generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(model.asPrismProgram(), options, actionMask);
@@ -102,13 +106,15 @@ storm::builder::ExplicitModelBuilder<ValueType> makeExplicitModelBuilder(storm::
     } else {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot build sparse model from this symbolic model description.");
     }
-    return storm::builder::ExplicitModelBuilder<ValueType>(generator);
+    return storm::builder::ExplicitModelBuilder<ValueType>(generator, explorationOptions);
 }
 
 template<typename ValueType>
-std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model,
-                                                                          storm::builder::BuilderOptions const& options) {
-    storm::builder::ExplicitModelBuilder<ValueType> builder = makeExplicitModelBuilder<ValueType>(model, options);
+std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(
+    storm::storage::SymbolicModelDescription const& model, storm::builder::BuilderOptions const& options,
+    typename storm::builder::ExplicitModelBuilder<ValueType>::Options const& explorationOptions =
+        typename storm::builder::ExplicitModelBuilder<ValueType>::Options()) {
+    storm::builder::ExplicitModelBuilder<ValueType> builder = makeExplicitModelBuilder<ValueType>(model, options, nullptr, explorationOptions);
     return builder.build();
 }
 

@@ -17,6 +17,7 @@
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
@@ -502,7 +503,7 @@ std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& inpu
     }
     auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
     return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), createFormulasToRespect(input.properties), buildSettings.isBuildFullModelSet(),
-                                                             !buildSettings.isApplyNoMaximumProgressAssumptionSet());
+                                                             !buildSettings.isApplyNoMaximumProgressAssumptionSet(), !buildSettings.isDontFixDeadlocksSet());
 }
 
 inline storm::builder::BuilderOptions createBuildOptionsSparseFromSettings(SymbolicInput const& input) {
@@ -546,7 +547,25 @@ inline storm::builder::BuilderOptions createBuildOptionsSparseFromSettings(Symbo
     if (ioSettings.isComputeExpectedVisitingTimesSet() || ioSettings.isComputeSteadyStateDistributionSet()) {
         options.clearTerminalStates();
     }
+
+    auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+    options.setStochasticTolerance(generalSettings.getPrecision());
+    options.setShowProgress(generalSettings.isVerboseSet());
+    options.setShowProgressDelay(generalSettings.getShowProgressDelay());
+
     return options;
+}
+
+template<typename ValueType>
+typename storm::builder::ExplicitModelBuilder<ValueType>::Options createExplorationOptionsFromSettings() {
+    auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
+    typename storm::builder::ExplicitModelBuilder<ValueType>::Options explorationOptions;
+    explorationOptions.explorationOrder = buildSettings.getExplorationOrder();
+    explorationOptions.fixDeadlocks = !buildSettings.isDontFixDeadlocksSet();
+    if (buildSettings.isExplorationStateLimitSet()) {
+        explorationOptions.explorationStateLimit = buildSettings.getExplorationStateLimit();
+    }
+    return explorationOptions;
 }
 
 template<typename ValueType>
@@ -560,9 +579,9 @@ std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& 
         STORM_LOG_THROW(IsDoubleInterval || IsRationalInterval, storm::exceptions::NotSupportedException,
                         "Can not build interval model for the provided value type.");
         using IntervalType = std::conditional_t<IsDoubleInterval, storm::Interval, storm::RationalInterval>;
-        return storm::api::buildSparseModel<IntervalType>(input.model.get(), options);
+        return storm::api::buildSparseModel<IntervalType>(input.model.get(), options, createExplorationOptionsFromSettings<IntervalType>());
     } else {
-        return storm::api::buildSparseModel<ValueType>(input.model.get(), options);
+        return storm::api::buildSparseModel<ValueType>(input.model.get(), options, createExplorationOptionsFromSettings<ValueType>());
     }
 }
 
@@ -680,9 +699,10 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseModelBi
     if (bisimulationSettings.isWeakBisimulationSet()) {
         bisimType = storm::storage::BisimulationType::Weak;
     }
+    std::optional<double> tolerance = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
 
     STORM_LOG_INFO("Performing bisimulation minimization...");
-    return storm::api::performBisimulationMinimization<ValueType>(model, createFormulasToRespect(input.properties), bisimType, graphPreserving);
+    return storm::api::performBisimulationMinimization<ValueType>(model, createFormulasToRespect(input.properties), bisimType, graphPreserving, tolerance);
 }
 
 template<typename ValueType>
@@ -860,9 +880,18 @@ std::shared_ptr<storm::models::Model<ExportValueType>> preprocessDdModelBisimula
         STORM_LOG_INFO("Setting bisimulation quotient format to 'sparse'.");
         quotientFormat = storm::dd::bisimulation::QuotientFormat::Sparse;
     }
+
+    storm::dd::bisimulation::BisimulationOptions ddBisimulationOptions;
+    ddBisimulationOptions.reuseMode = bisimulationSettings.getReuseMode();
+    ddBisimulationOptions.refinementMode = bisimulationSettings.getRefinementMode();
+    ddBisimulationOptions.initialPartitionMode = bisimulationSettings.getInitialPartitionMode();
+    ddBisimulationOptions.useRepresentatives = bisimulationSettings.isUseRepresentativesSet();
+    ddBisimulationOptions.useOriginalVariables = bisimulationSettings.isUseOriginalVariablesSet();
+
     STORM_LOG_INFO("Performing bisimulation minimization...");
     return storm::api::performBisimulationMinimization<DdType, ValueType, ExportValueType>(
-        model, createFormulasToRespect(input.properties), storm::storage::BisimulationType::Strong, bisimulationSettings.getSignatureMode(), quotientFormat);
+        model, createFormulasToRespect(input.properties), storm::storage::BisimulationType::Strong, bisimulationSettings.getSignatureMode(), quotientFormat,
+        ddBisimulationOptions);
 }
 
 template<typename ExportValueType, storm::dd::DdType DdType, typename ValueType>

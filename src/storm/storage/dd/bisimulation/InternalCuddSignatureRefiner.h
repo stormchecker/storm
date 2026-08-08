@@ -36,8 +36,7 @@ class InternalSignatureRefiner<storm::dd::DdType::CUDD, ValueType> {
     InternalSignatureRefiner(storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager, storm::expressions::Variable const& blockVariable,
                              std::set<storm::expressions::Variable> const& stateVariables,
                              storm::dd::Bdd<storm::dd::DdType::CUDD> const& nondeterminismVariables,
-                             storm::dd::Bdd<storm::dd::DdType::CUDD> const& nonBlockVariables,
-                             InternalSignatureRefinerOptions const& options = InternalSignatureRefinerOptions());
+                             storm::dd::Bdd<storm::dd::DdType::CUDD> const& nonBlockVariables, InternalSignatureRefinerOptions const& options);
 
     Partition<storm::dd::DdType::CUDD, ValueType> refine(Partition<storm::dd::DdType::CUDD, ValueType> const& oldPartition,
                                                          Signature<storm::dd::DdType::CUDD, ValueType> const& signature);

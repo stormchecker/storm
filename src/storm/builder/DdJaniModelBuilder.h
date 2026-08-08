@@ -118,6 +118,10 @@ class DdJaniModelBuilder {
         // An optional set of expression or labels that characterizes (a subset of) the terminal states of the model.
         // If this is set, the outgoing transitions of these states are replaced with a self-loop.
         storm::builder::TerminalStates terminalStates;
+
+        // A flag that indicates whether deadlock states should be fixed by inserting a self-loop. If not set,
+        // an error is raised whenever a deadlock state is encountered.
+        bool fixDeadlocks = true;
     };
 
     /*!

@@ -11,8 +11,6 @@
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
@@ -1463,7 +1461,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBui
     // If there are deadlocks, either fix them or raise an error.
     if (!deadlockStates.isZero()) {
         // If we need to fix deadlocks, we do so now.
-        if (!storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet()) {
+        if (options.fixDeadlocks) {
             STORM_LOG_INFO("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. The first three of these states are: ");
 
             storm::dd::Add<Type, ValueType> deadlockStatesAdd = deadlockStates.template toAdd<ValueType>();

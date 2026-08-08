@@ -7,6 +7,7 @@
 #include "storm/models/sparse/Model.h"
 #include "storm/models/symbolic/Model.h"
 
+#include "storm/storage/dd/bisimulation/BisimulationOptions.h"
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/PreservationInformation.h"
 #include "storm/storage/dd/bisimulation/QuotientFormat.h"
@@ -18,7 +19,7 @@ namespace bisimulation {
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>
 class QuotientExtractor {
    public:
-    QuotientExtractor(storm::dd::bisimulation::QuotientFormat const& quotientFormat);
+    QuotientExtractor(storm::dd::bisimulation::QuotientFormat const& quotientFormat, BisimulationOptions const& bisimulationOptions);
 
     std::shared_ptr<storm::models::Model<ExportValueType>> extract(storm::models::symbolic::Model<DdType, ValueType> const& model,
                                                                    Partition<DdType, ValueType> const& partition,

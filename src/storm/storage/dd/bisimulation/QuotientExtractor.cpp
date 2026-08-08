@@ -19,8 +19,6 @@
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/dd/DdManager.h"
@@ -965,11 +963,12 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType, Expo
 };
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
-QuotientExtractor<DdType, ValueType, ExportValueType>::QuotientExtractor(storm::dd::bisimulation::QuotientFormat const& quotientFormat)
-    : useRepresentatives(false), quotientFormat(quotientFormat) {
-    auto const& settings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
-    this->useRepresentatives = settings.isUseRepresentativesSet();
-    this->useOriginalVariables = settings.isUseOriginalVariablesSet();
+QuotientExtractor<DdType, ValueType, ExportValueType>::QuotientExtractor(storm::dd::bisimulation::QuotientFormat const& quotientFormat,
+                                                                         BisimulationOptions const& bisimulationOptions)
+    : useRepresentatives(bisimulationOptions.useRepresentatives),
+      useOriginalVariables(bisimulationOptions.useOriginalVariables),
+      quotientFormat(quotientFormat) {
+    // Intentionally left empty.
 }
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm/storage/dd/bisimulation/BisimulationOptions.h"
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/Status.h"
 
@@ -20,7 +21,8 @@ namespace bisimulation {
 template<storm::dd::DdType DdType, typename ValueType>
 class PartitionRefiner {
    public:
-    PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition);
+    PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition,
+                     BisimulationOptions const& bisimulationOptions);
 
     virtual ~PartitionRefiner() = default;
 
