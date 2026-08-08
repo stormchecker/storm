@@ -88,7 +88,7 @@ storm::expressions::Expression TerminalStates::asExpression(
     for (auto const& l : negatedTerminalLabels) {
         allTerminalExpressions.push_back(!labelToExpressionMap(l));
     }
-    STORM_LOG_ASSERT(!allTerminalExpressions.empty(), "Unable to convert empty terminal state set to expression");
+    STORM_LOG_ASSERT(!allTerminalExpressions.empty(), "Unable to convert empty terminal state set to expression.");
     return storm::expressions::disjunction(allTerminalExpressions);
 }
 

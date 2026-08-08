@@ -94,13 +94,13 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector 
 template<typename ValueType, typename ConstantType>
 std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getBottomTopOrder() {
     if (bottomTopOrder == nullptr) {
-        assert(model != nullptr);
+        STORM_LOG_ASSERT(model != nullptr, "Model is null.");
         STORM_LOG_THROW(matrix.getRowCount() == matrix.getColumnCount(), exceptions::NotSupportedException,
                         "Creating order not supported for non-square matrix.");
         modelchecker::SparsePropositionalModelChecker<models::sparse::Model<ValueType>> propositionalChecker(*model);
         storage::BitVector phiStates;
         storage::BitVector psiStates;
-        assert(formula->isProbabilityOperatorFormula());
+        STORM_LOG_ASSERT(formula->isProbabilityOperatorFormula(), "Expected probability operator formula.");
         if (formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
             phiStates = propositionalChecker.check(formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())
                             ->template asExplicitQualitativeCheckResult<ValueType>()
@@ -109,7 +109,7 @@ std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getBottomTopOrder
                             ->template asExplicitQualitativeCheckResult<ValueType>()
                             .getTruthValuesVector();
         } else {
-            assert(formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
+            STORM_LOG_ASSERT(formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula(), "Expected eventually formula.");
             phiStates = storage::BitVector(numberOfStates, true);
             psiStates = propositionalChecker.check(formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())
                             ->template asExplicitQualitativeCheckResult<ValueType>()
@@ -192,15 +192,15 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Order> order,
                                                               std::shared_ptr<expressions::BinaryRelationExpression> assumption) const {
-    assert(assumption != nullptr);
-    assert(assumption->getFirstOperand()->isVariable() && assumption->getSecondOperand()->isVariable());
+    STORM_LOG_ASSERT(assumption != nullptr, "Assumption is null.");
+    STORM_LOG_ASSERT(assumption->getFirstOperand()->isVariable() && assumption->getSecondOperand()->isVariable(), "Expected variable operands.");
 
     expressions::Variable var1 = assumption->getFirstOperand()->asVariableExpression().getVariable();
     expressions::Variable var2 = assumption->getSecondOperand()->asVariableExpression().getVariable();
     auto const& val1 = std::stoul(var1.getName(), nullptr, 0);
     auto const& val2 = std::stoul(var2.getName(), nullptr, 0);
 
-    assert(order->compare(val1, val2) == Order::UNKNOWN);
+    STORM_LOG_ASSERT(order->compare(val1, val2) == Order::UNKNOWN, "Order should be UNKNOWN");
 
     Order::Node* n1 = order->getNode(val1);
     Order::Node* n2 = order->getNode(val2);
@@ -217,7 +217,7 @@ void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Or
             order->addToNode(val2, order->getNode(val1));
         }
     } else {
-        assert(assumption->getRelationType() == expressions::RelationType::Greater);
+        STORM_LOG_ASSERT(assumption->getRelationType() == expressions::RelationType::Greater, "Expected Greater relation.");
         if (n1 != nullptr && n2 != nullptr) {
             order->addRelationNodes(n1, n2);
         } else if (n1 != nullptr) {
@@ -278,7 +278,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
                                 order->addToNode(state2, order->getNode(state1));
                             } else {
                                 order->merge(state1, state2);
-                                assert(!order->isInvalid());
+                                STORM_LOG_ASSERT(!order->isInvalid(), "Order is invalid.");
                             }
                         } else {
                             all = false;
@@ -312,13 +312,13 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
 
     auto currentStateMode = getNextState(order, numberOfStates, false);
     while (currentStateMode.first != numberOfStates) {
-        assert(currentStateMode.first < numberOfStates);
+        STORM_LOG_ASSERT(currentStateMode.first < numberOfStates, "State out of range.");
         auto& currentState = currentStateMode.first;
         auto& successors = stateMap[currentState];
         std::pair<uint_fast64_t, uint_fast64_t> result = {numberOfStates, numberOfStates};
 
         if (successors.size() == 1) {
-            assert(order->contains(successors[0]));
+            STORM_LOG_ASSERT(order->contains(successors[0]), "Order does not contain successor.");
             handleOneSuccessor(order, currentState, successors[0]);
         } else if (!successors.empty()) {
             if (order->isOnlyBottomTopOrder()) {
@@ -336,9 +336,9 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
 
         if (result.first == numberOfStates) {
             // We did extend the order
-            assert(result.second == numberOfStates);
-            assert(order->sortStates(&successors).size() == successors.size());
-            assert(order->contains(currentState) && order->getNode(currentState) != nullptr);
+            STORM_LOG_ASSERT(result.second == numberOfStates, "Result second mismatch.");
+            STORM_LOG_ASSERT(order->sortStates(&successors).size() == successors.size(), "Sort states size mismatch.");
+            STORM_LOG_ASSERT(order->contains(currentState) && order->getNode(currentState) != nullptr, "Current state not in order.");
 
             if (monRes != nullptr) {
                 for (auto& param : occuringVariablesAtState[currentState]) {
@@ -348,10 +348,10 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
             // Get the next state
             currentStateMode = getNextState(order, currentState, true);
         } else {
-            assert(result.first < numberOfStates);
-            assert(result.second < numberOfStates);
-            assert(order->compare(result.first, result.second) == Order::UNKNOWN);
-            assert(order->compare(result.second, result.first) == Order::UNKNOWN);
+            STORM_LOG_ASSERT(result.first < numberOfStates, "Result first out of range.");
+            STORM_LOG_ASSERT(result.second < numberOfStates, "Result second out of range.");
+            STORM_LOG_ASSERT(order->compare(result.first, result.second) == Order::UNKNOWN, "Comparison should be UNKNOWN");
+            STORM_LOG_ASSERT(order->compare(result.second, result.first) == Order::UNKNOWN, "Comparison should be UNKNOWN");
             // Try to add states based on min/max and assumptions, only if we are not in statesToHandle mode
             if (currentStateMode.second && extendByAssumption(order, result.first, result.second)) {
                 continue;
@@ -378,10 +378,10 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
                 }
             }
         }
-        assert(order->sortStates(&successors).size() == successors.size());
+        STORM_LOG_ASSERT(order->sortStates(&successors).size() == successors.size(), "Sort states size mismatch after extension.");
     }
 
-    assert(order->getDoneBuilding());
+    STORM_LOG_ASSERT(order->getDoneBuilding(), "Order building not done.");
     if (monRes != nullptr) {
         // monotonicity result for the in-build checking of monotonicity
         monRes->setDone();
@@ -397,7 +397,7 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
         // Try to extend the order for this scc
         return extendByForwardReasoning(order, currentState, successors, allowMerge);
     } else {
-        assert(order->isTrivial(currentState) || !order->contains(currentState));
+        STORM_LOG_ASSERT(order->isTrivial(currentState) || !order->contains(currentState), "State is neither trivial nor missing.");
         // Do backward reasoning, all successor states must be in the order
         return extendByBackwardReasoning(order, currentState, successors, allowMerge);
     }
@@ -405,7 +405,7 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
 
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) {
-    assert(order->contains(successor));
+    STORM_LOG_ASSERT(order->contains(successor), "Order does not contain successor.");
     if (currentState != successor) {
         if (order->contains(currentState)) {
             order->merge(currentState, successor);
@@ -420,8 +420,8 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
                                                                                                           uint_fast64_t currentState,
                                                                                                           std::vector<uint_fast64_t> const& successors,
                                                                                                           bool allowMerge) {
-    assert(!order->isOnlyBottomTopOrder());
-    assert(successors.size() > 1);
+    STORM_LOG_ASSERT(!order->isOnlyBottomTopOrder(), "Order is only bottom-top.");
+    STORM_LOG_ASSERT(successors.size() > 1, "Expected multiple successors.");
 
     bool pla = (usePLA.find(order) != usePLA.end() && usePLA.at(order));
     std::vector<uint_fast64_t> sortedSuccs;
@@ -474,13 +474,13 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
         }
     } else {
         if (!order->contains(sortedSuccs[0])) {
-            assert(order->isBottomState(sortedSuccs[sortedSuccs.size() - 1]));
-            assert(sortedSuccs.size() == 2);
+            STORM_LOG_ASSERT(order->isBottomState(sortedSuccs[sortedSuccs.size() - 1]), "Expected bottom state.");
+            STORM_LOG_ASSERT(sortedSuccs.size() == 2, "Expected 2 successors.");
             order->addAbove(sortedSuccs[0], order->getBottom());
         }
         if (!order->contains(sortedSuccs[sortedSuccs.size() - 1])) {
-            assert(order->isTopState(sortedSuccs[0]));
-            assert(sortedSuccs.size() == 2);
+            STORM_LOG_ASSERT(order->isTopState(sortedSuccs[0]), "Expected top state.");
+            STORM_LOG_ASSERT(sortedSuccs.size() == 2, "Expected 2 successors.");
             order->addBelow(sortedSuccs[sortedSuccs.size() - 1], order->getTop());
         }
         // sortedSuccs[0] is highest
@@ -491,8 +491,9 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
             order->addRelation(currentState, sortedSuccs[sortedSuccs.size() - 1], allowMerge);
         }
     }
-    assert(order->contains(currentState) && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE &&
-           order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW);
+    STORM_LOG_ASSERT(order->contains(currentState) && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE &&
+                         order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW,
+                     "Order is not as expected.");
     return {numberOfStates, numberOfStates};
 }
 
@@ -501,9 +502,9 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
                                                                                                          uint_fast64_t currentState,
                                                                                                          std::vector<uint_fast64_t> const& successors,
                                                                                                          bool allowMerge) {
-    assert(successors.size() > 1);
-    assert(order->contains(currentState));
-    assert(cyclic);
+    STORM_LOG_ASSERT(successors.size() > 1, "Expected multiple successors.");
+    STORM_LOG_ASSERT(order->contains(currentState), "Current state not in order.");
+    STORM_LOG_ASSERT(cyclic, "Expected cyclic.");
 
     std::vector<uint_fast64_t> statesSorted;
     statesSorted.push_back(currentState);
@@ -555,12 +556,12 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
         }
     }
     if (!unknown && oneUnknown) {
-        assert(statesSorted.size() == successors.size());
+        STORM_LOG_ASSERT(statesSorted.size() == successors.size(), "States sorted size mismatch.");
         s2 = numberOfStates;
     }
 
     if (s1 == numberOfStates) {
-        assert(statesSorted.size() == successors.size() + 1);
+        STORM_LOG_ASSERT(statesSorted.size() == successors.size() + 1, "States sorted size mismatch.");
         // all could be sorted, no need to do anything
     } else if (s2 == numberOfStates) {
         if (!order->contains(s1)) {
@@ -569,19 +570,23 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
 
         if (statesSorted[0] == currentState) {
             order->addRelation(s1, statesSorted[0], allowMerge);
-            assert((order->compare(s1, statesSorted[0]) == Order::ABOVE) ||
-                   (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)));
+            STORM_LOG_ASSERT((order->compare(s1, statesSorted[0]) == Order::ABOVE) ||
+                                 (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)),
+                             "Order is not as expected.");
             order->addRelation(s1, statesSorted[statesSorted.size() - 1], allowMerge);
-            assert((order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::ABOVE) ||
-                   (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)));
+            STORM_LOG_ASSERT((order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::ABOVE) ||
+                                 (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)),
+                             "Order is not as expected.");
             order->addStateToHandle(s1);
         } else if (statesSorted[statesSorted.size() - 1] == currentState) {
             order->addRelation(statesSorted[0], s1, allowMerge);
-            assert((order->compare(s1, statesSorted[0]) == Order::BELOW) ||
-                   (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)));
+            STORM_LOG_ASSERT((order->compare(s1, statesSorted[0]) == Order::BELOW) ||
+                                 (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)),
+                             "Order is not as expected.");
             order->addRelation(statesSorted[statesSorted.size() - 1], s1, allowMerge);
-            assert((order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::BELOW) ||
-                   (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)));
+            STORM_LOG_ASSERT((order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::BELOW) ||
+                                 (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)),
+                             "Order is not as expected.");
             order->addStateToHandle(s1);
         } else {
             bool continueSearch = true;
@@ -603,15 +608,16 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
     } else {
         return {s1, s2};
     }
-    assert(order->contains(currentState) && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE &&
-           order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW);
+    STORM_LOG_ASSERT(order->contains(currentState) && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE &&
+                         order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW,
+                     "Order is not as expected.");
     return {numberOfStates, numberOfStates};
 }
 
 template<typename ValueType, typename ConstantType>
 bool OrderExtender<ValueType, ConstantType>::extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) {
     bool usePLANow = usePLA.find(order) != usePLA.end() && usePLA[order];
-    assert(order->compare(state1, state2) == Order::UNKNOWN);
+    STORM_LOG_ASSERT(order->compare(state1, state2) == Order::UNKNOWN, "Comparison should be UNKNOWN");
     auto assumptions = usePLANow ? assumptionMaker->createAndCheckAssumptions(state1, state2, order, region, minValues[order], maxValues[order])
                                  : assumptionMaker->createAndCheckAssumptions(state1, state2, order, region);
     if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
@@ -625,15 +631,15 @@ bool OrderExtender<ValueType, ConstantType>::extendByAssumption(std::shared_ptr<
 template<typename ValueType, typename ConstantType>
 Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1,
                                                                                      uint_fast64_t state2) const {
-    assert(order->compareFast(state1, state2) == Order::UNKNOWN);
-    assert(minValues.find(order) != minValues.end());
+    STORM_LOG_ASSERT(order->compareFast(state1, state2) == Order::UNKNOWN, "Fast comparison should be UNKNOWN");
+    STORM_LOG_ASSERT(minValues.find(order) != minValues.end(), "MinValues missing for order.");
     std::vector<ConstantType> const& mins = minValues.at(order);
     std::vector<ConstantType> const& maxs = maxValues.at(order);
     if (mins[state1] == maxs[state1] && mins[state2] == maxs[state2] && mins[state1] == mins[state2]) {
         if (order->contains(state1)) {
             if (order->contains(state2)) {
                 order->merge(state1, state2);
-                assert(!order->isInvalid());
+                STORM_LOG_ASSERT(!order->isInvalid(), "Order is invalid after merge.");
             } else {
                 order->addToNode(state2, order->getNode(state1));
             }
@@ -647,8 +653,8 @@ Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMi
         if (!order->contains(state2)) {
             order->add(state2);
         }
-        assert(order->compare(state1, state2) != Order::BELOW);
-        assert(order->compare(state1, state2) != Order::SAME);
+        STORM_LOG_ASSERT(order->compare(state1, state2) != Order::BELOW, "State1 should not be below state2");
+        STORM_LOG_ASSERT(order->compare(state1, state2) != Order::SAME, "State1 should not be same as state2");
         order->addRelation(state1, state2);
 
         return Order::ABOVE;
@@ -660,8 +666,8 @@ Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMi
         if (!order->contains(state2)) {
             order->add(state2);
         }
-        assert(order->compare(state2, state1) != Order::BELOW);
-        assert(order->compare(state2, state1) != Order::SAME);
+        STORM_LOG_ASSERT(order->compare(state2, state1) != Order::BELOW, "State2 should not be below state1");
+        STORM_LOG_ASSERT(order->compare(state2, state1) != Order::SAME, "State2 should not be same as state1");
         order->addRelation(state2, state1);
         return Order::BELOW;
     } else {
@@ -697,16 +703,16 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
             plaModelChecker.check(env, annotatedRegion, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
         minValuesInit = minCheck.getValueVector();
         maxValuesInit = maxCheck.getValueVector();
-        assert(minValuesInit->size() == numberOfStates);
-        assert(maxValuesInit->size() == numberOfStates);
+        STORM_LOG_ASSERT(minValuesInit->size() == numberOfStates, "MinValuesInit size mismatch.");
+        STORM_LOG_ASSERT(maxValuesInit->size() == numberOfStates, "MaxValuesInit size mismatch.");
     }
 }
 
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& minValues,
                                                              std::vector<ConstantType>&& maxValues) {
-    assert(minValues.size() == numberOfStates);
-    assert(maxValues.size() == numberOfStates);
+    STORM_LOG_ASSERT(minValues.size() == numberOfStates, "MinValues size mismatch.");
+    STORM_LOG_ASSERT(maxValues.size() == numberOfStates, "MaxValues size mismatch.");
     usePLA[order] = true;
     if (unknownStatesMap.find(order) != unknownStatesMap.end()) {
         auto& unknownStates = unknownStatesMap[order];
@@ -725,7 +731,7 @@ void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::shared_ptr<Ord
 
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& minValues) {
-    assert(minValues.size() == numberOfStates);
+    STORM_LOG_ASSERT(minValues.size() == numberOfStates, "MinValues size mismatch.");
     auto& maxValues = this->maxValues[order];
     usePLA[order] = this->maxValues.find(order) != this->maxValues.end();
     if (maxValues.size() == 0) {
@@ -746,7 +752,7 @@ void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order>
 
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::setMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& maxValues) {
-    assert(maxValues.size() == numberOfStates);
+    STORM_LOG_ASSERT(maxValues.size() == numberOfStates, "MaxValues size mismatch.");
     usePLA[order] = this->minValues.find(order) != this->minValues.end();
     auto& minValues = this->minValues[order];
     if (minValues.size() == 0) {
@@ -766,13 +772,13 @@ void OrderExtender<ValueType, ConstantType>::setMaxValues(std::shared_ptr<Order>
 }
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::setMinValuesInit(std::vector<ConstantType>&& minValues) {
-    assert(minValues.size() == numberOfStates);
+    STORM_LOG_ASSERT(minValues.size() == numberOfStates, "MinValues size mismatch.");
     this->minValuesInit = std::move(minValues);
 }
 
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::setMaxValuesInit(std::vector<ConstantType>&& maxValues) {
-    assert(maxValues.size() == numberOfStates);
+    STORM_LOG_ASSERT(maxValues.size() == numberOfStates, "MaxValues size mismatch.");
     this->maxValuesInit = std::move(maxValues);  // maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
 }
 
@@ -786,7 +792,7 @@ void OrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t
 
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::setUnknownStates(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) {
-    assert(state1 != numberOfStates && state2 != numberOfStates);
+    STORM_LOG_ASSERT(state1 != numberOfStates && state2 != numberOfStates, "States should not be numberOfStates.");
     unknownStatesMap[order] = {state1, state2};
 }
 
@@ -800,7 +806,7 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
 
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::setUnknownStates(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy) {
-    assert(unknownStatesMap.find(orderCopy) == unknownStatesMap.end());
+    STORM_LOG_ASSERT(unknownStatesMap.find(orderCopy) == unknownStatesMap.end(), "OrderCopy already in unknownStatesMap.");
     unknownStatesMap.insert({orderCopy, {unknownStatesMap[orderOriginal].first, unknownStatesMap[orderOriginal].second}});
 }
 
@@ -809,7 +815,7 @@ void OrderExtender<ValueType, ConstantType>::copyMinMax(std::shared_ptr<Order> o
     usePLA[orderCopy] = usePLA[orderOriginal];
     if (usePLA[orderCopy]) {
         minValues[orderCopy] = minValues[orderOriginal];
-        assert(maxValues.find(orderOriginal) != maxValues.end());
+        STORM_LOG_ASSERT(maxValues.find(orderOriginal) != maxValues.end(), "MaxValues missing for orderOriginal.");
         maxValues[orderCopy] = maxValues[orderOriginal];
     }
     continueExtending[orderCopy] = continueExtending[orderOriginal];
@@ -834,8 +840,8 @@ std::pair<uint_fast64_t, bool> OrderExtender<ValueType, ConstantType>::getNextSt
 
 template<typename ValueType, typename ConstantType>
 bool OrderExtender<ValueType, ConstantType>::isHope(std::shared_ptr<Order> order) {
-    assert(unknownStatesMap.find(order) != unknownStatesMap.end());
-    assert(!order->getDoneBuilding());
+    STORM_LOG_ASSERT(unknownStatesMap.find(order) != unknownStatesMap.end(), "Order not in unknownStatesMap.");
+    STORM_LOG_ASSERT(!order->getDoneBuilding(), "Order building unexpectedly done.");
     // First check if bounds helped us
     bool yesThereIsHope = continueExtending[order];
     return yesThereIsHope;

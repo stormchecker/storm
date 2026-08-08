@@ -251,7 +251,7 @@ void callback(glp_tree* t, void* info) {
     if (!mipgap.second) {
         // Compute absolute gap
         factor = storm::utility::abs(glp_mip_obj_val(glp_ios_get_prob(t))) + DBL_EPSILON;
-        assert(factor >= 0.0);
+        STORM_LOG_ASSERT(factor >= 0.0, "Expected non-negative factor.");
     }
     if (actualRelativeGap * factor <= mipgap.first) {
         // Terminate early

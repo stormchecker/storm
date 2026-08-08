@@ -626,7 +626,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::TotalRewardFormula const&, boo
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::UnaryBooleanStateFormula const& f, boost::any const& data) const {
-    STORM_LOG_ASSERT(f.getOperator() == storm::logic::UnaryBooleanStateFormula::OperatorType::Not, "Unsupported operator");
+    STORM_LOG_ASSERT(f.getOperator() == storm::logic::UnaryBooleanStateFormula::OperatorType::Not, "Unsupported operator.");
     ExportJsonType opDecl;
     opDecl["op"] = "¬";
     opDecl["exp"] = anyToJson(f.getSubformula().accept(*this, data));
@@ -634,7 +634,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::UnaryBooleanStateFormula const
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::UnaryBooleanPathFormula const& f, boost::any const& data) const {
-    STORM_LOG_ASSERT(f.getOperator() == storm::logic::UnaryBooleanStateFormula::OperatorType::Not, "Unsupported operator");
+    STORM_LOG_ASSERT(f.getOperator() == storm::logic::UnaryBooleanStateFormula::OperatorType::Not, "Unsupported operator.");
     ExportJsonType opDecl;
     opDecl["op"] = "¬";
     opDecl["exp"] = boost::any_cast<ExportJsonType>(f.getSubformula().accept(*this, data));
@@ -1130,7 +1130,7 @@ ExportJsonType buildInitialLocations(storm::jani::Automaton const& automaton) {
 ExportJsonType buildDestinations(std::vector<EdgeDestination> const& destinations, std::map<uint64_t, std::string> const& locationNames,
                                  std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables,
                                  bool commentExpressions) {
-    assert(destinations.size() > 0);
+    STORM_LOG_ASSERT(destinations.size() > 0, "Expected at least one destination.");
     ExportJsonType destDeclarations = std::vector<ExportJsonType>();
     for (auto const& destination : destinations) {
         ExportJsonType destEntry;

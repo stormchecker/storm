@@ -37,7 +37,7 @@ inline size_t nrCommands(storm::storage::SymbolicModelDescription const& descr) 
     if (descr.isJaniModel()) {
         return descr.asJaniModel().getNumberOfEdges();
     } else {
-        assert(descr.isPrismProgram());
+        STORM_LOG_ASSERT(descr.isPrismProgram(), "Expected Prism program.");
         return descr.asPrismProgram().getNumberOfCommands();
     }
 }
@@ -1775,7 +1775,7 @@ class SMTMinimalLabelSetGenerator {
                 labelSets[choice] = choiceOrigins.getEdgeIndexSet(choice);
             }
         }
-        assert(labelSets.size() == model.getNumberOfChoices());
+        STORM_LOG_ASSERT(labelSets.size() == model.getNumberOfChoices(), "Label set size mismatch.");
 
         // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
         std::vector<double> maximalReachabilityProbability;
@@ -2049,7 +2049,7 @@ class SMTMinimalLabelSetGenerator {
                     if (model.getChoiceOrigins()->isPrismChoiceOrigins()) {
                         labelSetSize = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice).size();
                     } else {
-                        assert(model.getChoiceOrigins()->isJaniChoiceOrigins());
+                        STORM_LOG_ASSERT(model.getChoiceOrigins()->isJaniChoiceOrigins(), "Expected JANI choice origins.");
                         labelSetSize = model.getChoiceOrigins()->asJaniChoiceOrigins().getEdgeIndexSet(choice).size();
                     }
                     hasLabeledChoice |= (labelSetSize != 0);
@@ -2067,7 +2067,7 @@ class SMTMinimalLabelSetGenerator {
                     auto const& labelSet = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(smallestCommandChoice);
                     commandSet.insert(labelSet.begin(), labelSet.end());
                 } else {
-                    assert(model.getChoiceOrigins()->isJaniChoiceOrigins());
+                    STORM_LOG_ASSERT(model.getChoiceOrigins()->isJaniChoiceOrigins(), "Expected JANI choice origins.");
                     auto const& labelSet = model.getChoiceOrigins()->asJaniChoiceOrigins().getEdgeIndexSet(smallestCommandChoice);
                     commandSet.insert(labelSet.begin(), labelSet.end());
                 }
@@ -2123,7 +2123,7 @@ class SMTMinimalLabelSetGenerator {
             result.comparisonType = probabilityOperator.getComparisonType();
             result.threshold.push_back(probabilityOperator.getThresholdAs<T>());
         } else {
-            assert(formula->isRewardOperatorFormula());
+            STORM_LOG_ASSERT(formula->isRewardOperatorFormula(), "Expected reward operator formula.");
             storm::logic::RewardOperatorFormula const& rewardOperator = formula->asRewardOperatorFormula();
             STORM_LOG_THROW(rewardOperator.hasBound(), storm::exceptions::InvalidPropertyException,
                             "Counterexample generation only supports bounded formulas.");

@@ -32,7 +32,7 @@ GurobiEnvironment::~GurobiEnvironment() {
 
 #ifdef STORM_HAVE_GUROBI
 GRBenv* GurobiEnvironment::operator*() {
-    STORM_LOG_ASSERT(initialized, "Gurobi Environment has not been initialized");
+    STORM_LOG_ASSERT(initialized, "Gurobi Environment has not been initialized.");
     return env;
 }
 #endif

@@ -170,7 +170,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
                 actionsNotTaken.erase(action);
 
                 const auto& monitorRow = monitor.getTransitionMatrix().getRow(mon_from, i);
-                STORM_LOG_ASSERT(monitorRow.getNumberOfEntries() == 1, "Monitor is not fully deterministic");
+                STORM_LOG_ASSERT(monitorRow.getNumberOfEntries() == 1, "Monitor is not fully deterministic.");
                 const auto& monitorEntry = monitorRow.begin();
 
                 const auto& mcRow = mc.getTransitionMatrix().getRow(mc_from);

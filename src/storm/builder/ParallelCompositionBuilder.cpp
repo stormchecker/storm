@@ -54,8 +54,8 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ParallelCompositionBuild
     }
 
     storm::storage::SparseMatrix<ValueType> matrixComposed = builder.build();
-    STORM_LOG_ASSERT(matrixComposed.getRowCount() == size, "Row count is not correct");
-    STORM_LOG_ASSERT(matrixComposed.getColumnCount() == size, "Column count is not correct");
+    STORM_LOG_ASSERT(matrixComposed.getRowCount() == size, "Row count is not correct.");
+    STORM_LOG_ASSERT(matrixComposed.getColumnCount() == size, "Column count is not correct.");
 
     // Build labeling
     storm::models::sparse::StateLabeling labeling = storm::models::sparse::StateLabeling(sizeA * sizeB);

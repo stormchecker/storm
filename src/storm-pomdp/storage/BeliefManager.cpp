@@ -394,8 +394,8 @@ uint32_t BeliefManager<PomdpType, BeliefValueType, StateType>::getBeliefObservat
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 void BeliefManager<PomdpType, BeliefValueType, StateType>::triangulateBeliefFreudenthal(BeliefType const &belief, BeliefValueType const &resolution,
                                                                                         Triangulation &result) {
-    STORM_LOG_ASSERT(resolution != 0, "Invalid resolution: 0");
-    STORM_LOG_ASSERT(storm::utility::isInteger(resolution), "Expected an integer resolution");
+    STORM_LOG_ASSERT(resolution != 0, "Invalid resolution: 0.");
+    STORM_LOG_ASSERT(storm::utility::isInteger(resolution), "Expected an integer resolution.");
     StateType numEntries = belief.size();
     // This is the Freudenthal Triangulation as described in Lovejoy (a whole lotta math)
     // Probabilities will be triangulated to values in 0/N, 1/N, 2/N, ..., N/N
@@ -453,7 +453,7 @@ void BeliefManager<PomdpType, BeliefValueType, StateType>::triangulateBeliefDyna
                                                                                     Triangulation &result) {
     // Find the best resolution for this belief, i.e., N such that the largest distance between one of the belief values to a value in {i/N | 0 ≤ i ≤ N} is
     // minimal
-    STORM_LOG_ASSERT(storm::utility::isInteger(resolution), "Expected an integer resolution");
+    STORM_LOG_ASSERT(storm::utility::isInteger(resolution), "Expected an integer resolution.");
     BeliefValueType finalResolution = resolution;
     uint64_t finalResolutionMisses = belief.size() + 1;
     // We don't need to check resolutions that are smaller than the maximal resolution divided by 2 (as we already checked multiples of these)
@@ -684,7 +684,7 @@ typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping Be
             while (*helperIt == *(helperIt - 1)) {
                 --helperIt;
             }
-            STORM_LOG_ASSERT(helperIt != helper.begin(), "Error in grid clipping - index wrong");
+            STORM_LOG_ASSERT(helperIt != helper.begin(), "Error in grid clipping - index wrong.");
             // Increment the value at the index
             *helperIt += 1;
             // Reset all indices greater than the changed one to 0
@@ -756,8 +756,8 @@ typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping Be
 
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId BeliefManager<PomdpType, BeliefValueType, StateType>::computeInitialBelief() {
-    STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() < 2, "POMDP contains more than one initial state");
-    STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() == 1, "POMDP does not contain an initial state");
+    STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() < 2, "POMDP contains more than one initial state.");
+    STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() == 1, "POMDP does not contain an initial state.");
     BeliefType belief;
     belief[*pomdp.getInitialStates().begin()] = storm::utility::one<BeliefValueType>();
 

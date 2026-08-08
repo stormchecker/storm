@@ -778,7 +778,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
                             }
                         }
                     }
-                    STORM_LOG_ASSERT(!flexibleMatrix.getRow(initialStateSuccessor).empty(), "(1) New transitions expected to be non-empty.");
+                    STORM_LOG_ASSERT(!flexibleMatrix.getRow(initialStateSuccessor).empty(), "Expected new transitions to be non-empty (1).");
                 }
             }
             stateEliminator.unsetFilter();

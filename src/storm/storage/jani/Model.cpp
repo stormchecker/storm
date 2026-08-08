@@ -1415,9 +1415,9 @@ void Model::finalize() {
 
 void Model::checkValid() const {
     // TODO switch to exception based return value.
-    STORM_LOG_ASSERT(getModelType() != storm::jani::ModelType::UNDEFINED, "Model type not set");
-    STORM_LOG_ASSERT(!automata.empty(), "No automata set");
-    STORM_LOG_ASSERT(composition != nullptr, "Composition is not set");
+    STORM_LOG_ASSERT(getModelType() != storm::jani::ModelType::UNDEFINED, "Model type not set.");
+    STORM_LOG_ASSERT(!automata.empty(), "No automata set.");
+    STORM_LOG_ASSERT(composition != nullptr, "Composition is not set.");
 }
 
 storm::expressions::Expression Model::getLabelExpression(Variable const& transientVariable) const {

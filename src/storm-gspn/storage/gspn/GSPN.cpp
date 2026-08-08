@@ -76,7 +76,7 @@ std::vector<TransitionPartition> const& GSPN::getPartitions() const {
 
 storm::gspn::Place const* GSPN::getPlace(uint64_t id) const {
     if (id < places.size()) {
-        assert(places.at(id).getID() == id);
+        STORM_LOG_ASSERT(places.at(id).getID() == id, "Place ID mismatch.");
         return &places.at(id);
     }
     return nullptr;
@@ -84,7 +84,7 @@ storm::gspn::Place const* GSPN::getPlace(uint64_t id) const {
 
 storm::gspn::Place* GSPN::getPlace(uint64_t id) {
     if (id < places.size()) {
-        assert(places.at(id).getID() == id);
+        STORM_LOG_ASSERT(places.at(id).getID() == id, "Place ID mismatch.");
         return &places.at(id);
     }
     return nullptr;

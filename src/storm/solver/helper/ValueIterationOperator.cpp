@@ -14,7 +14,7 @@ template<bool Backward>
 void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& matrix,
                                                                                     std::vector<IndexType> const* rowGroupIndices) {
     if constexpr (TrivialRowGrouping) {
-        STORM_LOG_ASSERT(matrix.hasTrivialRowGrouping(), "Expected a matrix with trivial row grouping");
+        STORM_LOG_ASSERT(matrix.hasTrivialRowGrouping(), "Expected a matrix with trivial row grouping.");
         STORM_LOG_ASSERT(rowGroupIndices == nullptr, "Row groups given, but grouping is supposed to be trivial.");
         this->rowGroupIndices = nullptr;
     } else {
@@ -145,7 +145,7 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setIgn
 template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
 std::vector<typename ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::IndexType> const&
 ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::getRowGroupIndices() const {
-    STORM_LOG_ASSERT(!TrivialRowGrouping, "Tried to get row group indices for trivial row grouping");
+    STORM_LOG_ASSERT(!TrivialRowGrouping, "Tried to get row group indices for trivial row grouping.");
     return *rowGroupIndices;
 }
 
@@ -191,9 +191,9 @@ uint64_t ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::sk
     IndexType result{0ull};
     while (skipIgnoredRow(matrixColumnIt, matrixValueIt)) {
         ++result;
-        STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "Undexpected state of VI operator");
+        STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "Undexpected state of VI operator.");
         // We (currently) don't use this past the end of a row group, so we may have this additional sanity check:
-        STORM_LOG_ASSERT(*matrixColumnIt < StartOfRowGroupIndicator, "Undexpected state of VI operator");
+        STORM_LOG_ASSERT(*matrixColumnIt < StartOfRowGroupIndicator, "Undexpected state of VI operator.");
     }
     return result;
 }

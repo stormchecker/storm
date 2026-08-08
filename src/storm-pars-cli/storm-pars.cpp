@@ -552,8 +552,8 @@ void processInput(cli::SymbolicInput&& input, storm::cli::ModelProcessingInforma
         // TODO Partition mode does not support monotonicity. This should generally be possible.
         // TODO here setting monotone parameters from the outside may actually be useful
 
-        assert(!monotonicitySettings.useOnlyGlobalMonotonicity);
-        assert(!monotonicitySettings.useBoundsFromPLA);
+        STORM_LOG_ASSERT(!monotonicitySettings.useOnlyGlobalMonotonicity, "Unexpected setting of only using global monotonicity.");
+        STORM_LOG_ASSERT(!monotonicitySettings.useBoundsFromPLA, "Unexpected setting of using bounds from PLA.");
         storm::pars::parameterSpacePartitioningWithSparseEngine(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, monotonicitySettings,
                                                                 monThresh);
     } else if (mode == storm::pars::utility::ParametricMode::Sampling) {

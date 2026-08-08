@@ -26,7 +26,7 @@ NativePolytope<ValueType>::NativePolytope(std::vector<Halfspace<ValueType>> cons
         A = EigenMatrix(maxRow, maxCol);
         b = EigenVector(maxRow);
         for (Eigen::Index row = 0; row < A.rows(); ++row) {
-            assert((Eigen::Index)halfspaces[row].normalVector().size() == maxCol);
+            STORM_LOG_ASSERT((Eigen::Index)halfspaces[row].normalVector().size() == maxCol, "Halfspace normal vector size mismatch.");
             b(row) = halfspaces[row].offset();
             A.row(row) = storm::adapters::EigenAdapter::toEigenVector(halfspaces[row].normalVector());
         }

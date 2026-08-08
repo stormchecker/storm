@@ -79,13 +79,13 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
                                                                                 std::vector<ConstantType> const minValues,
                                                                                 std::vector<ConstantType> const maxValues) const {
     // First check if based on sample points the assumption can be discharged
-    assert(val1 == std::stoull(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
-    assert(val2 == std::stoull(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
+    STORM_LOG_ASSERT(val1 == std::stoull(assumption->getFirstOperand()->asVariableExpression().getVariableName()), "Value mismatch " << val1 << ".");
+    STORM_LOG_ASSERT(val2 == std::stoull(assumption->getSecondOperand()->asVariableExpression().getVariableName()), "Value mismatch " << val2 << ".");
     AssumptionStatus result = AssumptionStatus::UNKNOWN;
     if (useSamples) {
         result = checkOnSamples(assumption);
     }
-    assert(result != AssumptionStatus::VALID);
+    STORM_LOG_ASSERT(result != AssumptionStatus::VALID, "Assumption should not be VALID at this point.");
 
     if (minValues.size() != 0) {
         if (assumption->getRelationType() == expressions::RelationType::Greater) {
@@ -132,7 +132,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(std:
             valuation.setRationalValue(var, utility::convertNumber<double>(values[index]));
         }
 
-        assert(assumption->hasBooleanType());
+        STORM_LOG_ASSERT(assumption->hasBooleanType(), "Assumption does not have boolean type.");
         if (!assumption->evaluateAsBool(&valuation)) {
             result = AssumptionStatus::INVALID;
             break;
@@ -251,7 +251,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
         if (assumption->getRelationType() == expressions::RelationType::Greater) {
             exprToCheck = expr1 <= expr2;
         } else {
-            assert(assumption->getRelationType() == expressions::RelationType::Equal);
+            STORM_LOG_ASSERT(assumption->getRelationType() == expressions::RelationType::Equal, "Expected equality relation.");
             exprToCheck = expr1 != expr2;
         }
 
@@ -297,7 +297,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
         if (s.check() == solver::SmtSolver::CheckResult::Unsat) {
             return AssumptionStatus::INVALID;
         }
-        assert(s.check() != solver::SmtSolver::CheckResult::Unsat);
+        STORM_LOG_ASSERT(s.check() != solver::SmtSolver::CheckResult::Unsat, "SMT solver returned Unsat unexpectedly.");
 
         s.add(exprToCheck);
         auto smtRes = s.check();

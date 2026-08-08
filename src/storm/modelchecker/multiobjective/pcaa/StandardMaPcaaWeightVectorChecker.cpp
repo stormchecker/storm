@@ -179,17 +179,17 @@ typename StandardMaPcaaWeightVectorChecker<SparseMaModelType>::SubModel Standard
     result.states = createMS ? markovianStates : probabilisticStates;
     result.choices = this->transitionMatrix.getRowFilter(result.states);
     STORM_LOG_ASSERT(!createMS || result.states.getNumberOfSetBits() == result.choices.getNumberOfSetBits(),
-                     "row groups for Markovian states should consist of exactly one row");
+                     "Row groups for Markovian states should consist of exactly one row.");
 
     // We need to add diagonal entries for selfloops on Markovian states.
     result.toMS = this->transitionMatrix.getSubmatrix(true, result.states, markovianStates, createMS);
     result.toPS = this->transitionMatrix.getSubmatrix(true, result.states, probabilisticStates, false);
     STORM_LOG_ASSERT(result.getNumberOfStates() == result.states.getNumberOfSetBits() && result.getNumberOfStates() == result.toMS.getRowGroupCount() &&
                          result.getNumberOfStates() == result.toPS.getRowGroupCount(),
-                     "Invalid state count for subsystem");
+                     "Invalid state count for subsystem.");
     STORM_LOG_ASSERT(result.getNumberOfChoices() == result.choices.getNumberOfSetBits() && result.getNumberOfChoices() == result.toMS.getRowCount() &&
                          result.getNumberOfChoices() == result.toPS.getRowCount(),
-                     "Invalid choice count for subsystem");
+                     "Invalid choice count for subsystem.");
 
     result.weightedRewardVector.resize(result.getNumberOfChoices());
     storm::utility::vector::selectVectorValues(result.weightedRewardVector, result.choices, weightedRewardVector);
@@ -284,7 +284,7 @@ VT StandardMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant
             break;
         }
         ++smallestStepBound;
-        STORM_LOG_ASSERT(delta > smallestNonZeroBound / smallestStepBound, "Digitization constant is expected to become smaller in every iteration");
+        STORM_LOG_ASSERT(delta > smallestNonZeroBound / smallestStepBound, "Digitization constant is expected to become smaller in every iteration.");
         delta = smallestNonZeroBound / smallestStepBound;
     }
     STORM_LOG_DEBUG("Found digitization constant: " << delta << ". At least " << smallestStepBound << " digitization steps will be necessarry");

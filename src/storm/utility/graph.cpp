@@ -188,7 +188,7 @@ bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<T> const& transition
         while (choice >= transitionMatrix.getRowGroupIndices()[state + 1]) {
             ++state;
         }
-        assert(choice >= transitionMatrix.getRowGroupIndices()[state]);
+        STORM_LOG_ASSERT(choice >= transitionMatrix.getRowGroupIndices()[state], "Choice index out of range.");
         // make sure that the choice originates from the subsystem and also stays within the subsystem
         if (subsystem.get(state)) {
             bool choiceStaysInSubsys = true;
@@ -269,7 +269,7 @@ bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<T> const& transition
 
         // Check if converged
         if (newCandidates == candidateStates) {
-            assert(!candidateStates.empty());
+            STORM_LOG_ASSERT(!candidateStates.empty(), "Expected non-empty candidate states.");
             return true;
         }
         candidateStates = std::move(newCandidates);

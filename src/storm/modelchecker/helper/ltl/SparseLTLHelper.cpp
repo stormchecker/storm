@@ -168,7 +168,7 @@ storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeA
                     } else if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_FIN) {
                         // Do only sanity checks here.
                         STORM_LOG_ASSERT(atom.isNegated() ? !ec.containsAnyState(~accSet) : !ec.containsAnyState(accSet),
-                                         "EC contains Fin-states, which should have been removed");
+                                         "EC contains Fin-states, which should have been removed.");
                     }
                 }
             }

@@ -382,7 +382,7 @@ ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::s
 template<typename FunctionType, typename ConstantType>
 std::pair<std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>, ConstantType>
 GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescent() {
-    STORM_LOG_ASSERT(this->synthesisTask, "Call setup before calling gradientDescent");
+    STORM_LOG_ASSERT(this->synthesisTask, "Call setup before calling gradientDescent.");
 
     resetDynamicValues();
 

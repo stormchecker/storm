@@ -151,7 +151,7 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::setUpViOperat
     }
     if (this->choiceFixedForRowGroup) {
         // Ignore those rows that are not selected
-        assert(this->initialScheduler);
+        STORM_LOG_ASSERT(this->initialScheduler, "Expected initial scheduler.");
         auto callback = [&](uint64_t groupIndex, uint64_t localRowIndex) {
             return this->choiceFixedForRowGroup->get(groupIndex) && this->initialScheduler->at(groupIndex) != localRowIndex;
         };
@@ -832,7 +832,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         return false;
     } else {
         // Prepare the solution vectors and the helper.
-        assert(x.size() == this->A->getRowGroupCount());
+        STORM_LOG_ASSERT(x.size() == this->A->getRowGroupCount(), "Solution vector size mismatch.");
 
         std::optional<ValueType> lowerBound, upperBound;
         if (this->hasLowerBound()) {
@@ -925,7 +925,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         std::function<bool(uint64_t, uint64_t)> fixedChoicesCallback;
         if (this->choiceFixedForRowGroup) {
             // Ignore those rows that are not selected
-            assert(this->initialScheduler);
+            STORM_LOG_ASSERT(this->initialScheduler, "Expected initial scheduler.");
             fixedChoicesCallback = [&](uint64_t groupIndex, uint64_t localRowIndex) {
                 return this->choiceFixedForRowGroup->get(groupIndex) && this->initialScheduler->at(groupIndex) != localRowIndex;
             };

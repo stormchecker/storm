@@ -229,7 +229,7 @@ bool QuickHull<ValueType>::findInitialVertices(std::vector<EigenVector>& points,
     for (auto goodCandidate : goodCandidates) {
         if (goodCandidate >= numOfGoodCandidates) {
             uint_fast64_t notGoodCandidate = *notGoodCandidates.begin();
-            assert(notGoodCandidate < numOfGoodCandidates);
+            STORM_LOG_ASSERT(notGoodCandidate < numOfGoodCandidates, "Not-good candidate index out of range.");
             std::swap(points[notGoodCandidate], points[goodCandidate]);
             notGoodCandidates.set(notGoodCandidate, false);
         }
@@ -249,7 +249,7 @@ std::vector<typename QuickHull<ValueType>::Facet> QuickHull<ValueType>::computeI
                                                                                              std::vector<uint_fast64_t> const& verticesOfInitialPolytope,
                                                                                              EigenVector const& insidePoint) const {
     const uint_fast64_t dimension = points.front().rows();
-    assert(verticesOfInitialPolytope.size() == dimension + 1);
+    STORM_LOG_ASSERT(verticesOfInitialPolytope.size() == dimension + 1, "Number of vertices does not match dimension+1.");
     std::vector<Facet> result;
     result.reserve(dimension + 1);
     storm::storage::geometry::SubsetEnumerator<> subsetEnum(verticesOfInitialPolytope.size(), dimension);
@@ -274,14 +274,14 @@ std::vector<typename QuickHull<ValueType>::Facet> QuickHull<ValueType>::computeI
 
         result.push_back(std::move(newFacet));
     } while (subsetEnum.incrementSubset());
-    assert(result.size() == dimension + 1);
+    STORM_LOG_ASSERT(result.size() == dimension + 1, "Number of result facets does not match dimension+1.");
     return result;
 }
 
 template<typename ValueType>
 void QuickHull<ValueType>::computeNormalAndOffsetOfFacet(std::vector<EigenVector> const& points, EigenVector const& insidePoint, Facet& facet) const {
     const uint_fast64_t dimension = points.front().rows();
-    assert(facet.points.size() == dimension);
+    STORM_LOG_ASSERT(facet.points.size() == dimension, "Facet points size does not match dimension.");
     EigenVector const& refPoint = points[facet.points.back()];
     EigenMatrix constraints(dimension - 1, dimension);
     for (unsigned row = 0; row < dimension - 1; ++row) {

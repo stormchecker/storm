@@ -276,7 +276,7 @@ bool VariableInformation::hasOutOfBoundsBit() const {
 }
 
 uint64_t VariableInformation::getOutOfBoundsBit() const {
-    assert(hasOutOfBoundsBit());
+    STORM_LOG_ASSERT(hasOutOfBoundsBit(), "Expected out-of-bounds bit.");
     return outOfBoundsBit->bitOffset;
 }
 

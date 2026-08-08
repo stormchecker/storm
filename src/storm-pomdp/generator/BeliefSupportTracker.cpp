@@ -19,7 +19,7 @@ void BeliefSupportTracker<ValueType>::track(uint64_t action, uint64_t observatio
     for (uint64_t oldState : currentBeliefSupport) {
         uint64_t row = pomdp.getTransitionMatrix().getRowGroupIndices()[oldState] + action;
         for (auto const& successor : pomdp.getTransitionMatrix().getRow(row)) {
-            assert(!storm::utility::isZero(successor.getValue()));
+            STORM_LOG_ASSERT(!storm::utility::isZero(successor.getValue()), "Expected non-zero successor probability.");
             if (pomdp.getObservation(successor.getColumn()) == observation) {
                 newBeliefSupport.set(successor.getColumn(), true);
             }

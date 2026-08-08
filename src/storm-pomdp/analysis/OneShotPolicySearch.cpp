@@ -30,7 +30,7 @@ void OneShotPolicySearch<ValueType>::initialize(uint64_t k) {
             reachVarExpressions.push_back(reachVars.back().getExpression());
             statesPerObservation.at(obs).push_back(stateId++);
         }
-        assert(pathVars.size() == pomdp.getNumberOfStates());
+        STORM_LOG_ASSERT(pathVars.size() == pomdp.getNumberOfStates(), "Path vars size mismatch.");
 
         // Create the action selection variables.
         uint64_t obs = 0;
@@ -43,7 +43,7 @@ void OneShotPolicySearch<ValueType>::initialize(uint64_t k) {
             ++obs;
         }
     } else {
-        assert(false);
+        STORM_LOG_ASSERT(false, "Unreachable code reached.");
     }
 
     for (auto const& actionVars : actionSelectionVarExpressions) {
@@ -125,7 +125,7 @@ bool OneShotPolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVect
     for (uint64_t state : oneOfTheseStates) {
         atLeastOneOfStates.push_back(reachVarExpressions[state]);
     }
-    assert(atLeastOneOfStates.size() > 0);
+    STORM_LOG_ASSERT(atLeastOneOfStates.size() > 0, "At least one state expected.");
     smtSolver->add(storm::expressions::disjunction(atLeastOneOfStates));
 
     for (uint64_t state : allOfTheseStates) {

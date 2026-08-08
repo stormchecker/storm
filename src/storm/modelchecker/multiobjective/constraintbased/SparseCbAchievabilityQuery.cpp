@@ -23,7 +23,7 @@ SparseCbAchievabilityQuery<SparseModelType>::SparseCbAchievabilityQuery(
     preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult)
     : SparseCbQuery<SparseModelType>(preprocessorResult) {
     STORM_LOG_ASSERT(preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability,
-                     "Invalid query Type");
+                     "Invalid query Type.");
     solver = storm::utility::solver::SmtSolverFactory().create(*this->expressionManager);
 }
 
@@ -128,7 +128,7 @@ void SparseCbAchievabilityQuery<SparseModelType>::initializeConstraintSystem() {
         }
         solver->add(storm::expressions::sum(valueSummands) == zero);
     }
-    assert(bottomStateVariableIt == bottomStateVariables.end());
+    STORM_LOG_ASSERT(bottomStateVariableIt == bottomStateVariables.end(), "Unexpected bottom state variable.");
 }
 
 template<class SparseModelType>

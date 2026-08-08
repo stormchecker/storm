@@ -151,7 +151,7 @@ storm::expressions::Expression Z3ExpressionAdapter::translateExpression(z3::expr
                                         "Failed to convert Z3 expression. Expression is constant integer and value does not fit into 64-bit integer.");
                     }
                 } else {
-                    STORM_LOG_ASSERT(expr.is_real() && expr.is_const(), "Cannot handle numerical expression");
+                    STORM_LOG_ASSERT(expr.is_real() && expr.is_const(), "Cannot handle numerical expression.");
                     Z3_SIGNED_INTEGER num;
                     Z3_SIGNED_INTEGER den;
                     if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {

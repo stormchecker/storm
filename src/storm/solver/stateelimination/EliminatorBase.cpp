@@ -90,7 +90,7 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
 
         // Skip the row itself.
         if (predecessor == row) {
-            assert(hasEntryInColumn);
+            STORM_LOG_ASSERT(hasEntryInColumn, "Expected entry in column.");
             continue;
         }
 

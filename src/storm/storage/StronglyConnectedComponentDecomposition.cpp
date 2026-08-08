@@ -144,7 +144,7 @@ void performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& t
     while (!cache.recursionStateStack.empty()) {
         // Peek at the topmost state in the stack, but leave it on there for now.
         uint64_t currentState = cache.recursionStateStack.back();
-        assert(!subsystem || subsystem->get(currentState));
+        STORM_LOG_ASSERT(!subsystem || subsystem->get(currentState), "State not in subsystem.");
 
         // If the state has not yet been seen, we need to assign it a preorder number and iterate over its successors.
         if (!cache.hasPreorderNumber(currentState)) {

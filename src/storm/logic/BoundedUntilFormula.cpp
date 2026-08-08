@@ -34,8 +34,8 @@ BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& l
       timeBoundReference(timeBoundReferences),
       lowerBound(lowerBounds),
       upperBound(upperBounds) {
-    assert(timeBoundReferences.size() == upperBound.size());
-    assert(timeBoundReferences.size() == lowerBound.size());
+    STORM_LOG_ASSERT(timeBoundReferences.size() == upperBound.size(), "Time bound reference/upper bound size mismatch.");
+    STORM_LOG_ASSERT(timeBoundReferences.size() == lowerBound.size(), "Time bound reference/lower bound size mismatch.");
 }
 
 BoundedUntilFormula::BoundedUntilFormula(std::vector<std::shared_ptr<Formula const>> const& leftSubformulas,
@@ -48,10 +48,10 @@ BoundedUntilFormula::BoundedUntilFormula(std::vector<std::shared_ptr<Formula con
       timeBoundReference(timeBoundReferences),
       lowerBound(lowerBounds),
       upperBound(upperBounds) {
-    assert(leftSubformula.size() == rightSubformula.size());
-    assert(rightSubformula.size() == timeBoundReference.size());
-    assert(timeBoundReference.size() == lowerBound.size());
-    assert(lowerBound.size() == upperBound.size());
+    STORM_LOG_ASSERT(leftSubformula.size() == rightSubformula.size(), "Left/right subformula size mismatch.");
+    STORM_LOG_ASSERT(rightSubformula.size() == timeBoundReference.size(), "Subformula/time bound reference size mismatch.");
+    STORM_LOG_ASSERT(timeBoundReference.size() == lowerBound.size(), "Time bound reference/lower bound size mismatch.");
+    STORM_LOG_ASSERT(lowerBound.size() == upperBound.size(), "Lower/upper bound size mismatch.");
     STORM_LOG_THROW(this->getDimension() != 0, storm::exceptions::InvalidArgumentException, "Bounded until formula requires at least one dimension.");
     for (unsigned i = 0; i < timeBoundReferences.size(); ++i) {
         STORM_LOG_THROW(hasLowerBound(i) || hasUpperBound(i), storm::exceptions::InvalidArgumentException,
@@ -149,13 +149,13 @@ bool BoundedUntilFormula::hasQuantitativeResult() const {
 }
 
 bool BoundedUntilFormula::isMultiDimensional() const {
-    assert(timeBoundReference.size() != 0);
+    STORM_LOG_ASSERT(timeBoundReference.size() != 0, "Time bound reference is empty.");
     return timeBoundReference.size() > 1;
 }
 
 bool BoundedUntilFormula::hasMultiDimensionalSubformulas() const {
-    assert(leftSubformula.size() != 0);
-    assert(leftSubformula.size() == rightSubformula.size());
+    STORM_LOG_ASSERT(leftSubformula.size() != 0, "Left subformula is empty.");
+    STORM_LOG_ASSERT(leftSubformula.size() == rightSubformula.size(), "Left/right subformula size mismatch.");
     return leftSubformula.size() > 1;
 }
 
@@ -190,12 +190,12 @@ Formula const& BoundedUntilFormula::getRightSubformula(unsigned i) const {
 }
 
 TimeBoundReference const& BoundedUntilFormula::getTimeBoundReference(unsigned i) const {
-    assert(i < timeBoundReference.size());
+    STORM_LOG_ASSERT(i < timeBoundReference.size(), "Time bound reference index out of range.");
     return timeBoundReference.at(i);
 }
 
 bool BoundedUntilFormula::isLowerBoundStrict(unsigned i) const {
-    assert(i < lowerBound.size());
+    STORM_LOG_ASSERT(i < lowerBound.size(), "Lower bound index out of range.");
     if (!hasLowerBound(i)) {
         return false;
     }

@@ -217,7 +217,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initialize
         dim += objDimensionCount;
         objectiveDimensions.push_back(std::move(objDimensions));
     }
-    assert(dim == dimensions.size());
+    STORM_LOG_ASSERT(dim == dimensions.size(), "Dimension count mismatch.");
 
     // Initialize the epoch manager
     epochManager = EpochManager(dimensions.size());
@@ -251,7 +251,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::computeMax
         bool isStrict = false;
         storm::logic::Formula const& dimFormula = *dimensions[dim].formula;
         if (dimFormula.isBoundedUntilFormula()) {
-            assert(!dimFormula.asBoundedUntilFormula().hasMultiDimensionalSubformulas());
+            STORM_LOG_ASSERT(!dimFormula.asBoundedUntilFormula().hasMultiDimensionalSubformulas(), "Expected single-dimensional subformula.");
             if (dimFormula.asBoundedUntilFormula().hasUpperBound()) {
                 STORM_LOG_ASSERT(!dimFormula.asBoundedUntilFormula().hasLowerBound(), "Bounded until formulas with interval bounds are not supported.");
                 bound = dimFormula.asBoundedUntilFormula().getUpperBound();
@@ -262,7 +262,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::computeMax
                 isStrict = dimFormula.asBoundedUntilFormula().isLowerBoundStrict();
             }
         } else if (dimFormula.isCumulativeRewardFormula()) {
-            assert(!dimFormula.asCumulativeRewardFormula().isMultiDimensional());
+            STORM_LOG_ASSERT(!dimFormula.asCumulativeRewardFormula().isMultiDimensional(), "Expected single-dimensional cumulative reward.");
             bound = dimFormula.asCumulativeRewardFormula().getBound();
             isStrict = dimFormula.asCumulativeRewardFormula().isBoundStrict();
         }
@@ -486,19 +486,21 @@ EpochModel<ValueType, SingleObjectiveMode>& MultiDimensionalRewardUnfolding<Valu
                 }
             }
         }
-        assert(!firstSuccessor);
+        STORM_LOG_ASSERT(!firstSuccessor, "Expected no first successor.");
         *stepSolIt = std::move(choiceSolution);
         ++stepSolIt;
     }
 
-    assert(epochModel.objectiveRewards.size() == objectives.size());
-    assert(epochModel.objectiveRewardFilter.size() == objectives.size());
-    assert(epochModel.epochMatrix.getRowCount() == epochModel.stepChoices.size());
-    assert(epochModel.stepChoices.size() == epochModel.objectiveRewards.front().size());
-    assert(epochModel.objectiveRewards.front().size() == epochModel.objectiveRewards.back().size());
-    assert(epochModel.objectiveRewards.front().size() == epochModel.objectiveRewardFilter.front().size());
-    assert(epochModel.objectiveRewards.back().size() == epochModel.objectiveRewardFilter.back().size());
-    assert(epochModel.stepChoices.getNumberOfSetBits() == epochModel.stepSolutions.size());
+    STORM_LOG_ASSERT(epochModel.objectiveRewards.size() == objectives.size(), "Objective rewards size mismatch.");
+    STORM_LOG_ASSERT(epochModel.objectiveRewardFilter.size() == objectives.size(), "Objective reward filter size mismatch.");
+    STORM_LOG_ASSERT(epochModel.epochMatrix.getRowCount() == epochModel.stepChoices.size(), "Row count / step choices mismatch.");
+    STORM_LOG_ASSERT(epochModel.stepChoices.size() == epochModel.objectiveRewards.front().size(), "Step choices / objective rewards mismatch.");
+    STORM_LOG_ASSERT(epochModel.objectiveRewards.front().size() == epochModel.objectiveRewards.back().size(), "Front/back objective rewards size mismatch.");
+    STORM_LOG_ASSERT(epochModel.objectiveRewards.front().size() == epochModel.objectiveRewardFilter.front().size(),
+                     "Objective rewards / filter size mismatch (front).");
+    STORM_LOG_ASSERT(epochModel.objectiveRewards.back().size() == epochModel.objectiveRewardFilter.back().size(),
+                     "Objective rewards / filter size mismatch (back).");
+    STORM_LOG_ASSERT(epochModel.stepChoices.getNumberOfSetBits() == epochModel.stepSolutions.size(), "Step choices bits / solutions size mismatch.");
 
     currentEpoch = epoch;
     /*
@@ -568,8 +570,8 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrent
     // Create the epoch model matrix
     std::vector<uint64_t> productToEpochModelStateMapping;
     if (model.isOfType(storm::models::ModelType::Dtmc)) {
-        assert(zeroObjRewardChoices.size() == productModel->getProduct().getNumberOfStates());
-        assert(stepChoices.size() == productModel->getProduct().getNumberOfStates());
+        STORM_LOG_ASSERT(zeroObjRewardChoices.size() == productModel->getProduct().getNumberOfStates(), "Zero reward choices size mismatch.");
+        STORM_LOG_ASSERT(stepChoices.size() == productModel->getProduct().getNumberOfStates(), "Step choices size mismatch.");
         STORM_LOG_ASSERT(epochModel.equationSolverProblemFormat.is_initialized(), "Linear equation problem format was not set.");
         bool convertToEquationSystem = epochModel.equationSolverProblemFormat.get() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
         // For DTMCs we consider the subsystem induced by the considered states.
@@ -596,7 +598,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrent
             }
             epochModel.epochMatrix = builder.build(numEpochModelStates, numEpochModelStates);
         } else {
-            assert(!nonZeroRewardStates.empty());
+            STORM_LOG_ASSERT(!nonZeroRewardStates.empty(), "Expected non-zero reward states.");
             epochModel.epochMatrix = builder.build();
         }
         if (convertToEquationSystem) {
@@ -612,7 +614,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrent
         }
         if (requiresZeroRewardState) {
             uint64_t zeroRewardProductState = (consideredStates & ~nonZeroRewardStates).getNextSetIndex(0);
-            assert(zeroRewardProductState < consideredStates.size());
+            STORM_LOG_ASSERT(zeroRewardProductState < consideredStates.size(), "Zero reward product state out of range.");
             epochModelToProductChoiceMap.push_back(zeroRewardProductState);
         }
     } else if (model.isOfType(storm::models::ModelType::Mdp)) {
@@ -713,7 +715,7 @@ template<typename ValueType, bool SingleObjectiveMode>
 template<bool SO, typename std::enable_if<SO, int>::type>
 void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionEntry(SolutionType& solution, uint64_t objIndex,
                                                                                        ValueType const& value) const {
-    STORM_LOG_ASSERT(objIndex == 0, "Invalid objective index in single objective mode");
+    STORM_LOG_ASSERT(objIndex == 0, "Invalid objective index in single objective mode.");
     solution = value;
 }
 
@@ -825,7 +827,7 @@ boost::optional<ValueType> MultiDimensionalRewardUnfolding<ValueType, SingleObje
                                     isOutChoice = true;
                                     outStates.set(state, true);
                                     rew0StateProbs.push_back(storm::utility::one<ValueType>() - ecElimRes.matrix.getRowSum(choice));
-                                    assert(!storm::utility::isZero(rew0StateProbs.back()));
+                                    STORM_LOG_ASSERT(!storm::utility::isZero(rew0StateProbs.back()), "Expected non-zero reward state probability.");
                                     break;
                                 }
                             }

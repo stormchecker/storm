@@ -160,7 +160,7 @@ std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser<Val
             std::shared_ptr<storm::jani::Constant> constant =
                 parseConstant(constStructure, scope.refine("constants[" + std::to_string(constants.size()) + "]"));
             model.addConstant(*constant);
-            assert(model.getConstants().back().getName() == constant->getName());
+            STORM_LOG_ASSERT(model.getConstants().back().getName() == constant->getName(), "Constant name mismatch.");
             constants.emplace(constant->getName(), &model.getConstants().back());
         }
     }
@@ -200,7 +200,7 @@ std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser<Val
             // Actually parse the function body
             storm::jani::FunctionDefinition funDef =
                 parseFunctionDefinition(funStructure, scope.refine("functions[" + std::to_string(globalFuns.size()) + "] of model " + name), false);
-            assert(globalFuns.count(funDef.getName()) == 1);
+            STORM_LOG_ASSERT(globalFuns.count(funDef.getName()) == 1, "Global function not found.");
             globalFuns[funDef.getName()] = &model.addFunctionDefinition(funDef);
         }
     }
@@ -350,7 +350,7 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
             }
         }
         if (!exprContainsLabel) {
-            assert(bound == boost::none);
+            STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for atomic expression formula.");
             return std::make_shared<storm::logic::AtomicExpressionFormula>(expr);
         }
     }
@@ -360,14 +360,14 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
         if (opString == "Pmin" || opString == "Pmax") {
             std::vector<std::shared_ptr<storm::logic::Formula const>> args =
                 parseUnaryFormulaArgument(model, propertyStructure, storm::logic::FormulaContext::Probability, opString, scope);
-            assert(args.size() == 1);
+            STORM_LOG_ASSERT(args.size() == 1, "Expected one argument for probability operator.");
             storm::logic::OperatorInformation opInfo;
             opInfo.optimalityType = opString == "Pmin" ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
             opInfo.bound = bound;
             return std::make_shared<storm::logic::ProbabilityOperatorFormula>(args[0], opInfo);
 
         } else if (opString == "∀" || opString == "∃") {
-            assert(bound == boost::none);
+            STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for forall/exists.");
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Forall and Exists are currently not supported in " << scope.description << ".");
         } else if (opString == "Emin" || opString == "Emax") {
             STORM_LOG_WARN_COND(model.getJaniVersion() == 1, "Model not compliant: Contains Emin/Emax property in " << scope.description << ".");
@@ -466,7 +466,7 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                     subformula = std::make_shared<storm::logic::TotalRewardFormula>(rewardAccumulation);
                 }
                 if (time) {
-                    assert(subformula->isTotalRewardFormula() || subformula->isTimePathFormula());
+                    STORM_LOG_ASSERT(subformula->isTotalRewardFormula() || subformula->isTimePathFormula(), "Expected total reward or time path formula.");
                     return std::make_shared<storm::logic::TimeOperatorFormula>(subformula, opInfo);
                 } else {
                     if (!rewExpr.isVariable()) {
@@ -505,12 +505,12 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
             return std::make_shared<storm::logic::RewardOperatorFormula>(subformula, rewardName, opInfo);
 
         } else if (opString == "U" || opString == "F") {
-            assert(bound == boost::none);
+            STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for until/eventually.");
             std::vector<std::shared_ptr<storm::logic::Formula const>> args;
             if (opString == "U") {
                 args = parseBinaryFormulaArguments(model, propertyStructure, formulaContext, opString, scope);
             } else {
-                assert(opString == "F");
+                STORM_LOG_ASSERT(opString == "F", "Expected F operator.");
                 args = parseUnaryFormulaArgument(model, propertyStructure, formulaContext, opString, scope);
                 args.push_back(args[0]);
                 args[0] = storm::logic::BooleanLiteralFormula::getTrueFormula();
@@ -565,7 +565,7 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                 return std::make_shared<storm::logic::UntilFormula const>(args[0], args[1]);
             }
         } else if (opString == "G") {
-            assert(bound == boost::none);
+            STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for globally.");
             std::vector<std::shared_ptr<storm::logic::Formula const>> args =
                 parseUnaryFormulaArgument(model, propertyStructure, formulaContext, opString, scope.refine("Subformula of globally operator "));
             if (propertyStructure.count("step-bounds") > 0) {
@@ -578,35 +578,35 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
             return std::make_shared<storm::logic::GloballyFormula const>(args[0]);
 
         } else if (opString == "W") {
-            assert(bound == boost::none);
+            STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for weak until.");
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Weak until is not supported.");
         } else if (opString == "R") {
-            assert(bound == boost::none);
+            STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for release.");
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Release is not supported.");
         } else if (opString == "∧" || opString == "∨") {
-            assert(bound == boost::none);
+            STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for conjunction/disjunction.");
             std::vector<std::shared_ptr<storm::logic::Formula const>> args =
                 parseBinaryFormulaArguments(model, propertyStructure, formulaContext, opString, scope);
-            assert(args.size() == 2);
+            STORM_LOG_ASSERT(args.size() == 2, "Expected two arguments for conjunction/disjunction.");
             storm::logic::BinaryBooleanStateFormula::OperatorType oper =
                 opString == "∧" ? storm::logic::BinaryBooleanStateFormula::OperatorType::And : storm::logic::BinaryBooleanStateFormula::OperatorType::Or;
             return std::make_shared<storm::logic::BinaryBooleanStateFormula const>(oper, args[0], args[1]);
         } else if (opString == "⇒") {
-            assert(bound == boost::none);
+            STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for implication.");
             std::vector<std::shared_ptr<storm::logic::Formula const>> args =
                 parseBinaryFormulaArguments(model, propertyStructure, formulaContext, opString, scope);
-            assert(args.size() == 2);
+            STORM_LOG_ASSERT(args.size() == 2, "Expected two arguments for implication.");
             std::shared_ptr<storm::logic::UnaryBooleanStateFormula const> tmp =
                 std::make_shared<storm::logic::UnaryBooleanStateFormula const>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, args[0]);
             return std::make_shared<storm::logic::BinaryBooleanStateFormula const>(storm::logic::BinaryBooleanStateFormula::OperatorType::Or, tmp, args[1]);
         } else if (opString == "¬") {
-            assert(bound == boost::none);
+            STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for negation.");
             std::vector<std::shared_ptr<storm::logic::Formula const>> args =
                 parseUnaryFormulaArgument(model, propertyStructure, formulaContext, opString, scope);
-            assert(args.size() == 1);
+            STORM_LOG_ASSERT(args.size() == 1, "Expected one argument for negation.");
             return std::make_shared<storm::logic::UnaryBooleanStateFormula const>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, args[0]);
         } else if (!expr.isInitialized() && (opString == "≥" || opString == "≤" || opString == "<" || opString == ">" || opString == "=" || opString == "≠")) {
-            assert(bound == boost::none);
+            STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for comparison.");
             storm::logic::ComparisonType ct;
             if (opString == "≥") {
                 ct = storm::logic::ComparisonType::GreaterEqual;
@@ -659,7 +659,7 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                                 "Model feature " << storm::jani::toString(storm::jani::ModelFeature::MultiObjectiveProperties)
                                                  << " not enabled but model contains multi-objective property in " << scope.description
                                                  << ". Continuing with that property anyways");
-            assert(bound == boost::none);
+            STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for multi-objective.");
             STORM_LOG_THROW(propertyStructure.count("properties") == 1, storm::exceptions::InvalidJaniException,
                             "Expecting properties for multi-objective operator in " << scope.description << ".");
             std::vector<std::shared_ptr<storm::logic::Formula const>> subformulas;
@@ -801,7 +801,7 @@ std::shared_ptr<storm::jani::Constant> JaniParser<ValueType>::parseConstant(Json
         // Read initial value before; that makes creation later on a bit easier, and has as an additional benefit that we do not need to check whether the
         // variable occurs also on the assignment.
         definingExpression = parseExpression(constantStructure.at("value"), scope.refine("Value of constant " + name));
-        assert(definingExpression.isInitialized());
+        STORM_LOG_ASSERT(definingExpression.isInitialized(), "Defining expression not initialized.");
         // Check that the defined and actual expression value match OR the defined value is a rational and the actual value is a numerical type.
         STORM_LOG_THROW((type.second == definingExpression.getType() || (type.second.isRationalType() && definingExpression.getType().isNumericalType())),
                         storm::exceptions::InvalidJaniException,
@@ -1011,7 +1011,7 @@ std::shared_ptr<storm::jani::Variable> JaniParser<ValueType>::parseVariable(Json
         // storm::exceptions::InvalidJaniException,"Type of initial value for variable " + name + "' (scope: " + scope.description + ") does not match the
         // variable type '" + type.first->getStringRepresentation() + "'.");
     } else {
-        assert(!transientVar);
+        STORM_LOG_ASSERT(!transientVar, "Unexpected transient variable.");
     }
 
     if (transientVar && type.first->isBasicType() && type.first->asBasicType().isBooleanType()) {
@@ -1196,12 +1196,12 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 arguments.push_back(
                     parseExpression(expressionStructure.at("else"), scope.refine("else-formula"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables));
                 ensureNumberOfArguments(3, arguments.size(), opstring, scope.description);
-                assert(arguments.size() == 3);
+                STORM_LOG_ASSERT(arguments.size() == 3, "Expected three arguments.");
                 ensureBooleanType(arguments[0], opstring, 0, scope.description);
                 return storm::expressions::ite(arguments[0], arguments[1], arguments[2]);
             } else if (opstring == "∨") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 if (!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
                     return storm::expressions::Expression();
                 }
@@ -1210,7 +1210,7 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 return arguments[0] || arguments[1];
             } else if (opstring == "∧") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 if (!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
                     return storm::expressions::Expression();
                 }
@@ -1219,7 +1219,7 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 return arguments[0] && arguments[1];
             } else if (opstring == "⇒") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 if (!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
                     return storm::expressions::Expression();
                 }
@@ -1228,7 +1228,7 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 return (!arguments[0]) || arguments[1];
             } else if (opstring == "¬") {
                 arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 1);
+                STORM_LOG_ASSERT(arguments.size() == 1, "Expected one argument.");
                 if (!arguments[0].isInitialized()) {
                     return storm::expressions::Expression();
                 }
@@ -1236,7 +1236,7 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 return !arguments[0];
             } else if (opstring == "=") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 if (!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
                     return storm::expressions::Expression();
                 }
@@ -1249,7 +1249,7 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 }
             } else if (opstring == "≠") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 if (!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
                     return storm::expressions::Expression();
                 }
@@ -1262,7 +1262,7 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 }
             } else if (opstring == "<") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 if (!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
                     return storm::expressions::Expression();
                 }
@@ -1271,7 +1271,7 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 return arguments[0] < arguments[1];
             } else if (opstring == "≤") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 if (!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
                     return storm::expressions::Expression();
                 }
@@ -1280,7 +1280,7 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 return arguments[0] <= arguments[1];
             } else if (opstring == ">") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 if (!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
                     return storm::expressions::Expression();
                 }
@@ -1289,7 +1289,7 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 return arguments[0] > arguments[1];
             } else if (opstring == "≥") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 if (!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
                     return storm::expressions::Expression();
                 }
@@ -1298,103 +1298,103 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 return arguments[0] >= arguments[1];
             } else if (opstring == "+") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 ensureNumericalType(arguments[1], opstring, 1, scope.description);
                 return arguments[0] + arguments[1];
             } else if (opstring == "-" && expressionStructure.count("left") > 0) {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 ensureNumericalType(arguments[1], opstring, 1, scope.description);
                 return arguments[0] - arguments[1];
             } else if (opstring == "-") {
                 arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 1);
+                STORM_LOG_ASSERT(arguments.size() == 1, "Expected one argument.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 return -arguments[0];
             } else if (opstring == "*") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 ensureNumericalType(arguments[1], opstring, 1, scope.description);
                 return arguments[0] * arguments[1];
             } else if (opstring == "/") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 ensureNumericalType(arguments[1], opstring, 1, scope.description);
                 return arguments[0] / arguments[1];
             } else if (opstring == "%") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 ensureNumericalType(arguments[1], opstring, 1, scope.description);
                 return arguments[0] % arguments[1];
             } else if (opstring == "max") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 ensureNumericalType(arguments[1], opstring, 1, scope.description);
                 return storm::expressions::maximum(arguments[0], arguments[1]);
             } else if (opstring == "min") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 ensureNumericalType(arguments[1], opstring, 1, scope.description);
                 return storm::expressions::minimum(arguments[0], arguments[1]);
             } else if (opstring == "floor") {
                 arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 1);
+                STORM_LOG_ASSERT(arguments.size() == 1, "Expected one argument.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 return storm::expressions::floor(arguments[0]);
             } else if (opstring == "ceil") {
                 arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 1);
+                STORM_LOG_ASSERT(arguments.size() == 1, "Expected one argument.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 return storm::expressions::ceil(arguments[0]);
             } else if (opstring == "abs") {
                 arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 1);
+                STORM_LOG_ASSERT(arguments.size() == 1, "Expected one argument.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 return storm::expressions::abs(arguments[0]);
             } else if (opstring == "sgn") {
                 arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 1);
+                STORM_LOG_ASSERT(arguments.size() == 1, "Expected one argument.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 return storm::expressions::sign(arguments[0]);
             } else if (opstring == "trc") {
                 arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 1);
+                STORM_LOG_ASSERT(arguments.size() == 1, "Expected one argument.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 return storm::expressions::truncate(arguments[0]);
             } else if (opstring == "pow") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 ensureNumericalType(arguments[1], opstring, 1, scope.description);
                 return storm::expressions::pow(arguments[0], arguments[1]);
             } else if (opstring == "exp") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 ensureNumericalType(arguments[1], opstring, 1, scope.description);
                 // TODO implement
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Exp operation is not yet implemented.");
             } else if (opstring == "log") {
                 arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 2);
+                STORM_LOG_ASSERT(arguments.size() == 2, "Expected two arguments.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 ensureNumericalType(arguments[1], opstring, 1, scope.description);
                 return storm::expressions::logarithm(arguments[0], arguments[1]);
             } else if (opstring == "cos") {
                 arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 1);
+                STORM_LOG_ASSERT(arguments.size() == 1, "Expected one argument.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 return storm::expressions::cos(arguments[0]);
             } else if (opstring == "sin") {
                 arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                assert(arguments.size() == 1);
+                STORM_LOG_ASSERT(arguments.size() == 1, "Expected one argument.");
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 return storm::expressions::sin(arguments[0]);
             } else if (opstring == "aa") {
@@ -1547,7 +1547,7 @@ storm::jani::Automaton JaniParser<ValueType>::parseAutomaton(Json const& automat
         for (auto const& varStructure : automatonStructure.at("variables")) {
             std::shared_ptr<storm::jani::Variable> var = parseVariable(
                 varStructure, scope.refine("variables[" + std::to_string(localVars.size()) + "] of automaton " + name), name + VARIABLE_AUTOMATON_DELIMITER);
-            assert(localVars.count(var->getName()) == 0);
+            STORM_LOG_ASSERT(localVars.count(var->getName()) == 0, "Local variable already exists.");
             localVars.emplace(var->getName(), &automaton.addVariable(*var));
         }
     }
@@ -1576,7 +1576,7 @@ storm::jani::Automaton JaniParser<ValueType>::parseAutomaton(Json const& automat
             storm::jani::FunctionDefinition funDef =
                 parseFunctionDefinition(funStructure, scope.refine("functions[" + std::to_string(localFuns.size()) + "] of automaton " + name), false,
                                         name + VARIABLE_AUTOMATON_DELIMITER);
-            assert(localFuns.count(funDef.getName()) == 1);
+            STORM_LOG_ASSERT(localFuns.count(funDef.getName()) == 1, "Local function not found.");
             localFuns[funDef.getName()] = &automaton.addFunctionDefinition(funDef);
         }
     }
@@ -1641,7 +1641,7 @@ storm::jani::Automaton JaniParser<ValueType>::parseAutomaton(Json const& automat
         if (edgeEntry.count("action") > 0) {
             action = getString<ValueType>(edgeEntry.at("action"), "action name in edge from '" + sourceLoc + "' in automaton '" + name + "'");
             // TODO check if action is known
-            assert(action != "");
+            STORM_LOG_ASSERT(action != "", "Action is empty.");
         }
         // rate
         STORM_LOG_THROW(edgeEntry.count("rate") < 2, storm::exceptions::InvalidJaniException,
@@ -1665,7 +1665,7 @@ storm::jani::Automaton JaniParser<ValueType>::parseAutomaton(Json const& automat
             guardExpr = parseExpression(edgeEntry.at("guard").at("exp"), scope.refine("guard expression in edge from '" + sourceLoc));
             STORM_LOG_THROW(guardExpr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Guard " << guardExpr << " does not have Boolean type.");
         }
-        assert(guardExpr.isInitialized());
+        STORM_LOG_ASSERT(guardExpr.isInitialized(), "Guard expression not initialized.");
         std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(guardExpr);
 
         // edge assignments
@@ -1720,7 +1720,7 @@ storm::jani::Automaton JaniParser<ValueType>::parseAutomaton(Json const& automat
                 probExpr = parseExpression(destEntry.at("probability").at("exp"), scope.refine("probability expression in edge from '" + sourceLoc + "' to '" +
                                                                                                targetLoc + "' in automaton '" + name + "'"));
             }
-            assert(probExpr.isInitialized());
+            STORM_LOG_ASSERT(probExpr.isInitialized(), "Probability expression not initialized.");
             STORM_LOG_THROW(probExpr.hasNumericalType(), storm::exceptions::InvalidJaniException,
                             "Probability expression " << probExpr << " does not have a numerical type.");
             // assignments

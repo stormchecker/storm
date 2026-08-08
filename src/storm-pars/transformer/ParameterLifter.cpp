@@ -97,7 +97,7 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
                 AbstractValuation vectorVal(val);
                 for (auto const& vectorVar : vectorEntryVariables) {
                     if (occurringVariables.find(vectorVar) == occurringVariables.end()) {
-                        assert(!generateRowLabels);
+                        STORM_LOG_ASSERT(!generateRowLabels, "Row labels should not be generated yet.");
                         vectorVal.addParameterUnspecified(vectorVar);
                     }
                 }

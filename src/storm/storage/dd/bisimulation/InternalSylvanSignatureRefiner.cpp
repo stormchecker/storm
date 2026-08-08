@@ -250,7 +250,7 @@ TASK_3(BDD, sylvan_encode_block, BDD, vars, uint64_t, numberOfVariables, uint64_
 }
 
 TASK_3(BDD, sylvan_assign_block, BDD, sig, BDD, previous_block, InternalSylvanSignatureRefinerBase*, refiner) {
-    assert(previous_block != mtbdd_false);  // if so, incorrect call!
+    STORM_LOG_ASSERT(previous_block != mtbdd_false, "Incorrect call: previous_block is mtbdd_false.");
 
     // maybe do garbage collection
 #pragma clang diagnostic push
@@ -265,9 +265,9 @@ TASK_3(BDD, sylvan_assign_block, BDD, sig, BDD, previous_block, InternalSylvanSi
 
     if (refiner->options.reuseBlockNumbers) {
         // try to claim previous block number
-        assert(previous_block != sylvan_false);
+        STORM_LOG_ASSERT(previous_block != sylvan_false, "Previous_block is sylvan_false.");
         const uint64_t p_b = CALL(sylvan_decode_block, previous_block);
-        assert(p_b < refiner->signatures.size());
+        STORM_LOG_ASSERT(p_b < refiner->signatures.size(), "Block index out of range.");
 
         for (;;) {
             BDD cur = *(volatile BDD*)&refiner->signatures[p_b];

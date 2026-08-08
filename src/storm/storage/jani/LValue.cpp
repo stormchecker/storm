@@ -129,7 +129,7 @@ bool LValue::operator==(LValue const& other) const {
                 return false;
             }
         } else {
-            STORM_LOG_ASSERT(isVariable(), "Unhandled kind of LValue");
+            STORM_LOG_ASSERT(isVariable(), "Unhandled kind of LValue.");
             return other.isVariable();
         }
     } else {

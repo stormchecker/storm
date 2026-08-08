@@ -14,7 +14,7 @@ template<typename ValueType>
 ValueType VisitingTimesHelper<ValueType>::computeMecTraversalLowerBound(storm::storage::MaximalEndComponent const& mec,
                                                                         storm::storage::SparseMatrix<ValueType> const& transitions,
                                                                         bool assumeOptimalTransitionProbabilities) {
-    STORM_LOG_ASSERT(mec.size() > 0, "empty mec not expected");
+    STORM_LOG_ASSERT(mec.size() > 0, "Empty mec not expected.");
     auto res = storm::utility::one<ValueType>();
     if (mec.size() == 1) {
         return res;
@@ -50,7 +50,7 @@ ValueType VisitingTimesHelper<ValueType>::computeMecTraversalLowerBound(storm::s
                 }
             }
         }
-        STORM_LOG_ASSERT(!v.empty(), "self-loop state in non-singleton mec?");
+        STORM_LOG_ASSERT(!v.empty(), "Self-loop state in non-singleton mec?");
         res *= *v;
     }
     return res;
@@ -127,7 +127,7 @@ std::vector<ValueType> VisitingTimesHelper<ValueType>::computeUpperBoundsOnExpec
         }
     }
     auto modifiedQuotient = modifiedQuotientBuilder.build();
-    STORM_LOG_ASSERT(modifiedQuotient.getRowCount() == toSinkProbabilities.size(), "Unexpected row count");
+    STORM_LOG_ASSERT(modifiedQuotient.getRowCount() == toSinkProbabilities.size(), "Unexpected row count.");
 
     // compute upper visiting time bounds
     auto quotientUpperBounds =

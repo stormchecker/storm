@@ -431,7 +431,7 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> Program::
     std::map<storm::expressions::Variable, storm::expressions::Expression> renamingAsSubstitution;
     for (auto const& renamingPair : renaming) {
         if (getManager().hasVariable(renamingPair.first)) {
-            assert(getManager().hasVariable(renamingPair.second));
+            STORM_LOG_ASSERT(getManager().hasVariable(renamingPair.second), "Variable not found in renaming.");
             renamingAsSubstitution.emplace(getManager().getVariable(renamingPair.first), getManager().getVariableExpression(renamingPair.second));
         }
     }
@@ -449,14 +449,14 @@ std::map<std::string, std::string> Program::getFinalRenamingOfModule(Module cons
         moduleStack.push_back(&getModule(moduleStack.back()->getBaseModule()));
     }
 
-    assert(!moduleStack.back()->isRenamedFromModule());
+    STORM_LOG_ASSERT(!moduleStack.back()->isRenamedFromModule(), "Last module should not be renamed.");
     moduleStack.pop_back();
-    assert(moduleStack.empty() || moduleStack.back()->isRenamedFromModule());
+    STORM_LOG_ASSERT(moduleStack.empty() || moduleStack.back()->isRenamedFromModule(), "Expected renamed module.");
     std::map<std::string, std::string> currentRenaming;
     while (!moduleStack.empty()) {
         Module const& currentModule = *moduleStack.back();
         moduleStack.pop_back();
-        assert(currentModule.isRenamedFromModule());
+        STORM_LOG_ASSERT(currentModule.isRenamedFromModule(), "Expected renamed module.");
         std::map<std::string, std::string> newRenaming = currentModule.getRenaming();
         for (auto const& renaimingPair : newRenaming) {
             auto findRes = currentRenaming.find(renaimingPair.second);
@@ -576,7 +576,7 @@ std::vector<storm::storage::PlayerIndex> Program::buildModuleIndexToPlayerIndexM
     for (storm::storage::PlayerIndex i = 0; i < this->getPlayers().size(); ++i) {
         for (auto const& module : this->getPlayers()[i].getModules()) {
             STORM_LOG_ASSERT(hasModule(module), "Module " << module << " not found.");
-            STORM_LOG_ASSERT(moduleToIndexMap.at(module) < this->getModules().size(), "module index " << moduleToIndexMap.at(module) << " out of range.");
+            STORM_LOG_ASSERT(moduleToIndexMap.at(module) < this->getModules().size(), "Module index " << moduleToIndexMap.at(module) << " out of range.");
             result[moduleToIndexMap.at(module)] = i;
         }
     }

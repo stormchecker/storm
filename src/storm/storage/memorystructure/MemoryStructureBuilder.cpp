@@ -63,7 +63,7 @@ void MemoryStructureBuilder<ValueType, RewardModelType>::setInitialMemoryState(u
         }
     }
 
-    assert(initMemStateIt != initialMemoryStates.end());
+    STORM_LOG_ASSERT(initMemStateIt != initialMemoryStates.end(), "Initial memory state not found.");
 }
 
 template<typename ValueType, typename RewardModelType>

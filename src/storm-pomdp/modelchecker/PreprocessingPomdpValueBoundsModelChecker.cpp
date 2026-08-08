@@ -55,10 +55,10 @@ std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> Preproce
     for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
         auto& choiceDistribution = choiceDistributions[pomdp.getObservation(state)];
         ValueType const& stateValue = stateValues[state];
-        assert(stateValue >= storm::utility::zero<ValueType>());
+        STORM_LOG_ASSERT(stateValue >= storm::utility::zero<ValueType>(), "State value expected non-negative.");
         for (auto choice = choiceIndices[state]; choice < choiceIndices[state + 1]; ++choice) {
             ValueType const& choiceValue = choiceValues[choice];
-            assert(choiceValue >= storm::utility::zero<ValueType>());
+            STORM_LOG_ASSERT(choiceValue >= storm::utility::zero<ValueType>(), "Choice value expected non-negative.");
             // Rate this choice by considering the relative difference between the choice value and the (optimal) state value
             // A high score shall mean that the choice is "good"
             if (storm::utility::isInfinity(stateValue)) {

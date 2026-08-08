@@ -34,9 +34,9 @@ MultiObjectiveModelCheckerEnvironment::MultiObjectiveModelCheckerEnvironment() {
         encodingType = EncodingType::Flow;
     }
     STORM_LOG_ASSERT(multiobjectiveSettings.isBsccDetectionViaOrderConstraintsSet() || multiobjectiveSettings.isBsccDetectionViaFlowConstraintsSet(),
-                     "unexpected settings");
+                     "Unexpected settings.");
     bsccOrderEncoding = multiobjectiveSettings.isBsccDetectionViaOrderConstraintsSet();
-    STORM_LOG_ASSERT(multiobjectiveSettings.isIndicatorConstraintsSet() || multiobjectiveSettings.isBigMConstraintsSet(), "unexpected settings");
+    STORM_LOG_ASSERT(multiobjectiveSettings.isIndicatorConstraintsSet() || multiobjectiveSettings.isBigMConstraintsSet(), "Unexpected settings.");
     indicatorConstraints = multiobjectiveSettings.isIndicatorConstraintsSet();
     redundantBsccConstraints = multiobjectiveSettings.isRedundantBsccConstraintsSet();
 

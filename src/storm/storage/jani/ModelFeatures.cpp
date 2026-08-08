@@ -20,7 +20,7 @@ std::string toString(ModelFeature const& modelFeature) {
         case ModelFeature::TrigonometricFunctions:
             return "trigonometric-functions";
     }
-    STORM_LOG_ASSERT(false, "Unhandled model feature");
+    STORM_LOG_ASSERT(false, "Unhandled model feature.");
     return "Unhandled-feature";
 }
 

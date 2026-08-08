@@ -187,7 +187,7 @@ void SparseBeliefState<ValueType>::updateHelper(std::vector<std::map<uint64_t, V
             ValueType risk = storm::utility::zero<ValueType>();
             std::map<uint64_t, ValueType> finalBelief;
             for (auto& entry : partialBelief) {
-                assert(!storm::utility::isZero(sum));
+                STORM_LOG_ASSERT(!storm::utility::isZero(sum), "Expected non-zero sum.");
                 finalBelief[entry.first] = entry.second / sum;
                 // boost::hash_combine(newHash, std::hash<ValueType>()(entry.second));
                 boost::hash_combine(newHash, entry.first);

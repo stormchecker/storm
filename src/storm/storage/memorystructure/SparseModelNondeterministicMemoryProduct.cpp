@@ -165,7 +165,7 @@ memory.getNumberOfStates(); ++memState) { if (reachableStates.get(getProductStat
             }
         }
     }
-    assert(currReachableState == reachableStates.getNumberOfSetBits());
+    STORM_LOG_ASSERT(currReachableState == reachableStates.getNumberOfSetBits(), "Reachable state count mismatch.");
     return res;
 }*/
 

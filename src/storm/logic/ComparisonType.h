@@ -27,7 +27,7 @@ inline ComparisonType invert(ComparisonType t) {
         case ComparisonType::GreaterEqual:
             return ComparisonType::Less;
     }
-    STORM_LOG_ASSERT(false, "Unknown ComparisonType");
+    STORM_LOG_ASSERT(false, "Unknown ComparisonType.");
     // Wrong, but this code should not be reachable. Still, GCC issues a warning.
     return t;
 }
@@ -43,7 +43,7 @@ inline ComparisonType invertPreserveStrictness(ComparisonType t) {
         case ComparisonType::GreaterEqual:
             return ComparisonType::LessEqual;
     }
-    STORM_LOG_ASSERT(false, "Unknown ComparisonType");
+    STORM_LOG_ASSERT(false, "Unknown ComparisonType.");
     // Wrong, but this code should not be reachable. Still, GCC issues a warning.
     return t;
 }

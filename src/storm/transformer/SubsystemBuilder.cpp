@@ -54,7 +54,7 @@ RewardModelType transformRewardModel(RewardModelType const& originalRewardModel,
     if (originalRewardModel.hasTransitionRewards()) {
         transitionRewardMatrix = originalRewardModel.getTransitionRewardMatrix().getSubmatrix(false, subsystemActions, subsystem);
         if (makeRowGroupingTrivial) {
-            STORM_LOG_ASSERT(transitionRewardMatrix.value().getColumnCount() == transitionRewardMatrix.value().getRowCount(), "Matrix should be square");
+            STORM_LOG_ASSERT(transitionRewardMatrix.value().getColumnCount() == transitionRewardMatrix.value().getRowCount(), "Matrix should be square.");
             transitionRewardMatrix.value().makeRowGroupingTrivial();
         }
     }
@@ -137,7 +137,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
         components.transitionMatrix = originalModel.getTransitionMatrix().getSubmatrix(false, keptActions, subsystemStates);
     }
     if (options.makeRowGroupingTrivial) {
-        STORM_LOG_ASSERT(components.transitionMatrix.getColumnCount() == components.transitionMatrix.getRowCount(), "Matrix should be square");
+        STORM_LOG_ASSERT(components.transitionMatrix.getColumnCount() == components.transitionMatrix.getRowCount(), "Matrix should be square.");
         components.transitionMatrix.makeRowGroupingTrivial();
     }
 
@@ -158,7 +158,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
 
     if (hasDeadlockStates) {
         auto subDeadlockStates = deadlockStates % subsystemStates;
-        assert(deadlockStates.getNumberOfSetBits() == subDeadlockStates.getNumberOfSetBits());
+        STORM_LOG_ASSERT(deadlockStates.getNumberOfSetBits() == subDeadlockStates.getNumberOfSetBits(), "Deadlock states count mismatch.");
         // erase rewards, choice labels, choice origins
         for (auto& rewModel : components.rewardModels) {
             for (auto state : subDeadlockStates) {

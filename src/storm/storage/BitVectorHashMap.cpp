@@ -160,7 +160,7 @@ uint64_t BitVectorHashMap<ValueType, Hash>::getCurrentShiftWidth() const {
 
 template<class ValueType, class Hash>
 std::pair<bool, uint64_t> BitVectorHashMap<ValueType, Hash>::findBucket(storm::storage::BitVector const& key) const {
-    STORM_LOG_ASSERT(key.size() == bucketSize, "Size of bit vector and size of buckets do not match");
+    STORM_LOG_ASSERT(key.size() == bucketSize, "Size of bit vector and size of buckets do not match.");
     uint64_t bucket = hasher(key) >> this->getCurrentShiftWidth();
 
     while (isBucketOccupied(bucket)) {

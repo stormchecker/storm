@@ -214,7 +214,7 @@ SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
                 if (backend.allDown()) {
                     return SolverStatus::Converged;
                 } else {
-                    assert(backend.allUp());
+                    STORM_LOG_ASSERT(backend.allUp(), "Expected all values to be up.");
                     break;
                 }
             }

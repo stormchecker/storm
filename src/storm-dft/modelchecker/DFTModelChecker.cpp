@@ -113,7 +113,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
                 for (auto const& ft : dfts) {
                     // TODO: allow approximation in modularisation
                     dft_results ftResults = checkHelper(ft, {property}, symred, true, relevantEvents, allowDCForRelevant, 0.0);
-                    STORM_LOG_ASSERT(ftResults.size() == 1, "Wrong number of results");
+                    STORM_LOG_ASSERT(ftResults.size() == 1, "Wrong number of results.");
                     res.push_back(boost::get<ValueType>(ftResults[0]));
                 }
 
@@ -123,7 +123,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
                 int limK = invResults ? -1 : nrM + 1;
                 int chK = invResults ? -1 : 1;
                 for (int cK = nrK; cK != limK; cK += chK) {
-                    STORM_LOG_ASSERT(cK >= 0, "ck negative.");
+                    STORM_LOG_ASSERT(cK >= 0, "Ck negative.");
                     uint64_t permutation = smallestIntWithNBitsSet(static_cast<uint64_t>(cK));
                     do {
                         STORM_LOG_TRACE("Permutation=" << permutation);
@@ -319,7 +319,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
 
         bool probabilityFormula = property->isProbabilityOperatorFormula();
         STORM_LOG_ASSERT((property->isTimeOperatorFormula() && !probabilityFormula) || (!property->isTimeOperatorFormula() && probabilityFormula),
-                         "Probability formula not initialized correctly");
+                         "Probability formula not initialized correctly.");
         size_t iteration = 0;
         do {
             // Iteratively build finer models

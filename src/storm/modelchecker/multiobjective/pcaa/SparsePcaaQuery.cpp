@@ -249,7 +249,7 @@ SparsePcaaQuery<SparseModelType, GeometryValueType>::tryAnswerOrNextWeightsAchie
             optRes.first[optObjIndex.value()] - storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision());
         // The following assertion holds because optRes.first is in the over-approximation and satisfies all thresholds and the over-approximation is
         // downward closed
-        STORM_LOG_ASSERT(overApproximation->contains(referencePoint), "Expected reference point to be contained in the over-approximation");
+        STORM_LOG_ASSERT(overApproximation->contains(referencePoint), "Expected reference point to be contained in the over-approximation.");
     }
 
     // Second, find a separating halfspace between the under-approximation and the reference point with maximal L1 distance (not Euclidean!) to the latter

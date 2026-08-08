@@ -204,7 +204,7 @@ void ExtractMaximalStateFormulasVisitor::incrementNestingLevel() const {
     const_cast<std::size_t&>(nestingLevel)++;
 }
 void ExtractMaximalStateFormulasVisitor::decrementNestingLevel() const {
-    STORM_LOG_ASSERT(nestingLevel > 0, "Illegal nesting level decrement");
+    STORM_LOG_ASSERT(nestingLevel > 0, "Illegal nesting level decrement.");
     const_cast<std::size_t&>(nestingLevel)--;
 }
 

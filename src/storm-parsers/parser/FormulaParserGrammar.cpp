@@ -555,15 +555,15 @@ std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createOperato
                                                                                          std::shared_ptr<storm::logic::Formula const> const& subformula) {
     switch (context) {
         case storm::logic::FormulaContext::Probability:
-            STORM_LOG_ASSERT(!rewardModelName, "Probability operator with reward information parsed");
+            STORM_LOG_ASSERT(!rewardModelName, "Probability operator with reward information parsed.");
             return createProbabilityOperatorFormula(operatorInformation, subformula);
         case storm::logic::FormulaContext::Reward:
             return createRewardOperatorFormula(rewardModelName, operatorInformation, subformula);
         case storm::logic::FormulaContext::LongRunAverage:
-            STORM_LOG_ASSERT(!rewardModelName, "LRA operator with reward information parsed");
+            STORM_LOG_ASSERT(!rewardModelName, "LRA operator with reward information parsed.");
             return createLongRunAverageOperatorFormula(operatorInformation, subformula);
         case storm::logic::FormulaContext::Time:
-            STORM_LOG_ASSERT(!rewardModelName, "Time operator with reward model name parsed");
+            STORM_LOG_ASSERT(!rewardModelName, "Time operator with reward model name parsed.");
             return createTimeOperatorFormula(operatorInformation, subformula);
         default:
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Unexpected formula context.");

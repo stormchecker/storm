@@ -23,9 +23,9 @@ void MonotonicityResult<VariableType>::addMonotonicityResult(VariableType var, M
 
 template<typename VariableType>
 void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var, MonotonicityResult<VariableType>::Monotonicity mon, bool force) {
-    assert(!isDoneForVar(var));
+    STORM_LOG_ASSERT(!isDoneForVar(var), "Already done for variable.");
     if (force) {
-        assert(mon == MonotonicityResult<VariableType>::Monotonicity::Not);
+        STORM_LOG_ASSERT(mon == MonotonicityResult<VariableType>::Monotonicity::Not, "Expected Not monotonicity for force.");
         if (monotonicityResult.find(var) == monotonicityResult.end()) {
             addMonotonicityResult(std::move(var), std::move(mon));
         } else {

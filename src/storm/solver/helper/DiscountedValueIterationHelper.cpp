@@ -103,7 +103,7 @@ SolverStatus DiscountedValueIterationHelper<ValueType, TrivialRowGrouping>::Disc
     }
     if (mult == MultiplicationStyle::Regular) {
         if (resultInAuxVector) {
-            STORM_LOG_ASSERT(&operand == operand2, "Unexpected operand address");
+            STORM_LOG_ASSERT(&operand == operand2, "Unexpected operand address.");
             std::swap(*operand1, *operand2);
         }
         viOperator->freeAuxiliaryVector();
@@ -116,7 +116,7 @@ SolverStatus DiscountedValueIterationHelper<ValueType, TrivialRowGrouping>::Disc
     std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative, ValueType const& precision,
     ValueType const& discountFactor, ValueType const& maximalAbsoluteReward, std::optional<storm::OptimizationDirection> const& dir,
     std::function<SolverStatus(SolverStatus const&)> const& iterationCallback, MultiplicationStyle mult) const {
-    STORM_LOG_ASSERT(TrivialRowGrouping || dir.has_value(), "no optimization direction given!");
+    STORM_LOG_ASSERT(TrivialRowGrouping || dir.has_value(), "No optimization direction given!");
     if (!dir.has_value() || maximize(*dir)) {
         if (relative) {
             return DiscountedVI<storm::OptimizationDirection::Maximize, true>(operand, offsets, numIterations, precision, discountFactor, maximalAbsoluteReward,

@@ -102,7 +102,7 @@ void performFeasibility(std::shared_ptr<storm::models::sparse::Model<ValueType>>
     } else if (feasibilitySettings.getFeasibilityMethod() == storm::pars::FeasibilityMethod::PLA) {
         runFeasibilityWithPLA(model, task, omittedParameters, monotonicitySettings);
     } else {
-        STORM_LOG_ASSERT(feasibilitySettings.getFeasibilityMethod() == storm::pars::FeasibilityMethod::SCP, "Remaining method must be SCP");
+        STORM_LOG_ASSERT(feasibilitySettings.getFeasibilityMethod() == storm::pars::FeasibilityMethod::SCP, "Remaining method must be SCP.");
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SCP is not yet implemented.");
     }
 }

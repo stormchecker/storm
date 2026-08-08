@@ -95,7 +95,7 @@ class MonotonicityHelper {
             s.add(exprToCheck);
             monDecr = s.check() == solver::SmtSolver::CheckResult::Unsat;
         }
-        assert(!(monIncr && monDecr) || derivative.isZero());
+        STORM_LOG_ASSERT(!(monIncr && monDecr) || derivative.isZero(), "Monotonicity both increasing and decreasing but derivative not zero.");
 
         return std::pair<bool, bool>(monIncr, monDecr);
     }

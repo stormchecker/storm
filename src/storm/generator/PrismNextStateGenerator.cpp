@@ -203,7 +203,7 @@ std::vector<StateType> PrismNextStateGenerator<ValueType, StateType>::getInitial
                     initialState.setFromInt(intVar.bitOffset, intVar.bitWidth, value);
                 } else {
                     // Boolean variable
-                    STORM_LOG_ASSERT(index - intEndIndex < this->variableInformation.booleanVariables.size(), "Unexpected index");
+                    STORM_LOG_ASSERT(index - intEndIndex < this->variableInformation.booleanVariables.size(), "Unexpected index.");
                     auto const& boolVar = this->variableInformation.booleanVariables[index - intEndIndex];
                     STORM_LOG_ASSERT(value <= 1u, "Unexpected value for boolean variable.");
                     initialState.set(boolVar.bitOffset, static_cast<bool>(value));
@@ -1067,7 +1067,7 @@ std::shared_ptr<storm::storage::sparse::ChoiceOrigins> PrismNextStateGenerator<V
 
     std::map<CommandSet, uint_fast64_t> commandSetToIdentifierMap;
     // The empty commandset (i.e., the choices without origin) always has to get identifier getIdentifierForChoicesWithNoOrigin() -- which is assumed to be 0
-    STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero");
+    STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero.");
     commandSetToIdentifierMap.insert(std::make_pair(CommandSet(), 0));
     uint_fast64_t currentIdentifier = 1;
     for (boost::any& originData : dataForChoiceOrigins) {

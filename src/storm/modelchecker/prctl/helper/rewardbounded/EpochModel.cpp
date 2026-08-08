@@ -93,7 +93,7 @@ std::vector<ValueType> analyzeNonTrivialDtmcEpochModel(Environment const &env, E
         b[choice] += *stepSolutionIt;
         ++stepSolutionIt;
     }
-    assert(stepSolutionIt == epochModel.stepSolutions.end());
+    STORM_LOG_ASSERT(stepSolutionIt == epochModel.stepSolutions.end(), "Step solution iterator not at end.");
 
     // Solve the minMax equation system
     linEqSolver->solveEquations(env, x, b);
@@ -104,7 +104,7 @@ std::vector<ValueType> analyzeNonTrivialDtmcEpochModel(Environment const &env, E
 template<typename ValueType>
 std::vector<ValueType> analyzeTrivialMdpEpochModel(OptimizationDirection dir, EpochModel<ValueType, true> &epochModel) {
     // Assert that the epoch model is indeed trivial
-    assert(epochModel.epochMatrix.getEntryCount() == 0);
+    STORM_LOG_ASSERT(epochModel.epochMatrix.getEntryCount() == 0, "Epoch matrix should be empty for trivial MDP.");
 
     std::vector<ValueType> epochResult;
     epochResult.reserve(epochModel.epochInStates.getNumberOfSetBits());
@@ -207,9 +207,7 @@ std::vector<ValueType> analyzeNonTrivialMdpEpochModel(Environment const &env, Op
         b[choice] += *stepSolutionIt;
         ++stepSolutionIt;
     }
-    assert(stepSolutionIt == epochModel.stepSolutions.end());
-
-    // Solve the minMax equation system
+    STORM_LOG_ASSERT(stepSolutionIt == epochModel.stepSolutions.end(), "Step solution iterator not at end.");
     minMaxSolver->solveEquations(env, x, b);
 
     return storm::utility::vector::filterVector(x, epochModel.epochInStates);

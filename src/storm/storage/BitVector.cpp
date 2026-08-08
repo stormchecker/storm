@@ -331,7 +331,7 @@ void BitVector::expandSize(bool init) {
     // size_t oldBitCount = bitCount;
     bitCount = bucketCount() * 64;
     if (init) {
-        STORM_LOG_ASSERT(false, "Not implemented as we do not foresee any need");
+        STORM_LOG_ASSERT(false, "Not implemented as we do not foresee any need.");
     }
 }
 
@@ -1105,7 +1105,7 @@ bool BitVector::compareAndSwap(uint64_t start1, uint64_t start2, uint64_t length
             check.set(i + start1, check.get(i + start2));
             check.set(i + start2, tmp);
         }
-        STORM_LOG_ASSERT(*this == check, "Swapping not correct");
+        STORM_LOG_ASSERT(*this == check, "Swapping not correct.");
 
         // Check that sorted
         for (uint64_t i = 0; i < length; ++i) {

@@ -75,7 +75,7 @@ void extendLocalMonotonicityResult(
             // Simply add the states we couldn't add sofar between =) and =( as we could find local monotonicity for all parametric states
             order->add(order->getNextStateNumber().second);
         }
-        assert(order->getDoneBuilding());
+        STORM_LOG_ASSERT(order->getDoneBuilding(), "Order should be done building.");
     }
 }
 }  // namespace detail

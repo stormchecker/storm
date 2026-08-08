@@ -434,7 +434,7 @@ void StandardGameSolver<ValueType>::multiplyAndReduce(Environment const& env, Op
         uint_fast64_t player1State = 0;
         for (auto& result : player1ReducedResult) {
             storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_rows relevantRows = this->getPlayer1Matrix().getRowGroup(player1State);
-            STORM_LOG_ASSERT(relevantRows.getNumberOfEntries() != 0, "There is a choice of player 1 that does not lead to any player 2 choice");
+            STORM_LOG_ASSERT(relevantRows.getNumberOfEntries() != 0, "There is a choice of player 1 that does not lead to any player 2 choice.");
             auto it = relevantRows.begin();
             auto ite = relevantRows.end();
 

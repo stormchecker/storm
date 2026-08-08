@@ -47,7 +47,7 @@ storm::pars::FeasibilityMethod FeasibilitySettings::getFeasibilityMethod() const
     if (str == "gd") {
         return storm::pars::FeasibilityMethod::GD;
     } else {
-        STORM_LOG_ASSERT(str == "pla", "Only remaining option is PLA");
+        STORM_LOG_ASSERT(str == "pla", "Only remaining option is PLA.");
         return storm::pars::FeasibilityMethod::PLA;
     }
 }

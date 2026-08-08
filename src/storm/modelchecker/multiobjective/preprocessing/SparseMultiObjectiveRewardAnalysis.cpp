@@ -73,7 +73,7 @@ void SparseMultiObjectiveRewardAnalysis<SparseModelType>::setReward0States(
     // Now also incorporate cumulative and total reward objectives
     auto statesWithTotalOrCumulativeReward = transitions.getRowGroupFilter(~(zeroTotalRewardChoices & zeroCumulativeRewardChoices), false);
     result.reward0AStates &= storm::utility::graph::performProb0A(backwardTransitions, allStates, statesWithTotalOrCumulativeReward);
-    assert(result.reward0AStates.isSubsetOf(result.totalReward0EStates));
+    STORM_LOG_ASSERT(result.reward0AStates.isSubsetOf(result.totalReward0EStates), "Reward0A states not subset of totalReward0E states.");
 }
 
 template<typename SparseModelType>
@@ -101,7 +101,7 @@ void SparseMultiObjectiveRewardAnalysis<SparseModelType>::checkRewardFiniteness(
             auto const& timeBoundReference =
                 preprocessorResult.objectives[objIndex].formula->getSubformula().asCumulativeRewardFormula().getTimeBoundReference();
             // Only reward bounded formulas need a finiteness check
-            assert(timeBoundReference.isRewardBound());
+            STORM_LOG_ASSERT(timeBoundReference.isRewardBound(), "Expected reward bound.");
             auto const& rewModelOfBound = preprocessorResult.preprocessedModel->getRewardModel(timeBoundReference.getRewardName());
             irrelevantChoices |= ~rewModelOfBound.getChoicesWithZeroReward(transitions);
         }
@@ -185,7 +185,7 @@ void SparseMultiObjectiveRewardAnalysis<SparseModelType>::computeUpperResultBoun
                                 isOutChoice = true;
                                 outStates.set(state, true);
                                 rew0StateProbs.push_back(storm::utility::one<ValueType>() - ecElimRes.matrix.getRowSum(choice));
-                                assert(!storm::utility::isZero(rew0StateProbs.back()));
+                                STORM_LOG_ASSERT(!storm::utility::isZero(rew0StateProbs.back()), "Expected non-zero state probability.");
                                 break;
                             }
                         }

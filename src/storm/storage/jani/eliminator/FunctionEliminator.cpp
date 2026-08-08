@@ -144,7 +144,7 @@ class FunctionEliminationExpressionVisitor : public storm::expressions::Expressi
 
     virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
         STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(),
-                         "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
+                         "Unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
         uint64_t size = expression.size()->evaluateAsInt();
         std::vector<BaseExprPtr> elements;
         bool changed = false;

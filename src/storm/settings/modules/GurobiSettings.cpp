@@ -92,7 +92,7 @@ solver::GurobiSolverMethod GurobiSettings::getMethod() const {
     if (method.has_value()) {
         return method.value();
     }
-    STORM_LOG_ASSERT(false, "Unknown method name should not get through validator");
+    STORM_LOG_ASSERT(false, "Unknown method name should not get through validator.");
     return solver::GurobiSolverMethod::AUTOMATIC;
 }
 

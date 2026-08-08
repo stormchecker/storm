@@ -626,7 +626,7 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                 return true;
             }
         } else {
-            STORM_LOG_ASSERT(abstrValuation.getAnnotation(), "Needs to have annotation if no zeroes");
+            STORM_LOG_ASSERT(abstrValuation.getAnnotation(), "Needs to have annotation if no zeroes.");
             auto& regionsAndBounds = this->regionsAndBounds.at(abstrValuation);
             auto const& annotation = *abstrValuation.getAnnotation();
 
@@ -641,7 +641,7 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                     auto const& [region, bound] = regionsAndBounds[i];
                     STORM_LOG_ASSERT(
                         i == 0 ? true : (!(region.upper() < regionsAndBounds[i - 1].first.lower() || region.lower() > regionsAndBounds[i - 1].first.upper())),
-                        "regions next to each other need to intersect");
+                        "Regions next to each other need to intersect.");
                     if (region.upper() <= plaRegion.lower() || region.lower() >= plaRegion.upper()) {
                         if (regionsInPLARegion.empty()) {
                             continue;
@@ -709,7 +709,7 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
         lowerBound = utility::max(utility::min(lowerBound, utility::one<ConstantType>() - epsilon), epsilon);
         upperBound = utility::max(utility::min(upperBound, utility::one<ConstantType>() - epsilon), epsilon);
 
-        STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops");
+        STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops.");
 
         placeholder = Interval(lowerBound, upperBound);
     }

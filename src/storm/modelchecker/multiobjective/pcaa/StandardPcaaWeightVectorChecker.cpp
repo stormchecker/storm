@@ -834,7 +834,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::transformEcqSolutionToOri
             if (!ecqStateToOptimalMecMap.empty()) {
                 // The current ecqState represents an elimnated EC and we need to stay in this EC and we need to make sure that optimal MEC decisions are
                 // performed within this EC.
-                STORM_LOG_ASSERT(ecqStateToOptimalMecMap.count(ecqState) > 0, "No Lra Mec associated to given eliminated EC");
+                STORM_LOG_ASSERT(ecqStateToOptimalMecMap.count(ecqState) > 0, "No Lra Mec associated to given eliminated EC.");
                 auto const& lraMec = lraMecDecomposition->mecs[ecqStateToOptimalMecMap.at(ecqState)];
                 if (lraMec.size() == origStates.size()) {
                     // LRA mec and eliminated EC coincide

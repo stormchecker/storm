@@ -566,7 +566,7 @@ void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler,
             scheduler.setChoice(*subChoiceIt, maybeState);
             ++subChoiceIt;
         }
-        assert(subChoiceIt == subChoices.end());
+        STORM_LOG_ASSERT(subChoiceIt == subChoices.end(), "Subchoice iterator not at end.");
     } else {
         // See computeFixedPointSystemUntilProbabilities, where we create a different equation system.
         // Consequentially, we run a slightly different code here for interval-based models.
@@ -765,7 +765,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                     storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                 } else {
                     // For interval models, the result for maybe states indeed also holds values for all qualitative states.
-                    STORM_LOG_ASSERT(resultForMaybeStates.getValues().size() == transitionMatrix.getColumnCount(), "Dimensions do not match");
+                    STORM_LOG_ASSERT(resultForMaybeStates.getValues().size() == transitionMatrix.getColumnCount(), "Dimensions do not match.");
                     result = resultForMaybeStates.getValues();
                 }
                 if (produceScheduler) {
@@ -783,9 +783,9 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
     // Sanity check for created scheduler.
     STORM_LOG_ASSERT(!produceScheduler || scheduler, "Expected that a scheduler was obtained.");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
 
     // Return result.
     return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(result), std::move(scheduler));
@@ -1010,9 +1010,9 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
         scheduler = std::make_unique<storm::storage::Scheduler<ValueType>>(discountingHelper.computeScheduler());
     }
     STORM_LOG_ASSERT(!produceScheduler || scheduler, "Expected that a scheduler was obtained.");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
     return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(x), std::move(scheduler));
 }
 
@@ -1203,7 +1203,7 @@ void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler,
             ++subChoiceIt;
         }
     }
-    assert(subChoiceIt == subChoices.end());
+    STORM_LOG_ASSERT(subChoiceIt == subChoices.end(), "Subchoice iterator not at end.");
 }
 
 template<typename ValueType, typename SolutionType>
@@ -1461,9 +1461,9 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
     // Sanity check for created scheduler.
     STORM_LOG_ASSERT(!produceScheduler || scheduler, "Expected that a scheduler was obtained.");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
 
     if constexpr (storm::IsIntervalType<ValueType>) {
         return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(result));

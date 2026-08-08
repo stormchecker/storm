@@ -35,13 +35,13 @@ void JaniGSPNBuilder::addVariables(storm::jani::Model* model) {
             janiVar = storm::jani::Variable::makeIntegerVariable(place.getName(), expressionManager->getVariable(place.getName()),
                                                                  expressionManager->integer(place.getNumberOfInitialTokens()), false);
         } else {
-            assert(place.hasRestrictedCapacity());
+            STORM_LOG_ASSERT(place.hasRestrictedCapacity(), "Place does not have restricted capacity.");
             janiVar = storm::jani::Variable::makeBoundedIntegerVariable(place.getName(), expressionManager->getVariable(place.getName()),
                                                                         expressionManager->integer(place.getNumberOfInitialTokens()), false,
                                                                         expressionManager->integer(0), expressionManager->integer(place.getCapacity()));
         }
-        assert(janiVar != nullptr);
-        assert(vars.count(place.getID()) == 0);
+        STORM_LOG_ASSERT(janiVar != nullptr, "Jani variable is null.");
+        STORM_LOG_ASSERT(vars.count(place.getID()) == 0, "Variable already exists for this place.");
         vars[place.getID()] = &model->addVariable(*janiVar);
     }
 }
@@ -60,12 +60,12 @@ void JaniGSPNBuilder::addEdges(storm::jani::Automaton& automaton, uint64_t locId
     for (auto const& partition : gspn.getPartitions()) {
         storm::expressions::Expression guard = expressionManager->boolean(false);
 
-        assert(lastPriority >= partition.priority);
+        STORM_LOG_ASSERT(lastPriority >= partition.priority, "Priority decreased unexpectedly.");
         if (lastPriority > partition.priority) {
             priorityGuard = priorityGuard && !lastPriorityGuard;
             lastPriority = partition.priority;
         } else {
-            assert(lastPriority == partition.priority);
+            STORM_LOG_ASSERT(lastPriority == partition.priority, "Priority mismatch after decrement.");
         }
 
         // Compute enabled weight expression.

@@ -335,7 +335,7 @@ auto castAndApply(std::shared_ptr<storm::models::ModelBase> const& model, auto c
             return castAndApplyImpl.template operator()<storm::models::sparse::Model<ValueType>>();
         } else {
             auto ddType = model->getDdType();
-            STORM_LOG_ASSERT(model->isSymbolicModel() && ddType.has_value(), "Unexpected model representation");
+            STORM_LOG_ASSERT(model->isSymbolicModel() && ddType.has_value(), "Unexpected model representation.");
             if constexpr (storm::IsIntervalType<ValueType>) {
                 // Avoiding a couple of unnecessary template instantiations
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Symbolic interval models are currently not supported.");
@@ -346,7 +346,7 @@ auto castAndApply(std::shared_ptr<storm::models::ModelBase> const& model, auto c
                         return castAndApplyImpl.template operator()<storm::models::symbolic::Model<CUDD, ValueType>>();
                     }
                 }
-                STORM_LOG_ASSERT(*ddType == Sylvan, "Unexpected Dd type");
+                STORM_LOG_ASSERT(*ddType == Sylvan, "Unexpected Dd type.");
                 return castAndApplyImpl.template operator()<storm::models::symbolic::Model<Sylvan, ValueType>>();
             }
         }

@@ -176,7 +176,7 @@ void SparseItemLabelingParser::parseDeterministicLabelAssignments(std::string co
                 if (labeling.isStateLabeling()) {
                     labeling.asStateLabeling().addLabelToState(proposition, state);
                 } else {
-                    STORM_LOG_ASSERT(labeling.isChoiceLabeling(), "Unexpected labeling type");
+                    STORM_LOG_ASSERT(labeling.isChoiceLabeling(), "Unexpected labeling type.");
                     labeling.asChoiceLabeling().addLabelToChoice(proposition, state);
                 }
                 buf += cnt;

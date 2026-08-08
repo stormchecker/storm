@@ -92,7 +92,7 @@ template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Constraint const& constraint) {
     if constexpr (RawMode) {
         // Generate expression from raw constraint
-        STORM_LOG_ASSERT(constraint.lhsVariableIndices.size() == constraint.lhsCoefficients.size(), "number of variables and coefficients do not match.");
+        STORM_LOG_ASSERT(constraint.lhsVariableIndices.size() == constraint.lhsCoefficients.size(), "Number of variables and coefficients do not match.");
         std::vector<storm::expressions::Expression> lhsSummands;
         lhsSummands.reserve(constraint.lhsVariableIndices.size());
         auto varIt = constraint.lhsVariableIndices.cbegin();

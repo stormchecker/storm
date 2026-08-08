@@ -23,7 +23,7 @@ void WinningRegion::setObservationIsWinning(uint64_t observation) {
 }
 
 void WinningRegion::addTargetStates(uint64_t observation, storm::storage::BitVector const& offsets) {
-    assert(!offsets.empty());
+    STORM_LOG_ASSERT(!offsets.empty(), "Offsets should not be empty.");
     if (winningRegion[observation].empty()) {
         winningRegion[observation].push_back(offsets);
         return;
@@ -81,12 +81,12 @@ storm::expressions::Expression WinningRegion::extensionExpression(uint64_t obser
 
     for (auto const& winningForObservation : winningRegion[observation]) {
         if (winningForObservation.full()) {
-            assert(winningRegion[observation].size() == 1);
+            STORM_LOG_ASSERT(winningRegion[observation].size() == 1, "Expected single winning set per observation.");
             return varsForStates.front().getManager().boolean(false);
         }
         std::vector<storm::expressions::Expression> subexpr;
         std::vector<storm::expressions::Expression> leftHandSides;
-        assert(varsForStates.size() == winningForObservation.size());
+        STORM_LOG_ASSERT(varsForStates.size() == winningForObservation.size(), "Variable count mismatch.");
         for (uint64_t i = 0; i < varsForStates.size(); ++i) {
             if (winningForObservation.get(i)) {
                 leftHandSides.push_back(varsForStates[i]);
@@ -146,7 +146,7 @@ void WinningRegion::print() const {
  * @return
  */
 uint64_t WinningRegion::getNumberOfObservations() const {
-    assert(winningRegion.size() == observationSizes.size());
+    STORM_LOG_ASSERT(winningRegion.size() == observationSizes.size(), "Winning region size mismatch.");
     return observationSizes.size();
 }
 
@@ -160,7 +160,7 @@ bool WinningRegion::empty() const {
 }
 
 std::vector<storm::storage::BitVector> const& WinningRegion::getWinningSetsPerObservation(uint64_t observation) const {
-    assert(observation < getNumberOfObservations());
+    STORM_LOG_ASSERT(observation < getNumberOfObservations(), "Observation index out of range.");
     return winningRegion[observation];
 }
 
@@ -177,7 +177,7 @@ std::pair<storm::RationalNumber, storm::RationalNumber> count(std::vector<storm:
                                                               std::vector<storm::storage::BitVector> const& intersects,
                                                               std::vector<storm::storage::BitVector> const& intersectsInfo, storm::RationalNumber val,
                                                               bool plus, uint64_t remdepth) {
-    assert(intersects.size() == intersectsInfo.size());
+    STORM_LOG_ASSERT(intersects.size() == intersectsInfo.size(), "Intersect size mismatch.");
     storm::RationalNumber newVal = val;
     storm::RationalNumber two = storm::utility::convertNumber<storm::RationalNumber>(2);
     for (uint64_t i = 0; i < intersects.size(); ++i) {

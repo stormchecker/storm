@@ -231,8 +231,8 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSo
         updateCachedData(env, epochModel, cachedData, weightVector);
 
         // Formulate a min-max equation system max(A*x+b)=x for the weighted sum of the objectives
-        assert(cachedData.bMinMax.capacity() >= epochModel.epochMatrix.getRowCount());
-        assert(cachedData.xMinMax.size() == epochModel.epochMatrix.getRowGroupCount());
+        STORM_LOG_ASSERT(cachedData.bMinMax.capacity() >= epochModel.epochMatrix.getRowCount(), "BMinMax capacity insufficient.");
+        STORM_LOG_ASSERT(cachedData.xMinMax.size() == epochModel.epochMatrix.getRowGroupCount(), "XMinMax size mismatch.");
         cachedData.bMinMax.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
         for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
             ValueType weight =
@@ -275,7 +275,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSo
         }
 
         // Formulate for each objective the linear equation system induced by the performed choices
-        assert(cachedData.bLinEq.size() == choices.size());
+        STORM_LOG_ASSERT(cachedData.bLinEq.size() == choices.size(), "BLinEq size mismatch.");
         for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
             auto const& obj = this->objectives[objIndex];
             std::vector<ValueType> const& objectiveReward = epochModel.objectiveRewards[objIndex];
@@ -310,7 +310,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSo
                 ++rowGroupIndexIt;
                 ++choiceIt;
             }
-            assert(x.size() == choices.size());
+            STORM_LOG_ASSERT(x.size() == choices.size(), "X size mismatch.");
             auto req = cachedData.linEqSolver->getRequirements(env);
             cachedData.linEqSolver->clearBounds();
             if (obj.lowerResultBound) {

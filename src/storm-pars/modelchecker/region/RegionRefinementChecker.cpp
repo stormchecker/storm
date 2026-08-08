@@ -349,7 +349,7 @@ std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionR
     auto const& estimates = regionChecker->obtainRegionSplitEstimates(region.region.getVariables());
     std::vector<std::pair<VariableType, CoefficientType>> estimatesToSort;
     estimatesToSort.reserve(region.region.getVariables().size());
-    STORM_LOG_ASSERT(estimates.size() == region.region.getVariables().size(), "Unexpected number of estimates");
+    STORM_LOG_ASSERT(estimates.size() == region.region.getVariables().size(), "Unexpected number of estimates.");
     auto estimatesIter = estimates.begin();
     for (auto const& param : region.region.getVariables()) {
         estimatesToSort.push_back(std::make_pair(param, *estimatesIter++));

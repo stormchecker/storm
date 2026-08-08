@@ -84,7 +84,7 @@ void importGenericVector(typename storm::io::ArchiveReader::ArchiveReadEntry& sr
             break;
         case Int:
         case IntInterval:
-            STORM_LOG_ASSERT(type.bitSize() % 64 == 0, "int-based types must have size multiple of 64.");
+            STORM_LOG_ASSERT(type.bitSize() % 64 == 0, "Int-based types must have size multiple of 64.");
             importGenericVector<int64_t>(src, target);
             break;
         case Uint:
@@ -92,7 +92,7 @@ void importGenericVector(typename storm::io::ArchiveReader::ArchiveReadEntry& sr
         case Rational:
         case RationalInterval:
         case String:
-            STORM_LOG_ASSERT(type.bitSize() % 64 == 0, "uint-based types must have size multiple of 64.");
+            STORM_LOG_ASSERT(type.bitSize() % 64 == 0, "Uint-based types must have size multiple of 64.");
             importGenericVector<uint64_t>(src, target);
             break;
         case Double:

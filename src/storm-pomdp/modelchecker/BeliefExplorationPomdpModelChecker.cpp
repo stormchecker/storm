@@ -929,13 +929,13 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
             for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                 bool expandCurrentAction = exploreAllActions || truncateAllActions;
                 if (checkRewireForAllActions) {
-                    assert(refine);
+                    STORM_LOG_ASSERT(refine, "Expected refine to be true.");
                     // In this case, we still need to check whether this action needs to be expanded
-                    assert(!expandCurrentAction);
+                    STORM_LOG_ASSERT(!expandCurrentAction, "Action should not be expanded.");
                     // Check the action dependent conditions for rewiring
                     // First, check whether this action has been rewired since the last refinement of one of the successor observations (i.e. whether rewiring
                     // would actually change the successor states)
-                    assert(overApproximation->currentStateHasOldBehavior());
+                    STORM_LOG_ASSERT(overApproximation->currentStateHasOldBehavior(), "Expected old behavior.");
                     if (overApproximation->getCurrentStateActionExplorationWasDelayed(action) ||
                         overApproximation->currentStateHasSuccessorObservationInObservationSet(action, refinedObservations)) {
                         // Then, check whether the other criteria for rewiring are satisfied

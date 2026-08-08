@@ -227,7 +227,7 @@ storm::json<ValueType> unpackStateIntoJson(CompressedState const& state, Variabl
         if (onlyObservable && !integerVariable.observable) {
             continue;
         }
-        STORM_LOG_ASSERT(integerVariable.bitWidth <= 63, "Only integer variables with at most 63 bits are supported");
+        STORM_LOG_ASSERT(integerVariable.bitWidth <= 63, "Only integer variables with at most 63 bits are supported.");
         result[integerVariable.getName()] =
             static_cast<int64_t>(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth)) + integerVariable.lowerBound;
     }
@@ -236,7 +236,7 @@ storm::json<ValueType> unpackStateIntoJson(CompressedState const& state, Variabl
 
 CompressedState createOutOfBoundsState(VariableInformation const& varInfo, bool roundTo64Bit) {
     CompressedState result(varInfo.getTotalBitOffset(roundTo64Bit));
-    assert(varInfo.hasOutOfBoundsBit());
+    STORM_LOG_ASSERT(varInfo.hasOutOfBoundsBit(), "Variable info has no out-of-bounds bit.");
     result.set(varInfo.getOutOfBoundsBit());
     return result;
 }

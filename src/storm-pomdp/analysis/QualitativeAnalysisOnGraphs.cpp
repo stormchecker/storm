@@ -153,7 +153,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb1Ma
                     // Check whether all actions lead with a positive probabilty to a goal, and with zero probability to another (non-goal) state.
                     bool hasGoalEntry = false;
                     for (auto const& entry : pomdp.getTransitionMatrix().getRow(row)) {
-                        assert(!storm::utility::isZero(entry.getValue()));
+                        STORM_LOG_ASSERT(!storm::utility::isZero(entry.getValue()), "Expected non-zero entry value.");
                         if (newGoalStates.get(entry.getColumn())) {
                             STORM_LOG_TRACE("Reaches state " << entry.getColumn() << " which is a PROB1e state");
                             hasGoalEntry = true;

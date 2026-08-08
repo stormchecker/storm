@@ -61,7 +61,7 @@ template<typename ParametricType>
 std::vector<typename RegionModelChecker<ParametricType>::CoefficientType> RegionModelChecker<ParametricType>::obtainRegionSplitEstimates(
     std::set<VariableType> const& relevantParameters) const {
     STORM_LOG_ASSERT(specifiedRegionSplitEstimateKind.has_value(), "Unable to obtain region split estimates because they wre not requested.");
-    STORM_LOG_ASSERT(specifiedRegionSplitEstimateKind.value() == RegionSplitEstimateKind::Distance, "requested region split estimate kind not supported");
+    STORM_LOG_ASSERT(specifiedRegionSplitEstimateKind.value() == RegionSplitEstimateKind::Distance, "Requested region split estimate kind not supported.");
     STORM_LOG_ASSERT(lastCheckedRegion.has_value(), "Unable to obtain region split estimates because no region was checked.");
     std::vector<CoefficientType> result;
     result.reserve(relevantParameters.size());

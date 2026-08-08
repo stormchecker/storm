@@ -48,9 +48,9 @@ bool AcyclicMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Enviro
     std::vector<ValueType>* xPtr = &x;
     std::vector<ValueType> const* bPtr = &b;
     if (rowGroupOrdering) {
-        STORM_LOG_ASSERT(rowGroupOrdering->size() == x.size(), "x-vector has unexpected size.");
-        STORM_LOG_ASSERT(auxiliaryRowGroupVector->size() == x.size(), "x-vector has unexpected size.");
-        STORM_LOG_ASSERT(auxiliaryRowVector->size() == b.size(), "b-vector has unexpected size.");
+        STORM_LOG_ASSERT(rowGroupOrdering->size() == x.size(), "X-vector has unexpected size.");
+        STORM_LOG_ASSERT(auxiliaryRowGroupVector->size() == x.size(), "X-vector has unexpected size.");
+        STORM_LOG_ASSERT(auxiliaryRowVector->size() == b.size(), "B-vector has unexpected size.");
         for (uint64_t newGroupIndex = 0; newGroupIndex < x.size(); ++newGroupIndex) {
             uint64_t newRow = orderedMatrix->getRowGroupIndices()[newGroupIndex];
             uint64_t newRowGroupEnd = orderedMatrix->getRowGroupIndices()[newGroupIndex + 1];

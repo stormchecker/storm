@@ -3,6 +3,7 @@
 #include <boost/optional.hpp>
 
 #include "storm/logic/RewardAccumulation.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace logic {
@@ -17,13 +18,14 @@ class TimeBoundReference {
    public:
     explicit TimeBoundReference(TimeBoundType t) : type(t) {
         // For rewards, use the other constructor.
-        assert(t != TimeBoundType::Reward);
+        STORM_LOG_ASSERT(t != TimeBoundType::Reward, "Unexpected Reward time bound type.");
     }
 
     explicit TimeBoundReference(boost::optional<std::string> const& rewardName = boost::none,
                                 boost::optional<RewardAccumulation> rewardAccumulation = boost::none)
         : type(TimeBoundType::Reward), rewardName(rewardName), rewardAccumulation(rewardAccumulation) {
-        assert(rewardName.get_value_or("NO_REWARD_NAME_GIVEN") != "");  // Empty reward name is reserved.
+        STORM_LOG_ASSERT(rewardName.get_value_or("NO_REWARD_NAME_GIVEN") != "",
+                         "Reward name should not be empty.");  // Empty reward name is reserved.
     }
 
     TimeBoundType const& getType() const {
@@ -43,7 +45,7 @@ class TimeBoundReference {
     }
 
     std::string const& getRewardModelName() const {
-        assert(isRewardBound());
+        STORM_LOG_ASSERT(isRewardBound(), "Expected reward bound.");
         return rewardName.get();
     }
 
@@ -56,7 +58,7 @@ class TimeBoundReference {
     }
 
     boost::optional<std::string> const& getOptionalRewardModelName() const {
-        assert(isRewardBound());
+        STORM_LOG_ASSERT(isRewardBound(), "Expected reward bound.");
         return rewardName;
     }
 
@@ -65,12 +67,12 @@ class TimeBoundReference {
     }
 
     RewardAccumulation const& getRewardAccumulation() const {
-        assert(isRewardBound());
+        STORM_LOG_ASSERT(isRewardBound(), "Expected reward bound.");
         return rewardAccumulation.get();
     }
 
     boost::optional<RewardAccumulation> const& getOptionalRewardAccumulation() const {
-        assert(isRewardBound());
+        STORM_LOG_ASSERT(isRewardBound(), "Expected reward bound.");
         return rewardAccumulation;
     }
 };

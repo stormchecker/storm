@@ -257,7 +257,7 @@ void DftToGspnTransformator<ValueType>::translateBEConst(std::shared_ptr<storm::
         // Constant failsafe BE
         size_t capacity = 0;  // It cannot contain a token, because it cannot fail.
         uint64_t failedPlace = builder.addPlace(capacity, 0, dftConst->name() + STR_FAILED);
-        assert(failedPlaces.size() == dftConst->id());
+        STORM_LOG_ASSERT(failedPlaces.size() == dftConst->id(), "Failed place index mismatch.");
         failedPlaces.push_back(failedPlace);
         builder.setPlaceLayoutInfo(failedPlace, storm::gspn::LayoutInfo(xcenter, ycenter - 3.0));
 
@@ -1068,7 +1068,7 @@ template<typename ValueType>
 uint64_t DftToGspnTransformator<ValueType>::addFailedPlace(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> dftElement,
                                                            storm::gspn::LayoutInfo const &layoutInfo, bool initialFailed) {
     uint64_t failedPlace = builder.addPlace(defaultCapacity, initialFailed ? 1 : 0, dftElement->name() + STR_FAILED);
-    assert(failedPlaces.size() == dftElement->id());
+    STORM_LOG_ASSERT(failedPlaces.size() == dftElement->id(), "Failed place index mismatch.");
     failedPlaces.push_back(failedPlace);
     builder.setPlaceLayoutInfo(failedPlace, layoutInfo);
     return failedPlace;
