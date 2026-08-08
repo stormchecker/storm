@@ -248,6 +248,42 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, TwoDice) {
     });
 }
 
+// Regression test for https://github.com/moves-rwth/storm/issues/91: extracting a *sparse* quotient from a
+// symbolic (dd) bisimulation used to keep redundant nondeterministic choices that became identical distributions
+// after collapsing states into blocks, whereas the sparse engine's own bisimulation implementation already
+// deduplicated them. This made "-e dd-to-sparse" quotients gratuitously larger (in choice/transition count, not
+// state count) than the equivalent quotient computed directly by the sparse engine. Values below were confirmed
+// to match storm's own (post-fix) sparse-engine bisimulation on the same model/property.
+TYPED_TEST(SymbolicModelBisimulationDecomposition, SparseQuotientChoiceDeduplication) {
+    const storm::dd::DdType DdType = TestFixture::DdType;
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0_collide.nm");
+    program = program.preprocess("COL=1,TRANS_TIME_MAX=10");
+
+    storm::parser::FormulaParser formulaParser(program);
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F col=1]");
+
+    std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model = storm::builder::DdPrismModelBuilder<DdType, double>().build(program, *formula);
+
+    model->getManager().execute([&]() {
+        std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
+        formulas.push_back(formula);
+
+        storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, formulas, storm::storage::BisimulationType::Strong);
+        decomposition.compute();
+
+        // Extracting a dd-format quotient does not go through the sparse quotient extractor at all, so it cannot
+        // exercise the bug/fix; only the sparse-format extraction below does.
+        std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Sparse);
+
+        ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
+        EXPECT_FALSE(quotient->isSymbolicModel());
+
+        EXPECT_EQ(15ul, quotient->getNumberOfStates());
+        EXPECT_EQ(24ul, quotient->getNumberOfTransitions());
+        EXPECT_EQ(24ul, (quotient->as<storm::models::sparse::Mdp<double>>()->getNumberOfChoices()));
+    });
+}
+
 TYPED_TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader) {
     const storm::dd::DdType DdType = TestFixture::DdType;
     storm::storage::SymbolicModelDescription smd = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader4.nm");

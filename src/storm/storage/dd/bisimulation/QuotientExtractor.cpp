@@ -321,9 +321,10 @@ class InternalSparseQuotientExtractorBase {
             STORM_LOG_ASSERT(!this->rowPermutation.empty(), "Expected proper row permutation.");
             std::vector<ExportValueType> valueVector = extractVectorInternal(vector, this->allSourceVariablesCube, this->nondeterminismOdd);
 
-            // Reorder the values according to the known row permutation.
-            std::vector<ExportValueType> reorderedValues(valueVector.size());
-            for (uint64_t pos = 0; pos < valueVector.size(); ++pos) {
+            // Reorder the values according to the known row permutation. Note that rowPermutation may be shorter
+            // than valueVector if redundant (duplicate) choices were removed while building the transition matrix.
+            std::vector<ExportValueType> reorderedValues(rowPermutation.size());
+            for (uint64_t pos = 0; pos < rowPermutation.size(); ++pos) {
                 reorderedValues[pos] = valueVector[rowPermutation[pos]];
             }
             return reorderedValues;
@@ -358,11 +359,27 @@ class InternalSparseQuotientExtractorBase {
         if (this->isNondeterministic) {
             std::stable_sort(rowPermutation.begin(), rowPermutation.end(),
                              [this](uint64_t first, uint64_t second) { return this->rowToState[first] < this->rowToState[second]; });
+
+            // Remove choices that became exact duplicates of the (in the sorted order) preceding choice of the
+            // same state after quotienting, i.e. redundant nondeterminism that resulted from collapsing states
+            // into the same block. This mirrors what the sparse bisimulation engine does and keeps the two
+            // engines' quotients comparable.
+            std::vector<uint64_t> deduplicatedPermutation;
+            deduplicatedPermutation.reserve(rowPermutation.size());
+            for (uint64_t i = 0; i < rowPermutation.size(); ++i) {
+                uint64_t const rowIdx = rowPermutation[i];
+                bool const isDuplicate =
+                    i > 0 && rowToState[rowPermutation[i - 1]] == rowToState[rowIdx] && matrixEntries[rowPermutation[i - 1]] == matrixEntries[rowIdx];
+                if (!isDuplicate) {
+                    deduplicatedPermutation.push_back(rowIdx);
+                }
+            }
+            rowPermutation = std::move(deduplicatedPermutation);
         }
 
         uint64_t rowCounter = 0;
         uint64_t lastState = this->isNondeterministic ? rowToState[rowPermutation.front()] : 0;
-        storm::storage::SparseMatrixBuilder<ExportValueType> builder(matrixEntries.size(), this->numberOfBlocks, 0, true, this->isNondeterministic);
+        storm::storage::SparseMatrixBuilder<ExportValueType> builder(rowPermutation.size(), this->numberOfBlocks, 0, true, this->isNondeterministic);
         if (this->isNondeterministic) {
             builder.newRowGroup(0);
         }
@@ -377,10 +394,6 @@ class InternalSparseQuotientExtractorBase {
             for (auto const& entry : row) {
                 builder.addNextValue(rowCounter, entry.getColumn(), entry.getValue());
             }
-
-            // Free storage for row.
-            row.clear();
-            row.shrink_to_fit();
 
             ++rowCounter;
         }
