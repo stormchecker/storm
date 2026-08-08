@@ -7,6 +7,7 @@
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -165,6 +166,10 @@ TYPED_TEST(ConditionalDtmcPrctlModelCheckerTest, Conditional) {
     storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<ValueType>();
     EXPECT_NEAR(storm::utility::one<ValueType>(), quantitativeResult2[0], this->precision());
 
+    formula = formulaParser.parseSingleFormulaFromString("P=? [F \"target\" || F \"unreachable\"]");
+
+    STORM_SILENT_EXPECT_THROW(checker.check(this->env(), *formula), storm::exceptions::InvalidPropertyException);
+
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"target\"]");
 
     result = checker.check(this->env(), *formula);
@@ -176,5 +181,9 @@ TYPED_TEST(ConditionalDtmcPrctlModelCheckerTest, Conditional) {
     result = checker.check(this->env(), *formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<ValueType>();
     EXPECT_NEAR(storm::utility::one<ValueType>(), quantitativeResult4[0], this->precision());
+
+    formula = formulaParser.parseSingleFormulaFromString("R=? [F \"target\" || F \"unreachable\"]");
+
+    STORM_SILENT_EXPECT_THROW(checker.check(this->env(), *formula), storm::exceptions::InvalidPropertyException);
 }
 }  // namespace
