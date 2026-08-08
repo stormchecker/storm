@@ -164,6 +164,13 @@ boost::any ExtractMaximalStateFormulasVisitor::visit(MultiObjectiveFormula const
     return result;
 }
 
+boost::any ExtractMaximalStateFormulasVisitor::visit(CvarFormula const& f, boost::any const& data) const {
+    incrementNestingLevel();
+    boost::any result = CloneVisitor::visit(f, data);
+    decrementNestingLevel();
+    return result;
+}
+
 boost::any ExtractMaximalStateFormulasVisitor::visit(ProbabilityOperatorFormula const& f, boost::any const& data) const {
     incrementNestingLevel();
     boost::any result = CloneVisitor::visit(f, data);

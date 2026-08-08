@@ -59,6 +59,7 @@ const std::string IOSettings::qvbsInputOptionName = "qvbs";
 const std::string IOSettings::qvbsInputOptionShortName = "qvbs";
 const std::string IOSettings::qvbsRootOptionName = "qvbsroot";
 const std::string IOSettings::propertiesAsMultiOptionName = "propsasmulti";
+const std::string IOSettings::cvarOptionName = "cvar";
 
 const std::string IOSettings::uncertaintyResolutionModeName = "uncertainty-resolution";
 
@@ -279,6 +280,10 @@ IOSettings::IOSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, propertiesAsMultiOptionName, false,
                                                    "If set, the selected properties are interpreted as a multi-objective formula.")
                         .setIsAdvanced()
+                        .build());
+
+    this->addOption(storm::settings::OptionBuilder(moduleName, cvarOptionName, false, "Computes the conditional value-at-risk for the selected property.")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("alpha", "The size of the tail.").build())
                         .build());
 
     std::vector<std::string> uncertaintyResolutionModes = {"minimize", "maximize", "robust", "cooperative", "min", "max"};
@@ -516,6 +521,14 @@ std::string IOSettings::getProperty() const {
 
 std::string IOSettings::getPropertyFilter() const {
     return this->getOption(propertyOptionName).getArgumentByName("filter").getValueAsString();
+}
+
+bool IOSettings::isCvarSet() const {
+    return this->getOption(cvarOptionName).getHasOptionBeenSet();
+}
+
+std::string IOSettings::getCvarAlpha() const {
+    return this->getOption(cvarOptionName).getArgumentByName("alpha").getValueAsString();
 }
 
 bool IOSettings::isComputeSteadyStateDistributionSet() const {

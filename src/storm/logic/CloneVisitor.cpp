@@ -76,6 +76,11 @@ boost::any CloneVisitor::visit(CumulativeRewardFormula const& f, boost::any cons
     return std::static_pointer_cast<Formula>(std::make_shared<CumulativeRewardFormula>(f));
 }
 
+boost::any CloneVisitor::visit(CvarFormula const& f, boost::any const& data) const {
+    std::shared_ptr<Formula> subformula = boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula().accept(*this, data));
+    return std::static_pointer_cast<Formula>(std::make_shared<CvarFormula>(f.getAlpha(), subformula));
+}
+
 boost::any CloneVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {
     std::shared_ptr<Formula> subformula = boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula().accept(*this, data));
     if (f.hasRewardAccumulation()) {

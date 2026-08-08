@@ -36,6 +36,9 @@ class FragmentSpecification {
     bool areQuantileFormulasAllowed() const;
     FragmentSpecification& setQuantileFormulasAllowed(bool newValue);
 
+    bool areCvarFormulasAllowed() const;
+    FragmentSpecification& setCvarFormulasAllowed(bool newValue);
+
     bool areGloballyFormulasAllowed() const;
     FragmentSpecification& setGloballyFormulasAllowed(bool newValue);
 
@@ -156,6 +159,9 @@ class FragmentSpecification {
     bool isQuantileFormulaAtTopLevelRequired() const;
     FragmentSpecification& setQuantileFormulaAtTopLevelRequired(bool newValue);
 
+    bool isCvarFormulaAtTopLevelRequired() const;
+    FragmentSpecification& setCvarFormulaAtTopLevelRequired(bool newValue);
+
     bool isRewardAccumulationAllowed() const;
     FragmentSpecification& setRewardAccumulationAllowed(bool newValue);
 
@@ -181,6 +187,7 @@ class FragmentSpecification {
 
     bool multiObjectiveFormula;
     bool quantileFormula;
+    bool cvarFormula;
 
     bool globallyFormula;
     bool reachabilityProbabilityFormula;
@@ -229,6 +236,7 @@ class FragmentSpecification {
     bool operatorAtTopLevelRequired;
     bool multiObjectiveFormulaAtTopLevelRequired;
     bool quantileFormulaAtTopLevelRequired;
+    bool cvarFormulaAtTopLevelRequired;
     bool operatorsAtTopLevelOfMultiObjectiveFormulasRequired;
 
     bool rewardAccumulation;
@@ -280,6 +288,9 @@ FragmentSpecification lexObjective();
 
 // Quantile formulas.
 FragmentSpecification quantiles();
+
+// CVaR formulas.
+FragmentSpecification cvars();
 
 }  // namespace logic
 }  // namespace storm
