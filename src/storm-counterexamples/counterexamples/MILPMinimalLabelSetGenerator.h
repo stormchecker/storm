@@ -798,7 +798,7 @@ class MILPMinimalLabelSetGenerator {
         // Add constraints that ensure at least one choice is selected that targets a psi state.
         constraint = solver.getConstant(0);
         std::unordered_set<uint_fast64_t> predecessors;
-        for (auto psiState : psiStates) {
+        for (uint64_t psiState : psiStates) {
             // Compute the set of predecessors.
             for (auto const& predecessorEntry : backwardTransitions.getRow(psiState)) {
                 if (psiState != predecessorEntry.getColumn()) {

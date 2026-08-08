@@ -241,7 +241,7 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::removeIrrelevantStates(s
     if (!absorbingStates.empty()) {
         // We can make the states absorbing and delete unreachable states.
         storm::storage::BitVector subsystemActions(model->getNumberOfChoices(), true);
-        for (auto absorbingState : absorbingStates) {
+        for (uint64_t absorbingState : absorbingStates) {
             for (uint64_t action = model->getTransitionMatrix().getRowGroupIndices()[absorbingState];
                  action < model->getTransitionMatrix().getRowGroupIndices()[absorbingState + 1]; ++action) {
                 subsystemActions.set(action, false);
@@ -485,7 +485,7 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessUntilFormula(s
         // goalState
         std::vector<typename SparseModelType::ValueType> objectiveRewards(data.model->getTransitionMatrix().getRowCount(),
                                                                           storm::utility::zero<typename SparseModelType::ValueType>());
-        for (auto state : reachableFromInit) {
+        for (uint64_t state : reachableFromInit) {
             for (uint_fast64_t row = data.model->getTransitionMatrix().getRowGroupIndices()[state];
                  row < data.model->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++row) {
                 objectiveRewards[row] = data.model->getTransitionMatrix().getConstrainedRowSum(row, rightSubformulaResult);
@@ -590,7 +590,7 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessEventuallyForm
             }
             // clear state-action rewards
             if (objectiveRewards.hasStateActionRewards()) {
-                for (auto state : reachableFromGoal) {
+                for (uint64_t state : reachableFromGoal) {
                     std::fill_n(objectiveRewards.getStateActionRewardVector().begin() + data.model->getTransitionMatrix().getRowGroupIndices()[state],
                                 data.model->getTransitionMatrix().getRowGroupSize(state), storm::utility::zero<typename SparseModelType::ValueType>());
                 }

@@ -24,7 +24,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
     std::vector<uint32_t> newObservations;
 
     // New state 0 represents all states with probability 1
-    for (auto const iter : prob1States) {
+    for (uint64_t iter : prob1States) {
         stateMap[iter] = 0;
 
         std::set<std::string> labelSet = pomdp.getStateLabeling().getLabelsOfState(iter);
@@ -36,7 +36,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
         }
     }
     // New state 1 represents all states with probability 0
-    for (auto const iter : prob0States) {
+    for (uint64_t iter : prob0States) {
         stateMap[iter] = 1;
         for (auto const &label : pomdp.getStateLabeling().getLabelsOfState(iter)) {
             if (!newLabeling.containsLabel(label)) {
@@ -50,7 +50,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
     // If there are no states with probability 0 we set the next new state id to be 1, otherwise 2
     uint64_t newId = prob0States.empty() ? 1 : 2;
     uint64_t nextObservation = prob0States.empty() ? 1 : 2;
-    for (auto const iter : unknownStates) {
+    for (uint64_t iter : unknownStates) {
         stateMap[iter] = newId;
         if (observationMap.count(pomdp.getObservation(iter)) == 0) {
             observationMap[pomdp.getObservation(iter)] = nextObservation;
@@ -86,7 +86,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
 
     auto transitionMatrix = pomdp.getTransitionMatrix();
 
-    for (auto const iter : unknownStates) {
+    for (uint64_t iter : unknownStates) {
         smb.newRowGroup(currentRow);
         // First collect all transitions
         // auto rowGroup = transitionMatrix.getRowGroup(iter);

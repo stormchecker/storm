@@ -288,7 +288,7 @@ std::pair<CostLimitClosure, std::vector<typename QuantileHelper<ModelType>::Valu
     bool onlyUpperCostBounds = lowerBoundedDimensions.empty();
     bool onlyLowerCostBounds = lowerBoundedDimensions == consideredDimensions;
     if (onlyUpperCostBounds || onlyLowerCostBounds) {
-        for (auto k : consideredDimensions) {
+        for (uint64_t k : consideredDimensions) {
             storm::storage::BitVector subQueryDimensions = consideredDimensions;
             subQueryDimensions.set(k, false);
             bool subQueryComplement = complementaryQuery != ((onlyUpperCostBounds && hasLowerValueBound) || (onlyLowerCostBounds && !hasLowerValueBound));
@@ -296,7 +296,7 @@ std::pair<CostLimitClosure, std::vector<typename QuantileHelper<ModelType>::Valu
             for (auto const& subQueryCostLimit : subQueryResult.first.getGenerator()) {
                 CostLimits initPoint;
                 uint64_t i = 0;
-                for (auto dim : consideredDimensions) {
+                for (uint64_t dim : consideredDimensions) {
                     if (dim == k) {
                         initPoint.push_back(CostLimit::infinity());
                     } else {
@@ -322,7 +322,7 @@ std::pair<CostLimitClosure, std::vector<typename QuantileHelper<ModelType>::Valu
         MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(model, boundedUntilOp, infinityVariables);
         if (computeQuantile(env, consideredDimensions, *boundedUntilOp, lowerBoundedDimensions, satCostLimits, unsatCostLimits, rewardUnfolding)) {
             std::vector<ValueType> scalingFactors;
-            for (auto dim : consideredDimensions) {
+            for (uint64_t dim : consideredDimensions) {
                 scalingFactors.push_back(rewardUnfolding.getDimension(dim).scalingFactor);
             }
             std::pair<CostLimitClosure, std::vector<ValueType>> result(satCostLimits, scalingFactors);
@@ -418,7 +418,7 @@ bool QuantileHelper<ModelType>::computeQuantile(Environment& env, storm::storage
                 // Transform candidate cost limits to an appropriate start epoch
                 auto startEpoch = rewardUnfolding.getStartEpoch(true);
                 auto costLimitIt = currentCandidate.begin();
-                for (auto dim : consideredDimensions) {
+                for (uint64_t dim : consideredDimensions) {
                     if (lowerBoundedDimensions.get(dim)) {
                         if (costLimitIt->get() > 0) {
                             rewardUnfolding.getEpochManager().setDimensionOfEpoch(startEpoch, dim, costLimitIt->get() - 1);

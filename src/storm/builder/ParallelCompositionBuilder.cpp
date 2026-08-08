@@ -65,8 +65,8 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ParallelCompositionBuild
             if (labelingB.containsLabel(label)) {
                 // Only consider labels contained in both CTMCs
                 storm::storage::BitVector labelStates(size, false);
-                for (auto entryA : labelingA.getStates(label)) {
-                    for (auto entryB : labelingB.getStates(label)) {
+                for (uint64_t entryA : labelingA.getStates(label)) {
+                    for (uint64_t entryB : labelingB.getStates(label)) {
                         labelStates.set(entryA * sizeB + entryB);
                     }
                 }
@@ -80,15 +80,15 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ParallelCompositionBuild
                 // Initial states must be initial in both CTMCs
                 STORM_LOG_ASSERT(labelingB.containsLabel(label), "B does not have init.");
                 storm::storage::BitVector labelStates(size, false);
-                for (auto entryA : labelingA.getStates(label)) {
-                    for (auto entryB : labelingB.getStates(label)) {
+                for (uint64_t entryA : labelingA.getStates(label)) {
+                    for (uint64_t entryB : labelingB.getStates(label)) {
                         labelStates.set(entryA * sizeB + entryB);
                     }
                 }
                 labeling.addLabel(label, labelStates);
             } else {
                 storm::storage::BitVector labelStates(size, false);
-                for (auto entry : labelingA.getStates(label)) {
+                for (uint64_t entry : labelingA.getStates(label)) {
                     for (size_t index = entry * sizeB; index < entry * sizeB + sizeB; ++index) {
                         labelStates.set(index, true);
                     }
@@ -103,14 +103,14 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ParallelCompositionBuild
             }
             if (labeling.containsLabel(label)) {
                 // Label is already there from A
-                for (auto entry : labelingB.getStates(label)) {
+                for (uint64_t entry : labelingB.getStates(label)) {
                     for (size_t index = 0; index < sizeA; ++index) {
                         labeling.addLabelToState(label, index * sizeB + entry);
                     }
                 }
             } else {
                 storm::storage::BitVector labelStates(size, false);
-                for (auto entry : labelingB.getStates(label)) {
+                for (uint64_t entry : labelingB.getStates(label)) {
                     for (size_t index = 0; index < sizeA; ++index) {
                         labelStates.set(index * sizeB + entry, true);
                     }

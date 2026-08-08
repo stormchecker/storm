@@ -15,7 +15,7 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
     // get a mapping from old column indices to new ones
     oldToNewColumnIndexMapping = std::vector<uint_fast64_t>(selectedColumns.size(), selectedColumns.size());
     uint_fast64_t newIndex = 0;
-    for (auto oldColumn : selectedColumns) {
+    for (uint64_t oldColumn : selectedColumns) {
         oldToNewColumnIndexMapping[oldColumn] = newIndex++;
     }
 
@@ -33,7 +33,7 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
     storm::storage::SparseMatrixBuilder<ConstantType> builder(0, selectedColumns.getNumberOfSetBits(), 0, true, true, selectedRows.getNumberOfSetBits());
     rowGroupToStateNumber = std::vector<uint_fast64_t>();
     uint_fast64_t newRowIndex = 0;
-    for (auto rowIndex : selectedRows) {
+    for (uint64_t rowIndex : selectedRows) {
         builder.newRowGroup(newRowIndex);
         rowGroupToStateNumber.push_back(rowIndex);
 
@@ -142,7 +142,7 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
     STORM_LOG_ASSERT(matrixAssignmentIt == matrixAssignment.end(), "Unexpected number of entries in the matrix assignment.");
 
     auto vectorAssignmentIt = vectorAssignment.begin();
-    for (auto nonConstVectorEntry : nonConstVectorEntries) {
+    for (uint64_t nonConstVectorEntry : nonConstVectorEntries) {
         for (uint_fast64_t vectorIndex = matrix.getRowGroupIndices()[nonConstVectorEntry]; vectorIndex != matrix.getRowGroupIndices()[nonConstVectorEntry + 1];
              ++vectorIndex) {
             vectorAssignmentIt->first = vector.begin() + vectorIndex;

@@ -462,7 +462,7 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
     // Create variables and basic bounds
     std::vector<storm::expressions::Expression> choiceVisitsVars(matrix.getRowCount()), botVisitsVars(matrix.getRowGroupCount()),
         bsccVars(matrix.getRowGroupCount());
-    for (auto state : anyMaybeStates) {
+    for (uint64_t state : anyMaybeStates) {
         assert(indicatorConstraints || maxVisits[state] >= storm::utility::zero<ValueType>());
         for (auto choice : matrix.getRowGroupIndices(state)) {
             choiceVisitsVars[choice] =
@@ -494,7 +494,7 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
     // Add expected visiting times constraints
     auto notMaybe = ~anyMaybeStates;
     std::vector<storm::expressions::Expression> outSummands;
-    for (auto state : anyMaybeStates) {
+    for (uint64_t state : anyMaybeStates) {
         std::vector<storm::expressions::Expression> visitsSummands;
         if (mecStates.get(state)) {
             visitsSummands.push_back(-botVisitsVars[state]);

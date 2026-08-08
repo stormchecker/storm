@@ -79,7 +79,7 @@ void eliminateExtendedStatesFromExplicitRepresentation(std::pair<storm::storage:
     if (scheduler) {
         // Eliminate superfluous entries from the scheduler.
         uint64_t position = 0;
-        for (auto state : properMaybeStates) {
+        for (uint64_t state : properMaybeStates) {
             scheduler.get()[position] = scheduler.get()[state];
             position++;
         }

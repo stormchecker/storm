@@ -88,7 +88,7 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
         storm::storage::BitVector nonTrivSccIndices(sccDecRes.sccCount, false);
 
         // find the choices that do not stay in their SCC
-        for (auto state : remainingEcCandidates) {
+        for (uint64_t state : remainingEcCandidates) {
             auto const sccIndex = sccDecRes.stateToSccMapping[state];
             nonTrivSccIndices.set(sccIndex, true);
 
@@ -123,9 +123,9 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
         // process the MECs that we've found, i.e. SCCs where every state can stay inside the SCC
         ecSccIndices &= nonTrivSccIndices;
 
-        for (auto sccIndex : ecSccIndices) {
+        for (uint64_t sccIndex : ecSccIndices) {
             StronglyConnectedComponent newMec;
-            for (auto state : remainingEcCandidates) {
+            for (uint64_t state : remainingEcCandidates) {
                 // skip states from different SCCs
                 if (sccDecRes.stateToSccMapping[state] != sccIndex) {
                     continue;
@@ -139,7 +139,7 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
         }
 
         // Populate the transitions that stay inside the EC (sort of Haddad-Monmege line 10-11)
-        for (auto sccIndex : nonTrivSccIndices) {
+        for (uint64_t sccIndex : nonTrivSccIndices) {
             for (uint64_t state = 0; state < transitionMatrix.getRowCount(); state++) {
                 // Populate new edges for search that only consider intervals within the EC
                 // Tally up lower probability to stay inside of the EC. Once this is >= 1, our EC is done.

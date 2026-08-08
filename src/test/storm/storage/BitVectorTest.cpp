@@ -586,7 +586,7 @@ TEST(BitVectorTest, Iterator) {
     }
 
     uint64_t i = 0;
-    for (auto bit : vector) {
+    for (uint64_t bit : vector) {
         ASSERT_EQ(i, bit);
         i += 2;
     }
@@ -662,7 +662,7 @@ TEST(BitVectorTest, ZeroSized) {
     EXPECT_EQ(0ul, v.getNextSetIndex(0));
     EXPECT_EQ(v, v);
     EXPECT_EQ(v, ~v);
-    for (auto entry : v) {
+    for (uint64_t entry : v) {
         FAIL() << "Should not iterate over an empty bit vector.";
         ASSERT_FALSE(entry);
     }

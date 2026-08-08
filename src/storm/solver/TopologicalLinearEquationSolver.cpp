@@ -229,7 +229,7 @@ bool TopologicalLinearEquationSolver<ValueType>::solveScc(storm::Environment con
     // b Vector
     std::vector<ValueType> sccB;
     sccB.reserve(scc.getNumberOfSetBits());
-    for (auto row : scc) {
+    for (uint64_t row : scc) {
         ValueType bi = globalB[row];
         for (auto const& entry : this->A->getRow(row)) {
             if (!scc.get(entry.getColumn())) {

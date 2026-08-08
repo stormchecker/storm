@@ -294,7 +294,7 @@ void performSccDecomposition(storm::storage::SparseMatrix<ValueType> const& tran
     };
 
     if (options.optSubsystem) {
-        for (auto state : *options.optSubsystem) {
+        for (uint64_t state : *options.optSubsystem) {
             performSccDecompFromState(state);
         }
     } else {

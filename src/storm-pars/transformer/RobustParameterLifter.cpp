@@ -38,13 +38,13 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
                                                                            bool useMonotonicity) {
     oldToNewColumnIndexMapping = std::vector<uint64_t>(selectedColumns.size(), selectedColumns.size());
     uint64_t newIndexColumns = 0;
-    for (auto oldColumn : selectedColumns) {
+    for (uint64_t oldColumn : selectedColumns) {
         oldToNewColumnIndexMapping[oldColumn] = newIndexColumns++;
     }
 
     oldToNewRowIndexMapping = std::vector<uint64_t>(selectedRows.size(), selectedRows.size());
     uint64_t newIndexRows = 0;
-    for (auto oldRow : selectedRows) {
+    for (uint64_t oldRow : selectedRows) {
         oldToNewRowIndexMapping[oldRow] = newIndexRows++;
     }
 
@@ -141,7 +141,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
     STORM_LOG_ASSERT(matrixAssignmentIt == matrixAssignment.end(), "Unexpected number of entries in the matrix assignment.");
 
     auto vectorAssignmentIt = vectorAssignment.begin();
-    for (auto nonConstVectorEntry : nonConstVectorEntries) {
+    for (uint64_t nonConstVectorEntry : nonConstVectorEntries) {
         for (uint64_t vectorIndex = matrix.getRowGroupIndices()[nonConstVectorEntry]; vectorIndex != matrix.getRowGroupIndices()[nonConstVectorEntry + 1];
              ++vectorIndex) {
             vectorAssignmentIt->first = vector.begin() + vectorIndex;

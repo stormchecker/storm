@@ -68,13 +68,13 @@ void MemoryStateManager::setRelevantDimensions(MemoryState& state, storm::storag
     STORM_LOG_ASSERT(dimensionCount > 0, "Invoked MemoryStateManager with zero dimension count.");
     STORM_LOG_ASSERT(dimensions.size() == dimensionCount, "Invalid size of given bitset.");
     if (value) {
-        for (auto d : dimensions) {
+        for (uint64_t d : dimensions) {
             STORM_LOG_ASSERT(((dimensionBitMask << d) & dimensionsWithoutMemoryMask) == 0,
                              "Tried to set a dimension to 'relevant'-memory state but the dimension is assumed to have no memory.");
             state |= (dimensionBitMask << d);
         }
     } else {
-        for (auto d : dimensions) {
+        for (uint64_t d : dimensions) {
             STORM_LOG_ASSERT(((dimensionBitMask << d) & dimensionsWithoutMemoryMask) == 0,
                              "Tried to set a dimension to 'unrelevant'-memory state but the dimension is assumed to have no memory.");
             state &= ~(dimensionBitMask << d);

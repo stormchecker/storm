@@ -433,7 +433,7 @@ std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Spars
     storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, numberOfSspStates, 0, true, true, numberOfSspStates);
     // If the source state of a transition is not contained in any component, we copy its choices (and perform the necessary modifications).
     uint64_t currentSspChoice = 0;
-    for (auto nonComponentState : statesNotInComponent) {
+    for (uint64_t nonComponentState : statesNotInComponent) {
         sspMatrixBuilder.newRowGroup(currentSspChoice);
         for (uint64_t choice = choiceIndices[nonComponentState]; choice < choiceIndices[nonComponentState + 1]; ++choice, ++currentSspChoice) {
             rhs.push_back(storm::utility::zero<ValueType>());
@@ -567,14 +567,14 @@ std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::b
     // Now take care of the non-component states. Note that the order of these states will be preserved.
     uint64_t numberOfNonComponentStates = 0;
     storm::storage::BitVector statesNotInComponent = ~statesInComponents;
-    for (auto nonComponentState : statesNotInComponent) {
+    for (uint64_t nonComponentState : statesNotInComponent) {
         inputToSspStateMap[nonComponentState] = numberOfNonComponentStates;
         ++numberOfNonComponentStates;
     }
     // Finalize the mapping for the component states which now still assigns component states to to their component index.
     // To make sure that they point to the auxiliary states (located at the end of the SspMatrix), we need to shift them by the
     // number of states that are not in a component.
-    for (auto mecState : statesInComponents) {
+    for (uint64_t mecState : statesInComponents) {
         inputToSspStateMap[mecState] += numberOfNonComponentStates;
     }
 

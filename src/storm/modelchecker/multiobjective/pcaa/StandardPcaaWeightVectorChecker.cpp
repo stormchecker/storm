@@ -153,7 +153,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& 
     std::vector<ValueType> weightedRewardVector(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
     if (!lraObjectives.empty()) {
         boost::optional<std::vector<ValueType>> weightedStateRewardVector;
-        for (auto objIndex : lraObjectives) {
+        for (uint64_t objIndex : lraObjectives) {
             ValueType weight =
                 storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
             storm::utility::vector::addScaledVector(weightedRewardVector, actionRewards[objIndex], weight);
@@ -171,7 +171,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& 
 
     // Prepare and invoke weighted indefinite horizon (unbounded total reward) phase
     auto totalRewardObjectives = objectivesWithNoUpperTimeBound & ~lraObjectives;
-    for (auto objIndex : totalRewardObjectives) {
+    for (uint64_t objIndex : totalRewardObjectives) {
         if (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) {
             storm::utility::vector::addScaledVector(weightedRewardVector, actionRewards[objIndex], -weightVector[objIndex]);
         } else {
@@ -300,7 +300,7 @@ template<typename ValueType>
 void computeSchedulerProb0(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                            storm::storage::BitVector const& consideredStates, storm::storage::BitVector const& statesToAvoid,
                            storm::storage::BitVector const& allowedChoices, std::vector<uint64_t>& choices) {
-    for (auto state : consideredStates) {
+    for (uint64_t state : consideredStates) {
         auto const& groupStart = transitionMatrix.getRowGroupIndices()[state];
         auto const& groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
         bool choiceFound = false;
@@ -762,7 +762,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::computeAndSetBoundsToSolv
                                                                                    std::vector<ValueType> const& rewards) const {
     // Compute the one step target probs
     std::vector<ValueType> oneStepTargetProbs(transitions.getRowCount(), storm::utility::zero<ValueType>());
-    for (auto row : rowsWithSumLessOne) {
+    for (uint64_t row : rowsWithSumLessOne) {
         oneStepTargetProbs[row] = storm::utility::one<ValueType>() - transitions.getRowSum(row);
     }
 

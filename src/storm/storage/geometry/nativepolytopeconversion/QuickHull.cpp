@@ -362,7 +362,7 @@ template<typename ValueType>
 void QuickHull<ValueType>::getPolytopeFromMesh(std::vector<EigenVector> const& points, std::vector<Facet> const& facets,
                                                storm::storage::BitVector const& currentFacets, bool generateRelevantVerticesAndVertexSets) {
     storm::storage::geometry::HyperplaneCollector<ValueType> hyperplaneCollector;
-    for (auto facet : currentFacets) {
+    for (uint64_t facet : currentFacets) {
         hyperplaneCollector.insert(std::move(facets[facet].normal), std::move(facets[facet].offset),
                                    generateRelevantVerticesAndVertexSets ? &facets[facet].points : nullptr);
     }

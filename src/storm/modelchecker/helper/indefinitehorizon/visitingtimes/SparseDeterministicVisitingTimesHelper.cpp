@@ -433,7 +433,7 @@ std::vector<ValueType> SparseDeterministicVisitingTimesHelper<ValueType>::comput
     // Get the vector for the equation system
     auto sccVector = storm::utility::vector::filterVector(stateValues, stateSetAsBitvector);
     auto valIt = sccVector.begin();
-    for (auto sccState : stateSetAsBitvector) {
+    for (uint64_t sccState : stateSetAsBitvector) {
         for (auto const& entry : backwardTransitions->getRow(sccState)) {
             if (!stateSetAsBitvector.get(entry.getColumn())) {
                 (*valIt) += entry.getValue() * stateValues[entry.getColumn()];

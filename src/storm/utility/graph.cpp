@@ -48,7 +48,7 @@ storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> con
     // Initialize the stack used for the DFS with the states.
     std::vector<uint_fast64_t> stack;
     stack.reserve(initialStates.size());
-    for (auto state : initialStates) {
+    for (uint64_t state : initialStates) {
         if (constraintStates.get(state)) {
             stack.push_back(state);
         }
@@ -183,7 +183,7 @@ bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<T> const& transition
 
     storm::storage::BitVector statesWithChoice(transitionMatrix.getRowGroupCount(), false);
     uint_fast64_t state = 0;
-    for (auto choice : choices) {
+    for (uint64_t choice : choices) {
         // Get the correct state
         while (choice >= transitionMatrix.getRowGroupIndices()[state + 1]) {
             ++state;
@@ -217,7 +217,7 @@ bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<T> const& transition
     // Only keep the states that can be reached after performing one of the specified choices
     statesWithChoice &= candidateStates;
     storm::storage::BitVector choiceTargets(transitionMatrix.getRowGroupCount(), false);
-    for (auto state : statesWithChoice) {
+    for (uint64_t state : statesWithChoice) {
         for (uint_fast64_t choice = choices.getNextSetIndex(transitionMatrix.getRowGroupIndices()[state]);
              choice < transitionMatrix.getRowGroupIndices()[state + 1]; choice = choices.getNextSetIndex(choice + 1)) {
             bool choiceStaysInCandidateSet = true;
@@ -242,7 +242,7 @@ bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<T> const& transition
     while (!candidateStates.empty()) {
         // Update the states with a choice that stays within the set of candidates
         statesWithChoice &= candidateStates;
-        for (auto state : statesWithChoice) {
+        for (uint64_t state : statesWithChoice) {
             bool stateHasChoice = false;
             for (uint_fast64_t choice = choices.getNextSetIndex(transitionMatrix.getRowGroupIndices()[state]);
                  choice < transitionMatrix.getRowGroupIndices()[state + 1]; choice = choices.getNextSetIndex(choice + 1)) {
@@ -287,7 +287,7 @@ std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<T> const& t
     storm::storage::BitVector statesInQueue(transitionMatrix.getRowGroupCount());
 
     storm::storage::sparse::state_type currentPosition = 0;
-    for (auto initialState : initialStates) {
+    for (uint64_t initialState : initialStates) {
         stateQueue.emplace_back(initialState, 0);
         statesInQueue.set(initialState);
     }
@@ -331,7 +331,7 @@ storm::storage::BitVector performProbGreater0(storm::storage::SparseMatrix<T> co
         stepStack.reserve(numberOfStates);
         stepStack.insert(stepStack.begin(), psiStates.getNumberOfSetBits(), maximalSteps);
         remainingSteps.resize(numberOfStates);
-        for (auto state : psiStates) {
+        for (uint64_t state : psiStates) {
             remainingSteps[state] = maximalSteps;
         }
     }
@@ -484,7 +484,7 @@ void computeSchedulerStayingInStates(storm::storage::BitVector const& states, st
                                      storm::storage::Scheduler<SchedulerValueType>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter) {
     std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 
-    for (auto state : states) {
+    for (uint64_t state : states) {
         [[maybe_unused]] bool setValue{false};
         for (auto choice : transitionMatrix.getRowGroupIndices(state)) {
             if (rowFilter && !rowFilter->get(choice)) {
@@ -509,7 +509,7 @@ void computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& s
                                               storm::storage::Scheduler<SchedulerValueType>& scheduler) {
     std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 
-    for (auto state : states) {
+    for (uint64_t state : states) {
         [[maybe_unused]] bool setValue = false;
         for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
             bool oneSuccessorInStates = false;
@@ -610,7 +610,7 @@ void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm
                             storm::storage::BitVector const& psiStates, storm::storage::Scheduler<SchedulerValueType>& scheduler,
                             boost::optional<storm::storage::BitVector> const& rowFilter) {
     // set an arbitrary (valid) choice for the psi states.
-    for (auto psiState : psiStates) {
+    for (uint64_t psiState : psiStates) {
         for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
             if (!scheduler.getChoice(psiState, memState).isDefined()) {
                 scheduler.setChoice(0, psiState, memState);
@@ -690,7 +690,7 @@ storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<T> c
         stepStack.reserve(numberOfStates);
         stepStack.insert(stepStack.begin(), psiStates.getNumberOfSetBits(), maximalSteps);
         remainingSteps.resize(numberOfStates);
-        for (auto state : psiStates) {
+        for (uint64_t state : psiStates) {
             remainingSteps[state] = maximalSteps;
         }
     }
@@ -861,7 +861,7 @@ storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<T> c
         stepStack.reserve(numberOfStates);
         stepStack.insert(stepStack.begin(), psiStates.getNumberOfSetBits(), maximalSteps);
         remainingSteps.resize(numberOfStates);
-        for (auto state : psiStates) {
+        for (uint64_t state : psiStates) {
             remainingSteps[state] = maximalSteps;
         }
     }
@@ -1373,7 +1373,7 @@ ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> co
 
     // Generate player 1 strategy if required.
     if (strategyPair) {
-        for (auto player1State : result.player1States) {
+        for (uint64_t player1State : result.player1States) {
             if (player1Direction == storm::OptimizationDirection::Minimize) {
                 // At least one player 2 successor is a state with probability 0, find it.
                 [[maybe_unused]] bool foundProb0Successor = false;
@@ -1395,7 +1395,7 @@ ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> co
 
     // Generate player 2 strategy if required.
     if (strategyPair) {
-        for (auto player2State : result.player2States) {
+        for (uint64_t player2State : result.player2States) {
             if (player2Direction == storm::OptimizationDirection::Minimize) {
                 // At least one distribution only has successors with probability 0, find it.
                 [[maybe_unused]] bool foundProb0SuccessorDistribution = false;

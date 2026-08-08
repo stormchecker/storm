@@ -46,7 +46,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initializeModelTypeSp
         if (formula.getSubformula().isTotalRewardFormula()) {
             if (rewModel.hasStateRewards()) {
                 // Note that state rewards are earned over time and thus play no role for probabilistic states
-                for (auto markovianState : markovianStates) {
+                for (uint64_t markovianState : markovianStates) {
                     this->actionRewards[objIndex][model.getTransitionMatrix().getRowGroupIndices()[markovianState]] +=
                         rewModel.getStateReward(markovianState) / exitRates[markovianState];
                 }
@@ -260,7 +260,7 @@ VT StandardMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant
     VT delta = smallestNonZeroBound / smallestStepBound;
     while (true) {
         bool deltaValid = true;
-        for (auto objIndex : objectivesWithTimeBound) {
+        for (uint64_t objIndex : objectivesWithTimeBound) {
             auto const& timeBound = timeBounds[objIndex];
             if (timeBound / delta != std::floor(timeBound / delta)) {
                 deltaValid = false;
@@ -427,7 +427,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::updateDataToCurrentEp
     std::vector<ValueType> const& weightVector, TimeBoundMap::iterator& upperTimeBoundIt, TimeBoundMap const& upperTimeBounds) {
     if (upperTimeBoundIt != upperTimeBounds.end() && currentEpoch == upperTimeBoundIt->first) {
         consideredObjectives |= upperTimeBoundIt->second;
-        for (auto objIndex : upperTimeBoundIt->second) {
+        for (uint64_t objIndex : upperTimeBoundIt->second) {
             // This objective now plays a role in the weighted sum
             ValueType factor =
                 storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
@@ -480,7 +480,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::performPSStep(Environ
         // Get the results for the individual objectives.
         // Note that we do not consider an estimate for each objective (as done in the unbounded phase) since the results from the previous epoch are already
         // pretty close
-        for (auto objIndex : consideredObjectives) {
+        for (uint64_t objIndex : consideredObjectives) {
             auto const& objectiveRewardVectorPS = PS.objectiveRewardVectors[objIndex];
             auto const& objectiveSolutionVectorMS = MS.objectiveSolutionVectors[objIndex];
             // compute rhs of equation system, i.e., PS.toMS * x + Rewards
@@ -516,7 +516,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::performMSStep(Environ
             storm::utility::vector::scaleVectorInPlace(MS.objectiveSolutionVectors[*consideredObjectives.begin()], -storm::utility::one<ValueType>());
         }
     } else {
-        for (auto objIndex : consideredObjectives) {
+        for (uint64_t objIndex : consideredObjectives) {
             MS.toMS.multiplyWithVector(MS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues);
             storm::utility::vector::addVectors(MS.objectiveRewardVectors[objIndex], MS.auxChoiceValues, MS.objectiveSolutionVectors[objIndex]);
             MS.toPS.multiplyWithVector(PS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues);

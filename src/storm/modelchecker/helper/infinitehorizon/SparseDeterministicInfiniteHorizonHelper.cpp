@@ -283,7 +283,7 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::comp
     auto row = this->_transitionMatrix.getRow(proxyState);
     auto entryIt = row.begin();
     auto const entryItEnd = row.end();
-    for (auto state : bsccAsBitVector) {
+    for (uint64_t state : bsccAsBitVector) {
         if (entryIt != entryItEnd && state == entryIt->getColumn()) {
             initialValues.push_back(entryIt->getValue());
             ++entryIt;
@@ -318,7 +318,7 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::comp
     ValueType sumOfVisitingTimes = storm::utility::zero<ValueType>();
     if (this->isContinuousTime()) {
         auto resultIt = visitingTimes.begin();
-        for (auto state : bsccAsBitVector) {
+        for (uint64_t state : bsccAsBitVector) {
             *resultIt /= (*this->_exitRates)[state];
             sumOfVisitingTimes += *resultIt;
             ++resultIt;
@@ -490,7 +490,7 @@ std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Spars
     // Create the SSP right-hand-side
     std::vector<ValueType> rhs;
     rhs.reserve(sspMatrix.getRowCount());
-    for (auto state : statesNotInComponent) {
+    for (uint64_t state : statesNotInComponent) {
         ValueType stateValue = storm::utility::zero<ValueType>();
         for (auto const& transition : this->_transitionMatrix.getRow(state)) {
             if (!statesNotInComponent.get(transition.getColumn())) {
@@ -528,7 +528,7 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::buil
     // Map the non-component states to their index in the SSP. Note that the order of these states will be preserved.
     uint64_t numberOfNonComponentStates = 0;
     storm::storage::BitVector statesNotInComponent = ~statesInComponents;
-    for (auto nonComponentState : statesNotInComponent) {
+    for (uint64_t nonComponentState : statesNotInComponent) {
         stateIndexMap[nonComponentState] = numberOfNonComponentStates;
         ++numberOfNonComponentStates;
     }
@@ -722,14 +722,14 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::comp
             // set up and solve the equation system for this BSCC
             std::vector<ValueType> eqSysRhs;
             eqSysRhs.reserve(nonBsccStates.getNumberOfSetBits());
-            for (auto state : nonBsccStates) {
+            for (uint64_t state : nonBsccStates) {
                 eqSysRhs.push_back(this->_transitionMatrix.getConstrainedRowSum(state, bsccAsBitVector));
             }
             std::vector<ValueType> eqSysSolution(eqSysRhs.size());
             solver->solveEquations(env, eqSysSolution, eqSysRhs);
             // Sum up reachability probabilities over initial states
             uint64_t subsysState = 0;
-            for (auto globalState : nonBsccStates) {
+            for (uint64_t globalState : nonBsccStates) {
                 bsccVal += initialDistributionGetter(globalState) * eqSysSolution[subsysState];
                 ++subsysState;
             }

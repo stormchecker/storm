@@ -211,7 +211,7 @@ void NativeLinearEquationSolver<ValueType>::WalkerChaeData::computeWalkerChaeMat
         }
     }
     ValueType one = storm::utility::one<ValueType>();
-    for (auto column : columnsWithNegativeEntries) {
+    for (uint64_t column : columnsWithNegativeEntries) {
         builder.addNextValue(row, column, one);
         builder.addNextValue(row, originalMatrix.getRowCount() + columnsWithNegativeEntriesBefore[column], one);
         ++row;
@@ -401,7 +401,7 @@ template<typename ValueType>
 ValueType computeMaxAbsDiff(std::vector<ValueType> const& allValues, storm::storage::BitVector const& relevantValues, std::vector<ValueType> const& oldValues) {
     ValueType result = storm::utility::zero<ValueType>();
     auto oldValueIt = oldValues.begin();
-    for (auto value : relevantValues) {
+    for (uint64_t value : relevantValues) {
         result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allValues[value] - *oldValueIt));
     }
     return result;
@@ -411,7 +411,7 @@ template<typename ValueType>
 ValueType computeMaxAbsDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues,
                             storm::storage::BitVector const& relevantValues) {
     ValueType result = storm::utility::zero<ValueType>();
-    for (auto value : relevantValues) {
+    for (uint64_t value : relevantValues) {
         result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[value] - allOldValues[value]));
     }
     return result;

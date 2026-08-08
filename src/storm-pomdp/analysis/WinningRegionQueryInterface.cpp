@@ -93,7 +93,7 @@ void WinningRegionQueryInterface<ValueType>::validateIsMaximal(storm::storage::B
         STORM_LOG_DEBUG("Check listed belief supports for observation " << obs << " are maximal");
         for (auto const& winningBelief : winningRegion.getWinningSetsPerObservation(obs)) {
             storm::storage::BitVector remainders = ~winningBelief;
-            for (auto const additional : remainders) {
+            for (uint64_t additional : remainders) {
                 uint64_t addState = statesPerObservation[obs][additional];
                 if (badStates.get(addState)) {
                     continue;

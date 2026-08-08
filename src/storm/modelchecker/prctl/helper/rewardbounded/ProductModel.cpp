@@ -176,7 +176,7 @@ storm::storage::MemoryStructure ProductModel<ValueType>::computeMemoryStructure(
                             prob1InitialStates[objIndex] = initialTransitionStates;
                         }
 
-                        for (auto initState : initialTransitionStates) {
+                        for (uint64_t initState : initialTransitionStates) {
                             objMemoryBuilder.setInitialMemoryState(initState, memStatePrime);
                         }
                     }
@@ -399,7 +399,7 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
 
                 // find out whether objective reward should be earned within this epoch class
                 bool collectRewardInEpoch = true;
-                for (auto subObjIndex : relevantObjectives) {
+                for (uint64_t subObjIndex : relevantObjectives) {
                     if (dimensions[dimensionIndexMap[subObjIndex]].boundType == DimensionBoundType::UpperBound &&
                         epochManager.isBottomDimensionEpochClass(epochClass, dimensionIndexMap[subObjIndex])) {
                         collectRewardInEpoch = false;
@@ -435,7 +435,7 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
                     storm::storage::BitVector relevantChoices = getProduct().getTransitionMatrix().getRowFilter(relevantStates);
                     storm::storage::BitVector goalStates =
                         mc.check(*goalStatesFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
-                    for (auto choice : relevantChoices) {
+                    for (uint64_t choice : relevantChoices) {
                         objRew[choice] += getProduct().getTransitionMatrix().getConstrainedRowSum(choice, goalStates);
                     }
                 }
@@ -575,13 +575,13 @@ void ProductModel<ValueType>::computeReachableStates(EpochClass const& epochClas
         }
         STORM_LOG_ASSERT(reachableStates.find(predecessor) != reachableStates.end(), "Could not find reachable states of predecessor epoch class.");
         storm::storage::BitVector predecessorStates = reachableStates.find(predecessor)->second;
-        for (auto predecessorState : predecessorStates) {
+        for (uint64_t predecessorState : predecessorStates) {
             uint64_t predecessorMemoryState = getMemoryState(predecessorState);
             for (uint64_t choice = getProduct().getTransitionMatrix().getRowGroupIndices()[predecessorState];
                  choice < getProduct().getTransitionMatrix().getRowGroupIndices()[predecessorState + 1]; ++choice) {
                 bool choiceLeadsToThisClass = false;
                 Epoch const& choiceStep = getSteps()[choice];
-                for (auto dim : positiveStepDimensions) {
+                for (uint64_t dim : positiveStepDimensions) {
                     if (epochManager.getDimensionOfEpoch(choiceStep, dim) > 0) {
                         choiceLeadsToThisClass = true;
                     }
@@ -611,7 +611,7 @@ void ProductModel<ValueType>::computeReachableStates(EpochClass const& epochClas
              choice != getProduct().getTransitionMatrix().getRowGroupIndices()[currentState + 1]; ++choice) {
             bool choiceLeadsOutsideOfEpoch = false;
             Epoch const& choiceStep = getSteps()[choice];
-            for (auto dim : nonBottomDimensions) {
+            for (uint64_t dim : nonBottomDimensions) {
                 if (epochManager.getDimensionOfEpoch(choiceStep, dim) > 0) {
                     choiceLeadsOutsideOfEpoch = true;
                     break;
@@ -642,7 +642,7 @@ typename ProductModel<ValueType>::MemoryState ProductModel<ValueType>::transform
     MemoryState memoryStatePrime = memoryState;
 
     for (auto const& objDimensions : objectiveDimensions) {
-        for (auto dim : objDimensions) {
+        for (uint64_t dim : objDimensions) {
             auto const& dimension = dimensions[dim];
             if (dimension.memoryLabel) {
                 bool dimUpperBounded = dimension.boundType == DimensionBoundType::UpperBound;

@@ -499,7 +499,7 @@ void PrismParserGrammar::createFormulaIdentifiers(std::vector<storm::prism::Form
         }
     }
     if (!unprocessed.empty()) {
-        for (auto formulaIndex : unprocessed) {
+        for (uint64_t formulaIndex : unprocessed) {
             STORM_LOG_ERROR("Parsing error in " << this->getFilename() << ": Invalid expression for formula '" << formulas[formulaIndex].getName()
                                                 << "' at line '" << formulas[formulaIndex].getLineNumber() << "':\n\t" << formulaExpressions[formulaIndex]);
         }

@@ -509,7 +509,7 @@ ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(
     uint64_t position = 0;
     uint64_t previousPlayer2States = 0;
     storm::storage::BitVector player2MaybeStates(transitionMatrix.getRowGroupCount());
-    for (auto state : maybeStates) {
+    for (uint64_t state : maybeStates) {
         subPlayer1Groups[position] = previousPlayer2States;
 
         [[maybe_unused]] bool hasMaybePlayer2Successor = false;
@@ -549,7 +549,7 @@ ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(
         // If the starting strategy pair was provided, we need to extract the choices of the maybe states here.
         uint64_t maybeStatePosition = 0;
         previousPlayer2States = 0;
-        for (auto state : maybeStates) {
+        for (uint64_t state : maybeStates) {
             uint64_t chosenPlayer2State = startingStrategyPair->getPlayer1Strategy().getChoice(state);
 
             uint64_t previousPlayer2MaybeStatesForState = 0;
@@ -586,7 +586,7 @@ ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(
     // Obtain strategies from solver and fuse them with the pre-existing strategy pair for the qualitative result.
     uint64_t previousPlayer1MaybeStates = 0;
     uint64_t previousPlayer2MaybeStates = 0;
-    for (auto state : maybeStates) {
+    for (uint64_t state : maybeStates) {
         uint64_t previousPlayer2MaybeStatesForState = 0;
         [[maybe_unused]] bool madePlayer1Choice = false;
         for (uint64_t player2State = player1Groups[state]; player2State < player1Groups[state + 1]; ++player2State) {
@@ -1090,7 +1090,7 @@ class ExplicitGameExporter {
         std::vector<EdgeData> edges;
 
         std::vector<uint64_t> stack;
-        for (auto state : initialStates) {
+        for (uint64_t state : initialStates) {
             stack.push_back(state);
         }
         storm::storage::BitVector reachablePlayer1(player1Groups.size() - 1);

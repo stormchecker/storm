@@ -192,7 +192,7 @@ std::vector<double> SparseCbAchievabilityQuery<storm::models::sparse::MarkovAuto
                                      : std::vector<double>(this->preprocessedModel->getNumberOfChoices(), storm::utility::zero<ValueType>());
     if (rewModel.hasStateRewards()) {
         // Note that state rewards are earned over time and thus play no role for probabilistic states
-        for (auto markovianState : this->preprocessedModel->getMarkovianStates()) {
+        for (uint64_t markovianState : this->preprocessedModel->getMarkovianStates()) {
             result[this->preprocessedModel->getTransitionMatrix().getRowGroupIndices()[markovianState]] +=
                 rewModel.getStateReward(markovianState) / this->preprocessedModel->getExitRate(markovianState);
         }
@@ -210,7 +210,7 @@ std::vector<storm::RationalNumber> SparseCbAchievabilityQuery<storm::models::spa
                                          : std::vector<storm::RationalNumber>(this->preprocessedModel->getNumberOfChoices(), storm::utility::zero<ValueType>());
     if (rewModel.hasStateRewards()) {
         // Note that state rewards are earned over time and thus play no role for probabilistic states
-        for (auto markovianState : this->preprocessedModel->getMarkovianStates()) {
+        for (uint64_t markovianState : this->preprocessedModel->getMarkovianStates()) {
             result[this->preprocessedModel->getTransitionMatrix().getRowGroupIndices()[markovianState]] +=
                 rewModel.getStateReward(markovianState) / this->preprocessedModel->getExitRate(markovianState);
         }

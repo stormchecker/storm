@@ -276,7 +276,7 @@ class UnifPlusHelper {
                 // Store the best solution we have found so far.
                 if (relevantMaybeStates) {
                     auto currentSolIt = bestKnownSolution.begin();
-                    for (auto state : relevantMaybeStates.get()) {
+                    for (uint64_t state : relevantMaybeStates.get()) {
                         // We take the average of the lower and upper bounds
                         *currentSolIt = (maybeStatesValuesLower[state] + maybeStatesValuesUpper[state]) / two;
                         ++currentSolIt;
@@ -331,14 +331,14 @@ class UnifPlusHelper {
             STORM_LOG_ASSERT(markovianMaybeStates.getNumberOfSetBits() == markovianStatesModMaybeStates.getNumberOfSetBits(),
                              "Unexpected number of Markovian maybe states");
             auto subStateIt = markovianStatesModMaybeStates.begin();
-            for (auto const markovianState : markovianMaybeStates) {
+            for (uint64_t markovianState : markovianMaybeStates) {
                 result[markovianState] = (maybeStatesValuesLower[*subStateIt] + maybeStatesValuesUpper[*subStateIt]) / two;
                 ++subStateIt;
             }
             // At this point, we only need to set the values for probabilistic "maybe" states.
             // We derive the values from the values of the other states, which are reached in zero time.
             uint64_t probSubState = 0;
-            for (auto const probabilisticState : probabilisticMaybeStates) {
+            for (uint64_t probabilisticState : probabilisticMaybeStates) {
                 for (auto const probStateRow : transitionMatrix.getRowGroupIndices(probabilisticState)) {
                     eqSysRhs[probSubState] = transitionMatrix.multiplyRowWithVector(probStateRow, result);
                     ++probSubState;
@@ -394,7 +394,7 @@ class UnifPlusHelper {
         storm::storage::SparseMatrixBuilder<ValueType> builder(submatrix.getRowCount(), submatrix.getColumnCount());
         auto markovianStateColumns = markovianMaybeStates % maybeStates;
         uint64_t row = 0;
-        for (auto selfloopColumn : markovianStateColumns) {
+        for (uint64_t selfloopColumn : markovianStateColumns) {
             ValueType const& oldExitRate = oldRates[row];
             bool foundSelfoop = false;
             for (auto const& entry : submatrix.getRow(row)) {
@@ -420,7 +420,7 @@ class UnifPlusHelper {
     void uniformize(storm::storage::SparseMatrix<ValueType>& matrix, std::vector<std::pair<uint64_t, ValueType>>& oneSteps,
                     std::vector<ValueType> const& oldRates, ValueType uniformizationRate, storm::storage::BitVector const& selfloopColumns) {
         uint64_t row = 0;
-        for (auto selfloopColumn : selfloopColumns) {
+        for (uint64_t selfloopColumn : selfloopColumns) {
             ValueType const& oldExitRate = oldRates[row];
             if (oldExitRate == uniformizationRate) {
                 // Already uniformized.
@@ -452,7 +452,7 @@ class UnifPlusHelper {
             ValueType rateDiff = newUniformizationRate - oldUniformizationRate;
             ValueType rateFraction = oldUniformizationRate / newUniformizationRate;
             uint64_t row = 0;
-            for (auto selfloopColumn : selfloopColumns) {
+            for (uint64_t selfloopColumn : selfloopColumns) {
                 for (auto& v : matrix.getRow(row)) {
                     if (v.getColumn() == selfloopColumn) {
                         ValueType newSelfLoop = rateDiff + v.getValue() * oldUniformizationRate;
@@ -529,7 +529,7 @@ void computeBoundedReachabilityProbabilitiesImca(Environment const& env, Optimiz
     // The matrices with transitions from Markovian states need to be digitized.
     // Digitize aMarkovian. Based on whether the transition is a self-loop or not, we apply the two digitization rules.
     uint64_t rowIndex = 0;
-    for (auto state : markovianNonGoalStates) {
+    for (uint64_t state : markovianNonGoalStates) {
         for (auto& element : aMarkovian.getRow(rowIndex)) {
             ValueType eTerm = std::exp(-exitRates[state] * delta);
             if (element.getColumn() == rowIndex) {
@@ -544,7 +544,7 @@ void computeBoundedReachabilityProbabilitiesImca(Environment const& env, Optimiz
     // Digitize aMarkovianToProbabilistic. As there are no self-loops in this case, we only need to apply the digitization formula for regular successors.
     if (existProbabilisticStates) {
         rowIndex = 0;
-        for (auto state : markovianNonGoalStates) {
+        for (uint64_t state : markovianNonGoalStates) {
             for (auto& element : aMarkovianToProbabilistic.getRow(rowIndex)) {
                 element.setValue((1 - std::exp(-exitRates[state] * delta)) * element.getValue());
             }
@@ -563,7 +563,7 @@ void computeBoundedReachabilityProbabilitiesImca(Environment const& env, Optimiz
     }
     std::vector<ValueType> bMarkovianFixed;
     bMarkovianFixed.reserve(markovianNonGoalStates.getNumberOfSetBits());
-    for (auto state : markovianNonGoalStates) {
+    for (uint64_t state : markovianNonGoalStates) {
         bMarkovianFixed.push_back(storm::utility::zero<ValueType>());
 
         for (auto& element : transitionMatrix.getRowGroup(state)) {
@@ -757,7 +757,7 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
     storm::storage::BitVector const& markovianStates, RewardModelType const& rewardModel, bool produceScheduler) {
     // Get a reward model where the state rewards are scaled accordingly
     std::vector<ValueType> stateRewardWeights(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-    for (auto const markovianState : markovianStates) {
+    for (uint64_t markovianState : markovianStates) {
         stateRewardWeights[markovianState] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
     }
     std::vector<ValueType> totalRewardVector = rewardModel.getTotalActionRewardVector(transitionMatrix, stateRewardWeights);
@@ -773,7 +773,7 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
     storm::storage::BitVector const& markovianStates, RewardModelType const& rewardModel, storm::storage::BitVector const& psiStates, bool produceScheduler) {
     // Get a reward model where the state rewards are scaled accordingly
     std::vector<ValueType> stateRewardWeights(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-    for (auto const markovianState : markovianStates) {
+    for (uint64_t markovianState : markovianStates) {
         stateRewardWeights[markovianState] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
     }
     std::vector<ValueType> totalRewardVector = rewardModel.getTotalActionRewardVector(transitionMatrix, stateRewardWeights);
@@ -790,7 +790,7 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
     storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, bool produceScheduler) {
     // Get a reward model representing expected sojourn times
     std::vector<ValueType> rewardValues(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
-    for (auto const markovianState : markovianStates) {
+    for (uint64_t markovianState : markovianStates) {
         rewardValues[transitionMatrix.getRowGroupIndices()[markovianState]] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
     }
     storm::models::sparse::StandardRewardModel<ValueType> rewardModel(std::nullopt, std::move(rewardValues));

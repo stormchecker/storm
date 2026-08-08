@@ -13,7 +13,7 @@ std::pair<std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>, std::set<uin
     storm::storage::BitVector const& stateSet) const {
     // Collect observations of target states
     std::set<uint32_t> oldObservations;
-    for (auto const state : stateSet) {
+    for (uint64_t state : stateSet) {
         oldObservations.insert(pomdp->getObservation(state));
     }
 
@@ -40,7 +40,7 @@ std::pair<std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>, std::set<uin
     } else {
         // Create new observations
         auto newObservationVector = pomdp->getObservations();
-        for (auto const state : stateSet) {
+        for (uint64_t state : stateSet) {
             auto findRes = oldToNewObservationMap.find(pomdp->getObservation(state));
             if (findRes != oldToNewObservationMap.end()) {
                 newObservationVector[state] = findRes->second;

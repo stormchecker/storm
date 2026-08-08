@@ -68,7 +68,7 @@ void SparseModelMemoryProduct<ValueType, RewardModelType>::initialize() {
         // Compute the mapping to the states of the result
         uint64_t reachableStateCount = 0;
         toResultStateMapping = std::vector<uint64_t>(model.getNumberOfStates() * memoryStateCount, std::numeric_limits<uint64_t>::max());
-        for (auto reachableState : reachableStates) {
+        for (uint64_t reachableState : reachableStates) {
             toResultStateMapping[reachableState] = reachableStateCount;
             ++reachableStateCount;
         }
@@ -132,7 +132,7 @@ void SparseModelMemoryProduct<ValueType, RewardModelType>::computeMemorySuccesso
         for (uint64_t transitionGoal = 0; transitionGoal < memoryStateCount; ++transitionGoal) {
             auto const& memoryTransition = memory.getTransitionMatrix()[memoryState][transitionGoal];
             if (memoryTransition) {
-                for (auto modelTransitionIndex : memoryTransition.get()) {
+                for (uint64_t modelTransitionIndex : memoryTransition.get()) {
                     memorySuccessors[modelTransitionIndex * memoryStateCount + memoryState] = transitionGoal;
                 }
             }
@@ -196,13 +196,13 @@ template<typename ValueType, typename RewardModelType>
 storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType, RewardModelType>::buildDeterministicTransitionMatrix() {
     uint64_t numResStates = reachableStates.getNumberOfSetBits();
     uint64_t numResTransitions = 0;
-    for (auto stateIndex : reachableStates) {
+    for (uint64_t stateIndex : reachableStates) {
         numResTransitions += model.getTransitionMatrix().getRow(stateIndex / memoryStateCount).getNumberOfEntries();
     }
 
     storm::storage::SparseMatrixBuilder<ValueType> builder(numResStates, numResStates, numResTransitions, true);
     uint64_t currentRow = 0;
-    for (auto stateIndex : reachableStates) {
+    for (uint64_t stateIndex : reachableStates) {
         uint64_t modelState = stateIndex / memoryStateCount;
         uint64_t memoryState = stateIndex % memoryStateCount;
         auto const& modelRow = model.getTransitionMatrix().getRow(modelState);
@@ -222,7 +222,7 @@ storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType, Rewa
     uint64_t numResStates = reachableStates.getNumberOfSetBits();
     uint64_t numResChoices = 0;
     uint64_t numResTransitions = 0;
-    for (auto stateIndex : reachableStates) {
+    for (uint64_t stateIndex : reachableStates) {
         uint64_t modelState = stateIndex / memoryStateCount;
         for (uint64_t modelRow = model.getTransitionMatrix().getRowGroupIndices()[modelState];
              modelRow < model.getTransitionMatrix().getRowGroupIndices()[modelState + 1]; ++modelRow) {
@@ -233,7 +233,7 @@ storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType, Rewa
 
     storm::storage::SparseMatrixBuilder<ValueType> builder(numResChoices, numResStates, numResTransitions, true, true, numResStates);
     uint64_t currentRow = 0;
-    for (auto stateIndex : reachableStates) {
+    for (uint64_t stateIndex : reachableStates) {
         uint64_t modelState = stateIndex / memoryStateCount;
         uint64_t memoryState = stateIndex % memoryStateCount;
         builder.newRowGroup(currentRow);
@@ -258,7 +258,7 @@ storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType, Rewa
     uint64_t numResChoices = 0;
     uint64_t numResTransitions = 0;
     bool hasTrivialNondeterminism = true;
-    for (auto stateIndex : reachableStates) {
+    for (uint64_t stateIndex : reachableStates) {
         uint64_t modelState = stateIndex / memoryStateCount;
         uint64_t memoryState = stateIndex % memoryStateCount;
         storm::storage::SchedulerChoice<ValueType> choice = scheduler->getChoice(modelState, memoryState);
@@ -293,7 +293,7 @@ storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType, Rewa
     storm::storage::SparseMatrixBuilder<ValueType> builder(numResChoices, numResStates, numResTransitions, true, !hasTrivialNondeterminism,
                                                            hasTrivialNondeterminism ? 0 : numResStates);
     uint64_t currentRow = 0;
-    for (auto stateIndex : reachableStates) {
+    for (uint64_t stateIndex : reachableStates) {
         uint64_t modelState = stateIndex / memoryStateCount;
         uint64_t memoryState = stateIndex % memoryStateCount;
         if (!hasTrivialNondeterminism) {
@@ -374,7 +374,7 @@ storm::models::sparse::StateLabeling SparseModelMemoryProduct<ValueType, RewardM
                         "Failed to build the product of model and memory structure: State labelings are not disjoint as both structures contain the label "
                             << memoryLabel << ".");
         storm::storage::BitVector resLabeledStates(numResStates, false);
-        for (auto memoryState : memory.getStateLabeling().getStates(memoryLabel)) {
+        for (uint64_t memoryState : memory.getStateLabeling().getStates(memoryLabel)) {
             for (uint64_t modelState = 0; modelState < modelStateCount; ++modelState) {
                 if (isStateReachable(modelState, memoryState)) {
                     resLabeledStates.set(getResultState(modelState, memoryState), true);

@@ -325,7 +325,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::translateL
         if (!upperBoundedDimensions.empty()) {
             // To not invalidate upper-bounded dimensions, one needs to consider MECS where no reward for such a dimension is collected.
             for (uint64_t choiceIndex = 0; choiceIndex < model.getNumberOfChoices(); ++choiceIndex) {
-                for (auto dim : upperBoundedDimensions) {
+                for (uint64_t dim : upperBoundedDimensions) {
                     if (epochManager.getDimensionOfEpoch(epochSteps[choiceIndex], dim) != 0) {
                         choicesWithoutUpperBoundedStep.set(choiceIndex, false);
                         break;
@@ -344,14 +344,14 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::translateL
                 }
             }
         }
-        for (auto choice : nonMecChoices) {
-            for (auto dim : infLowerBoundedDimensions) {
+        for (uint64_t choice : nonMecChoices) {
+            for (uint64_t dim : infLowerBoundedDimensions) {
                 epochManager.setDimensionOfEpoch(epochSteps[choice], dim, 0);
             }
         }
 
         // Translate the dimension to '>0'
-        for (auto dim : infLowerBoundedDimensions) {
+        for (uint64_t dim : infLowerBoundedDimensions) {
             dimensions[dim].boundType = DimensionBoundType::LowerBound;
             dimensions[dim].maxValue = 0;
         }
@@ -606,7 +606,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrent
         epochModelToProductChoiceMap.clear();
         epochModelToProductChoiceMap.reserve(numEpochModelStates);
         productToEpochModelStateMapping.assign(nonZeroRewardStates.size(), zeroRewardInState);
-        for (auto productState : nonZeroRewardStates) {
+        for (uint64_t productState : nonZeroRewardStates) {
             productToEpochModelStateMapping[productState] = epochModelToProductChoiceMap.size();
             epochModelToProductChoiceMap.push_back(productState);
         }
@@ -649,7 +649,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrent
     }
 
     epochModel.epochInStates = storm::storage::BitVector(epochModel.epochMatrix.getRowGroupCount(), false);
-    for (auto productState : productInStates) {
+    for (uint64_t productState : productInStates) {
         STORM_LOG_ASSERT(productToEpochModelStateMapping[productState] < epochModel.epochMatrix.getRowGroupCount(),
                          "Selected product state does not exist in the epoch model.");
         epochModel.epochInStates.set(productToEpochModelStateMapping[productState], true);
@@ -657,7 +657,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrent
 
     std::vector<uint64_t> toEpochModelInStatesMap(productModel->getProduct().getNumberOfStates(), std::numeric_limits<uint64_t>::max());
     std::vector<uint64_t> epochModelStateToInStateMap = epochModel.epochInStates.getNumberOfSetBitsBeforeIndices();
-    for (auto productState : productInStates) {
+    for (uint64_t productState : productInStates) {
         toEpochModelInStatesMap[productState] = epochModelStateToInStateMap[productToEpochModelStateMapping[productState]];
     }
     productStateToEpochModelInStateMap = std::make_shared<std::vector<uint64_t> const>(std::move(toEpochModelInStatesMap));

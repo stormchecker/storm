@@ -96,7 +96,7 @@ std::map<storm::storage::sparse::state_type, SolutionType> SparseMdpPrctlHelper<
         }
 
         std::map<storm::storage::sparse::state_type, ValueType> result;
-        for (auto initState : initialStates) {
+        for (uint64_t initState : initialStates) {
             result[initState] = rewardUnfolding.getInitialStateResult(initEpoch, initState);
         }
 
@@ -163,7 +163,7 @@ std::vector<uint_fast64_t> computeValidSchedulerHint(Environment const& env, Sem
     schedulerHint.reserve(maybeStates.getNumberOfSetBits());
     if (selectedChoices) {
         // There might be unselected choices so the local choice indices from the scheduler need to be adapted
-        for (auto maybeState : maybeStates) {
+        for (uint64_t maybeState : maybeStates) {
             auto choice = validScheduler.getChoice(maybeState).getDeterministicChoice();
             auto const groupStart = transitionMatrix.getRowGroupIndices()[maybeState];
             auto const origGlobalChoiceIndex = groupStart + choice;
@@ -175,7 +175,7 @@ std::vector<uint_fast64_t> computeValidSchedulerHint(Environment const& env, Sem
             schedulerHint.push_back(choice);
         }
     } else {
-        for (auto maybeState : maybeStates) {
+        for (uint64_t maybeState : maybeStates) {
             schedulerHint.push_back(validScheduler.getChoice(maybeState).getDeterministicChoice());
         }
     }
@@ -289,7 +289,7 @@ void extractValueAndSchedulerHint(SparseMdpHintType<SolutionType>& hintStorage, 
                 // Compute the hint w.r.t. the given subsystem.
                 hintChoices.clear();
                 hintChoices.reserve(maybeStates.getNumberOfSetBits());
-                for (auto state : maybeStates) {
+                for (uint64_t state : maybeStates) {
                     uint_fast64_t hintChoice = schedulerHint.getChoice(state).getDeterministicChoice();
                     if (selectedChoices) {
                         uint_fast64_t firstChoice = transitionMatrix.getRowGroupIndices()[state];
@@ -507,7 +507,7 @@ QualitativeStateSetsUntilProbabilities getQualitativeStateSetsUntilProbabilities
     result.statesWithProbability1 = storm::storage::BitVector(result.maybeStates.size());
     result.statesWithProbability0 = storm::storage::BitVector(result.maybeStates.size());
     storm::storage::BitVector nonMaybeStates = ~result.maybeStates;
-    for (auto state : nonMaybeStates) {
+    for (uint64_t state : nonMaybeStates) {
         if (storm::utility::isOne(resultsForNonMaybeStates[state])) {
             result.statesWithProbability1.set(state, true);
         } else {
@@ -562,7 +562,7 @@ void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler,
                              storm::storage::BitVector const& maybeStates) {
     if constexpr (subChoicesCoverOnlyMaybeStates) {
         auto subChoiceIt = subChoices.begin();
-        for (auto maybeState : maybeStates) {
+        for (uint64_t maybeState : maybeStates) {
             scheduler.setChoice(*subChoiceIt, maybeState);
             ++subChoiceIt;
         }
@@ -571,7 +571,7 @@ void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler,
         // See computeFixedPointSystemUntilProbabilities, where we create a different equation system.
         // Consequentially, we run a slightly different code here for interval-based models.
         STORM_LOG_ASSERT(maybeStates.size() == subChoices.size(), "Sizes do not coincide.");
-        for (auto maybeState : maybeStates) {
+        for (uint64_t maybeState : maybeStates) {
             scheduler.setChoice(subChoices[maybeState], maybeState);
         }
     }
@@ -587,13 +587,13 @@ void extendScheduler(storm::storage::Scheduler<SolutionType>& scheduler, storm::
     // We also need to define some arbitrary choice for the remaining states to obtain a fully defined scheduler.
     if (goal.minimize()) {
         storm::utility::graph::computeSchedulerProb0E(qualitativeStateSets.statesWithProbability0, transitionMatrix, scheduler);
-        for (auto prob1State : qualitativeStateSets.statesWithProbability1) {
+        for (uint64_t prob1State : qualitativeStateSets.statesWithProbability1) {
             scheduler.setChoice(0, prob1State);
         }
     } else {
         storm::utility::graph::computeSchedulerProb1E(qualitativeStateSets.statesWithProbability1, transitionMatrix, backwardTransitions, phiStates, psiStates,
                                                       scheduler);
-        for (auto prob0State : qualitativeStateSets.statesWithProbability0) {
+        for (uint64_t prob0State : qualitativeStateSets.statesWithProbability0) {
             scheduler.setChoice(0, prob0State);
         }
     }
@@ -710,7 +710,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
         scheduler = std::make_unique<storm::storage::Scheduler<SolutionType>>(transitionMatrix.getRowGroupCount());
         // If maybeStatesNotRelevant is true, we have to set the scheduler for maybe states as "dontCare"
         if (maybeStatesNotRelevant) {
-            for (auto state : qualitativeStateSets.maybeStates) {
+            for (uint64_t state : qualitativeStateSets.maybeStates) {
                 scheduler->setDontCare(state);
             }
         }
@@ -913,7 +913,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
             auto ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(
                 transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), choicesWithoutReward, rew0AStates, true);
             storm::storage::BitVector newRew0AStates(ecElimResult.matrix.getRowGroupCount(), false);
-            for (auto oldRew0AState : rew0AStates) {
+            for (uint64_t oldRew0AState : rew0AStates) {
                 newRew0AStates.set(ecElimResult.oldToNewStateMapping[oldRew0AState]);
             }
 
@@ -943,7 +943,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                 newRew0AStates, qualitative, false,
                 [&]() {
                     storm::storage::BitVector newStatesWithoutReward(ecElimResult.matrix.getRowGroupCount(), false);
-                    for (auto oldStateWithoutRew : statesWithoutReward) {
+                    for (uint64_t oldStateWithoutRew : statesWithoutReward) {
                         newStatesWithoutReward.set(ecElimResult.oldToNewStateMapping[oldStateWithoutRew]);
                     }
                     return newStatesWithoutReward;
@@ -1102,7 +1102,7 @@ QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewar
     result.infinityStates = storm::storage::BitVector(result.maybeStates.size());
     result.rewardZeroStates = storm::storage::BitVector(result.maybeStates.size());
     storm::storage::BitVector nonMaybeStates = ~result.maybeStates;
-    for (auto state : nonMaybeStates) {
+    for (uint64_t state : nonMaybeStates) {
         if (storm::utility::isZero(resultsForNonMaybeStates[state])) {
             result.rewardZeroStates.set(state, true);
         } else {
@@ -1170,12 +1170,12 @@ void extendScheduler(storm::storage::Scheduler<SolutionType>& scheduler, storm::
     if (goal.minimize()) {
         storm::utility::graph::computeSchedulerProb1E(qualitativeStateSets.rewardZeroStates, transitionMatrix, backwardTransitions,
                                                       qualitativeStateSets.rewardZeroStates, targetStates, scheduler, zeroRewardChoicesGetter());
-        for (auto state : qualitativeStateSets.infinityStates) {
+        for (uint64_t state : qualitativeStateSets.infinityStates) {
             scheduler.setChoice(0, state);
         }
     } else {
         storm::utility::graph::computeSchedulerRewInf(qualitativeStateSets.infinityStates, transitionMatrix, backwardTransitions, scheduler);
-        for (auto state : qualitativeStateSets.rewardZeroStates) {
+        for (uint64_t state : qualitativeStateSets.rewardZeroStates) {
             scheduler.setChoice(0, state);
         }
     }
@@ -1187,7 +1187,7 @@ void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler,
                              boost::optional<storm::storage::BitVector> const& selectedChoices) {
     auto subChoiceIt = subChoices.begin();
     if (selectedChoices) {
-        for (auto maybeState : maybeStates) {
+        for (uint64_t maybeState : maybeStates) {
             // find the rowindex that corresponds to the selected row of the submodel
             uint_fast64_t firstRowIndex = transitionMatrix.getRowGroupIndices()[maybeState];
             uint_fast64_t selectedRowIndex = selectedChoices->getNextSetIndex(firstRowIndex);
@@ -1198,7 +1198,7 @@ void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler,
             ++subChoiceIt;
         }
     } else {
-        for (auto maybeState : maybeStates) {
+        for (uint64_t maybeState : maybeStates) {
             scheduler.setChoice(*subChoiceIt, maybeState);
             ++subChoiceIt;
         }
@@ -1262,7 +1262,7 @@ boost::optional<SparseMdpEndComponentInformation<ValueType>> computeFixedPointSy
 
     // Compute the states that have some zero reward choice.
     storm::storage::BitVector candidateStates(qualitativeStateSets.maybeStates);
-    for (auto state : qualitativeStateSets.maybeStates) {
+    for (uint64_t state : qualitativeStateSets.maybeStates) {
         bool keepState = false;
 
         for (auto row = transitionMatrix.getRowGroupIndices()[state], rowEnd = transitionMatrix.getRowGroupIndices()[state + 1]; row < rowEnd; ++row) {

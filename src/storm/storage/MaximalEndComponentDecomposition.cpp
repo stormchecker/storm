@@ -121,7 +121,7 @@ void getFlatSccDecomposition(SccDecompositionResult const& sccDecRes, std::vecto
 
     // count the number of states in each SCC. For efficiency, we re-use storage from sccIndications but make sure that sccIndications[0]==0 remains true
     std::span<uint64_t> sccCounts(sccIndications.begin() + 1, sccIndications.end());
-    for (auto state : sccDecRes.nonTrivialStates) {
+    for (uint64_t state : sccDecRes.nonTrivialStates) {
         ++sccCounts[sccDecRes.stateToSccMapping[state]];
     }
 
@@ -135,7 +135,7 @@ void getFlatSccDecomposition(SccDecompositionResult const& sccDecRes, std::vecto
     }
 
     // Now fill the sccStates vector
-    for (auto state : sccDecRes.nonTrivialStates) {
+    for (uint64_t state : sccDecRes.nonTrivialStates) {
         auto const sccIndex = sccDecRes.stateToSccMapping[state];
         sccStates[sccCounts[sccIndex]] = state;
         ++sccCounts[sccIndex];
@@ -183,7 +183,7 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
         storm::storage::BitVector ecSccIndices(sccDecRes.sccCount, true);
         storm::storage::BitVector nonTrivSccIndices(sccDecRes.sccCount, false);
         // find the choices that do not stay in their SCC
-        for (auto state : remainingEcCandidates) {
+        for (uint64_t state : remainingEcCandidates) {
             auto const sccIndex = sccDecRes.stateToSccMapping[state];
             nonTrivSccIndices.set(sccIndex, true);
             bool stateCanStayInScc = false;
@@ -208,7 +208,7 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
 
         // process the MECs that we've found, i.e. SCCs where every state can stay inside the SCC
         ecSccIndices &= nonTrivSccIndices;
-        for (auto sccIndex : ecSccIndices) {
+        for (uint64_t sccIndex : ecSccIndices) {
             MaximalEndComponent newMec;
             for (auto const state : getSccStates(sccIndex)) {
                 // This is no longer a candidate

@@ -1211,7 +1211,7 @@ boost::optional<ExplicitPivotStateResult<ValueType>> pickPivotState(
     // Use set as priority queue with unique membership.
     std::set<ExplicitDijkstraQueueElement<ValueType>, ExplicitDijkstraQueueElementLess<ValueType>> dijkstraQueue;
 
-    for (auto initialState : initialStates) {
+    for (uint64_t initialState : initialStates) {
         if (!relevantStates.get(initialState)) {
             continue;
         }

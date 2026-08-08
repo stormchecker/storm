@@ -518,7 +518,7 @@ bool SparseExplorationModelChecker<ModelType, StateType>::performPrecomputation(
 
     // Set the bounds of the identified states.
     STORM_LOG_ASSERT((statesWithProbability0 & statesWithProbability1).empty(), "States with probability 0 and 1 overlap.");
-    for (auto state : statesWithProbability0) {
+    for (uint64_t state : statesWithProbability0) {
         // Skip the sink state as it is not contained in the original system.
         if (state == sink) {
             continue;
@@ -528,7 +528,7 @@ bool SparseExplorationModelChecker<ModelType, StateType>::performPrecomputation(
         bounds.setUpperBoundForState(originalState, explorationInformation, storm::utility::zero<ValueType>());
         explorationInformation.addTerminalState(originalState);
     }
-    for (auto state : statesWithProbability1) {
+    for (uint64_t state : statesWithProbability1) {
         // Skip the sink state as it is not contained in the original system.
         if (state == sink) {
             continue;

@@ -540,7 +540,7 @@ template<typename ValueType, typename SolutionType>
 ValueType computeMaxAbsDiff(std::vector<ValueType> const& allValues, storm::storage::BitVector const& relevantValues, std::vector<ValueType> const& oldValues) {
     ValueType result = storm::utility::zero<ValueType>();
     auto oldValueIt = oldValues.begin();
-    for (auto value : relevantValues) {
+    for (uint64_t value : relevantValues) {
         result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allValues[value] - *oldValueIt));
         ++oldValueIt;
     }
@@ -551,7 +551,7 @@ template<typename ValueType, typename SolutionType>
 ValueType computeMaxAbsDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues,
                             storm::storage::BitVector const& relevantValues) {
     ValueType result = storm::utility::zero<ValueType>();
-    for (auto value : relevantValues) {
+    for (uint64_t value : relevantValues) {
         result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[value] - allOldValues[value]));
     }
     return result;

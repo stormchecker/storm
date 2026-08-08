@@ -15,7 +15,7 @@ template<typename ValueType>
 std::set<uint32_t> extractObservations(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::BitVector const& states) {
     // TODO move.
     std::set<uint32_t> observations;
-    for (auto state : states) {
+    for (uint64_t state : states) {
         observations.insert(pomdp.getObservation(state));
     }
     return observations;

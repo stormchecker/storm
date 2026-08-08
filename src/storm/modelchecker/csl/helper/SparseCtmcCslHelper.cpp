@@ -32,7 +32,7 @@ bool SparseCtmcCslHelper::checkAndUpdateTransientProbabilityEpsilon(storm::Envir
     // If we need to compute values with relative precision, it might be necessary to increase the precision requirements (epsilon)
     ValueType newEpsilon = epsilon;
     // Only consider positions that are relevant for the solve goal (e.g. initial states of the model) and are supposed to have a non-zero value
-    for (auto state : relevantPositions) {
+    for (uint64_t state : relevantPositions) {
         if (storm::utility::isZero(resultVector[state])) {
             newEpsilon = std::min(epsilon * storm::utility::convertNumber<ValueType>(0.1), newEpsilon);
         } else {
@@ -109,7 +109,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
                     if (!statesWithProbabilityGreater0NonPsi.empty()) {
                         // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
                         ValueType uniformizationRate = 0;
-                        for (auto state : statesWithProbabilityGreater0NonPsi) {
+                        for (uint64_t state : statesWithProbabilityGreater0NonPsi) {
                             uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                         }
                         uniformizationRate *= 1.02;
@@ -145,7 +145,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
                     storm::utility::vector::selectVectorValues(subResult, relevantStates, result);
 
                     ValueType uniformizationRate = 0;
-                    for (auto state : relevantStates) {
+                    for (uint64_t state : relevantStates) {
                         uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                     }
                     uniformizationRate *= 1.02;
@@ -173,7 +173,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
                         if (!statesWithProbabilityGreater0NonPsi.empty()) {
                             // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
                             ValueType uniformizationRate = storm::utility::zero<ValueType>();
-                            for (auto state : statesWithProbabilityGreater0NonPsi) {
+                            for (uint64_t state : statesWithProbabilityGreater0NonPsi) {
                                 uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                             }
                             uniformizationRate *= 1.02;
@@ -201,7 +201,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
                         // Then compute the transient probabilities of being in such a state after t time units. For this,
                         // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
                         ValueType uniformizationRate = storm::utility::zero<ValueType>();
-                        for (auto state : relevantStates) {
+                        for (uint64_t state : relevantStates) {
                             uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                         }
                         uniformizationRate *= 1.02;
@@ -226,7 +226,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
                         // Then compute the transient probabilities of being in such a state after t time units. For this,
                         // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
                         ValueType uniformizationRate = storm::utility::zero<ValueType>();
-                        for (auto state : statesWithProbabilityGreater0) {
+                        for (uint64_t state : statesWithProbabilityGreater0) {
                             uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                         }
                         uniformizationRate *= 1.02;
@@ -525,7 +525,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Env
     storm::storage::SparseMatrix<ValueType> transposedMatrix(rateMatrix);
     transposedMatrix.makeRowsAbsorbing(psiStates);
     std::vector<ValueType> newRates = exitRates;
-    for (auto state : psiStates) {
+    for (uint64_t state : psiStates) {
         newRates[state] = storm::utility::one<ValueType>();
     }
 
@@ -540,7 +540,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Env
     if (!relevantStates.empty()) {
         // Find the maximal rate of all relevant states to take it as the uniformization rate.
         ValueType uniformizationRate = 0;
-        for (auto state : relevantStates) {
+        for (uint64_t state : relevantStates) {
             uniformizationRate = std::max(uniformizationRate, newRates[state]);
         }
         uniformizationRate *= 1.02;
@@ -565,7 +565,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Env
         // Set initial states
         size_t i = 0;
         ValueType initDist = storm::utility::one<ValueType>() / initialStates.getNumberOfSetBits();
-        for (auto state : relevantStates) {
+        for (uint64_t state : relevantStates) {
             if (initialStates.get(state)) {
                 values[i] = initDist;
             }
@@ -597,7 +597,7 @@ storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper::computeUniformizedM
     // the uniformization rate, and the diagonal needs to be set to the negative exit rate of the
     // state plus the self-loop rate and then increased by one.
     uint_fast64_t currentRow = 0;
-    for (auto state : maybeStates) {
+    for (uint64_t state : maybeStates) {
         for (auto& element : uniformizedMatrix.getRow(currentRow)) {
             if (element.getColumn() == currentRow) {
                 element.setValue((element.getValue() - exitRates[state]) / uniformizationRate + storm::utility::one<ValueType>());

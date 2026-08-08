@@ -351,7 +351,7 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveScc(st
     // b Vector
     std::vector<ValueType> sccB;
     sccB.reserve(sccRows.getNumberOfSetBits());
-    for (auto row : sccRows) {
+    for (uint64_t row : sccRows) {
         ValueType bi = globalB[row];
         for (auto const& entry : this->A->getRow(row)) {
             if (!sccRowGroups.get(entry.getColumn())) {

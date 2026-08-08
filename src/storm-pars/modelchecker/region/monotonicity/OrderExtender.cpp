@@ -45,11 +45,11 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector 
     std::vector<uint64_t> firstStates;
 
     storm::storage::BitVector subStates(topStates.size(), true);
-    for (auto state : topStates) {
+    for (uint64_t state : topStates) {
         firstStates.push_back(state);
         subStates.set(state, false);
     }
-    for (auto state : bottomStates) {
+    for (uint64_t state : bottomStates) {
         firstStates.push_back(state);
         subStates.set(state, false);
     }

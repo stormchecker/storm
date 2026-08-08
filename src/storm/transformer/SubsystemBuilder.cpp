@@ -82,7 +82,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
     // Get the set of actions that stay in the subsystem.
     // Also establish the mappings if requested.
     storm::storage::BitVector keptActions(originalModel.getTransitionMatrix().getRowCount(), false);
-    for (auto subsysState : subsystemStates) {
+    for (uint64_t subsysState : subsystemStates) {
         if (options.buildStateMapping) {
             result.newToOldStateIndexMapping.push_back(subsysState);
         }
@@ -121,7 +121,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
         // store them now, before changing them.
         result.keptActions = keptActions;
     }
-    for (auto deadlockState : deadlockStates) {
+    for (uint64_t deadlockState : deadlockStates) {
         keptActions.set(groupIndices[deadlockState], true);
     }
 
@@ -161,13 +161,13 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
         assert(deadlockStates.getNumberOfSetBits() == subDeadlockStates.getNumberOfSetBits());
         // erase rewards, choice labels, choice origins
         for (auto& rewModel : components.rewardModels) {
-            for (auto state : subDeadlockStates) {
+            for (uint64_t state : subDeadlockStates) {
                 rewModel.second.clearRewardAtState(state, components.transitionMatrix);
             }
         }
         if (components.choiceLabeling) {
             storm::storage::BitVector nonDeadlockChoices(components.transitionMatrix.getRowCount(), true);
-            for (auto state : subDeadlockStates) {
+            for (uint64_t state : subDeadlockStates) {
                 auto const& choice = components.transitionMatrix.getRowGroupIndices()[state];
                 nonDeadlockChoices.set(choice, false);
             }
@@ -176,7 +176,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
             }
         }
         if (components.choiceOrigins) {
-            for (auto state : subDeadlockStates) {
+            for (uint64_t state : subDeadlockStates) {
                 auto const& choice = components.transitionMatrix.getRowGroupIndices()[state];
                 components.choiceOrigins.value()->clearOriginOfChoice(choice);
             }

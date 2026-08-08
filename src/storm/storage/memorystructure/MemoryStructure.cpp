@@ -97,7 +97,7 @@ MemoryStructure MemoryStructure::product(MemoryStructure const& rhs) const {
     for (std::string lhsLabel : this->getStateLabeling().getLabels()) {
         storm::storage::BitVector const& lhsLabeledStates = this->getStateLabeling().getStates(lhsLabel);
         storm::storage::BitVector resLabeledStates(resNumStates, false);
-        for (auto lhsState : lhsLabeledStates) {
+        for (uint64_t lhsState : lhsLabeledStates) {
             for (uint_fast64_t rhsState = 0; rhsState < rhsNumStates; ++rhsState) {
                 resState = (lhsState * rhsNumStates) + rhsState;
                 resLabeledStates.set(resState, true);
@@ -111,7 +111,7 @@ MemoryStructure MemoryStructure::product(MemoryStructure const& rhs) const {
             "Failed to build the product of two memory structures: State labelings are not disjoint as both structures contain the label " << rhsLabel << ".");
         storm::storage::BitVector const& rhsLabeledStates = rhs.getStateLabeling().getStates(rhsLabel);
         storm::storage::BitVector resLabeledStates(resNumStates, false);
-        for (auto rhsState : rhsLabeledStates) {
+        for (uint64_t rhsState : rhsLabeledStates) {
             for (uint_fast64_t lhsState = 0; lhsState < lhsNumStates; ++lhsState) {
                 resState = (lhsState * rhsNumStates) + rhsState;
                 resLabeledStates.set(resState, true);

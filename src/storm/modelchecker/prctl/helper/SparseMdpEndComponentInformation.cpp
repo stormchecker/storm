@@ -133,7 +133,7 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
 
     // (2) Create the parts of the submatrix and vector b that belong to states not contained in ECs.
     uint64_t currentRow = 0;
-    for (auto state : maybeStates) {
+    for (uint64_t state : maybeStates) {
         if (!result.isStateInEc(state)) {
             builder.newRowGroup(currentRow);
             for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
@@ -267,7 +267,7 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
 
     // (2) Create the parts of the submatrix and vector b that belong to states not contained in ECs.
     uint64_t currentRow = 0;
-    for (auto state : maybeStates) {
+    for (uint64_t state : maybeStates) {
         if (!result.isStateInEc(state)) {
             builder.newRowGroup(currentRow);
             for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
@@ -357,7 +357,7 @@ void SparseMdpEndComponentInformation<ValueType>::setValues(std::vector<ValueTyp
                                                             std::vector<ValueType> const& fromResult) {
     // The following assumes that row groups associated to EC states are at the very end.
     auto notInEcResultIt = fromResult.begin();
-    for (auto state : maybeStates) {
+    for (uint64_t state : maybeStates) {
         if (this->isStateInEc(state)) {
             STORM_LOG_ASSERT(this->getRowGroupAfterElimination(state) >= this->getNumberOfMaybeStatesNotInEc(),
                              "Expected introduced EC states to be located at the end of the matrix.");
@@ -380,7 +380,7 @@ void SparseMdpEndComponentInformation<ValueType>::setScheduler(storm::storage::S
     storm::storage::BitVector maybeStatesWithoutChoice(maybeStates.size(), false);
     storm::storage::BitVector ecStayChoices(transitionMatrix.getRowCount(), false);
     auto notInEcResultIt = fromResult.begin();
-    for (auto state : maybeStates) {
+    for (uint64_t state : maybeStates) {
         if (this->isStateInEc(state)) {
             STORM_LOG_ASSERT(this->getRowGroupAfterElimination(state) >= this->getNumberOfMaybeStatesNotInEc(),
                              "Expected introduced EC states to be located at the end of the matrix.");

@@ -33,7 +33,7 @@ Partition<DataType>::Partition(std::size_t numberOfStates, storm::storage::BitVe
         blocks.emplace_back(new Block<DataType>(0, prob0States.getNumberOfSetBits(), nullptr, nullptr, blocks.size()));
         firstBlock = blocks.front().get();
 
-        for (auto state : prob0States) {
+        for (uint64_t state : prob0States) {
             states[position] = state;
             positions[state] = position;
             stateToBlockMapping[state] = firstBlock;
@@ -46,7 +46,7 @@ Partition<DataType>::Partition(std::size_t numberOfStates, storm::storage::BitVe
         blocks.emplace_back(new Block<DataType>(position, position + prob1States.getNumberOfSetBits(), firstBlock, nullptr, blocks.size()));
         secondBlock = blocks.back().get();
 
-        for (auto state : prob1States) {
+        for (uint64_t state : prob1States) {
             states[position] = state;
             positions[state] = position;
             stateToBlockMapping[state] = secondBlock;
@@ -61,7 +61,7 @@ Partition<DataType>::Partition(std::size_t numberOfStates, storm::storage::BitVe
         blocks.emplace_back(new Block<DataType>(position, numberOfStates, secondBlock, nullptr, blocks.size()));
         thirdBlock = blocks.back().get();
 
-        for (auto state : otherStates) {
+        for (uint64_t state : otherStates) {
             states[position] = state;
             positions[state] = position;
             stateToBlockMapping[state] = thirdBlock;

@@ -248,7 +248,7 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(Env
     // Now, we set the values of all states in BSCCs to that of the representative value (and clear the
     // transitions of the representative states while doing so).
     auto representativeIt = bsccRepresentatives.begin();
-    for (auto sccIndex : relevantBsccs) {
+    for (uint64_t sccIndex : relevantBsccs) {
         // We only need to set the values for all states of the BSCC if we are not computing the values for the
         // initial states only.
         ValueType bsccValue = stateValues[*representativeIt] / averageTimeInStates[*representativeIt];
@@ -286,7 +286,7 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(Env
     // Set the value initial value of all states not in a BSCC to zero, because a) any previous value would
     // incorrectly influence the result and b) the value have been erroneously changed for the predecessors of
     // BSCCs by the previous state elimination.
-    for (auto state : remainingStates) {
+    for (uint64_t state : remainingStates) {
         if (!bsccRepresentativesAsBitVector.get(state)) {
             stateValues[state] = storm::utility::zero<ValueType>();
         }
@@ -413,7 +413,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
             // each state to the initial states to determine whether we still need to consider the values for
             // these states. If not, we can null-out all their probabilities.
             if (checkTask.isOnlyInitialStatesRelevantSet()) {
-                for (auto state : relevantStates) {
+                for (uint64_t state : relevantStates) {
                     if (distancesFromInitialStates[state] > (timeBound - timeStep)) {
                         for (auto& element : submatrix.getRow(state)) {
                             element.setValue(storm::utility::zero<ValueType>());
@@ -513,7 +513,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         // If we computed the results for the initial (and prob 0 and prob1) states only, we need to filter the
         // result to only communicate these results.
         std::unique_ptr<ExplicitQuantitativeCheckResult<ValueType>> checkResult = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>();
-        for (auto state : ~maybeStates | initialStates) {
+        for (uint64_t state : ~maybeStates | initialStates) {
             (*checkResult)[state] = result[state];
         }
         return std::move(checkResult);  // move() required by, e.g., clang 3.8
@@ -622,7 +622,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         // If we computed the results for the initial (and inf) states only, we need to filter the result to
         // only communicate these results.
         std::unique_ptr<ExplicitQuantitativeCheckResult<ValueType>> checkResult = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>();
-        for (auto state : ~maybeStates | initialStates) {
+        for (uint64_t state : ~maybeStates | initialStates) {
             (*checkResult)[state] = result[state];
         }
         return std::move(checkResult);  // move() required by, e.g., clang 3.8
@@ -989,7 +989,7 @@ uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::treatScc(
 
         // And then recursively treat the remaining sub-SCCs.
         STORM_LOG_TRACE("Eliminating " << remainingSccs.getNumberOfSetBits() << " remaining SCCs on level " << level << ".");
-        for (auto sccIndex : remainingSccs) {
+        for (uint64_t sccIndex : remainingSccs) {
             storm::storage::StronglyConnectedComponent const& newScc = decomposition.getBlock(sccIndex);
 
             // Rewrite SCC into bit vector and subtract it from the remaining states.
@@ -1028,7 +1028,7 @@ uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::treatScc(
         STORM_LOG_TRACE("Eliminated/added entry states.");
     } else {
         STORM_LOG_TRACE("Finally, adding entry states to queue.");
-        for (auto state : entryStates) {
+        for (uint64_t state : entryStates) {
             entryStateQueue.push_back(state);
         }
     }

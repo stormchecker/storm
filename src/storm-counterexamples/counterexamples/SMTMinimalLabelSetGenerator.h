@@ -2019,7 +2019,7 @@ class SMTMinimalLabelSetGenerator {
         // Create a queue of reachable prob0E(psi) states so we can check which commands need to be added
         // to give them a strategy that avoids psi states.
         std::queue<uint_fast64_t> prob0EWorklist;
-        for (auto e : reachableProb0EStates) {
+        for (uint64_t e : reachableProb0EStates) {
             prob0EWorklist.push(e);
         }
 

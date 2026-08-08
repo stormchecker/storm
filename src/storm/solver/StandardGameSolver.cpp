@@ -205,7 +205,7 @@ bool StandardGameSolver<ValueType>::solveGamePolicyIteration(Environment const& 
         asEquationSystem = true;
     }
     if (!this->hasUniqueSolution()) {
-        for (auto state : zeroStates) {
+        for (uint64_t state : zeroStates) {
             for (auto& element : submatrix.getRow(state)) {
                 if (element.getColumn() == state) {
                     element.setValue(asEquationSystem ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());
@@ -251,7 +251,7 @@ bool StandardGameSolver<ValueType>::solveGamePolicyIteration(Environment const& 
                 submatrix.convertToEquationSystem();
             }
             if (!this->hasUniqueSolution()) {
-                for (auto state : zeroStates) {
+                for (uint64_t state : zeroStates) {
                     for (auto& element : submatrix.getRow(state)) {
                         if (element.getColumn() == state) {
                             element.setValue(asEquationSystem ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());

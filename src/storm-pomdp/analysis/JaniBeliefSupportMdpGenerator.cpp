@@ -128,13 +128,13 @@ void JaniBeliefSupportMdpGenerator<ValueType>::generate(storm::storage::BitVecto
     auto const& targetVar = model.addVariable(
         *storm::jani::Variable::makeBooleanVariable("target", exprManager.declareBooleanVariable("target"), exprManager.boolean(false), true));
     std::vector<storm::expressions::Expression> notTargetExpression;
-    for (auto const state : ~targetStates) {
+    for (uint64_t state : ~targetStates) {
         notTargetExpression.push_back(!stateVariables.at(state)->getExpressionVariable().getExpression());
     }
     auto const& badVar =
         model.addVariable(*storm::jani::Variable::makeBooleanVariable("bad", exprManager.declareBooleanVariable("bad"), exprManager.boolean(false), true));
     std::vector<storm::expressions::Expression> badExpression;
-    for (auto const state : badStates) {
+    for (uint64_t state : badStates) {
         badExpression.push_back(stateVariables.at(state)->getExpressionVariable().getExpression());
     }
 

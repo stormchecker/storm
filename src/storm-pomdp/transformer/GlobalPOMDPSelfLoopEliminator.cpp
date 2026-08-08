@@ -81,7 +81,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPOMDPSelfLoopElim
     for (uint64_t state = 0; state < nrStates; ++state) {
         storm::storage::BitVector& observationSelfLoopMask = observationSelfLoopMasks[pomdp.getObservation(state)];
         assert(!observationSelfLoopMask.full());
-        for (auto const localChoiceIndex : observationSelfLoopMask) {
+        for (uint64_t localChoiceIndex : observationSelfLoopMask) {
             filter.set(offset + localChoiceIndex, false);
         }
         offset += pomdp.getNumberOfChoices(state);

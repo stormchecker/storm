@@ -290,7 +290,7 @@ void finalizeSchedulerForMaybeStates(storm::storage::Scheduler<SolutionType>& sc
     storm::storage::BitVector initialComponentStates(transitionMatrix.getRowGroupCount(), false);
 
     // compute initial component states and all choices that stay within a given EC
-    for (auto state : maybeStates) {
+    for (uint64_t state : maybeStates) {
         auto ecIndex = stateToFinalEc[state];
         if (ecIndex == initialComponentIndex) {
             initialComponentStates.set(state, true);
@@ -370,7 +370,7 @@ void finalizeSchedulerForMaybeStates(storm::storage::Scheduler<SolutionType>& sc
 
     storm::storage::BitVector goodInitialComponentStates = initialComponentStates;
     bool progress = false;
-    for (auto state : initialComponentExitStates) {
+    for (uint64_t state : initialComponentExitStates) {
         auto const groupStart = transitionMatrix.getRowGroupIndices()[state];
         auto const groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
         bool const allChoicesAreDisallowed = disallowedInitialComponentExits.getNextUnsetIndex(groupStart) >= groupEnd;
@@ -381,7 +381,7 @@ void finalizeSchedulerForMaybeStates(storm::storage::Scheduler<SolutionType>& sc
     }
     while (progress) {
         progress = false;
-        for (auto state : goodInitialComponentStates) {
+        for (uint64_t state : goodInitialComponentStates) {
             bool allChoicesAreDisallowed = true;
             for (auto choiceIndex : transitionMatrix.getRowGroupIndices(state)) {
                 auto row = transitionMatrix.getRow(choiceIndex);
@@ -408,7 +408,7 @@ void finalizeSchedulerForMaybeStates(storm::storage::Scheduler<SolutionType>& sc
 
     // fill the choices of initial component states that do not have a choice yet
     // these states should not reach the condition or target states under the constructed scheduler
-    for (auto state : initialComponentStates) {
+    for (uint64_t state : initialComponentStates) {
         if (!scheduler.isChoiceSelected(state)) {
             for (auto choiceIndex : transitionMatrix.getRowGroupIndices(state)) {
                 if (choicesAllowedForInitialComponent.get(choiceIndex)) {
@@ -734,7 +734,7 @@ class WeightedReachabilityHelper {
             };
             // invoke the lambda
             if (state == initialState) {
-                for (auto origRowIndex : initialComponentExitRows) {
+                for (uint64_t origRowIndex : initialComponentExitRows) {
                     processRow(origRowIndex);
                     reducedToOriginalRowIndexMap.push_back(origRowIndex);
                 }
@@ -1403,14 +1403,14 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
         storm::storage::BitVector conditionExitTransitions(transitionMatrix.getEntryCount(), false);
         storm::storage::BitVector targetExitTransitions(transitionMatrix.getEntryCount(), false);
 
-        for (auto state : conditionStates) {
+        for (uint64_t state : conditionStates) {
             for (auto choice : transitionMatrix.getRowGroupIndices(state)) {
                 for (auto entryIt = transitionMatrix.getRow(choice).begin(); entryIt < transitionMatrix.getRow(choice).end(); ++entryIt) {
                     conditionExitTransitions.set(entryIt - transitionMatrix.begin(), true);
                 }
             }
         }
-        for (auto state : targetStates) {
+        for (uint64_t state : targetStates) {
             for (auto choice : transitionMatrix.getRowGroupIndices(state)) {
                 for (auto entryIt = transitionMatrix.getRow(choice).begin(); entryIt < transitionMatrix.getRow(choice).end(); ++entryIt) {
                     targetExitTransitions.set(entryIt - transitionMatrix.begin(), true);

@@ -147,7 +147,7 @@ uint64_t choiceLabelingToUmb(storm::models::sparse::ChoiceLabeling const& labeli
     }
 
     // Handle choices with multiple labels.
-    for (auto choice : choicesWithMultipleLabels) {
+    for (uint64_t choice : choicesWithMultipleLabels) {
         std::string action;
         for (auto const& label : labeling.getLabelsOfChoice(choice)) {
             if (!action.empty()) {
@@ -229,7 +229,7 @@ void playerIndicesToUmb(storm::models::sparse::Smg<ValueType> const& smg, auto& 
         }
         return name;
     };
-    for (auto const unnamedIndex : unnamedIndices) {
+    for (uint64_t unnamedIndex : unnamedIndices) {
         playerNames[unnamedIndex] = freshPlayerName(unnamedIndex);
     }
     stateToPlayerIndices.reserve(smg.getNumberOfStates());

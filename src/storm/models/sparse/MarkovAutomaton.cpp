@@ -194,7 +194,7 @@ bool MarkovAutomaton<ValueType, RewardModelType>::hasOnlyTrivialNondeterminism()
 
 template<typename ValueType, typename RewardModelType>
 bool MarkovAutomaton<ValueType, RewardModelType>::checkIsClosed() const {
-    for (auto state : markovianStates) {
+    for (uint64_t state : markovianStates) {
         if (this->getTransitionMatrix().getRowGroupSize(state) > 1) {
             return false;
         }

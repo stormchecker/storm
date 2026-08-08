@@ -12,7 +12,7 @@ Order::Order(storm::storage::BitVector const& topStates, storm::storage::BitVect
     init(numberOfStates, decomposition);
     this->numberOfAddedStates = 0;
     this->onlyBottomTopOrder = true;
-    for (auto i : topStates) {
+    for (uint64_t i : topStates) {
         this->doneStates.set(i);
         this->bottom->statesAbove.set(i);
         this->top->states.insert(i);
@@ -21,7 +21,7 @@ Order::Order(storm::storage::BitVector const& topStates, storm::storage::BitVect
     }
     this->statesSorted = statesSorted;
 
-    for (auto i : bottomStates) {
+    for (uint64_t i : bottomStates) {
         this->doneStates.set(i);
         this->bottom->states.insert(i);
         this->nodes[i] = bottom;
@@ -473,7 +473,7 @@ std::vector<uint_fast64_t> Order::sortStates(storm::storage::BitVector* states) 
     uint_fast64_t numberOfStatesToSort = states->getNumberOfSetBits();
     std::vector<uint_fast64_t> result;
     // Go over all states
-    for (auto state : *states) {
+    for (uint64_t state : *states) {
         bool unknown = false;
         if (result.size() == 0) {
             result.push_back(state);
@@ -696,7 +696,7 @@ bool Order::above(Node* node1, Node* node2) {
 
         storm::storage::BitVector statesSeen((node2->statesAbove));
         std::queue<uint_fast64_t> statesToHandle;
-        for (auto state : statesSeen) {
+        for (uint64_t state : statesSeen) {
             statesToHandle.push(state);
         }
         while (!above && !statesToHandle.empty()) {
@@ -708,7 +708,7 @@ bool Order::above(Node* node1, Node* node2) {
                 above = true;
                 continue;
             }
-            for (auto newState : node->statesAbove) {
+            for (uint64_t newState : node->statesAbove) {
                 if (!statesSeen[newState]) {
                     statesToHandle.push(newState);
                     statesSeen.set(newState);

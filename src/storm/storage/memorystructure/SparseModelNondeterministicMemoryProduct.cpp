@@ -71,7 +71,7 @@ SparseModelNondeterministicMemoryProduct<SparseModelType>::buildTransitions() co
             builder.newRowGroup(row);
             for (uint64_t origRow = origTransitions.getRowGroupIndices()[modelState]; origRow < origTransitions.getRowGroupIndices()[modelState + 1];
                  ++origRow) {
-                for (auto memStatePrime : memory.getTransitions(memState)) {
+                for (uint64_t memStatePrime : memory.getTransitions(memState)) {
                     for (auto const& entry : origTransitions.getRow(origRow)) {
                         builder.addNextValue(row, getProductState(entry.getColumn(), memStatePrime), entry.getValue());
                     }
