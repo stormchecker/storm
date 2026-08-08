@@ -1,6 +1,7 @@
 #include "storm-pars-cli/feasibility.h"
 #include <optional>
 
+#include "storm-cli-utilities/print.h"
 #include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm/api/verification.h"

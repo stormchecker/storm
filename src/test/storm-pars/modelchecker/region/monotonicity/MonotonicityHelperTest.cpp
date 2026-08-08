@@ -8,13 +8,18 @@
 #include <carl/util/stringparser.h>
 #pragma clang diagnostic pop
 
+#include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-#include "storm-parsers/api/storm-parsers.h"
+#include "storm-pars/utility/parametric.h"
+#include "storm-parsers/api/model_descriptions.h"
+#include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/api/bisimulation.h"
 #include "storm/api/builder.h"
-#include "storm/api/storm.h"
+#include "storm/api/properties.h"
+#include "storm/utility/constants.h"
 
 class MonotonicityHelperTest : public ::testing::Test {
    protected:

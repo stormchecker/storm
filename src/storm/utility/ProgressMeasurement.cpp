@@ -12,7 +12,6 @@ namespace utility {
 
 ProgressMeasurement::ProgressMeasurement(std::string const& itemName) : itemName(itemName), maxCount(std::numeric_limits<uint64_t>::max()) {
     auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-    showProgress = generalSettings.isShowProgressSet();
     delay = generalSettings.getShowProgressDelay();
 }
 
@@ -23,16 +22,12 @@ void ProgressMeasurement::startNewMeasurement(uint64_t startCount) {
 }
 
 bool ProgressMeasurement::updateProgress(uint64_t count) {
-    if (showProgress) {
-        std::stringstream stream;
-        if (updateProgress(count, stream)) {
-            std::string message = stream.str();
-            // Message already contains line break at the end.
-            STORM_PRINT_AND_LOG(message);
-            return true;
-        }
-    }
-    return false;
+    bool progressPrinted = false;
+    STORM_LOG_PROGRESS_LAZY([this, count, &progressPrinted](std::ostream& stream) {
+        progressPrinted = updateProgress(count, stream);
+        return progressPrinted;
+    });
+    return progressPrinted;
 }
 
 bool ProgressMeasurement::updateProgress(uint64_t count, std::ostream& outstream) {

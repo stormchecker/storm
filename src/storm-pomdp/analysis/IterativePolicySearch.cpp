@@ -34,16 +34,16 @@ void printRelevantInfoFromModel(std::shared_ptr<storm::solver::SmtSolver::ModelR
 
 template<typename ValueType>
 void IterativePolicySearch<ValueType>::Statistics::print() const {
-    STORM_PRINT_AND_LOG("#STATS Total time: " << totalTimer << '\n');
-    STORM_PRINT_AND_LOG("#STATS SAT Calls: " << satCalls << '\n');
-    STORM_PRINT_AND_LOG("#STATS SAT Calls time: " << smtCheckTimer << '\n');
-    STORM_PRINT_AND_LOG("#STATS Outer iterations: " << outerIterations << '\n');
-    STORM_PRINT_AND_LOG("#STATS Solver initialization time: " << initializeSolverTimer << '\n');
-    STORM_PRINT_AND_LOG("#STATS Obtain partial scheduler time: " << evaluateExtensionSolverTime << '\n');
-    STORM_PRINT_AND_LOG("#STATS Update solver to extend partial scheduler time: " << encodeExtensionSolverTime << '\n');
-    STORM_PRINT_AND_LOG("#STATS Update solver with new scheduler time: " << updateNewStrategySolverTime << '\n');
-    STORM_PRINT_AND_LOG("#STATS Winning regions update time: " << winningRegionUpdatesTimer << '\n');
-    STORM_PRINT_AND_LOG("#STATS Graph search time: " << graphSearchTime << '\n');
+    STORM_LOG_STATISTICS("#STATS Total time: " << totalTimer << '\n');
+    STORM_LOG_STATISTICS("#STATS SAT Calls: " << satCalls << '\n');
+    STORM_LOG_STATISTICS("#STATS SAT Calls time: " << smtCheckTimer << '\n');
+    STORM_LOG_STATISTICS("#STATS Outer iterations: " << outerIterations << '\n');
+    STORM_LOG_STATISTICS("#STATS Solver initialization time: " << initializeSolverTimer << '\n');
+    STORM_LOG_STATISTICS("#STATS Obtain partial scheduler time: " << evaluateExtensionSolverTime << '\n');
+    STORM_LOG_STATISTICS("#STATS Update solver to extend partial scheduler time: " << encodeExtensionSolverTime << '\n');
+    STORM_LOG_STATISTICS("#STATS Update solver with new scheduler time: " << updateNewStrategySolverTime << '\n');
+    STORM_LOG_STATISTICS("#STATS Winning regions update time: " << winningRegionUpdatesTimer << '\n');
+    STORM_LOG_STATISTICS("#STATS Graph search time: " << graphSearchTime << '\n');
 }
 
 template<typename ValueType>

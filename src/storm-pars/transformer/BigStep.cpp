@@ -275,7 +275,8 @@ std::ostream& operator<<(std::ostream& os, const Annotation& annotation) {
                 } else {
                     alreadyPrintedFactor = true;
                 }
-                os << "(" << annotation.polynomialCache->at(annotation.parameter).second[i] << ")" << "^" << factors[i];
+                os << "(" << annotation.polynomialCache->at(annotation.parameter).second[i] << ")"
+                   << "^" << factors[i];
             }
         }
         if (factors.empty()) {

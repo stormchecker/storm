@@ -4,13 +4,18 @@
 #include <memory>
 #include <vector>
 
-#include "storm-pars/api/storm-pars.h"
+#include "storm-pars/api/region.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
+#include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-#include "storm-parsers/api/storm-parsers.h"
+#include "storm-parsers/api/model_descriptions.h"
+#include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/PrismParser.h"
+#include "storm/api/bisimulation.h"
 #include "storm/api/builder.h"
-#include "storm/api/storm.h"
+#include "storm/api/properties.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"

@@ -660,9 +660,6 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(
             ++numLpQueries;
             STORM_LOG_TRACE("\tDone solving MILP...");
 
-            // STORM_PRINT_AND_LOG("Writing model to file '" << polytopeTree.toId() << ".lp'\n";);
-            // lpModel->writeModelToFile(polytopeTree.toId() + ".lp");
-
             if (lpModel->isInfeasible()) {
                 infeasableAreas.push_back(polytopeTree.getPolytope());
                 polytopeTree.clear();

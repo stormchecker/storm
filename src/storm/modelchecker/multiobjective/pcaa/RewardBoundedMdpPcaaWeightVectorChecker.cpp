@@ -9,7 +9,6 @@
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
@@ -52,18 +51,16 @@ RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::RewardBoundedMdpPca
 template<class SparseMdpModelType>
 RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::~RewardBoundedMdpPcaaWeightVectorChecker() {
     swAll.stop();
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("--------------------------------------------------\n");
-        STORM_PRINT_AND_LOG("Statistics:\n");
-        STORM_PRINT_AND_LOG("--------------------------------------------------\n");
-        STORM_PRINT_AND_LOG("           #checked weight vectors: " << numChecks << ".\n");
-        STORM_PRINT_AND_LOG("           #checked epochs overall: " << numCheckedEpochs << ".\n");
-        STORM_PRINT_AND_LOG("# checked epochs per weight vector: " << numCheckedEpochs / numChecks << ".\n");
-        STORM_PRINT_AND_LOG("                      overall Time: " << swAll << ".\n");
-        STORM_PRINT_AND_LOG("         Epoch Model building time: " << swEpochModelBuild << ".\n");
-        STORM_PRINT_AND_LOG("         Epoch Model checking time: " << swEpochModelAnalysis << ".\n");
-        STORM_PRINT_AND_LOG("--------------------------------------------------\n");
-    }
+    STORM_LOG_STATISTICS("--------------------------------------------------\n");
+    STORM_LOG_STATISTICS("Statistics:\n");
+    STORM_LOG_STATISTICS("--------------------------------------------------\n");
+    STORM_LOG_STATISTICS("           #checked weight vectors: " << numChecks << ".\n");
+    STORM_LOG_STATISTICS("           #checked epochs overall: " << numCheckedEpochs << ".\n");
+    STORM_LOG_STATISTICS("# checked epochs per weight vector: " << numCheckedEpochs / numChecks << ".\n");
+    STORM_LOG_STATISTICS("                      overall Time: " << swAll << ".\n");
+    STORM_LOG_STATISTICS("         Epoch Model building time: " << swEpochModelBuild << ".\n");
+    STORM_LOG_STATISTICS("         Epoch Model checking time: " << swEpochModelAnalysis << ".\n");
+    STORM_LOG_STATISTICS("--------------------------------------------------\n");
 }
 
 template<class SparseMdpModelType>

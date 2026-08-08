@@ -13,8 +13,6 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/Z3LpSolver.h"
 #include "storm/storage/geometry/Hyperrectangle.h"
 #include "storm/utility/SignalHandler.h"
@@ -66,10 +64,7 @@ std::unique_ptr<CheckResult> SparsePcaaQuery<SparseModelType, GeometryValueType>
             if (env.modelchecker().multi().isExportPlotSet()) {
                 exportPlotOfCurrentApproximation(env, refinementSteps, overApproximation);
             }
-            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-                STORM_PRINT_AND_LOG("Multi-objective Pareto Curve Approximation algorithm terminated after " << refinementSteps.size()
-                                                                                                             << " refinement steps.\n");
-            }
+            STORM_LOG_STATISTICS("Multi-objective Pareto Curve Approximation algorithm terminated after " << refinementSteps.size() << " refinement steps.\n");
             return std::move(std::get<0>(answerOrWeights));
         }
         auto [weightVector, epsilonWso] = std::get<1>(answerOrWeights);

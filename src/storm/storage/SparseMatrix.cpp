@@ -384,7 +384,8 @@ void print(std::vector<typename SparseMatrix<ValueType>::index_type> const& rowG
         for (typename SparseMatrix<ValueType>::index_type i = rowGroupIndices[group]; i < endGroups; ++i) {
             endRows = i < rowIndications.size() - 1 ? rowIndications[i + 1] : columnsAndValues.size();
             // Print the actual row.
-            std::cout << "Row " << i << " (" << rowIndications[i] << " - " << endRows << ")" << ": ";
+            std::cout << "Row " << i << " (" << rowIndications[i] << " - " << endRows << ")"
+                      << ": ";
             for (typename SparseMatrix<ValueType>::index_type pos = rowIndications[i]; pos < endRows; ++pos) {
                 std::cout << "(" << columnsAndValues[pos].getColumn() << ": " << columnsAndValues[pos].getValue() << ") ";
             }

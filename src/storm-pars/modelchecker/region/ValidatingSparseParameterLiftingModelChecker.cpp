@@ -9,8 +9,6 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 
 namespace storm {
 namespace modelchecker {
@@ -23,9 +21,7 @@ ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, Pre
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
 ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::~ValidatingSparseParameterLiftingModelChecker() {
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Validating Parameter Lifting Model Checker detected " << numOfWrongRegions << " regions where the imprecise method was wrong.\n");
-    }
+    STORM_LOG_STATISTICS("Validating Parameter Lifting Model Checker detected " << numOfWrongRegions << " regions where the imprecise method was wrong.\n");
 }
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>

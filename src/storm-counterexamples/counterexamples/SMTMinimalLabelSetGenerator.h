@@ -5,7 +5,6 @@
 
 #include "storm-counterexamples/counterexamples/GuaranteedLabelSet.h"
 #include "storm-counterexamples/counterexamples/HighLevelCounterexample.h"
-#include "storm-counterexamples/settings/modules/CounterexampleGeneratorSettings.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
@@ -15,7 +14,7 @@
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/CounterexampleGeneratorSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/BoostTypes.h"
@@ -1975,27 +1974,28 @@ class SMTMinimalLabelSetGenerator {
         stats.solverTime = std::chrono::duration_cast<std::chrono::milliseconds>(totalSolverTime);
         stats.iterations = iterations;
 
-        if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+        {
             storm::storage::FlatSet<uint64_t> allLabels;
             for (auto const& e : labelSets) {
                 allLabels.insert(e.begin(), e.end());
             }
 
-            std::cout << "Metrics:\n";
-            std::cout << "    * all labels: " << allLabels.size() << '\n';
-            std::cout << "    * known labels: " << relevancyInformation.knownLabels.size() << '\n';
-            std::cout << "    * relevant labels: " << (relevancyInformation.knownLabels.size() + relevancyInformation.relevantLabels.size()) << "\n\n";
-            std::cout << "Time breakdown:\n";
-            std::cout << "    * time for setup: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSetupTime).count() << "ms\n";
-            std::cout << "    * time for solving: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSolverTime).count() << "ms\n";
-            std::cout << "    * time for checking: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalModelCheckingTime).count() << "ms\n";
-            std::cout << "    * time for analysis: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalAnalysisTime).count() << "ms\n";
-            std::cout << "------------------------------------------\n";
-            std::cout << "    * total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms\n\n";
-            std::cout << "Other:\n";
-            std::cout << "    * number of models checked: " << iterations << '\n';
-            std::cout << "    * number of models that could not reach a target state: " << zeroProbabilityCount << " ("
-                      << 100 * static_cast<double>(zeroProbabilityCount) / iterations << "%)\n\n";
+            STORM_LOG_STATISTICS("Metrics:\n");
+            STORM_LOG_STATISTICS("    * all labels: " << allLabels.size() << '\n');
+            STORM_LOG_STATISTICS("    * known labels: " << relevancyInformation.knownLabels.size() << '\n');
+            STORM_LOG_STATISTICS("    * relevant labels: " << (relevancyInformation.knownLabels.size() + relevancyInformation.relevantLabels.size()) << "\n\n");
+            STORM_LOG_STATISTICS("Time breakdown:\n");
+            STORM_LOG_STATISTICS("    * time for setup: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSetupTime).count() << "ms\n");
+            STORM_LOG_STATISTICS("    * time for solving: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSolverTime).count() << "ms\n");
+            STORM_LOG_STATISTICS("    * time for checking: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalModelCheckingTime).count()
+                                                             << "ms\n");
+            STORM_LOG_STATISTICS("    * time for analysis: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalAnalysisTime).count() << "ms\n");
+            STORM_LOG_STATISTICS("------------------------------------------\n");
+            STORM_LOG_STATISTICS("    * total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms\n\n");
+            STORM_LOG_STATISTICS("Other:\n");
+            STORM_LOG_STATISTICS("    * number of models checked: " << iterations << '\n');
+            STORM_LOG_STATISTICS("    * number of models that could not reach a target state: "
+                                 << zeroProbabilityCount << " (" << 100 * static_cast<double>(zeroProbabilityCount) / iterations << "%)\n\n");
         }
 
         return result;

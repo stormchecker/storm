@@ -10,8 +10,6 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"
@@ -71,10 +69,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initializeModelTypeSp
                              << " was simplified to a cumulative reward formula. Correctness of the algorithm is unknown for this type of property.");
         }
     }
-    // Print some statistics (if requested)
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Final preprocessed model has " << markovianStates.getNumberOfSetBits() << " Markovian states.\n");
-    }
+    STORM_LOG_STATISTICS("Final preprocessed model has " << markovianStates.getNumberOfSetBits() << " Markovian states.\n");
 }
 
 template<class SparseMdpModelType>

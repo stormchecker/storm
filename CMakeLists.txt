@@ -150,8 +150,6 @@ if (STORM_DEVELOPER)
     if (NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE "DEBUG")
     endif()
-    # TODO Do this more targeted
-    add_definitions(-DSTORM_DEV)
     set(STORM_DEBUG_CUDD ON)
     set(STORM_DEBUG_SPOT ON)
     set(STORM_DEBUG_SYLVAN ON)

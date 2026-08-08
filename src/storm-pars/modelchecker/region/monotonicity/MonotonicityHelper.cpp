@@ -3,6 +3,7 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
+#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/models/ModelType.h"
 #include "storm/utility/Stopwatch.h"
@@ -11,7 +12,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "storm-pars/modelchecker/region/monotonicity/AssumptionChecker.h"
-#include "storm/utility/Stopwatch.h"
+#include "storm-pars/utility/ModelInstantiator.h"
 
 namespace storm {
 namespace analysis {
@@ -84,7 +85,7 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostre
         storm::utility::Stopwatch plaWatch(true);
         this->extender->initializeMinMaxValues(region);
         plaWatch.stop();
-        STORM_PRINT("\nTotal time for pla checking: " << plaWatch << ".\n\n");
+        STORM_LOG_STATISTICS("\nTotal time for pla checking: " << plaWatch << ".\n\n");
     }
     createOrder();
 

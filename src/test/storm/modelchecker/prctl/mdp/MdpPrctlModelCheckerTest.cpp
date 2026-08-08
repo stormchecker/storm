@@ -740,7 +740,7 @@ TYPED_TEST(MdpPrctlModelCheckerTest, Dice) {
     });
 }
 
-TYPED_TEST(MdpPrctlModelCheckerTest, AsynchronousLeader) {
+STORM_EXPENSIVE_TYPED_TEST(MdpPrctlModelCheckerTest, AsynchronousLeader) {
     std::string formulasString = "Pmin=? [F \"elected\"]";
     formulasString += "; Pmax=? [F \"elected\"]";
     formulasString += "; Pmin=? [F<=25 \"elected\"]";
@@ -778,7 +778,7 @@ TYPED_TEST(MdpPrctlModelCheckerTest, AsynchronousLeader) {
     });
 }
 
-TYPED_TEST(MdpPrctlModelCheckerTest, consensus) {
+STORM_EXPENSIVE_TYPED_TEST(MdpPrctlModelCheckerTest, consensus) {
     std::string formulasString = "Pmax=? [F \"finished\"]";
     formulasString += "; Pmax=? [F \"all_coins_equal_1\"]";
     formulasString += "; P<0.8 [F \"all_coins_equal_1\"]";

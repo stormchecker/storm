@@ -1,5 +1,7 @@
 #include "storm-gamebased-ar/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 
+#include <sstream>
+
 #include "storm-gamebased-ar/abstraction/ExplicitQualitativeGameResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/MenuGameRefiner.h"
@@ -19,7 +21,6 @@
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/StandardGameSolver.h"
 #include "storm/solver/SymbolicGameSolver.h"
@@ -1744,48 +1745,44 @@ template<storm::dd::DdType Type, typename ModelType>
 void GameBasedMdpModelChecker<Type, ModelType>::printStatistics(storm::gbar::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor,
                                                                 storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, uint64_t refinements,
                                                                 uint64_t peakPlayer1States, uint64_t peakTransitions) const {
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        storm::gbar::abstraction::AbstractionInformation<Type> const& abstractionInformation = abstractor.getAbstractionInformation();
+    storm::gbar::abstraction::AbstractionInformation<Type> const& abstractionInformation = abstractor.getAbstractionInformation();
 
-        std::streamsize originalPrecision = std::cout.precision();
-        std::cout << std::fixed << std::setprecision(2);
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(2);
 
-        std::cout << '\n';
-        std::cout << "Statistics:\n";
-        std::cout << "    * size of final game: " << game.getReachableStates().getNonZeroCount() << " player 1 states, "
-                  << game.getTransitionMatrix().getNonZeroCount() << " transitions\n";
-        std::cout << "    * peak size of game: " << peakPlayer1States << " player 1 states, " << peakTransitions << " transitions\n";
-        std::cout << "    * refinements: " << refinements << '\n';
-        std::cout << "    * predicates: " << abstractionInformation.getNumberOfPredicates() << "\n\n";
+    oss << '\n';
+    oss << "Statistics:\n";
+    oss << "    * size of final game: " << game.getReachableStates().getNonZeroCount() << " player 1 states, " << game.getTransitionMatrix().getNonZeroCount()
+        << " transitions\n";
+    oss << "    * peak size of game: " << peakPlayer1States << " player 1 states, " << peakTransitions << " transitions\n";
+    oss << "    * refinements: " << refinements << '\n';
+    oss << "    * predicates: " << abstractionInformation.getNumberOfPredicates() << "\n\n";
 
-        uint64_t totalAbstractionTimeMillis = totalAbstractionWatch.getTimeInMilliseconds();
-        uint64_t totalTranslationTimeMillis = totalTranslationWatch.getTimeInMilliseconds();
-        uint64_t totalStrategyProcessingTimeMillis = totalStrategyProcessingWatch.getTimeInMilliseconds();
-        uint64_t totalSolutionTimeMillis = totalSolutionWatch.getTimeInMilliseconds();
-        uint64_t totalRefinementTimeMillis = totalRefinementWatch.getTimeInMilliseconds();
-        uint64_t setupTime = setupWatch.getTimeInMilliseconds();
-        uint64_t totalTimeMillis = totalWatch.getTimeInMilliseconds();
+    uint64_t totalAbstractionTimeMillis = totalAbstractionWatch.getTimeInMilliseconds();
+    uint64_t totalTranslationTimeMillis = totalTranslationWatch.getTimeInMilliseconds();
+    uint64_t totalStrategyProcessingTimeMillis = totalStrategyProcessingWatch.getTimeInMilliseconds();
+    uint64_t totalSolutionTimeMillis = totalSolutionWatch.getTimeInMilliseconds();
+    uint64_t totalRefinementTimeMillis = totalRefinementWatch.getTimeInMilliseconds();
+    uint64_t setupTime = setupWatch.getTimeInMilliseconds();
+    uint64_t totalTimeMillis = totalWatch.getTimeInMilliseconds();
 
-        std::cout << "Time breakdown:\n";
-        std::cout << "    * setup: " << setupTime << "ms (" << 100 * static_cast<double>(setupTime) / totalTimeMillis << "%)\n";
-        std::cout << "    * abstraction: " << totalAbstractionTimeMillis << "ms (" << 100 * static_cast<double>(totalAbstractionTimeMillis) / totalTimeMillis
-                  << "%)\n";
-        if (this->solveMode == storm::settings::modules::AbstractionSettings::SolveMode::Sparse) {
-            std::cout << "    * translation: " << totalTranslationTimeMillis << "ms ("
-                      << 100 * static_cast<double>(totalTranslationTimeMillis) / totalTimeMillis << "%)\n";
-            if (fixPlayer1Strategy || fixPlayer2Strategy) {
-                std::cout << "    * strategy processing: " << totalStrategyProcessingTimeMillis << "ms ("
-                          << 100 * static_cast<double>(totalStrategyProcessingTimeMillis) / totalTimeMillis << "%)\n";
-            }
+    oss << "Time breakdown:\n";
+    oss << "    * setup: " << setupTime << "ms (" << 100 * static_cast<double>(setupTime) / totalTimeMillis << "%)\n";
+    oss << "    * abstraction: " << totalAbstractionTimeMillis << "ms (" << 100 * static_cast<double>(totalAbstractionTimeMillis) / totalTimeMillis << "%)\n";
+    if (this->solveMode == storm::settings::modules::AbstractionSettings::SolveMode::Sparse) {
+        oss << "    * translation: " << totalTranslationTimeMillis << "ms (" << 100 * static_cast<double>(totalTranslationTimeMillis) / totalTimeMillis
+            << "%)\n";
+        if (fixPlayer1Strategy || fixPlayer2Strategy) {
+            oss << "    * strategy processing: " << totalStrategyProcessingTimeMillis << "ms ("
+                << 100 * static_cast<double>(totalStrategyProcessingTimeMillis) / totalTimeMillis << "%)\n";
         }
-        std::cout << "    * solution: " << totalSolutionTimeMillis << "ms (" << 100 * static_cast<double>(totalSolutionTimeMillis) / totalTimeMillis << "%)\n";
-        std::cout << "    * refinement: " << totalRefinementTimeMillis << "ms (" << 100 * static_cast<double>(totalRefinementTimeMillis) / totalTimeMillis
-                  << "%)\n";
-        std::cout << "    ---------------------------------------------\n";
-        std::cout << "    * total: " << totalTimeMillis << "ms\n\n";
-
-        std::cout << std::defaultfloat << std::setprecision(originalPrecision);
     }
+    oss << "    * solution: " << totalSolutionTimeMillis << "ms (" << 100 * static_cast<double>(totalSolutionTimeMillis) / totalTimeMillis << "%)\n";
+    oss << "    * refinement: " << totalRefinementTimeMillis << "ms (" << 100 * static_cast<double>(totalRefinementTimeMillis) / totalTimeMillis << "%)\n";
+    oss << "    ---------------------------------------------\n";
+    oss << "    * total: " << totalTimeMillis << "ms\n\n";
+
+    STORM_LOG_STATISTICS(oss.str());
 }
 
 template<storm::dd::DdType Type, typename ModelType>
