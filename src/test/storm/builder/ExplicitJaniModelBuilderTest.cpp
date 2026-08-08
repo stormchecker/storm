@@ -228,4 +228,33 @@ TEST_F(ExplicitJaniModelBuilderTest, enumerateInitial) {
     EXPECT_EQ(145ul, model->getNumberOfTransitions());
     EXPECT_EQ(72ul, model->getInitialStates().getNumberOfSetBits());
 }
+
+TEST_F(ExplicitJaniModelBuilderTest, SynchronizationVectorOutputActionIndex) {
+    auto janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/synchronization_vector_output_action_index.jani").first;
+
+    storm::generator::JaniNextStateGenerator<double> generator(janiModel);
+    std::vector<storm::generator::CompressedState> states;
+    auto stateToIdCallback = [&states](storm::generator::CompressedState const& state) {
+        for (uint32_t index = 0; index < states.size(); ++index) {
+            if (states[index] == state) {
+                return index;
+            }
+        }
+        states.push_back(state);
+        return static_cast<uint32_t>(states.size() - 1);
+    };
+
+    auto initialStates = generator.getInitialStates(stateToIdCallback);
+    ASSERT_EQ(1ul, initialStates.size());
+    generator.load(states[initialStates.front()]);
+
+    auto behavior = generator.expand(stateToIdCallback);
+    ASSERT_EQ(3ul, behavior.getNumberOfChoices());
+
+    std::set<std::string> actionNames;
+    for (auto const& choice : behavior.getChoices()) {
+        actionNames.insert(janiModel.getAction(choice.getActionIndex()).getName());
+    }
+    EXPECT_EQ(std::set<std::string>({"d", "e", "f"}), actionNames);
+}
 }  // namespace

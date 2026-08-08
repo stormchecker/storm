@@ -727,7 +727,7 @@ Choice<ValueType> JaniNextStateGenerator<ValueType, StateType>::expandNonSynchro
         exitRate = this->evaluator->asRational(edge.getRate());
     }
 
-    Choice<ValueType> choice(edge.getActionIndex(), static_cast<bool>(exitRate));
+    Choice<ValueType> choice(outputActionIndex, static_cast<bool>(exitRate));
     std::vector<ValueType> stateActionRewards;
 
     // Perform the transient edge assignments and create the state action rewards
