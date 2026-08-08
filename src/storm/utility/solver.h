@@ -56,6 +56,14 @@ class SoplexLpSolverFactory : public LpSolverFactory<ValueType> {
 };
 
 template<typename ValueType>
+class HighsLpSolverFactory : public LpSolverFactory<ValueType> {
+   public:
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const override;
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(storm::Environment const& env, std::string const& name) const override;
+    virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
+};
+
+template<typename ValueType>
 class GurobiLpSolverFactory : public LpSolverFactory<ValueType> {
    public:
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const override;

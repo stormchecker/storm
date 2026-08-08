@@ -1,5 +1,7 @@
 #include "storm/utility/solver.h"
 
+#include <type_traits>
+
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -8,6 +10,7 @@
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
+#include "storm/solver/HighsLpSolver.h"
 #include "storm/solver/MathsatSmtSolver.h"
 #include "storm/solver/SoplexLpSolver.h"
 #include "storm/solver/Z3LpSolver.h"
@@ -50,6 +53,21 @@ std::unique_ptr<storm::solver::LpSolver<ValueType, true>> SoplexLpSolverFactory<
 template<typename ValueType>
 std::unique_ptr<LpSolverFactory<ValueType>> SoplexLpSolverFactory<ValueType>::clone() const {
     return std::make_unique<SoplexLpSolverFactory<ValueType>>(*this);
+}
+
+template<typename ValueType>
+std::unique_ptr<storm::solver::LpSolver<ValueType>> HighsLpSolverFactory<ValueType>::create(storm::Environment const&, std::string const& name) const {
+    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::HighsLpSolver<ValueType>(name));
+}
+
+template<typename ValueType>
+std::unique_ptr<storm::solver::LpSolver<ValueType, true>> HighsLpSolverFactory<ValueType>::createRaw(storm::Environment const&, std::string const& name) const {
+    return std::unique_ptr<storm::solver::LpSolver<ValueType, true>>(new storm::solver::HighsLpSolver<ValueType, true>(name));
+}
+
+template<typename ValueType>
+std::unique_ptr<LpSolverFactory<ValueType>> HighsLpSolverFactory<ValueType>::clone() const {
+    return std::make_unique<HighsLpSolverFactory<ValueType>>(*this);
 }
 
 template<typename ValueType>
@@ -114,6 +132,12 @@ std::unique_ptr<LpSolverFactory<ValueType>> getLpSolverFactory(storm::Environmen
             return std::unique_ptr<LpSolverFactory<ValueType>>(new Z3LpSolverFactory<ValueType>());
         case storm::solver::LpSolverType::Soplex:
             return std::unique_ptr<LpSolverFactory<ValueType>>(new SoplexLpSolverFactory<ValueType>());
+        case storm::solver::LpSolverType::Highs:
+            if constexpr (std::is_same_v<ValueType, double>) {
+                return std::unique_ptr<LpSolverFactory<ValueType>>(new HighsLpSolverFactory<ValueType>());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "The HiGHS LP solver only supports double precision.");
+            }
     }
     return nullptr;
 }
@@ -177,6 +201,7 @@ template class Z3LpSolverFactory<double>;
 template class Z3LpSolverFactory<storm::RationalNumber>;
 template class SoplexLpSolverFactory<double>;
 template class SoplexLpSolverFactory<storm::RationalNumber>;
+template class HighsLpSolverFactory<double>;
 
 template std::unique_ptr<LpSolverFactory<double>> getLpSolverFactory(storm::Environment const& env, storm::solver::LpSolverTypeSelection solvType);
 template std::unique_ptr<LpSolverFactory<storm::RationalNumber>> getLpSolverFactory(storm::Environment const& env,

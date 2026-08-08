@@ -401,6 +401,28 @@ endif()
 
 #############################################################
 ##
+##	HiGHS (optional)
+##
+#############################################################
+
+if(NOT STORM_DISABLE_HIGHS)
+    set(STORM_HAVE_HIGHS OFF)
+    find_package(highs CONFIG QUIET)
+
+    if(TARGET highs::highs)
+        set(STORM_HAVE_HIGHS ON)
+        message(STATUS "Storm - Linking with HiGHS.")
+        list(APPEND STORM_DEP_IMP_TARGETS highs::highs)
+    else()
+        message(WARNING "Storm - Not linking with HiGHS.")
+    endif()
+else()
+    message(STATUS "Storm - Not linking with HiGHS.")
+    set(STORM_HAVE_HIGHS OFF)
+endif()
+
+#############################################################
+##
 ##	CUDD (optional)
 ##
 #############################################################

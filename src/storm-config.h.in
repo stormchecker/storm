@@ -64,6 +64,7 @@
 #cmakedefine STORM_HAVE_GMM
 #cmakedefine STORM_HAVE_GLPK
 #cmakedefine STORM_HAVE_GUROBI
+#cmakedefine STORM_HAVE_HIGHS
 #cmakedefine STORM_HAVE_LIBARCHIVE
 #cmakedefine STORM_HAVE_MATHSAT
 #cmakedefine STORM_HAVE_SOPLEX
