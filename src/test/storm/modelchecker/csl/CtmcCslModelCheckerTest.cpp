@@ -558,8 +558,8 @@ TEST(CtmcCslModelCheckerTest, TransientProbabilitiesWithPhiStates) {
 
     // phiStates = all states: probability can flow freely through all states
     storm::storage::BitVector phiStatesAll(3, true);
-    std::vector<double> resultAll = storm::modelchecker::helper::SparseCtmcCslHelper::computeAllTransientProbabilities(
-        env, matrix, initialStates, phiStatesAll, psiStates, exitRates, 1.0);
+    std::vector<double> resultAll =
+        storm::modelchecker::helper::SparseCtmcCslHelper::computeAllTransientProbabilities(env, matrix, initialStates, phiStatesAll, psiStates, exitRates, 1.0);
 
     // With no restriction, some probability reaches state 2
     EXPECT_GT(resultAll[2], 1e-6);
