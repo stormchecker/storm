@@ -1,0 +1,55 @@
+name: Lint check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-check:
+    name: clang-format & clang-tidy
+    runs-on: ubuntu-latest
+    container: movesrwth/storm-dependencies:latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configure to generate compile_commands.json
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DSTORM_PORTABLE=ON \
+            -DSTORM_DEVELOPER=ON \
+            -DSTORM_COMPILE_WITH_PCH=OFF
+
+      - name: Run cpp-linter
+        id: cpp-linter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: cpp-linter/cpp-linter-action@v2.20.0
+        with:
+          style: file
+          tidy-checks: ''
+          version: '22'
+          database: build
+          files-changed-only: true
+          lines-changed-only: diff
+          step-summary: true
+          thread-comments: false
+          format-review: true
+          tidy-review: true
+          passive-reviews: true
+          no-lgtm: true
+          ignore-format: 'build|resources|.github'
+          ignore-tidy: 'resources/3rdparty'
+
+      - name: Fail on lint errors
+        if: steps.cpp-linter.outputs.checks-failed != 0
+        run: exit 1
