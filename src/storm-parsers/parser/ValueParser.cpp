@@ -36,13 +36,19 @@ void ValueParser<storm::RationalFunction>::addParameter(std::string const& param
     storm::expressions::Variable var = data.manager->declareRationalVariable(parameter);
     data.identifierMapping.emplace(var.getName(), var);
     data.parser->setIdentifierMapping(data.identifierMapping);
+    data.rationalFunctionCache.clear();
     STORM_LOG_TRACE("Added parameter: " << var.getName());
 }
 
 template<>
 storm::RationalFunction ValueParser<storm::RationalFunction>::parseValue(std::string const& value) const {
+    auto it = data.rationalFunctionCache.find(value);
+    if (it != data.rationalFunctionCache.end()) {
+        return it->second;
+    }
     storm::RationalFunction rationalFunction = data.evaluator->asRational(data.parser->parseFromString(value));
     STORM_LOG_TRACE("Parsed expression: " << rationalFunction);
+    data.rationalFunctionCache.emplace(value, rationalFunction);
     return rationalFunction;
 }
 

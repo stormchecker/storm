@@ -3,8 +3,9 @@
 #include <cstddef>
 #include <string>
 #include <type_traits>
+#include <unordered_map>
 
-#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
@@ -46,6 +47,7 @@ class ValueParser {
         std::unique_ptr<storm::parser::ExpressionParser> parser;  // Pointer to avoid header include.
         std::unique_ptr<storm::expressions::ExpressionEvaluator<storm::RationalFunction>> evaluator;
         std::unordered_map<std::string, storm::expressions::Expression> identifierMapping;
+        std::unordered_map<std::string, storm::RationalFunction> rationalFunctionCache;
     };
     std::conditional_t<std::is_same_v<ValueType, storm::RationalFunction>, ParametricData, std::nullptr_t> data;
 };
