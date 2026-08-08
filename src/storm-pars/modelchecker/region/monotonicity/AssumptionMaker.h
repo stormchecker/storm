@@ -1,19 +1,17 @@
 #pragma once
 
-#include "AssumptionChecker.h"
-#include "Order.h"
-
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/expressions/BinaryRelationExpression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/BinaryRelationType.h"
+
+#include "storm-pars/modelchecker/region/monotonicity/Assumption.h"
+#include "storm-pars/modelchecker/region/monotonicity/AssumptionChecker.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
 
 namespace storm {
 namespace analysis {
 
 template<typename ValueType, typename ConstantType>
 class AssumptionMaker {
-    typedef std::shared_ptr<expressions::BinaryRelationExpression> AssumptionType;
-
    public:
     /*!
      * Constructs AssumptionMaker based on the matrix of the model.
@@ -31,13 +29,15 @@ class AssumptionMaker {
      * @param val2 Second state number.
      * @param order The order on which the assumptions are checked.
      * @param region The region for the parameters.
-     * @return Map with at most three assumptions, and the validation.
+     * @return At most three (assumption, status) candidates, in the order they were tried
+     *         (val1 > val2, val2 > val1, val1 == val2).
      */
-    std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumptions(
-        uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const;
-    std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumptions(
-        uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
-        std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
+    std::vector<std::pair<Assumption, AssumptionStatus>> createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order,
+                                                                                   storage::ParameterRegion<ValueType> region) const;
+    std::vector<std::pair<Assumption, AssumptionStatus>> createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order,
+                                                                                   storage::ParameterRegion<ValueType> region,
+                                                                                   std::vector<ConstantType> const minValues,
+                                                                                   std::vector<ConstantType> const maxValue) const;
 
     /*!
      * Initializes the given number of sample points for a given model, formula and region.
@@ -58,15 +58,11 @@ class AssumptionMaker {
     void setSampleValues(std::vector<std::vector<ConstantType>> const& samples);
 
    private:
-    std::pair<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumption(
-        uint_fast64_t val1, uint_fast64_t val2, expressions::RelationType relationType, std::shared_ptr<Order> order,
-        storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
+    std::pair<Assumption, AssumptionStatus> createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, expressions::RelationType relationType,
+                                                                     std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
+                                                                     std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
 
     AssumptionChecker<ValueType, ConstantType> assumptionChecker;
-
-    std::shared_ptr<expressions::ExpressionManager> expressionManager;
-
-    uint_fast64_t numberOfStates;
 };
 }  // namespace analysis
 }  // namespace storm

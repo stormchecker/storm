@@ -152,6 +152,53 @@ TEST(OrderTest, copy_order) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, orderCopy.compare(5, 6));
 }
 
+TEST(OrderTest, copy_is_deep) {
+    // Regression test: Order's copy constructor must deep-copy every Node, not alias the
+    // original's nodes. Mutating one Order (adding states, merging nodes) must not affect the
+    // other.
+    auto numberOfStates = 7;
+    auto above = storm::storage::BitVector(numberOfStates);
+    above.set(0);
+    auto below = storm::storage::BitVector(numberOfStates);
+    below.set(1);
+    storm::storage::SparseMatrixBuilder<storm::RationalFunction> matrixBuilder(2, 2, 2);
+    matrixBuilder.addNextValue(0, 0, storm::RationalFunction(1));
+    matrixBuilder.addNextValue(1, 1, storm::RationalFunction(1));
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+    options.forceTopologicalSort();
+    auto matrix = matrixBuilder.build();
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
+    auto order = storm::analysis::Order(above, below, numberOfStates, decomposition, statesSorted);
+    order.add(2);
+    order.add(3);
+    order.addToNode(4, order.getNode(2));
+
+    auto orderCopy = storm::analysis::Order(order);
+
+    // Mutating the copy (adding a new state) must not be visible in the original.
+    orderCopy.addBetween(5, orderCopy.getNode(0), orderCopy.getNode(3));
+    EXPECT_TRUE(orderCopy.contains(5));
+    EXPECT_FALSE(order.contains(5));
+
+    // Mutating the original (adding a different state) must not be visible in the copy.
+    order.addBetween(6, order.getNode(0), order.getNode(3));
+    EXPECT_TRUE(order.contains(6));
+    EXPECT_FALSE(orderCopy.contains(6));
+
+    // Merging nodes in the copy must not merge the corresponding nodes in the original: states 2
+    // and 3 stay unrelated in the original, even after they are merged in the copy.
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(2, 3));
+    orderCopy.mergeNodes(orderCopy.getNode(2), orderCopy.getNode(3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, orderCopy.compare(2, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(2, 3));
+
+    // Node pointers themselves must not be shared between the two Orders.
+    EXPECT_NE(order.getNode(0), orderCopy.getNode(0));
+    EXPECT_NE(order.getTop(), orderCopy.getTop());
+    EXPECT_NE(order.getBottom(), orderCopy.getBottom());
+}
+
 TEST(OrderTest, merge_nodes) {
     auto numberOfStates = 7;
     auto above = storm::storage::BitVector(numberOfStates);
@@ -190,6 +237,47 @@ TEST(OrderTest, merge_nodes) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 2));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 4));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 5));
+}
+
+TEST(OrderTest, merge_nodes_inconsistent) {
+    // Regression test: forcing a merge that contradicts an already-established chain of relations
+    // must be reported gracefully (mergeNodes returns false, isInvalid() becomes true) rather than
+    // crashing on an internal assertion when a later compare() call discovers the resulting cycle.
+    auto numberOfStates = 6;
+    auto above = storm::storage::BitVector(numberOfStates);
+    above.set(0);
+    auto below = storm::storage::BitVector(numberOfStates);
+    below.set(1);
+    storm::storage::SparseMatrixBuilder<storm::RationalFunction> matrixBuilder(2, 2, 2);
+    matrixBuilder.addNextValue(0, 0, storm::RationalFunction(1));
+    matrixBuilder.addNextValue(1, 1, storm::RationalFunction(1));
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+    options.forceTopologicalSort();
+    auto matrix = matrixBuilder.build();
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
+    auto order = storm::analysis::Order(above, below, numberOfStates, decomposition, statesSorted);
+
+    // Build a strict chain: top(0) > 3 > 4 > 5 > 2 > bottom(1).
+    order.add(2);
+    order.addBetween(3, order.getNode(0), order.getNode(2));
+    order.addBetween(4, order.getNode(3), order.getNode(2));
+    order.addBetween(5, order.getNode(4), order.getNode(2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(3, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(3, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(4, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(5, 2));
+
+    // Forcing 3 and 2 to be equal directly contradicts 3 > 4 > 5 > 2: mergeNodes must refuse this
+    // (returning false, marking the order invalid) instead of leaving the order in a state where a
+    // later compare() call would discover a state both above and below another.
+    EXPECT_FALSE(order.mergeNodes(order.getNode(3), order.getNode(2)));
+    EXPECT_TRUE(order.isInvalid());
+
+    // Further compare() calls on the now-invalid order must not crash.
+    EXPECT_NO_FATAL_FAILURE(order.compare(4, 5));
+    EXPECT_NO_FATAL_FAILURE(order.compare(3, 4));
+    EXPECT_NO_FATAL_FAILURE(order.compare(0, 1));
 }
 
 TEST(OrderTest, sort_states) {

@@ -58,6 +58,18 @@ class Order {
     Order();
 
     /*!
+     * Constructs a deep copy of the given Order. Every Node is reallocated; no state is shared
+     * with other.
+     */
+    Order(Order const& other);
+
+    Order(Order&&) noexcept = default;
+
+    Order& operator=(Order other);
+
+    friend void swap(Order& first, Order& second) noexcept;
+
+    /*!
      * Adds state between the top and bottom node of the order.
      *
      * @param state The given state.
@@ -318,6 +330,12 @@ class Order {
 
     void init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent>, bool doneBuilding = false);
 
+    /*!
+     * Allocates a new Node owned by this Order (in nodeStorage) and returns an observer pointer to
+     * it.
+     */
+    Node* allocateNode();
+
     std::string nodeName(Node n) const;
 
     std::string nodeLabel(Node n) const;
@@ -332,6 +350,10 @@ class Order {
     storm::storage::BitVector trivialStates;
 
     std::vector<Node*> nodes;
+
+    // Sole owner of every Node allocated for this Order; `nodes`, `top` and `bottom` are
+    // non-owning observer pointers into this storage.
+    std::vector<std::unique_ptr<Node>> nodeStorage;
 
     std::vector<uint_fast64_t> statesToHandle;
 

@@ -102,7 +102,7 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::initializeMono
     if (useBounds) {
         STORM_LOG_ASSERT(plaBoundFunction, "PLA bound function not registered.");
         orderExtender->setMaxValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Maximize));
-        orderExtender->setMaxValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Minimize));
+        orderExtender->setMinValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Minimize));
     }
     typename MonotonicityAnnotation<ParametricType>::OrderBasedMonotonicityAnnotation annotation;
     annotation.stateOrder = detail::extendOrder(*this->orderExtender, nullptr, region.region);
@@ -128,11 +128,9 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::updateMonotoni
     // Copy order only if it will potentially change and if it is shared with another region
     bool const changeOrder = !annotation->stateOrder->getDoneBuilding() && orderExtender->isHope(annotation->stateOrder);
     if (changeOrder && annotation->stateOrder.use_count() > 1) {
-        // TODO: orderExtender currently uses shared_ptr<Order> which likely interferes with the use_count() > 1 check above
         // TODO: Make sure that only annotated regions own the order
         auto newOrder = annotation->stateOrder->copy();
-        orderExtender->setUnknownStates(annotation->stateOrder, newOrder);
-        orderExtender->copyMinMax(annotation->stateOrder, newOrder);
+        orderExtender->copyContext(annotation->stateOrder, newOrder);
         annotation->stateOrder = newOrder;
     }
     if (changeOrder) {
