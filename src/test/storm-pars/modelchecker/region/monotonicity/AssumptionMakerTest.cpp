@@ -67,20 +67,29 @@ TEST_F(AssumptionMakerTest, Brp_without_bisimulation) {
 
     for (auto res : result) {
         EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, res.second);
-        EXPECT_EQ(true, res.first->getFirstOperand()->isVariable());
-        EXPECT_EQ(true, res.first->getSecondOperand()->isVariable());
     }
+
+    // Regression test: when more than one candidate survives, they must be returned in construction
+    // order (val1 > val2, val2 > val1, val1 == val2), not e.g. heap-address order of some internal
+    // representation.
+    EXPECT_EQ(183ul, result[0].first.state1);
+    EXPECT_EQ(186ul, result[0].first.state2);
+    EXPECT_EQ(storm::expressions::RelationType::Greater, result[0].first.relation);
+    EXPECT_EQ(186ul, result[1].first.state1);
+    EXPECT_EQ(183ul, result[1].first.state2);
+    EXPECT_EQ(storm::expressions::RelationType::Greater, result[1].first.relation);
+    EXPECT_EQ(183ul, result[2].first.state1);
+    EXPECT_EQ(186ul, result[2].first.state2);
+    EXPECT_EQ(storm::expressions::RelationType::Equal, result[2].first.relation);
 
     assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
     result = assumptionMaker.createAndCheckAssumptions(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple), region);
     EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, itr->second);
-    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
-    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
-    EXPECT_EQ("186", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ("183", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(186ul, itr->first.state1);
+    EXPECT_EQ(183ul, itr->first.state2);
+    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first.relation);
 }
 
 TEST_F(AssumptionMakerTest, Simple1) {
@@ -129,11 +138,9 @@ TEST_F(AssumptionMakerTest, Simple1) {
     EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, itr->second);
-    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
-    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
-    EXPECT_EQ("1", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ("2", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(1ul, itr->first.state1);
+    EXPECT_EQ(2ul, itr->first.state2);
+    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first.relation);
 }
 
 TEST_F(AssumptionMakerTest, Casestudy1) {
@@ -175,9 +182,7 @@ TEST_F(AssumptionMakerTest, Casestudy1) {
     EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, itr->second);
-    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
-    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
-    EXPECT_EQ("1", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ("2", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(1ul, itr->first.state1);
+    EXPECT_EQ(2ul, itr->first.state2);
+    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first.relation);
 }

@@ -1,12 +1,12 @@
 #pragma once
 
 #include <boost/container/flat_set.hpp>
+#include <optional>
 #include "storm/logic/Formula.h"
 #include "storm/models/sparse/Model.h"
-#include "storm/storage/expressions/BinaryRelationExpression.h"
-#include "storm/storage/expressions/VariableExpression.h"
 #include "storm/utility/Stopwatch.h"
 
+#include "storm-pars/modelchecker/region/monotonicity/Assumption.h"
 #include "storm-pars/modelchecker/region/monotonicity/AssumptionMaker.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityChecker.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
@@ -63,7 +63,7 @@ class OrderExtender {
     std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order,
                                                                                  storm::storage::ParameterRegion<ValueType> region,
                                                                                  std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr,
-                                                                                 std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
+                                                                                 std::optional<Assumption> assumption = std::nullopt);
 
     void setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& minValues, std::vector<ConstantType>&& maxValues);
     void setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& minValues);
@@ -74,8 +74,7 @@ class OrderExtender {
     void setUnknownStates(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2);
 
     std::pair<uint_fast64_t, uint_fast64_t> getUnknownStates(std::shared_ptr<Order> order) const;
-    void setUnknownStates(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
-    void copyMinMax(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
+    void copyContext(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
     void initializeMinMaxValues(storage::ParameterRegion<ValueType> region);
     void checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param,
                                std::shared_ptr<MonotonicityResult<VariableType>> monResult);
@@ -89,7 +88,7 @@ class OrderExtender {
     Order::NodeComparison addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const;
     std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order,
                                                                                  std::shared_ptr<MonotonicityResult<VariableType>> monRes,
-                                                                                 std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
+                                                                                 std::optional<Assumption> assumption = std::nullopt);
     std::pair<uint_fast64_t, uint_fast64_t> extendNormal(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors,
                                                          bool allowMerge);
     std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState,
@@ -99,26 +98,38 @@ class OrderExtender {
     bool extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2);
 
     void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor);
-    void handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
+    void handleAssumption(std::shared_ptr<Order> order, Assumption const& assumption) const;
 
     std::pair<uint_fast64_t, bool> getNextState(std::shared_ptr<Order> order, uint_fast64_t stateNumber, bool done);
+    std::shared_ptr<Order> computeInitialOrder(storm::storage::BitVector const& topStates, storm::storage::BitVector const& bottomStates,
+                                               storm::storage::SparseMatrix<ValueType> const& matrix, bool addStatesWithDirectBoundaryTransition);
     std::shared_ptr<Order> getBottomTopOrder();
 
     std::shared_ptr<Order> bottomTopOrder = nullptr;
 
-    std::map<std::shared_ptr<Order>, std::vector<ConstantType>> minValues;
+    // Per-in-progress-order bookkeeping used while extending an order (PLA bounds, whether PLA is
+    // usable/worth continuing, and the pair of states this order got stuck on, if any). Keyed by
+    // weak_ptr so this bookkeeping neither keeps an order alive nor inflates its use_count()
+    // while the order is still being extended.
+    struct Context {
+        std::vector<ConstantType> minValues;
+        std::vector<ConstantType> maxValues;
+        bool usePLA = false;
+        bool continueExtending = true;
+        std::pair<uint_fast64_t, uint_fast64_t> unknownStates;
+    };
+    Context& context(std::shared_ptr<Order> const& order);
+    Context const& contextAt(std::shared_ptr<Order> const& order) const;
+    std::map<std::weak_ptr<Order>, Context, std::owner_less<std::weak_ptr<Order>>> contexts;
+
     boost::optional<std::vector<ConstantType>> minValuesInit;
     boost::optional<std::vector<ConstantType>> maxValuesInit;
-    std::map<std::shared_ptr<Order>, std::vector<ConstantType>> maxValues;
 
     storage::SparseMatrix<ValueType> matrix;
     std::shared_ptr<models::sparse::Model<ValueType>> model;
 
     std::map<uint_fast64_t, std::vector<uint_fast64_t>> stateMap;
-    std::map<std::shared_ptr<Order>, std::pair<uint_fast64_t, uint_fast64_t>> unknownStatesMap;
 
-    std::map<std::shared_ptr<Order>, bool> usePLA;
-    std::map<std::shared_ptr<Order>, bool> continueExtending;
     bool cyclic;
 
     std::shared_ptr<logic::Formula const> formula;
@@ -127,7 +138,7 @@ class OrderExtender {
 
     uint_fast64_t numberOfStates;
 
-    analysis::AssumptionMaker<ValueType, ConstantType>* assumptionMaker;
+    std::unique_ptr<analysis::AssumptionMaker<ValueType, ConstantType>> assumptionMaker;
 
     boost::container::flat_set<uint_fast64_t> nonParametricStates;
 

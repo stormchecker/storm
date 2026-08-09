@@ -9,8 +9,6 @@
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
-#include "storm/storage/expressions/SimpleValuation.h"
-#include "storm/storage/expressions/VariableExpression.h"
 #include "storm/utility/solver.h"
 
 namespace storm {
@@ -73,22 +71,21 @@ AssumptionChecker<ValueType, ConstantType>::AssumptionChecker(std::shared_ptr<lo
 }
 
 template<typename ValueType, typename ConstantType>
-AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(uint_fast64_t val1, uint_fast64_t val2,
-                                                                                std::shared_ptr<expressions::BinaryRelationExpression> assumption,
-                                                                                std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
+AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(Assumption const& assumption, std::shared_ptr<Order> order,
+                                                                                storage::ParameterRegion<ValueType> region,
                                                                                 std::vector<ConstantType> const minValues,
                                                                                 std::vector<ConstantType> const maxValues) const {
     // First check if based on sample points the assumption can be discharged
-    assert(val1 == std::stoull(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
-    assert(val2 == std::stoull(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
     AssumptionStatus result = AssumptionStatus::UNKNOWN;
     if (useSamples) {
         result = checkOnSamples(assumption);
     }
-    assert(result != AssumptionStatus::VALID);
+    STORM_LOG_ASSERT(result != AssumptionStatus::VALID, "Sample-based checking should never conclude VALID by itself.");
 
     if (minValues.size() != 0) {
-        if (assumption->getRelationType() == expressions::RelationType::Greater) {
+        auto const val1 = assumption.state1;
+        auto const val2 = assumption.state2;
+        if (assumption.relation == expressions::RelationType::Greater) {
             if (minValues[val1] > maxValues[val2]) {
                 return AssumptionStatus::VALID;
             } else if (minValues[val1] == maxValues[val2] && minValues[val1] == maxValues[val1] && minValues[val2] == maxValues[val2]) {
@@ -109,31 +106,22 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
 
     if (result == AssumptionStatus::UNKNOWN) {
         // If result from sample checking was unknown, the assumption might hold
-        std::set<expressions::Variable> vars = std::set<expressions::Variable>({});
-        assumption->gatherVariables(vars);
-
-        STORM_LOG_THROW(
-            assumption->getRelationType() == expressions::RelationType::Greater || assumption->getRelationType() == expressions::RelationType::Equal,
-            exceptions::NotSupportedException, "Only Greater Or Equal assumptions supported.");
-        result = validateAssumptionSMTSolver(val1, val2, assumption, order, region, minValues, maxValues);
+        STORM_LOG_THROW(assumption.relation == expressions::RelationType::Greater || assumption.relation == expressions::RelationType::Equal,
+                        exceptions::NotSupportedException, "Only Greater Or Equal assumptions supported");
+        result = validateAssumptionSMTSolver(assumption, order, region, minValues, maxValues);
     }
     return result;
 }
 
 template<typename ValueType, typename ConstantType>
-AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption) const {
+AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(Assumption const& assumption) const {
+    STORM_LOG_ASSERT(assumption.relation == expressions::RelationType::Greater || assumption.relation == expressions::RelationType::Equal,
+                      "Only Greater or Equal assumptions are supported.");
     auto result = AssumptionStatus::UNKNOWN;
-    std::set<expressions::Variable> vars = std::set<expressions::Variable>({});
-    assumption->gatherVariables(vars);
-    for (auto values : samples) {
-        auto valuation = expressions::SimpleValuation(assumption->getManager().getSharedPointer());
-        for (auto var : vars) {
-            auto index = std::stoi(var.getName());
-            valuation.setRationalValue(var, utility::convertNumber<double>(values[index]));
-        }
-
-        assert(assumption->hasBooleanType());
-        if (!assumption->evaluateAsBool(&valuation)) {
+    for (auto const& values : samples) {
+        bool holds = assumption.relation == expressions::RelationType::Greater ? values[assumption.state1] > values[assumption.state2]
+                                                                               : values[assumption.state1] == values[assumption.state2];
+        if (!holds) {
             result = AssumptionStatus::INVALID;
             break;
         }
@@ -142,19 +130,19 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(std:
 }
 
 template<typename ValueType, typename ConstantType>
-AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(
-    uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order,
-    storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValues) const {
-    std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
+AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(Assumption const& assumption, std::shared_ptr<Order> order,
+                                                                                         storage::ParameterRegion<ValueType> region,
+                                                                                         std::vector<ConstantType> const minValues,
+                                                                                         std::vector<ConstantType> const maxValues) const {
     std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
     AssumptionStatus result = AssumptionStatus::UNKNOWN;
-    auto var1 = assumption->getFirstOperand()->asVariableExpression().getVariableName();
-    auto var2 = assumption->getSecondOperand()->asVariableExpression().getVariableName();
+    uint_fast64_t val1 = assumption.state1;
+    uint_fast64_t val2 = assumption.state2;
     auto row1 = matrix.getRow(val1);
     auto row2 = matrix.getRow(val2);
 
     bool orderKnown = true;
-    // if the state with number var1 (var2) occurs in the successors of the state with number var2 (var1) we need to add var1 == expr1 (var2 == expr2) to the
+    // if the state with number val1 (val2) occurs in the successors of the state with number val2 (val1) we need to add val1 == expr1 (val2 == expr2) to the
     // bounds
     bool addVar1 = false;
     bool addVar2 = false;
@@ -165,7 +153,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
     std::set<expressions::Variable> topVariables;
     std::set<expressions::Variable> bottomVariables;
     for (auto itr1 = row1.begin(); orderKnown && itr1 != row1.end(); ++itr1) {
-        addVar2 |= std::to_string(itr1->getColumn()) == var2;
+        addVar2 |= itr1->getColumn() == val2;
         auto varname1 = "s" + std::to_string(itr1->getColumn());
         if (!manager->hasVariable(varname1)) {
             if (order->isTopState(itr1->getColumn())) {
@@ -178,7 +166,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
         }
 
         for (auto itr2 = row2.begin(); orderKnown && itr2 != row2.end(); ++itr2) {
-            addVar1 |= std::to_string(itr2->getColumn()) == var1;
+            addVar1 |= itr2->getColumn() == val1;
             if (itr1->getColumn() != itr2->getColumn()) {
                 auto varname2 = "s" + std::to_string(itr2->getColumn());
                 if (!manager->hasVariable(varname2)) {
@@ -248,10 +236,10 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
         // It is the negation of actual assumption
 
         expressions::Expression exprToCheck;
-        if (assumption->getRelationType() == expressions::RelationType::Greater) {
+        if (assumption.relation == expressions::RelationType::Greater) {
             exprToCheck = expr1 <= expr2;
         } else {
-            assert(assumption->getRelationType() == expressions::RelationType::Equal);
+            STORM_LOG_ASSERT(assumption.relation == expressions::RelationType::Equal, "Only Greater and Equal assumptions are supported.");
             exprToCheck = expr1 != expr2;
         }
 
@@ -259,10 +247,10 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
         // Bounds for the state probabilities and parameters
         expressions::Expression exprBounds = manager->boolean(true);
         if (addVar1) {
-            exprBounds = exprBounds && (manager->getVariable("s" + var1) == expr1);
+            exprBounds = exprBounds && (manager->getVariable("s" + std::to_string(val1)) == expr1);
         }
         if (addVar2) {
-            exprBounds = exprBounds && (manager->getVariable("s" + var2) == expr2);
+            exprBounds = exprBounds && (manager->getVariable("s" + std::to_string(val2)) == expr2);
         }
         for (auto var : variables) {
             if (find(stateVariables.begin(), stateVariables.end(), var) != stateVariables.end()) {
@@ -297,7 +285,6 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
         if (s.check() == solver::SmtSolver::CheckResult::Unsat) {
             return AssumptionStatus::INVALID;
         }
-        assert(s.check() != solver::SmtSolver::CheckResult::Unsat);
 
         s.add(exprToCheck);
         auto smtRes = s.check();
@@ -312,13 +299,10 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
 }
 
 template<typename ValueType, typename ConstantType>
-AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption,
-                                                                                std::shared_ptr<Order> order,
+AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(Assumption const& assumption, std::shared_ptr<Order> order,
                                                                                 storage::ParameterRegion<ValueType> region) const {
-    auto var1 = std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName());
-    auto var2 = std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName());
     std::vector<ConstantType> vals;
-    return validateAssumption(var1, var2, assumption, order, region, vals, vals);
+    return validateAssumption(assumption, order, region, vals, vals);
 }
 
 template class AssumptionChecker<RationalFunction, double>;
