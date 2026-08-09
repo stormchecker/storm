@@ -233,7 +233,7 @@ TEST_F(ExplicitJaniModelBuilderTest, SynchronizationVectorOutputActionIndex) {
     auto janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/synchronization_vector_output_action_index.jani").first;
 
     storm::generator::JaniNextStateGenerator<double> generator(janiModel);
-    std::vector<storm::generator::CompressedState> states;
+    std::deque<storm::generator::CompressedState> states;
     auto stateToIdCallback = [&states](storm::generator::CompressedState const& state) {
         for (uint32_t index = 0; index < states.size(); ++index) {
             if (states[index] == state) {
