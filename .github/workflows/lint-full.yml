@@ -23,6 +23,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Read pinned clang versions
+        id: clang-versions
+        run: |
+          echo "TIDY_VERSION=$(grep '^CLANG_TIDY_VERSION=' resources/scripts/clang-versions | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+
       - name: Configure to generate compile_commands.json
         run: |
           cmake -S . -B build \
@@ -43,7 +48,7 @@ jobs:
         with:
           style: file
           tidy-checks: ''
-          version: '22'
+          version: ${{ steps.clang-versions.outputs.TIDY_VERSION }}
           database: build
           files-changed-only: false
           lines-changed-only: false

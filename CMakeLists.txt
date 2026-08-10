@@ -52,6 +52,8 @@ option(STORM_COMPILE_WITH_PCH "Enable pre-compiled headers" ON)
 mark_as_advanced(STORM_COMPILE_WITH_PCH)
 option(STORM_ENABLE_CLANG_TIDY "Sets whether a target for running clang-tidy is added." OFF)
 MARK_AS_ADVANCED(STORM_ENABLE_CLANG_TIDY)
+option(STORM_ENABLE_CLANG_FORMAT "Sets whether a target for running clang-format is added." OFF)
+MARK_AS_ADVANCED(STORM_ENABLE_CLANG_FORMAT)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
 option(STORM_COMPILE_WITH_ADDRESS_SANITIZER "Sets whether to compile with AddressSanitizer enabled" OFF)
 option(STORM_COMPILE_WITH_ALL_SANITIZERS "Sets whether to compile with all sanitizers enabled" OFF)
@@ -158,6 +160,8 @@ if (STORM_DEVELOPER)
     set(STORM_DEBUG_SPOT ON)
     set(STORM_DEBUG_SYLVAN ON)
     set(STORM_WARNING_AS_ERROR ON)
+    set(STORM_ENABLE_CLANG_FORMAT ON)
+    set(STORM_ENABLE_CLANG_TIDY ON)
 else()
     set(STORM_LOG_DISABLE_DEBUG ON)
     if (NOT CMAKE_BUILD_TYPE)
@@ -526,45 +530,9 @@ if(PROJECT_IS_TOP_LEVEL AND STORM_BUILD_TESTS)
 	add_dependencies(check-verbose tests)
 endif()
 
+# Developer tools for formatting and static analysis
 if(PROJECT_IS_TOP_LEVEL)
-	# Apply code formatting
-	add_custom_target(format COMMAND ${PROJECT_SOURCE_DIR}/resources/scripts/auto-format.sh)
-endif()
-
-if(PROJECT_IS_TOP_LEVEL AND STORM_ENABLE_CLANG_TIDY)
-	# Ensure that a compile_commands.json is generated, since clang-tidy relies on it.
-	set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-	find_program(STORM_CLANG_TIDY_BINARY
-		NAMES clang-tidy-22 clang-tidy-21 clang-tidy-20 clang-tidy-19 clang-tidy-18
-		      clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy
-		HINTS ${LLVM_ROOT}/bin)
-	find_program(STORM_RUN_CLANG_TIDY_BINARY
-		NAMES run-clang-tidy-22 run-clang-tidy-21 run-clang-tidy-20 run-clang-tidy-19 run-clang-tidy-18
-		      run-clang-tidy-17 run-clang-tidy-16 run-clang-tidy-15 run-clang-tidy
-		HINTS ${LLVM_ROOT}/bin)
-	if(NOT STORM_CLANG_TIDY_BINARY)
-		message(FATAL_ERROR "STORM_ENABLE_CLANG_TIDY was set, but no clang-tidy executable could be found.")
-	endif()
-	if(NOT STORM_RUN_CLANG_TIDY_BINARY)
-		message(FATAL_ERROR "STORM_ENABLE_CLANG_TIDY was set, but no run-clang-tidy executable could be found.")
-	endif()
-	set(STORM_CLANG_TIDY_JOBS "${STORM_RESOURCES_BUILD_JOBCOUNT}")
-	# Bake the compiler's implicit include directories into the recorded compile commands. Fixes problems with e.g. Nix.
-	set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
-	set(CMAKE_C_STANDARD_INCLUDE_DIRECTORIES ${CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES})
-	# Runs clang-tidy (as configured in .clang-tidy) over the Storm sources.
-	# USES_TERMINAL and PYTHONUNBUFFERED keep the progress of clang-tidy visible
-	add_custom_target(clang-tidy
-		COMMAND ${CMAKE_COMMAND} -E env PYTHONUNBUFFERED=1
-			${STORM_RUN_CLANG_TIDY_BINARY} -p ${CMAKE_BINARY_DIR} -j ${STORM_CLANG_TIDY_JOBS} -source-filter=${CMAKE_SOURCE_DIR}/src
-		USES_TERMINAL
-		COMMENT "Running clang-tidy over the Storm sources.")
-	# Like clang-tidy, but automatically applies the suggested fixes.
-	add_custom_target(clang-tidy-fix
-		COMMAND ${CMAKE_COMMAND} -E env PYTHONUNBUFFERED=1
-			${STORM_RUN_CLANG_TIDY_BINARY} -p ${CMAKE_BINARY_DIR} -j ${STORM_CLANG_TIDY_JOBS} -source-filter=${CMAKE_SOURCE_DIR}/src -fix
-		USES_TERMINAL
-		COMMENT "Running clang-tidy with automatic fixes over the Storm sources.")
+	include(${PROJECT_SOURCE_DIR}/resources/cmake/ClangTools.cmake)
 endif()
 
 set(STORM_TARGETS "")
