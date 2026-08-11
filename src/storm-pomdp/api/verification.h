@@ -1,7 +1,16 @@
 #pragma once
 
+#include <memory>
+#include <unordered_map>
+#include <vector>
+
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelChecker.h"
 #include "storm/environment/Environment.h"
+#include "storm/modelchecker/CheckTask.h"
+#include "storm/models/sparse/Model.h"
+#include "storm/models/sparse/Pomdp.h"
+#include "storm/storage/Scheduler.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
 namespace pomdp {

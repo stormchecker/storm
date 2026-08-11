@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "storm/storage/sparse/StateType.h"
 
 namespace storm {

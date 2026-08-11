@@ -1,7 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 #include "storm-gspn/storage/gspn/Transition.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace gspn {

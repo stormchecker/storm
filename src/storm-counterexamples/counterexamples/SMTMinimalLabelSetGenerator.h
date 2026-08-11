@@ -1,11 +1,18 @@
 #pragma once
 
+#include <algorithm>
 #include <chrono>
+#include <iterator>
+#include <memory>
 #include <queue>
+#include <set>
+#include <sstream>
+#include <utility>
 
 #include "storm-counterexamples/counterexamples/GuaranteedLabelSet.h"
 #include "storm-counterexamples/counterexamples/HighLevelCounterexample.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -13,6 +20,10 @@
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/models/ModelType.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Model.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
@@ -20,7 +31,9 @@
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/prism/Program.h"
+#include "storm/storage/sparse/JaniChoiceOrigins.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

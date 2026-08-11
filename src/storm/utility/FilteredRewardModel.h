@@ -1,8 +1,11 @@
 #pragma once
 
 #include <memory>
+#include <type_traits>
+#include <utility>
 
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/logic/RewardAccumulation.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

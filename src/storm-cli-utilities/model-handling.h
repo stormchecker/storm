@@ -3,11 +3,11 @@
 #include <boost/algorithm/string/join.hpp>
 #include <type_traits>
 
-#include "storm/api/storm.h"
-
 #include "storm-cli-utilities/AutomaticSettings.h"
 #include "storm-cli-utilities/print.h"
 #include "storm-parsers/api/storm-parsers.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/api/storm.h"
 #include "storm/builder/BuilderType.h"
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/OptionParserException.h"

@@ -1,12 +1,16 @@
 #pragma once
 
+#include <cstddef>
+#include <deque>
+#include <map>
+#include <utility>
+#include <vector>
+
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-
-#include <deque>
-#include <map>
-#include <vector>
+#include "storm/storage/sparse/StateType.h"
+#include "storm/transformer/Product.h"
 
 namespace storm {
 namespace transformer {
