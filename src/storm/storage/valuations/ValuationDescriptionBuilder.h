@@ -76,11 +76,12 @@ class ValuationDescriptionBuilder {
      * Asserts that the given variable is associated with the right manager and that it is not already present in this description.
      * Otherwise, throws an exception.
      */
-    void assertVariable(storm::expressions::Variable const& variable) const;
+    void assertAndCollectVariable(storm::expressions::Variable const& variable);
 
     void finalize();
     std::shared_ptr<storm::expressions::ExpressionManager const> const manager;
     ValuationClassDescription descr;
+    std::set<storm::expressions::Variable> addedVariables;
 };
 
 }  // namespace storage::sparse

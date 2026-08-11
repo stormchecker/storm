@@ -844,13 +844,13 @@ std::vector<Label> const& Program::getLabels() const {
     return this->labels;
 }
 
-bool Program::hasFormula(std::string const& labelName) const {
-    return this->formulaToIndexMap.find(labelName) != this->formulaToIndexMap.end();
+bool Program::hasFormula(std::string const& formulaName) const {
+    return this->formulaToIndexMap.find(formulaName) != this->formulaToIndexMap.end();
 }
 
-Formula const& Program::getFormula(std::string const& labelName) const {
-    STORM_LOG_ASSERT(this->hasFormula(labelName), "Formula with name '" << labelName << "' does not exist.");
-    return formulas[this->formulaToIndexMap.at(labelName)];
+Formula const& Program::getFormula(std::string const& formulaName) const {
+    STORM_LOG_ASSERT(this->hasFormula(formulaName), "Formula with name '" << formulaName << "' does not exist.");
+    return formulas[this->formulaToIndexMap.at(formulaName)];
 }
 
 std::vector<storm::expressions::Expression> Program::getAllGuards(bool negated) const {
