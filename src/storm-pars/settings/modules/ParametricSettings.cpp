@@ -66,7 +66,7 @@ bool ParametricSettings::hasOperationModeBeenSet() const {
 
 pars::utility::ParametricMode ParametricSettings::getOperationMode() const {
     auto mode = pars::utility::getParametricModeFromString(this->getOption(modeOptionName).getArgumentByName("mode").getValueAsString());
-    STORM_LOG_THROW(mode, storm::exceptions::IllegalArgumentException, "Parametric mode is not properly implemented");
+    STORM_LOG_THROW(mode, storm::exceptions::IllegalArgumentException, "Parametric mode is not properly implemented.");
     return *mode;
 }
 

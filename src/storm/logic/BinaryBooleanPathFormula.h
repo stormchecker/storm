@@ -17,7 +17,7 @@ class BinaryBooleanPathFormula : public BinaryPathFormula {
 
     virtual ~BinaryBooleanPathFormula() {
         // Intentionally left empty.
-    };
+    }
 
     FormulaContext const& getContext() const;
 

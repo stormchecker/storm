@@ -183,7 +183,7 @@ std::vector<int64_t> Valuations::getInt64Values(storm::expressions::Variable con
     std::vector<int64_t> result;
     result.reserve(getNumberOfEntities());
     umbValuations->readCallback<int64_t>(integerVariable, [&result](auto const entity, auto, int64_t value) {
-        STORM_LOG_ASSERT(entity == result.size(), "entities processed in unexpected order.");
+        STORM_LOG_ASSERT(entity == result.size(), "Entities processed in unexpected order.");
         result.push_back(value);
     });
     return result;
@@ -194,7 +194,7 @@ std::vector<double> Valuations::getDoubleValues(storm::expressions::Variable con
     std::vector<double> result;
     result.reserve(getNumberOfEntities());
     umbValuations->readCallback<double>(doubleVariable, [&result](auto const entity, auto, double value) {
-        STORM_LOG_ASSERT(entity == result.size(), "entities processed in unexpected order.");
+        STORM_LOG_ASSERT(entity == result.size(), "Entities processed in unexpected order.");
         result.push_back(value);
     });
     return result;
@@ -205,7 +205,7 @@ std::vector<storm::RationalNumber> Valuations::getRationalValues(storm::expressi
     std::vector<storm::RationalNumber> result;
     result.reserve(getNumberOfEntities());
     umbValuations->readCallback<storm::RationalNumber>(rationalVariable, [&result](auto const entity, auto, storm::RationalNumber value) {
-        STORM_LOG_ASSERT(entity == result.size(), "entities processed in unexpected order.");
+        STORM_LOG_ASSERT(entity == result.size(), "Entities processed in unexpected order.");
         result.push_back(std::move(value));
     });
     return result;
@@ -216,7 +216,7 @@ std::vector<std::string> Valuations::getStringValues(storm::expressions::Variabl
     std::vector<std::string> result;
     result.reserve(getNumberOfEntities());
     umbValuations->readCallback<std::string>(stringVariable, [&result](auto const entity, auto, std::string&& value) {
-        STORM_LOG_ASSERT(entity == result.size(), "entities processed in unexpected order.");
+        STORM_LOG_ASSERT(entity == result.size(), "Entities processed in unexpected order.");
         result.push_back(std::move(value));
     });
     return result;

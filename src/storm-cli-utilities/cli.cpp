@@ -8,6 +8,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/OptionParserException.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
@@ -68,6 +69,7 @@ void setFileLogging() {
 void setLogLevel() {
     storm::settings::modules::GeneralSettings const& general = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
     storm::settings::modules::DebugSettings const& debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
+    storm::settings::modules::CoreSettings const& core = storm::settings::getModule<storm::settings::modules::CoreSettings>();
 
     if (general.isVerboseSet()) {
         storm::utility::setLogLevel(l3pp::LogLevel::INFO);
@@ -78,6 +80,16 @@ void setLogLevel() {
     if (debug.isTraceSet()) {
         storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
     }
+
+    // Statistics and progress messages live on their own log channels so they can be enabled
+    // independently of general verbosity.
+    if (core.isShowStatisticsSet()) {
+        storm::utility::setStatisticsLogLevel(l3pp::LogLevel::INFO);
+    }
+    if (general.isShowProgressSet()) {
+        storm::utility::setProgressLogLevel(l3pp::LogLevel::INFO);
+    }
+
     setFileLogging();
 }
 

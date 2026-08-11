@@ -32,7 +32,7 @@ void Place::setCapacity(boost::optional<uint64_t> const& cap) {
 }
 
 uint64_t Place::getCapacity() const {
-    assert(hasRestrictedCapacity());
+    STORM_LOG_ASSERT(hasRestrictedCapacity(), "Place does not have restricted capacity.");
     return capacity.get();
 }
 

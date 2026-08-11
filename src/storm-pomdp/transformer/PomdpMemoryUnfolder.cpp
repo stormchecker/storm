@@ -20,7 +20,7 @@ PomdpMemoryUnfolder<ValueType>::PomdpMemoryUnfolder(storm::models::sparse::Pomdp
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> PomdpMemoryUnfolder<ValueType>::transform(bool dropUnreachableStates) const {
     // For simplicity we first build the 'full' product of pomdp and memory (with pomdp.numStates * memory.numStates states).
-    STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::InvalidArgumentException, "POMDP must be canonical to unfold memory into it");
+    STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::InvalidArgumentException, "POMDP must be canonical to unfold memory into it.");
     storm::storage::sparse::ModelComponents<ValueType> components;
     components.transitionMatrix = transformTransitions();
     components.stateLabeling = transformStateLabeling();
@@ -72,7 +72,7 @@ storm::storage::SparseMatrix<ValueType> PomdpMemoryUnfolder<ValueType>::transfor
             builder.newRowGroup(row);
             for (uint64_t origRow = origTransitions.getRowGroupIndices()[modelState]; origRow < origTransitions.getRowGroupIndices()[modelState + 1];
                  ++origRow) {
-                for (auto const& memStatePrime : memory.getTransitions(memState)) {
+                for (auto memStatePrime : memory.getTransitions(memState)) {
                     for (auto const& entry : origTransitions.getRow(origRow)) {
                         builder.addNextValue(row, getUnfoldingState(entry.getColumn(), memStatePrime), entry.getValue());
                     }

@@ -21,7 +21,7 @@ inline MemlessSearchPathVariables pathVariableTypeFromString(std::string const& 
     } else if (in == "real") {
         return MemlessSearchPathVariables::RealRanking;
     } else {
-        assert(in == "bool");
+        STORM_LOG_ASSERT(in == "bool", "Expected 'bool' path variable type.");
         return MemlessSearchPathVariables::BooleanRanking;
     }
 }

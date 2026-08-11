@@ -24,7 +24,7 @@ Automaton::Automaton(std::string const& name, storm::expressions::Variable const
 
 storm::expressions::Variable cloneVariable(storm::expressions::ExpressionManager& manager, storm::expressions::Variable const& var,
                                            std::string const& variablePrefix) {
-    STORM_LOG_ASSERT(var.getManager() == manager, "expected same manager.");
+    STORM_LOG_ASSERT(var.getManager() == manager, "Expected same manager.");
     return manager.declareVariable(variablePrefix + var.getName(), var.getType());
 }
 
@@ -79,7 +79,7 @@ bool Automaton::hasTransientVariable() const {
 FunctionDefinition const& Automaton::addFunctionDefinition(FunctionDefinition const& functionDefinition) {
     auto insertionRes = functionDefinitions.emplace(functionDefinition.getName(), functionDefinition);
     STORM_LOG_THROW(insertionRes.second, storm::exceptions::InvalidArgumentException,
-                    " a function with the name " << functionDefinition.getName() << " already exists in this automaton (" << this->getName() << ")");
+                    "A function with the name " << functionDefinition.getName() << " already exists in this automaton (" << this->getName() << ").");
     return insertionRes.first->second;
 }
 
@@ -121,7 +121,7 @@ uint64_t Automaton::addLocation(Location const& location) {
 }
 
 uint64_t Automaton::getLocationIndex(std::string const& name) const {
-    assert(hasLocation(name));
+    STORM_LOG_ASSERT(hasLocation(name), "Location not found.");
     return locationToIndex.at(name);
 }
 
@@ -297,7 +297,7 @@ EdgeContainer& Automaton::getEdgeContainer() {
 void Automaton::addEdge(Edge const& edge) {
     STORM_LOG_THROW(edge.getSourceLocationIndex() < locations.size(), storm::exceptions::InvalidArgumentException,
                     "Cannot add edge with unknown source location index '" << edge.getSourceLocationIndex() << "'.");
-    assert(validate());
+    STORM_LOG_ASSERT(validate(), "Automaton validation failed.");
 
     edges.insertEdge(edge, locationToStartingIndex[edge.getSourceLocationIndex()], locationToStartingIndex[edge.getSourceLocationIndex() + 1]);
     // Update the set of action indices of this automaton.
@@ -540,9 +540,9 @@ void Automaton::liftTransientEdgeDestinationAssignments(int64_t maxLevel) {
 }
 
 bool Automaton::validate() const {
-    assert(locationToStartingIndex.size() == locations.size() + 1);
+    STORM_LOG_ASSERT(locationToStartingIndex.size() == locations.size() + 1, "Location index size mismatch.");
     for (uint64_t i = 0; i < locations.size(); i++) {
-        assert(locationToStartingIndex[i] <= locationToStartingIndex[i + 1]);
+        STORM_LOG_ASSERT(locationToStartingIndex[i] <= locationToStartingIndex[i + 1], "Location index not monotonically increasing.");
     }
     return true;
 }

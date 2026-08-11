@@ -13,8 +13,6 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/Z3LpSolver.h"
 #include "storm/storage/geometry/Hyperrectangle.h"
 #include "storm/utility/SignalHandler.h"
@@ -66,12 +64,9 @@ std::unique_ptr<CheckResult> SparsePcaaQuery<SparseModelType, GeometryValueType>
             if (env.modelchecker().multi().isExportPlotSet()) {
                 exportPlotOfCurrentApproximation(env, refinementSteps, overApproximation);
             }
-            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-                STORM_PRINT_AND_LOG("Multi-objective Pareto Curve Approximation algorithm terminated after " << refinementSteps.size()
-                                                                                                             << " refinement steps.\n");
-            }
+            STORM_LOG_STATISTICS("Multi-objective Pareto Curve Approximation algorithm terminated after " << refinementSteps.size() << " refinement steps.\n");
             return std::move(std::get<0>(answerOrWeights));
-        };
+        }
         auto [weightVector, epsilonWso] = std::get<1>(answerOrWeights);
         // Normalize the weight vector to make sure that its magnitude does not influence the accuracy of the weighted sum optimization
         GeometryValueType normalizationFactor =
@@ -254,7 +249,7 @@ SparsePcaaQuery<SparseModelType, GeometryValueType>::tryAnswerOrNextWeightsAchie
             optRes.first[optObjIndex.value()] - storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision());
         // The following assertion holds because optRes.first is in the over-approximation and satisfies all thresholds and the over-approximation is
         // downward closed
-        STORM_LOG_ASSERT(overApproximation->contains(referencePoint), "Expected reference point to be contained in the over-approximation");
+        STORM_LOG_ASSERT(overApproximation->contains(referencePoint), "Expected reference point to be contained in the over-approximation.");
     }
 
     // Second, find a separating halfspace between the under-approximation and the reference point with maximal L1 distance (not Euclidean!) to the latter

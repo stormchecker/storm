@@ -8,8 +8,8 @@
 #include "storm/storage/expressions/Expressions.h"
 
 #ifdef STORM_HAVE_Z3
-#include "z3++.h"
-#include "z3.h"
+#include <z3++.h>
+#include <z3.h>
 #endif
 
 namespace storm {

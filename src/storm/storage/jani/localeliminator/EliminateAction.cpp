@@ -17,7 +17,7 @@ std::string EliminateAction::getDescription() {
 }
 
 void EliminateAction::doAction(JaniLocalEliminator::Session& session) {
-    STORM_LOG_THROW(!session.hasLoops(automatonName, locationName), storm::exceptions::InvalidArgumentException, "Locations with loops cannot be eliminated");
+    STORM_LOG_THROW(!session.hasLoops(automatonName, locationName), storm::exceptions::InvalidArgumentException, "Locations with loops cannot be eliminated.");
 
     Automaton& automaton = session.getModel().getAutomaton(automatonName);
     uint64_t locIndex = automaton.getLocationIndex(locationName);
@@ -69,9 +69,7 @@ void EliminateAction::doAction(JaniLocalEliminator::Session& session) {
         if (!edge.getGuard().containsVariables() && !edge.getGuard().evaluateAsBool())
             continue;
         for (const EdgeDestination& dest : edge.getDestinations()) {
-            if (dest.getLocationIndex() == locIndex) {
-                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Could not eliminate location");
-            }
+            STORM_LOG_THROW(dest.getLocationIndex() != locIndex, storm::exceptions::IllegalArgumentException, "Could not eliminate location.");
         }
     }
 }
@@ -114,7 +112,7 @@ void EliminateAction::eliminateDestination(JaniLocalEliminator::Session& session
             destinationLocationsAndProbabilities.emplace_back(unchangedDest.getLocationIndex(), unchangedDest.getProbability());
         }
 
-        STORM_LOG_THROW(!edge.hasRate() && !outEdge.hasRate(), storm::exceptions::NotImplementedException, "Edge Rates are not implemented");
+        STORM_LOG_THROW(!edge.hasRate() && !outEdge.hasRate(), storm::exceptions::NotImplementedException, "Edge Rates are not implemented.");
         newEdges.emplace_back(Edge(sourceIndex, actionIndex, boost::none, templateEdge, destinationLocationsAndProbabilities));
     }
 

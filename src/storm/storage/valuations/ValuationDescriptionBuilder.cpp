@@ -102,7 +102,7 @@ void ValuationDescriptionBuilder::addVariable(ValuationClassDescription::Variabl
     assertAndCollectVariable(manager->getVariable(variable.name));
     std::ostringstream errors;
     STORM_LOG_THROW(storm::umb::validation::validateTypeDeclaration(variable.type, false, errors), storm::exceptions::WrongFormatException,
-                    "Invalid type declaration for variable " << variable.name << ": " << errors.str());
+                    "Invalid type declaration for variable " << variable.name << ": " << errors.str() << ".");
     descr.variables.push_back(variable);
 }
 

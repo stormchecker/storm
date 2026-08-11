@@ -6,6 +6,7 @@
 #include "storm/logic/Formula.h"
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/bisimulation/BisimulationOptions.h"
 #include "storm/storage/dd/bisimulation/PreservationInformation.h"
 #include "storm/storage/dd/bisimulation/QuotientFormat.h"
 #include "storm/storage/dd/bisimulation/SignatureMode.h"
@@ -36,15 +37,19 @@ class PartialQuotientExtractor;
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>
 class BisimulationDecomposition {
    public:
-    BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType);
     BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType,
-                              bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation);
+                              bisimulation::BisimulationOptions const& bisimulationOptions = bisimulation::BisimulationOptions());
+    BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType,
+                              bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation,
+                              bisimulation::BisimulationOptions const& bisimulationOptions = bisimulation::BisimulationOptions());
     BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model,
                               std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
-                              storm::storage::BisimulationType const& bisimulationType);
+                              storm::storage::BisimulationType const& bisimulationType,
+                              bisimulation::BisimulationOptions const& bisimulationOptions = bisimulation::BisimulationOptions());
     BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model,
                               bisimulation::Partition<DdType, ValueType> const& initialPartition,
-                              bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation);
+                              bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation,
+                              bisimulation::BisimulationOptions const& bisimulationOptions = bisimulation::BisimulationOptions());
 
     ~BisimulationDecomposition();
 
@@ -80,6 +85,9 @@ class BisimulationDecomposition {
 
     // The object capturing what is preserved.
     bisimulation::PreservationInformation<DdType, ValueType> preservationInformation;
+
+    // The configuration used for the bisimulation minimization.
+    bisimulation::BisimulationOptions bisimulationOptions;
 
     // The refiner to use.
     std::unique_ptr<bisimulation::PartitionRefiner<DdType, ValueType>> refiner;

@@ -26,7 +26,7 @@ NativePolytope<ValueType>::NativePolytope(std::vector<Halfspace<ValueType>> cons
         A = EigenMatrix(maxRow, maxCol);
         b = EigenVector(maxRow);
         for (Eigen::Index row = 0; row < A.rows(); ++row) {
-            assert((Eigen::Index)halfspaces[row].normalVector().size() == maxCol);
+            STORM_LOG_ASSERT((Eigen::Index)halfspaces[row].normalVector().size() == maxCol, "Halfspace normal vector size mismatch.");
             b(row) = halfspaces[row].offset();
             A.row(row) = storm::adapters::EigenAdapter::toEigenVector(halfspaces[row].normalVector());
         }
@@ -159,7 +159,7 @@ bool NativePolytope<ValueType>::contains(Point const& point) const {
 template<typename ValueType>
 bool NativePolytope<ValueType>::contains(std::shared_ptr<Polytope<ValueType>> const& other) const {
     STORM_LOG_THROW(other->isNativePolytope(), storm::exceptions::InvalidArgumentException,
-                    "Invoked operation between a NativePolytope and a different polytope implementation. This is not supported");
+                    "Invoked operation between a NativePolytope and a different polytope implementation. This is not supported.");
     if (this->isUniversal()) {
         return true;
     } else if (other->isUniversal()) {
@@ -194,7 +194,7 @@ bool NativePolytope<ValueType>::contains(std::shared_ptr<Polytope<ValueType>> co
 template<typename ValueType>
 std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::intersection(std::shared_ptr<Polytope<ValueType>> const& rhs) const {
     STORM_LOG_THROW(rhs->isNativePolytope(), storm::exceptions::InvalidArgumentException,
-                    "Invoked operation between a NativePolytope and a different polytope implementation. This is not supported");
+                    "Invoked operation between a NativePolytope and a different polytope implementation. This is not supported.");
     if (this->isUniversal()) {
         return rhs;
     } else if (rhs->isUniversal()) {
@@ -228,7 +228,7 @@ std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::intersection(Hal
 template<typename ValueType>
 std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::convexUnion(std::shared_ptr<Polytope<ValueType>> const& rhs) const {
     STORM_LOG_THROW(rhs->isNativePolytope(), storm::exceptions::InvalidArgumentException,
-                    "Invoked operation between a NativePolytope and a different polytope implementation. This is not supported");
+                    "Invoked operation between a NativePolytope and a different polytope implementation. This is not supported.");
     if (this->isEmpty()) {
         return std::make_shared<NativePolytope<ValueType>>(dynamic_cast<NativePolytope<ValueType> const&>(*rhs));
     } else if (rhs->isEmpty()) {
@@ -251,7 +251,7 @@ std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::convexUnion(std:
 template<typename ValueType>
 std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::minkowskiSum(std::shared_ptr<Polytope<ValueType>> const& rhs) const {
     STORM_LOG_THROW(rhs->isNativePolytope(), storm::exceptions::InvalidArgumentException,
-                    "Invoked operation between a NativePolytope and a different polytope implementation. This is not supported");
+                    "Invoked operation between a NativePolytope and a different polytope implementation. This is not supported.");
     NativePolytope<ValueType> const& nativeRhs = dynamic_cast<NativePolytope<ValueType> const&>(*rhs);
 
     if (this->isEmpty() || nativeRhs.isEmpty()) {
@@ -305,7 +305,7 @@ std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::affineTransforma
 
     Eigen::FullPivLU<EigenMatrix> luMatrix(eigenMatrix);
     STORM_LOG_THROW(luMatrix.isInvertible(), storm::exceptions::NotImplementedException,
-                    "Affine Transformation of native polytope only implemented if the transformation matrix is invertable");
+                    "Affine Transformation of native polytope only implemented if the transformation matrix is invertable.");
     if (isUniversal()) {
         return std::make_shared<NativePolytope<ValueType>>(std::vector<Halfspace<ValueType>>());
     }
@@ -434,6 +434,7 @@ std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::clean() {
         switch (solver->check()) {
             case storm::solver::SmtSolver::CheckResult::Sat:
                 keptConstraints.set(row, true);
+                break;
             case storm::solver::SmtSolver::CheckResult::Unsat:
                 break;
             default:

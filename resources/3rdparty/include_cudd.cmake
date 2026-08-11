@@ -47,8 +47,8 @@ ExternalProject_Add(
         LOG_CONFIGURE ON
         LOG_BUILD ON
         LOG_INSTALL ON
-        BUILD_BYPRODUCTS ${CUDD_LIB_DIR}/libcudd${STATIC_EXT}
         LOG_OUTPUT_ON_FAILURE ON
+        BUILD_BYPRODUCTS ${CUDD_LIB_DIR}/libcudd${STATIC_EXT}
 )
 
 # Do not use system CUDD, Storm has a modified version

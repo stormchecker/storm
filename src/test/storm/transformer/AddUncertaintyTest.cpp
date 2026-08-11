@@ -16,7 +16,7 @@ TEST(AddUncertaintyTransformerTest, BrpTest) {
     auto formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasString, program));
     auto model = storm::api::buildSparseModel<double>(program, formulas);
 
-    auto transformer = storm::transformer::AddUncertainty(model);
+    auto transformer = storm::transformer::AddUncertainty<double>(model);
     auto uncertainModel = transformer.transform(0.01);
     EXPECT_EQ(uncertainModel->getNumberOfStates(), model->getNumberOfStates());
     EXPECT_EQ(uncertainModel->getNumberOfTransitions(), model->getNumberOfTransitions());
@@ -32,7 +32,7 @@ TEST(AddUncertaintyTransformerTest, Coin22Test) {
     auto formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasString, program));
     auto model = storm::api::buildSparseModel<double>(program, formulas);
 
-    auto transformer = storm::transformer::AddUncertainty(model);
+    auto transformer = storm::transformer::AddUncertainty<double>(model);
     auto uncertainModel = transformer.transform(0.01);
     EXPECT_EQ(uncertainModel->getNumberOfStates(), model->getNumberOfStates());
     EXPECT_EQ(uncertainModel->getNumberOfTransitions(), model->getNumberOfTransitions());

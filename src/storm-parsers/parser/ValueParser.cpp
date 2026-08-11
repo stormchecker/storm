@@ -54,9 +54,8 @@ ValueType ValueParser<ValueType>::parseValue(std::string const& value) const {
 template<typename NumberType>
 NumberType parseNumber(std::string const& value) {
     NumberType result;
-    if (!parseNumber(value, result)) {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Could not parse value '" << value << "' into " << typeid(NumberType).name() << ".");
-    }
+    STORM_LOG_THROW(parseNumber(value, result), storm::exceptions::WrongFormatException,
+                    "Could not parse value '" << value << "' into " << typeid(NumberType).name() << ".");
     return result;
 }
 

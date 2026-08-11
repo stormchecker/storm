@@ -9,16 +9,16 @@
 #include "storm/utility/macros.h"
 
 #ifdef STORM_HAVE_GLPK
-#include "glpk.h"
+#include <glpk.h>
 #endif
 #ifdef STORM_HAVE_GUROBI
-#include "gurobi_c.h"
+#include <gurobi_c.h>
 #endif
 #ifdef STORM_HAVE_MATHSAT
-#include "mathsat.h"
+#include <mathsat.h>
 #endif
 #ifdef STORM_HAVE_SOPLEX
-#include "soplex.h"
+#include <soplex.h>
 #endif
 #ifdef STORM_HAVE_SPOT
 #include <spot/misc/version.hh>
@@ -27,7 +27,7 @@
 #include <xercesc/util/XercesVersion.hpp>
 #endif
 #ifdef STORM_HAVE_Z3
-#include "z3.h"
+#include <z3.h>
 #endif
 
 namespace storm {

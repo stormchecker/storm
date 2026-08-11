@@ -17,8 +17,6 @@
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/macros.h"
 
@@ -122,11 +120,8 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
     swAnalysis.stop();
 
     swTotal.stop();
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Solving multi-objective query took " << swTotal << " seconds (consisting of " << swPreprocessing
-                                                                  << " seconds for preprocessing and " << swAnalysis
-                                                                  << " seconds for analyzing the preprocessed model).\n");
-    }
+    STORM_LOG_STATISTICS("Solving multi-objective query took " << swTotal << " seconds (consisting of " << swPreprocessing << " seconds for preprocessing and "
+                                                               << swAnalysis << " seconds for analyzing the preprocessed model).\n");
 
     return result;
 }

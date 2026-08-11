@@ -252,7 +252,7 @@ DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::stor
         visitQueue.push(dependency->dependentEvents()[0]->id());
     }
     stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
-    STORM_LOG_ASSERT(visitQueue.empty(), "VisitQueue not empty");
+    STORM_LOG_ASSERT(visitQueue.empty(), "VisitQueue not empty.");
 
     // Visit all remaining states
     for (size_t i = 0; i < visited.size(); ++i) {

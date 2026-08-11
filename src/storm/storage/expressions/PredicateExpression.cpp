@@ -18,7 +18,7 @@ OperatorType toOperatorType(PredicateExpression::PredicateType tp) {
         case PredicateExpression::PredicateType::ExactlyOneOf:
             return OperatorType::ExactlyOneOf;
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Predicate type not supported");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Predicate type not supported.");
 }
 
 PredicateExpression::PredicateExpression(ExpressionManager const& manager, Type const& type, std::vector<std::shared_ptr<BaseExpression const>> const& operands,
@@ -46,7 +46,7 @@ bool PredicateExpression::evaluateAsBool(Valuation const* valuation) const {
         case PredicateType::AtLeastOneOf:
             return nrTrue >= 1;
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Predicate type not supported");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Predicate type not supported.");
 }
 
 std::shared_ptr<BaseExpression const> PredicateExpression::simplify() const {
@@ -59,13 +59,14 @@ std::shared_ptr<BaseExpression const> PredicateExpression::simplify() const {
                 if (predicate == PredicateType::AtLeastOneOf) {
                     return res;
                 } else {
-                    assert(predicate == PredicateType::AtMostOneOf || predicate == PredicateType::ExactlyOneOf);
-                    trueCount++;
+                    STORM_LOG_ASSERT(predicate == PredicateType::AtMostOneOf || predicate == PredicateType::ExactlyOneOf, "Unexpected predicate.");
                     simplifiedOperands.push_back(res);
                 }
             } else {
-                assert(res->isFalse());
-                assert(predicate == PredicateType::AtMostOneOf || predicate == PredicateType::AtLeastOneOf || predicate == PredicateType::ExactlyOneOf);
+                STORM_LOG_ASSERT(res->isFalse(), "Expected false literal.");
+                STORM_LOG_ASSERT(
+                    predicate == PredicateType::AtMostOneOf || predicate == PredicateType::AtLeastOneOf || predicate == PredicateType::ExactlyOneOf,
+                    "Unexpected predicate.");
                 // do nothing, in particular, do not add.
             }
         } else {
@@ -122,7 +123,7 @@ uint_fast64_t PredicateExpression::getArity() const {
 }
 
 std::shared_ptr<BaseExpression const> PredicateExpression::getOperand(uint_fast64_t operandIndex) const {
-    STORM_LOG_ASSERT(operandIndex < this->getArity(), "Invalid operand access");
+    STORM_LOG_ASSERT(operandIndex < this->getArity(), "Invalid operand access.");
     return operands[operandIndex];
 }
 

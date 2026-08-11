@@ -1286,7 +1286,11 @@ MTBDD InternalAdd<DdType::Sylvan, ValueType>::fromVectorRec(uint_fast64_t& curre
         // Create a node representing ITE(currentVar, thenSuccessor, elseSuccessor);
         MTBDD currentVar = mtbdd_makenode(ddVariableIndices[currentLevel], mtbdd_false, mtbdd_true);
         mtbdd_refs_push(thenSuccessor);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wextra-semi-stmt"
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
         MTBDD result = mtbdd_ite(currentVar, thenSuccessor, elseSuccessor);
+#pragma clang diagnostic pop
 
         // Dispose of the intermediate results
         mtbdd_refs_pop(3);

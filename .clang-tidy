@@ -1,0 +1,56 @@
+# See https://clang.llvm.org/extra/clang-tidy/ for a list of available checks.
+# Disable everything first, then enable individual checks.
+Checks: >-
+  -*,
+  readability-braces-around-statements
+# Candidate checks that are not (yet) enabled:
+# bugprone-branch-clone,
+# bugprone-copy-constructor-init,
+# bugprone-dangling-handle,
+# bugprone-infinite-loop,
+# bugprone-misplaced-widening-cast,
+# bugprone-redundant-expression,
+# bugprone-signed-char-misuse,
+# bugprone-unused-return-value,
+# bugprone-use-after-move,
+# bugprone-virtual-near-miss,
+# clang-analyzer-core.*,
+# clang-analyzer-cplusplus.*,
+# clang-analyzer-deadcode.*,
+# clang-analyzer-nullability.*,
+# clang-analyzer-security.*,
+# clang-analyzer-unix.*,
+# misc-misplaced-const,
+# misc-static-assert,
+# misc-throw-by-value-catch-by-reference,
+# misc-unused-using-decls,
+# modernize-deprecated-headers,
+# modernize-make-shared,
+# modernize-make-unique,
+# modernize-return-braced-init-list,
+# modernize-use-default-member-init,
+# modernize-use-nullptr,
+# modernize-use-using,
+# performance-for-range-copy,
+# performance-implicit-conversion-in-loop,
+# performance-move-constructor-init,
+# performance-unnecessary-copy-initialization,
+# performance-unnecessary-value-param,
+# readability-container-size-empty,
+# readability-else-after-return,
+# readability-non-const-parameter,
+# readability-redundant-member-init,
+# readability-redundant-smartptr-get,
+# readability-redundant-string-cstr,
+# readability-simplify-boolean-expr,
+# readability-static-accessed-through-instance
+
+# Only report diagnostics in src/ but not third-party or system headers.
+# The regex also matches storm-*
+HeaderFilterRegex: 'src/(storm|test)'
+# Exclude any bundled third-party code.
+# Avoids potential problems if its paths contains "src/storm/" as a substring.
+ExcludeHeaderFilterRegex: '(_deps|resources/3rdparty)/'
+SystemHeaders: false
+FormatStyle: file
+WarningsAsErrors: ''

@@ -76,7 +76,7 @@ std::vector<TransitionPartition> const& GSPN::getPartitions() const {
 
 storm::gspn::Place const* GSPN::getPlace(uint64_t id) const {
     if (id < places.size()) {
-        assert(places.at(id).getID() == id);
+        STORM_LOG_ASSERT(places.at(id).getID() == id, "Place ID mismatch.");
         return &places.at(id);
     }
     return nullptr;
@@ -84,7 +84,7 @@ storm::gspn::Place const* GSPN::getPlace(uint64_t id) const {
 
 storm::gspn::Place* GSPN::getPlace(uint64_t id) {
     if (id < places.size()) {
-        assert(places.at(id).getID() == id);
+        STORM_LOG_ASSERT(places.at(id).getID() == id, "Place ID mismatch.");
         return &places.at(id);
     }
     return nullptr;
@@ -146,7 +146,7 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> const& GS
 void GSPN::setCapacities(std::unordered_map<std::string, uint64_t> const& mapping) {
     for (auto const& entry : mapping) {
         storm::gspn::Place* place = getPlace(entry.first);
-        STORM_LOG_THROW(place != nullptr, storm::exceptions::InvalidArgumentException, "No place with name " << entry.first);
+        STORM_LOG_THROW(place != nullptr, storm::exceptions::InvalidArgumentException, "No place with name " << entry.first << ".");
         place->setCapacity(entry.second);
     }
 }
@@ -260,17 +260,17 @@ bool GSPN::testPlaces() const {
 
     for (auto const& place : this->getPlaces()) {
         if (std::find(namesOfPlaces.begin(), namesOfPlaces.end(), place.getName()) != namesOfPlaces.end()) {
-            STORM_PRINT_AND_LOG("duplicates states with the name \"" + place.getName() + "\"\n");
+            STORM_LOG_WARN("duplicates states with the name \"" + place.getName() + "\"\n");
             result = false;
         }
 
         if (std::find(idsOfPlaces.begin(), idsOfPlaces.end(), place.getID()) != idsOfPlaces.end()) {
-            STORM_PRINT_AND_LOG("duplicates states with the id \"" + boost::lexical_cast<std::string>(place.getID()) + "\"\n");
+            STORM_LOG_WARN("duplicates states with the id \"" + boost::lexical_cast<std::string>(place.getID()) + "\"\n");
             result = false;
         }
 
         if (place.getNumberOfInitialTokens() > place.getCapacity()) {
-            STORM_PRINT_AND_LOG("number of initial tokens is greater than the capacity for place \"" + place.getName() + "\"\n");
+            STORM_LOG_WARN("number of initial tokens is greater than the capacity for place \"" + place.getName() + "\"\n");
             result = false;
         }
     }

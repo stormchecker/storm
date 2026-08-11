@@ -65,7 +65,7 @@ uint64_t getBitWidthLowerUpperBound(bool const& hasLowerBound, int64_t& lowerBou
                                     uint64_t const& reservedBitsForUnboundedVariables) {
     if (hasLowerBound) {
         if (hasUpperBound) {
-            STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound");
+            STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound.");
             // We do not have to set any bounds in this case.
             // Return the number of bits required to store all the values between lower and upper bound
             return static_cast<uint64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
@@ -291,7 +291,7 @@ bool VariableInformation::hasOutOfBoundsBit() const {
 }
 
 uint64_t VariableInformation::getOutOfBoundsBit() const {
-    assert(hasOutOfBoundsBit());
+    STORM_LOG_ASSERT(hasOutOfBoundsBit(), "Expected out-of-bounds bit.");
     return outOfBoundsBit->bitOffset;
 }
 

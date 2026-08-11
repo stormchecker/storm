@@ -1,6 +1,7 @@
 #include "AcceptanceCondition.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -76,7 +77,7 @@ bool AcceptanceCondition::isAccepting(const storm::storage::StateBlock& scc, acc
         }
     }
 
-    throw std::runtime_error("Missing case statement");
+    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Missing case statement.");
 }
 
 std::vector<std::vector<AcceptanceCondition::acceptance_expr::ptr>> AcceptanceCondition::extractFromDNF() const {
@@ -110,7 +111,7 @@ void AcceptanceCondition::extractFromDNFRecursion(AcceptanceCondition::acceptanc
         }
     } else {
         if (e->isOR() || e->isNOT()) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Acceptance condition is not in DNF");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Acceptance condition is not in DNF.");
         } else if (e->isAND()) {
             extractFromDNFRecursion(e->getLeft(), dnf, false);
             extractFromDNFRecursion(e->getRight(), dnf, false);

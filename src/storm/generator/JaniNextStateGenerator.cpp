@@ -273,7 +273,7 @@ std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialS
                     STORM_LOG_THROW(variableValue >= integerVariable.lowerBound, storm::exceptions::WrongFormatException,
                                     "The initial value for variable " << integerVariable.variable.getName() << " is lower than the lower bound.");
                     STORM_LOG_THROW(variableValue <= integerVariable.upperBound, storm::exceptions::WrongFormatException,
-                                    "The initial value for variable " << integerVariable.variable.getName() << " is higher than the upper bound");
+                                    "The initial value for variable " << integerVariable.variable.getName() << " is higher than the upper bound.");
                 }
                 storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
                 blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
@@ -347,7 +347,7 @@ std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialS
                     initialState.setFromInt(intVar.bitOffset, intVar.bitWidth, value);
                 } else {
                     // Boolean variable
-                    STORM_LOG_ASSERT(index - intEndIndex < this->variableInformation.booleanVariables.size(), "Unexpected index");
+                    STORM_LOG_ASSERT(index - intEndIndex < this->variableInformation.booleanVariables.size(), "Unexpected index.");
                     auto const& boolVar = this->variableInformation.booleanVariables[index - intEndIndex];
                     STORM_LOG_ASSERT(value <= 1u, "Unexpected value for boolean variable.");
                     initialState.set(boolVar.bitOffset, static_cast<bool>(value));
@@ -1236,7 +1236,7 @@ std::vector<ValueType> JaniNextStateGenerator<ValueType, StateType>::evaluateRew
 
 template<typename ValueType, typename StateType>
 void JaniNextStateGenerator<ValueType, StateType>::addEvaluatedRewardExpressions(std::vector<ValueType>& rewards, ValueType const& factor) const {
-    assert(rewards.size() == rewardExpressions.size());
+    STORM_LOG_ASSERT(rewards.size() == rewardExpressions.size(), "Reward count mismatch.");
     auto rewIt = rewards.begin();
     for (auto const& rewardExpression : rewardExpressions) {
         (*rewIt) += factor * this->evaluator->asRational(rewardExpression.second);
@@ -1361,7 +1361,7 @@ std::shared_ptr<storm::storage::sparse::ChoiceOrigins> JaniNextStateGenerator<Va
 
     std::map<EdgeIndexSet, uint_fast64_t> edgeIndexSetToIdentifierMap;
     // The empty edge set (i.e., the choices without origin) always has to get identifier getIdentifierForChoicesWithNoOrigin() -- which is assumed to be 0
-    STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero");
+    STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero.");
     edgeIndexSetToIdentifierMap.insert(std::make_pair(EdgeIndexSet(), 0));
     uint_fast64_t currentIdentifier = 1;
     for (boost::any& originData : dataForChoiceOrigins) {
@@ -1407,7 +1407,7 @@ void JaniNextStateGenerator<ValueType, StateType>::checkValid() const {
             stream << constant.get().getName() << " (" << constant.get().getType() << ")";
         }
         stream << ".";
-        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
+        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str() + ".");
     } else if (std::is_same<ValueType, storm::RationalFunction>::value && !model.undefinedConstantsAreGraphPreserving()) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
                         "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");

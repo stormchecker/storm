@@ -46,7 +46,7 @@ bool isUncertaintyResolvedRobust(UncertaintyResolutionMode uncertaintyResolution
 
 UncertaintyResolutionMode convert(UncertaintyResolutionModeSetting settingMode) {
     STORM_LOG_THROW(settingMode != UncertaintyResolutionModeSetting::Both, storm::exceptions::InvalidSettingsException,
-                    "Cannot convert uncertainty resolution setting mode 'both'");
+                    "Cannot convert uncertainty resolution setting mode 'both'.");
     return static_cast<UncertaintyResolutionMode>(settingMode);
 }
 

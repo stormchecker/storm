@@ -1,5 +1,9 @@
 #pragma once
 
+#include <cstdint>
+#include <iosfwd>
+#include <optional>
+
 #include "storm/storage/bisimulation/Block.h"
 
 namespace storm {

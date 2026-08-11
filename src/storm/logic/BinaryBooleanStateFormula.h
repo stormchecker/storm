@@ -16,7 +16,7 @@ class BinaryBooleanStateFormula : public BinaryStateFormula {
 
     virtual ~BinaryBooleanStateFormula() {
         // Intentionally left empty.
-    };
+    }
 
     virtual bool isBinaryBooleanStateFormula() const override;
 

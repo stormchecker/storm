@@ -92,7 +92,7 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
     }
     if (mult == MultiplicationStyle::Regular) {
         if (resultInAuxVector) {
-            STORM_LOG_ASSERT(&operand == operand2, "Unexpected operand address");
+            STORM_LOG_ASSERT(&operand == operand2, "Unexpected operand address.");
             std::swap(*operand1, *operand2);
         }
         viOperator->freeAuxiliaryVector();
@@ -135,7 +135,7 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
                         "Robust or cooperative nature resolution modes cannot be used if optimization direction is not set.");
     }
 
-    STORM_LOG_ASSERT(TrivialRowGrouping || dir.has_value(), "no optimization direction given!");
+    STORM_LOG_ASSERT(TrivialRowGrouping || dir.has_value(), "No optimization direction given!");
     if (!dir.has_value() || maximize(*dir)) {
         if (relative) {
             return VI<storm::OptimizationDirection::Maximize, true>(operand, offsets, numIterations, precision, iterationCallback, mult,

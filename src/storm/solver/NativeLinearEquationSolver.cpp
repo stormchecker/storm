@@ -456,7 +456,7 @@ template<typename ValueType>
 bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(Environment const& env, std::vector<ValueType>& x,
                                                                               std::vector<ValueType> const& b) const {
     // Prepare the solution vectors and the helper.
-    assert(x.size() == this->A->getRowGroupCount());
+    STORM_LOG_ASSERT(x.size() == this->A->getRowGroupCount(), "Solution vector size mismatch.");
 
     std::optional<ValueType> lowerBound, upperBound;
     if (this->hasLowerBound()) {

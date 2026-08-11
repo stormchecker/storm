@@ -12,7 +12,7 @@ namespace logic {
 UnaryBooleanPathFormula::UnaryBooleanPathFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& subformula, FormulaContext context)
     : UnaryPathFormula(subformula), operatorType(operatorType), context(context) {
     STORM_LOG_THROW(this->getSubformula().isStateFormula() || this->getSubformula().isPathFormula(), storm::exceptions::InvalidPropertyException,
-                    "Boolean path formula must have either path or state subformulas");
+                    "Boolean path formula must have either path or state subformulas.");
     STORM_LOG_THROW(context == FormulaContext::Probability, storm::exceptions::InvalidPropertyException, "Invalid context for formula.");
 }
 

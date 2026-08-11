@@ -124,7 +124,7 @@ storm::storage::BitVector getStates(storm::logic::Formula const& propositionalFo
 template<typename PomdpType>
 FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::ProbabilityOperatorFormula const& formula) {
     STORM_LOG_THROW(formula.hasOptimalityType(), storm::exceptions::InvalidPropertyException,
-                    "The property does not specify an optimization direction (min/max)");
+                    "The property does not specify an optimization direction (min/max).");
     STORM_LOG_WARN_COND(!formula.hasBound(), "The probability threshold for the given property will be ignored.");
     auto const& subformula = formula.getSubformula();
     std::shared_ptr<storm::logic::Formula const> targetStatesFormula, constraintsStatesFormula;
@@ -149,7 +149,7 @@ FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::P
 template<typename PomdpType>
 FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::RewardOperatorFormula const& formula) {
     STORM_LOG_THROW(formula.hasOptimalityType(), storm::exceptions::InvalidPropertyException,
-                    "The property does not specify an optimization direction (min/max)");
+                    "The property does not specify an optimization direction (min/max).");
     STORM_LOG_WARN_COND(!formula.hasBound(), "The reward threshold for the given property will be ignored.");
     std::string rewardModelName = "";
     if (formula.hasRewardModelName()) {

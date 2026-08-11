@@ -6,10 +6,10 @@
 #include <string>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/utility/graph.h"
-#include "storm/utility/macros.h"
 
 // FIXME: I've accidentally used k=0 *twice* now without realizing that k>=1 is required!
 // (Also, did I document this? I think so, somewhere. I went with k>=1 because
@@ -114,7 +114,7 @@ std::vector<state_t> ShortestPathsGenerator<T>::getPathAsList(unsigned long k) {
 
 template<typename T>
 void ShortestPathsGenerator<T>::computePredecessors() {
-    assert(transitionMatrix.hasTrivialRowGrouping());
+    STORM_LOG_ASSERT(transitionMatrix.hasTrivialRowGrouping(), "Expected trivial row grouping.");
 
     // one more for meta-target
     graphPredecessors.resize(numStates);
@@ -167,7 +167,7 @@ void ShortestPathsGenerator<T>::performDijkstra() {
 
                 // note that distances are probabilities, thus they are multiplied and larger is better
                 T alternateDistance = shortestPathDistances[currentNode] * convertDistance(currentNode, otherNode, transition.getValue());
-                assert((zero<T>() <= alternateDistance) && (alternateDistance <= one<T>()));
+                STORM_LOG_ASSERT((zero<T>() <= alternateDistance) && (alternateDistance <= one<T>()), "Distance out of [0,1] range.");
                 if (alternateDistance > shortestPathDistances[otherNode]) {
                     shortestPathDistances[otherNode] = alternateDistance;
                     shortestPathPredecessors[otherNode] = boost::optional<state_t>(currentNode);
@@ -244,15 +244,15 @@ T ShortestPathsGenerator<T>::getEdgeDistance(state_t tailNode, state_t headNode)
         STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Should not happen.");
     } else {
         // edge must be "virtual edge" to meta-target
-        assert(isMetaTargetPredecessor(tailNode));
+        STORM_LOG_ASSERT(isMetaTargetPredecessor(tailNode), "Expected meta-target predecessor.");
         return targetProbMap.at(tailNode);
     }
 }
 
 template<typename T>
 void ShortestPathsGenerator<T>::computeNextPath(state_t node, unsigned long k) {
-    assert(k >= 2);                                // Dijkstra is used for k=1
-    assert(kShortestPaths[node].size() == k - 1);  // if not, the previous SP must not exist
+    STORM_LOG_ASSERT(k >= 2, "Expected k >= 2.");                                               // Dijkstra is used for k=1
+    STORM_LOG_ASSERT(kShortestPaths[node].size() == k - 1, "K-shortest paths size mismatch.");  // if not, the previous SP must not exist
 
     // TODO: I could extract the candidate generation to make this function more succinct
     if (k == 2) {
@@ -321,9 +321,7 @@ void ShortestPathsGenerator<T>::computeNextPath(state_t node, unsigned long k) {
 
 template<typename T>
 void ShortestPathsGenerator<T>::computeKSP(unsigned long k) {
-    if (k == 0) {
-        throw std::invalid_argument("Index 0 is invalid, since we use 1-based indices (sorry)!");
-    }
+    STORM_LOG_THROW(k != 0, storm::exceptions::InvalidArgumentException, "Index 0 is invalid, since we use 1-based indices!");
 
     unsigned long alreadyComputedK = kShortestPaths[metaTarget].size();
 
@@ -334,7 +332,7 @@ void ShortestPathsGenerator<T>::computeKSP(unsigned long k) {
             STORM_LOG_DEBUG("KSP throws (as expected) due to nonexistence -- maybe this is unhandled and causes the Python interface to segfault?");
             STORM_LOG_DEBUG("last existing k-SP has k=" + std::to_string(lastExistingK));
             STORM_LOG_DEBUG("maybe this is unhandled and causes the Python interface to segfault?");
-            throw std::invalid_argument("k-SP does not exist for k=" + std::to_string(k));
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "K-SP does not exist for k=" << k << ".");
         }
     }
 }

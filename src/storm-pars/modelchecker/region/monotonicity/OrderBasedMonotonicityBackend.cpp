@@ -75,7 +75,7 @@ void extendLocalMonotonicityResult(
             // Simply add the states we couldn't add sofar between =) and =( as we could find local monotonicity for all parametric states
             order->add(order->getNextStateNumber().second);
         }
-        assert(order->getDoneBuilding());
+        STORM_LOG_ASSERT(order->getDoneBuilding(), "Order should be done building.");
     }
 }
 }  // namespace detail
@@ -220,7 +220,7 @@ storm::storage::BitVector OrderBasedMonotonicityBackend<ParametricType, Constant
         // point at which we start with rows for this state
 
         STORM_LOG_THROW(variables.size() <= 1, storm::exceptions::NotImplementedException,
-                        "Using localMonRes not yet implemented for states with 2 or more variables, please run without --use-monotonicity");
+                        "Using localMonRes not yet implemented for states with 2 or more variables, please run without --use-monotonicity.");
 
         bool allMonotone = true;
         for (auto var : variables) {

@@ -3,6 +3,7 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
+#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/models/ModelType.h"
 #include "storm/utility/Stopwatch.h"
@@ -11,7 +12,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "storm-pars/modelchecker/region/monotonicity/AssumptionChecker.h"
-#include "storm/utility/Stopwatch.h"
+#include "storm-pars/utility/ModelInstantiator.h"
 
 namespace storm {
 namespace analysis {
@@ -22,7 +23,7 @@ MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<
                                                                 std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples,
                                                                 double const& precision, bool dotOutput)
     : assumptionMaker(model->getTransitionMatrix()) {
-    assert(model != nullptr);
+    STORM_LOG_ASSERT(model != nullptr, "Model should not be null.");
 
     this->model = model;
     this->formulas = formulas;
@@ -84,7 +85,7 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostre
         storm::utility::Stopwatch plaWatch(true);
         this->extender->initializeMinMaxValues(region);
         plaWatch.stop();
-        STORM_PRINT("\nTotal time for pla checking: " << plaWatch << ".\n\n");
+        STORM_LOG_STATISTICS("\nTotal time for pla checking: " << plaWatch << ".\n\n");
     }
     createOrder();
 
@@ -195,7 +196,7 @@ void MonotonicityHelper<ValueType, ConstantType>::createOrder() {
     } else if (val1 != numberOfStates && val2 != numberOfStates) {
         extendOrderWithAssumptions(std::get<0>(criticalTuple), val1, val2, assumptions, monRes);
     } else {
-        assert(false);
+        STORM_LOG_ASSERT(false, "Unreachable code reached.");
     }
 }
 
@@ -211,8 +212,8 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
     }
     auto numberOfStates = model->getNumberOfStates();
     if (val1 == numberOfStates || val2 == numberOfStates) {
-        assert(val1 == val2);
-        assert(order->getNumberOfAddedStates() == order->getNumberOfStates());
+        STORM_LOG_ASSERT(val1 == val2, "Values should be equal when reaching numberOfStates.");
+        STORM_LOG_ASSERT(order->getNumberOfAddedStates() == order->getNumberOfStates(), "Added states count mismatch.");
         auto resAssumptionPair =
             std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes,
                                                                                                                                               assumptions);
@@ -224,7 +225,7 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
         // Make the three assumptions
         STORM_LOG_INFO("Creating assumptions for " << val1 << " and " << val2 << ". ");
         auto newAssumptions = assumptionMaker.createAndCheckAssumptions(val1, val2, order, region);
-        assert(newAssumptions.size() <= 3);
+        STORM_LOG_ASSERT(newAssumptions.size() <= 3, "Expected at most 3 assumptions.");
         auto itr = newAssumptions.begin();
         if (newAssumptions.size() == 0) {
             monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
@@ -276,7 +277,7 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
 template<typename ValueType, typename ConstantType>
 void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Dtmc<ValueType>> model,
                                                                              uint_fast64_t numberOfSamples) {
-    assert(numberOfSamples > 2);
+    STORM_LOG_ASSERT(numberOfSamples > 2, "Expected at least 3 samples.");
 
     auto instantiator = utility::ModelInstantiator<models::sparse::Dtmc<ValueType>, models::sparse::Dtmc<ConstantType>>(*model);
     std::set<VariableType> variables = models::sparse::getProbabilityParameters(*model);
@@ -320,7 +321,7 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
                         formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
                 checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
             } else {
-                STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula");
+                STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula.");
             }
 
             auto quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<ConstantType>();
@@ -332,9 +333,9 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
                 initial += values[j];
             }
             // Calculate difference with result for previous valuation
-            assert(initial >= 0 - precision && initial <= 1 + precision);
+            STORM_LOG_ASSERT(initial >= 0 - precision && initial <= 1 + precision, "Initial value out of [0,1] range.");
             ConstantType diff = previous - initial;
-            assert(previous == -1 || (diff >= -1 - precision && diff <= 1 + precision));
+            STORM_LOG_ASSERT(previous == -1 || (diff >= -1 - precision && diff <= 1 + precision), "Diff out of [-1,1] range.");
 
             if (previous != -1 && (diff > precision || diff < -precision)) {
                 monDecr &= diff > precision;  // then previous value is larger than the current value from the initial states
@@ -352,7 +353,7 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
 template<typename ValueType, typename ConstantType>
 void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model,
                                                                              uint_fast64_t numberOfSamples) {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Checking monotonicity on samples not implemented for mdps");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Checking monotonicity on samples not implemented for mdps.");
 }
 
 template class MonotonicityHelper<RationalFunction, double>;

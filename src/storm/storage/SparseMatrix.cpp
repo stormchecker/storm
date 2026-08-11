@@ -187,7 +187,7 @@ void SparseMatrixBuilder<ValueType>::addNextValue(index_type row, index_type col
         // If we switched to another row, we have to adjust the missing entries in the row indices vector.
         if (row != lastRow) {
             // Otherwise, we need to push the correct values to the vectors, which might trigger reallocations.
-            assert(rowIndications.size() == lastRow + 1);
+            STORM_LOG_ASSERT(rowIndications.size() == lastRow + 1, "Row indications size mismatch.");
             rowIndications.resize(row + 1, currentEntryCount);
             lastRow = row;
         }
@@ -267,7 +267,7 @@ void SparseMatrixBuilder<ValueType>::newRowGroup(index_type startingRow) {
     // Handle the case where the previous row group ends with one or more empty rows
     if (lastRow + 1 < startingRow) {
         // Close all rows from the most recent one to the starting row.
-        assert(rowIndications.size() == lastRow + 1);
+        STORM_LOG_ASSERT(rowIndications.size() == lastRow + 1, "Row indications size mismatch.");
         rowIndications.resize(startingRow, currentEntryCount);
         // Reset the most recently seen row/column to allow for proper insertion of the following elements.
         lastRow = startingRow - 1;
@@ -384,7 +384,8 @@ void print(std::vector<typename SparseMatrix<ValueType>::index_type> const& rowG
         for (typename SparseMatrix<ValueType>::index_type i = rowGroupIndices[group]; i < endGroups; ++i) {
             endRows = i < rowIndications.size() - 1 ? rowIndications[i + 1] : columnsAndValues.size();
             // Print the actual row.
-            std::cout << "Row " << i << " (" << rowIndications[i] << " - " << endRows << ")" << ": ";
+            std::cout << "Row " << i << " (" << rowIndications[i] << " - " << endRows << ")"
+                      << ": ";
             for (typename SparseMatrix<ValueType>::index_type pos = rowIndications[i]; pos < endRows; ++pos) {
                 std::cout << "(" << columnsAndValues[pos].getColumn() << ": " << columnsAndValues[pos].getValue() << ") ";
             }
@@ -445,7 +446,7 @@ void SparseMatrixBuilder<ValueType>::addDiagonalEntry(index_type row, ValueType 
     }
     pendingDiagonalEntry = value;
     if (lastRow != row) {
-        assert(rowIndications.size() == lastRow + 1);
+        STORM_LOG_ASSERT(rowIndications.size() == lastRow + 1, "Row indications size mismatch.");
         rowIndications.resize(row + 1, currentEntryCount);
         lastRow = row;
         lastColumn = 0;
@@ -857,7 +858,7 @@ storm::storage::BitVector SparseMatrix<ValueType>::getRowFilter(storm::storage::
 
 template<typename ValueType>
 storm::storage::BitVector SparseMatrix<ValueType>::getRowGroupFilter(storm::storage::BitVector const& rowConstraint, bool setIfForAllRowsInGroup) const {
-    STORM_LOG_ASSERT(!this->hasTrivialRowGrouping(), "Tried to get a row group filter but this matrix does not have row groups");
+    STORM_LOG_ASSERT(!this->hasTrivialRowGrouping(), "Tried to get a row group filter but this matrix does not have row groups.");
     storm::storage::BitVector result(this->getRowGroupCount(), false);
     auto const& groupIndices = this->getRowGroupIndices();
     if (setIfForAllRowsInGroup) {
@@ -917,10 +918,8 @@ void SparseMatrix<ValueType>::makeRowDirac(index_type row, index_type column, bo
 
     // If the row has no elements in it, we cannot make it absorbing, because we would need to move all elements
     // in the vector of nonzeros otherwise.
-    if (columnValuePtr >= columnValuePtrEnd) {
-        throw storm::exceptions::InvalidStateException()
-            << "Illegal call to SparseMatrix::makeRowDirac: cannot make row " << row << " absorbing, because there is no entry in this row.";
-    }
+    STORM_LOG_THROW(columnValuePtr < columnValuePtrEnd, storm::exceptions::InvalidStateException,
+                    "Illegal call to SparseMatrix::makeRowDirac: cannot make row " << row << " absorbing, because there is no entry in this row.");
     iterator lastColumnValuePtr = this->end(row) - 1;
 
     // If there is at least one entry in this row, we can set it to one, modify its column value to the
@@ -1605,9 +1604,8 @@ void SparseMatrix<ValueType>::invertDiagonal() {
         }
 
         // Throw an exception if a row did not have an element on the diagonal.
-        if (!foundDiagonalElement) {
-            throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrix::invertDiagonal: matrix is missing diagonal entries.";
-        }
+        STORM_LOG_THROW(foundDiagonalElement, storm::exceptions::InvalidArgumentException,
+                        "Illegal call to SparseMatrix::invertDiagonal: matrix is missing diagonal entries.");
     }
 }
 
@@ -1820,7 +1818,7 @@ void SparseMatrix<ValueType>::performSuccessiveOverRelaxationStep(ValueType omeg
                 diagonalElement += it->getValue();
             }
         }
-        assert(!storm::utility::isZero(diagonalElement));
+        STORM_LOG_ASSERT(!storm::utility::isZero(diagonalElement), "Diagonal element is zero.");
         *resultIterator = ((storm::utility::one<ValueType>() - omega) * *resultIterator) + (omega / diagonalElement) * (*bIt - tmpValue);
     }
 }

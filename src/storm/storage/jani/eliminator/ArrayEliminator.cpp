@@ -30,7 +30,7 @@ class ArrayReplacementsCollectorExpressionVisitor : public storm::expressions::E
     typedef typename ArrayEliminatorData::Replacement Replacement;
     typedef std::unordered_map<storm::expressions::Variable, Replacement> ReplMap;
 
-    ArrayReplacementsCollectorExpressionVisitor(Model& model) : model(model), converged(false), declaringAutomaton(nullptr) {};
+    ArrayReplacementsCollectorExpressionVisitor(Model& model) : model(model), converged(false), declaringAutomaton(nullptr) {}
     virtual ~ArrayReplacementsCollectorExpressionVisitor() = default;
 
     /*!
@@ -41,7 +41,7 @@ class ArrayReplacementsCollectorExpressionVisitor : public storm::expressions::E
              ReplMap const& allCollectedReplacements, Automaton* declaringAutomaton = nullptr, std::vector<std::size_t>* arrayAccessIndices = nullptr) {
         currentVar = &arrayVariable;
         this->declaringAutomaton = declaringAutomaton;
-        STORM_LOG_ASSERT(currentVar->getType().isArrayType(), "expected array variable");
+        STORM_LOG_ASSERT(currentVar->getType().isArrayType(), "Expected array variable.");
         STORM_LOG_ASSERT(((declaringAutomaton == nullptr && model.hasGlobalVariable(currentVar->getName())) ||
                           (declaringAutomaton != nullptr && declaringAutomaton->hasVariable(currentVar->getName()))),
                          "Cannot find variable declaration.");
@@ -168,7 +168,7 @@ class ArrayReplacementsCollectorExpressionVisitor : public storm::expressions::E
 
     virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
         STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(),
-                         "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
+                         "Unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
         auto current = boost::any_cast<std::pair<Replacement*, std::vector<std::size_t>*>>(data);
         arrayExpressionHelper(expression, *current.first, *current.second);
         return boost::any();
@@ -264,7 +264,7 @@ class ArrayReplacementsCollectorExpressionVisitor : public storm::expressions::E
                 arrayVariableAccessHelper(indexStack, *current.first, varIt->second, *current.second);
             }
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected kind of array access expression");
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected kind of array access expression.");
         }
     }
 
@@ -327,7 +327,7 @@ class ArrayReplacementsCollectorExpressionVisitor : public storm::expressions::E
                     break;
             }
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unhandled base type for array of type " << currentVar->getType());
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unhandled base type for array of type " << currentVar->getType() << ".");
         }
 
         auto janiVar = storm::jani::Variable::makeVariable(name, baseType, exprVariable, initValue, currentVar->isTransient());
@@ -478,12 +478,12 @@ class ArrayExpressionEliminationVisitor : public storm::expressions::ExpressionV
         ResultType(BaseExprPtr expression) : expression(expression) {}
         ResultType() {}
         BaseExprPtr& expr() {
-            STORM_LOG_ASSERT(!isArrayOutOfBounds(), "Tried to get the result expression, but the expression is out-of-bounds");
+            STORM_LOG_ASSERT(!isArrayOutOfBounds(), "Tried to get the result expression, but the expression is out-of-bounds.");
             return expression;
-        };
+        }
         bool isArrayOutOfBounds() {
             return expression.get() == nullptr;
-        };
+        }
 
        private:
         BaseExprPtr expression;
@@ -494,7 +494,7 @@ class ArrayExpressionEliminationVisitor : public storm::expressions::ExpressionV
     ArrayExpressionEliminationVisitor(ArrayEliminatorData const& data) : replacements(data.replacements) {}
 
     ArrayAccessIndices const& getArrayAccessIndices(boost::any const& data) {
-        STORM_LOG_ASSERT(!data.empty(), "tried to convert data but it is empty.");
+        STORM_LOG_ASSERT(!data.empty(), "Tried to convert data but it is empty.");
         return *boost::any_cast<ArrayAccessIndices*>(data);
     }
 
@@ -778,7 +778,7 @@ class ArrayExpressionEliminationVisitor : public storm::expressions::ExpressionV
 
     virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
         STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(),
-                         "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
+                         "Unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
         return arrayExprHelper(expression, data);
     }
 
@@ -829,7 +829,7 @@ class ArrayVariableReplacer : public JaniTraverser {
         for (auto& c : model.getConstants()) {
             traverse(c, data);
         }
-        STORM_LOG_ASSERT(model.getGlobalFunctionDefinitions().empty(), "Expected functions to be eliminated at this point");
+        STORM_LOG_ASSERT(model.getGlobalFunctionDefinitions().empty(), "Expected functions to be eliminated at this point.");
         JaniTraverser::traverse(model.getGlobalVariables(), data);
         for (auto& aut : model.getAutomata()) {
             traverse(aut, data);
@@ -846,7 +846,7 @@ class ArrayVariableReplacer : public JaniTraverser {
 
     virtual void traverse(Automaton& automaton, boost::any const& data) override {
         JaniTraverser::traverse(automaton.getVariables(), data);
-        STORM_LOG_ASSERT(automaton.getFunctionDefinitions().empty(), "Expected functions to be eliminated at this point");
+        STORM_LOG_ASSERT(automaton.getFunctionDefinitions().empty(), "Expected functions to be eliminated at this point.");
         for (auto& loc : automaton.getLocations()) {
             traverse(loc, data);
         }
@@ -891,7 +891,7 @@ class ArrayVariableReplacer : public JaniTraverser {
     }
 
     void traverse(JaniType& type, boost::any const& data) override {
-        STORM_LOG_ASSERT(!type.isArrayType(), "did not expect any array variable declarations at this point.");
+        STORM_LOG_ASSERT(!type.isArrayType(), "Did not expect any array variable declarations at this point.");
         if (type.isBoundedType()) {
             auto& boundedType = type.asBoundedType();
             if (boundedType.hasLowerBound()) {
@@ -1033,7 +1033,7 @@ class ArrayVariableReplacer : public JaniTraverser {
             for (auto aa : arrayAssignments) {
                 // Eliminate array expressions in array access indices and the assigned expression
                 auto const& lValue = aa->getLValue();
-                STORM_LOG_ASSERT(lValue.isFullArrayAccess(), "unexpected type of lValue");
+                STORM_LOG_ASSERT(lValue.isFullArrayAccess(), "Unexpected type of lValue.");
                 std::vector<storm::expressions::Expression> newAaIndices;
                 newAaIndices.reserve(lValue.getArrayIndexVector().size());
                 for (auto const& i : lValue.getArrayIndexVector()) {
@@ -1059,7 +1059,7 @@ class ArrayVariableReplacer : public JaniTraverser {
         std::map<storm::expressions::Variable, Assignment> collectedAssignments;
         auto insert = [&](storm::jani::Variable const& var, storm::expressions::Expression const& newRhs, storm::expressions::Expression const& condition) {
             STORM_LOG_ASSERT(!condition.isInitialized() || !storm::jani::containsArrayExpression(condition),
-                             "condition " << condition << " still contains array expressions.");
+                             "Condition " << condition << " still contains array expressions.");
             auto rhs = newRhs.isInitialized() ? newRhs : getOutOfBoundsValue(var);
             auto findIt = collectedAssignments.find(var.getExpressionVariable());
             if (findIt == collectedAssignments.end()) {
@@ -1071,9 +1071,9 @@ class ArrayVariableReplacer : public JaniTraverser {
                 auto otherRhs = findIt->second.getAssignedExpression();
                 // Deal with cases like 'a[0]:=x; a:=b' or 'a:=b; a[0]:=x'
                 STORM_LOG_THROW(condition.isInitialized(), storm::exceptions::InvalidOperationException,
-                                "Found conflicting array assignments to " << var.getName());
+                                "Found conflicting array assignments to " << var.getName() << ".");
                 STORM_LOG_THROW(otherRhs.getBaseExpression().isIfThenElseExpression(), storm::exceptions::InvalidOperationException,
-                                "Found conflicting array assignments to " << var.getName());
+                                "Found conflicting array assignments to " << var.getName() << ".");
                 rhs = storm::expressions::ite(condition, rhs, otherRhs);
                 findIt->second.setAssignedExpression(rhs);
             }
@@ -1125,7 +1125,7 @@ class ArrayVariableReplacer : public JaniTraverser {
                 }
             }
         }
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "unhandled variable type");
+        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled variable type.");
         return storm::expressions::Expression();
     }
 
@@ -1148,22 +1148,22 @@ bool ArrayEliminatorData::Replacement::isVariable() const {
 }
 
 storm::jani::Variable const& ArrayEliminatorData::Replacement::getVariable() const {
-    STORM_LOG_ASSERT(isVariable(), "unexpected replacement type");
+    STORM_LOG_ASSERT(isVariable(), "Unexpected replacement type.");
     return *boost::get<storm::jani::Variable const*>(data);
 }
 
 std::vector<typename ArrayEliminatorData::Replacement> const& ArrayEliminatorData::Replacement::getReplacements() const {
-    STORM_LOG_ASSERT(!isVariable(), "unexpected replacement type");
+    STORM_LOG_ASSERT(!isVariable(), "Unexpected replacement type.");
     return boost::get<std::vector<Replacement>>(data);
 }
 
 typename ArrayEliminatorData::Replacement const& ArrayEliminatorData::Replacement::at(std::size_t const& index) const {
-    STORM_LOG_ASSERT(!isVariable(), "unexpected replacement type");
+    STORM_LOG_ASSERT(!isVariable(), "Unexpected replacement type.");
     return getReplacements().at(index);
 }
 
 typename ArrayEliminatorData::Replacement& ArrayEliminatorData::Replacement::at(std::size_t const& index) {
-    STORM_LOG_ASSERT(!isVariable(), "unexpected replacement type");
+    STORM_LOG_ASSERT(!isVariable(), "Unexpected replacement type.");
     return boost::get<std::vector<Replacement>>(data).at(index);
 }
 
@@ -1211,10 +1211,10 @@ ArrayEliminatorData ArrayEliminator::eliminate(Model& model, bool keepNonTrivial
             model.getModelFeatures().remove(ModelFeature::Arrays);
         }
         model.finalize();
-        STORM_LOG_ASSERT(keepNonTrivialArrayAccess || !containsArrayExpression(model), "the model still contains array expressions.");
+        STORM_LOG_ASSERT(keepNonTrivialArrayAccess || !containsArrayExpression(model), "The model still contains array expressions.");
         return elimData;
     }
-    STORM_LOG_ASSERT(!containsArrayExpression(model), "the model contains array expressions although the array feature is not enabled.");
+    STORM_LOG_ASSERT(!containsArrayExpression(model), "The model contains array expressions although the array feature is not enabled.");
     return {};
 }
 }  // namespace jani

@@ -14,8 +14,8 @@ boost::any JaniSyntacticalEqualityCheckVisitor::visit(ValueArrayExpression const
     BaseExpression const& otherBaseExpression = boost::any_cast<std::reference_wrapper<BaseExpression const>>(data).get();
     auto const rhs = std::dynamic_pointer_cast<storm::expressions::ValueArrayExpression const>(otherBaseExpression.getSharedPointer());
     if (rhs) {
-        STORM_LOG_ASSERT(!expression.size()->containsVariables(), "non-const size of value array expr");
-        STORM_LOG_ASSERT(!rhs->size()->containsVariables(), "non-const size of value array expr");
+        STORM_LOG_ASSERT(!expression.size()->containsVariables(), "Non-const size of value array expr.");
+        STORM_LOG_ASSERT(!rhs->size()->containsVariables(), "Non-const size of value array expr.");
         auto lhsSize = expression.size()->evaluateAsInt();
         auto rhsSize = rhs->size()->evaluateAsInt();
         if (lhsSize != rhsSize) {

@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& os, RegionResult const& regionResult) {
             break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                            "Could not get a string from the region check result. The case has not been implemented");
+                            "Could not get a string from the region check result. The case has not been implemented.");
     }
     return os;
 }

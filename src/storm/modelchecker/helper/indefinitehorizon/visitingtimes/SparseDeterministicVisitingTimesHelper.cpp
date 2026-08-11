@@ -56,7 +56,7 @@ void SparseDeterministicVisitingTimesHelper<ValueType>::provideSCCDecomposition(
 template<typename ValueType>
 std::vector<ValueType> SparseDeterministicVisitingTimesHelper<ValueType>::computeExpectedVisitingTimes(Environment const& env,
                                                                                                        storm::storage::BitVector const& initialStates) {
-    STORM_LOG_ASSERT(!initialStates.empty(), "provided an empty set of initial states.");
+    STORM_LOG_ASSERT(!initialStates.empty(), "Provided an empty set of initial states.");
     STORM_LOG_ASSERT(initialStates.size() == transitionMatrix.getRowCount(), "Dimension mismatch.");
     ValueType const p = storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(initialStates.getNumberOfSetBits());
     std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
@@ -283,7 +283,7 @@ storm::Environment SparseDeterministicVisitingTimesHelper<ValueType>::getEnviron
             // the precision is relevant (e.g. not the case for elimination, sparselu etc.)
             ValueType min = *std::min_element(exitRates->begin(), exitRates->end());
             STORM_LOG_THROW(!storm::utility::isZero(min), storm::exceptions::InvalidOperationException,
-                            "An error occurred during the adjustment of the precision. Min. rate = " << min);
+                            "An error occurred during the adjustment of the precision. Min. rate = " << min << ".");
             newEnv.solver().setLinearEquationSolverPrecision(
                 static_cast<storm::RationalNumber>(prec.first.get() * storm::utility::convertNumber<storm::RationalNumber>(min)));
         }
@@ -416,7 +416,7 @@ void SparseDeterministicVisitingTimesHelper<ValueType>::processSingletonScc(uint
         ValueType divisor = storm::utility::one<ValueType>();
         for (auto const& entry : backwardRow) {
             if (entry.getColumn() == sccState) {
-                STORM_LOG_ASSERT(!storm::utility::isOne(entry.getValue()), "found a self-loop state. This is not expected");
+                STORM_LOG_ASSERT(!storm::utility::isOne(entry.getValue()), "Found a self-loop state. This is not expected.");
                 divisor -= entry.getValue();
             } else {
                 stateVal += entry.getValue() * stateValues[entry.getColumn()];

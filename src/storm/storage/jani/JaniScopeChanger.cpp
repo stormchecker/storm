@@ -155,7 +155,7 @@ std::pair<bool, uint64_t> JaniScopeChanger::canMakeVariableLocal(storm::expressi
         index = automatonIndex.has_value() ? automatonIndex.value() : 0;
     } else {
         index = *accessingAutomata.begin();
-        assert(!automatonIndex.has_value() || index == automatonIndex.value());
+        STORM_LOG_ASSERT(!automatonIndex.has_value() || index == automatonIndex.value(), "Automaton index mismatch.");
     }
     STORM_LOG_TRACE(".. Yes, made local in automaton with index " << index);
     return {true, index};

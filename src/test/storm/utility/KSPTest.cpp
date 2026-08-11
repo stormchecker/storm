@@ -3,6 +3,7 @@
 
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/utility/graph.h"
@@ -82,7 +83,7 @@ TEST_F(KSPTest, kTooLargeException) {
     auto model = buildExampleModel();
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, stateWithOnlyOnePath);
 
-    STORM_SILENT_ASSERT_THROW(spg.getDistance(2), std::invalid_argument);
+    STORM_SILENT_ASSERT_THROW(spg.getDistance(2), storm::exceptions::InvalidArgumentException);
 }
 
 TEST_F(KSPTest, kspStateSet) {

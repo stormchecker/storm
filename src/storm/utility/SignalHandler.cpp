@@ -8,7 +8,7 @@ namespace utility {
 namespace resources {
 
 // Maximal waiting time after abort signal before terminating
-int maxWaitTime = 0;
+static int maxWaitTime = 0;
 
 SignalInformation::SignalInformation() : terminate(false), lastSignal(0) {}
 

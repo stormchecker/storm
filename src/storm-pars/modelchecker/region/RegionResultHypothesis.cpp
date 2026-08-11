@@ -18,7 +18,7 @@ std::ostream& operator<<(std::ostream& os, RegionResultHypothesis const& regionR
             break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                            "Could not get a string from the region result hypothesis. The case has not been implemented");
+                            "Could not get a string from the region result hypothesis. The case has not been implemented.");
     }
     return os;
 }

@@ -57,7 +57,7 @@ std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::createSelectiveDownwar
     if (selectedDimensions.empty()) {
         return create(points);
     }
-    assert(points.front().size() == selectedDimensions.size());
+    STORM_LOG_ASSERT(points.front().size() == selectedDimensions.size(), "Point dimensions do not match selected dimensions.");
 
     std::vector<Halfspace<ValueType>> halfspaces;
     // We build the convex hull of the given points.
@@ -131,7 +131,7 @@ std::vector<typename Polytope<storm::RationalNumber>::Point> Polytope<storm::Rat
         }
     }
     STORM_LOG_ASSERT(neighborsOfVertices[currentVertex].getNumberOfSetBits() == 2,
-                     "For 2D Polytopes with at least 3 vertices, each vertex should have exactly 2 neighbors");
+                     "For 2D Polytopes with at least 3 vertices, each vertex should have exactly 2 neighbors.");
     uint_fast64_t firstNeighbor = neighborsOfVertices[currentVertex].getNextSetIndex(0);
     uint_fast64_t secondNeighbor = neighborsOfVertices[currentVertex].getNextSetIndex(firstNeighbor + 1);
     uint_fast64_t previousVertex = vertices[firstNeighbor].back() <= vertices[secondNeighbor].back() ? firstNeighbor : secondNeighbor;
@@ -140,7 +140,7 @@ std::vector<typename Polytope<storm::RationalNumber>::Point> Polytope<storm::Rat
         result.push_back(std::move(vertices[currentVertex]));
 
         STORM_LOG_ASSERT(neighborsOfVertices[currentVertex].getNumberOfSetBits() == 2,
-                         "For 2D Polytopes with at least 3 vertices, each vertex should have exactly 2 neighbors");
+                         "For 2D Polytopes with at least 3 vertices, each vertex should have exactly 2 neighbors.");
         firstNeighbor = neighborsOfVertices[currentVertex].getNextSetIndex(0);
         secondNeighbor = neighborsOfVertices[currentVertex].getNextSetIndex(firstNeighbor + 1);
         uint_fast64_t nextVertex = firstNeighbor != previousVertex ? firstNeighbor : secondNeighbor;
@@ -244,7 +244,7 @@ bool Polytope<ValueType>::isNativePolytope() const {
 
 template<typename ValueType>
 std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::clean() {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not implemented for this polytope type.");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented for this polytope type.");
     return nullptr;
 }
 

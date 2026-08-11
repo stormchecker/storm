@@ -6,6 +6,7 @@
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/expressions/Expression.h"
@@ -144,14 +145,14 @@ void SoplexLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, 
     SoplexValueType l, r;
     switch (relationType) {
         case storm::expressions::RelationType::Less:
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex only supports nonstrict inequalities");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex only supports nonstrict inequalities.");
             break;
         case storm::expressions::RelationType::LessOrEqual:
             l = -soplex::infinity;
             r = rhs;
             break;
         case storm::expressions::RelationType::Greater:
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex only supports nonstrict inequalities");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex only supports nonstrict inequalities.");
             break;
         case storm::expressions::RelationType::GreaterOrEqual:
             l = rhs;
@@ -190,27 +191,25 @@ void SoplexLpSolver<ValueType, RawMode>::optimize() const {
     status = solver.optimize();
     STORM_LOG_TRACE("soplex status " << status);
     if (status == soplex::SPxSolver::ERROR) {
-        STORM_LOG_THROW(false, storm::exceptions::InternalException, "Soplex failed");
+        STORM_LOG_THROW(false, storm::exceptions::InternalException, "Soplex failed.");
     } else if (status == soplex::SPxSolver::UNKNOWN) {
-        STORM_LOG_THROW(false, storm::exceptions::InternalException, "Soplex gives up on this problem");
+        STORM_LOG_THROW(false, storm::exceptions::InternalException, "Soplex gives up on this problem.");
     }
     this->currentModelHasBeenOptimized = true;
 }
 
 template<typename ValueType, bool RawMode>
 bool SoplexLpSolver<ValueType, RawMode>::isInfeasible() const {
-    if (!this->currentModelHasBeenOptimized) {
-        throw storm::exceptions::InvalidStateException() << "Illegal call to SoplexLpSolver<ValueType, RawMode>::isInfeasible: model has not been optimized.";
-    }
+    STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException,
+                    "Illegal call to SoplexLpSolver<ValueType, RawMode>::isInfeasible: model has not been optimized.");
 
     return (status == soplex::SPxSolver::INFEASIBLE);
 }
 
 template<typename ValueType, bool RawMode>
 bool SoplexLpSolver<ValueType, RawMode>::isUnbounded() const {
-    if (!this->currentModelHasBeenOptimized) {
-        throw storm::exceptions::InvalidStateException() << "Illegal call to SoplexLpSolver<ValueType, RawMode>::isUnbounded: model has not been optimized.";
-    }
+    STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException,
+                    "Illegal call to SoplexLpSolver<ValueType, RawMode>::isUnbounded: model has not been optimized.");
 
     return (status == soplex::SPxSolver::UNBOUNDED);
 }
@@ -284,31 +283,34 @@ void SoplexLpSolver<ValueType, RawMode>::writeModelToFile(std::string const& fil
 
 template<typename ValueType, bool RawMode>
 void SoplexLpSolver<ValueType, RawMode>::push() {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Push/Pop not supported on SoPlex");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Push/Pop not supported on SoPlex.");
 }
 
 template<typename ValueType, bool RawMode>
 void SoplexLpSolver<ValueType, RawMode>::pop() {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Push/Pop not supported on SoPlex");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Push/Pop not supported on SoPlex.");
 }
 
 #else
 template<typename ValueType, bool RawMode>
 SoplexLpSolver<ValueType, RawMode>::SoplexLpSolver(std::string const&, OptimizationDirection const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 SoplexLpSolver<ValueType, RawMode>::SoplexLpSolver(std::string const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 SoplexLpSolver<ValueType, RawMode>::SoplexLpSolver(OptimizationDirection const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
@@ -318,91 +320,104 @@ template<typename ValueType, bool RawMode>
 typename SoplexLpSolver<ValueType, RawMode>::Variable SoplexLpSolver<ValueType, RawMode>::addVariable(std::string const&, VariableType const&,
                                                                                                       std::optional<ValueType> const&,
                                                                                                       std::optional<ValueType> const&, ValueType) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 void SoplexLpSolver<ValueType, RawMode>::update() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 void SoplexLpSolver<ValueType, RawMode>::addConstraint(std::string const&, Constraint const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 void SoplexLpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const&, Variable, bool, Constraint const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 void SoplexLpSolver<ValueType, RawMode>::optimize() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool SoplexLpSolver<ValueType, RawMode>::isInfeasible() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool SoplexLpSolver<ValueType, RawMode>::isUnbounded() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool SoplexLpSolver<ValueType, RawMode>::isOptimal() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 ValueType SoplexLpSolver<ValueType, RawMode>::getContinuousValue(Variable const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 ValueType SoplexLpSolver<ValueType, RawMode>::getObjectiveValue() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 void SoplexLpSolver<ValueType, RawMode>::writeModelToFile(std::string const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 void SoplexLpSolver<ValueType, RawMode>::push() {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 
 template<typename ValueType, bool RawMode>
 void SoplexLpSolver<ValueType, RawMode>::pop() {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
 }
 #endif
 
 template<typename ValueType, bool RawMode>
 int_fast64_t SoplexLpSolver<ValueType, RawMode>::getIntegerValue(Variable const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support integer variables");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support integer variables.");
 }
 
 template<typename ValueType, bool RawMode>
 bool SoplexLpSolver<ValueType, RawMode>::getBinaryValue(Variable const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support binary variables");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support binary variables.");
 }
 
 template<typename ValueType, bool RawMode>

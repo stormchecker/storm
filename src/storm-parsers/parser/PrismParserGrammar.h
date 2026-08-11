@@ -37,6 +37,7 @@ class GlobalProgramInformation {
           labels(),
           hasInitialConstruct(false),
           initialConstruct(),
+          hasObservablesConstruct(false),
           systemCompositionConstruct(boost::none),
           currentCommandIndex(0),
           currentUpdateIndex(0) {
@@ -60,6 +61,7 @@ class GlobalProgramInformation {
         observationLabels.clear();
         hasInitialConstruct = false;
         initialConstruct = storm::prism::InitialConstruct();
+        hasObservablesConstruct = false;
         systemCompositionConstruct = boost::none;
 
         currentCommandIndex = 0;
@@ -84,6 +86,7 @@ class GlobalProgramInformation {
 
     bool hasInitialConstruct;
     storm::prism::InitialConstruct initialConstruct;
+    bool hasObservablesConstruct;
     boost::optional<storm::prism::SystemCompositionConstruct> systemCompositionConstruct;
 
     // Counters to provide unique indexing for commands and updates.
@@ -294,7 +297,7 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
     qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> initialStatesConstruct;
 
     // Rules for POMDP observables (standard prism)
-    qi::rule<Iterator, qi::unused_type(), Skipper> observablesConstruct;
+    qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> observablesConstruct;
 
     // Rules for invariant constructs
     qi::rule<Iterator, storm::expressions::Expression(), Skipper> invariantConstruct;
@@ -421,7 +424,7 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
                                              GlobalProgramInformation& globalProgramInformation) const;
     storm::prism::Player createPlayer(std::string const& playerName, std::vector<std::string> const& moduleNames, std::vector<std::string> const& commandNames);
     storm::prism::Program createProgram(GlobalProgramInformation const& globalProgramInformation) const;
-    void createObservablesList(std::vector<std::string> const& observables);
+    bool addObservablesConstruct(std::vector<std::string> const& observables, GlobalProgramInformation& globalProgramInformation);
 
     void removeInitialConstruct(GlobalProgramInformation& globalProgramInformation) const;
 

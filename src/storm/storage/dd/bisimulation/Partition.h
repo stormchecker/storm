@@ -9,6 +9,7 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/bisimulation/BisimulationOptions.h"
 
 #include "storm/models/symbolic/Model.h"
 #include "storm/models/symbolic/NondeterministicModel.h"
@@ -40,7 +41,7 @@ class Partition {
     static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType,
                             PreservationInformation<DdType, ValueType> const& preservationInformation);
     static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType,
-                            std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
+                            std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, BisimulationOptions const& bisimulationOptions);
     static Partition createTrivialChoicePartition(storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model,
                                                   std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables);
 

@@ -698,7 +698,7 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, Die) {
     });
 }
 
-TYPED_TEST(DtmcPrctlModelCheckerTest, Crowds) {
+STORM_EXPENSIVE_TYPED_TEST(DtmcPrctlModelCheckerTest, Crowds) {
     std::string formulasString = "P=? [F observe0>1]";
     formulasString += "; P=? [F \"observeIGreater1\"]";
     formulasString += "; P=? [F observe1>1]";

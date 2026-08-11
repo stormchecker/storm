@@ -56,7 +56,8 @@ uint32_t UnfoldDependencyGraph::findGroupIndex(std::string expressionVariableNam
             if (variable.expressionVariableName == expressionVariableName)
                 return i;
 
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "The UnfoldDependencyGraph does not contain the variable " + expressionVariableName);
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException,
+                    "The UnfoldDependencyGraph does not contain the variable " + expressionVariableName + ".");
 }
 
 std::vector<uint32_t> UnfoldDependencyGraph::getOrderedDependencies(uint32_t groupIndex, bool includeSelf) {

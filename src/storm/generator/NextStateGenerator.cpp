@@ -12,6 +12,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -40,7 +41,8 @@ NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions:
       variableInformation(variableInformation),
       evaluator(nullptr),
       state(nullptr),
-      comparator(storm::utility::convertNumber<ValueType>(options.getStochasticTolerance())),
+      comparator(storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>()
+                                                         : storm::utility::convertNumber<ValueType>(options.getStochasticTolerance())),
       actionMask(mask) {
     initializeSpecialStates();
 }
@@ -54,7 +56,8 @@ NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions:
       variableInformation(),
       evaluator(nullptr),
       state(nullptr),
-      comparator(storm::utility::convertNumber<ValueType>(options.getStochasticTolerance())),
+      comparator(storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>()
+                                                         : storm::utility::convertNumber<ValueType>(options.getStochasticTolerance())),
       actionMask(mask) {}
 
 template<typename ValueType, typename StateType>
@@ -214,7 +217,7 @@ storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::l
     }
     if (this->options.isAddOverlappingGuardLabelSet()) {
         STORM_LOG_THROW(!result.containsLabel("overlap_guards"), storm::exceptions::WrongFormatException,
-                        "Label 'overlap_guards' is reserved when adding overlapping guard labels");
+                        "Label 'overlap_guards' is reserved when adding overlapping guard labels.");
         addSpecialLabel("overlap_guards", overlappingGuardStates.get());
     }
     if (this->options.isAddOutOfBoundsStateSet() && stateStorage.stateToId.contains(outOfBoundsState)) {
@@ -320,15 +323,13 @@ uint32_t NextStateGenerator<ValueType, StateType>::observabilityClass(Compressed
 
 template<typename ValueType, typename StateType>
 std::map<std::string, storm::storage::PlayerIndex> NextStateGenerator<ValueType, StateType>::getPlayerNameToIndexMap() const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Generating player mappings is not supported for this model input format");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Generating player mappings is not supported for this model input format.");
 }
 
 template<typename ValueType, typename StateType>
 void NextStateGenerator<ValueType, StateType>::remapStateIds(std::function<StateType(StateType const&)> const& /*remapping*/) {
-    if (overlappingGuardStates != boost::none) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                        "Remapping of Ids during model building is not supported for overlapping guard statements.");
-    }
+    STORM_LOG_THROW(overlappingGuardStates == boost::none, storm::exceptions::NotImplementedException,
+                    "Remapping of Ids during model building is not supported for overlapping guard statements.");
     // Nothing to be done.
 }
 

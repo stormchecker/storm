@@ -172,7 +172,7 @@ class ValueIterationOperator {
     template<typename OperandType, typename OffsetType, typename BackendType, bool Backward, bool SkipIgnoredRows, OptimizationDirection RobustDirection>
     bool apply(OperandType& operandOut, OperandType const& operandIn, OffsetType const& offsets, BackendType& backend) const {
         auto const outSize = TrivialRowGrouping ? getSize(operandOut) : rowGroupIndices->size() - 1;
-        STORM_LOG_ASSERT(TrivialRowGrouping || getSize(operandOut) >= outSize, "Dimension mismatch");
+        STORM_LOG_ASSERT(TrivialRowGrouping || getSize(operandOut) >= outSize, "Dimension mismatch.");
         backend.startNewIteration();
         auto matrixValueIt = matrixValues.cbegin();
         auto matrixColumnIt = matrixColumns.cbegin();

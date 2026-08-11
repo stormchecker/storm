@@ -143,34 +143,34 @@ storm::dd::bisimulation::SignatureMode BisimulationSettings::getSignatureMode() 
     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unknown signature mode '" << modeAsString << ".");
 }
 
-BisimulationSettings::ReuseMode BisimulationSettings::getReuseMode() const {
+storm::dd::bisimulation::ReuseMode BisimulationSettings::getReuseMode() const {
     std::string reuseModeAsString = this->getOption(reuseOptionName).getArgumentByName("mode").getValueAsString();
     if (reuseModeAsString == "none") {
-        return ReuseMode::None;
+        return storm::dd::bisimulation::ReuseMode::None;
     } else if (reuseModeAsString == "blocks") {
-        return ReuseMode::BlockNumbers;
+        return storm::dd::bisimulation::ReuseMode::BlockNumbers;
     }
-    return ReuseMode::BlockNumbers;
+    return storm::dd::bisimulation::ReuseMode::BlockNumbers;
 }
 
-BisimulationSettings::InitialPartitionMode BisimulationSettings::getInitialPartitionMode() const {
+storm::dd::bisimulation::InitialPartitionMode BisimulationSettings::getInitialPartitionMode() const {
     std::string initialPartitionModeAsString = this->getOption(initialPartitionOptionName).getArgumentByName("mode").getValueAsString();
     if (initialPartitionModeAsString == "regular") {
-        return InitialPartitionMode::Regular;
+        return storm::dd::bisimulation::InitialPartitionMode::Regular;
     } else if (initialPartitionModeAsString == "finer") {
-        return InitialPartitionMode::Finer;
+        return storm::dd::bisimulation::InitialPartitionMode::Finer;
     }
-    return InitialPartitionMode::Finer;
+    return storm::dd::bisimulation::InitialPartitionMode::Finer;
 }
 
-BisimulationSettings::RefinementMode BisimulationSettings::getRefinementMode() const {
+storm::dd::bisimulation::RefinementMode BisimulationSettings::getRefinementMode() const {
     std::string refinementModeAsString = this->getOption(refinementModeOptionName).getArgumentByName("mode").getValueAsString();
     if (refinementModeAsString == "full") {
-        return RefinementMode::Full;
+        return storm::dd::bisimulation::RefinementMode::Full;
     } else if (refinementModeAsString == "changed") {
-        return RefinementMode::ChangedStates;
+        return storm::dd::bisimulation::RefinementMode::ChangedStates;
     }
-    return RefinementMode::Full;
+    return storm::dd::bisimulation::RefinementMode::Full;
 }
 
 bool BisimulationSettings::check() const {

@@ -92,7 +92,7 @@ boost::any ToDiceStringVisitor::visit(BinaryNumericalFunctionExpression const& e
             break;
         case BinaryNumericalFunctionExpression::OperatorType::Divide: {
             STORM_LOG_THROW(expression.getSecondOperand()->isIntegerLiteralExpression(), storm::exceptions::NotSupportedException,
-                            "Dice does not support modulo with nonconst rhs");
+                            "Dice does not support modulo with nonconst rhs.");
             uint64_t denominator = expression.getSecondOperand()->evaluateAsInt();
             int shifts = 0;
             while (denominator % 2 == 0) {
@@ -100,9 +100,7 @@ boost::any ToDiceStringVisitor::visit(BinaryNumericalFunctionExpression const& e
                 shifts++;
             }
             denominator = denominator >> 1;
-            if (denominator > 0) {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Dice does not support division with non-powers of two");
-            }
+            STORM_LOG_THROW(denominator <= 0, storm::exceptions::NotSupportedException, "Dice does not support division with non-powers of two.");
             if (shifts > 0) {
                 stream << "(";
                 expression.getFirstOperand()->accept(*this, data);
@@ -122,9 +120,9 @@ boost::any ToDiceStringVisitor::visit(BinaryNumericalFunctionExpression const& e
             break;
         case BinaryNumericalFunctionExpression::OperatorType::Modulo:
             STORM_LOG_THROW(expression.getSecondOperand()->isIntegerLiteralExpression(), storm::exceptions::NotSupportedException,
-                            "Dice does not support modulo with nonconst rhs");
+                            "Dice does not support modulo with nonconst rhs.");
             STORM_LOG_THROW(expression.getSecondOperand()->evaluateAsInt() == 2, storm::exceptions::NotSupportedException,
-                            "Dice does not support modulo with rhs != 2");
+                            "Dice does not support modulo with rhs != 2.");
 
             stream << "( nth_bit(int(" << nrBits << "," << nrBits - 1 << "), ";
             expression.getFirstOperand()->accept(*this, data);

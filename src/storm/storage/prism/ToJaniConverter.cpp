@@ -211,7 +211,7 @@ storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program
 
     // Create a mapping from variables to a flag indicating whether it should be made global
     for (auto const& varMods : variablesToAccessingModuleIndices) {
-        assert(!varMods.second.empty());
+        STORM_LOG_ASSERT(!varMods.second.empty(), "Variable has no accessing modules.");
         auto varIt = variablesToMakeGlobal.find(varMods.first);
         // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
         if (varIt == variablesToMakeGlobal.end()) {

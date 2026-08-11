@@ -24,7 +24,6 @@
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm/settings/modules/OviSolverSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
-#include "storm/settings/modules/Smt2SmtSolverSettings.h"
 #include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/TopologicalEquationSolverSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"

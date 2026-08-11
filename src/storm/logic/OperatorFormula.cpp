@@ -26,7 +26,7 @@ bool OperatorFormula::hasBound() const {
 }
 
 ComparisonType OperatorFormula::getComparisonType() const {
-    STORM_LOG_ASSERT(operatorInformation.bound.is_initialized(), "Cannot get Formula comparison type (has no bound?)");
+    STORM_LOG_ASSERT(operatorInformation.bound.is_initialized(), "Cannot get Formula comparison type (has no bound?).");
     return operatorInformation.bound.get().comparisonType;
 }
 

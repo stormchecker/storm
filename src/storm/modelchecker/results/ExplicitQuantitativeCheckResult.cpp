@@ -173,7 +173,7 @@ std::pair<ValueType, ValueType> ExplicitQuantitativeCheckResult<ValueType>::getM
 
 template<typename ValueType>
 ValueType ExplicitQuantitativeCheckResult<ValueType>::sum() const {
-    STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Sum of empty set is not defined");
+    STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Sum of empty set is not defined.");
 
     ValueType sum = storm::utility::zero<ValueType>();
     if (this->isResultForAllStates()) {
@@ -194,7 +194,7 @@ ValueType ExplicitQuantitativeCheckResult<ValueType>::sum() const {
 
 template<typename ValueType>
 ValueType ExplicitQuantitativeCheckResult<ValueType>::average() const {
-    STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Average of empty set is not defined");
+    STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Average of empty set is not defined.");
 
     ValueType sum = storm::utility::zero<ValueType>();
     if (this->isResultForAllStates()) {

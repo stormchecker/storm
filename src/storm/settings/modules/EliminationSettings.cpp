@@ -56,35 +56,35 @@ EliminationSettings::EliminationSettings() : ModuleSettings(moduleName) {
                         .build());
 }
 
-EliminationSettings::EliminationMethod EliminationSettings::getEliminationMethod() const {
+storm::solver::stateelimination::EliminationMethod EliminationSettings::getEliminationMethod() const {
     std::string eliminationMethodAsString = this->getOption(eliminationMethodOptionName).getArgumentByName("name").getValueAsString();
     if (eliminationMethodAsString == "state") {
-        return EliminationMethod::State;
+        return storm::solver::stateelimination::EliminationMethod::State;
     } else if (eliminationMethodAsString == "hybrid") {
-        return EliminationMethod::Hybrid;
+        return storm::solver::stateelimination::EliminationMethod::Hybrid;
     } else {
         STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal elimination method selected.");
     }
 }
 
-EliminationSettings::EliminationOrder EliminationSettings::getEliminationOrder() const {
+storm::solver::stateelimination::EliminationOrder EliminationSettings::getEliminationOrder() const {
     std::string eliminationOrderAsString = this->getOption(eliminationOrderOptionName).getArgumentByName("name").getValueAsString();
     if (eliminationOrderAsString == "fw") {
-        return EliminationOrder::Forward;
+        return storm::solver::stateelimination::EliminationOrder::Forward;
     } else if (eliminationOrderAsString == "fwrev") {
-        return EliminationOrder::ForwardReversed;
+        return storm::solver::stateelimination::EliminationOrder::ForwardReversed;
     } else if (eliminationOrderAsString == "bw") {
-        return EliminationOrder::Backward;
+        return storm::solver::stateelimination::EliminationOrder::Backward;
     } else if (eliminationOrderAsString == "bwrev") {
-        return EliminationOrder::BackwardReversed;
+        return storm::solver::stateelimination::EliminationOrder::BackwardReversed;
     } else if (eliminationOrderAsString == "rand") {
-        return EliminationOrder::Random;
+        return storm::solver::stateelimination::EliminationOrder::Random;
     } else if (eliminationOrderAsString == "spen") {
-        return EliminationOrder::StaticPenalty;
+        return storm::solver::stateelimination::EliminationOrder::StaticPenalty;
     } else if (eliminationOrderAsString == "dpen") {
-        return EliminationOrder::DynamicPenalty;
+        return storm::solver::stateelimination::EliminationOrder::DynamicPenalty;
     } else if (eliminationOrderAsString == "regex") {
-        return EliminationOrder::RegularExpression;
+        return storm::solver::stateelimination::EliminationOrder::RegularExpression;
     } else {
         STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal elimination order selected.");
     }

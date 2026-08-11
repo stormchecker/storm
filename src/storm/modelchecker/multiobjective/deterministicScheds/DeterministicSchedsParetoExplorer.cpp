@@ -12,9 +12,6 @@
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/geometry/coordinates.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
-
 #include "storm/io/export.h"
 #include "storm/utility/solver.h"
 
@@ -29,13 +26,13 @@ namespace multiobjective {
 template<class SparseModelType, typename GeometryValueType>
 DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Point::Point(std::vector<GeometryValueType> const& coordinates)
     : coordinates(coordinates), onFacet(false), paretoOptimal(false) {
-    STORM_LOG_ASSERT(!this->coordinates.empty(), "Points with dimension 0 are not supported");
+    STORM_LOG_ASSERT(!this->coordinates.empty(), "Points with dimension 0 are not supported.");
 }
 
 template<class SparseModelType, typename GeometryValueType>
 DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Point::Point(std::vector<GeometryValueType>&& coordinates)
     : coordinates(std::move(coordinates)), onFacet(false), paretoOptimal(false) {
-    STORM_LOG_ASSERT(!this->coordinates.empty(), "Points with dimension 0 are not supported");
+    STORM_LOG_ASSERT(!this->coordinates.empty(), "Points with dimension 0 are not supported.");
 }
 
 template<class SparseModelType, typename GeometryValueType>
@@ -50,7 +47,7 @@ std::vector<GeometryValueType> const& DeterministicSchedsParetoExplorer<SparseMo
 
 template<class SparseModelType, typename GeometryValueType>
 uint64_t DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Point::dimension() const {
-    STORM_LOG_ASSERT(!coordinates.empty(), "Points with dimension 0 are not supported");
+    STORM_LOG_ASSERT(!coordinates.empty(), "Points with dimension 0 are not supported.");
     return coordinates.size();
 }
 
@@ -80,7 +77,7 @@ DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Point::ge
         }
         return DominanceResult::Dominates;
     } else {
-        assert(*thisIt < *otherIt);
+        STORM_LOG_ASSERT(*thisIt < *otherIt, "Expected iterator value less than other.");
         // *this might be dominated by other
         for (++thisIt, ++otherIt; thisIt != thisItE; ++thisIt, ++otherIt) {
             if (*thisIt > *otherIt) {
@@ -286,7 +283,7 @@ DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Facet::ge
     // This facet might lie at the 'border', which means that the downward closure has to be taken in some directions
     storm::storage::BitVector dimensionsForDownwardClosure = storm::utility::vector::filterZero(this->halfspace.normalVector());
     STORM_LOG_ASSERT(dimensionsForDownwardClosure.getNumberOfSetBits() + vertices.size() >= halfspace.normalVector().size() + 1,
-                     "The number of points on the facet is insufficient");
+                     "The number of points on the facet is insufficient.");
     if (dimensionsForDownwardClosure.empty()) {
         return storm::storage::geometry::Polytope<GeometryValueType>::create(vertices);
     } else {
@@ -620,13 +617,13 @@ bool DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::opti
                     auto vertexIt = vertices.begin();
                     ++vertexIt;
                     for (auto const& pId : f.getPoints()) {
-                        assert(pointset.getPoint(pId).get() == *vertexIt);
+                        STORM_LOG_ASSERT(pointset.getPoint(pId).get() == *vertexIt, "Vertex mismatch.");
                         if (fNew.getHalfspace().isPointOnBoundary(*vertexIt)) {
                             fNew.addPoint(pId, pointset.getPoint(pId));
                         }
                         ++vertexIt;
                     }
-                    assert(vertexIt == vertices.end());
+                    STORM_LOG_ASSERT(vertexIt == vertices.end(), "Vertex iterator not at end.");
                     unprocessedFacets.push(std::move(fNew));
                 }
             }

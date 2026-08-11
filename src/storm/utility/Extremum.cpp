@@ -103,13 +103,13 @@ bool Extremum<Dir, ValueType>::empty() const {
 
 template<storm::OptimizationDirection Dir, typename ValueType>
 ValueType const& Extremum<Dir, ValueType>::operator*() const {
-    STORM_LOG_ASSERT(!empty(), "tried to get empty extremum.");
+    STORM_LOG_ASSERT(!empty(), "Tried to get empty extremum.");
     return data.value;
 }
 
 template<storm::OptimizationDirection Dir, typename ValueType>
 ValueType& Extremum<Dir, ValueType>::operator*() {
-    STORM_LOG_ASSERT(!empty(), "tried to get empty extremum.");
+    STORM_LOG_ASSERT(!empty(), "Tried to get empty extremum.");
     return data.value;
 }
 

@@ -34,15 +34,15 @@ void ParameterRegion<ParametricType>::init() {
     for (auto const& variableWithLowerBoundary : this->lowerBoundaries) {
         auto variableWithUpperBoundary = this->upperBoundaries.find(variableWithLowerBoundary.first);
         STORM_LOG_THROW((variableWithUpperBoundary != upperBoundaries.end()), storm::exceptions::InvalidArgumentException,
-                        "Could not create region. No upper boundary specified for Variable " << variableWithLowerBoundary.first);
+                        "Could not create region. No upper boundary specified for Variable " << variableWithLowerBoundary.first << ".");
         STORM_LOG_THROW((variableWithLowerBoundary.second <= variableWithUpperBoundary->second), storm::exceptions::InvalidArgumentException,
-                        "Could not create region. The lower boundary for " << variableWithLowerBoundary.first << " is larger then the upper boundary");
+                        "Could not create region. The lower boundary for " << variableWithLowerBoundary.first << " is larger then the upper boundary.");
         this->variables.insert(variableWithLowerBoundary.first);
         this->sortedOnDifference.insert({variableWithLowerBoundary.second - variableWithUpperBoundary->second, variableWithLowerBoundary.first});
     }
     for (auto const& variableWithBoundary : this->upperBoundaries) {
         STORM_LOG_THROW((this->variables.find(variableWithBoundary.first) != this->variables.end()), storm::exceptions::InvalidArgumentException,
-                        "Could not create region. No lower boundary specified for Variable " << variableWithBoundary.first);
+                        "Could not create region. No lower boundary specified for Variable " << variableWithBoundary.first << ".");
     }
     this->splitThreshold = variables.size();
 }
@@ -62,7 +62,7 @@ template<typename ParametricType>
 typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getLowerBoundary(VariableType const& variable) const {
     auto const& result = lowerBoundaries.find(variable);
     STORM_LOG_THROW(result != lowerBoundaries.end(), storm::exceptions::InvalidArgumentException,
-                    "Tried to find a lower boundary for variable " << variable << " which is not specified by this region");
+                    "Tried to find a lower boundary for variable " << variable << " which is not specified by this region.");
     return (*result).second;
 }
 
@@ -74,14 +74,14 @@ typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion
         }
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
-                    "Tried to find a lower boundary for variableName " << varName << " which is not specified by this region");
+                    "Tried to find a lower boundary for variableName " << varName << " which is not specified by this region.");
 }
 
 template<typename ParametricType>
 typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getUpperBoundary(VariableType const& variable) const {
     auto const& result = upperBoundaries.find(variable);
     STORM_LOG_THROW(result != upperBoundaries.end(), storm::exceptions::InvalidArgumentException,
-                    "Tried to find an upper boundary for variable " << variable << " which is not specified by this region");
+                    "Tried to find an upper boundary for variable " << variable << " which is not specified by this region.");
     return (*result).second;
 }
 
@@ -93,7 +93,7 @@ typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion
         }
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
-                    "Tried to find an upper boundary for variableName " << varName << " which is not specified by this region");
+                    "Tried to find an upper boundary for variableName " << varName << " which is not specified by this region.");
 }
 
 template<typename ParametricType>

@@ -80,7 +80,7 @@ boost::any FragmentChecker::visit(BoundedUntilFormula const& f, boost::any const
         } else if (tbr.isTimeBound()) {
             result = result && inherited.getSpecification().areTimeBoundedUntilFormulasAllowed();
         } else {
-            assert(tbr.isRewardBound());
+            STORM_LOG_ASSERT(tbr.isRewardBound(), "Expected reward bound.");
             result = result && inherited.getSpecification().areRewardBoundedUntilFormulasAllowed();
             if (tbr.hasRewardAccumulation()) {
                 result = result && inherited.getSpecification().isRewardAccumulationAllowed();
@@ -141,7 +141,7 @@ boost::any FragmentChecker::visit(CumulativeRewardFormula const& f, boost::any c
         } else if (tbr.isTimeBound()) {
             result = result && inherited.getSpecification().areTimeBoundedCumulativeRewardFormulasAllowed();
         } else {
-            assert(tbr.isRewardBound());
+            STORM_LOG_ASSERT(tbr.isRewardBound(), "Expected reward bound.");
             result = result && inherited.getSpecification().areRewardBoundedCumulativeRewardFormulasAllowed();
             if (tbr.hasRewardAccumulation()) {
                 result = result && inherited.getSpecification().isRewardAccumulationAllowed();
@@ -354,7 +354,7 @@ boost::any FragmentChecker::visit(DiscountedCumulativeRewardFormula const& f, bo
         } else if (tbr.isTimeBound()) {
             result = result && inherited.getSpecification().areTimeBoundedCumulativeRewardFormulasAllowed();
         } else {
-            assert(tbr.isRewardBound());
+            STORM_LOG_ASSERT(tbr.isRewardBound(), "Expected reward bound.");
             result = result && inherited.getSpecification().areRewardBoundedCumulativeRewardFormulasAllowed();
             if (tbr.hasRewardAccumulation()) {
                 result = result && inherited.getSpecification().isRewardAccumulationAllowed();

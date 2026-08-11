@@ -105,7 +105,8 @@ void RebuildWithoutUnreachableAction::doAction(JaniLocalEliminator::Session &ses
             std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(oldEdge.getGuard());
             oldEdge.getDestination(0).getOrderedAssignments().clone();
 
-            STORM_LOG_THROW(oldEdge.getAssignments().empty(), storm::exceptions::NotImplementedException, "Support for oldEdge-assignments is not implemented");
+            STORM_LOG_THROW(oldEdge.getAssignments().empty(), storm::exceptions::NotImplementedException,
+                            "Support for oldEdge-assignments is not implemented.");
 
             std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
             for (auto const &destination : oldEdge.getDestinations()) {

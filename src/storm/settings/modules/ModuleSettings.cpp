@@ -21,12 +21,12 @@ bool ModuleSettings::check() const {
 void ModuleSettings::finalize() {}
 
 void ModuleSettings::set(std::string const& name) {
-    return this->getOption(name).setHasOptionBeenSet();
+    this->getOption(name).setHasOptionBeenSet();
 }
 
 void ModuleSettings::unset(std::string const& name) {
-    return this->getOption(name).setHasOptionBeenSet(false);
-    return this->getOption(name).setHasOptionBeenSetWithModulePrefix(false);
+    this->getOption(name).setHasOptionBeenSet(false);
+    this->getOption(name).setHasOptionBeenSetWithModulePrefix(false);
 }
 
 std::vector<std::shared_ptr<Option>> const& ModuleSettings::getOptions() const {

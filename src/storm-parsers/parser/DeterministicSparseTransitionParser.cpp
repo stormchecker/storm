@@ -49,10 +49,8 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
     STORM_LOG_TRACE("First pass on " << filename << " shows " << firstPass.numberOfNonzeroEntries << " non-zeros.");
 
     // If first pass returned zero, the file format was wrong.
-    if (firstPass.numberOfNonzeroEntries == 0) {
-        STORM_LOG_ERROR("Error while parsing " << filename << ": empty or erroneous file format.");
-        throw storm::exceptions::WrongFormatException();
-    }
+    STORM_LOG_THROW(firstPass.numberOfNonzeroEntries > 0, storm::exceptions::WrongFormatException,
+                    "Error while parsing " << filename << ": empty or erroneous file format.");
 
     // Perform second pass.
 
@@ -66,8 +64,7 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
     if (isRewardFile) {
         // The reward matrix should match the size of the transition matrix.
         if (firstPass.highestStateIndex + 1 > transitionMatrix.getRowCount() || firstPass.highestStateIndex + 1 > transitionMatrix.getColumnCount()) {
-            STORM_LOG_ERROR("Reward matrix has more rows or columns than transition matrix.");
-            throw storm::exceptions::WrongFormatException() << "Reward matrix has more rows or columns than transition matrix.";
+            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Reward matrix has more rows or columns than transition matrix.");
         } else {
             // If we found the right number of states or less, we set it to the number of states represented by the transition matrix.
             firstPass.highestStateIndex = transitionMatrix.getRowCount() - 1;
@@ -146,8 +143,7 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
         }
 
         // If we encountered deadlock and did not fix them, now is the time to throw the exception.
-        if (dontFixDeadlocks && hadDeadlocks)
-            throw storm::exceptions::WrongFormatException() << "Some of the states do not have outgoing transitions.";
+        STORM_LOG_THROW(!dontFixDeadlocks || !hadDeadlocks, storm::exceptions::WrongFormatException, "Some of the states do not have outgoing transitions.");
     }
 
     // Finally, build the actual matrix, test and return it.
@@ -155,10 +151,8 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
 
     // Since we cannot check if each transition for which there is a reward in the reward file also exists in the transition matrix during parsing, we have to
     // do it afterwards.
-    if (isRewardFile && !result.isSubmatrixOf(transitionMatrix)) {
-        STORM_LOG_ERROR("There are rewards for non existent transitions given in the reward file.");
-        throw storm::exceptions::WrongFormatException() << "There are rewards for non existent transitions given in the reward file.";
-    }
+    STORM_LOG_THROW(!isRewardFile || result.isSubmatrixOf(transitionMatrix), storm::exceptions::WrongFormatException,
+                    "There are rewards for non existent transitions given in the reward file.");
 
     return result;
 }
@@ -210,10 +204,8 @@ typename DeterministicSparseTransitionParser<ValueType>::FirstPassResult Determi
         ++result.numberOfNonzeroEntries;
 
         // Have we already seen this transition?
-        if (row == lastRow && col == lastCol) {
-            STORM_LOG_ERROR("The same transition (" << row << ", " << col << ") is given twice.");
-            throw storm::exceptions::InvalidArgumentException() << "The same transition (" << row << ", " << col << ") is given twice.";
-        }
+        STORM_LOG_THROW(row != lastRow || col != lastCol, storm::exceptions::InvalidArgumentException,
+                        "The same transition (" << row << ", " << col << ") is given twice.");
 
         lastRow = row;
         lastCol = col;

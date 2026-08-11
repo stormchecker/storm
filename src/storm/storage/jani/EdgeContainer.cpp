@@ -149,7 +149,7 @@ std::set<uint64_t> EdgeContainer::getActionIndices() const {
  * @param locEnd index where to end
  */
 void EdgeContainer::insertEdge(Edge const& e, uint64_t locStart, uint64_t locEnd) {
-    assert(locStart <= locEnd);
+    STORM_LOG_ASSERT(locStart <= locEnd, "Invalid edge location range.");
     // Find the right position for the edge and insert it properly.
     auto posIt = edges.begin();
     std::advance(posIt, locEnd);

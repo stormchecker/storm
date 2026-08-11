@@ -141,25 +141,25 @@ bool LpMinMaxLinearEquationSolver<ValueType>::solveEquationsLp(Environment const
     if (this->hasLowerBound() && lowerBounds == nullptr) {
         lower = [this](uint64_t const& i) { return this->getLowerBound(i); };
     } else if (!this->hasLowerBound() && lowerBounds != nullptr) {
-        STORM_LOG_ASSERT(lowerBounds->size() == x.size(), "lower bounds vector has invalid size.");
+        STORM_LOG_ASSERT(lowerBounds->size() == x.size(), "Lower bounds vector has invalid size.");
         lower = [&lowerBounds](uint64_t const& i) { return (*lowerBounds)[i]; };
     } else if (this->hasLowerBound() && lowerBounds != nullptr) {
-        STORM_LOG_ASSERT(lowerBounds->size() == x.size(), "lower bounds vector has invalid size.");
+        STORM_LOG_ASSERT(lowerBounds->size() == x.size(), "Lower bounds vector has invalid size.");
         lower = [&lowerBounds, this](uint64_t const& i) { return std::max(this->getLowerBound(i), (*lowerBounds)[i]); };
     }
     if (this->hasUpperBound() && upperBounds == nullptr) {
         upper = [this](uint64_t const& i) { return this->getUpperBound(i); };
     } else if (!this->hasUpperBound() && upperBounds != nullptr) {
-        STORM_LOG_ASSERT(upperBounds->size() == x.size(), "upper bounds vector has invalid size.");
+        STORM_LOG_ASSERT(upperBounds->size() == x.size(), "Upper bounds vector has invalid size.");
         upper = [&upperBounds](uint64_t const& i) { return (*upperBounds)[i]; };
     } else if (this->hasUpperBound() && upperBounds != nullptr) {
-        STORM_LOG_ASSERT(upperBounds->size() == x.size(), "upper bounds vector has invalid size.");
+        STORM_LOG_ASSERT(upperBounds->size() == x.size(), "Upper bounds vector has invalid size.");
         upper = [&upperBounds, this](uint64_t const& i) { return std::min(this->getUpperBound(i), (*upperBounds)[i]); };
     }
     bool const useBounds = lower || upper;
 
     // Set up the LP solver
-    auto solver = lpSolverFactory->createRaw("");
+    auto solver = lpSolverFactory->createRaw(env, "");
     solver->setOptimizationDirection(invert(dir));
     using VariableIndex = typename LpSolver<ValueType, true>::Variable;
     std::map<VariableIndex, ValueType> constantRowGroups;  // Keep track of the rows that are known to be constants

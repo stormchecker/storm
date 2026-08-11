@@ -306,7 +306,7 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::init
     auto parametricEntryIt = matrix.begin();
     while (parametricEntryIt != matrix.end()) {
         STORM_LOG_ASSERT(parametricEntryIt->getColumn() == constantEntryIt->getColumn(),
-                         "Entries of parametric and constant matrix are not at the same position");
+                         "Entries of parametric and constant matrix are not at the same position.");
         if (storm::utility::isConstant(parametricEntryIt->getValue())) {
             // Constant entries can be inserted directly
             constantEntryIt->setValue(storm::utility::convertNumber<ConstantType>(parametricEntryIt->getValue()));
@@ -321,7 +321,7 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::init
         ++constantEntryIt;
         ++parametricEntryIt;
     }
-    STORM_LOG_ASSERT(constantEntryIt == matrixInstantiated.end(), "Parametric matrix seems to have more or less entries then the constant matrix");
+    STORM_LOG_ASSERT(constantEntryIt == matrixInstantiated.end(), "Parametric matrix seems to have more or less entries then the constant matrix.");
 }
 
 template class SparseDerivativeInstantiationModelChecker<RationalFunction, RationalNumber>;

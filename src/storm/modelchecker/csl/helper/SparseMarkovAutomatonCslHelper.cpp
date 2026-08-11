@@ -220,7 +220,8 @@ class UnifPlusHelper {
                     // Update the value when reaching a psi state.
                     // This has to be done after updating the Markovian state values since we needed the 'old' target value above.
                     if (computeLowerBound && static_cast<uint64_t>(k) >= foxGlynnResult.left) {
-                        assert(static_cast<uint64_t>(k) <= foxGlynnResult.right);  // has to hold since this iteration is relevant
+                        STORM_LOG_ASSERT(static_cast<uint64_t>(k) <= foxGlynnResult.right,
+                                         "K exceeds left bound.");  // has to hold since this iteration is relevant
                         targetValue += foxGlynnResult.weights[k - foxGlynnResult.left];
                     }
 
@@ -244,7 +245,7 @@ class UnifPlusHelper {
                         // Add the scaled values to the actual result vector
                         uint64_t i = N - 1 - k;
                         if (i >= foxGlynnResult.left) {
-                            assert(i <= foxGlynnResult.right);  // has to hold since this iteration is considered relevant.
+                            STORM_LOG_ASSERT(i <= foxGlynnResult.right, "I exceeds right bound.");  // has to hold since this iteration is considered relevant.
                             ValueType const& weight = foxGlynnResult.weights[i - foxGlynnResult.left];
                             storm::utility::vector::addScaledVector(maybeStatesValuesUpper, maybeStatesValuesWeightedUpper, weight);
                         }
@@ -329,7 +330,7 @@ class UnifPlusHelper {
         } else {
             // Set the values for Markovian "maybe" states
             STORM_LOG_ASSERT(markovianMaybeStates.getNumberOfSetBits() == markovianStatesModMaybeStates.getNumberOfSetBits(),
-                             "Unexpected number of Markovian maybe states");
+                             "Unexpected number of Markovian maybe states.");
             auto subStateIt = markovianStatesModMaybeStates.begin();
             for (auto const markovianState : markovianMaybeStates) {
                 result[markovianState] = (maybeStatesValuesLower[*subStateIt] + maybeStatesValuesUpper[*subStateIt]) / two;
@@ -388,7 +389,7 @@ class UnifPlusHelper {
 
         // First build a submatrix without selfloop entries
         auto submatrix = transitionMatrix.getSubmatrix(true, markovianMaybeStates, maybeStates);
-        assert(submatrix.getRowCount() == submatrix.getRowGroupCount());
+        STORM_LOG_ASSERT(submatrix.getRowCount() == submatrix.getRowGroupCount(), "Submatrix row count != row group count.");
 
         // Now add selfloop entries at the correct positions and apply uniformization
         storm::storage::SparseMatrixBuilder<ValueType> builder(submatrix.getRowCount(), submatrix.getColumnCount());
@@ -412,7 +413,7 @@ class UnifPlusHelper {
             }
             ++row;
         }
-        assert(row == submatrix.getRowCount());
+        STORM_LOG_ASSERT(row == submatrix.getRowCount(), "Row count mismatch for submatrix.");
 
         return builder.build();
     }
@@ -437,7 +438,7 @@ class UnifPlusHelper {
             }
             ++row;
         }
-        assert(row == matrix.getRowCount());
+        STORM_LOG_ASSERT(row == matrix.getRowCount(), "Row count mismatch after uniformization.");
         for (auto& oneStep : oneSteps) {
             oneStep.second *= oldRates[oneStep.first] / uniformizationRate;
         }
@@ -448,7 +449,7 @@ class UnifPlusHelper {
     void uniformize(storm::storage::SparseMatrix<ValueType>& matrix, std::vector<std::pair<uint64_t, ValueType>>& oneSteps, ValueType oldUniformizationRate,
                     ValueType newUniformizationRate, storm::storage::BitVector const& selfloopColumns) {
         if (oldUniformizationRate != newUniformizationRate) {
-            assert(oldUniformizationRate < newUniformizationRate);
+            STORM_LOG_ASSERT(oldUniformizationRate < newUniformizationRate, "Old uniformization rate must be less than new.");
             ValueType rateDiff = newUniformizationRate - oldUniformizationRate;
             ValueType rateFraction = oldUniformizationRate / newUniformizationRate;
             uint64_t row = 0;
@@ -463,7 +464,7 @@ class UnifPlusHelper {
                 }
                 ++row;
             }
-            assert(row == matrix.getRowCount());
+            STORM_LOG_ASSERT(row == matrix.getRowCount(), "Row count mismatch after uniformization.");
             for (auto& oneStep : oneSteps) {
                 oneStep.second *= rateFraction;
             }

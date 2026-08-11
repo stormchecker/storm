@@ -1,9 +1,6 @@
 #pragma once
 
 #include "storm/logic/Formulas.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BisimulationSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/StateBlock.h"
@@ -18,22 +15,6 @@ class Formula;
 
 namespace storage {
 
-inline BisimulationType resolveBisimulationTypeChoice(BisimulationTypeChoice c) {
-    switch (c) {
-        case BisimulationTypeChoice::Strong:
-            return BisimulationType::Strong;
-        case BisimulationTypeChoice::Weak:
-            return BisimulationType::Weak;
-        case BisimulationTypeChoice::FromSettings:
-            if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
-                return BisimulationType::Weak;
-            } else {
-                return BisimulationType::Strong;
-            }
-    }
-    return BisimulationType::Strong;
-}
-
 /*!
  * This class is the superclass of all decompositions of a sparse model into its bisimulation quotient.
  */
@@ -45,9 +26,6 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
 
     // A class that offers the possibility to customize the bisimulation.
     struct Options {
-        // Creates an object representing the default values for all options.
-        Options();
-
         /*!
          * Creates an object representing the options necessary to obtain the quotient while still preserving
          * the given formula.
@@ -55,8 +33,9 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
          * @param model The model for which the quotient model shall be computed. This needs to be given in order to
          * derive a suitable initial partition.
          * @param formula The formula that is to be preserved.
+         * @param tolerance The tolerance used for comparing constants (irrelevant if ValueType is exact).
          */
-        Options(ModelType const& model, storm::logic::Formula const& formula);
+        Options(ModelType const& model, storm::logic::Formula const& formula, ValueType const& tolerance);
 
         /*!
          * Creates an object representing the options necessary to obtain the smallest quotient while still
@@ -65,8 +44,17 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
          * @param model The model for which the quotient model shall be computed. This needs to be given in order to
          * derive a suitable initial partition.
          * @param formulas The formulas that need to be preserved.
+         * @param tolerance The tolerance used for comparing constants (irrelevant if ValueType is exact).
          */
-        Options(ModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
+        Options(ModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, ValueType const& tolerance);
+
+        /*!
+         * Creates an object representing the options necessary to obtain the quotient that respects all atomic
+         * propositions of the model (rather than those relevant to some formula).
+         *
+         * @param tolerance The tolerance used for comparing constants (irrelevant if ValueType is exact).
+         */
+        static Options preservingAllLabels(ValueType const& tolerance);
 
         /*!
          * Changes the options in a way that the given formula is preserved.
@@ -115,9 +103,11 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
         }
 
         ValueType getTolerance() const {
-            return storm::NumberTraits<ValueType>::IsExact
-                       ? storm::utility::zero<ValueType>()
-                       : storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+            return storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : tolerance;
+        }
+
+        void setTolerance(ValueType value) {
+            tolerance = value;
         }
 
         OptimizationDirection getOptimizationDirection() const {
@@ -128,7 +118,7 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
         // A flag that indicates whether a measure driven initial partition is to be used. If this flag is set
         // to true, the two optional pairs phiStatesAndLabel and psiStatesAndLabel must be set. Then, the
         // measure driven initial partition wrt. to the states phi and psi is taken.
-        bool measureDrivenInitialPartition;
+        bool measureDrivenInitialPartition = false;
         std::optional<storm::storage::BitVector> phiStates;
         std::optional<storm::storage::BitVector> psiStates;
 
@@ -137,25 +127,34 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
         std::optional<std::set<std::string>> respectedAtomicPropositions;
 
         /// A flag that governs whether the quotient model is actually built or only the decomposition is computed.
-        bool buildQuotient;
+        bool buildQuotient = true;
 
        private:
         std::optional<OptimizationDirection> optimalityType;
 
         /// A flag that indicates whether the state-rewards of the model are to be respected (and should
         /// be kept in the quotient model, if one is built).
-        bool keepRewards;
+        bool keepRewards = false;
 
         /// A flag that indicates whether a strong or a weak bisimulation is to be computed.
-        BisimulationType type;
+        BisimulationType type = BisimulationType::Strong;
 
         /// A flag that indicates whether step-bounded properties are to be preserved. This may only be set to tru
         /// when computing strong bisimulation equivalence.
-        bool bounded;
+        bool bounded = false;
 
         /// A flag that indicates whether discounted properties are to be preserved. This may only be set to true
         /// when computing strong bisimulation equivalence.
-        bool discounted;
+        bool discounted = false;
+
+        /// The tolerance used for comparing constants (irrelevant if ValueType is exact).
+        ValueType tolerance;
+
+        /*!
+         * Creates an object representing the default values for all options except the tolerance, which must
+         * always be supplied deliberately by the caller.
+         */
+        explicit Options(ValueType const& tolerance);
 
         /*!
          * Sets the options under the assumption that the given formula is the only one that is to be checked.

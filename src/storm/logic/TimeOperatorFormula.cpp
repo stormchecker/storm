@@ -11,7 +11,7 @@ namespace storm {
 namespace logic {
 TimeOperatorFormula::TimeOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation)
     : OperatorFormula(subformula, operatorInformation) {
-    assert(subformula->isTimePathFormula());
+    STORM_LOG_ASSERT(subformula->isTimePathFormula(), "Expected time path formula.");
     // Intentionally left empty.
 }
 

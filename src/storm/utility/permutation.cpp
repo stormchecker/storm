@@ -30,7 +30,7 @@ std::string orderKindtoString(OrderKind order) {
         case OrderKind::Random:
             return "random";
     }
-    STORM_LOG_ASSERT(false, "unreachable");
+    STORM_LOG_ASSERT(false, "Unreachable.");
     return "";
 }
 
@@ -40,7 +40,7 @@ OrderKind orderKindFromString(std::string const& order) {
             return kind;
         }
     }
-    STORM_LOG_ASSERT(false, "Unknown order kind");
+    STORM_LOG_ASSERT(false, "Unknown order kind.");
     return OrderKind::Bfs;
 }
 
@@ -73,7 +73,7 @@ std::vector<index_type> createPermutation(OrderKind order, storm::storage::Spars
         return createRandomPermutation(transitionMatrix.getRowGroupCount());
     }
     STORM_LOG_ASSERT((order == OrderKind::Bfs || order == OrderKind::Dfs || order == OrderKind::ReverseBfs || order == OrderKind::ReverseDfs),
-                     "Unknown order kind");
+                     "Unknown order kind.");
     STORM_LOG_ASSERT(initialStates.size() == transitionMatrix.getRowGroupCount(), "Unexpected dimensions of initial states and transition matrix.");
     STORM_LOG_ASSERT(initialStates.size() == transitionMatrix.getColumnCount(), "Unexpected dimensions of initial states and transition matrix.");
     std::vector<index_type> permutation;

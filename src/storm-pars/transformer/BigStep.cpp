@@ -33,8 +33,8 @@ namespace transformer {
 using UniPoly = carl::UnivariatePolynomial<RationalFunctionCoefficient>;
 
 RationalFunction BigStep::uniPolyToRationalFunction(UniPoly uniPoly) {
-    auto multivariatePol = carl::MultivariatePolynomial<RationalFunctionCoefficient>(uniPoly);
-    auto multiNominator = carl::FactorizedPolynomial(multivariatePol, rawPolynomialCache);
+    auto multivariatePol = storm::RawPolynomial(uniPoly);
+    auto multiNominator = carl::FactorizedPolynomial<storm::RawPolynomial>(multivariatePol, rawPolynomialCache);
     return RationalFunction(multiNominator);
 }
 
@@ -275,7 +275,8 @@ std::ostream& operator<<(std::ostream& os, const Annotation& annotation) {
                 } else {
                     alreadyPrintedFactor = true;
                 }
-                os << "(" << annotation.polynomialCache->at(annotation.parameter).second[i] << ")" << "^" << factors[i];
+                os << "(" << annotation.polynomialCache->at(annotation.parameter).second[i] << ")"
+                   << "^" << factors[i];
             }
         }
         if (factors.empty()) {
@@ -806,7 +807,7 @@ std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(const std::map
             if (!parametricTransitions.count(info)) {
                 parametricTransitions[info] = std::map<uint64_t, RationalFunctionCoefficient>();
             }
-            STORM_LOG_ASSERT(!parametricTransitions.at(info).count(state), "State already exists");
+            STORM_LOG_ASSERT(!parametricTransitions.at(info).count(state), "State already exists.");
             parametricTransitions.at(info)[state] = constant;
         }
     }
@@ -951,8 +952,8 @@ std::map<UniPoly, Annotation> BigStep::replaceWithNewTransitions(uint64_t state,
         auto probability = uniPolyToRationalFunction(uniProbability);
 
         // We know that neither no transition state <-> entry.first exist because we've erased them
-        flexibleMatrix.getRow(state).push_back(storm::storage::MatrixEntry(state2, probability));
-        backwardsFlexibleMatrix.getRow(state2).push_back(storm::storage::MatrixEntry(state, probability));
+        flexibleMatrix.getRow(state).push_back(storm::storage::MatrixEntry<uint_fast64_t, RationalFunction>(state2, probability));
+        backwardsFlexibleMatrix.getRow(state2).push_back(storm::storage::MatrixEntry<uint_fast64_t, RationalFunction>(state, probability));
     }
     // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsFlexibleMatrix.createSparseMatrix(), "");
     return storedAnnotations;

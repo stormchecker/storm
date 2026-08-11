@@ -1,11 +1,10 @@
-#include "storm/utility/stateelimination.h"
+#include "storm/solver/stateelimination/StateEliminationUtility.h"
 
 #include <random>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/InvalidStateException.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/solver/stateelimination/DynamicStatePriorityQueue.h"
 #include "storm/solver/stateelimination/StatePriorityQueue.h"
 #include "storm/solver/stateelimination/StaticStatePriorityQueue.h"
@@ -16,34 +15,28 @@
 #include "storm/utility/macros.h"
 
 namespace storm {
-namespace utility {
+namespace solver {
 namespace stateelimination {
 
-bool eliminationOrderNeedsDistances(storm::settings::modules::EliminationSettings::EliminationOrder const& order) {
-    return order == storm::settings::modules::EliminationSettings::EliminationOrder::Forward ||
-           order == storm::settings::modules::EliminationSettings::EliminationOrder::ForwardReversed ||
-           order == storm::settings::modules::EliminationSettings::EliminationOrder::Backward ||
-           order == storm::settings::modules::EliminationSettings::EliminationOrder::BackwardReversed;
+bool eliminationOrderNeedsDistances(EliminationOrder const& order) {
+    return order == EliminationOrder::Forward || order == EliminationOrder::ForwardReversed || order == EliminationOrder::Backward ||
+           order == EliminationOrder::BackwardReversed;
 }
 
-bool eliminationOrderNeedsForwardDistances(storm::settings::modules::EliminationSettings::EliminationOrder const& order) {
-    return order == storm::settings::modules::EliminationSettings::EliminationOrder::Forward ||
-           order == storm::settings::modules::EliminationSettings::EliminationOrder::ForwardReversed;
+bool eliminationOrderNeedsForwardDistances(EliminationOrder const& order) {
+    return order == EliminationOrder::Forward || order == EliminationOrder::ForwardReversed;
 }
 
-bool eliminationOrderNeedsReversedDistances(storm::settings::modules::EliminationSettings::EliminationOrder const& order) {
-    return order == storm::settings::modules::EliminationSettings::EliminationOrder::ForwardReversed ||
-           order == storm::settings::modules::EliminationSettings::EliminationOrder::BackwardReversed;
+bool eliminationOrderNeedsReversedDistances(EliminationOrder const& order) {
+    return order == EliminationOrder::ForwardReversed || order == EliminationOrder::BackwardReversed;
 }
 
-bool eliminationOrderIsPenaltyBased(storm::settings::modules::EliminationSettings::EliminationOrder const& order) {
-    return order == storm::settings::modules::EliminationSettings::EliminationOrder::StaticPenalty ||
-           order == storm::settings::modules::EliminationSettings::EliminationOrder::DynamicPenalty ||
-           order == storm::settings::modules::EliminationSettings::EliminationOrder::RegularExpression;
+bool eliminationOrderIsPenaltyBased(EliminationOrder const& order) {
+    return order == EliminationOrder::StaticPenalty || order == EliminationOrder::DynamicPenalty || order == EliminationOrder::RegularExpression;
 }
 
-bool eliminationOrderIsStatic(storm::settings::modules::EliminationSettings::EliminationOrder const& order) {
-    return eliminationOrderNeedsDistances(order) || order == storm::settings::modules::EliminationSettings::EliminationOrder::StaticPenalty;
+bool eliminationOrderIsStatic(EliminationOrder const& order) {
+    return eliminationOrderNeedsDistances(order) || order == EliminationOrder::StaticPenalty;
 }
 
 template<typename ValueType>
@@ -97,19 +90,16 @@ uint_fast64_t computeStatePenaltyRegularExpression(storm::storage::sparse::state
 }
 
 template<typename ValueType>
-std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities,
+std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(EliminationOrder const& order,
+                                                             boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities,
                                                              storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix,
                                                              storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions,
                                                              std::vector<ValueType> const& oneStepProbabilities, storm::storage::BitVector const& states) {
     STORM_LOG_TRACE("Creating state priority queue for states " << states);
 
-    // Get the settings to customize the priority queue.
-    storm::settings::modules::EliminationSettings::EliminationOrder order =
-        storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder();
-
     std::vector<storm::storage::sparse::state_type> sortedStates(states.begin(), states.end());
 
-    if (order == storm::settings::modules::EliminationSettings::EliminationOrder::Random) {
+    if (order == EliminationOrder::Random) {
         std::random_device randomDevice;
         std::mt19937 generator(randomDevice());
         std::shuffle(sortedStates.begin(), sortedStates.end(), generator);
@@ -126,8 +116,7 @@ std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(boost::optional<std
         } else if (eliminationOrderIsPenaltyBased(order)) {
             std::vector<std::pair<storm::storage::sparse::state_type, uint_fast64_t>> statePenalties(sortedStates.size());
             typename DynamicStatePriorityQueue<ValueType>::PenaltyFunctionType penaltyFunction =
-                order == storm::settings::modules::EliminationSettings::EliminationOrder::RegularExpression ? computeStatePenaltyRegularExpression<ValueType>
-                                                                                                            : computeStatePenalty<ValueType>;
+                order == EliminationOrder::RegularExpression ? computeStatePenaltyRegularExpression<ValueType> : computeStatePenalty<ValueType>;
             for (uint_fast64_t index = 0; index < sortedStates.size(); ++index) {
                 statePenalties[index] =
                     std::make_pair(sortedStates[index], penaltyFunction(sortedStates[index], transitionMatrix, backwardTransitions, oneStepProbabilities));
@@ -164,7 +153,7 @@ std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(std::vector<storm::
 }
 
 template<typename ValueType>
-std::vector<uint_fast64_t> getDistanceBasedPriorities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+std::vector<uint_fast64_t> getDistanceBasedPriorities(EliminationOrder const& order, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                       storm::storage::SparseMatrix<ValueType> const& transitionMatrixTransposed,
                                                       storm::storage::BitVector const& initialStates, std::vector<ValueType> const& oneStepProbabilities,
                                                       bool forward, bool reverse) {
@@ -174,12 +163,8 @@ std::vector<uint_fast64_t> getDistanceBasedPriorities(storm::storage::SparseMatr
         states[index] = index;
     }
 
-    std::vector<uint_fast64_t> distances =
-        getStateDistances(transitionMatrix, transitionMatrixTransposed, initialStates, oneStepProbabilities,
-                          storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder() ==
-                                  storm::settings::modules::EliminationSettings::EliminationOrder::Forward ||
-                              storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder() ==
-                                  storm::settings::modules::EliminationSettings::EliminationOrder::ForwardReversed);
+    std::vector<uint_fast64_t> distances = getStateDistances(transitionMatrix, transitionMatrixTransposed, initialStates, oneStepProbabilities,
+                                                             order == EliminationOrder::Forward || order == EliminationOrder::ForwardReversed);
 
     // In case of the forward or backward ordering, we can sort the states according to the distances.
     if (forward ^ reverse) {
@@ -225,7 +210,8 @@ std::vector<uint_fast64_t> getStateDistances(storm::storage::SparseMatrix<ValueT
 }
 
 template uint_fast64_t estimateComplexity(double const& value);
-template std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities,
+template std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(EliminationOrder const& order,
+                                                                      boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities,
                                                                       storm::storage::FlexibleSparseMatrix<double> const& transitionMatrix,
                                                                       storm::storage::FlexibleSparseMatrix<double> const& backwardTransitions,
                                                                       std::vector<double> const& oneStepProbabilities, storm::storage::BitVector const& states);
@@ -237,7 +223,7 @@ template uint_fast64_t computeStatePenaltyRegularExpression(storm::storage::spar
                                                             storm::storage::FlexibleSparseMatrix<double> const& transitionMatrix,
                                                             storm::storage::FlexibleSparseMatrix<double> const& backwardTransitions,
                                                             std::vector<double> const& oneStepProbabilities);
-template std::vector<uint_fast64_t> getDistanceBasedPriorities(storm::storage::SparseMatrix<double> const& transitionMatrix,
+template std::vector<uint_fast64_t> getDistanceBasedPriorities(EliminationOrder const& order, storm::storage::SparseMatrix<double> const& transitionMatrix,
                                                                storm::storage::SparseMatrix<double> const& transitionMatrixTransposed,
                                                                storm::storage::BitVector const& initialStates, std::vector<double> const& oneStepProbabilities,
                                                                bool forward, bool reverse);
@@ -247,7 +233,8 @@ template std::vector<uint_fast64_t> getStateDistances(storm::storage::SparseMatr
                                                       bool forward);
 
 template uint_fast64_t estimateComplexity(storm::RationalNumber const& value);
-template std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities,
+template std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(EliminationOrder const& order,
+                                                                      boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities,
                                                                       storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& transitionMatrix,
                                                                       storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& backwardTransitions,
                                                                       std::vector<storm::RationalNumber> const& oneStepProbabilities,
@@ -260,7 +247,8 @@ template uint_fast64_t computeStatePenaltyRegularExpression(storm::storage::spar
                                                             storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& transitionMatrix,
                                                             storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& backwardTransitions,
                                                             std::vector<storm::RationalNumber> const& oneStepProbabilities);
-template std::vector<uint_fast64_t> getDistanceBasedPriorities(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
+template std::vector<uint_fast64_t> getDistanceBasedPriorities(EliminationOrder const& order,
+                                                               storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
                                                                storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrixTransposed,
                                                                storm::storage::BitVector const& initialStates,
                                                                std::vector<storm::RationalNumber> const& oneStepProbabilities, bool forward, bool reverse);
@@ -269,7 +257,8 @@ template std::vector<uint_fast64_t> getStateDistances(storm::storage::SparseMatr
                                                       storm::storage::BitVector const& initialStates,
                                                       std::vector<storm::RationalNumber> const& oneStepProbabilities, bool forward);
 
-template std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities,
+template std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(EliminationOrder const& order,
+                                                                      boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities,
                                                                       storm::storage::FlexibleSparseMatrix<storm::RationalFunction> const& transitionMatrix,
                                                                       storm::storage::FlexibleSparseMatrix<storm::RationalFunction> const& backwardTransitions,
                                                                       std::vector<storm::RationalFunction> const& oneStepProbabilities,
@@ -282,7 +271,8 @@ template uint_fast64_t computeStatePenaltyRegularExpression(storm::storage::spar
                                                             storm::storage::FlexibleSparseMatrix<storm::RationalFunction> const& transitionMatrix,
                                                             storm::storage::FlexibleSparseMatrix<storm::RationalFunction> const& backwardTransitions,
                                                             std::vector<storm::RationalFunction> const& oneStepProbabilities);
-template std::vector<uint_fast64_t> getDistanceBasedPriorities(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix,
+template std::vector<uint_fast64_t> getDistanceBasedPriorities(EliminationOrder const& order,
+                                                               storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix,
                                                                storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrixTransposed,
                                                                storm::storage::BitVector const& initialStates,
                                                                std::vector<storm::RationalFunction> const& oneStepProbabilities, bool forward, bool reverse);
@@ -291,5 +281,5 @@ template std::vector<uint_fast64_t> getStateDistances(storm::storage::SparseMatr
                                                       storm::storage::BitVector const& initialStates,
                                                       std::vector<storm::RationalFunction> const& oneStepProbabilities, bool forward);
 }  // namespace stateelimination
-}  // namespace utility
+}  // namespace solver
 }  // namespace storm

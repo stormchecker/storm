@@ -54,7 +54,7 @@ RewardModelType transformRewardModel(RewardModelType const& originalRewardModel,
     if (originalRewardModel.hasTransitionRewards()) {
         transitionRewardMatrix = originalRewardModel.getTransitionRewardMatrix().getSubmatrix(false, subsystemActions, subsystem);
         if (makeRowGroupingTrivial) {
-            STORM_LOG_ASSERT(transitionRewardMatrix.value().getColumnCount() == transitionRewardMatrix.value().getRowCount(), "Matrix should be square");
+            STORM_LOG_ASSERT(transitionRewardMatrix.value().getColumnCount() == transitionRewardMatrix.value().getRowCount(), "Matrix should be square.");
             transitionRewardMatrix.value().makeRowGroupingTrivial();
         }
     }
@@ -108,7 +108,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
         }
         if (hasDeadlock) {
             STORM_LOG_THROW(options.fixDeadlocks, storm::exceptions::InvalidOperationException,
-                            "Expected that in each state, at least one action is selected. Got a deadlock state instead. (violated at " << subsysState << ")");
+                            "Expected that in each state, at least one action is selected. Got a deadlock state instead. (violated at " << subsysState << ").");
             if (options.buildActionMapping) {
                 result.newToOldActionIndexMapping.push_back(std::numeric_limits<uint64_t>::max());
             }
@@ -137,7 +137,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
         components.transitionMatrix = originalModel.getTransitionMatrix().getSubmatrix(false, keptActions, subsystemStates);
     }
     if (options.makeRowGroupingTrivial) {
-        STORM_LOG_ASSERT(components.transitionMatrix.getColumnCount() == components.transitionMatrix.getRowCount(), "Matrix should be square");
+        STORM_LOG_ASSERT(components.transitionMatrix.getColumnCount() == components.transitionMatrix.getRowCount(), "Matrix should be square.");
         components.transitionMatrix.makeRowGroupingTrivial();
     }
 
@@ -158,7 +158,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
 
     if (hasDeadlockStates) {
         auto subDeadlockStates = deadlockStates % subsystemStates;
-        assert(deadlockStates.getNumberOfSetBits() == subDeadlockStates.getNumberOfSetBits());
+        STORM_LOG_ASSERT(deadlockStates.getNumberOfSetBits() == subDeadlockStates.getNumberOfSetBits(), "Deadlock states count mismatch.");
         // erase rewards, choice labels, choice origins
         for (auto& rewModel : components.rewardModels) {
             for (auto state : subDeadlockStates) {
@@ -206,7 +206,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> buildSubsystem(storm::mod
                                                                       SubsystemBuilderOptions options) {
     STORM_LOG_DEBUG("Invoked subsystem builder on model with " << originalModel.getNumberOfStates() << " states.");
     storm::storage::BitVector initialStates = originalModel.getInitialStates() & subsystemStates;
-    STORM_LOG_THROW(!initialStates.empty(), storm::exceptions::InvalidArgumentException, "The subsystem would not contain any initial states");
+    STORM_LOG_THROW(!initialStates.empty(), storm::exceptions::InvalidArgumentException, "The subsystem would not contain any initial states.");
 
     STORM_LOG_THROW(!subsystemStates.empty(), storm::exceptions::InvalidArgumentException, "Invoked SubsystemBuilder for an empty subsystem.");
     if (keepUnreachableStates) {

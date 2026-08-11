@@ -27,33 +27,35 @@ std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatu
     std::vector<ConstantType> const maxValues) const {
     std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> result;
     STORM_LOG_INFO("Creating assumptions for " << val1 << " and " << val2);
-    assert(order->compare(val1, val2) == Order::UNKNOWN);
+    STORM_LOG_ASSERT(order->compare(val1, val2) == Order::UNKNOWN, "Order should be UNKNOWN at start.");
     auto assumption = createAndCheckAssumption(val1, val2, expressions::RelationType::Greater, order, region, minValues, maxValues);
     if (assumption.second != AssumptionStatus::INVALID) {
         result.insert(assumption);
         if (assumption.second == AssumptionStatus::VALID) {
-            assert(createAndCheckAssumption(val2, val1, expressions::RelationType::Greater, order, region, minValues, maxValues).second !=
-                       AssumptionStatus::VALID &&
-                   createAndCheckAssumption(val1, val2, expressions::RelationType::Equal, order, region, minValues, maxValues).second !=
-                       AssumptionStatus::VALID);
+            STORM_LOG_ASSERT(createAndCheckAssumption(val2, val1, expressions::RelationType::Greater, order, region, minValues, maxValues).second !=
+                                     AssumptionStatus::VALID &&
+                                 createAndCheckAssumption(val1, val2, expressions::RelationType::Equal, order, region, minValues, maxValues).second !=
+                                     AssumptionStatus::VALID,
+                             "Assumption " << val2 << " >= " << val1 << " should not be valid.");
             STORM_LOG_INFO("Assumption " << assumption.first << "is valid\n");
             return result;
         }
     }
-    assert(order->compare(val1, val2) == Order::UNKNOWN);
+    STORM_LOG_ASSERT(order->compare(val1, val2) == Order::UNKNOWN, "Order should be UNKNOWN.");
     assumption = createAndCheckAssumption(val2, val1, expressions::RelationType::Greater, order, region, minValues, maxValues);
     if (assumption.second != AssumptionStatus::INVALID) {
         if (assumption.second == AssumptionStatus::VALID) {
             result.clear();
             result.insert(assumption);
-            assert(createAndCheckAssumption(val1, val2, expressions::RelationType::Equal, order, region, minValues, maxValues).second !=
-                   AssumptionStatus::VALID);
+            STORM_LOG_ASSERT(
+                createAndCheckAssumption(val1, val2, expressions::RelationType::Equal, order, region, minValues, maxValues).second != AssumptionStatus::VALID,
+                "Assumption " << val1 << " == " << val2 << " should not be valid.");
             STORM_LOG_INFO("Assumption " << assumption.first << "is valid\n");
             return result;
         }
         result.insert(assumption);
     }
-    assert(order->compare(val1, val2) == Order::UNKNOWN);
+    STORM_LOG_ASSERT(order->compare(val1, val2) == Order::UNKNOWN, "Order should be UNKNOWN.");
     assumption = createAndCheckAssumption(val1, val2, expressions::RelationType::Equal, order, region, minValues, maxValues);
     if (assumption.second != AssumptionStatus::INVALID) {
         if (assumption.second == AssumptionStatus::VALID) {
@@ -64,7 +66,7 @@ std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatu
         }
         result.insert(assumption);
     }
-    assert(order->compare(val1, val2) == Order::UNKNOWN);
+    STORM_LOG_ASSERT(order->compare(val1, val2) == Order::UNKNOWN, "Order should be UNKNOWN.");
     STORM_LOG_INFO("None of the assumptions is valid, number of possible assumptions:  " << result.size() << '\n');
     return result;
 }
@@ -85,7 +87,7 @@ template<typename ValueType, typename ConstantType>
 std::pair<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumption(
     uint_fast64_t val1, uint_fast64_t val2, expressions::RelationType relationType, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
     std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValues) const {
-    assert(val1 != val2);
+    STORM_LOG_ASSERT(val1 != val2, "Values should be different.");
     expressions::Variable var1 = expressionManager->getVariable(std::to_string(val1));
     expressions::Variable var2 = expressionManager->getVariable(std::to_string(val2));
     auto assumption = std::make_shared<expressions::BinaryRelationExpression>(

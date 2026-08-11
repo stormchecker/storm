@@ -52,7 +52,7 @@ std::optional<typename storm::transformer::EndComponentEliminator<ValueType>::En
         auto const columnIndex = ecElimResult.oldToNewStateMapping[*representativeRowEntry];
         for (auto representativeRowIndex : ecElimResult.sinkRows) {
             auto row = matrix.getRow(representativeRowIndex);
-            STORM_LOG_ASSERT(row.getNumberOfEntries() == 1, "unexpected number of entries in representative row.");
+            STORM_LOG_ASSERT(row.getNumberOfEntries() == 1, "Unexpected number of entries in representative row.");
             auto& entry = *row.begin();
             entry.setColumn(columnIndex);
         }
@@ -207,14 +207,14 @@ struct NormalFormData {
         schedulerChoicesForReachingConditionStates;  // Scheduler choices for reaching condition states, used for constructing the resulting scheduler
 
     ValueType getTargetValue(uint64_t state) const {
-        STORM_LOG_ASSERT(terminalStates.get(state), "Tried to get target value for non-terminal state");
+        STORM_LOG_ASSERT(terminalStates.get(state), "Tried to get target value for non-terminal state.");
         auto const it = nonZeroTargetStateValues.find(state);
         return it == nonZeroTargetStateValues.end() ? storm::utility::zero<ValueType>() : it->second;
     }
 
     ValueType failProbability(uint64_t state) const {
-        STORM_LOG_ASSERT(terminalStates.get(state), "Tried to get fail probability for non-terminal state");
-        STORM_LOG_ASSERT(!conditionStates.get(state), "Tried to get fail probability for a condition state");
+        STORM_LOG_ASSERT(terminalStates.get(state), "Tried to get fail probability for non-terminal state.");
+        STORM_LOG_ASSERT(!conditionStates.get(state), "Tried to get fail probability for a condition state.");
         // condition states have fail probability zero
         return storm::utility::one<ValueType>() - getTargetValue(state);
     }
@@ -709,7 +709,7 @@ class WeightedReachabilityHelper {
                 bool rowSumIsLess1 = false;
                 for (auto const& entry : transitionMatrix.getRow(origRowIndex)) {
                     if (normalForm.terminalStates.get(entry.getColumn())) {
-                        STORM_LOG_ASSERT(!storm::utility::isZero(entry.getValue()), "Transition probability must be non-zero");
+                        STORM_LOG_ASSERT(!storm::utility::isZero(entry.getValue()), "Transition probability must be non-zero.");
                         rowSumIsLess1 = true;
                         ValueType const scaledTargetValue = normalForm.getTargetValue(entry.getColumn()) * entry.getValue();
                         targetProbability += scaledTargetValue;
@@ -850,7 +850,7 @@ class WeightedReachabilityHelper {
     }
 
     SolutionType evaluateScheduler(storm::Environment const& env, std::vector<uint64_t> const& scheduler) {
-        STORM_LOG_ASSERT(scheduler.size() == submatrix.getRowGroupCount(), "Scheduler size does not match number of row groups");
+        STORM_LOG_ASSERT(scheduler.size() == submatrix.getRowGroupCount(), "Scheduler size does not match number of row groups.");
         auto solver = getScheduledSolver(env, scheduler);
         cachedB.resize(submatrix.getRowGroupCount());
         cachedX.resize(submatrix.getRowGroupCount());
@@ -935,7 +935,7 @@ class WeightedReachabilityHelper {
    private:
     void createScaledVector(std::vector<ValueType>& out, ValueType const& w1, std::vector<ValueType> const& v1, ValueType const& w2,
                             std::vector<ValueType> const& v2) const {
-        STORM_LOG_ASSERT(v1.size() == v2.size(), "Vector sizes must match");
+        STORM_LOG_ASSERT(v1.size() == v2.size(), "Vector sizes must match.");
         out.resize(v1.size());
         storm::utility::vector::applyPointwise(v1, v2, out, [&w1, &w2](ValueType const& a, ValueType const& b) -> ValueType { return w1 * a + w2 * b; });
     }
@@ -985,7 +985,7 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
     bool const relative = env.modelchecker().conditional().isRelativePrecision();
     auto const precision = storm::utility::convertNumber<SolutionType>(env.modelchecker().conditional().getPrecision());
 
-    WeightedReachabilityHelper wrh(initialState, transitionMatrix, normalForm, computeScheduler);
+    WeightedReachabilityHelper<ValueType, SolutionType> wrh(initialState, transitionMatrix, normalForm, computeScheduler);
     SolutionType pMin{storm::utility::zero<SolutionType>()};
     SolutionType pMax{storm::utility::one<SolutionType>()};
 
@@ -1178,7 +1178,7 @@ typename internal::ResultReturnType<ValueType> decideThreshold(Environment const
                                                                NormalFormData<ValueType> const& normalForm) {
     // We currently handle sound model checking incorrectly: we would need the actual lower/upper bounds of the weightedReachabilityHelper
 
-    WeightedReachabilityHelper wrh(initialState, transitionMatrix, normalForm, computeScheduler);
+    WeightedReachabilityHelper<ValueType, SolutionType> wrh(initialState, transitionMatrix, normalForm, computeScheduler);
 
     std::optional<std::vector<uint64_t>> scheduler;
     storm::OptionalRef<std::vector<uint64_t>> schedulerRef;
@@ -1213,7 +1213,7 @@ internal::ResultReturnType<SolutionType> computeViaPolicyIteration(Environment c
                                                                    storm::solver::OptimizationDirection const dir,
                                                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                    NormalFormData<ValueType> const& normalForm) {
-    WeightedReachabilityHelper wrh(initialState, transitionMatrix, normalForm, false);  // scheduler computation not yet implemented.
+    WeightedReachabilityHelper<ValueType, SolutionType> wrh(initialState, transitionMatrix, normalForm, false);  // scheduler computation not yet implemented.
 
     std::vector<uint64_t> scheduler;
     std::vector<SolutionType> targetResults, conditionResults;
@@ -1299,7 +1299,7 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
     STORM_LOG_THROW(goal.hasRelevantValues(), storm::exceptions::NotSupportedException,
                     "No initial state given. Conditional probabilities can only be computed for models with a single initial state.");
     STORM_LOG_THROW(goal.relevantValues().hasUniqueSetBit(), storm::exceptions::NotSupportedException,
-                    "Only one initial state is supported for conditional probabilities");
+                    "Only one initial state is supported for conditional probabilities.");
     STORM_LOG_TRACE("Computing conditional probabilities for a model with " << transitionMatrix.getRowGroupCount() << " states and "
                                                                             << transitionMatrix.getEntryCount() << " transitions.");
     auto normalFormData = internal::obtainNormalForm(normalFormConstructionEnv, goal.direction(), produceSchedulers, transitionMatrix, backwardTransitions,
@@ -1330,7 +1330,7 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
         }
         STORM_LOG_DEBUG("Initial state has trivial value " << initialStateValue);
     } else {
-        STORM_LOG_ASSERT(normalFormData.maybeStates.get(initialState), "Initial state must be a maybe state if it is not a terminal state");
+        STORM_LOG_ASSERT(normalFormData.maybeStates.get(initialState), "Initial state must be a maybe state if it is not a terminal state.");
         auto alg = analysisEnv.modelchecker().conditional().getAlgorithm();
         if (alg == ConditionalAlgorithmSetting::Default) {
             alg = ConditionalAlgorithmSetting::BisectionPolicyTracking;
@@ -1366,7 +1366,7 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
                 break;
             }
             default: {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Unknown conditional probability algorithm: " << alg);
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Unknown conditional probability algorithm: " << alg << ".");
             }
         }
         initialStateValue = result.initialStateValue;

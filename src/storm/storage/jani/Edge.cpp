@@ -131,7 +131,7 @@ void Edge::simplifyIndexedAssignments(VariableSet const& localVars) {
     if (usesAssignmentLevels()) {
         templateEdge = std::make_shared<TemplateEdge>(templateEdge->simplifyIndexedAssignments(!hasSilentAction(), localVars));
         std::vector<EdgeDestination> newdestinations;
-        assert(templateEdge->getNumberOfDestinations() == destinations.size());
+        STORM_LOG_ASSERT(templateEdge->getNumberOfDestinations() == destinations.size(), "Destination count mismatch.");
         for (uint64_t i = 0; i < templateEdge->getNumberOfDestinations(); ++i) {
             auto const& templateDestination = templateEdge->getDestination(i);
             newdestinations.emplace_back(destinations[i].getLocationIndex(), destinations[i].getProbability(), templateDestination);
@@ -153,7 +153,7 @@ void Edge::setTemplateEdge(std::shared_ptr<TemplateEdge> const& newTe) {
     uint64_t i = 0;
     std::vector<EdgeDestination> newdestinations;
 
-    assert(destinations.size() == newTe->getNumberOfDestinations());
+    STORM_LOG_ASSERT(destinations.size() == newTe->getNumberOfDestinations(), "Destination count mismatch.");
     for (auto& destination : destinations) {
         newdestinations.emplace_back(destination.getLocationIndex(), destination.getProbability(), newTe->getDestination(i));
         // destination.updateTemplateEdgeDestination(newTe->getDestination(i));

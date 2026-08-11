@@ -27,10 +27,8 @@
 #include "storm/models/sparse/Smg.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
-#include "storm/settings/modules/IOSettings.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
 

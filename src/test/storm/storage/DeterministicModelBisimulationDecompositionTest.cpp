@@ -9,6 +9,10 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 
+namespace {
+static constexpr double DefaultTestTolerance = 1e-6;
+}
+
 TEST(DeterministicModelBisimulationDecomposition, Die) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel =
         storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/die.tra", STORM_TEST_RESOURCES_DIR "/lab/die.lab", "", "");
@@ -16,7 +20,10 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
 
-    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim(*dtmc);
+    using OptionsType = typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options;
+
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim(
+        *dtmc, OptionsType::preservingAllLabels(DefaultTestTolerance));
     ASSERT_NO_THROW(bisim.computeBisimulationDecomposition());
     std::shared_ptr<storm::models::sparse::Model<double>> result;
     ASSERT_NO_THROW(result = bisim.getQuotient());
@@ -25,7 +32,7 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     EXPECT_EQ(13ul, result->getNumberOfStates());
     EXPECT_EQ(20ul, result->getNumberOfTransitions());
 
-    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options;
+    OptionsType options = OptionsType::preservingAllLabels(DefaultTestTolerance);
     options.respectedAtomicPropositions = std::set<std::string>({"one"});
 
     storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim2(*dtmc, options);
@@ -49,7 +56,7 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     storm::parser::FormulaParser formulaParser;
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
 
-    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options2(*dtmc, *formula);
+    OptionsType options2(*dtmc, *formula, DefaultTestTolerance);
 
     storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim4(*dtmc, options2);
     ASSERT_NO_THROW(bisim4.computeBisimulationDecomposition());
@@ -66,7 +73,10 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
 
-    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim(*dtmc);
+    using OptionsType = typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options;
+
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim(
+        *dtmc, OptionsType::preservingAllLabels(DefaultTestTolerance));
     std::shared_ptr<storm::models::sparse::Model<double>> result;
     ASSERT_NO_THROW(bisim.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim.getQuotient());
@@ -75,7 +85,7 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     EXPECT_EQ(334ul, result->getNumberOfStates());
     EXPECT_EQ(546ul, result->getNumberOfTransitions());
 
-    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options;
+    OptionsType options = OptionsType::preservingAllLabels(DefaultTestTolerance);
     options.respectedAtomicPropositions = std::set<std::string>({"observe0Greater1"});
 
     storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim2(*dtmc, options);
@@ -99,7 +109,7 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     storm::parser::FormulaParser formulaParser;
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
 
-    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options3(*dtmc, *formula);
+    OptionsType options3(*dtmc, *formula, DefaultTestTolerance);
 
     storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim5(*dtmc, options3);
     ASSERT_NO_THROW(bisim5.computeBisimulationDecomposition());
@@ -111,7 +121,7 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [true U<=50 \"observe0Greater1\"] ");
 
-    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options4(*dtmc, *formula);
+    OptionsType options4(*dtmc, *formula, DefaultTestTolerance);
 
     storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim6(*dtmc, options4);
     ASSERT_NO_THROW(bisim6.computeBisimulationDecomposition());
@@ -122,6 +132,9 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     EXPECT_EQ(105ul, result->getNumberOfTransitions());
 }
 
+// Suppress compiler warning on unreachable code due to skipped test
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
 TEST(DeterministicModelBisimulationDecomposition, Cluster) {
     // TODO FIXME
     GTEST_SKIP() << "CTMC bisimulation currently yields unstable results.";
@@ -137,7 +150,10 @@ TEST(DeterministicModelBisimulationDecomposition, Cluster) {
     ASSERT_EQ(3478ul, ctmc->getNumberOfStates());
     ASSERT_EQ(14639ul, ctmc->getNumberOfTransitions());
 
-    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>> bisim(*ctmc);
+    using OptionsType = typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>>::Options;
+
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>> bisim(
+        *ctmc, OptionsType::preservingAllLabels(DefaultTestTolerance));
     std::shared_ptr<storm::models::sparse::Model<double>> result;
     ASSERT_NO_THROW(bisim.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim.getQuotient());
@@ -146,7 +162,7 @@ TEST(DeterministicModelBisimulationDecomposition, Cluster) {
     EXPECT_EQ(1731ul, result->getNumberOfStates());
     EXPECT_EQ(8619ul, result->getNumberOfTransitions());
 
-    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>>::Options options;
+    OptionsType options = OptionsType::preservingAllLabels(DefaultTestTolerance);
     options.respectedAtomicPropositions = std::set<std::string>({"down"});
     storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>> bisim2(*ctmc, options);
     ASSERT_NO_THROW(bisim2.computeBisimulationDecomposition());
@@ -167,7 +183,7 @@ TEST(DeterministicModelBisimulationDecomposition, Cluster) {
 
     storm::parser::FormulaParser formulaParser;
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=10000 \"down\"]");
-    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>>::Options options3(*ctmc, *formula);
+    OptionsType options3(*ctmc, *formula, DefaultTestTolerance);
     storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>> bisim5(*ctmc, options3);
     ASSERT_NO_THROW(bisim5.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim5.getQuotient());
@@ -176,3 +192,4 @@ TEST(DeterministicModelBisimulationDecomposition, Cluster) {
     EXPECT_EQ(1618ul, result->getNumberOfStates());
     EXPECT_EQ(8816ul, result->getNumberOfTransitions());
 }
+#pragma clang diagnostic pop

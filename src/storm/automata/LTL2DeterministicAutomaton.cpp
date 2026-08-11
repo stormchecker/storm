@@ -4,7 +4,7 @@
 
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/FileIoException.h"
-#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/logic/Formula.h"
 #include "storm/utility/macros.h"
 
@@ -21,7 +21,8 @@ std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daSpot(s
     if (!spotPrefixLtl.errors.empty()) {
         std::ostringstream errorMsg;
         spotPrefixLtl.format_errors(errorMsg);
-        STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Spot could not parse formula: " << prefixLtl << ": " << errorMsg.str());
+        STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException,
+                        "Spot could not parse formula: " << prefixLtl << ": " << errorMsg.str() << ".");
     }
     spot::formula spotFormula = spotPrefixLtl.f;
 
@@ -53,7 +54,7 @@ std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daSpot(s
 #else
     (void)f;
     (void)dnf;
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Spot support.");
 #endif
 }
 
@@ -65,7 +66,7 @@ std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daExtern
     pid_t pid;
 
     pid = fork();
-    STORM_LOG_THROW(pid >= 0, storm::exceptions::FileIoException, "Could not construct deterministic automaton, fork failed");
+    STORM_LOG_THROW(pid >= 0, storm::exceptions::FileIoException, "Could not construct deterministic automaton, fork failed.");
 
     if (pid == 0) {
         // we are in the child process
@@ -87,10 +88,10 @@ std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daExtern
         if (WIFEXITED(status)) {
             rv = WEXITSTATUS(status);
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Could not construct deterministic automaton: process aborted");
+            STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Could not construct deterministic automaton: process aborted.");
         }
         STORM_LOG_THROW(rv == 0, storm::exceptions::FileIoException,
-                        "Could not construct deterministic automaton for " << prefixLtl << ", return code = " << rv);
+                        "Could not construct deterministic automaton for " << prefixLtl << ", return code = " << rv << ".");
 
         STORM_LOG_INFO("Reading automaton for " << prefixLtl << " from da.hoa");
 

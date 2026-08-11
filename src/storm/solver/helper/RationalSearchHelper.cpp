@@ -170,7 +170,7 @@ template<typename TargetValueType, typename ExactValueType, typename ImpreciseVa
 SolverStatus RationalSearchHelper<TargetValueType, ExactValueType, ImpreciseValueType, TrivialRowGrouping>::RS(
     std::vector<TargetValueType>& operand, std::vector<TargetValueType> const& offsets, uint64_t& numIterations, TargetValueType const& precision,
     std::optional<storm::OptimizationDirection> const& dir, std::function<SolverStatus(SolverStatus const&)> const& iterationCallback) const {
-    STORM_LOG_ASSERT(TrivialRowGrouping || dir.has_value(), "no optimization direction given!");
+    STORM_LOG_ASSERT(TrivialRowGrouping || dir.has_value(), "No optimization direction given!");
     if (!dir.has_value() || maximize(*dir)) {
         return RS<storm::OptimizationDirection::Maximize>(operand, offsets, numIterations, precision, iterationCallback);
     } else {

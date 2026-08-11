@@ -174,8 +174,8 @@ bool hasCycle(storm::storage::SparseMatrix<T> const& transitionMatrix, boost::op
 template<typename T>
 bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions,
                                storm::storage::BitVector const& subsystem, storm::storage::BitVector const& choices) {
-    STORM_LOG_THROW(subsystem.size() == transitionMatrix.getRowGroupCount(), storm::exceptions::InvalidArgumentException, "Invalid size of subsystem");
-    STORM_LOG_THROW(choices.size() == transitionMatrix.getRowCount(), storm::exceptions::InvalidArgumentException, "Invalid size of choice vector");
+    STORM_LOG_THROW(subsystem.size() == transitionMatrix.getRowGroupCount(), storm::exceptions::InvalidArgumentException, "Invalid size of subsystem.");
+    STORM_LOG_THROW(choices.size() == transitionMatrix.getRowCount(), storm::exceptions::InvalidArgumentException, "Invalid size of choice vector.");
 
     if (subsystem.empty() || choices.empty()) {
         return false;
@@ -188,7 +188,7 @@ bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<T> const& transition
         while (choice >= transitionMatrix.getRowGroupIndices()[state + 1]) {
             ++state;
         }
-        assert(choice >= transitionMatrix.getRowGroupIndices()[state]);
+        STORM_LOG_ASSERT(choice >= transitionMatrix.getRowGroupIndices()[state], "Choice index out of range.");
         // make sure that the choice originates from the subsystem and also stays within the subsystem
         if (subsystem.get(state)) {
             bool choiceStaysInSubsys = true;
@@ -269,7 +269,7 @@ bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<T> const& transition
 
         // Check if converged
         if (newCandidates == candidateStates) {
-            assert(!candidateStates.empty());
+            STORM_LOG_ASSERT(!candidateStates.empty(), "Expected non-empty candidate states.");
             return true;
         }
         candidateStates = std::move(newCandidates);
@@ -1843,10 +1843,7 @@ std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<T> const& mat
 
 template<typename T>
 std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates) {
-    if (matrix.getRowCount() != matrix.getColumnCount()) {
-        STORM_LOG_ERROR("Provided matrix is required to be square.");
-        throw storm::exceptions::InvalidArgumentException() << "Provided matrix is required to be square.";
-    }
+    STORM_LOG_THROW(matrix.getRowCount() == matrix.getColumnCount(), storm::exceptions::InvalidArgumentException, "Provided matrix is required to be square.");
 
     uint_fast64_t numberOfStates = matrix.getRowCount();
 

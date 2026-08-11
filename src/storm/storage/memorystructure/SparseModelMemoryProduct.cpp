@@ -537,7 +537,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Sparse
         uint64_t stateIndex = 0;
         for (auto const& resState : toResultStateMapping) {
             if (resState < numResStates) {
-                assert(resState == resultExitRates.size());
+                STORM_LOG_ASSERT(resState == resultExitRates.size(), "Result state index mismatch.");
                 uint64_t modelState = stateIndex / memoryStateCount;
                 resultExitRates.push_back(modelExitRates[modelState]);
                 if (modelMarkovianStates.get(modelState)) {

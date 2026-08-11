@@ -99,7 +99,7 @@ void ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::init
     auto parametricEntryIt = parametricMatrix.begin();
     while (parametricEntryIt != parametricMatrix.end()) {
         STORM_LOG_ASSERT(parametricEntryIt->getColumn() == constantEntryIt->getColumn(),
-                         "Entries of parametric and constant matrix are not at the same position");
+                         "Entries of parametric and constant matrix are not at the same position.");
         if (storm::utility::isConstant(parametricEntryIt->getValue())) {
             // Constant entries can be inserted directly
             constantEntryIt->setValue(storm::utility::convertNumber<ConstantType>(parametricEntryIt->getValue()));
@@ -112,7 +112,7 @@ void ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::init
         ++constantEntryIt;
         ++parametricEntryIt;
     }
-    STORM_LOG_ASSERT(constantEntryIt == constantMatrix.end(), "Parametric matrix seems to have more or less entries then the constant matrix");
+    STORM_LOG_ASSERT(constantEntryIt == constantMatrix.end(), "Parametric matrix seems to have more or less entries then the constant matrix.");
     constantMatrix.updateNonzeroEntryCount();
 }
 
@@ -136,7 +136,7 @@ void ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::init
         ++constantEntryIt;
         ++parametricEntryIt;
     }
-    STORM_LOG_ASSERT(constantEntryIt == constantVector.end(), "Parametric vector seems to have more or less entries then the constant vector");
+    STORM_LOG_ASSERT(constantEntryIt == constantVector.end(), "Parametric vector seems to have more or less entries then the constant vector.");
 }
 
 template<typename ParametricSparseModelType, typename ConstantSparseModelType>

@@ -55,7 +55,7 @@ class SVIBackend {
     }
 
     void firstRow(std::pair<ValueType, ValueType>&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
-        assert(currRowValuesIndex == 0);
+        STORM_LOG_ASSERT(currRowValuesIndex == 0, "Expected currRowValuesIndex to be 0.");
         if constexpr (!TrivialRowGrouping) {
             bestValue.reset();
         }
@@ -63,15 +63,15 @@ class SVIBackend {
     }
 
     void nextRow(std::pair<ValueType, ValueType>&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
-        assert(!TrivialRowGrouping);
-        assert(currRowValuesIndex < currRowValues.size());
+        STORM_LOG_ASSERT(!TrivialRowGrouping, "Expected non-trivial row grouping.");
+        STORM_LOG_ASSERT(currRowValuesIndex < currRowValues.size(), "CurrRowValuesIndex out of range.");
         if (Stage == SVIStage::Initial && bValue.empty()) {
             if (value.second > best.second || (value.second == best.second && better(value.first, best.first))) {
                 std::swap(value, best);
             }
             currRowValues[currRowValuesIndex++] = std::move(value);
         } else {
-            assert(!bValue.empty());
+            STORM_LOG_ASSERT(!bValue.empty(), "BValue should not be empty.");
             auto const& b = Stage == SVIStage::b_eq_d ? *dValue : *bValue;
             if (bestValue.empty()) {
                 bestValue = best.first + b * best.second;
@@ -106,7 +106,7 @@ class SVIBackend {
                 }
             }
         } else {
-            assert(currRowValuesIndex == 0);
+            STORM_LOG_ASSERT(currRowValuesIndex == 0, "Expected currRowValuesIndex to be 0.");
         }
 
         // keep track of bounds a,b
@@ -282,7 +282,7 @@ bool SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::checkCon
             for (; convergenceCheckState < xy.first.size(); getNextConvergenceCheckState()) {
                 ValueType l = xy.first[convergenceCheckState] + min * xy.second[convergenceCheckState];
                 ValueType u = xy.first[convergenceCheckState] + max * xy.second[convergenceCheckState];
-                assert(u >= l);
+                STORM_LOG_ASSERT(u >= l, "Upper bound less than lower bound.");
                 if (l > storm::utility::zero<ValueType>()) {
                     if ((u - l) > l * precision) {
                         return false;
@@ -352,7 +352,7 @@ typename SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData Sound
                         return SVI(xy, offsets, numIterations, relative, precision, backend.template createBackendForNextStage<SVIStage::b_eq_d>(),
                                    iterationCallback, relevantValues, convergenceCheckState);
                     default:
-                        STORM_LOG_ASSERT(false, "Unexpected next stage");
+                        STORM_LOG_ASSERT(false, "Unexpected next stage.");
                 }
             }
         }

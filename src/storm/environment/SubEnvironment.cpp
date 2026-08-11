@@ -53,6 +53,7 @@ template class SubEnvironment<MultiObjectiveModelCheckerEnvironment>;
 template class SubEnvironment<ModelCheckerEnvironment>;
 
 template class SubEnvironment<SolverEnvironment>;
+template class SubEnvironment<EliminationSolverEnvironment>;
 template class SubEnvironment<EigenSolverEnvironment>;
 template class SubEnvironment<GmmxxSolverEnvironment>;
 template class SubEnvironment<NativeSolverEnvironment>;
@@ -64,5 +65,7 @@ template class SubEnvironment<MultiplierEnvironment>;
 template class SubEnvironment<OviSolverEnvironment>;
 template class SubEnvironment<GameSolverEnvironment>;
 template class SubEnvironment<TopologicalSolverEnvironment>;
+template class SubEnvironment<GurobiSolverEnvironment>;
+template class SubEnvironment<GlpkSolverEnvironment>;
 
 }  // namespace storm

@@ -38,13 +38,13 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
                                                                            bool useMonotonicity) {
     oldToNewColumnIndexMapping = std::vector<uint64_t>(selectedColumns.size(), selectedColumns.size());
     uint64_t newIndexColumns = 0;
-    for (auto const& oldColumn : selectedColumns) {
+    for (auto oldColumn : selectedColumns) {
         oldToNewColumnIndexMapping[oldColumn] = newIndexColumns++;
     }
 
     oldToNewRowIndexMapping = std::vector<uint64_t>(selectedRows.size(), selectedRows.size());
     uint64_t newIndexRows = 0;
-    for (auto const& oldRow : selectedRows) {
+    for (auto oldRow : selectedRows) {
         oldToNewRowIndexMapping[oldRow] = newIndexRows++;
     }
 
@@ -141,7 +141,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
     STORM_LOG_ASSERT(matrixAssignmentIt == matrixAssignment.end(), "Unexpected number of entries in the matrix assignment.");
 
     auto vectorAssignmentIt = vectorAssignment.begin();
-    for (auto const& nonConstVectorEntry : nonConstVectorEntries) {
+    for (auto nonConstVectorEntry : nonConstVectorEntries) {
         for (uint64_t vectorIndex = matrix.getRowGroupIndices()[nonConstVectorEntry]; vectorIndex != matrix.getRowGroupIndices()[nonConstVectorEntry + 1];
              ++vectorIndex) {
             vectorAssignmentIt->first = vector.begin() + vectorIndex;
@@ -626,7 +626,7 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                 return true;
             }
         } else {
-            STORM_LOG_ASSERT(abstrValuation.getAnnotation(), "Needs to have annotation if no zeroes");
+            STORM_LOG_ASSERT(abstrValuation.getAnnotation(), "Needs to have annotation if no zeroes.");
             auto& regionsAndBounds = this->regionsAndBounds.at(abstrValuation);
             auto const& annotation = *abstrValuation.getAnnotation();
 
@@ -641,7 +641,7 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                     auto const& [region, bound] = regionsAndBounds[i];
                     STORM_LOG_ASSERT(
                         i == 0 ? true : (!(region.upper() < regionsAndBounds[i - 1].first.lower() || region.lower() > regionsAndBounds[i - 1].first.upper())),
-                        "regions next to each other need to intersect");
+                        "Regions next to each other need to intersect.");
                     if (region.upper() <= plaRegion.lower() || region.lower() >= plaRegion.upper()) {
                         if (regionsInPLARegion.empty()) {
                             continue;
@@ -709,7 +709,7 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
         lowerBound = utility::max(utility::min(lowerBound, utility::one<ConstantType>() - epsilon), epsilon);
         upperBound = utility::max(utility::min(upperBound, utility::one<ConstantType>() - epsilon), epsilon);
 
-        STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops");
+        STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops.");
 
         placeholder = Interval(lowerBound, upperBound);
     }

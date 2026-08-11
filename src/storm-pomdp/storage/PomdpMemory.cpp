@@ -115,7 +115,7 @@ PomdpMemory PomdpMemoryBuilder::build(PomdpMemoryPattern pattern, uint64_t numSt
         case PomdpMemoryPattern::Full:
             return buildFullyConnectedMemory(numStates);
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown PomdpMemoryPattern");
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown PomdpMemoryPattern.");
 }
 
 PomdpMemory PomdpMemoryBuilder::buildTrivialMemory() const {

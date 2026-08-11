@@ -68,7 +68,7 @@ class ChoiceLabelIdStorage {
     }
 
     std::string const& getLabel(uint64_t id) const {
-        STORM_LOG_ASSERT(id < storage.size(), "Id must be in storage");
+        STORM_LOG_ASSERT(id < storage.size(), "Id must be in storage.");
         return storage[id];
     }
 
@@ -126,7 +126,7 @@ void actionIdentifiersToStream(std::ostream& stream, std::map<ActionIdentifier, 
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> MakePOMDPCanonic<ValueType>::transform() const {
     STORM_LOG_THROW(pomdp.hasChoiceLabeling(), storm::exceptions::InvalidArgumentException,
-                    "Model must have been built with choice labels (--buildchoicelab for command line users)");
+                    "Model must have been built with choice labels (--buildchoicelab for command line users).");
     std::vector<uint64_t> permutation = computeCanonicalPermutation();
     return applyPermutationOnPomdp(permutation);
 }
@@ -207,16 +207,14 @@ std::vector<uint64_t> MakePOMDPCanonic<ValueType>::computeCanonicalPermutation()
             // One action is ALWAYS fine.
             continue;
         } else {
-            if (oneActionObservations.get(observation)) {
-                // We have seen this observation previously with one action. Error!
-                //                        std::string actionval= "";
-                //                        if (pomdp.hasChoiceLabeling()) {
-                //                            actionval = *pomdp.getChoiceLabeling().getLabelsOfChoice(rowIndexFrom).begin();
-                //                        }
-                STORM_LOG_THROW(false, storm::exceptions::AmbiguousModelException,
-                                "Observation " << getObservationInformation(observation) << " sometimes provides one action, but in state "
-                                               << getStateInformation(state) << " provides " << rowIndexTo - rowIndexFrom << " actions.");
-            }
+            // We have seen this observation previously with one action. Error!
+            //                        std::string actionval= "";
+            //                        if (pomdp.hasChoiceLabeling()) {
+            //                            actionval = *pomdp.getChoiceLabeling().getLabelsOfChoice(rowIndexFrom).begin();
+            //                        }
+            STORM_LOG_THROW(!oneActionObservations.get(observation), storm::exceptions::AmbiguousModelException,
+                            "Observation " << getObservationInformation(observation) << " sometimes provides one action, but in state "
+                                           << getStateInformation(state) << " provides " << rowIndexTo - rowIndexFrom << " actions.");
             moreActionObservations.set(observation);
         }
 
@@ -226,7 +224,7 @@ std::vector<uint64_t> MakePOMDPCanonic<ValueType>::computeCanonicalPermutation()
             // While this is in full generality a set of labels,
             // for models modelled with prism, we actually know that these are singleton sets.
             std::set<std::string> labels = choiceLabeling.getLabelsOfChoice(actionIndex);
-            STORM_LOG_ASSERT(labels.size() <= 1, "We expect choice labels to be single sets");
+            STORM_LOG_ASSERT(labels.size() <= 1, "We expect choice labels to be single sets.");
             // Generate action identifier
             uint64_t labelId = -1;
             if (labels.size() == 1) {
@@ -245,10 +243,10 @@ std::vector<uint64_t> MakePOMDPCanonic<ValueType>::computeCanonicalPermutation()
             } else {
                 ai.choiceOriginId = freshChoiceOriginId++;
             }
-            STORM_LOG_ASSERT(actionIdentifiers.count(ai) == 0, "Action with this identifier already exists for this state");
+            STORM_LOG_ASSERT(actionIdentifiers.count(ai) == 0, "Action with this identifier already exists for this state.");
             actionIdentifiers.emplace(ai, actionIndex);
         }
-        STORM_LOG_ASSERT(actionIdentifiers.size() == rowIndexTo - rowIndexFrom, "Number of action identifiers should match number of actions");
+        STORM_LOG_ASSERT(actionIdentifiers.size() == rowIndexTo - rowIndexFrom, "Number of action identifiers should match number of actions.");
 
         if (observationActionIdentifiers.count(observation) == 0) {
             // First state with this observation
@@ -265,13 +263,11 @@ std::vector<uint64_t> MakePOMDPCanonic<ValueType>::computeCanonicalPermutation()
             auto referenceEnd = observationActionIdentifiers[observation].end();
             STORM_LOG_ASSERT(observationActionIdentifiers[observation].size() == pomdp.getNumberOfChoices(actionIdentifierDefinition[observation]),
                              "Number of actions recorded for state does not coincide with number of actions.");
-            if (observationActionIdentifiers[observation].size() != actionIdentifiers.size()) {
-                STORM_LOG_THROW(false, storm::exceptions::AmbiguousModelException,
-                                "Number of actions in state '" << getStateInformation(state) << "' (nr actions:" << actionIdentifiers.size() << ") and state '"
-                                                               << getStateInformation(actionIdentifierDefinition[observation])
-                                                               << "' (actions: " << observationActionIdentifiers[observation].size()
-                                                               << " ), both having observation " << getObservationInformation(observation) << " do not match.");
-            }
+            STORM_LOG_THROW(observationActionIdentifiers[observation].size() == actionIdentifiers.size(), storm::exceptions::AmbiguousModelException,
+                            "Number of actions in state '" << getStateInformation(state) << "' (nr actions:" << actionIdentifiers.size() << ") and state '"
+                                                           << getStateInformation(actionIdentifierDefinition[observation])
+                                                           << "' (actions: " << observationActionIdentifiers[observation].size()
+                                                           << " ), both having observation " << getObservationInformation(observation) << " do not match.");
             if (!detail::compatibleWith(referenceStart, referenceEnd, actionIdentifiers.begin(), actionIdentifiers.end())) {
                 std::cout << "Observation " << getObservationInformation(observation) << ": \n";
                 detail::actionIdentifiersToStream(std::cout, observationActionIdentifiers[observation], labelStorage);
