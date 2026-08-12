@@ -242,7 +242,9 @@ storm::storage::SparseMatrix<ValueType> FlexibleSparseMatrix<ValueType>::createS
         auto rowGroupIndexIt = getRowGroupIndices().begin();
         while (rowGroupIndexIt != lastRowGroupIndexIt) {
             // Check whether the rowGroup will be nonempty
-            if (rowConstraint.getNextSetIndex(*rowGroupIndexIt) < *(++rowGroupIndexIt)) {
+            uint64_t nextSet = rowConstraint.getNextSetIndex(*rowGroupIndexIt);
+            ++rowGroupIndexIt;
+            if (nextSet < *rowGroupIndexIt) {
                 ++numRowGroups;
             }
         }

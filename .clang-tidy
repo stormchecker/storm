@@ -7,6 +7,7 @@ Checks: >-
   boost-use-to-string,
   bugprone-dangling-handle,
   bugprone-empty-catch,
+  bugprone-inc-dec-in-conditions,
   bugprone-infinite-loop,
   bugprone-misplaced-widening-cast,
   bugprone-reserved-identifier,
