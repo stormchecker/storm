@@ -186,7 +186,7 @@ TEST(BitVectorTest, Resize) {
         ASSERT_TRUE(vector.get(i));
     }
 
-    vector.resize(16, 0);
+    vector.resize(16, false);
     ASSERT_EQ(16ul, vector.size());
     ASSERT_EQ(16ul, vector.getNumberOfSetBits());
 
@@ -194,7 +194,7 @@ TEST(BitVectorTest, Resize) {
         ASSERT_TRUE(vector.get(i));
     }
 
-    vector.resize(65, 1);
+    vector.resize(65, true);
     ASSERT_EQ(65ul, vector.size());
     ASSERT_TRUE(vector.full());
 }

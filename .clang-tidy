@@ -15,6 +15,7 @@ Checks: >-
   misc-unused-using-decls,
   modernize-deprecated-headers,
   modernize-make-unique,
+  modernize-use-bool-literals,
   modernize-use-nullptr,
   readability-braces-around-statements,
   readability-redundant-smartptr-get,
