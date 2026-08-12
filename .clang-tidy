@@ -10,6 +10,7 @@ Checks: >-
   bugprone-inc-dec-in-conditions,
   bugprone-infinite-loop,
   bugprone-misplaced-widening-cast,
+  bugprone-redundant-expression,
   bugprone-reserved-identifier,
   bugprone-signed-char-misuse,
   bugprone-switch-missing-default-case,
@@ -28,7 +29,6 @@ Checks: >-
 # Candidate checks that are not (yet) enabled:
 # bugprone-branch-clone,
 # bugprone-copy-constructor-init,
-# bugprone-redundant-expression,
 # clang-analyzer-core.*,
 # clang-analyzer-cplusplus.*,
 # clang-analyzer-deadcode.*,

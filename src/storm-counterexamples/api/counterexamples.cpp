@@ -64,7 +64,7 @@ std::shared_ptr<storm::counterexamples::Counterexample> computeKShortestPathCoun
         cex.addPath(generator.getPathAsList(k), k);
         probability += generator.getDistance(k);
         // Check if accumulated probability mass is already enough
-        if ((probability > threshold) || (strictBound && probability >= threshold && strictBound)) {
+        if ((probability > threshold) || (strictBound && probability >= threshold)) {
             thresholdExceeded = true;
             break;
         }
