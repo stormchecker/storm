@@ -29,7 +29,7 @@ LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentTyp
     : _transitionMatrix(transitionMatrix),
       _timedStates(timedStates),
       _hasInstantStates(TransitionsType == LraViTransitionsType::DetTsNondetIs || TransitionsType == LraViTransitionsType::DetTsDetIs),
-      _Tsx1IsCurrent(false) {
+      _tsx1IsCurrent(false) {
     setComponent(component);
 
     // Run through the component and collect some data:
@@ -85,7 +85,7 @@ LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentTyp
                                                                               nondetIs() ? numIsSubModelStates : 0);
         isToTsTransitionsBuilder = storm::storage::SparseMatrixBuilder<ValueType>(numIsSubModelChoices, numTsSubModelStates, 0, true, nondetIs(),
                                                                                   nondetIs() ? numIsSubModelStates : 0);
-        _IsChoiceValues.reserve(numIsSubModelChoices);
+        _isChoiceValues.reserve(numIsSubModelChoices);
     }
     ValueType uniformizationFactor = storm::utility::one<ValueType>() / _uniformizationRate;
     uint64_t currTsRow = 0;
@@ -145,11 +145,11 @@ LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentTyp
             }
         }
     }
-    _TsTransitions = tsTransitionsBuilder.build();
+    _tsTransitions = tsTransitionsBuilder.build();
     if (_hasInstantStates) {
-        _TsToIsTransitions = tsToIsTransitionsBuilder.build();
-        _IsTransitions = isTransitionsBuilder.build();
-        _IsToTsTransitions = isToTsTransitionsBuilder.build();
+        _tsToIsTransitions = tsToIsTransitionsBuilder.build();
+        _isTransitions = isTransitionsBuilder.build();
+        _isToTsTransitions = isToTsTransitionsBuilder.build();
     }
 }
 
@@ -220,11 +220,11 @@ template<typename ValueType, typename ComponentType, LraViTransitionsType Transi
 void LraViHelper<ValueType, ComponentType, TransitionsType>::initializeNewValues(ValueGetter const& stateValueGetter, ValueGetter const& actionValueGetter,
                                                                                  std::vector<ValueType> const* exitRates) {
     // clear potential old values and reserve enough space for new values
-    _TsChoiceValues.clear();
-    _TsChoiceValues.reserve(_TsTransitions.getRowCount());
+    _tsChoiceValues.clear();
+    _tsChoiceValues.reserve(_tsTransitions.getRowCount());
     if (_hasInstantStates) {
-        _IsChoiceValues.clear();
-        _IsChoiceValues.reserve(_IsTransitions.getRowCount());
+        _isChoiceValues.clear();
+        _isChoiceValues.reserve(_isTransitions.getRowCount());
     }
 
     // Set the new choice-based values
@@ -237,55 +237,55 @@ void LraViHelper<ValueType, ComponentType, TransitionsType>::initializeNewValues
             }
             for (auto const& componentChoice : element.second) {
                 // Compute the values obtained for this choice.
-                _TsChoiceValues.push_back(stateValueGetter(componentState) / _uniformizationRate +
+                _tsChoiceValues.push_back(stateValueGetter(componentState) / _uniformizationRate +
                                           actionValueGetter(componentChoice) * actionRewardScalingFactor);
             }
         } else {
             for (auto const& componentChoice : element.second) {
                 // Compute the values obtained for this choice.
                 // State values do not count here since no time passes in instant states.
-                _IsChoiceValues.push_back(actionValueGetter(componentChoice));
+                _isChoiceValues.push_back(actionValueGetter(componentChoice));
             }
         }
     }
 
     // Set-up new iteration vectors for timed states
-    _Tsx1.assign(_TsTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
-    _Tsx2 = _Tsx1;
+    _tsx1.assign(_tsTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
+    _tsx2 = _tsx1;
 
     if (_hasInstantStates) {
         // Set-up vectors for storing intermediate results for instant states.
-        _Isx.resize(_IsTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
-        _Isb = _IsChoiceValues;
+        _isx.resize(_isTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
+        _isb = _isChoiceValues;
     }
 }
 
 template<typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
 void LraViHelper<ValueType, ComponentType, TransitionsType>::prepareSolversAndMultipliers(const Environment& env,
                                                                                           storm::solver::OptimizationDirection const* dir) {
-    _TsMultiplier = storm::solver::MultiplierFactory<ValueType>().create(env, _TsTransitions);
+    _tsMultiplier = storm::solver::MultiplierFactory<ValueType>().create(env, _tsTransitions);
     if (_hasInstantStates) {
-        if (_IsTransitions.getNonzeroEntryCount() > 0) {
+        if (_isTransitions.getNonzeroEntryCount() > 0) {
             // Set-up a solver for transitions within instant states
-            _IsSolverEnv = std::make_unique<storm::Environment>(env);
+            _isSolverEnv = std::make_unique<storm::Environment>(env);
             if (env.solver().isForceSoundness()) {
                 // To get correct results, the inner equation systems are solved exactly.
                 // TODO investigate how an error would propagate
-                _IsSolverEnv->solver().setForceExact(true);
+                _isSolverEnv->solver().setForceExact(true);
             }
-            bool isAcyclic = !storm::utility::graph::hasCycle(_IsTransitions);
+            bool isAcyclic = !storm::utility::graph::hasCycle(_isTransitions);
             if (isAcyclic) {
                 STORM_LOG_INFO("Instant transitions are acyclic.");
-                _IsSolverEnv->solver().minMax().setMethod(storm::solver::MinMaxMethod::Acyclic);
-                _IsSolverEnv->solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Acyclic);
+                _isSolverEnv->solver().minMax().setMethod(storm::solver::MinMaxMethod::Acyclic);
+                _isSolverEnv->solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Acyclic);
             }
             if (nondetIs()) {
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> factory;
-                _NondetIsSolver = factory.create(*_IsSolverEnv, _IsTransitions);
-                _NondetIsSolver->setHasUniqueSolution(true);   // Assume non-zeno MA
-                _NondetIsSolver->setHasNoEndComponents(true);  // assume non-zeno MA
-                _NondetIsSolver->setCachingEnabled(true);
-                auto req = _NondetIsSolver->getRequirements(*_IsSolverEnv, *dir);
+                _nondetIsSolver = factory.create(*_isSolverEnv, _isTransitions);
+                _nondetIsSolver->setHasUniqueSolution(true);   // Assume non-zeno MA
+                _nondetIsSolver->setHasNoEndComponents(true);  // assume non-zeno MA
+                _nondetIsSolver->setCachingEnabled(true);
+                auto req = _nondetIsSolver->getRequirements(*_isSolverEnv, *dir);
                 req.clearUniqueSolution();
                 if (isAcyclic) {
                     req.clearAcyclic();
@@ -294,24 +294,24 @@ void LraViHelper<ValueType, ComponentType, TransitionsType>::prepareSolversAndMu
                 // Which accumulate a lot of reward. Moreover, the right-hand-side of the equation system changes dynamically.
                 STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException,
                                 "The solver requirement " << req.getEnabledRequirementsAsString() << " has not been cleared.");
-                _NondetIsSolver->setRequirementsChecked(true);
+                _nondetIsSolver->setRequirementsChecked(true);
             } else {
                 storm::solver::GeneralLinearEquationSolverFactory<ValueType> factory;
-                if (factory.getEquationProblemFormat(*_IsSolverEnv) != storm::solver::LinearEquationSolverProblemFormat::FixedPointSystem) {
+                if (factory.getEquationProblemFormat(*_isSolverEnv) != storm::solver::LinearEquationSolverProblemFormat::FixedPointSystem) {
                     // We need to convert the transition matrix connecting instant states
                     // TODO: This could have been done already during construction of the matrix.
                     // Insert diagonal entries.
-                    storm::storage::SparseMatrix<ValueType> converted(_IsTransitions, true);
+                    storm::storage::SparseMatrix<ValueType> converted(_isTransitions, true);
                     // Compute A' = 1-A
                     converted.convertToEquationSystem();
                     STORM_LOG_WARN("The selected equation solver requires to create a temporary " << converted.getDimensionsAsString());
                     // Note that the solver has ownership of the converted matrix.
-                    _DetIsSolver = factory.create(*_IsSolverEnv, std::move(converted));
+                    _detIsSolver = factory.create(*_isSolverEnv, std::move(converted));
                 } else {
-                    _DetIsSolver = factory.create(*_IsSolverEnv, _IsTransitions);
+                    _detIsSolver = factory.create(*_isSolverEnv, _isTransitions);
                 }
-                _DetIsSolver->setCachingEnabled(true);
-                auto req = _DetIsSolver->getRequirements(*_IsSolverEnv);
+                _detIsSolver->setCachingEnabled(true);
+                auto req = _detIsSolver->getRequirements(*_isSolverEnv);
                 if (isAcyclic) {
                     req.clearAcyclic();
                 }
@@ -322,8 +322,8 @@ void LraViHelper<ValueType, ComponentType, TransitionsType>::prepareSolversAndMu
         }
 
         // Set up multipliers for transitions connecting timed and instant states
-        _TsToIsMultiplier = storm::solver::MultiplierFactory<ValueType>().create(env, _TsToIsTransitions);
-        _IsToTsMultiplier = storm::solver::MultiplierFactory<ValueType>().create(env, _IsToTsTransitions);
+        _tsToIsMultiplier = storm::solver::MultiplierFactory<ValueType>().create(env, _tsToIsTransitions);
+        _isToTsMultiplier = storm::solver::MultiplierFactory<ValueType>().create(env, _isToTsTransitions);
     }
 }
 
@@ -356,60 +356,60 @@ void LraViHelper<ValueType, ComponentType, TransitionsType>::performIterationSte
                                                                                   std::vector<uint64_t>* choices) {
     STORM_LOG_ASSERT(!((nondetTs() || nondetIs()) && dir == nullptr), "No optimization direction provided for model with nondeterminism.");
     // Initialize value vectors, multiplers, and solver if this has not been done, yet
-    if (!_TsMultiplier) {
+    if (!_tsMultiplier) {
         prepareSolversAndMultipliers(env, dir);
     }
 
     // Compute new x values for the timed states
     // Flip what is new and what is old
-    _Tsx1IsCurrent = !_Tsx1IsCurrent;
+    _tsx1IsCurrent = !_tsx1IsCurrent;
     // At this point, xOld() points to what has been computed in the most recent call of performIterationStep (initially, this is the 0-vector).
     // The result of this ongoing computation will be stored in xNew()
 
     // Compute the values obtained by a single uniformization step between timed states only
     if (nondetTs()) {
         if (choices == nullptr) {
-            _TsMultiplier->multiplyAndReduce(env, *dir, xOld(), &_TsChoiceValues, xNew());
+            _tsMultiplier->multiplyAndReduce(env, *dir, xOld(), &_tsChoiceValues, xNew());
         } else {
             // Also keep track of the choices made.
-            std::vector<uint64_t> tsChoices(_TsTransitions.getRowGroupCount());
-            _TsMultiplier->multiplyAndReduce(env, *dir, xOld(), &_TsChoiceValues, xNew(), UncertaintyResolutionMode::Unset, &tsChoices);
+            std::vector<uint64_t> tsChoices(_tsTransitions.getRowGroupCount());
+            _tsMultiplier->multiplyAndReduce(env, *dir, xOld(), &_tsChoiceValues, xNew(), UncertaintyResolutionMode::Unset, &tsChoices);
             // Note that nondeterminism within the timed states means that there can not be instant states (We either have MDPs or MAs)
             // Hence, in this branch we don't have to care for choices at instant states.
             STORM_LOG_ASSERT(!_hasInstantStates, "Nondeterministic timed states are only supported if there are no instant states.");
             setInputModelChoices(*choices, tsChoices);
         }
     } else {
-        _TsMultiplier->multiply(env, xOld(), &_TsChoiceValues, xNew());
+        _tsMultiplier->multiply(env, xOld(), &_tsChoiceValues, xNew());
     }
     if (_hasInstantStates) {
         // Add the values obtained by taking a single uniformization step that leads to an instant state followed by arbitrarily many instant steps.
         // First compute the total values when taking arbitrarily many instant transitions (in no time)
-        if (_NondetIsSolver) {
+        if (_nondetIsSolver) {
             // We might need to track the optimal choices.
             if (choices == nullptr) {
-                _NondetIsSolver->solveEquations(*_IsSolverEnv, *dir, _Isx, _Isb);
+                _nondetIsSolver->solveEquations(*_isSolverEnv, *dir, _isx, _isb);
             } else {
-                _NondetIsSolver->setTrackScheduler();
-                _NondetIsSolver->solveEquations(*_IsSolverEnv, *dir, _Isx, _Isb);
-                setInputModelChoices(*choices, _NondetIsSolver->getSchedulerChoices(), true);
+                _nondetIsSolver->setTrackScheduler();
+                _nondetIsSolver->solveEquations(*_isSolverEnv, *dir, _isx, _isb);
+                setInputModelChoices(*choices, _nondetIsSolver->getSchedulerChoices(), true);
             }
-        } else if (_DetIsSolver) {
-            _DetIsSolver->solveEquations(*_IsSolverEnv, _Isx, _Isb);
+        } else if (_detIsSolver) {
+            _detIsSolver->solveEquations(*_isSolverEnv, _isx, _isb);
         } else {
-            STORM_LOG_ASSERT(_IsTransitions.getNonzeroEntryCount() == 0, "If no solver was initialized, an empty matrix would have been expected.");
+            STORM_LOG_ASSERT(_isTransitions.getNonzeroEntryCount() == 0, "If no solver was initialized, an empty matrix would have been expected.");
             if (nondetIs()) {
                 if (choices == nullptr) {
-                    storm::utility::vector::reduceVectorMinOrMax(*dir, _Isb, _Isx, _IsTransitions.getRowGroupIndices());
+                    storm::utility::vector::reduceVectorMinOrMax(*dir, _isb, _isx, _isTransitions.getRowGroupIndices());
                 } else {
-                    std::vector<uint64_t> psChoices(_IsTransitions.getRowGroupCount());
-                    storm::utility::vector::reduceVectorMinOrMax(*dir, _Isb, _Isx, _IsTransitions.getRowGroupIndices(), &psChoices);
+                    std::vector<uint64_t> psChoices(_isTransitions.getRowGroupCount());
+                    storm::utility::vector::reduceVectorMinOrMax(*dir, _isb, _isx, _isTransitions.getRowGroupIndices(), &psChoices);
                     setInputModelChoices(*choices, psChoices, true);
                 }
             } else {
                 // For deterministic instant states, there is nothing to reduce, i.e., we could just set _Isx = _Isb.
                 // For efficiency reasons, we do a swap instead:
-                _Isx.swap(_Isb);
+                _isx.swap(_isb);
                 // Note that at this point we have changed the contents of _Isb, but they will be overwritten anyway.
                 if (choices) {
                     // Set choice 0 to all states.
@@ -418,14 +418,14 @@ void LraViHelper<ValueType, ComponentType, TransitionsType>::performIterationSte
             }
         }
         // Now add the (weighted) values of the instant states to the values of the timed states.
-        _TsToIsMultiplier->multiply(env, _Isx, &xNew(), xNew());
+        _tsToIsMultiplier->multiply(env, _isx, &xNew(), xNew());
     }
 }
 
 template<typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
 typename LraViHelper<ValueType, ComponentType, TransitionsType>::ConvergenceCheckResult
 LraViHelper<ValueType, ComponentType, TransitionsType>::checkConvergence(bool relative, ValueType precision) const {
-    STORM_LOG_ASSERT(_TsMultiplier, "Tried to check for convergence without doing an iteration first.");
+    STORM_LOG_ASSERT(_tsMultiplier, "Tried to check for convergence without doing an iteration first.");
     // All values are scaled according to the uniformizationRate.
     // We need to 'revert' this scaling when computing the absolute precision.
     // However, for relative precision, the scaling cancels out.
@@ -475,7 +475,7 @@ void LraViHelper<ValueType, ComponentType, TransitionsType>::prepareNextIteratio
     if (_hasInstantStates) {
         // Update the RHS of the equation system for the instant states by taking the new values of timed states into account.
         STORM_LOG_ASSERT(!nondetTs(), "Nondeterministic timed states not expected when there are also instant states.");
-        _IsToTsMultiplier->multiply(env, xNew(), &_IsChoiceValues, _Isb);
+        _isToTsMultiplier->multiply(env, xNew(), &_isChoiceValues, _isb);
     }
 }
 
@@ -489,22 +489,22 @@ bool LraViHelper<ValueType, ComponentType, TransitionsType>::isTimedState(uint64
 
 template<typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
 std::vector<ValueType>& LraViHelper<ValueType, ComponentType, TransitionsType>::xNew() {
-    return _Tsx1IsCurrent ? _Tsx1 : _Tsx2;
+    return _tsx1IsCurrent ? _tsx1 : _tsx2;
 }
 
 template<typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
 std::vector<ValueType> const& LraViHelper<ValueType, ComponentType, TransitionsType>::xNew() const {
-    return _Tsx1IsCurrent ? _Tsx1 : _Tsx2;
+    return _tsx1IsCurrent ? _tsx1 : _tsx2;
 }
 
 template<typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
 std::vector<ValueType>& LraViHelper<ValueType, ComponentType, TransitionsType>::xOld() {
-    return _Tsx1IsCurrent ? _Tsx2 : _Tsx1;
+    return _tsx1IsCurrent ? _tsx2 : _tsx1;
 }
 
 template<typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
 std::vector<ValueType> const& LraViHelper<ValueType, ComponentType, TransitionsType>::xOld() const {
-    return _Tsx1IsCurrent ? _Tsx2 : _Tsx1;
+    return _tsx1IsCurrent ? _tsx2 : _tsx1;
 }
 
 template<typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
