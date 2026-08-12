@@ -1,7 +1,9 @@
 # See https://clang.llvm.org/extra/clang-tidy/ for a list of available checks.
 # Disable everything first, then enable individual checks.
+# - portability-avoid-pragma-once is deliberately disabled since Storm uses #pragma once everywhere.
 Checks: >-
   -*,
+  -portability-avoid-pragma-once,
   bugprone-dangling-handle,
   bugprone-infinite-loop,
   bugprone-misplaced-widening-cast,
