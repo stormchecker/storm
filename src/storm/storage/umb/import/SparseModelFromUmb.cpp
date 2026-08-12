@@ -3,21 +3,20 @@
 #include <ranges>
 #include <utility>
 
-#include "storm/storage/umb/model/UmbModel.h"
-#include "storm/storage/valuations/ValuationsStorage.h"
-
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/models/ModelType.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/ModelComponents.h"
+#include "storm/storage/umb/model/ModelIndex.h"
 #include "storm/storage/umb/model/StringEncoding.h"
+#include "storm/storage/umb/model/UmbModel.h"
 #include "storm/storage/umb/model/ValueEncoding.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/utility/builder.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
-#include "storm/exceptions/WrongFormatException.h"
 
 namespace storm::umb {
 
@@ -344,7 +343,7 @@ storm::models::ModelType deriveModelType(storm::umb::ModelIndex const& index) {
     auto const& ts = index.transitionSystem;
 
     STORM_LOG_THROW(ts.branchProbabilityType.has_value(), storm::exceptions::NotSupportedException, "Models without branch values are not supported.");
-    switch (ts.time) {
+    switch (storm::umb::ModelIndex::TransitionSystem::Time(ts.time)) {
         using enum storm::umb::ModelIndex::TransitionSystem::Time;
         case Discrete:
             switch (ts.numPlayers) {

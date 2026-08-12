@@ -13,6 +13,7 @@
 #include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/solver/Z3SmtSolver.h"
@@ -279,7 +280,6 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
             continue;
         }
         CoefficientType coefficient = term.coeff();
-        STORM_LOG_ASSERT(term.tdeg() < 4, "Transitions are only allowed to have a maximum degree of four.");
         switch (term.tdeg()) {
             case 0:
                 d = coefficient;
@@ -292,6 +292,9 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
                 break;
             case 3:
                 a = coefficient;
+                break;
+            default:
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Transitions are only allowed to have have a maximum degree of four.");
                 break;
         }
     }

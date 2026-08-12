@@ -12,6 +12,7 @@ Checks: >-
   bugprone-misplaced-widening-cast,
   bugprone-reserved-identifier,
   bugprone-signed-char-misuse,
+  bugprone-switch-missing-default-case,
   bugprone-unused-local-non-trivial-variable,
   bugprone-unused-return-value,
   bugprone-use-after-move,

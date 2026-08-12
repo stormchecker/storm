@@ -47,7 +47,7 @@ bool validateTypeDeclaration(storm::umb::SizedType const& type, bool requireStan
     }
     uint64_t const defaultSize = defaultBitSize(type.type);
     bool sizeError = false;
-    switch (type.type) {
+    switch (storm::umb::Type(type.type)) {
         case Double:
         case DoubleInterval:
         case String:
@@ -67,6 +67,7 @@ bool validateTypeDeclaration(storm::umb::SizedType const& type, bool requireStan
         case RationalInterval:
             // types that occasionally must be their default size
             sizeError = requireStandardSize && ((size % defaultSize) != 0);
+            break;
     }
     if (isIntervalType(type.type)) {
         // interval type sizes must be multiples of four or two
@@ -85,7 +86,7 @@ bool vectorMatchesType(storm::umb::GenericVector const& vector, storm::umb::Size
     }
 
     using enum storm::umb::Type;
-    switch (type.type) {
+    switch (storm::umb::Type(type.type)) {
         case Bool:
             return vector.isType<bool>();
         case Int:

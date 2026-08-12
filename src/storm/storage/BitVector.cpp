@@ -1209,6 +1209,8 @@ inline __attribute__((always_inline)) uint32_t getblock64(uint64_t const* p, int
     return p[i];
 }
 
+// Murmur3 hash functions.
+// based on https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp
 template<>
 uint32_t Murmur3BitVectorHash<uint32_t>::operator()(storm::storage::BitVector const& bv) const {
     uint8_t const* data = reinterpret_cast<uint8_t const*>(bv.buckets);
@@ -1352,6 +1354,10 @@ uint64_t Murmur3BitVectorHash<uint64_t>::operator()(storm::storage::BitVector co
             k1 = rotl64(k1, 31);
             k1 *= c2;
             h1 ^= k1;
+            [[fallthrough]];
+        default:
+            // Intentionally left empty
+            break;
     }
 
     //----------
