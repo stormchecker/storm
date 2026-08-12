@@ -177,7 +177,7 @@ class SylvanBddManager {
             bdd.PrintDot(filePointer);
             fclose(filePointer);
             std::ofstream filestream;
-            storm::io::openFile(filename.c_str(), filestream, true);
+            storm::io::openFile(filename, filestream, true);
             filestream << "// Mapping from BDD nodes to DFT BEs as follows: \n";
             for (auto const &[index, name] : indexToName) {
                 filestream << "// " << index << " -> " << name << '\n';
