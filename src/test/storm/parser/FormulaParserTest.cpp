@@ -487,7 +487,7 @@ TEST(FormulaParserTest, HOAPathFormulaTest) {
     EXPECT_TRUE(nested1.isHOAPathFormula());
     EXPECT_TRUE(nested1.isPathFormula());
 
-    ASSERT_NO_THROW(std::string af = nested1.asHOAPathFormula().getAutomatonFile());
+    ASSERT_NO_THROW(nested1.asHOAPathFormula().getAutomatonFile());
     storm::automata::DeterministicAutomaton::ptr da1;
     ASSERT_NO_THROW(da1 = nested1.asHOAPathFormula().readAutomaton());
     EXPECT_EQ(3ul, da1->getNumberOfStates());
@@ -503,7 +503,7 @@ TEST(FormulaParserTest, HOAPathFormulaTest) {
     EXPECT_TRUE(nested2.isHOAPathFormula());
     EXPECT_TRUE(nested2.isPathFormula());
 
-    ASSERT_NO_THROW(std::string af = nested2.asHOAPathFormula().getAutomatonFile());
+    ASSERT_NO_THROW(nested2.asHOAPathFormula().getAutomatonFile());
     storm::automata::DeterministicAutomaton::ptr da2;
     ASSERT_NO_THROW(da2 = nested2.asHOAPathFormula().readAutomaton());
     EXPECT_EQ(4ul, da2->getNumberOfStates());

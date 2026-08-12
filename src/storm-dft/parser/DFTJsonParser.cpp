@@ -36,7 +36,6 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
     // Initialize DFT builder and value parser
     storm::dft::builder::DFTBuilder<ValueType> builder;
     storm::parser::ValueParser<ValueType> valueParser;
-    std::string toplevelName = "";
     storm::dft::utility::RelevantEvents relevantEvents;
 
     std::string currentLocation;
