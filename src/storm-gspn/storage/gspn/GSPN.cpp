@@ -2,8 +2,6 @@
 
 #include <unordered_map>
 
-#include <boost/lexical_cast.hpp>
-
 #include "storm-gspn/storage/gspn/GspnJsonExporter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"
@@ -265,7 +263,7 @@ bool GSPN::testPlaces() const {
         }
 
         if (std::find(idsOfPlaces.begin(), idsOfPlaces.end(), place.getID()) != idsOfPlaces.end()) {
-            STORM_LOG_WARN("duplicates states with the id \"" + boost::lexical_cast<std::string>(place.getID()) + "\"\n");
+            STORM_LOG_WARN("duplicates states with the id \"" + std::to_string(place.getID()) + "\"\n");
             result = false;
         }
 
