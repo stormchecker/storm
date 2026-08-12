@@ -45,7 +45,7 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::initialize() {
 
 template<typename ModelType>
 void NondeterministicModelBisimulationDecomposition<ModelType>::createChoiceToStateMapping() {
-    std::vector<uint_fast64_t> nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
+    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
     for (storm::storage::sparse::state_type state = 0; state < this->model.getNumberOfStates(); ++state) {
         for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
             choiceToStateMapping[choice] = state;
@@ -55,7 +55,7 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::createChoiceToSt
 
 template<typename ModelType>
 void NondeterministicModelBisimulationDecomposition<ModelType>::initializeQuotientDistributions() {
-    std::vector<uint_fast64_t> nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
+    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
 
     for (auto const& block : this->partition.getBlocks()) {
         if (block->data().absorbing()) {
@@ -94,7 +94,7 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::initializeQuotie
 
 template<typename ModelType>
 void NondeterministicModelBisimulationDecomposition<ModelType>::updateOrderedQuotientDistributions(storm::storage::sparse::state_type state) {
-    std::vector<uint_fast64_t> nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
+    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
     std::sort(this->orderedQuotientDistributions.begin() + nondeterministicChoiceIndices[state],
               this->orderedQuotientDistributions.begin() + nondeterministicChoiceIndices[state + 1],
               [this](storm::storage::Distribution<ValueType> const* dist1, storm::storage::Distribution<ValueType> const* dist2) {
@@ -135,7 +135,7 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() 
 
     // Now build (a) and (b) by traversing all blocks.
     uint_fast64_t currentRow = 0;
-    std::vector<uint_fast64_t> nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
+    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
     for (uint_fast64_t blockIndex = 0; blockIndex < this->blocks.size(); ++blockIndex) {
         auto const& block = this->blocks[blockIndex];
 
@@ -280,7 +280,7 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::updateQuotientDi
 
 template<typename ModelType>
 bool NondeterministicModelBisimulationDecomposition<ModelType>::checkQuotientDistributions() const {
-    std::vector<uint_fast64_t> nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
+    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
     for (decltype(this->model.getNumberOfStates()) state = 0; state < this->model.getNumberOfStates(); ++state) {
         for (auto choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
             storm::storage::DistributionWithReward<ValueType> distribution;
@@ -323,7 +323,7 @@ bool NondeterministicModelBisimulationDecomposition<ModelType>::checkQuotientDis
 
 template<typename ModelType>
 bool NondeterministicModelBisimulationDecomposition<ModelType>::printDistributions(uint_fast64_t state) const {
-    std::vector<uint_fast64_t> nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
+    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
     for (auto choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
         std::cout << quotientDistributions[choice] << '\n';
     }
@@ -396,7 +396,7 @@ template<typename ModelType>
 bool NondeterministicModelBisimulationDecomposition<ModelType>::quotientDistributionsLess(storm::storage::sparse::state_type state1,
                                                                                           storm::storage::sparse::state_type state2) const {
     STORM_LOG_TRACE("Comparing the quotient distributions of state " << state1 << " and " << state2 << ".");
-    std::vector<uint_fast64_t> nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
+    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
 
     auto firstIt = orderedQuotientDistributions.begin() + nondeterministicChoiceIndices[state1];
     auto firstIte = orderedQuotientDistributions.begin() + nondeterministicChoiceIndices[state1 + 1];
