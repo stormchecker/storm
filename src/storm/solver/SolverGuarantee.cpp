@@ -9,7 +9,7 @@ std::ostream& operator<<(std::ostream& out, SolverGuarantee const& guarantee) {
             out << "greater-or-equal";
             break;
         case SolverGuarantee::LessOrEqual:
-            out << "greater-or-equal";
+            out << "less-or-equal";
             break;
         case SolverGuarantee::None:
             out << "none";

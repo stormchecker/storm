@@ -2144,7 +2144,8 @@ typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRow(ind
     if (!this->hasTrivialRowGrouping()) {
         return getRow(this->getRowGroupIndices()[rowGroup] + offset);
     } else {
-        return getRow(this->getRowGroupIndices()[rowGroup] + offset);
+        STORM_LOG_ASSERT(offset == 0, "Invalid offset.");
+        return getRow(rowGroup + offset);
     }
 }
 
