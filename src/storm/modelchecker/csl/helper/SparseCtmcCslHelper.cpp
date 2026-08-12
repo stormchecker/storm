@@ -522,18 +522,16 @@ std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Env
     // Create the result vector.
     std::vector<ValueType> result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
 
+    // States that are psi are absorbing; states that are neither phi nor psi are also absorbing
+    // (paths must stay within phiStates until psiStates is reached)
+    storm::storage::BitVector absorbingStates = ~phiStates | psiStates;
     storm::storage::SparseMatrix<ValueType> transposedMatrix(rateMatrix);
-    transposedMatrix.makeRowsAbsorbing(psiStates);
+    transposedMatrix.makeRowsAbsorbing(absorbingStates);
     std::vector<ValueType> newRates = exitRates;
-    for (auto state : psiStates) {
+    for (auto state : absorbingStates) {
         newRates[state] = storm::utility::one<ValueType>();
     }
 
-    // Identify all maybe states which have a probability greater than 0 to be reached from the initial state.
-    // storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(transposedMatrix, phiStates, initialStates);
-    // STORM_LOG_INFO("Found " << statesWithProbabilityGreater0.getNumberOfSetBits() << " states with probability greater 0.");
-
-    // storm::storage::BitVector relevantStates = statesWithProbabilityGreater0 & ~initialStates;//phiStates | psiStates;
     storm::storage::BitVector relevantStates(numberOfStates, true);
     STORM_LOG_DEBUG(relevantStates.getNumberOfSetBits() << " relevant states.");
 
