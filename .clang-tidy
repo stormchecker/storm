@@ -6,6 +6,7 @@ Checks: >-
   -portability-avoid-pragma-once,
   boost-use-to-string,
   bugprone-dangling-handle,
+  bugprone-empty-catch,
   bugprone-infinite-loop,
   bugprone-misplaced-widening-cast,
   bugprone-reserved-identifier,

@@ -116,6 +116,7 @@ bool GmmxxLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
             }
         } catch (storm::exceptions::AbortException const&) {
             // Do nothing
+            STORM_LOG_WARN("Gmm++ (externally) aborted.");
         }
 
         if (!this->isCachingEnabled()) {
