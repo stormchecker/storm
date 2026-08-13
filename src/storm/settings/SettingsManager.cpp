@@ -20,6 +20,7 @@
 #include "storm/settings/modules/ConditionalSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/CuddSettings.h"
+#include "storm/settings/modules/CvarSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/EigenEquationSolverSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
@@ -700,6 +701,7 @@ void initializeAll(std::string const& name, std::string const& executableName) {
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
     storm::settings::addModule<storm::settings::modules::IOSettings>();
+    storm::settings::addModule<storm::settings::modules::CvarSettings>();
     storm::settings::addModule<storm::settings::modules::BuildSettings>();
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();

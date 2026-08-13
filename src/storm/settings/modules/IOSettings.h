@@ -367,6 +367,20 @@ class IOSettings : public ModuleSettings {
     std::string getPropertyFilter() const;
 
     /*!
+     * Retrieves whether the CVaR option was set.
+     *
+     * @return True if the CVaR option was set.
+     */
+    bool isCvarSet() const;
+
+    /*!
+     * Retrieves the alpha value specified with the CVaR option.
+     *
+     * @return The alpha value specified with the CVaR option.
+     */
+    std::string getCvarAlpha() const;
+
+    /*!
      * Retrieves whether the steady-state distribution is to be computed.
      */
     bool isComputeSteadyStateDistributionSet() const;
@@ -469,6 +483,7 @@ class IOSettings : public ModuleSettings {
     static const std::string qvbsInputOptionShortName;
     static const std::string qvbsRootOptionName;
     static const std::string propertiesAsMultiOptionName;
+    static const std::string cvarOptionName;
     static const std::string uncertaintyResolutionModeName;
 };
 

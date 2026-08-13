@@ -1,0 +1,23 @@
+mdp
+
+module main
+    s : [0..4] init 0;
+
+    [] s=0 -> 1 : (s'=1);
+
+    [cycle12] s=1 -> 1 : (s'=2);
+    [takeLow] s=1 -> 1 : (s'=3);
+
+    [cycle21] s=2 -> 1 : (s'=1);
+    [takeRisk] s=2 -> 1/2 : (s'=3) + 1/2 : (s'=4);
+
+    [] s=3 -> 1 : (s'=3);
+    [] s=4 -> 1 : (s'=4);
+endmodule
+
+label "target" = s=3 | s=4;
+
+rewards "term"
+    s=3 : 4;
+    s=4 : 10;
+endrewards

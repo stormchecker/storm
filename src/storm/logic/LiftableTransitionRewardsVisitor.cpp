@@ -70,6 +70,10 @@ boost::any LiftableTransitionRewardsVisitor::visit(CumulativeRewardFormula const
     return true;
 }
 
+boost::any LiftableTransitionRewardsVisitor::visit(CvarFormula const& f, boost::any const& data) const {
+    return f.getSubformula().accept(*this, data);
+}
+
 boost::any LiftableTransitionRewardsVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {
     return f.getSubformula().accept(*this, data);
 }

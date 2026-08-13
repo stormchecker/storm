@@ -1,0 +1,41 @@
+mdp
+
+module main
+    s : [0..10] init 0;
+
+    // Start: direct safe/balanced/risky options, plus an adaptive branch.
+    [safe]     s=0 -> 1 : (s'=3);
+    [balanced] s=0 -> 3/4 : (s'=1) + 1/4 : (s'=5);
+    [adaptive] s=0 -> 1/2 : (s'=8) + 1/2 : (s'=9);
+    [risky]    s=0 -> 1/2 : (s'=10) + 1/2 : (s'=7);
+
+    // Duplicate terminal rewards at 6 and 12 make threshold splitting observable.
+    [] s=1 -> 1 : (s'=1);
+    [] s=2 -> 1 : (s'=2);
+    [] s=3 -> 1 : (s'=3);
+    [] s=4 -> 1 : (s'=4);
+    [] s=5 -> 1 : (s'=5);
+    [] s=6 -> 1 : (s'=6);
+    [] s=7 -> 1 : (s'=7);
+
+    // After the adaptive probabilistic split, the scheduler can react to good/bad news.
+    [cash] s=8 -> 1 : (s'=4);
+    [push] s=8 -> 1/2 : (s'=6) + 1/2 : (s'=7);
+
+    [cash] s=9 -> 1 : (s'=2);
+    [push] s=9 -> 1/2 : (s'=10) + 1/2 : (s'=4);
+
+    [] s=10 -> 1 : (s'=10);
+endmodule
+
+label "target" = s=1 | s=2 | s=3 | s=4 | s=5 | s=6 | s=7 | s=10;
+
+rewards "term"
+    s=1 : 6;
+    s=2 : 6;
+    s=3 : 7;
+    s=4 : 10;
+    s=5 : 12;
+    s=6 : 12;
+    s=7 : 20;
+endrewards

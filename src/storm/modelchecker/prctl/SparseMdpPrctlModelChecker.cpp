@@ -3,10 +3,12 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/FragmentSpecification.h"
+#include "storm/modelchecker/cvar/CvarModelChecking.h"
 #include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
 #include "storm/modelchecker/helper/finitehorizon/SparseStepBoundedHorizonHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
@@ -91,7 +93,8 @@ bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandleStatic(CheckTask<s
                                             .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
                                             .setRewardAccumulationAllowed(true);
 
-            if (formula.isInFragment(multiObjectiveFragment) || formula.isInFragment(storm::logic::quantiles()) || formula.isInFragment(lexObjectiveFragment)) {
+            if (formula.isInFragment(multiObjectiveFragment) || formula.isInFragment(storm::logic::quantiles()) ||
+                formula.isInFragment(storm::logic::cvars()) || formula.isInFragment(lexObjectiveFragment)) {
                 if (requiresSingleInitialState) {
                     *requiresSingleInitialState = true;
                 }
@@ -519,6 +522,19 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
         auto ret = lexicographic::check(env, this->getModel(), checkTask, formulaChecker);
         std::unique_ptr<CheckResult> result(new LexicographicCheckResult<SolutionType>(ret.values, *this->getModel().getInitialStates().begin()));
         return result;
+    }
+}
+
+template<typename SparseMdpModelType>
+std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkCvarFormula(
+    Environment const& env, CheckTask<storm::logic::CvarFormula, SolutionType> const& checkTask) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "CVaR formulas are not supported for interval models.");
+    } else {
+        auto formulaChecker = [&](storm::logic::Formula const& formula) {
+            return this->check(env, formula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
+        };
+        return cvar::performCvarModelChecking(env, this->getModel(), checkTask, formulaChecker);
     }
 }
 

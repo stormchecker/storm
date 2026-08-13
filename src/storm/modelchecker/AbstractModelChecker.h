@@ -138,6 +138,9 @@ class AbstractModelChecker {
     virtual std::unique_ptr<CheckResult> checkMultiObjectiveFormula(Environment const& env,
                                                                     CheckTask<storm::logic::MultiObjectiveFormula, SolutionType> const& checkTask);
 
+    // The methods to check CVaR formulas.
+    virtual std::unique_ptr<CheckResult> checkCvarFormula(Environment const& env, CheckTask<storm::logic::CvarFormula, SolutionType> const& checkTask);
+
     // The methods to check quantile formulas.
     virtual std::unique_ptr<CheckResult> checkQuantileFormula(Environment const& env, CheckTask<storm::logic::QuantileFormula, SolutionType> const& checkTask);
 

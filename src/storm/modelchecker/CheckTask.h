@@ -63,12 +63,13 @@ class CheckTask {
      * Calling this method has no effect if the provided formula is not an operator formula.
      */
     void updateOperatorInformation() {
-        if (formula.get().isOperatorFormula()) {
-            storm::logic::OperatorFormula const& operatorFormula = formula.get().asOperatorFormula();
-            if (operatorFormula.hasOptimalityType()) {
-                this->optimizationDirection = operatorFormula.getOptimalityType();
-            }
+        storm::logic::Formula const* formulaForOperatorInformation = &formula.get();
+        if (formulaForOperatorInformation->isCvarFormula()) {
+            formulaForOperatorInformation = &formulaForOperatorInformation->asCvarFormula().getSubformula();
+        }
 
+        if (formulaForOperatorInformation->isOperatorFormula()) {
+            storm::logic::OperatorFormula const& operatorFormula = formulaForOperatorInformation->asOperatorFormula();
             if (operatorFormula.hasBound()) {
                 this->bound = operatorFormula.getBound();
             }
@@ -82,8 +83,8 @@ class CheckTask {
                                                   : OptimizationDirection::Minimize;
             }
 
-            if (formula.get().isProbabilityOperatorFormula()) {
-                storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.get().asProbabilityOperatorFormula();
+            if (formulaForOperatorInformation->isProbabilityOperatorFormula()) {
+                storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formulaForOperatorInformation->asProbabilityOperatorFormula();
 
                 if (probabilityOperatorFormula.hasBound()) {
                     if (storm::utility::isZero(probabilityOperatorFormula.template getThresholdAs<ValueType>()) ||
@@ -91,8 +92,8 @@ class CheckTask {
                         this->qualitative = true;
                     }
                 }
-            } else if (formula.get().isRewardOperatorFormula()) {
-                storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.get().asRewardOperatorFormula();
+            } else if (formulaForOperatorInformation->isRewardOperatorFormula()) {
+                storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formulaForOperatorInformation->asRewardOperatorFormula();
                 this->rewardModel = rewardOperatorFormula.getOptionalRewardModelName();
 
                 if (rewardOperatorFormula.hasBound()) {

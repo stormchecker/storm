@@ -2,14 +2,31 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "storm/logic/Formula.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/logic/Formulas.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/prism/Program.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace api {
+namespace {
+
+storm::RationalNumber parseCvarAlpha(std::string const& input) {
+    std::string strippedInput = boost::algorithm::trim_copy(input);
+    STORM_LOG_THROW(!strippedInput.empty(), storm::exceptions::InvalidArgumentException, "Unable to parse CVaR alpha '" << input << "'.");
+
+    storm::RationalNumber alpha = storm::utility::convertNumber<storm::RationalNumber>(strippedInput);
+
+    STORM_LOG_THROW(storm::utility::zero<storm::RationalNumber>() < alpha && alpha < storm::utility::one<storm::RationalNumber>(),
+                    storm::exceptions::InvalidArgumentException, "The CVaR alpha must be in the open interval (0, 1).");
+    return alpha;
+}
+
+}  // namespace
 
 std::vector<storm::jani::Property> substituteConstantsInProperties(std::vector<storm::jani::Property> const& properties,
                                                                    std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
@@ -65,6 +82,17 @@ std::vector<std::shared_ptr<storm::logic::Formula const>> extractFormulasFromPro
         formulas.push_back(prop.getRawFormula());
     }
     return formulas;
+}
+
+storm::jani::Property createCvarProperty(storm::jani::Property const& property, storm::RationalNumber const& alpha) {
+    STORM_LOG_WARN_COND(property.getFilter().isDefault(),
+                        "Non-default property filter of property " << property.getName() << " will be dropped during conversion to CVaR property.");
+    auto cvarFormula = std::make_shared<storm::logic::CvarFormula>(alpha, property.getRawFormula());
+    return storm::jani::Property(property.getName(), cvarFormula, property.getUndefinedConstants(), property.getComment());
+}
+
+storm::jani::Property createCvarProperty(storm::jani::Property const& property, std::string const& alpha) {
+    return createCvarProperty(property, parseCvarAlpha(alpha));
 }
 
 storm::jani::Property createMultiObjectiveProperty(std::vector<storm::jani::Property> const& properties, bool lexicographic) {
