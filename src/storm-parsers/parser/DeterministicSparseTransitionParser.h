@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
 #include "storm/storage/SparseMatrix.h"
 
 namespace storm {
@@ -44,7 +45,8 @@ class DeterministicSparseTransitionParser {
      * file.
      * @return A SparseMatrix containing the parsed transition system.
      */
-    static storm::storage::SparseMatrix<ValueType> parseDeterministicTransitions(std::string const& filename);
+    static storm::storage::SparseMatrix<ValueType> parseDeterministicTransitions(std::string const& filename,
+                                                                                 ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 
     /*!
      * Load the transition rewards for a deterministic transition system from file and create a
@@ -83,7 +85,8 @@ class DeterministicSparseTransitionParser {
      */
     template<typename MatrixValueType>
     static storm::storage::SparseMatrix<ValueType> parse(std::string const& filename, bool isRewardFile,
-                                                         storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix);
+                                                         storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix,
+                                                         ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 };
 
 }  // namespace parser

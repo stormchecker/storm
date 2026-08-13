@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -35,7 +36,8 @@ class DeterministicModelParser {
      */
     static storm::models::sparse::Dtmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> parseDtmc(
         std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "",
-        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "");
+        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "",
+        ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 
     /*!
      * Parse a Ctmc.
@@ -56,7 +58,8 @@ class DeterministicModelParser {
      */
     static storm::models::sparse::Ctmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> parseCtmc(
         std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "",
-        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "");
+        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "",
+        ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 
    private:
     /*!
@@ -75,7 +78,8 @@ class DeterministicModelParser {
      */
     static storm::storage::sparse::ModelComponents<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> parseDeterministicModel(
         std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "",
-        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "");
+        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "",
+        ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 };
 
 } /* namespace parser */

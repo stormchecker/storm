@@ -8,8 +8,6 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -18,9 +16,10 @@ namespace parser {
 using namespace storm::utility::cstring;
 
 template<typename ValueType>
-storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<ValueType>::parseNondeterministicTransitions(std::string const& filename) {
+storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<ValueType>::parseNondeterministicTransitions(
+    std::string const& filename, ExplicitModelParserOptions const& options) {
     storm::storage::SparseMatrix<ValueType> emptyMatrix;
-    return NondeterministicSparseTransitionParser::parse(filename, false, emptyMatrix);
+    return NondeterministicSparseTransitionParser::parse(filename, false, emptyMatrix, options);
 }
 
 template<typename ValueType>
@@ -33,7 +32,8 @@ storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<V
 template<typename ValueType>
 template<typename MatrixValueType>
 storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<ValueType>::parse(
-    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<MatrixValueType> const& modelInformation) {
+    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<MatrixValueType> const& modelInformation,
+    ExplicitModelParserOptions const& options) {
     // Enforce locale where decimal point is '.'.
     setlocale(LC_NUMERIC, "C");
 
@@ -89,7 +89,7 @@ storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<V
     // Initialize variables for the parsing run.
     uint_fast64_t source = 0, target = 0, lastSource = 0, choice = 0, lastChoice = 0, curRow = 0;
     double val = 0.0;
-    bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet();
+    bool fixDeadlocks = options.fixDeadlocks;
     bool hadDeadlocks = false;
 
     // The first state already starts a new row group of the matrix.
@@ -139,7 +139,7 @@ storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<V
             // Also begin a new rowGroup for the skipped state.
             for (uint_fast64_t node = lastSource + 1; node < source; node++) {
                 hadDeadlocks = true;
-                if (!dontFixDeadlocks) {
+                if (fixDeadlocks) {
                     matrixBuilder.newRowGroup(curRow);
                     matrixBuilder.addNextValue(curRow, node, 1);
                     ++curRow;
@@ -168,7 +168,7 @@ storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<V
         buf = trimWhitespaces(buf);
     }
 
-    STORM_LOG_THROW(!dontFixDeadlocks || !hadDeadlocks || isRewardFile, storm::exceptions::WrongFormatException,
+    STORM_LOG_THROW(fixDeadlocks || !hadDeadlocks || isRewardFile, storm::exceptions::WrongFormatException,
                     "Some of the states do not have outgoing transitions.");
 
     // Since we assume the transition rewards are for the transitions of the model, we copy the rowGroupIndices.
@@ -322,14 +322,14 @@ template class NondeterministicSparseTransitionParser<double>;
 template storm::storage::SparseMatrix<double> NondeterministicSparseTransitionParser<double>::parseNondeterministicTransitionRewards(
     std::string const& filename, storm::storage::SparseMatrix<double> const& modelInformation);
 template storm::storage::SparseMatrix<double> NondeterministicSparseTransitionParser<double>::parse(
-    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& modelInformation);
+    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& modelInformation, ExplicitModelParserOptions const& options);
 
 template class NondeterministicSparseTransitionParser<storm::Interval>;
 
 template storm::storage::SparseMatrix<storm::Interval> NondeterministicSparseTransitionParser<storm::Interval>::parseNondeterministicTransitionRewards<double>(
     std::string const& filename, storm::storage::SparseMatrix<double> const& modelInformation);
 template storm::storage::SparseMatrix<storm::Interval> NondeterministicSparseTransitionParser<storm::Interval>::parse<double>(
-    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& modelInformation);
+    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& modelInformation, ExplicitModelParserOptions const& options);
 
 }  // namespace parser
 }  // namespace storm

@@ -28,6 +28,8 @@ ARG disable_cudd="OFF"
 ARG disable_glpk="OFF"
 ARG disable_gmm="OFF"
 ARG disable_gurobi="OFF"
+# Highs solver is not available on Alpine
+ARG disable_highs="ON"
 ARG disable_libarchive="OFF"
 ARG disable_mathsat="OFF"
 ARG disable_soplex="OFF"
@@ -89,6 +91,7 @@ RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
           -DSTORM_DISABLE_GLPK=$disable_glpk \
           -DSTORM_DISABLE_GMM=$disable_gmm \
           -DSTORM_DISABLE_GUROBI=$disable_gurobi \
+          -DSTORM_DISABLE_HIGHS=$disable_highs \
           -DSTORM_DISABLE_LIBARCHIVE=$disable_libarchive \
           -DSTORM_DISABLE_MATHSAT=$disable_mathsat \
           -DSTORM_DISABLE_SOPLEX=$disable_soplex \

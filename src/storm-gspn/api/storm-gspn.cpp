@@ -8,6 +8,7 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/utility/solver.h"
 
 namespace storm {
 namespace api {
@@ -74,7 +75,7 @@ void handleGSPNExportSettings(storm::gspn::GSPN const& gspn,
             properties.insert(properties.end(), deadlockProperties.begin(), deadlockProperties.end());
         }
 
-        storm::api::transformJani(*model, properties, options);
+        storm::api::transformJani(*model, properties, options, std::make_shared<storm::utility::solver::SmtSolverFactory>());
 
         storm::api::exportJaniToFile(*model, properties, exportSettings.getWriteToJaniFilename(), jani.isCompactJsonSet());
         delete model;

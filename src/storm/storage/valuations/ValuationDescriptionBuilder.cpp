@@ -1,7 +1,7 @@
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
 
-#include <bit>
 #include <sstream>
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Variable.h"
@@ -20,8 +20,16 @@ storm::expressions::ExpressionManager const& ValuationDescriptionBuilder::getMan
     return *manager;
 }
 
+void ValuationDescriptionBuilder::assertAndCollectVariable(storm::expressions::Variable const& variable) {
+    STORM_LOG_THROW(*manager == variable.getManager(), storm::exceptions::InvalidArgumentException,
+                    "Variable " << variable.getName() << " has a different manager than previously specified for this valuation description.");
+    bool const inserted = addedVariables.insert(variable).second;
+    STORM_LOG_THROW(inserted, storm::exceptions::InvalidArgumentException,
+                    "Duplicate variable with name '" << variable.getName() << "' has already been added to this valuation description.");
+}
+
 void ValuationDescriptionBuilder::addBooleanVariable(storm::expressions::Variable const& variable, bool optional) {
-    STORM_LOG_ASSERT(*manager == variable.getManager(), "Variable " << variable.getName() << " has a different manager than previously specified.");
+    assertAndCollectVariable(variable);
     descr.variables.emplace_back(ValuationClassDescription::Variable{.name{variable.getName()},
                                                                      .isOptional{optional ? std::optional<bool>(true) : std::nullopt},
                                                                      .type{.type = storm::umb::Type::Bool, .size = 1},
@@ -32,7 +40,7 @@ void ValuationDescriptionBuilder::addBooleanVariable(storm::expressions::Variabl
 
 void ValuationDescriptionBuilder::addIntegerVariable(storm::expressions::Variable const& variable, int64_t const lowerBound, int64_t const upperBound,
                                                      bool optional) {
-    STORM_LOG_ASSERT(*manager == variable.getManager(), "Variable " << variable.getName() << " has a different manager than previously specified.");
+    assertAndCollectVariable(variable);
     STORM_LOG_ASSERT(lowerBound <= upperBound, "Lower bound " << lowerBound << " must not be above upper bound" << upperBound << ".");
     // Cast to uint64_t *before* subtracting to avoid signed overflow UB.
     uint64_t const bitSize = storm::utility::bitsize(static_cast<uint64_t>(upperBound) - static_cast<uint64_t>(lowerBound));
@@ -47,7 +55,7 @@ void ValuationDescriptionBuilder::addIntegerVariable(storm::expressions::Variabl
 
 void ValuationDescriptionBuilder::addIntegerVariable(storm::expressions::Variable const& variable, Integer const lowerBound, Integer const upperBound,
                                                      bool optional) {
-    STORM_LOG_ASSERT(*manager == variable.getManager(), "Variable " << variable.getName() << " has a different manager than previously specified.");
+    assertAndCollectVariable(variable);
     STORM_LOG_ASSERT(lowerBound <= upperBound, "Lower bound " << lowerBound << " must not be above upper bound" << upperBound << ".");
     if (lowerBound >= storm::utility::convertNumber<storm::RationalNumber>(std::numeric_limits<int64_t>::min()) &&
         upperBound <= storm::utility::convertNumber<storm::RationalNumber>(std::numeric_limits<int64_t>::max())) {
@@ -62,7 +70,7 @@ void ValuationDescriptionBuilder::addIntegerVariable(storm::expressions::Variabl
 }
 
 void ValuationDescriptionBuilder::addDoubleVariable(storm::expressions::Variable const& variable, bool optional) {
-    STORM_LOG_ASSERT(*manager == variable.getManager(), "Variable " << variable.getName() << " has a different manager than previously specified.");
+    assertAndCollectVariable(variable);
     descr.variables.emplace_back(ValuationClassDescription::Variable{.name{variable.getName()},
                                                                      .isOptional{optional ? std::optional<bool>(true) : std::nullopt},
                                                                      .type{storm::umb::Type::Double, std::nullopt},
@@ -72,7 +80,7 @@ void ValuationDescriptionBuilder::addDoubleVariable(storm::expressions::Variable
 }
 
 void ValuationDescriptionBuilder::addRationalVariable(storm::expressions::Variable const& variable, uint64_t bitSize, bool optional) {
-    STORM_LOG_ASSERT(*manager == variable.getManager(), "Variable " << variable.getName() << " has a different manager than previously specified.");
+    assertAndCollectVariable(variable);
     STORM_LOG_ASSERT(bitSize % 2 == 0, "Bit size for rational variables must be a multiple of 2.");
     storm::umb::SizedType const t{.type{storm::umb::Type::Rational}, .size{std::max<uint64_t>(2, bitSize)}};
     descr.variables.emplace_back(ValuationClassDescription::Variable{
@@ -80,7 +88,7 @@ void ValuationDescriptionBuilder::addRationalVariable(storm::expressions::Variab
 }
 
 void ValuationDescriptionBuilder::addStringVariable(storm::expressions::Variable const& variable, bool optional) {
-    STORM_LOG_ASSERT(*manager == variable.getManager(), "Variable " << variable.getName() << " has a different manager than previously specified.");
+    assertAndCollectVariable(variable);
     descr.variables.emplace_back(ValuationClassDescription::Variable{.name{variable.getName()},
                                                                      .isOptional{optional ? std::optional<bool>(true) : std::nullopt},
                                                                      .type{storm::umb::Type::String, std::nullopt},
@@ -91,11 +99,13 @@ void ValuationDescriptionBuilder::addStringVariable(storm::expressions::Variable
 
 void ValuationDescriptionBuilder::addVariable(ValuationClassDescription::Variable const& variable) {
     STORM_LOG_ASSERT(manager->hasVariable(variable.name), "Variable " << variable.name << " is not declared in the expression manager.");
+    assertAndCollectVariable(manager->getVariable(variable.name));
     std::ostringstream errors;
     STORM_LOG_THROW(storm::umb::validation::validateTypeDeclaration(variable.type, false, errors), storm::exceptions::WrongFormatException,
                     "Invalid type declaration for variable " << variable.name << ": " << errors.str() << ".");
     descr.variables.push_back(variable);
 }
+
 void ValuationDescriptionBuilder::addVariables(ValuationClassDescription const& description, bool addPadding) {
     for (auto const& varVariant : description.variables) {
         if (std::holds_alternative<ValuationClassDescription::Variable>(varVariant)) {
@@ -113,7 +123,6 @@ void ValuationDescriptionBuilder::finalize() {
 }
 
 ValuationClassDescription ValuationDescriptionBuilder::buildClassDescription() {
-    STORM_LOG_ASSERT(!descr.variables.empty(), "At least one variable must be added to the valuation description.");
     finalize();
     return descr;
 }

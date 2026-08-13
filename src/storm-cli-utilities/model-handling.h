@@ -590,11 +590,14 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
                                                              storm::settings::modules::BuildSettings const& buildSettings) {
     std::shared_ptr<storm::models::ModelBase> result;
     if (ioSettings.isExplicitSet()) {
+        storm::parser::ExplicitModelParserOptions explicitModelParserOptions;
+        explicitModelParserOptions.fixDeadlocks = !buildSettings.isDontFixDeadlocksSet();
+        explicitModelParserOptions.buildChoiceLabels = buildSettings.isBuildChoiceLabelsSet();
         result = storm::api::buildExplicitModel<ValueType>(
             ioSettings.getTransitionFilename(), ioSettings.getLabelingFilename(),
             ioSettings.isStateRewardsSet() ? boost::optional<std::string>(ioSettings.getStateRewardsFilename()) : boost::none,
             ioSettings.isTransitionRewardsSet() ? boost::optional<std::string>(ioSettings.getTransitionRewardsFilename()) : boost::none,
-            ioSettings.isChoiceLabelingSet() ? boost::optional<std::string>(ioSettings.getChoiceLabelingFilename()) : boost::none);
+            ioSettings.isChoiceLabelingSet() ? boost::optional<std::string>(ioSettings.getChoiceLabelingFilename()) : boost::none, explicitModelParserOptions);
     } else if (ioSettings.isExplicitDRNSet()) {
         storm::parser::DirectEncodingParserOptions options;
         options.buildChoiceLabeling = buildSettings.isBuildChoiceLabelsSet();
@@ -625,7 +628,10 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
         result = storm::api::buildExplicitUmbModel(ioSettings.getExplicitUmbFilename(), options);
     } else {
         STORM_LOG_THROW(ioSettings.isExplicitIMCASet(), storm::exceptions::InvalidSettingsException, "Unexpected explicit model input type.");
-        result = storm::api::buildExplicitIMCAModel<ValueType>(ioSettings.getExplicitIMCAFilename());
+        storm::parser::ExplicitModelParserOptions explicitModelParserOptions;
+        explicitModelParserOptions.fixDeadlocks = !buildSettings.isDontFixDeadlocksSet();
+        explicitModelParserOptions.buildChoiceLabels = buildSettings.isBuildChoiceLabelsSet();
+        result = storm::api::buildExplicitIMCAModel<ValueType>(ioSettings.getExplicitIMCAFilename(), explicitModelParserOptions);
     }
     return result;
 }

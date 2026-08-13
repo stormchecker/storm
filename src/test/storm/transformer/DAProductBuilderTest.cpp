@@ -11,7 +11,6 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/storage/BitVector.h"
 #include "storm/transformer/DAProductBuilder.h"

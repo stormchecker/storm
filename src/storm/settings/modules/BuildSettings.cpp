@@ -6,7 +6,6 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 
 #include "storm/exceptions/IllegalArgumentValueException.h"
@@ -139,10 +138,6 @@ bool BuildSettings::isPrismCompatibilityEnabled() const {
 
 bool BuildSettings::isDontFixDeadlocksSet() const {
     return this->getOption(dontFixDeadlockOptionName).getHasOptionBeenSet();
-}
-
-std::unique_ptr<storm::settings::SettingMemento> BuildSettings::overrideDontFixDeadlocksSet(bool stateToSet) {
-    return this->overrideOption(dontFixDeadlockOptionName, stateToSet);
 }
 
 bool BuildSettings::isBuildFullModelSet() const {

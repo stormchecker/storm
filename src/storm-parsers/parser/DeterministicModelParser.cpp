@@ -17,10 +17,11 @@ storm::storage::sparse::ModelComponents<ValueType, storm::models::sparse::Standa
 DeterministicModelParser<ValueType, RewardValueType>::parseDeterministicModel(std::string const& transitionsFilename, std::string const& labelingFilename,
                                                                               std::string const& stateRewardFilename,
                                                                               std::string const& transitionRewardFilename,
-                                                                              std::string const& choiceLabelingFilename) {
+                                                                              std::string const& choiceLabelingFilename,
+                                                                              ExplicitModelParserOptions const& options) {
     // Parse the transitions.
     storm::storage::SparseMatrix<ValueType> transitions(
-        storm::parser::DeterministicSparseTransitionParser<ValueType>::parseDeterministicTransitions(transitionsFilename));
+        storm::parser::DeterministicSparseTransitionParser<ValueType>::parseDeterministicTransitions(transitionsFilename, options));
 
     uint_fast64_t stateCount = transitions.getColumnCount();
 
@@ -62,8 +63,9 @@ template<typename ValueType, typename RewardValueType>
 storm::models::sparse::Dtmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>
 DeterministicModelParser<ValueType, RewardValueType>::parseDtmc(std::string const& transitionsFilename, std::string const& labelingFilename,
                                                                 std::string const& stateRewardFilename, std::string const& transitionRewardFilename,
-                                                                std::string const& choiceLabelingFilename) {
-    auto parserResult = parseDeterministicModel(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename, choiceLabelingFilename);
+                                                                std::string const& choiceLabelingFilename, ExplicitModelParserOptions const& options) {
+    auto parserResult =
+        parseDeterministicModel(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename, choiceLabelingFilename, options);
     return storm::models::sparse::Dtmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(parserResult));
 }
 
@@ -71,8 +73,9 @@ template<typename ValueType, typename RewardValueType>
 storm::models::sparse::Ctmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>
 DeterministicModelParser<ValueType, RewardValueType>::parseCtmc(std::string const& transitionsFilename, std::string const& labelingFilename,
                                                                 std::string const& stateRewardFilename, std::string const& transitionRewardFilename,
-                                                                std::string const& choiceLabelingFilename) {
-    auto parserResult = parseDeterministicModel(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename, choiceLabelingFilename);
+                                                                std::string const& choiceLabelingFilename, ExplicitModelParserOptions const& options) {
+    auto parserResult =
+        parseDeterministicModel(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename, choiceLabelingFilename, options);
     parserResult.rateTransitions = true;
     return storm::models::sparse::Ctmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(parserResult));
 }

@@ -61,6 +61,10 @@ if(@STORM_HAVE_GUROBI@)  # STORM_HAVE_GUROBI
     )
 endif()
 
+if(@STORM_HAVE_HIGHS@)  # STORM_HAVE_HIGHS
+    find_dependency(highs)
+endif()
+
 if(@STORM_HAVE_LIBARCHIVE@) # STORM_HAVE_LIBARCHIVE
      set(LibArchive_ROOT "@LibArchive_ROOT@")
      find_dependency(LibArchive)

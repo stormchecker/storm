@@ -2,8 +2,6 @@
 
 #include "storm/api/properties.h"
 #include "storm/io/file.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/JaniLocationExpander.h"
 #include "storm/storage/jani/JaniScopeChanger.h"
@@ -16,7 +14,8 @@
 namespace storm {
 namespace api {
 
-void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Property>& properties, storm::converter::JaniConversionOptions const& options) {
+void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Property>& properties, storm::converter::JaniConversionOptions const& options,
+                   std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory) {
     if (options.replaceUnassignedVariablesWithConstants) {
         janiModel.replaceUnassignedVariablesWithConstants();
     }
@@ -63,10 +62,7 @@ void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Prope
     }
 
     if (options.flatten) {
-        std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
-        if (storm::settings::hasModule<storm::settings::modules::CoreSettings>()) {
-            smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>();
-        } else {
+        if (!smtSolverFactory) {
             smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
         }
         janiModel = janiModel.flattenComposition(smtSolverFactory);

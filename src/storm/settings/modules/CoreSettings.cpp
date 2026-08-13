@@ -4,7 +4,6 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/solver/SolverSelectionOptions.h"
 
@@ -86,7 +85,7 @@ CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(storm::utility
                 .build());
     }
 
-    std::vector<std::string> lpSolvers = {"gurobi", "glpk", "z3", "soplex"};
+    std::vector<std::string> lpSolvers = {"glpk", "gurobi", "highs", "soplex", "z3"};
     this->addOption(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, false, "Sets which LP solver is preferred.")
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an LP solver.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(lpSolvers))
@@ -134,14 +133,16 @@ bool CoreSettings::isEquationSolverSetFromDefaultValue() const {
 
 storm::solver::LpSolverType CoreSettings::getLpSolver() const {
     std::string lpSolverName = this->getOption(lpSolverOptionName).getArgumentByName("name").getValueAsString();
-    if (lpSolverName == "gurobi") {
-        return storm::solver::LpSolverType::Gurobi;
-    } else if (lpSolverName == "glpk") {
+    if (lpSolverName == "glpk") {
         return storm::solver::LpSolverType::Glpk;
-    } else if (lpSolverName == "z3") {
-        return storm::solver::LpSolverType::Z3;
+    } else if (lpSolverName == "gurobi") {
+        return storm::solver::LpSolverType::Gurobi;
+    } else if (lpSolverName == "highs") {
+        return storm::solver::LpSolverType::Highs;
     } else if (lpSolverName == "soplex") {
         return storm::solver::LpSolverType::Soplex;
+    } else if (lpSolverName == "z3") {
+        return storm::solver::LpSolverType::Z3;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << lpSolverName << "'.");
 }

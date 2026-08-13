@@ -4,8 +4,6 @@
 #include "storm-parsers/util/cstring.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -15,10 +13,11 @@ namespace parser {
 using namespace storm::utility::cstring;
 
 template<typename ValueType>
-typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult MarkovAutomatonSparseTransitionParser<ValueType>::firstPass(char const* buf) {
+typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult MarkovAutomatonSparseTransitionParser<ValueType>::firstPass(
+    char const* buf, ExplicitModelParserOptions const& options) {
     MarkovAutomatonSparseTransitionParser::FirstPassResult result;
 
-    bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet();
+    bool fixDeadlocks = options.fixDeadlocks;
 
     // Skip the format hint if it is there.
     buf = trimWhitespaces(buf);
@@ -44,7 +43,7 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult Marko
 
         // If we have skipped some states, we need to reserve the space for the self-loop insertion in the second pass.
         if (source > lastsource + 1) {
-            if (!dontFixDeadlocks) {
+            if (fixDeadlocks) {
                 result.numberOfNonzeroEntries += source - lastsource - 1;
                 result.numberOfChoices += source - lastsource - 1;
             } else {
@@ -149,7 +148,7 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult Marko
 
     // If there are some states with indices that are behind the last source for which no transition was specified,
     // we need to reserve some space for introducing self-loops later.
-    if (!dontFixDeadlocks) {
+    if (fixDeadlocks) {
         result.numberOfNonzeroEntries += result.highestStateIndex - lastsource;
         result.numberOfChoices += result.highestStateIndex - lastsource;
     } else {
@@ -162,10 +161,10 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult Marko
 
 template<typename ValueType>
 typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomatonSparseTransitionParser<ValueType>::secondPass(
-    char const* buf, FirstPassResult const& firstPassResult) {
+    char const* buf, FirstPassResult const& firstPassResult, ExplicitModelParserOptions const& options) {
     Result result(firstPassResult);
 
-    bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet();
+    bool fixDeadlocks = options.fixDeadlocks;
 
     // Skip the format hint if it is there.
     buf = trimWhitespaces(buf);
@@ -189,7 +188,7 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomato
 
         // If we have skipped some states, we need to insert self-loops if requested.
         if (source > lastsource + 1) {
-            if (!dontFixDeadlocks) {
+            if (fixDeadlocks) {
                 for (uint_fast64_t index = lastsource + 1; index < source; ++index) {
                     result.transitionMatrixBuilder.newRowGroup(currentChoice);
                     result.transitionMatrixBuilder.addNextValue(currentChoice, index, 1);
@@ -267,7 +266,7 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomato
 
     // If there are some states with indices that are behind the last source for which no transition was specified,
     // we need to insert the self-loops now. Note that we assume all these states to be Markovian.
-    if (!dontFixDeadlocks) {
+    if (fixDeadlocks) {
         for (uint_fast64_t index = lastsource + 1; index <= firstPassResult.highestStateIndex; ++index) {
             result.markovianStates.set(index, true);
             result.exitRates[index] = storm::utility::one<ValueType>();
@@ -285,7 +284,7 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomato
 
 template<typename ValueType>
 typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomatonSparseTransitionParser<ValueType>::parseMarkovAutomatonTransitions(
-    std::string const& filename) {
+    std::string const& filename, ExplicitModelParserOptions const& options) {
     // Set the locale to correctly recognize floating point numbers.
     setlocale(LC_NUMERIC, "C");
 
@@ -293,7 +292,7 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomato
     MappedFile file(filename.c_str());
     char const* buf = file.getData();
 
-    return secondPass(buf, firstPass(buf));
+    return secondPass(buf, firstPass(buf, options), options);
 }
 
 template class MarkovAutomatonSparseTransitionParser<double>;

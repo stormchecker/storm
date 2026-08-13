@@ -284,8 +284,6 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkStateFormula(
         return this->checkAtomicExpressionFormula(env, checkTask.substituteFormula(stateFormula.asAtomicExpressionFormula()));
     } else if (stateFormula.isAtomicLabelFormula()) {
         return this->checkAtomicLabelFormula(env, checkTask.substituteFormula(stateFormula.asAtomicLabelFormula()));
-    } else if (stateFormula.isBooleanLiteralFormula()) {
-        return this->checkBooleanLiteralFormula(env, checkTask.substituteFormula(stateFormula.asBooleanLiteralFormula()));
     } else if (stateFormula.isGameFormula()) {
         return this->checkGameFormula(env, checkTask.substituteFormula(stateFormula.asGameFormula()));
     } else if (stateFormula.isMultiObjectiveFormula()) {
