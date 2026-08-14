@@ -5,6 +5,7 @@ Checks: >-
   -*,
   -portability-avoid-pragma-once,
   boost-use-to-string,
+  bugprone-copy-constructor-init,
   bugprone-dangling-handle,
   bugprone-empty-catch,
   bugprone-implicit-widening-of-multiplication-result,
@@ -31,7 +32,6 @@ Checks: >-
   readability-static-accessed-through-instance
 # Candidate checks that are not (yet) enabled:
 # bugprone-branch-clone,
-# bugprone-copy-constructor-init,
 # clang-analyzer-core.*,
 # clang-analyzer-cplusplus.*,
 # clang-analyzer-deadcode.*,
