@@ -44,7 +44,7 @@ template<class T>
 std::size_t findOrInsert(std::vector<T>& vector, T&& element) {
     std::size_t position = std::find(vector.begin(), vector.end(), element) - vector.begin();
     if (position == vector.size()) {
-        vector.emplace_back(std::move(element));
+        vector.emplace_back(std::forward<T>(element));
     }
     return position;
 }

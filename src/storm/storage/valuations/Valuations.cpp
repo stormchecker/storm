@@ -136,7 +136,7 @@ std::optional<storm::RationalNumber> Valuations::getOptionalRationalValue(uint64
     umbValuations->readCallback<std::nullopt_t, storm::RationalNumber>(entity, rationalVariable, [&result](auto, auto const&, auto&& value) {
         using T = std::remove_cvref_t<decltype(value)>;
         if constexpr (std::is_same_v<T, storm::RationalNumber>) {
-            result = std::move(value);
+            result = std::forward<decltype(value)>(value);
         }
     });
     return result;
@@ -154,7 +154,7 @@ std::optional<std::string> Valuations::getOptionalStringValue(uint64_t const ent
     umbValuations->readCallback<std::nullopt_t, std::string>(entity, stringVariable, [&result](auto, auto const&, auto&& value) {
         using T = std::remove_cvref_t<decltype(value)>;
         if constexpr (std::is_same_v<T, std::string>) {
-            result = std::move(value);
+            result = std::forward<decltype(value)>(value);
         }
     });
     return result;

@@ -543,7 +543,7 @@ class ValuationsStorage {
             using ValueType = std::remove_cvref_t<decltype(value)>;
             bool constexpr IsAllowed = (sizeof...(AllowedTypes) == 0) || std::disjunction_v<std::is_same<ValueType, AllowedTypes>...>;
             if constexpr (IsAllowed) {
-                callback(entity, varInfo.expressionVariable, std::move(value));
+                callback(entity, varInfo.expressionVariable, std::forward<decltype(value)>(value));
             }
             return IsAllowed;
         };
