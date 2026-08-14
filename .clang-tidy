@@ -7,13 +7,13 @@ Checks: >-
   bugprone-misplaced-widening-cast,
   bugprone-signed-char-misuse,
   bugprone-unused-return-value,
+  bugprone-use-after-move,
   bugprone-virtual-near-miss,
   readability-braces-around-statements
 # Candidate checks that are not (yet) enabled:
 # bugprone-branch-clone,
 # bugprone-copy-constructor-init,
 # bugprone-redundant-expression,
-# bugprone-use-after-move,
 # clang-analyzer-core.*,
 # clang-analyzer-cplusplus.*,
 # clang-analyzer-deadcode.*,

@@ -585,7 +585,7 @@ void Model<ValueType, RewardModelType>::writeJsonToStream(std::ostream& outStrea
                 }
             }
             if (!choiceRewardsJson.empty()) {
-                choiceRewardsJson["rew"] = std::move(choiceRewardsJson);
+                choiceJson["rew"] = std::move(choiceRewardsJson);
             }
             storm::json<JsonValueType> successors;
             for (auto const& entry : transitionMatrix.getRow(choiceIndex)) {

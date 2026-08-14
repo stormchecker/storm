@@ -828,7 +828,8 @@ TEST(DtmcPrctlModelCheckerTest, AllUntilProbabilities) {
 
     phiStates.set(6);
     psiStates.set(1);
-    result = storm::modelchecker::helper::SparseDtmcPrctlHelper<double>::computeAllUntilProbabilities(env, std::move(goal), matrix, initialStates, phiStates,
+    storm::solver::SolveGoal<double> goal2(*model, tasks[0]);
+    result = storm::modelchecker::helper::SparseDtmcPrctlHelper<double>::computeAllUntilProbabilities(env, std::move(goal2), matrix, initialStates, phiStates,
                                                                                                       psiStates);
 
     EXPECT_NEAR(1, result[0], 1e-6);

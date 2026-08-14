@@ -471,6 +471,8 @@ std::vector<ValueType> SparseDeterministicVisitingTimesHelper<ValueType>::comput
     }
 
     // Get the solver object and satisfy requirements
+    // The solver consumes the matrix, so the acyclic check must be performed before moving it.
+    bool const hasCycles = storm::utility::graph::hasCycle(sccMatrix);
     auto solver = linearEquationSolverFactory.create(env, std::move(sccMatrix));
     solver->setLowerBound(storm::utility::zero<ValueType>());
     auto req = solver->getRequirements(env);
@@ -483,8 +485,7 @@ std::vector<ValueType> SparseDeterministicVisitingTimesHelper<ValueType>::comput
     }
 
     if (req.acyclic().isCritical()) {
-        STORM_LOG_THROW(!storm::utility::graph::hasCycle(sccMatrix), storm::exceptions::UnmetRequirementException,
-                        "The solver requires an acyclic model, but the model is not acyclic.");
+        STORM_LOG_THROW(!hasCycles, storm::exceptions::UnmetRequirementException, "The solver requires an acyclic model, but the model is not acyclic.");
         req.clearAcyclic();
     }
 

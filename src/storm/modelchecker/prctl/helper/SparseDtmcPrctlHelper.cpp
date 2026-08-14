@@ -141,10 +141,12 @@ std::vector<SolutionType> computeRobustValuesForMaybeStates(Environment const& e
 
     // Set up the solver.
     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType> minMaxLinearEquationSolverFactory;
+    // The goal is consumed by the solver configuration, so capture what is needed first.
+    auto const uncertaintyResolutionMode = goal.getUncertaintyResolutionMode();
     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver = storm::solver::configureMinMaxLinearEquationSolver(
         env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix),
         convert(OptimizationDirection::Maximize));  // default to maximize for IDTMCs; does not affect the result
-    solver->setUncertaintyResolutionMode(goal.getUncertaintyResolutionMode());
+    solver->setUncertaintyResolutionMode(uncertaintyResolutionMode);
     solver->setHasUniqueSolution(computeReward);  // As we check for graph-preservation, in case of rewards on IDTMCs, we have a unique solution
     solver->setHasNoEndComponents(false);
 

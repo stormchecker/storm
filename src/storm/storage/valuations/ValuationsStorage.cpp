@@ -161,7 +161,7 @@ ValuationsStorage::ValuationsStorage(uint64_t const numEntities, std::vector<Val
         this->stringMapping.push_back(0);
     }
     STORM_LOG_ASSERT(hasStringVariable || this->stringMapping.empty(), "Non-empty string mapping given but there is no string variable.");
-    STORM_LOG_ASSERT(stringMapping.empty() || this->stringMapping.back() == strings.size(),
+    STORM_LOG_ASSERT(this->stringMapping.empty() || this->stringMapping.back() == this->strings.size(),
                      "String mapping should end with the total size of the string data.");
 
     // Enable quick access to the right byte span for each entity.
@@ -185,7 +185,7 @@ ValuationsStorage::ValuationsStorage(uint64_t const numEntities, std::vector<Val
         STORM_LOG_ASSERT(this->variableClasses.front().sizeInBytes == 0 || this->valuations.size() % this->variableClasses.front().sizeInBytes == 0,
                          "Valuation data size is not a multiple of the unique valuation size.");
         STORM_LOG_ASSERT(numEntities * this->variableClasses.front().sizeInBytes == this->valuations.size(),
-                         "Valuation data size (" << valuations.size() << ") does not match number of entities (" << this->numEntities
+                         "Valuation data size (" << this->valuations.size() << ") does not match number of entities (" << this->numEntities
                                                  << ") times valuation size (" << this->variableClasses.front().sizeInBytes << ").");
     }
 }
