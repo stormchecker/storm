@@ -4,6 +4,7 @@
 #include <bit>
 #include <bitset>
 #include <boost/functional/hash.hpp>
+#include <cstddef>
 #include <iostream>
 
 #include "storm/storage/BoostTypes.h"
@@ -1226,7 +1227,7 @@ uint32_t Murmur3BitVectorHash<uint32_t>::operator()(storm::storage::BitVector co
     //----------
     // body
 
-    const uint32_t* blocks = reinterpret_cast<uint32_t const*>(data + nblocks * 4);
+    const uint32_t* blocks = reinterpret_cast<uint32_t const*>(data + static_cast<std::ptrdiff_t>(nblocks) * 4);
 
     for (int i = -nblocks; i; i++) {
         uint32_t k1 = getblock32(blocks, i);
@@ -1293,7 +1294,7 @@ uint64_t Murmur3BitVectorHash<uint64_t>::operator()(storm::storage::BitVector co
     //----------
     // tail
 
-    uint8_t const* tail = reinterpret_cast<uint8_t const*>(data + nblocks * 16);
+    uint8_t const* tail = reinterpret_cast<uint8_t const*>(data + static_cast<std::ptrdiff_t>(nblocks) * 16);
 
     uint64_t k1 = 0;
     uint64_t k2 = 0;
