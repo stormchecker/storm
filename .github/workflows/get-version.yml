@@ -28,7 +28,7 @@ jobs:
 
       - id: version
         run: |
-          VERSION=$(sed -n '/^project(storm$/,/^)/{/^[[:space:]]*VERSION[[:space:]]/s/.*VERSION[[:space:]]*//p}' CMakeLists.txt)
+          VERSION=$(sed -n '/^project(storm[[:space:]]*$/,/^)/{/^[[:space:]]*VERSION[[:space:]]/s/.*VERSION[[:space:]]*//p}' CMakeLists.txt)
           BASE=$(echo "$VERSION" | cut -d. -f1-3)
           if [ -z "$BASE" ]; then
             echo "Failed to extract version from CMakeLists.txt" >&2
