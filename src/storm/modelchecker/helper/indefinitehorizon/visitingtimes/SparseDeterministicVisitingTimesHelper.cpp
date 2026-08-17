@@ -472,21 +472,22 @@ std::vector<ValueType> SparseDeterministicVisitingTimesHelper<ValueType>::comput
 
     // Get the solver object and satisfy requirements
     // The solver consumes the matrix, so the acyclic check must be performed before moving it.
-    bool const hasCycles = storm::utility::graph::hasCycle(sccMatrix);
+    auto req = linearEquationSolverFactory.getRequirements(env);
+    if (req.acyclic().isCritical()) {
+        // The solver consumes the matrix, so the acyclic check must be performed before moving it.
+        STORM_LOG_THROW(!storm::utility::graph::hasCycle(sccMatrix), storm::exceptions::UnmetRequirementException,
+                        "The solver requires an acyclic model, but the model is not acyclic.");
+        req.clearAcyclic();
+    }
     auto solver = linearEquationSolverFactory.create(env, std::move(sccMatrix));
     solver->setLowerBound(storm::utility::zero<ValueType>());
-    auto req = solver->getRequirements(env);
+    req = solver->getRequirements(env);
     req.clearLowerBounds();
     if (req.upperBounds().isCritical()) {
         // Compute upper bounds on EVTs using techniques from Baier et al. [CAV'17] (https://doi.org/10.1007/978-3-319-63387-9_8)
         std::vector<ValueType> upperBounds = computeUpperBounds(subsystem);
         solver->setUpperBounds(upperBounds);
         req.clearUpperBounds();
-    }
-
-    if (req.acyclic().isCritical()) {
-        STORM_LOG_THROW(!hasCycles, storm::exceptions::UnmetRequirementException, "The solver requires an acyclic model, but the model is not acyclic.");
-        req.clearAcyclic();
     }
 
     STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException,
