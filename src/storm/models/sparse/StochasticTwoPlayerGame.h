@@ -1,8 +1,6 @@
-#ifndef STORM_MODELS_SPARSE_STOCHASTICTWOPLAYERGAME_H_
-#define STORM_MODELS_SPARSE_STOCHASTICTWOPLAYERGAME_H_
+#pragma once
 
 #include "storm/models/sparse/NondeterministicModel.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {
@@ -94,5 +92,3 @@ class StochasticTwoPlayerGame : public NondeterministicModel<ValueType, RewardMo
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SPARSE_STOCHASTICTWOPLAYERGAME_H_ */

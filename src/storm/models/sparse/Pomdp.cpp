@@ -1,6 +1,8 @@
 #include "storm/models/sparse/Pomdp.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 namespace models {
@@ -119,12 +121,12 @@ bool Pomdp<ValueType, RewardModelType>::hasObservationValuations() const {
 }
 
 template<typename ValueType, typename RewardModelType>
-storm::storage::sparse::StateValuations const &Pomdp<ValueType, RewardModelType>::getObservationValuations() const {
+storm::storage::sparse::Valuations const &Pomdp<ValueType, RewardModelType>::getObservationValuations() const {
     return observationValuations.value();
 }
 
 template<typename ValueType, typename RewardModelType>
-std::optional<storm::storage::sparse::StateValuations> const &Pomdp<ValueType, RewardModelType>::getOptionalObservationValuations() const {
+std::optional<storm::storage::sparse::Valuations> const &Pomdp<ValueType, RewardModelType>::getOptionalObservationValuations() const {
     return observationValuations;
 }
 
@@ -152,10 +154,12 @@ std::size_t Pomdp<ValueType, RewardModelType>::hash() const {
 }
 
 template class Pomdp<double>;
-template class Pomdp<storm::RationalNumber>;
 template class Pomdp<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-template class Pomdp<storm::RationalFunction>;
+template class Pomdp<storm::RationalNumber>;
+template class Pomdp<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
 template class Pomdp<storm::Interval>;
+template class Pomdp<storm::RationalInterval>;
+template class Pomdp<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm

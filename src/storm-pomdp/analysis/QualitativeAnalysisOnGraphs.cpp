@@ -1,15 +1,14 @@
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
 namespace analysis {
@@ -35,7 +34,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProbSma
                     "The formula " << formula << " does not specify whether to minimize or maximize.");
     bool minimizes = (formula.hasOptimalityType() && storm::solver::minimize(formula.getOptimalityType())) ||
                      (formula.hasBound() && storm::logic::isLowerBound(formula.getBound().comparisonType));
-    STORM_LOG_THROW(!minimizes, storm::exceptions::NotImplementedException, "This operation is only supported when maximizing");
+    STORM_LOG_THROW(!minimizes, storm::exceptions::NotImplementedException, "This operation is only supported when maximizing.");
     std::shared_ptr<storm::logic::Formula const> subformula = formula.getSubformula().asSharedPointer();
     std::shared_ptr<storm::logic::UntilFormula> untilSubformula;
     // If necessary, convert the subformula to a more general case
@@ -54,7 +53,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProbSma
 template<typename ValueType>
 storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb0or1(storm::logic::ProbabilityOperatorFormula const& formula, bool prob0) const {
     // check whether the property is minimizing or maximizing
-    STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::IllegalArgumentException, "POMDP needs to be canonic");
+    STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::IllegalArgumentException, "POMDP needs to be canonic.");
     STORM_LOG_THROW(formula.hasOptimalityType() || formula.hasBound(), storm::exceptions::InvalidPropertyException,
                     "The formula " << formula << " does not specify whether to minimize or maximize.");
     bool minimizes = (formula.hasOptimalityType() && storm::solver::minimize(formula.getOptimalityType())) ||
@@ -78,7 +77,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb0or
             return analyseProb1Max(subformula->asUntilFormula());
         }
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Prob0or1 analysis is not supported for the property " << formula);
+    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Prob0or1 analysis is not supported for the property " << formula << ".");
 }
 
 template<typename ValueType>
@@ -154,7 +153,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb1Ma
                     // Check whether all actions lead with a positive probabilty to a goal, and with zero probability to another (non-goal) state.
                     bool hasGoalEntry = false;
                     for (auto const& entry : pomdp.getTransitionMatrix().getRow(row)) {
-                        assert(!storm::utility::isZero(entry.getValue()));
+                        STORM_LOG_ASSERT(!storm::utility::isZero(entry.getValue()), "Expected non-zero entry value.");
                         if (newGoalStates.get(entry.getColumn())) {
                             STORM_LOG_TRACE("Reaches state " << entry.getColumn() << " which is a PROB1e state");
                             hasGoalEntry = true;
@@ -201,12 +200,11 @@ template<typename ValueType>
 storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::checkPropositionalFormula(storm::logic::Formula const& propositionalFormula) const {
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(pomdp);
     STORM_LOG_THROW(mc.canHandle(propositionalFormula), storm::exceptions::InvalidPropertyException,
-                    "Propositional model checker can not handle formula " << propositionalFormula);
-    return mc.check(propositionalFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                    "Propositional model checker can not handle formula " << propositionalFormula << ".");
+    return mc.check(propositionalFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
 }
 
-template class QualitativeAnalysisOnGraphs<storm::RationalNumber>;
-
 template class QualitativeAnalysisOnGraphs<double>;
+template class QualitativeAnalysisOnGraphs<storm::RationalNumber>;
 }  // namespace analysis
 }  // namespace storm

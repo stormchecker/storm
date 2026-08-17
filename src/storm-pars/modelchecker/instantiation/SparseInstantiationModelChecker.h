@@ -26,6 +26,17 @@ class SparseInstantiationModelChecker {
     virtual std::unique_ptr<CheckResult> check(Environment const& env,
                                                storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) = 0;
 
+    /**
+     * Checks if the given valuation is valid for the current model.  Currently
+     * used before checking whether the center of the model is SAT / UNSAT in
+     * PLA. So we'll use the model instantiator to instantiate the model anyway,
+     * but we currently don't re-use the result.
+     *
+     * @param valuation The valuation to check.
+     * @return true if the valuation is well-defined, false otherwise.
+     */
+    virtual bool isWellDefined(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) = 0;
+
     // If set, it is assumed that all considered model instantiations have the same underlying graph structure.
     // This bypasses the graph analysis for the different instantiations.
     void setInstantiationsAreGraphPreserving(bool value);

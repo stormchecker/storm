@@ -1,7 +1,6 @@
-#include "SingleValueModelCheckerHelper.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
 
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace modelchecker {

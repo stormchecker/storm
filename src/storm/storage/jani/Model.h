@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Composition.h"
+#include "storm/storage/BoostTypes.h"
 #include "storm/storage/jani/Action.h"
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/Constant.h"
@@ -13,8 +14,6 @@
 #include "storm/storage/jani/ModelType.h"
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/VariableSet.h"
-
-#include "storm/storage/BoostTypes.h"
 #include "storm/utility/solver.h"
 
 namespace storm {
@@ -428,6 +427,23 @@ class Model {
      * instead a new model is created.
      */
     Model substituteConstants() const;
+
+    /*!
+     * Preprocesses the model by defining the given constant definitions and substituting constants.
+     *
+     * @param constantDefinitions A mapping from undefined constant to the expressions they are supposed to be replaced with.
+     * @return The preprocessed model.
+     */
+    Model preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const;
+
+    /*!
+     * Preprocesses the model by parsing the given constant definition string, defining the constants,
+     * and substituting constants.
+     *
+     * @param constantDefinitionString A string of constant definitions, e.g., "p=0.5, n=10".
+     * @return The preprocessed model.
+     */
+    Model preprocess(std::string const& constantDefinitionString = "") const;
 
     /*!
      * Retrieves a mapping from expression variables associated with defined constants of the model to their

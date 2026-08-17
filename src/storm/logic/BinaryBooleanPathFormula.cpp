@@ -13,9 +13,9 @@ BinaryBooleanPathFormula::BinaryBooleanPathFormula(OperatorType operatorType, st
                                                    std::shared_ptr<Formula const> const& rightSubformula, FormulaContext context)
     : BinaryPathFormula(leftSubformula, rightSubformula), operatorType(operatorType), context(context) {
     STORM_LOG_THROW(this->getLeftSubformula().isStateFormula() || this->getLeftSubformula().isPathFormula(), storm::exceptions::InvalidPropertyException,
-                    "Boolean path formula must have either path or state subformulas");
+                    "Boolean path formula must have either path or state subformulas.");
     STORM_LOG_THROW(this->getRightSubformula().isStateFormula() || this->getRightSubformula().isPathFormula(), storm::exceptions::InvalidPropertyException,
-                    "Boolean path formula must have either path or state subformulas");
+                    "Boolean path formula must have either path or state subformulas.");
     STORM_LOG_THROW(context == FormulaContext::Probability, storm::exceptions::InvalidPropertyException, "Invalid context for formula.");
 }
 

@@ -1,25 +1,21 @@
 #include "storm/transformer/SubsystemBuilder.h"
 
 #include <boost/optional.hpp>
-#include <storm/exceptions/UnexpectedException.h>
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/models/sparse/Ctmc.h"
-#include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/models/sparse/Mdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/sparse/ModelComponents.h"
-#include "storm/utility/builder.h"
-#include "storm/utility/constants.h"
-#include "storm/utility/graph.h"
-#include "storm/utility/macros.h"
-#include "storm/utility/vector.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/models/sparse/Ctmc.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/storage/sparse/ModelComponents.h"
+#include "storm/utility/builder.h"
+#include "storm/utility/graph.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace transformer {
@@ -58,7 +54,7 @@ RewardModelType transformRewardModel(RewardModelType const& originalRewardModel,
     if (originalRewardModel.hasTransitionRewards()) {
         transitionRewardMatrix = originalRewardModel.getTransitionRewardMatrix().getSubmatrix(false, subsystemActions, subsystem);
         if (makeRowGroupingTrivial) {
-            STORM_LOG_ASSERT(transitionRewardMatrix.value().getColumnCount() == transitionRewardMatrix.value().getRowCount(), "Matrix should be square");
+            STORM_LOG_ASSERT(transitionRewardMatrix.value().getColumnCount() == transitionRewardMatrix.value().getRowCount(), "Matrix should be square.");
             transitionRewardMatrix.value().makeRowGroupingTrivial();
         }
     }
@@ -112,7 +108,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
         }
         if (hasDeadlock) {
             STORM_LOG_THROW(options.fixDeadlocks, storm::exceptions::InvalidOperationException,
-                            "Expected that in each state, at least one action is selected. Got a deadlock state instead. (violated at " << subsysState << ")");
+                            "Expected that in each state, at least one action is selected. Got a deadlock state instead. (violated at " << subsysState << ").");
             if (options.buildActionMapping) {
                 result.newToOldActionIndexMapping.push_back(std::numeric_limits<uint64_t>::max());
             }
@@ -141,7 +137,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
         components.transitionMatrix = originalModel.getTransitionMatrix().getSubmatrix(false, keptActions, subsystemStates);
     }
     if (options.makeRowGroupingTrivial) {
-        STORM_LOG_ASSERT(components.transitionMatrix.getColumnCount() == components.transitionMatrix.getRowCount(), "Matrix should be square");
+        STORM_LOG_ASSERT(components.transitionMatrix.getColumnCount() == components.transitionMatrix.getRowCount(), "Matrix should be square.");
         components.transitionMatrix.makeRowGroupingTrivial();
     }
 
@@ -154,7 +150,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
         components.choiceLabeling = originalModel.getChoiceLabeling().getSubLabeling(keptActions);
     }
     if (originalModel.hasStateValuations()) {
-        components.stateValuations = originalModel.getStateValuations().selectStates(subsystemStates);
+        components.stateValuations = originalModel.getStateValuations().selectEntities(subsystemStates);
     }
     if (originalModel.hasChoiceOrigins()) {
         components.choiceOrigins = originalModel.getChoiceOrigins()->selectChoices(keptActions);
@@ -162,7 +158,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
 
     if (hasDeadlockStates) {
         auto subDeadlockStates = deadlockStates % subsystemStates;
-        assert(deadlockStates.getNumberOfSetBits() == subDeadlockStates.getNumberOfSetBits());
+        STORM_LOG_ASSERT(deadlockStates.getNumberOfSetBits() == subDeadlockStates.getNumberOfSetBits(), "Deadlock states count mismatch.");
         // erase rewards, choice labels, choice origins
         for (auto& rewModel : components.rewardModels) {
             for (auto state : subDeadlockStates) {
@@ -210,7 +206,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> buildSubsystem(storm::mod
                                                                       SubsystemBuilderOptions options) {
     STORM_LOG_DEBUG("Invoked subsystem builder on model with " << originalModel.getNumberOfStates() << " states.");
     storm::storage::BitVector initialStates = originalModel.getInitialStates() & subsystemStates;
-    STORM_LOG_THROW(!initialStates.empty(), storm::exceptions::InvalidArgumentException, "The subsystem would not contain any initial states");
+    STORM_LOG_THROW(!initialStates.empty(), storm::exceptions::InvalidArgumentException, "The subsystem would not contain any initial states.");
 
     STORM_LOG_THROW(!subsystemStates.empty(), storm::exceptions::InvalidArgumentException, "Invoked SubsystemBuilder for an empty subsystem.");
     if (keepUnreachableStates) {
@@ -229,6 +225,10 @@ template SubsystemBuilderReturnType<double, storm::models::sparse::StandardRewar
     storm::models::sparse::Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& originalModel,
     storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,
     SubsystemBuilderOptions options = SubsystemBuilderOptions());
+template SubsystemBuilderReturnType<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>> buildSubsystem(
+    storm::models::sparse::Model<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>> const& originalModel,
+    storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,
+    SubsystemBuilderOptions options = SubsystemBuilderOptions());
 template SubsystemBuilderReturnType<storm::RationalNumber> buildSubsystem(storm::models::sparse::Model<storm::RationalNumber> const& originalModel,
                                                                           storm::storage::BitVector const& subsystemStates,
                                                                           storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,
@@ -242,6 +242,11 @@ template SubsystemBuilderReturnType<storm::Interval> buildSubsystem(storm::model
                                                                     storm::storage::BitVector const& subsystemStates,
                                                                     storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,
                                                                     SubsystemBuilderOptions options = SubsystemBuilderOptions());
+template SubsystemBuilderReturnType<storm::RationalInterval> buildSubsystem(storm::models::sparse::Model<storm::RationalInterval> const& originalModel,
+                                                                            storm::storage::BitVector const& subsystemStates,
+                                                                            storm::storage::BitVector const& subsystemActions,
+                                                                            bool keepUnreachableStates = true,
+                                                                            SubsystemBuilderOptions options = SubsystemBuilderOptions());
 
 }  // namespace transformer
 }  // namespace storm

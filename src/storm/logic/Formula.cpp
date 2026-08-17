@@ -145,6 +145,10 @@ bool Formula::isCumulativeRewardFormula() const {
     return false;
 }
 
+bool Formula::isDiscountedCumulativeRewardFormula() const {
+    return false;
+}
+
 bool Formula::isInstantaneousRewardFormula() const {
     return false;
 }
@@ -158,6 +162,10 @@ bool Formula::isLongRunAverageRewardFormula() const {
 }
 
 bool Formula::isTotalRewardFormula() const {
+    return false;
+}
+
+bool Formula::isDiscountedTotalRewardFormula() const {
     return false;
 }
 
@@ -434,6 +442,21 @@ TotalRewardFormula const& Formula::asTotalRewardFormula() const {
     return dynamic_cast<TotalRewardFormula const&>(*this);
 }
 
+DiscountedCumulativeRewardFormula& Formula::asDiscountedCumulativeRewardFormula() {
+    return dynamic_cast<DiscountedCumulativeRewardFormula&>(*this);
+}
+
+DiscountedCumulativeRewardFormula const& Formula::asDiscountedCumulativeRewardFormula() const {
+    return dynamic_cast<DiscountedCumulativeRewardFormula const&>(*this);
+}
+
+DiscountedTotalRewardFormula& Formula::asDiscountedTotalRewardFormula() {
+    return dynamic_cast<DiscountedTotalRewardFormula&>(*this);
+}
+DiscountedTotalRewardFormula const& Formula::asDiscountedTotalRewardFormula() const {
+    return dynamic_cast<DiscountedTotalRewardFormula const&>(*this);
+}
+
 InstantaneousRewardFormula& Formula::asInstantaneousRewardFormula() {
     return dynamic_cast<InstantaneousRewardFormula&>(*this);
 }
@@ -553,21 +576,13 @@ std::shared_ptr<Formula const> Formula::asSharedPointer() const {
     return this->shared_from_this();
 }
 
-void Formula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>&) const {
-    return;
-}
+void Formula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>&) const {}
 
-void Formula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>&) const {
-    return;
-}
+void Formula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>&) const {}
 
-void Formula::gatherReferencedRewardModels(std::set<std::string>&) const {
-    return;
-}
+void Formula::gatherReferencedRewardModels(std::set<std::string>&) const {}
 
-void Formula::gatherUsedVariables(std::set<storm::expressions::Variable>&) const {
-    return;
-}
+void Formula::gatherUsedVariables(std::set<storm::expressions::Variable>&) const {}
 
 std::string Formula::toString() const {
     std::stringstream str2;

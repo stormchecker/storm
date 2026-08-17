@@ -1,7 +1,5 @@
 #include "storm/solver/stateelimination/StaticStatePriorityQueue.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
-
 namespace storm {
 namespace solver {
 namespace stateelimination {

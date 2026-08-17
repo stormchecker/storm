@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_UNARYBOOLEANSTATEFORMULA_H_
-#define STORM_LOGIC_UNARYBOOLEANSTATEFORMULA_H_
+#pragma once
 
 #include "storm/logic/UnaryBooleanOperatorType.h"
 #include "storm/logic/UnaryStateFormula.h"
@@ -31,5 +30,3 @@ class UnaryBooleanStateFormula : public UnaryStateFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_UNARYBOOLEANSTATEFORMULA_H_ */

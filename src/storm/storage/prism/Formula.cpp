@@ -34,13 +34,14 @@ storm::expressions::Expression const& Formula::getExpression() const {
 }
 
 storm::expressions::Type const& Formula::getType() const {
-    assert(this->getExpression().isInitialized());
-    assert(!hasExpressionVariable() || this->getExpressionVariable().getType() == this->getExpression().getType());
+    STORM_LOG_ASSERT(this->getExpression().isInitialized(), "Expression not initialized.");
+    STORM_LOG_ASSERT(!hasExpressionVariable() || this->getExpressionVariable().getType() == this->getExpression().getType(),
+                     "Expression variable type mismatch.");
     return this->getExpressionVariable().getType();
 }
 
 Formula Formula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-    assert(this->getExpression().isInitialized());
+    STORM_LOG_ASSERT(this->getExpression().isInitialized(), "Expression not initialized.");
     if (hasExpressionVariable()) {
         return Formula(this->getExpressionVariable(), this->getExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
     } else {
@@ -49,7 +50,7 @@ Formula Formula::substitute(std::map<storm::expressions::Variable, storm::expres
 }
 
 Formula Formula::substituteNonStandardPredicates() const {
-    assert(this->getExpression().isInitialized());
+    STORM_LOG_ASSERT(this->getExpression().isInitialized(), "Expression not initialized.");
     if (hasExpressionVariable()) {
         return Formula(this->getExpressionVariable(), this->getExpression().substituteNonStandardPredicates(), this->getFilename(), this->getLineNumber());
     } else {

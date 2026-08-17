@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_BOUNDS_H_
-#define STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_BOUNDS_H_
+#pragma once
 
 #include <utility>
 #include <vector>
@@ -75,5 +74,3 @@ class Bounds {
 }  // namespace exploration_detail
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_BOUNDS_H_ */

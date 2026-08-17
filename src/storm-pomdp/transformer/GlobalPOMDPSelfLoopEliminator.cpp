@@ -1,5 +1,7 @@
 #include "storm-pomdp/transformer/GlobalPOMDPSelfLoopEliminator.h"
+
 #include <vector>
+
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -38,7 +40,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPOMDPSelfLoopElim
     std::vector<storm::storage::BitVector> observationSelfLoopMasks(pomdp.getNrObservations());
     for (uint64_t state = 0; state < nrStates; ++state) {
         uint32_t observation = pomdp.getObservation(state);
-        assert(pomdp.getNumberOfChoices(state) != 0);
+        STORM_LOG_ASSERT(pomdp.getNumberOfChoices(state) != 0, "State with no choices found.");
 
         STORM_LOG_ASSERT(observation < observationSelfLoopMasks.size(),
                          "Observation index (" << observation << ") should be less than number of observations (" << observationSelfLoopMasks.size() << "). ");
@@ -78,7 +80,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPOMDPSelfLoopElim
     uint64_t offset = 0;
     for (uint64_t state = 0; state < nrStates; ++state) {
         storm::storage::BitVector& observationSelfLoopMask = observationSelfLoopMasks[pomdp.getObservation(state)];
-        assert(!observationSelfLoopMask.full());
+        STORM_LOG_ASSERT(!observationSelfLoopMask.full(), "Observation self-loop mask is full.");
         for (auto const localChoiceIndex : observationSelfLoopMask) {
             filter.set(offset + localChoiceIndex, false);
         }
@@ -98,7 +100,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPOMDPSelfLoopElim
     return res;
 }
 
-template class GlobalPOMDPSelfLoopEliminator<storm::RationalNumber>;
 template class GlobalPOMDPSelfLoopEliminator<double>;
+template class GlobalPOMDPSelfLoopEliminator<storm::RationalNumber>;
 }  // namespace transformer
 }  // namespace storm

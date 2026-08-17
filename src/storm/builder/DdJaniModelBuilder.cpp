@@ -1,15 +1,25 @@
 #include "storm/builder/DdJaniModelBuilder.h"
 
+#include <boost/algorithm/string/join.hpp>
 #include <sstream>
 
-#include <boost/algorithm/string/join.hpp>
-
+#include "storm/adapters/AddExpressionAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/logic/Formulas.h"
-
-#include "storm/adapters/RationalNumberAdapter.h"
-
+#include "storm/models/symbolic/Ctmc.h"
+#include "storm/models/symbolic/Dtmc.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
+#include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Variable.h"
-
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/Edge.h"
@@ -21,32 +31,8 @@
 #include "storm/storage/jani/eliminator/ArrayEliminator.h"
 #include "storm/storage/jani/types/AllJaniTypes.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
-
-#include "storm/adapters/AddExpressionAdapter.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-
-#include "storm/storage/expressions/ExpressionManager.h"
-
-#include "storm/models/symbolic/Ctmc.h"
-#include "storm/models/symbolic/Dtmc.h"
-#include "storm/models/symbolic/MarkovAutomaton.h"
-#include "storm/models/symbolic/Mdp.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/dd.h"
-#include "storm/utility/jani.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/math.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace builder {
@@ -56,19 +42,21 @@ storm::jani::ModelFeatures DdJaniModelBuilder<Type, ValueType>::getSupportedJani
     storm::jani::ModelFeatures features;
     features.add(storm::jani::ModelFeature::DerivedOperators);
     features.add(storm::jani::ModelFeature::StateExitRewards);
+    features.add(storm::jani::ModelFeature::MultiObjectiveProperties);
     // We do not add Functions and arrays as these should ideally be substituted before creating this generator.
     // This is because functions or arrays may also occur in properties and the user of this builder should take care of that.
     return features;
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& model, boost::optional<std::vector<storm::jani::Property>> const& properties) {
+bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& model, storm::OptionalRef<std::vector<storm::jani::Property> const> properties) {
     // Check jani features
     auto features = model.getModelFeatures();
     features.remove(storm::jani::ModelFeature::Arrays);  // can be substituted
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::Functions);  // can be substituted
     features.remove(storm::jani::ModelFeature::StateExitRewards);
+    features.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
     if (!features.empty()) {
         STORM_LOG_INFO("Symbolic engine can not build Jani model due to unsupported jani features.");
         return false;
@@ -81,7 +69,7 @@ bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& mo
     // Check nonTrivial reward expressions
     if (properties) {
         std::set<std::string> rewardModels;
-        for (auto const& p : properties.get()) {
+        for (auto const& p : properties.value()) {
             p.gatherReferencedRewardModels(rewardModels);
         }
         for (auto const& r : rewardModels) {
@@ -1827,7 +1815,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
             return combineEdgesBySummation(allGuards, edges);
         } else {
             // Calculate number of required variables to encode the nondeterminism.
-            uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(storm::utility::math::log2(maxChoices)));
+            uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(std::log2(maxChoices)));
 
             storm::dd::Add<Type, ValueType> allEdges = this->variables.manager->template getAddZero<ValueType>();
             std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> globalVariableToWritingFragment;
@@ -2029,7 +2017,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
                 ActionIdentification identificationWithoutSynchVector(actionIndex, markovian);
 
                 STORM_LOG_THROW(containedActions.find(identificationWithoutSynchVector) == containedActions.end(), storm::exceptions::WrongFormatException,
-                                "Duplicate action " << actionInformation.getActionName(actionIndex));
+                                "Duplicate action " << actionInformation.getActionName(actionIndex) << ".");
                 containedActions.insert(identificationWithoutSynchVector);
                 illegalFragment |= action.second.illegalFragment;
                 addMissingGlobalVariableIdentities(action.second);
@@ -2060,7 +2048,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
             std::unordered_set<uint64_t> actionIndices;
             for (auto& action : automaton.actions) {
                 STORM_LOG_THROW(actionIndices.find(action.first.actionIndex) == actionIndices.end(), storm::exceptions::WrongFormatException,
-                                "Duplication action " << actionInformation.getActionName(action.first.actionIndex));
+                                "Duplication action " << actionInformation.getActionName(action.first.actionIndex) << ".");
                 actionIndices.insert(action.first.actionIndex);
                 illegalFragment |= action.second.illegalFragment;
                 addMissingGlobalVariableIdentities(action.second);
@@ -2200,16 +2188,16 @@ storm::dd::Bdd<Type> computeInitialStates(storm::jani::Model const& model, Compo
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-storm::dd::Bdd<Type> fixDeadlocks(storm::jani::ModelType const& modelType, storm::dd::Add<Type, ValueType>& transitionMatrix,
-                                  storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& reachableStates,
-                                  CompositionVariables<Type, ValueType> const& variables) {
+storm::dd::Bdd<Type> doFixDeadlocks(storm::jani::ModelType const& modelType, storm::dd::Add<Type, ValueType>& transitionMatrix,
+                                    storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& reachableStates,
+                                    CompositionVariables<Type, ValueType> const& variables, bool fixDeadlocks) {
     // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
     storm::dd::Bdd<Type> statesWithTransition = transitionMatrixBdd.existsAbstract(variables.columnMetaVariables);
     storm::dd::Bdd<Type> deadlockStates = reachableStates && !statesWithTransition;
 
     if (!deadlockStates.isZero()) {
         // If we need to fix deadlocks, we do so now.
-        if (!storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet()) {
+        if (fixDeadlocks) {
             STORM_LOG_INFO("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. The first three of these states are: ");
 
             storm::dd::Add<Type, ValueType> deadlockStatesAdd = deadlockStates.template toAdd<ValueType>();
@@ -2393,8 +2381,8 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> buildInternal(s
     modelComponents.transitionMatrix = system.transitions * reachableStatesAdd;
 
     // Fix deadlocks if existing.
-    modelComponents.deadlockStates =
-        fixDeadlocks(model.getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd, modelComponents.reachableStates, variables);
+    modelComponents.deadlockStates = doFixDeadlocks(model.getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd,
+                                                    modelComponents.reachableStates, variables, options.fixDeadlocks);
 
     // Cut the deadlock states by removing all states that we 'converted' to deadlock states by making them terminal.
     modelComponents.deadlockStates = modelComponents.deadlockStates && !terminalStates;
@@ -2408,7 +2396,8 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> buildInternal(s
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build(storm::jani::Model const& model,
+std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build(storm::Environment const& env,
+                                                                                                            storm::jani::Model const& model,
                                                                                                             Options const& options) {
     // Prepare the model and do some sanity checks
     if (!std::is_same<ValueType, storm::RationalFunction>::value && model.hasUndefinedConstants()) {
@@ -2428,6 +2417,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
     auto features = model.getModelFeatures();
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::StateExitRewards);
+    features.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
 
     storm::jani::Model preparedModel = model;
     preparedModel.simplifyComposition();
@@ -2458,7 +2448,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
                     "The symbolic JANI model builder currently does not support transient edge destination assignments.");
 
     // Create the manager
-    auto manager = std::make_shared<storm::dd::DdManager<Type>>();
+    auto manager = std::make_shared<storm::dd::DdManager<Type>>(env);
 
     // Prepare a result
     std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;

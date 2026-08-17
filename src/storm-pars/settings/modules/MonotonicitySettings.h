@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_MONOTONICITYSETTINGS_H_
-#define STORM_SETTINGS_MODULES_MONOTONICITYSETTINGS_H_
+#pragma once
 
 #include "storm/settings/modules/ModuleSettings.h"
 
@@ -77,5 +76,3 @@ class MonotonicitySettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_MONOTONICITYSETTINGS_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_GUROBILPSOLVER
-#define STORM_SOLVER_GUROBILPSOLVER
+#pragma once
 
 #include <map>
 #include <optional>
@@ -9,13 +8,16 @@
 
 #ifdef STORM_HAVE_GUROBI
 extern "C" {
-#include "gurobi_c.h"
+#include <gurobi_c.h>
 
 int __stdcall GRBislp(GRBenv**, const char*, const char*, const char*, const char*);
 }
 #endif
 
 namespace storm {
+
+class GurobiSolverEnvironment;
+
 namespace solver {
 
 class GurobiEnvironment {
@@ -27,13 +29,15 @@ class GurobiEnvironment {
     /*!
      * Sets some properties of the Gurobi environment according to parameters given by the options.
      */
-    void initialize();
+    void initialize(storm::GurobiSolverEnvironment const& gurobiSettings, bool debug);
     void setOutput(bool set = false);
+    double getIntegerTolerance() const;
 #ifdef STORM_HAVE_GUROBI
     GRBenv* operator*();
 #endif
    private:
     bool initialized = false;
+    double integerTolerance = 0.0;
 #ifdef STORM_HAVE_GUROBI
     GRBenv* env = nullptr;
 #endif
@@ -82,12 +86,6 @@ class GurobiLpSolver : public LpSolver<ValueType, RawMode> {
     GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const& environment);
 
     /*!
-     * Creates a (deep) copy of this solver.
-     * @param other
-     */
-    GurobiLpSolver(GurobiLpSolver<ValueType> const& other);
-
-    /*!
      * Destructs a solver by freeing the pointers to Gurobi's structures.
      */
     virtual ~GurobiLpSolver();
@@ -131,6 +129,15 @@ class GurobiLpSolver : public LpSolver<ValueType, RawMode> {
     bool getBinaryValue(Variable const& name, uint64_t const& solutionIndex) const;
     ValueType getObjectiveValue(uint64_t solutionIndex) const;
 
+    // Method for specifying a time limit
+    void setTimeLimit(uint64_t seconds);
+    // Retrieve the time limit in seconds. Requires that a time limit has been set before.
+    uint64_t getTimeLimit();
+    // Method for checking whether the model has a time limit
+    bool hasTimeLimit();
+    // Method for checking whether the optimization has timed out
+    bool hasTimedOut();
+
    private:
 #ifdef STORM_HAVE_GUROBI
     // The Gurobi model.
@@ -153,6 +160,8 @@ class GurobiLpSolver : public LpSolver<ValueType, RawMode> {
         int firstGenConstraintIndex;
     };
     std::vector<IncrementalLevel> incrementalData;
+
+    std::optional<uint64_t> timeLimit;
 };
 
 enum class GurobiSolverMethod { AUTOMATIC = -1, PRIMALSIMPLEX = 0, DUALSIMPLEX = 1, BARRIER = 2, CONCURRENT = 3, DETCONCURRENT = 4, DETCONCURRENTSIMPLEX = 5 };
@@ -168,5 +177,3 @@ std::vector<GurobiSolverMethod> getGurobiSolverMethods();
 
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_GUROBILPSOLVER */

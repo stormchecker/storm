@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_BINARYBOOLEANPATHFORMULA_H_
-#define STORM_LOGIC_BINARYBOOLEANPATHFORMULA_H_
+#pragma once
 
 #include <map>
 
@@ -18,7 +17,7 @@ class BinaryBooleanPathFormula : public BinaryPathFormula {
 
     virtual ~BinaryBooleanPathFormula() {
         // Intentionally left empty.
-    };
+    }
 
     FormulaContext const& getContext() const;
 
@@ -40,5 +39,3 @@ class BinaryBooleanPathFormula : public BinaryPathFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_BINARYBOOLEANPATHFORMULA_H_ */

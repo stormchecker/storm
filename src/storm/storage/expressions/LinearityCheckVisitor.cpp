@@ -121,9 +121,6 @@ boost::any LinearityCheckVisitor::visit(UnaryBooleanFunctionExpression const& ex
     } else {
         return LinearityStatus::NonLinear;
     }
-
-    // Boolean function applications are not allowed in linear expressions.
-    return LinearityStatus::NonLinear;
 }
 
 boost::any LinearityCheckVisitor::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
@@ -132,6 +129,8 @@ boost::any LinearityCheckVisitor::visit(UnaryNumericalFunctionExpression const& 
             return expression.getOperand()->accept(*this, data);
         case UnaryNumericalFunctionExpression::OperatorType::Floor:
         case UnaryNumericalFunctionExpression::OperatorType::Ceil:
+        case UnaryNumericalFunctionExpression::OperatorType::Cos:
+        case UnaryNumericalFunctionExpression::OperatorType::Sin:
             return LinearityStatus::NonLinear;
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal unary numerical expression operator.");

@@ -1,23 +1,20 @@
 #pragma once
 
+#include <boost/iterator/counting_iterator.hpp>
 #include <list>
 #include <map>
 #include <memory>
 #include <unordered_map>
 #include <vector>
 
-#include <boost/iterator/counting_iterator.hpp>
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/storage/BitVector.h"
-#include "storm/utility/macros.h"
-#include "storm/utility/math.h"
-
 #include "storm-dft/storage/DFTLayoutInfo.h"
 #include "storm-dft/storage/DFTStateGenerationInfo.h"
 #include "storm-dft/storage/DftModule.h"
 #include "storm-dft/storage/DftSymmetries.h"
 #include "storm-dft/storage/elements/DFTElements.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/BitVector.h"
+#include "storm/utility/macros.h"
 
 namespace storm::dft {
 
@@ -66,6 +63,7 @@ class DFT {
     size_t mStateVectorSize;
     size_t mMaxSpareChildCount;
     std::map<size_t, storm::dft::storage::DftModule> mModules;
+    std::vector<size_t> mBEs;
     std::vector<size_t> mDependencies;
     std::map<size_t, size_t> mRepresentants;  // id element -> id representative
     std::map<size_t, DFTLayoutInfo> mLayoutInfo;
@@ -83,8 +81,6 @@ class DFT {
                                          size_t stateIndex) const;
 
     DFT<ValueType> optimize() const;
-
-    void copyElements(std::vector<size_t> elements, storm::dft::builder::DFTBuilder<ValueType> builder) const;
 
     size_t stateBitVectorSize() const {
         // Ensure multiple of 64
@@ -230,12 +226,30 @@ class DFT {
         return std::static_pointer_cast<storm::dft::storage::elements::DFTRestriction<ValueType> const>(mElements[index]);
     }
 
-    std::vector<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType>>> getBasicElements() const {
-        std::vector<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType>>> elements;
-        for (DFTElementPointer elem : mElements) {
-            if (elem->isBasicElement()) {
-                elements.push_back(std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType>>(elem));
-            }
+    /*!
+     * Set order of BEs.
+     * The same order of BEs is returned from getBasicElements().
+     *
+     * @param bes List of BE ids.
+     */
+    void setBEOrder(std::vector<size_t> const& bes) {
+        STORM_LOG_ASSERT(bes.size() == nrBasicElements(), "BEs must be the same size.");
+        STORM_LOG_ASSERT(std::all_of(bes.begin(), bes.end(), [this](size_t id) { return this->getElement(id)->isBasicElement(); }),
+                         "All elements must be BEs.");
+        this->mBEs = bes;
+    }
+
+    /*!
+     * Return list of basic elements. The list is ordered according to the initially given order of BEs.
+     *
+     * @return List of BEs.
+     */
+    std::vector<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>> getBasicElements() const {
+        std::vector<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>> elements;
+        for (size_t id : mBEs) {
+            auto element = getElement(id);
+            STORM_LOG_ASSERT(element->isBasicElement(), "Element is not a BE.");
+            elements.push_back(std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(element));
         }
         return elements;
     }

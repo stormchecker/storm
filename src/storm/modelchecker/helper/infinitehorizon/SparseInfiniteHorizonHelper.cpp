@@ -1,30 +1,15 @@
-#include "SparseInfiniteHorizonHelper.h"
-
-#include "storm/modelchecker/helper/infinitehorizon/internal/ComponentUtility.h"
-#include "storm/modelchecker/helper/infinitehorizon/internal/LraViHelper.h"
+#include "storm/modelchecker/helper/infinitehorizon/SparseInfiniteHorizonHelper.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-
-#include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/LpSolver.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/solver/multiplier/Multiplier.h"
-
 #include "storm/utility/ProgressMeasurement.h"
-#include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
-#include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
-
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-
-#include "storm/exceptions/UnmetRequirementException.h"
 
 namespace storm {
 namespace modelchecker {

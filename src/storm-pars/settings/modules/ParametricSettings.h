@@ -46,12 +46,17 @@ class ParametricSettings : public ModuleSettings {
     pars::utility::ParametricMode getOperationMode() const;
 
     /*!
-     * Retrieves whether time-travelling should be enabled.
+     * Retrieves whether big-step should be enabled.
      */
-    bool isTimeTravellingEnabled() const;
+    bool isBigStepEnabled() const;
 
     /*!
-     * Retrieves whether time-travelling should be enabled.
+     * Retrieves big step depth.
+     */
+    uint64_t getBigStepHorizon() const;
+
+    /*!
+     * Retrieves whether linear to simple should be enabled.
      */
     bool isLinearToSimpleEnabled() const;
 

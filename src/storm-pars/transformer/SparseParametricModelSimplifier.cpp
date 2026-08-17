@@ -1,17 +1,14 @@
 #include "storm-pars/transformer/SparseParametricModelSimplifier.h"
+#include <memory>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidStateException.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
 #include "storm/storage/FlexibleSparseMatrix.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
 namespace transformer {
@@ -105,6 +102,7 @@ template<typename SparseModelType>
 std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType>::eliminateConstantDeterministicStates(
     SparseModelType const& model, storm::storage::BitVector const& consideredStates, boost::optional<std::string> const& rewardModelName) {
     storm::storage::SparseMatrix<typename SparseModelType::ValueType> const& sparseMatrix = model.getTransitionMatrix();
+    auto backwardsSparseMatrix = sparseMatrix.transpose();
 
     // get the action-based reward values
     std::vector<typename SparseModelType::ValueType> actionRewards;
@@ -126,6 +124,14 @@ std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType
                     break;
                 }
             }
+            if (state && this->preserveParametricTransitions) {
+                for (auto const& entry : backwardsSparseMatrix.getRowGroup(state)) {
+                    if (!storm::utility::isConstant(entry.getValue())) {
+                        selectedStates.set(state, false);
+                        break;
+                    }
+                }
+            }
         } else {
             selectedStates.set(state, false);
         }
@@ -133,7 +139,7 @@ std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType
 
     // invoke elimination and obtain resulting transition matrix
     storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleMatrix(sparseMatrix);
-    storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleBackwardTransitions(sparseMatrix.transpose(), true);
+    storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleBackwardTransitions(backwardsSparseMatrix, true);
     storm::solver::stateelimination::NondeterministicModelStateEliminator<typename SparseModelType::ValueType> stateEliminator(
         flexibleMatrix, flexibleBackwardTransitions, actionRewards);
     for (auto state : selectedStates) {
@@ -151,6 +157,16 @@ std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType
     }
 
     return std::make_shared<SparseModelType>(std::move(newTransitionMatrix), model.getStateLabeling().getSubLabeling(selectedStates), std::move(rewardModels));
+}
+
+template<typename SparseModelType>
+void SparseParametricModelSimplifier<SparseModelType>::setPreserveParametricTransitions(bool preserveParametricTransitions) {
+    this->preserveParametricTransitions = preserveParametricTransitions;
+}
+
+template<typename SparseModelType>
+bool SparseParametricModelSimplifier<SparseModelType>::isPreserveParametricTransitionsSet() const {
+    return this->preserveParametricTransitions;
 }
 
 template class SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>;

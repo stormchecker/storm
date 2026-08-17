@@ -5,9 +5,11 @@
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
+#include "storm/solver/EliminationLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
-
+#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
+
 namespace {
 
 class NativeDoublePowerEnvironment {
@@ -76,6 +78,21 @@ class NativeDoubleIntervalIterationEnvironment {
         env.solver().setForceSoundness(true);
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
         env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::IntervalIteration);
+        env.solver().native().setRelativeTerminationCriterion(false);
+        env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-6"));
+        return env;
+    }
+};
+
+class NativeDoubleGuessingViEnvironment {
+   public:
+    typedef double ValueType;
+    static const bool isExact = false;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setForceSoundness(true);
+        env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
+        env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::GuessingValueIteration);
         env.solver().native().setRelativeTerminationCriterion(false);
         env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-6"));
         return env;
@@ -158,6 +175,7 @@ class EliminationRationalEnvironment {
     }
 };
 
+#ifdef STORM_HAVE_GMM
 class GmmGmresIluEnvironment {
    public:
     typedef double ValueType;
@@ -227,6 +245,7 @@ class GmmQmrDiagonalEnvironment {
         return env;
     }
 };
+#endif
 
 class EigenDGmresDiagonalEnvironment {
    public:
@@ -327,12 +346,14 @@ class LinearEquationSolverTest : public ::testing::Test {
 };
 
 typedef ::testing::Types<NativeDoublePowerEnvironment, NativeDoublePowerRegMultEnvironment, NativeDoubleSoundValueIterationEnvironment,
-                         NativeDoubleOptimisticValueIterationEnvironment, NativeDoubleIntervalIterationEnvironment, NativeDoubleJacobiEnvironment,
-                         NativeDoubleGaussSeidelEnvironment, NativeDoubleSorEnvironment, NativeDoubleWalkerChaeEnvironment,
-                         NativeRationalRationalSearchEnvironment, EliminationRationalEnvironment, GmmGmresIluEnvironment, GmmGmresDiagonalEnvironment,
-                         GmmGmresNoneEnvironment, GmmBicgstabIluEnvironment, GmmQmrDiagonalEnvironment, EigenDGmresDiagonalEnvironment,
-                         EigenGmresIluEnvironment, EigenBicgstabNoneEnvironment, EigenDoubleLUEnvironment, EigenRationalLUEnvironment,
-                         TopologicalEigenRationalLUEnvironment>
+                         NativeDoubleOptimisticValueIterationEnvironment, NativeDoubleGuessingViEnvironment, NativeDoubleIntervalIterationEnvironment,
+                         NativeDoubleJacobiEnvironment, NativeDoubleGaussSeidelEnvironment, NativeDoubleSorEnvironment, NativeDoubleWalkerChaeEnvironment,
+                         NativeRationalRationalSearchEnvironment, EliminationRationalEnvironment,
+#ifdef STORM_HAVE_GMM
+                         GmmGmresIluEnvironment, GmmGmresDiagonalEnvironment, GmmGmresNoneEnvironment, GmmBicgstabIluEnvironment, GmmQmrDiagonalEnvironment,
+#endif
+                         EigenDGmresDiagonalEnvironment, EigenGmresIluEnvironment, EigenBicgstabNoneEnvironment, EigenDoubleLUEnvironment,
+                         EigenRationalLUEnvironment, TopologicalEigenRationalLUEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(LinearEquationSolverTest, TestingTypes, );
@@ -372,5 +393,53 @@ TYPED_TEST(LinearEquationSolverTest, solveEquationSystem) {
     EXPECT_NEAR(x[0], this->parseNumber("481/9"), this->precision());
     EXPECT_NEAR(x[1], this->parseNumber("457/9"), this->precision());
     EXPECT_NEAR(x[2], this->parseNumber("875/18"), this->precision());
+}
+
+template<typename ValueType>
+void testEliminationWithAbsorbingStates(std::vector<std::vector<std::pair<uint64_t, ValueType>>> const& rows, std::vector<ValueType> const& b,
+                                        std::vector<ValueType> const& expected) {
+    storm::storage::SparseMatrixBuilder<ValueType> builder(rows.size(), rows.size(), 0);
+    for (uint64_t row = 0; row < rows.size(); ++row) {
+        for (auto const& entry : rows[row]) {
+            builder.addNextValue(row, entry.first, entry.second);
+        }
+    }
+    auto matrix = builder.build();
+
+    storm::Environment env;
+    env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Elimination);
+    storm::solver::EliminationLinearEquationSolver<ValueType> solver(matrix);
+    std::vector<ValueType> x(b.size());
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
+    ASSERT_EQ(expected.size(), x.size());
+    for (uint64_t i = 0; i < x.size(); ++i) {
+        EXPECT_EQ(expected[i], x[i]);
+    }
+}
+
+TEST(EliminationLinearEquationSolver, AbsorbingState) {
+    // Regression test for issue #86: the elimination-based solver must handle a single absorbing state
+    // (a one on the diagonal), for which the least fixed point is zero.
+    auto zero = storm::utility::zero<storm::RationalNumber>();
+    testEliminationWithAbsorbingStates<storm::RationalNumber>({{{0, storm::utility::one<storm::RationalNumber>()}}}, {zero}, {zero});
+}
+
+TEST(EliminationLinearEquationSolver, AbsorbingTwoCycle) {
+    // Regression test for issue #86: when eliminating one state of a probability-1 cycle, the remaining state
+    // obtains a one on the diagonal (i.e., it becomes absorbing) and must be handled by the eliminator.
+    auto one = storm::utility::one<storm::RationalNumber>();
+    auto zero = storm::utility::zero<storm::RationalNumber>();
+    testEliminationWithAbsorbingStates<storm::RationalNumber>({{{1, one}}, {{0, one}}}, {zero, zero}, {zero, zero});
+
+    // Also check the double instantiation.
+    testEliminationWithAbsorbingStates<double>({{{1, 1.0}}, {{0, 1.0}}}, {0.0, 0.0}, {0.0, 0.0});
+}
+
+TEST(EliminationLinearEquationSolver, AbsorbingSinkReachability) {
+    // A transient state can either reach the target with probability one half or fall into an absorbing sink.
+    auto half = storm::utility::convertNumber<storm::RationalNumber, std::string>("1/2");
+    auto one = storm::utility::one<storm::RationalNumber>();
+    auto zero = storm::utility::zero<storm::RationalNumber>();
+    testEliminationWithAbsorbingStates<storm::RationalNumber>({{{1, half}}, {{2, one}}, {{1, one}}}, {half, zero, zero}, {half, zero, zero});
 }
 }  // namespace

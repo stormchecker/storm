@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_FLEXIBLESPARSEMATRIX_H_
-#define STORM_STORAGE_FLEXIBLESPARSEMATRIX_H_
+#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -166,6 +165,13 @@ class FlexibleSparseMatrix {
     void filterEntries(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint);
 
     /*!
+     * Inserts new, empty rows at the end of the FlexibleSparseMatrix.
+     *
+     * @return The index of the first newly inserted row.
+     */
+    index_type insertNewRowsAtEnd(index_type numRows);
+
+    /*!
      * Creates a sparse matrix from the flexible sparse matrix.
      * @return The sparse matrix.
      */
@@ -222,5 +228,3 @@ class FlexibleSparseMatrix {
 };
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_FLEXIBLESPARSEMATRIX_H_ */

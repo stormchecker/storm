@@ -1,10 +1,10 @@
 #include "storm/builder/RewardModelBuilder.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/models/sparse/StandardRewardModel.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -66,6 +66,7 @@ template class RewardModelBuilder<double>;
 template class RewardModelBuilder<storm::RationalNumber>;
 template class RewardModelBuilder<storm::RationalFunction>;
 template class RewardModelBuilder<storm::Interval>;
+template class RewardModelBuilder<storm::RationalInterval>;
 
 }  // namespace builder
 }  // namespace storm

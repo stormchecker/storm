@@ -1,12 +1,10 @@
-#ifndef STORM_STORAGE_PRISM_INITIALCONSTRUCT_H_
-#define STORM_STORAGE_PRISM_INITIALCONSTRUCT_H_
+#pragma once
 
 #include <map>
 #include <string>
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/prism/LocatedInformation.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace expressions {
@@ -57,5 +55,3 @@ class InitialConstruct : public LocatedInformation {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_INITIALCONSTRUCT_H_ */

@@ -1,11 +1,12 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/storm.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/transformer/StatePermuter.h"
 #include "storm/utility/permutation.h"
-#include "test/storm_gtest.h"
 
 namespace {
 

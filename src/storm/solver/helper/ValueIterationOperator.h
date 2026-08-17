@@ -1,16 +1,22 @@
 #pragma once
+
+#include <algorithm>
+#include <boost/range/adaptor/reversed.hpp>
+#include <boost/range/irange.hpp>
 #include <functional>
 #include <optional>
 #include <utility>
 #include <vector>
 
-#include <boost/range/adaptor/reversed.hpp>
-#include <boost/range/irange.hpp>
-
+#include "storm/adapters/IntervalForward.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/helper/SchedulerTrackingHelper.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
+#include "storm/storage/BitVector.h"
 #include "storm/storage/sparse/StateType.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/vector.h"  // TODO
 
 namespace storm {
 class Environment;
@@ -165,18 +171,24 @@ class ValueIterationOperator {
      */
     template<typename OperandType, typename OffsetType, typename BackendType, bool Backward, bool SkipIgnoredRows, OptimizationDirection RobustDirection>
     bool apply(OperandType& operandOut, OperandType const& operandIn, OffsetType const& offsets, BackendType& backend) const {
-        STORM_LOG_ASSERT(getSize(operandIn) == getSize(operandOut), "Input and Output Operands have different sizes.");
-        auto const operandSize = getSize(operandIn);
-        STORM_LOG_ASSERT(TrivialRowGrouping || rowGroupIndices->size() == operandSize + 1, "Dimension mismatch");
+        auto const outSize = TrivialRowGrouping ? getSize(operandOut) : rowGroupIndices->size() - 1;
+        STORM_LOG_ASSERT(TrivialRowGrouping || getSize(operandOut) >= outSize, "Dimension mismatch.");
         backend.startNewIteration();
         auto matrixValueIt = matrixValues.cbegin();
         auto matrixColumnIt = matrixColumns.cbegin();
-        for (auto groupIndex : indexRange<Backward>(0, operandSize)) {
+        for (auto groupIndex : indexRange<Backward>(0, outSize)) {
             STORM_LOG_ASSERT(matrixColumnIt != matrixColumns.end(), "VI Operator in invalid state.");
             STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
-            //            STORM_LOG_ASSERT(matrixValueIt != matrixValues.end(), "VI Operator in invalid state.");
             if constexpr (TrivialRowGrouping) {
-                backend.firstRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, groupIndex);
+                // Ugly special case
+                if constexpr (std::is_same<BackendType, RobustSchedulerTrackingBackend<double, RobustDirection, TrivialRowGrouping>>::value) {
+                    // Intentionally different method name
+                    backend.processRobustRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex,
+                                             applyCache.robustOrder);
+                } else {
+                    // Generic nextRow interface
+                    backend.firstRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, groupIndex);
+                }
             } else {
                 IndexType rowIndex = (*rowGroupIndices)[groupIndex];
                 if constexpr (SkipIgnoredRows) {
@@ -207,6 +219,11 @@ class ValueIterationOperator {
 
     // Auxiliary methods to deal with various OperandTypes and OffsetTypes
 
+    template<typename OpT>
+    OpT initializeRowRes(std::vector<OpT> const&, OpT const& offsets, uint64_t offsetIndex) const {
+        return offsets;
+    }
+
     template<typename OpT, typename OffT>
     OpT initializeRowRes(std::vector<OpT> const&, std::vector<OffT> const& offsets, uint64_t offsetIndex) const {
         return offsets[offsetIndex];
@@ -225,8 +242,21 @@ class ValueIterationOperator {
     }
 
     template<OptimizationDirection RobustDirection, typename OpT, typename OffT>
+    OpT robustInitializeRowRes(std::vector<OpT> const&, OffT const& offsets, uint64_t offsetIndex) const {
+        if constexpr (RobustDirection == OptimizationDirection::Maximize) {
+            return offsets.upper();
+        } else {
+            return offsets.lower();
+        }
+    }
+
+    template<OptimizationDirection RobustDirection, typename OpT, typename OffT>
     OpT robustInitializeRowRes(std::vector<OpT> const&, std::vector<OffT> const& offsets, uint64_t offsetIndex) const {
-        return offsets[offsetIndex].upper();
+        if constexpr (RobustDirection == OptimizationDirection::Maximize) {
+            return offsets[offsetIndex].upper();
+        } else {
+            return offsets[offsetIndex].lower();
+        }
     }
 
     template<OptimizationDirection RobustDirection, typename OpT1, typename OpT2, typename OffT>
@@ -251,7 +281,7 @@ class ValueIterationOperator {
     template<OptimizationDirection RobustDirection, typename OperandType, typename OffsetType>
     auto applyRow(std::vector<IndexType>::const_iterator& matrixColumnIt, typename std::vector<ValueType>::const_iterator& matrixValueIt,
                   OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
-        if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
             return applyRowRobust<RobustDirection>(matrixColumnIt, matrixValueIt, operand, offsets, offsetIndex);
         } else {
             return applyRowStandard(matrixColumnIt, matrixValueIt, operand, offsets, offsetIndex);
@@ -277,7 +307,8 @@ class ValueIterationOperator {
     // Aux function for applyRowRobust
     template<OptimizationDirection RobustDirection>
     struct AuxCompare {
-        bool operator()(const std::pair<SolutionType, SolutionType>& a, const std::pair<SolutionType, SolutionType>& b) const {
+        bool operator()(const std::pair<SolutionType, std::pair<SolutionType, uint64_t>>& a,
+                        const std::pair<SolutionType, std::pair<SolutionType, uint64_t>>& b) const {
             if constexpr (RobustDirection == OptimizationDirection::Maximize) {
                 return a.first > b.first;
             } else {
@@ -290,13 +321,27 @@ class ValueIterationOperator {
     auto applyRowRobust(std::vector<IndexType>::const_iterator& matrixColumnIt, typename std::vector<ValueType>::const_iterator& matrixValueIt,
                         OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
         STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
-        auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
-        AuxCompare<RobustDirection> compare;
+        SolutionType result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
+
         applyCache.robustOrder.clear();
 
+        if (applyCache.hasOnlyConstants.size() > 0 && applyCache.hasOnlyConstants.get(offsetIndex)) {
+            for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
+                SolutionType const lower = matrixValueIt->lower();
+                if constexpr (isPair<OperandType>::value) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
+                    // Notice the unclear semantics here in terms of how to order things.
+                } else {
+                    result += operand[*matrixColumnIt] * lower;
+                }
+            }
+            return result;
+        }
+
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
-        for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
-            auto const lower = matrixValueIt->lower();
+        uint64_t orderCounter = 0;
+        for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt, ++orderCounter) {
+            SolutionType const lower = matrixValueIt->lower();
             if constexpr (isPair<OperandType>::value) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
                 // Notice the unclear semantics here in terms of how to order things.
@@ -304,26 +349,30 @@ class ValueIterationOperator {
                 result += operand[*matrixColumnIt] * lower;
             }
             remainingValue -= lower;
-            auto const diameter = matrixValueIt->upper() - lower;
-            if (!storm::utility::isZero(diameter)) {
-                applyCache.robustOrder.emplace_back(operand[*matrixColumnIt], diameter);
+            SolutionType const diameter = matrixValueIt->upper() - lower;
+            if (!storm::utility::isZero<SolutionType>(diameter)) {
+                applyCache.robustOrder.emplace_back(operand[*matrixColumnIt], std::make_pair(diameter, orderCounter));
             }
         }
-        if (storm::utility::isZero(remainingValue) || storm::utility::isOne(remainingValue)) {
+        if (storm::utility::isZero(remainingValue)) {
             return result;
         }
 
-        std::sort(applyCache.robustOrder.begin(), applyCache.robustOrder.end(), compare);
+        static AuxCompare<RobustDirection> cmp;
+        std::sort(applyCache.robustOrder.begin(), applyCache.robustOrder.end(), cmp);
 
         for (auto const& pair : applyCache.robustOrder) {
-            auto availableMass = std::min(pair.second, remainingValue);
+            SolutionType availableMass = std::min(pair.second.first, remainingValue);
             result += availableMass * pair.first;
             remainingValue -= availableMass;
             if (storm::utility::isZero(remainingValue)) {
                 return result;
             }
         }
-        STORM_LOG_ASSERT(storm::utility::isAlmostZero(remainingValue), "Remaining value should be zero (all prob mass taken) but is " << remainingValue);
+        STORM_LOG_ASSERT(storm::utility::isAlmostZero(remainingValue) ||
+                             // sad states allowed (they're having a bummer summer)
+                             (storm::utility::isOne(remainingValue) && applyCache.robustOrder.size() == 0),
+                         "Remaining value should be zero (all prob mass taken) or it should be a sad state, but is " << remainingValue);
         return result;
     }
 
@@ -418,28 +467,35 @@ class ValueIterationOperator {
 
     template<typename Dummy>
     struct ApplyCache<storm::Interval, Dummy> {
-        mutable std::vector<std::pair<SolutionType, SolutionType>> robustOrder;
+        mutable std::vector<std::pair<SolutionType, std::pair<SolutionType, uint64_t>>> robustOrder;
+        storage::BitVector hasOnlyConstants;
+    };
+
+    template<typename Dummy>
+    struct ApplyCache<storm::RationalInterval, Dummy> {
+        mutable std::vector<std::pair<SolutionType, std::pair<SolutionType, uint64_t>>> robustOrder;
+        storage::BitVector hasOnlyConstants;
     };
 
     /*!
-     * Cache for robust value iteration, empty struct for other ValueTypes than storm::Interval.
+     * Cache for robust value iteration, empty struct for other ValueTypes than storm::Interval and storm::RationalInterval.
      */
     ApplyCache<ValueType, int> applyCache;
 
     /*!
      * Bitmask that indicates the start of a row in the 'matrixColumns' vector
      */
-    IndexType const StartOfRowIndicator = 1ull << 63;  // 10000..0
+    static constexpr IndexType StartOfRowIndicator = 1ull << 63;  // 10000..0
 
     /*!
      * Bitmask that indicates the start of a row group in the 'matrixColumns' vector
      */
-    IndexType const StartOfRowGroupIndicator = StartOfRowIndicator + (1ull << 62);  // 11000..0
+    static constexpr IndexType StartOfRowGroupIndicator = StartOfRowIndicator + (1ull << 62);  // 11000..0
 
     /*!
      * Ignored rows are encoded by adding the number of skipped entries to the row indicator. This Bitmask helps to get the number of skipped entries
      */
-    IndexType const SkipNumEntriesMask = ~StartOfRowGroupIndicator;  // 00111..1
+    static constexpr IndexType SkipNumEntriesMask = ~StartOfRowGroupIndicator;  // 00111..1
 };
 
 }  // namespace solver::helper

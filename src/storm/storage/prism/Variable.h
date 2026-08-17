@@ -1,12 +1,10 @@
-#ifndef STORM_STORAGE_PRISM_VARIABLE_H_
-#define STORM_STORAGE_PRISM_VARIABLE_H_
+#pragma once
 
 #include <map>
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/prism/LocatedInformation.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace prism {
@@ -116,5 +114,3 @@ class Variable : public LocatedInformation {
 
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_VARIABLE_H_ */

@@ -428,12 +428,9 @@ TASK_IMPL_2(MTBDD, mtbdd_op_not_zero, MTBDD, a, size_t, v)
             return mtbdd_getnumer(a) != 0 ? mtbdd_true : mtbdd_false;
         } else if (mtbddnode_gettype(na) == srn_type) {
             return storm_rational_number_is_zero((storm_rational_number_ptr)mtbdd_getvalue(a)) == 0 ? mtbdd_true : mtbdd_false;
-        }
-#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
-        else if (mtbddnode_gettype(na) == srf_type) {
+        } else if (mtbddnode_gettype(na) == srf_type) {
             return storm_rational_function_is_zero((storm_rational_function_ptr)mtbdd_getvalue(a)) == 0 ? mtbdd_true : mtbdd_false;
         }
-#endif
     }
 
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
@@ -564,12 +561,9 @@ TASK_IMPL_2(double, mtbdd_non_zero_count, MTBDD, dd, size_t, nvars)
             return mtbdd_getnumer(dd) != 0 ? powl(2.0L, nvars) : 0.0;
         } else if (mtbddnode_gettype(na) == srn_type) {
             return storm_rational_number_is_zero((storm_rational_number_ptr)mtbdd_getvalue(dd)) == 0 ? powl(2.0L, nvars) : 0.0;
-        }
-#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
-        else if (mtbddnode_gettype(na) == srf_type) {
+        } else if (mtbddnode_gettype(na) == srf_type) {
             return storm_rational_function_is_zero((storm_rational_function_ptr)mtbdd_getvalue(dd)) == 0 ? powl(2.0L, nvars) : 0.0;
         }
-#endif
     }
 
     /* Perhaps execute garbage collection */
@@ -603,12 +597,9 @@ int mtbdd_iszero(MTBDD dd) {
         return mtbdd_getnumer(dd) == 0;
     } else if (mtbdd_gettype(dd) == srn_type) {
         return storm_rational_number_is_zero((storm_rational_number_ptr)mtbdd_getvalue(dd)) == 1 ? 1 : 0;
-    }
-#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
-    else if (mtbdd_gettype(dd) == srf_type) {
+    } else if (mtbdd_gettype(dd) == srf_type) {
         return storm_rational_function_is_zero((storm_rational_function_ptr)mtbdd_getvalue(dd)) == 1 ? 1 : 0;
     }
-#endif
     return 0;
 }
 

@@ -2,6 +2,7 @@
 
 #include "storm-dft/storage/elements/DFTDependency.h"
 #include "storm-dft/storage/elements/DFTGate.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::dft {
 namespace storage {

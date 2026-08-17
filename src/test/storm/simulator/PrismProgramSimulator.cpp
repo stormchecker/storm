@@ -1,7 +1,9 @@
-#include "storm/simulator/PrismProgramSimulator.h"
+#include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/environment/Environment.h"
-#include "test/storm_gtest.h"
+#include "storm/simulator/PrismProgramSimulator.h"
 
 TEST(PrismProgramSimulatorTest, KnuthYaoDieTest) {
 #ifndef STORM_HAVE_Z3

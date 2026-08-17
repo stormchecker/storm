@@ -1,9 +1,8 @@
 #include "storm-pars/transformer/ParameterLifter.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/NotSupportedException.h"
+#include "storm-pars/storage/ParameterRegion.h"
 #include "storm/exceptions/UnexpectedException.h"
-#include "storm/utility/vector.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace transformer {
@@ -16,7 +15,7 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
     // get a mapping from old column indices to new ones
     oldToNewColumnIndexMapping = std::vector<uint_fast64_t>(selectedColumns.size(), selectedColumns.size());
     uint_fast64_t newIndex = 0;
-    for (auto const& oldColumn : selectedColumns) {
+    for (auto oldColumn : selectedColumns) {
         oldToNewColumnIndexMapping[oldColumn] = newIndex++;
     }
 
@@ -34,7 +33,7 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
     storm::storage::SparseMatrixBuilder<ConstantType> builder(0, selectedColumns.getNumberOfSetBits(), 0, true, true, selectedRows.getNumberOfSetBits());
     rowGroupToStateNumber = std::vector<uint_fast64_t>();
     uint_fast64_t newRowIndex = 0;
-    for (auto const& rowIndex : selectedRows) {
+    for (auto rowIndex : selectedRows) {
         builder.newRowGroup(newRowIndex);
         rowGroupToStateNumber.push_back(rowIndex);
 
@@ -98,7 +97,7 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
                 AbstractValuation vectorVal(val);
                 for (auto const& vectorVar : vectorEntryVariables) {
                     if (occurringVariables.find(vectorVar) == occurringVariables.end()) {
-                        assert(!generateRowLabels);
+                        STORM_LOG_ASSERT(!generateRowLabels, "Row labels should not be generated yet.");
                         vectorVal.addParameterUnspecified(vectorVar);
                     }
                 }
@@ -143,7 +142,7 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
     STORM_LOG_ASSERT(matrixAssignmentIt == matrixAssignment.end(), "Unexpected number of entries in the matrix assignment.");
 
     auto vectorAssignmentIt = vectorAssignment.begin();
-    for (auto const& nonConstVectorEntry : nonConstVectorEntries) {
+    for (auto nonConstVectorEntry : nonConstVectorEntries) {
         for (uint_fast64_t vectorIndex = matrix.getRowGroupIndices()[nonConstVectorEntry]; vectorIndex != matrix.getRowGroupIndices()[nonConstVectorEntry + 1];
              ++vectorIndex) {
             vectorAssignmentIt->first = vector.begin() + vectorIndex;
@@ -239,7 +238,7 @@ ParameterLifter<ParametricType, ConstantType>::getOccurringVariablesAtState() co
 }
 
 template<typename ParametricType, typename ConstantType>
-std::map<typename ParameterLifter<ParametricType, ConstantType>::VariableType, std::set<uint_fast64_t>>
+std::map<typename ParameterLifter<ParametricType, ConstantType>::VariableType, std::set<uint_fast64_t>> const&
 ParameterLifter<ParametricType, ConstantType>::getOccuringStatesAtVariable() const {
     return occuringStatesAtVariable;
 }
@@ -292,7 +291,7 @@ typename ParameterLifter<ParametricType, ConstantType>::AbstractValuation Parame
             result.addParameterUnspecified(p);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException,
-                            "Tried to obtain a subvaluation for parameters that are not specified by this valuation");
+                            "Tried to obtain a subvaluation for parameters that are not specified by this valuation.");
         }
     }
     return result;
@@ -355,9 +354,9 @@ void ParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::
         ConstantType& placeholder = collectedFunctionValuationPlaceholder.second;
         auto concreteValuations = abstrValuation.getConcreteValuations(region);
         auto concreteValuationIt = concreteValuations.begin();
-        placeholder = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(function, *concreteValuationIt));
+        placeholder = storm::utility::parametric::evaluate<ConstantType>(function, *concreteValuationIt);
         for (++concreteValuationIt; concreteValuationIt != concreteValuations.end(); ++concreteValuationIt) {
-            ConstantType currentResult = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(function, *concreteValuationIt));
+            ConstantType currentResult = storm::utility::parametric::evaluate<ConstantType>(function, *concreteValuationIt);
             if (storm::solver::minimize(dirForUnspecifiedParameters)) {
                 placeholder = std::min(placeholder, currentResult);
             } else {

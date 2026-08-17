@@ -1,5 +1,6 @@
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
+#include "storm/environment/solver/MinMaxLpSolverEnvironment.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 #include "storm/utility/constants.h"
@@ -22,7 +23,7 @@ MinMaxSolverEnvironment::MinMaxSolverEnvironment() {
         minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
     STORM_LOG_ASSERT(considerRelativeTerminationCriterion ||
                          minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute,
-                     "Unknown convergence criterion");
+                     "Unknown convergence criterion.");
     multiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
     forceRequireUnique = minMaxSettings.isForceUniqueSolutionRequirementSet();
 }
@@ -74,6 +75,13 @@ storm::solver::MultiplicationStyle const& MinMaxSolverEnvironment::getMultiplica
 
 void MinMaxSolverEnvironment::setMultiplicationStyle(storm::solver::MultiplicationStyle value) {
     multiplicationStyle = value;
+}
+
+MinMaxLpSolverEnvironment const& MinMaxSolverEnvironment::lp() const {
+    return lpEnvironment.get();
+}
+MinMaxLpSolverEnvironment& MinMaxSolverEnvironment::lp() {
+    return lpEnvironment.get();
 }
 
 bool MinMaxSolverEnvironment::isForceRequireUnique() const {

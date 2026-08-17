@@ -1,14 +1,14 @@
 #include "storm-parsers/parser/SparseStateRewardParser.h"
+
 #include <iostream>
 
 #include "storm-parsers/parser/MappedFile.h"
 #include "storm-parsers/util/cstring.h"
-#include "storm/exceptions/FileIoException.h"
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
+
 namespace storm {
 namespace parser {
 
@@ -37,17 +37,14 @@ std::vector<ValueType> SparseStateRewardParser<ValueType>::parseSparseStateRewar
         // If the state has already been read or skipped once there might be a problem with the file (doubled lines, or blocks).
         // Note: The value -1 shows that lastState has not yet been set, i.e. this is the first run of the loop (state index (2^64)-1 is a really bad starting
         // index).
-        if (state <= lastState && lastState != startIndexComparison) {
-            STORM_LOG_ERROR("Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
-            throw storm::exceptions::WrongFormatException()
-                << "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.";
-        }
+        STORM_LOG_THROW(state > lastState || lastState == startIndexComparison, storm::exceptions::WrongFormatException,
+                        "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
 
         if (stateCount <= state) {
             STORM_LOG_ERROR("Error while parsing " << filename << ": Found reward for a state of an invalid index \"" << state << "\". The model has only "
                                                    << stateCount << " states.");
-            throw storm::exceptions::OutOfRangeException()
-                << "Error while parsing " << filename << ": Found reward for a state of an invalid index \"" << state << "\"";
+            STORM_LOG_THROW(false, storm::exceptions::OutOfRangeException,
+                            "Error while parsing " << filename << ": Found reward for a state of an invalid index \"" << state << "\".");
         }
 
         // Parse reward value.
@@ -55,7 +52,8 @@ std::vector<ValueType> SparseStateRewardParser<ValueType>::parseSparseStateRewar
 
         if (reward < 0.0) {
             STORM_LOG_ERROR("Error while parsing " << filename << ": Expected positive reward value but got \"" << reward << "\".");
-            throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": State reward file specifies illegal reward value.";
+            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                            "Error while parsing " << filename << ": State reward file specifies illegal reward value.");
         }
 
         stateRewards[state] = reward;
@@ -67,10 +65,6 @@ std::vector<ValueType> SparseStateRewardParser<ValueType>::parseSparseStateRewar
 }
 
 template class SparseStateRewardParser<double>;
-
-#ifdef STORM_HAVE_CARL
 template class SparseStateRewardParser<storm::Interval>;
-#endif
-
 }  // namespace parser
 }  // namespace storm

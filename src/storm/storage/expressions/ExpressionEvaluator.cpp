@@ -1,6 +1,6 @@
 #include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
+#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/constants.h"
 
 namespace storm {
@@ -34,7 +34,6 @@ void ExpressionEvaluatorWithVariableToExpressionMap<RationalType>::setRationalVa
     this->variableToExpressionMap[variable] = this->getManager().rational(value);
 }
 
-#ifdef STORM_HAVE_CARL
 ExpressionEvaluator<RationalNumber>::ExpressionEvaluator(storm::expressions::ExpressionManager const& manager)
     : ExprtkExpressionEvaluatorBase<RationalNumber>(manager), rationalNumberVisitor(*this) {
     // Intentionally left empty.
@@ -99,6 +98,5 @@ RationalFunction ExpressionEvaluator<RationalFunction>::asRational(Expression co
 
 template class ExpressionEvaluatorWithVariableToExpressionMap<RationalNumber>;
 template class ExpressionEvaluatorWithVariableToExpressionMap<RationalFunction>;
-#endif
 }  // namespace expressions
 }  // namespace storm

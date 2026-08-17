@@ -12,7 +12,6 @@ template<typename IteratorType>
 void forEach(std::vector<IteratorType> const& its, std::vector<IteratorType> const& ites,
              std::function<void(uint64_t, decltype(*std::declval<IteratorType>()))> const& setValueCallback,
              std::function<bool()> const& newCombinationCallback) {
-    typedef decltype((*std::declval<IteratorType>())) value_type;
     STORM_LOG_ASSERT(its.size() == ites.size(), "Iterator begin/end mismatch.");
 
     if (its.size() == 0) {

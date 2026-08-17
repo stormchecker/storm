@@ -1,24 +1,56 @@
 #include "storm/io/DirectEncodingExporter.h"
-#include <storm/exceptions/NotSupportedException.h>
 
+#include <sstream>
+
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/NotImplementedException.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/io/ArchiveWriter.h"
+#include "storm/io/file.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Pomdp.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
-#include "storm/models/sparse/StandardRewardModel.h"
-
 namespace storm {
-namespace exporter {
+namespace io {
+
+template<typename ValueType>
+void explicitExportSparseModel(std::filesystem::path const& filename, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel,
+                               std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options) {
+    auto const compression = (options.compression == CompressionMode::Default) ? getCompressionModeFromFileExtension(filename) : options.compression;
+    if (compression == CompressionMode::None) {
+        // No compression
+        std::ofstream stream;
+        storm::io::openFile(filename, stream);
+        storm::io::explicitExportSparseModel(stream, sparseModel, parameters, options);
+        storm::io::closeFile(stream);
+    } else {
+        // TODO: write directly to compressed file instead of having the entire file in memory first
+        std::stringstream stream;
+        storm::io::explicitExportSparseModel(stream, sparseModel, parameters, options);
+        auto nameInArchive = filename.filename();
+        if (getCompressionModeFromFileExtension(filename) != CompressionMode::None) {
+            // remove compression extension from filename (e.g. model.drn.gz -> model.drn)
+            nameInArchive.replace_extension();
+        }
+        storm::io::ArchiveWriter archiveWriter(filename, compression);
+        archiveWriter.addTextFile(nameInArchive, stream.str());
+    }
+}
 
 template<typename ValueType>
 void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel,
-                               std::vector<std::string> const& parameters, DirectEncodingOptions const& options) {
+                               std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options) {
+    // Handle output precision of doubles
+    if (options.outputPrecision) {
+        os.precision(*options.outputPrecision);
+    }
+
     // Notice that for CTMCs we write the rate matrix instead of probabilities
 
     // Initialize
@@ -33,6 +65,21 @@ void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::
     os << "// Exported by storm\n";
     os << "// Original model type: " << sparseModel->getType() << '\n';
     os << "@type: " << sparseModel->getType() << '\n';
+    os << "@value_type: ";
+    if constexpr (std::is_same_v<ValueType, double>) {
+        os << "double";
+    } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+        os << "rational";
+    } else if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+        os << "double-interval";
+    } else if constexpr (std::is_same_v<ValueType, storm::RationalInterval>) {
+        os << "rational-interval";
+    } else if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+        os << "parametric";
+    } else {
+        STORM_LOG_ASSERT(false, "Unhandled value type.");
+    }
+    os << '\n';
     os << "@parameters\n";
     if (parameters.empty()) {
         for (std::string const& parameter : getParameters(sparseModel)) {
@@ -119,7 +166,7 @@ void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::
         os << '\n';
         // Write state valuations as comments
         if (sparseModel->hasStateValuations()) {
-            os << "//" << sparseModel->getStateValuations().getStateInfo(group) << '\n';
+            os << "//" << sparseModel->getStateValuations().toString(group) << '\n';
         }
 
         // Write probabilities
@@ -271,15 +318,33 @@ void writeValue(std::ostream& os, ValueType value, std::unordered_map<ValueType,
 }
 
 // Template instantiations
+template void explicitExportSparseModel<double>(std::filesystem::path const& os, std::shared_ptr<storm::models::sparse::Model<double>> sparseModel,
+                                                std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
+template void explicitExportSparseModel<storm::RationalNumber>(std::filesystem::path const& os,
+                                                               std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> sparseModel,
+                                                               std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
+template void explicitExportSparseModel<storm::RationalFunction>(std::filesystem::path const& os,
+                                                                 std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> sparseModel,
+                                                                 std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
+template void explicitExportSparseModel<storm::Interval>(std::filesystem::path const& os,
+                                                         std::shared_ptr<storm::models::sparse::Model<storm::Interval>> sparseModel,
+                                                         std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
+template void explicitExportSparseModel<storm::RationalInterval>(std::filesystem::path const& os,
+                                                                 std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> sparseModel,
+                                                                 std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
+
 template void explicitExportSparseModel<double>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<double>> sparseModel,
-                                                std::vector<std::string> const& parameters, DirectEncodingOptions const& options);
+                                                std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
 template void explicitExportSparseModel<storm::RationalNumber>(std::ostream& os,
                                                                std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> sparseModel,
-                                                               std::vector<std::string> const& parameters, DirectEncodingOptions const& options);
+                                                               std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
 template void explicitExportSparseModel<storm::RationalFunction>(std::ostream& os,
                                                                  std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> sparseModel,
-                                                                 std::vector<std::string> const& parameters, DirectEncodingOptions const& options);
+                                                                 std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
 template void explicitExportSparseModel<storm::Interval>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::Interval>> sparseModel,
-                                                         std::vector<std::string> const& parameters, DirectEncodingOptions const& options);
-}  // namespace exporter
+                                                         std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
+template void explicitExportSparseModel<storm::RationalInterval>(std::ostream& os,
+                                                                 std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> sparseModel,
+                                                                 std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
+}  // namespace io
 }  // namespace storm

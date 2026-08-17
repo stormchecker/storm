@@ -1,0 +1,24 @@
+// Taken from https://github.com/stormchecker/storm/issues/683
+mdp
+
+module state_space
+    s : [0..3];
+
+    [a1] s=0 -> (s'=1);
+
+    [a2] s=1 -> 0.5 : (s'=2) + 0.5 : (s'=3);
+
+    [a3] s=2 -> (s'=1);
+    [a4] s=2 -> (s'=2);
+
+    [] s=3 -> true;
+endmodule
+
+label "goal" = s=3;
+
+rewards "rew"
+    [a1] true : 1;
+    [a2] true : 1;
+    [a3] true : 1;
+    [a4] true : 1;
+endrewards

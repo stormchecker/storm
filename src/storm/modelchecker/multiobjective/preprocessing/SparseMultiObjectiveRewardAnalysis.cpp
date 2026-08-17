@@ -1,19 +1,11 @@
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
 
 #include <algorithm>
-#include <set>
 
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
-#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/graph.h"
@@ -81,7 +73,7 @@ void SparseMultiObjectiveRewardAnalysis<SparseModelType>::setReward0States(
     // Now also incorporate cumulative and total reward objectives
     auto statesWithTotalOrCumulativeReward = transitions.getRowGroupFilter(~(zeroTotalRewardChoices & zeroCumulativeRewardChoices), false);
     result.reward0AStates &= storm::utility::graph::performProb0A(backwardTransitions, allStates, statesWithTotalOrCumulativeReward);
-    assert(result.reward0AStates.isSubsetOf(result.totalReward0EStates));
+    STORM_LOG_ASSERT(result.reward0AStates.isSubsetOf(result.totalReward0EStates), "Reward0A states not subset of totalReward0E states.");
 }
 
 template<typename SparseModelType>
@@ -93,37 +85,46 @@ void SparseMultiObjectiveRewardAnalysis<SparseModelType>::checkRewardFiniteness(
     auto const& transitions = preprocessorResult.preprocessedModel->getTransitionMatrix();
     std::vector<uint_fast64_t> const& groupIndices = transitions.getRowGroupIndices();
 
-    storm::storage::BitVector maxRewardsToCheck(preprocessorResult.preprocessedModel->getNumberOfChoices(), true);
-    storm::storage::BitVector minRewardsToCheck(preprocessorResult.preprocessedModel->getNumberOfChoices(), true);
+    // Gather choices where infinite reward is collected if they are taken infinitely often.
+    // Distinguish between attracting choices, where (for some objective) optimal policies might take that choice infinitely often
+    // and draining choices, where optimal policies should never take that choice infinitely often.
+    storm::storage::BitVector attractingInfRewardChoices(preprocessorResult.preprocessedModel->getNumberOfChoices(), true);
+    storm::storage::BitVector drainingInfRewardChoices(preprocessorResult.preprocessedModel->getNumberOfChoices(), true);
     for (auto objIndex : preprocessorResult.maybeInfiniteRewardObjectives) {
         STORM_LOG_ASSERT(preprocessorResult.objectives[objIndex].formula->isRewardOperatorFormula(),
                          "Objective needs to be checked for finite reward but has no reward operator.");
         auto const& rewModel = preprocessorResult.preprocessedModel->getRewardModel(
             preprocessorResult.objectives[objIndex].formula->asRewardOperatorFormula().getRewardModelName());
-        auto unrelevantChoices = rewModel.getChoicesWithZeroReward(transitions);
+        auto irrelevantChoices = rewModel.getChoicesWithZeroReward(transitions);
         // For (upper) reward bounded cumulative reward formulas, we do not need to consider the choices where boundReward is collected.
         if (preprocessorResult.objectives[objIndex].formula->getSubformula().isCumulativeRewardFormula()) {
             auto const& timeBoundReference =
                 preprocessorResult.objectives[objIndex].formula->getSubformula().asCumulativeRewardFormula().getTimeBoundReference();
             // Only reward bounded formulas need a finiteness check
-            assert(timeBoundReference.isRewardBound());
+            STORM_LOG_ASSERT(timeBoundReference.isRewardBound(), "Expected reward bound.");
             auto const& rewModelOfBound = preprocessorResult.preprocessedModel->getRewardModel(timeBoundReference.getRewardName());
-            unrelevantChoices |= ~rewModelOfBound.getChoicesWithZeroReward(transitions);
+            irrelevantChoices |= ~rewModelOfBound.getChoicesWithZeroReward(transitions);
         }
-        if (storm::solver::minimize(preprocessorResult.objectives[objIndex].formula->getOptimalityType())) {
-            minRewardsToCheck &= unrelevantChoices;
+
+        bool const maximizing = storm::solver::maximize(preprocessorResult.objectives[objIndex].formula->getOptimalityType());
+        bool const negativeRewards = rewModel.hasNegativeRewards();
+        bool const positiveRewards = rewModel.hasPositiveRewards();
+        bool const hasMixedSignRewards = negativeRewards && positiveRewards;
+
+        if (hasMixedSignRewards || (maximizing && !negativeRewards) || (!maximizing && !positiveRewards)) {
+            attractingInfRewardChoices &= irrelevantChoices;
         } else {
-            maxRewardsToCheck &= unrelevantChoices;
+            drainingInfRewardChoices &= irrelevantChoices;
         }
     }
-    maxRewardsToCheck.complement();
-    minRewardsToCheck.complement();
+    attractingInfRewardChoices.complement();
+    drainingInfRewardChoices.complement();
 
     // Check reward finiteness under all schedulers
     storm::storage::BitVector allStates(preprocessorResult.preprocessedModel->getNumberOfStates(), true);
-    if (storm::utility::graph::checkIfECWithChoiceExists(transitions, backwardTransitions, allStates, maxRewardsToCheck | minRewardsToCheck)) {
+    if (storm::utility::graph::checkIfECWithChoiceExists(transitions, backwardTransitions, allStates, attractingInfRewardChoices | drainingInfRewardChoices)) {
         // Check whether there is a scheduler yielding infinite reward for a maximizing objective
-        if (storm::utility::graph::checkIfECWithChoiceExists(transitions, backwardTransitions, allStates, maxRewardsToCheck)) {
+        if (storm::utility::graph::checkIfECWithChoiceExists(transitions, backwardTransitions, allStates, attractingInfRewardChoices)) {
             result.rewardFinitenessType = RewardFinitenessType::Infinite;
         } else {
             // Check whether there is a scheduler under which all rewards are finite.
@@ -184,7 +185,7 @@ void SparseMultiObjectiveRewardAnalysis<SparseModelType>::computeUpperResultBoun
                                 isOutChoice = true;
                                 outStates.set(state, true);
                                 rew0StateProbs.push_back(storm::utility::one<ValueType>() - ecElimRes.matrix.getRowSum(choice));
-                                assert(!storm::utility::isZero(rew0StateProbs.back()));
+                                STORM_LOG_ASSERT(!storm::utility::isZero(rew0StateProbs.back()), "Expected non-zero state probability.");
                                 break;
                             }
                         }
@@ -204,12 +205,10 @@ void SparseMultiObjectiveRewardAnalysis<SparseModelType>::computeUpperResultBoun
                         rewards.push_back(actionRewards[row]);
                     }
 
-                    storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType> baier(ecElimRes.matrix, rewards, rew0StateProbs);
-                    if (objective.upperResultBound) {
-                        objective.upperResultBound = std::min(objective.upperResultBound.get(), baier.computeUpperBound());
-                    } else {
-                        objective.upperResultBound = baier.computeUpperBound();
-                    }
+                    auto bounds = storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>(ecElimRes.matrix, rew0StateProbs)
+                                      .computeTotalRewardBounds(rewards);
+                    objective.lowerResultBound = std::max(objective.lowerResultBound.value_or(bounds.lower), bounds.lower);
+                    objective.upperResultBound = std::min(objective.upperResultBound.value_or(bounds.upper), bounds.upper);
                 }
             }
         }

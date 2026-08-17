@@ -14,8 +14,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/sparse/StateType.h"
 
-#include "storm/adapters/IntelTbbAdapter.h"
-#include "storm/utility/OsDetection.h"
+#include "storm/utility/OptionalRef.h"
 #include "storm/utility/constants.h"
 
 // Forward declaration for adapter classes.
@@ -61,10 +60,8 @@ class MatrixEntry {
     MatrixEntry() = default;
     MatrixEntry(MatrixEntry const& other) = default;
     MatrixEntry& operator=(MatrixEntry const& other) = default;
-#ifndef WINDOWS
     MatrixEntry(MatrixEntry&& other) = default;
     MatrixEntry& operator=(MatrixEntry&& other) = default;
-#endif
 
     /*!
      * Retrieves the column of the matrix entry.
@@ -536,6 +533,13 @@ class SparseMatrix {
     index_type getRowGroupEntryCount(index_type const group) const;
 
     /*!
+     * Returns the number of entries in the given row of the matrix.
+     * @param row  Which row
+     * @return Number of entries
+     */
+    index_type getRowEntryCount(index_type const row) const;
+
+    /*!
      * Returns the cached number of nonzero entries in the matrix.
      *
      * @see updateNonzeroEntryCount()
@@ -597,6 +601,11 @@ class SparseMatrix {
      * Returns the row indices within the given group
      */
     boost::integer_range<index_type> getRowGroupIndices(index_type group) const;
+
+    /*!
+     * Returns the entry indices within the given row
+     */
+    std::vector<index_type> const& getRowIndices() const;
 
     /*!
      * Swaps the grouping of rows of this matrix.
@@ -914,10 +923,6 @@ class SparseMatrix {
                                    std::vector<value_type> const* summand = nullptr) const;
     void multiplyWithVectorBackward(std::vector<value_type> const& vector, std::vector<value_type>& result,
                                     std::vector<value_type> const* summand = nullptr) const;
-#ifdef STORM_HAVE_INTELTBB
-    void multiplyWithVectorParallel(std::vector<value_type> const& vector, std::vector<value_type>& result,
-                                    std::vector<value_type> const* summand = nullptr) const;
-#endif
 
     /*!
      * Multiplies the matrix with the given vector, reduces it according to the given direction and and writes
@@ -949,14 +954,6 @@ class SparseMatrix {
     template<typename Compare>
     void multiplyAndReduceBackward(std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b,
                                    std::vector<ValueType>& result, std::vector<uint64_t>* choices) const;
-#ifdef STORM_HAVE_INTELTBB
-    void multiplyAndReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
-                                   std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result,
-                                   std::vector<uint64_t>* choices) const;
-    template<typename Compare>
-    void multiplyAndReduceParallel(std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b,
-                                   std::vector<ValueType>& result, std::vector<uint64_t>* choices) const;
-#endif
 
     /*!
      * Multiplies a single row of the matrix with the given vector and returns the result
@@ -1032,9 +1029,13 @@ class SparseMatrix {
     index_type getNonconstantRowGroupCount() const;
 
     /*!
-     * Checks for each row whether it sums to one.
+     * Checks for each row whether (i) each entry is between zero and one and (ii) all entries sum to one.
+     * For interval models, we check if each interval contains a value between zero and one and if the sum contains one.
+     * For rational functions, we only do these checks if they are constant, i.e., do not contain any parameter.
+     * @param tolerance The tolerance used when comparing values to zero and one.
+     * @param reason if the matrix is not probabilistic, this string will be filled with a human-readable explanation of why the matrix is not probabilistic.
      */
-    bool isProbabilistic() const;
+    bool isProbabilistic(ValueType const& tolerance, storm::OptionalRef<std::string> reason = {}) const;
 
     /*!
      * Checks whether each present entry is strictly positive (omitted entries are not considered).

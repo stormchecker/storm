@@ -1,5 +1,4 @@
-#ifndef STORM_MODELS_SPARSE_DTMC_H_
-#define STORM_MODELS_SPARSE_DTMC_H_
+#pragma once
 
 #include "storm/models/sparse/DeterministicModel.h"
 
@@ -55,5 +54,3 @@ class Dtmc : public DeterministicModel<ValueType, RewardModelType> {
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SPARSE_DTMC_H_ */

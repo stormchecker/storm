@@ -1,13 +1,11 @@
+#include "storm/storage/expressions/ExprtkExpressionEvaluator.h"
+
 #include <string>
 
 #include "storm/adapters/ExprttkAdapter.h"
-
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/ExprtkExpressionEvaluator.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -56,7 +54,7 @@ typename ExprtkExpressionEvaluatorBase<RationalType>::CompiledExpressionType con
         compiledExpression.register_symbol_table(*symbolTable);
         bool parsingOk = parser->compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
         STORM_LOG_THROW(parsingOk, storm::exceptions::UnexpectedException,
-                        "Expression was not properly parsed by ExprTk: " << expression << ". (Returned error: " << parser->error() << ")");
+                        "Expression was not properly parsed by ExprTk: " << expression << ". (Returned error: " << parser->error() << ").");
         expression.setCompiledExpression(std::make_shared<ExprtkCompiledExpression>(compiledExpression));
     }
     return expression.getCompiledExpression().asExprtkCompiledExpression().getCompiledExpression();
@@ -88,9 +86,7 @@ double ExprtkExpressionEvaluator::asRational(Expression const& expression) const
 
 template class ExprtkExpressionEvaluatorBase<double>;
 
-#ifdef STORM_HAVE_CARL
 template class ExprtkExpressionEvaluatorBase<RationalNumber>;
 template class ExprtkExpressionEvaluatorBase<RationalFunction>;
-#endif
 }  // namespace expressions
 }  // namespace storm

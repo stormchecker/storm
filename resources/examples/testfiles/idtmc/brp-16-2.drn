@@ -1,6 +1,7 @@
 // Exported by storm
 // Original model type: DTMC
 @type: DTMC
+@value_type: double-interval
 @parameters
 
 @reward_models

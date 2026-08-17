@@ -1,18 +1,13 @@
-#include "HybridInfiniteHorizonHelper.h"
+#include "storm/modelchecker/helper/infinitehorizon/HybridInfiniteHorizonHelper.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseDeterministicInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromOtherHelper.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/models/symbolic/NondeterministicModel.h"
-
 #include "storm/storage/SparseMatrix.h"
-
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
 namespace modelchecker {

@@ -6,10 +6,8 @@
 #include "storm-pars/settings/modules/ParametricSettings.h"
 #include "storm-pars/settings/modules/PartitionSettings.h"
 #include "storm-pars/settings/modules/RegionSettings.h"
-#include "storm-pars/settings/modules/SamplingSettings.h"
-
 #include "storm-pars/settings/modules/RegionVerificationSettings.h"
-
+#include "storm-pars/settings/modules/SamplingSettings.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/BuildSettings.h"

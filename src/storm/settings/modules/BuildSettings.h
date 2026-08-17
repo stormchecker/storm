@@ -49,15 +49,6 @@ class BuildSettings : public ModuleSettings {
      */
     bool isDontFixDeadlocksSet() const;
 
-    /*!
-     * Overrides the option to not fix deadlocks by setting it to the specified value. As soon as the
-     * returned memento goes out of scope, the original value is restored.
-     *
-     * @param stateToSet The value that is to be set for the fix-deadlocks option.
-     * @return The memento that will eventually restore the original value.
-     */
-    std::unique_ptr<storm::settings::SettingMemento> overrideDontFixDeadlocksSet(bool stateToSet);
-
     /**
      * Retrieves whether no model should be build at all, in case one just want to translate models or parse a file.
      */
@@ -74,6 +65,11 @@ class BuildSettings : public ModuleSettings {
      * Retrieves whether the maximum progress assumption is to be applied when building the model
      */
     bool isApplyNoMaximumProgressAssumptionSet() const;
+
+    /*!
+     * Retrieves whether Markov automata should be checked for the presence of Zeno cycles after building.
+     */
+    bool isCheckZenoSet() const;
 
     /*!
      * Retrieves whether the choice labels should be build

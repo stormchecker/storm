@@ -179,11 +179,14 @@ TYPED_TEST(DftModelCheckerTest, FdepMTTF) {
     EXPECT_NEAR(result, 2, this->precision());
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep3.dft");
     EXPECT_NEAR(result, 5 / 2.0, this->precision());
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep7.dft");
+    EXPECT_NEAR(result, 5 / 12.0, this->precision());
 
     if (this->getConfig().useMod) {
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft"), storm::exceptions::NotSupportedException);
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep4.dft"), storm::exceptions::NotSupportedException);
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft"), storm::exceptions::NotSupportedException);
+        STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep6.dft"), storm::exceptions::NotSupportedException);
     } else {
         double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft");
         EXPECT_NEAR(result, 2 / 3.0, this->precision());
@@ -191,6 +194,8 @@ TYPED_TEST(DftModelCheckerTest, FdepMTTF) {
         EXPECT_NEAR(result, 1, this->precision());
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft");
         EXPECT_NEAR(result, 3, this->precision());
+        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep6.dft");
+        EXPECT_NEAR(result, 9 / 56.0, this->precision());
     }
 }
 
@@ -235,6 +240,9 @@ TYPED_TEST(DftModelCheckerTest, SpareMTTF) {
     EXPECT_NEAR(result, 78311 / 182700.0, this->precision());
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/modules3.dft");
     EXPECT_NEAR(result, 7 / 6.0, this->precision());
+    // Spare gate is part of spare module. As a result it is not activated.
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare_contains_spare.dft");
+    EXPECT_NEAR(result, 1, this->precision());
 }
 
 TYPED_TEST(DftModelCheckerTest, SeqMTTF) {

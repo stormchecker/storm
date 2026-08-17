@@ -2,9 +2,8 @@
 
 #include <algorithm>
 
-#include "storm/storage/dd/DdManager.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -17,7 +16,7 @@ Dd<LibraryType>::Dd(DdManager<LibraryType> const& ddManager, std::set<storm::exp
 
 template<DdType LibraryType>
 bool Dd<LibraryType>::containsMetaVariable(storm::expressions::Variable const& metaVariable) const {
-    return containedMetaVariables.find(metaVariable) != containedMetaVariables.end();
+    return containedMetaVariables.contains(metaVariable);
 }
 
 template<DdType LibraryType>

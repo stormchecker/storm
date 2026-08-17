@@ -36,6 +36,16 @@ class RegionSettings : public ModuleSettings {
      */
     std::string getRegionBoundString() const;
 
+    /*!
+     * Retrieves whether non-graph-preserving mode is enabled
+     */
+    bool isAssumeGraphPreservingSet() const;
+
+    /*!
+     * Retrieves the discrete variables string
+     */
+    std::string getDiscreteVariablesString() const;
+
     const static std::string moduleName;
 };
 

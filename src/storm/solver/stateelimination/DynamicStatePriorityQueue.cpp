@@ -1,7 +1,6 @@
 #include "storm/solver/stateelimination/DynamicStatePriorityQueue.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -73,10 +72,8 @@ std::size_t DynamicStatePriorityQueue<ValueType>::size() const {
 
 template class DynamicStatePriorityQueue<double>;
 
-#ifdef STORM_HAVE_CARL
 template class DynamicStatePriorityQueue<storm::RationalNumber>;
 template class DynamicStatePriorityQueue<storm::RationalFunction>;
-#endif
 }  // namespace stateelimination
 }  // namespace solver
 }  // namespace storm

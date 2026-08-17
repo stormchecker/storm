@@ -1,10 +1,8 @@
 #include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResult.h"
 
-#include "storm/storage/BitVector.h"
-
 #include "storm/adapters/RationalNumberAdapter.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/BitVector.h"
 #include "storm/utility/macros.h"
 
 namespace storm::gbar {

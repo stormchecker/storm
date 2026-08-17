@@ -1,4 +1,5 @@
 #pragma once
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::utility::vector {

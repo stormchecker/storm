@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_STATISTICS_H_
-#define STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_STATISTICS_H_
+#pragma once
 
 #include <cstddef>
 #include <iostream>
@@ -40,5 +39,3 @@ struct Statistics {
 }  // namespace exploration_detail
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_STATISTICS_H_ */

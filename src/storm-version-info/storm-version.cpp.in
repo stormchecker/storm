@@ -1,24 +1,22 @@
-// AUTO GENERATED -- DO NOT CHANGE
+// The file ending with .cpp is auto generated and will be overwritten.
+// The file is generated from storm-version.cpp.in.
 #include "storm-version-info/storm-version.h"
 
 namespace storm {
 
     const unsigned StormVersion::versionMajor = @STORM_VERSION_MAJOR@;
     const unsigned StormVersion::versionMinor = @STORM_VERSION_MINOR@;
-    const unsigned StormVersion::versionPatch = @STORM_VERSION_DEV_PATCH@;
-    const std::string StormVersion::versionLabel = "@STORM_VERSION_LABEL@";
+    const unsigned StormVersion::versionPatch = @STORM_VERSION_PATCH@;
     const bool StormVersion::versionDev = @STORM_VERSION_DEV@;
-    const StormVersion::VersionSource StormVersion::versionSource = @STORM_VERSION_SOURCE@;
     const std::string StormVersion::gitRevisionHash = "@STORM_VERSION_GIT_HASH@";
-    const unsigned StormVersion::commitsAhead = @STORM_VERSION_COMMITS_AHEAD@;
     const StormVersion::DirtyState StormVersion::dirty = @STORM_VERSION_DIRTY@;
     const std::string StormVersion::systemName = "@CMAKE_SYSTEM_NAME@";
     const std::string StormVersion::systemVersion = "@CMAKE_SYSTEM_VERSION@";
     const std::string StormVersion::cxxCompiler = "@STORM_COMPILER_ID@ @CMAKE_CXX_COMPILER_VERSION@";
 #ifdef NDEBUG
-    const std::string StormVersion::cxxFlags = "@CMAKE_CXX_FLAGS@" " " "@CMAKE_CXX_FLAGS_RELEASE@";
+    const std::string StormVersion::cxxFlags = "compiled with NDEBUG";
 #else
-    const std::string StormVersion::cxxFlags = "@CMAKE_CXX_FLAGS@" " " "@CMAKE_CXX_FLAGS_DEBUG@";
+    const std::string StormVersion::cxxFlags = "compiled without NDEBUG";
 #endif
 
 }

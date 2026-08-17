@@ -6,9 +6,9 @@
 #include "storm-pars-cli/print.h"
 #include "storm-pars-cli/sampling.h"
 
-#include "storm-pars/analysis/MonotonicityHelper.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/api/storm-pars.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 
 #include "storm-pars/utility/parametric.h"
 
@@ -37,11 +37,11 @@ void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>
     auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
 
     if (monSettings.isExportMonotonicitySet()) {
-        storm::utility::openFile(monSettings.getExportMonotonicityFilename(), outfile);
+        storm::io::openFile(monSettings.getExportMonotonicityFilename(), outfile);
     }
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
     storm::utility::Stopwatch monotonicityWatch(true);
-    STORM_LOG_THROW(regions.size() <= 1, storm::exceptions::InvalidArgumentException, "Monotonicity analysis only allowed on single region");
+    STORM_LOG_THROW(regions.size() <= 1, storm::exceptions::InvalidArgumentException, "Monotonicity analysis only allowed on single region.");
     if (!monSettings.isMonSolutionSet()) {
         auto monotonicityHelper = storm::analysis::MonotonicityHelper<ValueType, double>(
             model, formulas, regions, monSettings.getNumberOfSamples(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision(),
@@ -99,12 +99,11 @@ void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>
     }
 
     if (monSettings.isExportMonotonicitySet()) {
-        storm::utility::closeFile(outfile);
+        storm::io::closeFile(outfile);
     }
 
     monotonicityWatch.stop();
     STORM_PRINT("\nTotal time for monotonicity checking: " << monotonicityWatch << ".\n\n");
-    return;
 }
 
 template void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model, cli::SymbolicInput const& input,

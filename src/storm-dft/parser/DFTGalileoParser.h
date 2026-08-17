@@ -27,7 +27,6 @@ class DFTGalileoParser {
      */
     static storm::dft::storage::DFT<ValueType> parseDFT(std::string const& filename);
 
-   private:
     /*!
      * Parse element name (strip quotation marks, etc.).
      *
@@ -37,6 +36,7 @@ class DFTGalileoParser {
      */
     static std::string parseName(std::string const& name);
 
+   private:
     /*!
      * Parse basic element and add it to builder.
      *

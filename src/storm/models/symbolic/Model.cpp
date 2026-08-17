@@ -2,26 +2,22 @@
 
 #include <boost/algorithm/string/join.hpp>
 
+#include "storm/adapters/AddExpressionAdapter.h"
+#include "storm/adapters/IntervalForward.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/Mdp.h"
-#include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-
-#include "storm/exceptions/IllegalArgumentException.h"
-#include "storm/exceptions/InvalidOperationException.h"
-
-#include "storm/adapters/AddExpressionAdapter.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/models/symbolic/StandardRewardModel.h"
-
+#include "storm/models/symbolic/StochasticTwoPlayerGame.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/WrongFormatException.h"
 
 namespace storm {
 namespace models {
@@ -225,11 +221,6 @@ std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-void Model<Type, ValueType>::setTransitionMatrix(storm::dd::Add<Type, ValueType> const& transitionMatrix) {
-    this->transitionMatrix = transitionMatrix;
-}
-
-template<storm::dd::DdType Type, typename ValueType>
 std::map<std::string, storm::expressions::Expression> const& Model<Type, ValueType>::getLabelToExpressionMap() const {
     return labelToExpressionMap;
 }
@@ -327,7 +318,7 @@ std::vector<std::string> Model<Type, ValueType>::getLabels() const {
 template<storm::dd::DdType Type, typename ValueType>
 void Model<Type, ValueType>::printModelInformationHeaderToStream(std::ostream& out) const {
     out << "-------------------------------------------------------------- \n";
-    out << "Model type: \t" << this->getType() << " (symbolic)\n";
+    out << "Model type: \t" << (storm::IsIntervalType<ValueType> ? "I" : "") << this->getType() << " (symbolic)\n";
     out << "States: \t" << this->getNumberOfStates() << " (" << reachableStates.getNodeCount() << " nodes)\n";
     out << "Transitions: \t" << this->getNumberOfTransitions() << " (" << transitionMatrix.getNodeCount() << " nodes)\n";
 }
@@ -375,7 +366,8 @@ void Model<Type, ValueType>::printDdVariableInformationToStream(std::ostream& ou
         columnVariableCount += this->getManager().getMetaVariable(metaVariable).getNumberOfDdVariables();
     }
 
-    out << "Variables: \t" << "rows: " << this->rowVariables.size() << " meta variables (" << rowVariableCount << " DD variables)"
+    out << "Variables: \t"
+        << "rows: " << this->rowVariables.size() << " meta variables (" << rowVariableCount << " DD variables)"
         << ", columns: " << this->columnVariables.size() << " meta variables (" << columnVariableCount << " DD variables)";
 }
 
@@ -387,6 +379,16 @@ std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> const& M
 template<storm::dd::DdType Type, typename ValueType>
 bool Model<Type, ValueType>::isSymbolicModel() const {
     return true;
+}
+
+template<storm::dd::DdType Type, typename ValueType>
+std::optional<storm::dd::DdType> Model<Type, ValueType>::getDdType() const {
+    return Type;
+}
+
+template<storm::dd::DdType Type, typename ValueType>
+bool Model<Type, ValueType>::isExact() const {
+    return storm::NumberTraits<ValueType>::IsExact;
 }
 
 template<storm::dd::DdType Type, typename ValueType>
@@ -486,11 +488,10 @@ typename std::enable_if<std::is_same<ValueType, NewValueType>::value, std::share
 
 // Explicitly instantiate the template class.
 template class Model<storm::dd::DdType::CUDD, double>;
-template class Model<storm::dd::DdType::Sylvan, double>;
-
 template typename std::enable_if<std::is_same<double, double>::value, std::shared_ptr<Model<storm::dd::DdType::CUDD, double>>>::type
 Model<storm::dd::DdType::CUDD, double>::toValueType<double>() const;
 
+template class Model<storm::dd::DdType::Sylvan, double>;
 template class Model<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template typename std::enable_if<std::is_same<double, double>::value, std::shared_ptr<Model<storm::dd::DdType::Sylvan, double>>>::type
 Model<storm::dd::DdType::Sylvan, double>::toValueType<double>() const;
@@ -503,6 +504,7 @@ Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::toValueType<storm::Ra
 template typename std::enable_if<!std::is_same<storm::RationalNumber, double>::value, std::shared_ptr<Model<storm::dd::DdType::Sylvan, double>>>::type
 Model<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType<double>() const;
 template class Model<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+
 }  // namespace symbolic
 }  // namespace models
 }  // namespace storm

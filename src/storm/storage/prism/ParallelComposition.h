@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_PARALLELCOMPOSITION_H_
-#define STORM_STORAGE_PRISM_PARALLELCOMPOSITION_H_
+#pragma once
 
 #include <memory>
 #include <set>
@@ -22,5 +21,3 @@ class ParallelComposition : public Composition {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_PARALLELCOMPOSITION_H_ */

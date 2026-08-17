@@ -1,27 +1,21 @@
 #include "storm/generator/PrismNextStateGenerator.h"
 
 #include <boost/any.hpp>
-#include <boost/container/flat_map.hpp>
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/models/sparse/StateLabeling.h"
-
-#include "storm/storage/expressions/SimpleValuation.h"
-#include "storm/storage/sparse/PrismChoiceOrigins.h"
-
-#include "storm/generator/Distribution.h"
-
-#include "storm/solver/SmtSolver.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/generator/Distribution.h"
+#include "storm/models/sparse/StateLabeling.h"
+#include "storm/solver/SmtSolver.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/storage/sparse/PrismChoiceOrigins.h"
 #include "storm/utility/combinatorics.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -41,6 +35,8 @@ PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::pr
     STORM_LOG_TRACE("Creating next-state generator for PRISM program: " << program);
     STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException,
                     "The explicit next-state generator currently does not support custom system compositions.");
+    STORM_LOG_THROW(storm::IsIntervalType<ValueType> || !this->program.hasIntervalUpdates(), storm::exceptions::WrongFormatException,
+                    "The provided PRISM program contains interval updates, which are not supported by the chosen value type.");
 
     // Only after checking validity of the program, we initialize the variable information.
     this->checkValid();
@@ -48,7 +44,7 @@ PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::pr
     this->initializeSpecialStates();
 
     // Create a proper evaluator.
-    this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(program.getManager());
+    this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<BaseValueType>>(program.getManager());
 
     if (this->options.isBuildAllRewardModelsSet()) {
         for (auto const& rewardModel : this->program.getRewardModels()) {
@@ -112,11 +108,7 @@ bool PrismNextStateGenerator<ValueType, StateType>::canHandle(storm::prism::Prog
 template<typename ValueType, typename StateType>
 void PrismNextStateGenerator<ValueType, StateType>::checkValid() const {
     // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
-#ifdef STORM_HAVE_CARL
     if (!std::is_same<ValueType, storm::RationalFunction>::value && program.hasUndefinedConstants()) {
-#else
-    if (program.hasUndefinedConstants()) {
-#endif
         std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = program.getUndefinedConstants();
         std::stringstream stream;
         bool printComma = false;
@@ -129,17 +121,14 @@ void PrismNextStateGenerator<ValueType, StateType>::checkValid() const {
             stream << constant.get().getName() << " (" << constant.get().getType() << ")";
         }
         stream << ".";
-        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
-    }
-#ifdef STORM_HAVE_CARL
-    else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.undefinedConstantsAreGraphPreserving()) {
+        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str() + ".");
+    } else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.undefinedConstantsAreGraphPreserving()) {
         auto undef = program.getUndefinedConstantsAsString();
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
                         "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, "
                         "which is not admitted. Undefined constants are: "
-                            << undef);
+                            << undef << ".");
     }
-#endif
 }
 
 template<typename ValueType, typename StateType>
@@ -214,7 +203,7 @@ std::vector<StateType> PrismNextStateGenerator<ValueType, StateType>::getInitial
                     initialState.setFromInt(intVar.bitOffset, intVar.bitWidth, value);
                 } else {
                     // Boolean variable
-                    STORM_LOG_ASSERT(index - intEndIndex < this->variableInformation.booleanVariables.size(), "Unexpected index");
+                    STORM_LOG_ASSERT(index - intEndIndex < this->variableInformation.booleanVariables.size(), "Unexpected index.");
                     auto const& boolVar = this->variableInformation.booleanVariables[index - intEndIndex];
                     STORM_LOG_ASSERT(value <= 1u, "Unexpected value for boolean variable.");
                     initialState.set(boolVar.bitOffset, static_cast<bool>(value));
@@ -297,11 +286,26 @@ StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType
         result.addStateReward(stateRewardValue);
     }
 
-    // If a terminal expression was set and we must not expand this state, return now.
+    // If a terminal expression was set, we must not expand this state
     if (!this->terminalStates.empty()) {
         for (auto const& expressionBool : this->terminalStates) {
             if (this->evaluator->asBool(expressionBool.first) == expressionBool.second) {
-                return result;
+                if (!isPartiallyObservable()) {
+                    // If the model is not partially observable, return.
+                    return result;
+                } else {
+                    // for partially observable models, we need to add self-loops for all enabled actions.
+                    result.setExpanded();
+                    std::vector<Choice<ValueType>> allChoices = getSelfLoopsForAllActions(*this->state, stateToIdCallback);
+                    if (allChoices.size() != 0) {
+                        for (auto& choice : allChoices) {
+                            result.addChoice(std::move(choice));
+                        }
+
+                        this->postprocess(result);
+                    }
+                    return result;
+                }
             }
         }
     }
@@ -324,16 +328,14 @@ StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType
         addSynchronousChoices(allChoices, *this->state, stateToIdCallback);
     }
 
-    std::size_t totalNumberOfChoices = allChoices.size();
-
     // If there is not a single choice, we return immediately, because the state has no behavior (other than
     // the state reward).
-    if (totalNumberOfChoices == 0) {
+    if (allChoices.empty()) {
         return result;
     }
 
     // If the model is a deterministic model, we need to fuse the choices into one.
-    if (this->isDeterministicModel() && totalNumberOfChoices > 1) {
+    if (this->isDeterministicModel() && allChoices.size() > 1) {
         Choice<ValueType> globalChoice;
 
         if (this->options.isAddOverlappingGuardLabelSet()) {
@@ -342,7 +344,8 @@ StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType
 
         // For CTMCs, we need to keep track of the total exit rate to scale the action rewards later. For DTMCs
         // this is equal to the number of choices, which is why we initialize it like this here.
-        ValueType totalExitRate = this->isDiscreteTimeModel() ? static_cast<ValueType>(totalNumberOfChoices) : storm::utility::zero<ValueType>();
+        ValueType const totalNumberOfChoices = storm::utility::convertNumber<ValueType, uint64_t>(allChoices.size());
+        ValueType totalExitRate = this->isDiscreteTimeModel() ? totalNumberOfChoices : storm::utility::zero<ValueType>();
 
         // Iterate over all choices and combine the probabilities/rates into one choice.
         for (auto const& choice : allChoices) {
@@ -577,6 +580,23 @@ PrismNextStateGenerator<ValueType, StateType>::getActiveCommandsByActionIndex(ui
     return result;
 }
 
+template<typename ValueType, typename BaseValueType>
+ValueType evaluateLikelihoodExpression(storm::prism::Update const& update, storm::expressions::ExpressionEvaluator<BaseValueType> const& evaluator) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        if (update.isLikelihoodInterval()) {
+            BaseValueType lower = evaluator.asRational(update.getLikelihoodExpressionInterval().first);
+            BaseValueType upper = evaluator.asRational(update.getLikelihoodExpressionInterval().second);
+            return ValueType(lower, carl::BoundType::WEAK, upper, carl::BoundType::WEAK);
+        } else {
+            return evaluator.asRational(update.getLikelihoodExpression());
+        }
+    } else {
+        // We don't expect to see an interval likelihood now. This case should have been catched earlier.
+        STORM_LOG_ASSERT(!update.isLikelihoodInterval(), "Unexpected interval likelihood for non-interval model in update " << update << ".");
+        return evaluator.asRational(update.getLikelihoodExpression());
+    }
+}
+
 template<typename ValueType, typename StateType>
 std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getAsynchronousChoices(CompressedState const& state,
                                                                                                      StateToIdCallback stateToIdCallback,
@@ -626,7 +646,7 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
             for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
                 storm::prism::Update const& update = command.getUpdate(k);
 
-                ValueType probability = this->evaluator->asRational(update.getLikelihoodExpression());
+                ValueType probability = evaluateLikelihoodExpression<ValueType>(update, *this->evaluator);
                 if (probability != storm::utility::zero<ValueType>()) {
                     // Obtain target state index and add it to the list of known states. If it has not yet been
                     // seen, we also add it to the set of states that have yet to be explored.
@@ -635,6 +655,13 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
                     // Update the choice by adding the probability/target state to it.
                     choice.addProbability(stateIndex, probability);
                     if (this->options.isExplorationChecksSet()) {
+                        if constexpr (!std::is_same_v<ValueType, storm::RationalFunction>) {
+                            STORM_LOG_THROW(probability > storm::utility::zero<ValueType>(), storm::exceptions::WrongFormatException,
+                                            "Probability expression in update '" << update << " evaluates to negative value " << probability << ".");
+                            STORM_LOG_THROW(!program.isDiscreteTimeModel() || probability <= storm::utility::one<ValueType>(),
+                                            storm::exceptions::WrongFormatException,
+                                            "Probability expression in update '" << update << " evaluates to value " << probability << " >1.");
+                        }
                         probabilitySum += probability;
                     }
                 }
@@ -676,8 +703,147 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
 
             if (this->options.isExplorationChecksSet()) {
                 // Check that the resulting distribution is in fact a distribution.
-                STORM_LOG_THROW(!program.isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException,
+                STORM_LOG_THROW(!program.isDiscreteTimeModel() || !storm::utility::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
+                                storm::exceptions::WrongFormatException,
                                 "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
+            }
+        }
+    }
+
+    return result;
+}
+
+template<typename ValueType, typename StateType>
+std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getSelfLoopsForAllActions(CompressedState const& state,
+                                                                                                        StateToIdCallback stateToIdCallback,
+                                                                                                        CommandFilter const& commandFilter) {
+    std::vector<Choice<ValueType>> result;
+
+    // Asynchronous actions
+    // Iterate over all modules.
+    for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
+        storm::prism::Module const& module = program.getModule(i);
+
+        // Iterate over all commands.
+        for (uint_fast64_t j = 0; j < module.getNumberOfCommands(); ++j) {
+            storm::prism::Command const& command = module.getCommand(j);
+
+            // Only consider commands that are not possibly synchronizing.
+            if (isCommandPotentiallySynchronizing(command))
+                continue;
+
+            if (this->actionMask != nullptr) {
+                if (!this->actionMask->query(*this, command.getActionIndex())) {
+                    continue;
+                }
+            }
+
+            // Skip the command, if it is not enabled.
+            if (!this->evaluator->asBool(command.getGuardExpression())) {
+                continue;
+            }
+
+            result.push_back(Choice<ValueType>(command.getActionIndex(), command.isMarkovian()));
+            Choice<ValueType>& choice = result.back();
+
+            // Remember the choice origin only if we were asked to.
+            if (this->options.isBuildChoiceOriginsSet()) {
+                CommandSet commandIndex{command.getGlobalIndex()};
+                choice.addOriginData(boost::any(std::move(commandIndex)));
+            }
+            choice.addProbability(stateToIdCallback(*this->state), storm::utility::one<ValueType>());
+
+            // Create the state-action reward for the newly created choice.
+            for (auto const& rewardModel : rewardModels) {
+                ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
+                if (rewardModel.get().hasStateActionRewards()) {
+                    for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
+                        if (stateActionReward.getActionIndex() == choice.getActionIndex() &&
+                            this->evaluator->asBool(stateActionReward.getStatePredicateExpression())) {
+                            stateActionRewardValue += ValueType(this->evaluator->asRational(stateActionReward.getRewardValueExpression()));
+                        }
+                    }
+                }
+                choice.addReward(stateActionRewardValue);
+            }
+
+            if (this->options.isBuildChoiceLabelsSet() && command.isLabeled()) {
+                choice.addLabel(program.getActionName(command.getActionIndex()));
+            }
+        }
+    }
+
+    // Synchronizing actions
+    for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
+        if (this->actionMask != nullptr) {
+            if (!this->actionMask->query(*this, actionIndex)) {
+                continue;
+            }
+        }
+        boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists =
+            getActiveCommandsByActionIndex(actionIndex, commandFilter);
+
+        // Only process this action label, if there is at least one feasible solution.
+        if (optionalActiveCommandLists) {
+            std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>> const& activeCommandList = optionalActiveCommandLists.get();
+            std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator> iteratorList(activeCommandList.size());
+
+            // Initialize the list of iterators.
+            for (size_t i = 0; i < activeCommandList.size(); ++i) {
+                iteratorList[i] = activeCommandList[i].cbegin();
+            }
+
+            // As long as there is one feasible combination of commands, keep on expanding it.
+            bool done = false;
+            while (!done) {
+                // At this point, we applied all commands of the current command combination and newTargetStates
+                // contains all target states and their respective probabilities. That means we are now ready to
+                // add the choice to the list of transitions.
+                result.push_back(Choice<ValueType>(actionIndex));
+
+                // Now create the actual distribution.
+                Choice<ValueType>& choice = result.back();
+
+                // Remember the choice label and origins only if we were asked to.
+                if (this->options.isBuildChoiceLabelsSet()) {
+                    choice.addLabel(program.getActionName(actionIndex));
+                }
+                if (this->options.isBuildChoiceOriginsSet()) {
+                    CommandSet commandIndices;
+                    for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
+                        commandIndices.insert(iteratorList[i]->get().getGlobalIndex());
+                    }
+                    choice.addOriginData(boost::any(std::move(commandIndices)));
+                }
+                choice.addProbability(stateToIdCallback(*this->state), storm::utility::one<ValueType>());
+
+                // Create the state-action reward for the newly created choice.
+                for (auto const& rewardModel : rewardModels) {
+                    ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
+                    if (rewardModel.get().hasStateActionRewards()) {
+                        for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
+                            if (stateActionReward.getActionIndex() == choice.getActionIndex() &&
+                                this->evaluator->asBool(stateActionReward.getStatePredicateExpression())) {
+                                stateActionRewardValue += ValueType(this->evaluator->asRational(stateActionReward.getRewardValueExpression()));
+                            }
+                        }
+                    }
+                    choice.addReward(stateActionRewardValue);
+                }
+
+                // Now, check whether there is one more command combination to consider.
+                bool movedIterator = false;
+                for (int_fast64_t j = iteratorList.size() - 1; !movedIterator && j >= 0; --j) {
+                    ++iteratorList[j];
+                    if (iteratorList[j] != activeCommandList[j].end()) {
+                        movedIterator = true;
+                    } else {
+                        // Reset the iterator to the beginning of the list.
+                        iteratorList[j] = activeCommandList[j].begin();
+                    }
+                }
+
+                done = !movedIterator;
             }
         }
     }
@@ -696,13 +862,23 @@ void PrismNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribu
 
     if (position >= iteratorList.size()) {
         StateType id = stateToIdCallback(state);
-        distribution.add(id, probability);
+        distribution.add(id, std::move(probability));
     } else {
         storm::prism::Command const& command = *iteratorList[position];
         for (uint_fast64_t j = 0; j < command.getNumberOfUpdates(); ++j) {
             storm::prism::Update const& update = command.getUpdate(j);
-            generateSynchronizedDistribution(applyUpdate(state, update), probability * this->evaluator->asRational(update.getLikelihoodExpression()),
-                                             position + 1, iteratorList, distribution, stateToIdCallback);
+            ValueType updateProbability = evaluateLikelihoodExpression<ValueType>(update, *this->evaluator);
+            if constexpr (!std::is_same_v<ValueType, storm::RationalFunction>) {
+                if (this->options.isExplorationChecksSet()) {
+                    STORM_LOG_THROW(updateProbability >= storm::utility::zero<ValueType>(), storm::exceptions::WrongFormatException,
+                                    "Probability expression in update '" << update << " evaluates to negative value " << updateProbability << ".");
+                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || updateProbability <= storm::utility::one<ValueType>(),
+                                    storm::exceptions::WrongFormatException,
+                                    "Probability expression in update '" << update << " evaluates to value " << updateProbability << " >1.");
+                }
+            }
+            updateProbability *= probability;
+            generateSynchronizedDistribution(applyUpdate(state, update), updateProbability, position + 1, iteratorList, distribution, stateToIdCallback);
         }
     }
 }
@@ -778,7 +954,7 @@ void PrismNextStateGenerator<ValueType, StateType>::addSynchronousChoices(std::v
 
                 if (this->options.isExplorationChecksSet()) {
                     // Check that the resulting distribution is in fact a distribution.
-                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
+                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || !storm::utility::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
                                     storm::exceptions::WrongFormatException,
                                     "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
                 }
@@ -861,7 +1037,7 @@ storm::storage::BitVector PrismNextStateGenerator<ValueType, StateType>::evaluat
 }
 
 template<typename ValueType, typename StateType>
-void PrismNextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<ValueType>& result) const {
+void PrismNextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<BaseValueType>& result) const {
     for (uint64_t i = 0; i < program.getNumberOfObservationLabels(); ++i) {
         result[program.getObservationLabels()[i].getName()] = this->evaluator->asInt(program.getObservationLabels()[i].getStatePredicateExpression());
     }
@@ -891,7 +1067,7 @@ std::shared_ptr<storm::storage::sparse::ChoiceOrigins> PrismNextStateGenerator<V
 
     std::map<CommandSet, uint_fast64_t> commandSetToIdentifierMap;
     // The empty commandset (i.e., the choices without origin) always has to get identifier getIdentifierForChoicesWithNoOrigin() -- which is assumed to be 0
-    STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero");
+    STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero.");
     commandSetToIdentifierMap.insert(std::make_pair(CommandSet(), 0));
     uint_fast64_t currentIdentifier = 1;
     for (boost::any& originData : dataForChoiceOrigins) {
@@ -921,10 +1097,9 @@ bool PrismNextStateGenerator<ValueType, StateType>::isCommandPotentiallySynchron
 }
 
 template class PrismNextStateGenerator<double>;
-
-#ifdef STORM_HAVE_CARL
 template class PrismNextStateGenerator<storm::RationalNumber>;
 template class PrismNextStateGenerator<storm::RationalFunction>;
-#endif
+template class PrismNextStateGenerator<storm::Interval>;
+template class PrismNextStateGenerator<storm::RationalInterval>;
 }  // namespace generator
 }  // namespace storm

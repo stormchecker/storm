@@ -4,8 +4,6 @@
 #include "storm-parsers/util/cstring.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -15,10 +13,11 @@ namespace parser {
 using namespace storm::utility::cstring;
 
 template<typename ValueType>
-typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult MarkovAutomatonSparseTransitionParser<ValueType>::firstPass(char const* buf) {
+typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult MarkovAutomatonSparseTransitionParser<ValueType>::firstPass(
+    char const* buf, ExplicitModelParserOptions const& options) {
     MarkovAutomatonSparseTransitionParser::FirstPassResult result;
 
-    bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet();
+    bool fixDeadlocks = options.fixDeadlocks;
 
     // Skip the format hint if it is there.
     buf = trimWhitespaces(buf);
@@ -44,17 +43,16 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult Marko
 
         // If we have skipped some states, we need to reserve the space for the self-loop insertion in the second pass.
         if (source > lastsource + 1) {
-            if (!dontFixDeadlocks) {
+            if (fixDeadlocks) {
                 result.numberOfNonzeroEntries += source - lastsource - 1;
                 result.numberOfChoices += source - lastsource - 1;
             } else {
-                STORM_LOG_ERROR("Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
-                throw storm::exceptions::WrongFormatException()
-                    << "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.";
+                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                                "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
             }
         } else if (source < lastsource) {
-            STORM_LOG_ERROR("Illegal state choice order. A choice of state " << source << " appears at an illegal position.");
-            throw storm::exceptions::WrongFormatException() << "Illegal state choice order. A choice of state " << source << " appears at an illegal position.";
+            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                            "Illegal state choice order. A choice of state " << source << " appears at an illegal position.");
         }
 
         ++result.numberOfChoices;
@@ -80,17 +78,12 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult Marko
         buf = skipWord(buf);
 
         if (isMarkovianChoice) {
-            if (stateHasMarkovianChoice) {
-                STORM_LOG_ERROR("The state " << source << " has multiple Markovian choices.");
-                throw storm::exceptions::WrongFormatException() << "The state " << source << " has multiple Markovian choices.";
-            }
+            STORM_LOG_THROW(!stateHasMarkovianChoice, storm::exceptions::WrongFormatException, "The state " << source << " has multiple Markovian choices.");
             if (stateHasProbabilisticChoice) {
-                STORM_LOG_ERROR(
+                STORM_LOG_THROW(
+                    false, storm::exceptions::WrongFormatException,
                     "The state " << source
                                  << " has a probabilistic choice preceding a Markovian choice. The Markovian choice must be the first choice listed.");
-                throw storm::exceptions::WrongFormatException()
-                    << "The state " << source
-                    << " has a probabilistic choice preceding a Markovian choice. The Markovian choice must be the first choice listed.";
             }
             stateHasMarkovianChoice = true;
         } else {
@@ -112,9 +105,8 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult Marko
             // If the end of the file was reached, we need to abort and check whether we are in a legal state.
             if (buf[0] == '\0') {
                 if (!hasSuccessorState) {
-                    STORM_LOG_ERROR("Premature end-of-file. Expected at least one successor state for state " << source << ".");
-                    throw storm::exceptions::WrongFormatException()
-                        << "Premature end-of-file. Expected at least one successor state for state " << source << ".";
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                                    "Premature end-of-file. Expected at least one successor state for state " << source << ".");
                 } else {
                     // If there was at least one successor for the current choice, this is legal and we need to move on.
                     encounteredEOF = true;
@@ -128,23 +120,15 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult Marko
                 if (target > result.highestStateIndex) {
                     result.highestStateIndex = target;
                 }
-                if (hasSuccessorState && target <= lastSuccessorState) {
-                    STORM_LOG_ERROR("Illegal transition order for source state " << source << ".");
-                    throw storm::exceptions::WrongFormatException() << "Illegal transition order for source state " << source << ".";
-                }
+                STORM_LOG_THROW(!hasSuccessorState || target > lastSuccessorState, storm::exceptions::WrongFormatException,
+                                "Illegal transition order for source state " << source << ".");
 
                 // And the corresponding probability/rate.
                 double val = checked_strtod(buf, &buf);
-                if (val < 0.0) {
-                    STORM_LOG_ERROR("Illegal negative probability/rate value for transition from " << source << " to " << target << ": " << val << ".");
-                    throw storm::exceptions::WrongFormatException()
-                        << "Illegal negative probability/rate value for transition from " << source << " to " << target << ": " << val << ".";
-                }
-                if (!isMarkovianChoice && val > 1.0) {
-                    STORM_LOG_ERROR("Illegal probability value for transition from " << source << " to " << target << ": " << val << ".");
-                    throw storm::exceptions::WrongFormatException()
-                        << "Illegal probability value for transition from " << source << " to " << target << ": " << val << ".";
-                }
+                STORM_LOG_THROW(val >= 0.0, storm::exceptions::WrongFormatException,
+                                "Illegal negative probability/rate value for transition from " << source << " to " << target << ": " << val << ".");
+                STORM_LOG_THROW(isMarkovianChoice || val <= 1.0, storm::exceptions::WrongFormatException,
+                                "Illegal probability value for transition from " << source << " to " << target << ": " << val << ".");
 
                 // We need to record that we found at least one successor state for the current choice.
                 hasSuccessorState = true;
@@ -164,13 +148,12 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult Marko
 
     // If there are some states with indices that are behind the last source for which no transition was specified,
     // we need to reserve some space for introducing self-loops later.
-    if (!dontFixDeadlocks) {
+    if (fixDeadlocks) {
         result.numberOfNonzeroEntries += result.highestStateIndex - lastsource;
         result.numberOfChoices += result.highestStateIndex - lastsource;
     } else {
-        STORM_LOG_ERROR("Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
-        throw storm::exceptions::WrongFormatException()
-            << "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.";
+        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                        "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
     }
 
     return result;
@@ -178,10 +161,10 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult Marko
 
 template<typename ValueType>
 typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomatonSparseTransitionParser<ValueType>::secondPass(
-    char const* buf, FirstPassResult const& firstPassResult) {
+    char const* buf, FirstPassResult const& firstPassResult, ExplicitModelParserOptions const& options) {
     Result result(firstPassResult);
 
-    bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet();
+    bool fixDeadlocks = options.fixDeadlocks;
 
     // Skip the format hint if it is there.
     buf = trimWhitespaces(buf);
@@ -205,16 +188,15 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomato
 
         // If we have skipped some states, we need to insert self-loops if requested.
         if (source > lastsource + 1) {
-            if (!dontFixDeadlocks) {
+            if (fixDeadlocks) {
                 for (uint_fast64_t index = lastsource + 1; index < source; ++index) {
                     result.transitionMatrixBuilder.newRowGroup(currentChoice);
                     result.transitionMatrixBuilder.addNextValue(currentChoice, index, 1);
                     ++currentChoice;
                 }
             } else {
-                STORM_LOG_ERROR("Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
-                throw storm::exceptions::WrongFormatException()
-                    << "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.";
+                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                                "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
             }
         }
 
@@ -284,7 +266,7 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomato
 
     // If there are some states with indices that are behind the last source for which no transition was specified,
     // we need to insert the self-loops now. Note that we assume all these states to be Markovian.
-    if (!dontFixDeadlocks) {
+    if (fixDeadlocks) {
         for (uint_fast64_t index = lastsource + 1; index <= firstPassResult.highestStateIndex; ++index) {
             result.markovianStates.set(index, true);
             result.exitRates[index] = storm::utility::one<ValueType>();
@@ -293,9 +275,8 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomato
             ++currentChoice;
         }
     } else {
-        STORM_LOG_ERROR("Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
-        throw storm::exceptions::WrongFormatException()
-            << "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.";
+        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                        "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
     }
 
     return result;
@@ -303,7 +284,7 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomato
 
 template<typename ValueType>
 typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomatonSparseTransitionParser<ValueType>::parseMarkovAutomatonTransitions(
-    std::string const& filename) {
+    std::string const& filename, ExplicitModelParserOptions const& options) {
     // Set the locale to correctly recognize floating point numbers.
     setlocale(LC_NUMERIC, "C");
 
@@ -311,7 +292,7 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomato
     MappedFile file(filename.c_str());
     char const* buf = file.getData();
 
-    return secondPass(buf, firstPass(buf));
+    return secondPass(buf, firstPass(buf, options), options);
 }
 
 template class MarkovAutomatonSparseTransitionParser<double>;

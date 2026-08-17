@@ -37,6 +37,7 @@ class GlobalProgramInformation {
           labels(),
           hasInitialConstruct(false),
           initialConstruct(),
+          hasObservablesConstruct(false),
           systemCompositionConstruct(boost::none),
           currentCommandIndex(0),
           currentUpdateIndex(0) {
@@ -60,6 +61,7 @@ class GlobalProgramInformation {
         observationLabels.clear();
         hasInitialConstruct = false;
         initialConstruct = storm::prism::InitialConstruct();
+        hasObservablesConstruct = false;
         systemCompositionConstruct = boost::none;
 
         currentCommandIndex = 0;
@@ -84,6 +86,7 @@ class GlobalProgramInformation {
 
     bool hasInitialConstruct;
     storm::prism::InitialConstruct initialConstruct;
+    bool hasObservablesConstruct;
     boost::optional<storm::prism::SystemCompositionConstruct> systemCompositionConstruct;
 
     // Counters to provide unique indexing for commands and updates.
@@ -124,6 +127,15 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
             add("dtmc", 1)("ctmc", 2)("mdp", 3)("ctmdp", 4)("ma", 5)("pomdp", 6)("pta", 7)("smg", 8)("const", 9)("int", 10)("bool", 11)("module", 12)(
                 "endmodule", 13)("rewards", 14)("endrewards", 15)("true", 16)("false", 17)("min", 18)("max", 19)("floor", 20)("ceil", 21)("init", 22)(
                 "atLeastOneOf", 23)("atMostOneOf", 24)("exactlyOneOf", 25)("endinit", 26)("invariant", 27)("endinvariant", 28)("player", 29)("endplayer", 30);
+        }
+    };
+
+    // Same as keywordsStruct, without the model-type-specific keywords (see isValidIdentifier).
+    struct expressionKeywordsStruct : qi::symbols<char, uint_fast64_t> {
+        expressionKeywordsStruct() {
+            add("dtmc", 1)("ctmc", 2)("mdp", 3)("ctmdp", 4)("ma", 5)("pomdp", 6)("pta", 7)("smg", 8)("const", 9)("int", 10)("bool", 11)("module", 12)(
+                "endmodule", 13)("rewards", 14)("endrewards", 15)("true", 16)("false", 17)("min", 18)("max", 19)("floor", 20)("ceil", 21)("init", 22)(
+                "atLeastOneOf", 23)("atMostOneOf", 24)("exactlyOneOf", 25)("endinit", 26);
         }
     };
 
@@ -186,7 +198,13 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
      */
     std::string const& getFilename() const;
 
-    mutable std::set<std::string> observables;
+    // Name of the last identifier that was rejected for coinciding with a reserved keyword.
+    // Only meaningful for diagnosing an actual parse failure, since valid parses may speculatively
+    // (and harmlessly) try identifiers that collide with keywords while exploring grammar alternatives.
+    std::string lastRejectedKeywordIdentifier;
+
+    // Collects the observable variables and maps them to true, if they are actually declared.
+    mutable std::map<std::string, bool> observables;
 
     // Store the expressions of formulas. They have to be parsed after the first and before the second run
     std::vector<std::string> formulaExpressions;
@@ -250,6 +268,7 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
     qi::rule<Iterator, storm::prism::Command(GlobalProgramInformation&), qi::locals<bool>, Skipper> commandDefinition;
     qi::rule<Iterator, std::vector<storm::prism::Update>(GlobalProgramInformation&), Skipper> updateListDefinition;
     qi::rule<Iterator, storm::prism::Update(GlobalProgramInformation&), Skipper> updateDefinition;
+    qi::rule<Iterator, typename storm::prism::Update::ExpressionPair, Skipper> likelihoodDefinition;
     qi::rule<Iterator, std::vector<storm::prism::Assignment>(), Skipper> assignmentDefinitionList;
     qi::rule<Iterator, storm::prism::Assignment(), Skipper> assignmentDefinition;
     qi::rule<Iterator, std::string(), Skipper> knownActionName;
@@ -278,7 +297,7 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
     qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> initialStatesConstruct;
 
     // Rules for POMDP observables (standard prism)
-    qi::rule<Iterator, qi::unused_type(), Skipper> observablesConstruct;
+    qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> observablesConstruct;
 
     // Rules for invariant constructs
     qi::rule<Iterator, storm::expressions::Expression(), Skipper> invariantConstruct;
@@ -315,6 +334,9 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
 
     // Parsers that recognize special keywords and model types.
     storm::parser::PrismParserGrammar::keywordsStruct keywords_;
+    // Same as keywords_, but without the keywords that are only reserved for a specific model type
+    // (see isValidIdentifier) -- the model type is not statically known here, so this is unconditional.
+    storm::parser::PrismParserGrammar::expressionKeywordsStruct expressionKeywords_;
     storm::parser::PrismParserGrammar::modelTypeStruct modelType_;
     qi::symbols<char, storm::expressions::Expression> identifiers_;
 
@@ -324,6 +346,8 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
 
     // Helper methods used in the grammar.
     bool isValidIdentifier(std::string const& identifier);
+    // Logs the last keyword collision recorded by isValidIdentifier, if any. Called from the top-level error handler.
+    void reportRejectedKeywordIdentifier();
     bool isFreshIdentifier(std::string const& identifier);
     bool isKnownModuleName(std::string const& moduleName, bool inSecondRun);
     bool isFreshModuleName(std::string const& moduleName);
@@ -379,8 +403,9 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
                                                           storm::expressions::Expression rewardValueExpression,
                                                           GlobalProgramInformation& globalProgramInformation) const;
     storm::prism::Assignment createAssignment(std::string const& variableName, storm::expressions::Expression assignedExpression) const;
-    storm::prism::Update createUpdate(storm::expressions::Expression likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments,
-                                      GlobalProgramInformation& globalProgramInformation) const;
+    storm::prism::Update createUpdate(typename storm::prism::Update::ExpressionPair likelihoodExpressions,
+                                      std::vector<storm::prism::Assignment> const& assignments, GlobalProgramInformation& globalProgramInformation) const;
+
     storm::prism::Command createCommand(bool markovianCommand, boost::optional<std::string> const& actionName, storm::expressions::Expression guardExpression,
                                         std::vector<storm::prism::Update> const& updates, GlobalProgramInformation& globalProgramInformation) const;
     storm::prism::Command createDummyCommand(boost::optional<std::string> const& actionName, GlobalProgramInformation& globalProgramInformation) const;
@@ -399,7 +424,7 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
                                              GlobalProgramInformation& globalProgramInformation) const;
     storm::prism::Player createPlayer(std::string const& playerName, std::vector<std::string> const& moduleNames, std::vector<std::string> const& commandNames);
     storm::prism::Program createProgram(GlobalProgramInformation const& globalProgramInformation) const;
-    void createObservablesList(std::vector<std::string> const& observables);
+    bool addObservablesConstruct(std::vector<std::string> const& observables, GlobalProgramInformation& globalProgramInformation);
 
     void removeInitialConstruct(GlobalProgramInformation& globalProgramInformation) const;
 

@@ -1,4 +1,4 @@
-#include "storm/adapters/RationalNumberAdapter.h"  // Must come first
+#include "storm/adapters/RationalNumberAdapter.h"  // Must come first. TODO: fix
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
@@ -48,20 +48,20 @@ ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(vect
 
 template<typename ValueType>
 ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(boost::variant<vector_type, map_type> const& values,
-                                                                            boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
+                                                                            std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
     : values(values), scheduler(scheduler) {
     // Intentionally left empty.
 }
 
 template<typename ValueType>
 ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(boost::variant<vector_type, map_type>&& values,
-                                                                            boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
+                                                                            std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
     : values(std::move(values)), scheduler(scheduler) {
     // Intentionally left empty.
 }
 
 template<typename ValueType>
-ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(ExplicitQualitativeCheckResult const& other) {
+ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(ExplicitQualitativeCheckResult<ValueType> const& other) {
     if (other.isResultForAllStates()) {
         storm::storage::BitVector const& bvValues = other.getTruthValuesVector();
 
@@ -73,7 +73,7 @@ ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(Expl
 
         values = newVector;
     } else {
-        ExplicitQualitativeCheckResult::map_type const& bitMap = other.getTruthValuesMap();
+        typename ExplicitQualitativeCheckResult<ValueType>::map_type const& bitMap = other.getTruthValuesMap();
 
         map_type newMap;
         for (auto const& e : bitMap) {
@@ -109,8 +109,9 @@ void ExplicitQuantitativeCheckResult<ValueType>::filter(QualitativeCheckResult c
     STORM_LOG_THROW(filter.isExplicitQualitativeCheckResult(), storm::exceptions::InvalidOperationException,
                     "Cannot filter explicit check result with non-explicit filter.");
     STORM_LOG_THROW(filter.isResultForAllStates(), storm::exceptions::InvalidOperationException, "Cannot filter check result with non-complete filter.");
-    ExplicitQualitativeCheckResult const& explicitFilter = filter.asExplicitQualitativeCheckResult();
-    ExplicitQualitativeCheckResult::vector_type const& filterTruthValues = explicitFilter.getTruthValuesVector();
+    STORM_LOG_THROW(filter.hasValueType<ValueType>(), storm::exceptions::InvalidOperationException, "Filter has unexpected value type.");
+    ExplicitQualitativeCheckResult<ValueType> const& explicitFilter = filter.template asExplicitQualitativeCheckResult<ValueType>();
+    typename ExplicitQualitativeCheckResult<ValueType>::vector_type const& filterTruthValues = explicitFilter.getTruthValuesVector();
 
     if (this->isResultForAllStates()) {
         map_type newMap;
@@ -172,7 +173,7 @@ std::pair<ValueType, ValueType> ExplicitQuantitativeCheckResult<ValueType>::getM
 
 template<typename ValueType>
 ValueType ExplicitQuantitativeCheckResult<ValueType>::sum() const {
-    STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Sum of empty set is not defined");
+    STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Sum of empty set is not defined.");
 
     ValueType sum = storm::utility::zero<ValueType>();
     if (this->isResultForAllStates()) {
@@ -193,7 +194,7 @@ ValueType ExplicitQuantitativeCheckResult<ValueType>::sum() const {
 
 template<typename ValueType>
 ValueType ExplicitQuantitativeCheckResult<ValueType>::average() const {
-    STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Average of empty set is not defined");
+    STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Average of empty set is not defined.");
 
     ValueType sum = storm::utility::zero<ValueType>();
     if (this->isResultForAllStates()) {
@@ -226,13 +227,13 @@ void ExplicitQuantitativeCheckResult<ValueType>::setScheduler(std::unique_ptr<st
 template<typename ValueType>
 storm::storage::Scheduler<ValueType> const& ExplicitQuantitativeCheckResult<ValueType>::getScheduler() const {
     STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
-    return *scheduler.get();
+    return *scheduler.value();
 }
 
 template<typename ValueType>
 storm::storage::Scheduler<ValueType>& ExplicitQuantitativeCheckResult<ValueType>::getScheduler() {
     STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
-    return *scheduler.get();
+    return *scheduler.value();
 }
 
 template<typename ValueType>
@@ -369,7 +370,7 @@ std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<ValueType>::compare
                 }
                 break;
         }
-        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(std::move(result)));
+        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<ValueType>(std::move(result), std::move(scheduler)));
     } else {
         map_type const& valuesAsMap = boost::get<map_type>(values);
         std::map<storm::storage::sparse::state_type, bool> result;
@@ -395,18 +396,16 @@ std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<ValueType>::compare
                 }
                 break;
         }
-        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(std::move(result)));
+        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<ValueType>(std::move(result), std::move(scheduler)));
     }
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<storm::RationalFunction>::compareAgainstBound(storm::logic::ComparisonType comparisonType,
                                                                                                            storm::RationalFunction const& bound) const {
     // Since it is not possible to compare rational functions against bounds, we simply call the base class method.
     return QuantitativeCheckResult::compareAgainstBound(comparisonType, bound);
 }
-#endif
 
 template<typename ValueType>
 ValueType& ExplicitQuantitativeCheckResult<ValueType>::operator[](storm::storage::sparse::state_type state) {
@@ -459,7 +458,7 @@ void ExplicitQuantitativeCheckResult<ValueType>::oneMinus() {
 
 template<typename ValueType>
 void insertJsonEntry(storm::json<ValueType>& json, uint64_t const& id, ValueType const& value,
-                     std::optional<storm::storage::sparse::StateValuations> const& stateValuations = std::nullopt,
+                     std::optional<storm::storage::sparse::Valuations> const& stateValuations = std::nullopt,
                      std::optional<storm::models::sparse::StateLabeling> const& stateLabels = std::nullopt) {
     typename storm::json<ValueType> entry;
     if (stateValuations) {
@@ -476,7 +475,7 @@ void insertJsonEntry(storm::json<ValueType>& json, uint64_t const& id, ValueType
 }
 
 template<typename ValueType>
-storm::json<ValueType> ExplicitQuantitativeCheckResult<ValueType>::toJson(std::optional<storm::storage::sparse::StateValuations> const& stateValuations,
+storm::json<ValueType> ExplicitQuantitativeCheckResult<ValueType>::toJson(std::optional<storm::storage::sparse::Valuations> const& stateValuations,
                                                                           std::optional<storm::models::sparse::StateLabeling> const& stateLabels) const {
     storm::json<ValueType> result;
     if (this->isResultForAllStates()) {
@@ -495,15 +494,12 @@ storm::json<ValueType> ExplicitQuantitativeCheckResult<ValueType>::toJson(std::o
 
 template<>
 storm::json<storm::RationalFunction> ExplicitQuantitativeCheckResult<storm::RationalFunction>::toJson(
-    std::optional<storm::storage::sparse::StateValuations> const&, std::optional<storm::models::sparse::StateLabeling> const&) const {
+    std::optional<storm::storage::sparse::Valuations> const&, std::optional<storm::models::sparse::StateLabeling> const&) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export of Check results is not supported for Rational Functions.");
 }
 
 template class ExplicitQuantitativeCheckResult<double>;
-
-#ifdef STORM_HAVE_CARL
 template class ExplicitQuantitativeCheckResult<storm::RationalNumber>;
 template class ExplicitQuantitativeCheckResult<storm::RationalFunction>;
-#endif
 }  // namespace modelchecker
 }  // namespace storm

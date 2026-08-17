@@ -1,5 +1,6 @@
 #include "storm/adapters/sylvan.h"
 
+#ifdef STORM_HAVE_SYLVAN
 namespace storm {
 namespace dd {
 
@@ -13,3 +14,4 @@ bool sylvan_mtbdd_matches_variable_index(MTBDD node, uint64_t variableIndex, int
 
 }  // namespace dd
 }  // namespace storm
+#endif

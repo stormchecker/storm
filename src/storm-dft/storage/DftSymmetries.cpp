@@ -39,7 +39,7 @@ std::vector<size_t>::const_iterator DftSymmetries::end() const {
 }
 
 std::vector<std::vector<size_t>> const& DftSymmetries::getSymmetryGroup(size_t index) const {
-    STORM_LOG_ASSERT(groups.count(index) > 0, "Invalid index");
+    STORM_LOG_ASSERT(groups.count(index) > 0, "Invalid index.");
     return groups.at(index);
 }
 

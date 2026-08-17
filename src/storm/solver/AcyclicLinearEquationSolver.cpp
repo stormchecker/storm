@@ -2,7 +2,6 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/solver/helper/AcyclicSolverHelper.h"
-
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -70,7 +69,7 @@ bool AcyclicLinearEquationSolver<ValueType>::internalSolveEquations(Environment 
     std::vector<ValueType>* xPtr = &x;
     std::vector<ValueType> const* bPtr = &b;
     if (rowOrdering) {
-        STORM_LOG_ASSERT(rowOrdering->size() == b.size(), "b-vector has unexpected size.");
+        STORM_LOG_ASSERT(rowOrdering->size() == b.size(), "B-vector has unexpected size.");
         auxiliaryRowVector->resize(b.size());
         storm::utility::vector::selectVectorValues(*auxiliaryRowVector, *rowOrdering, b);
         for (auto const& bFactor : bFactors) {
@@ -120,9 +119,7 @@ void AcyclicLinearEquationSolver<ValueType>::clearCache() const {
 // Explicitly instantiate the min max linear equation solver.
 template class AcyclicLinearEquationSolver<double>;
 
-#ifdef STORM_HAVE_CARL
 template class AcyclicLinearEquationSolver<storm::RationalNumber>;
 template class AcyclicLinearEquationSolver<storm::RationalFunction>;
-#endif
 }  // namespace solver
 }  // namespace storm

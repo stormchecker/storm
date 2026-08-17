@@ -1,6 +1,6 @@
 #include "storm/modelchecker/results/ParetoCurveCheckResult.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -93,9 +93,6 @@ std::ostream& ParetoCurveCheckResult<ValueType>::writeToStream(std::ostream& out
 }
 
 template class ParetoCurveCheckResult<double>;
-
-#ifdef STORM_HAVE_CARL
 template class ParetoCurveCheckResult<storm::RationalNumber>;
-#endif
 }  // namespace modelchecker
 }  // namespace storm

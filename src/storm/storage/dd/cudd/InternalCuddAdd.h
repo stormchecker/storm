@@ -1,5 +1,6 @@
-#ifndef STORM_STORAGE_DD_CUDD_INTERNALCUDDADD_H_
-#define STORM_STORAGE_DD_CUDD_INTERNALCUDDADD_H_
+#pragma once
+
+#include "storm-config.h"
 
 #include <functional>
 #include <memory>
@@ -7,15 +8,15 @@
 #include <unordered_map>
 
 #include "storm/adapters/RationalNumberAdapter.h"
-
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalAdd.h"
 #include "storm/storage/dd/Odd.h"
-
 #include "storm/storage/expressions/Variable.h"
 
+#ifdef STORM_HAVE_CUDD
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
+#endif
 
 namespace storm {
 namespace storage {
@@ -53,6 +54,7 @@ class InternalAdd<DdType::CUDD, ValueType> {
 
     friend class bisimulation::InternalSignatureRefiner<DdType::CUDD, ValueType>;
 
+#ifdef STORM_HAVE_CUDD
     /*!
      * Creates an ADD that encapsulates the given CUDD ADD.
      *
@@ -60,6 +62,7 @@ class InternalAdd<DdType::CUDD, ValueType> {
      * @param cuddAdd The CUDD ADD to store.
      */
     InternalAdd(InternalDdManager<DdType::CUDD> const* ddManager, cudd::ADD cuddAdd);
+#endif
 
     // Instantiate all copy/move constructors/assignments with the default implementation.
     InternalAdd() = default;
@@ -670,6 +673,7 @@ class InternalAdd<DdType::CUDD, ValueType> {
 
     InternalDdManager<DdType::CUDD> const& getInternalDdManager() const;
 
+#ifdef STORM_HAVE_CUDD
     /*!
      * Retrieves the CUDD ADD object associated with this ADD.
      *
@@ -683,6 +687,7 @@ class InternalAdd<DdType::CUDD, ValueType> {
      * @return The DD node of CUDD associated with this ADD.
      */
     DdNode* getCuddDdNode() const;
+#endif
 
     /*!
      * Retrieves a string representation of an ID for thid ADD.
@@ -690,6 +695,7 @@ class InternalAdd<DdType::CUDD, ValueType> {
     std::string getStringId() const;
 
    private:
+#ifdef STORM_HAVE_CUDD
     /*!
      * Performs a recursive step for forEach.
      *
@@ -827,8 +833,7 @@ class InternalAdd<DdType::CUDD, ValueType> {
     InternalDdManager<DdType::CUDD> const* ddManager;
 
     cudd::ADD cuddAdd;
+#endif
 };
 }  // namespace dd
 }  // namespace storm
-
-#endif /* STORM_STORAGE_DD_CUDD_INTERNALCUDDADD_H_ */

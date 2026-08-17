@@ -5,7 +5,6 @@
 #include "storm-dft/generator/DftNextStateGenerator.h"
 #include "storm-dft/simulator/DFTTraceSimulator.h"
 #include "storm-dft/utility/SymmetryFinder.h"
-
 #include "storm-parsers/api/storm-parsers.h"
 
 namespace {

@@ -49,7 +49,8 @@ class ExpressionToJson : public storm::expressions::ExpressionVisitor, public st
 class FormulaToJaniJson : public storm::logic::FormulaVisitor {
    public:
     static ExportJsonType translate(storm::logic::Formula const& formula, storm::jani::Model const& model, storm::jani::ModelFeatures& modelFeatures);
-    bool containsStateExitRewards() const;  // Returns true iff the  previously translated formula contained state exit rewards
+    bool containsStateExitRewards() const;          // Returns true iff the  previously translated formula contained state exit rewards
+    bool containsMultiObjectiveProperties() const;  // Returns true iff the  previously translated formula contained a multi-objective property
     virtual boost::any visit(storm::logic::AtomicExpressionFormula const& f, boost::any const& data) const;
     virtual boost::any visit(storm::logic::AtomicLabelFormula const& f, boost::any const& data) const;
     virtual boost::any visit(storm::logic::BinaryBooleanStateFormula const& f, boost::any const& data) const;
@@ -75,9 +76,11 @@ class FormulaToJaniJson : public storm::logic::FormulaVisitor {
     virtual boost::any visit(storm::logic::UnaryBooleanPathFormula const& f, boost::any const& data) const;
     virtual boost::any visit(storm::logic::UntilFormula const& f, boost::any const& data) const;
     virtual boost::any visit(storm::logic::HOAPathFormula const& f, boost::any const& data) const;
+    virtual boost::any visit(storm::logic::DiscountedCumulativeRewardFormula const& f, boost::any const& data) const;
+    virtual boost::any visit(storm::logic::DiscountedTotalRewardFormula const& f, boost::any const& data) const;
 
    private:
-    FormulaToJaniJson(storm::jani::Model const& model) : model(model), stateExitRewards(false) {}
+    FormulaToJaniJson(storm::jani::Model const& model) : model(model), stateExitRewards(false), multiObjectiveProperties(false) {}
 
     ExportJsonType constructPropertyInterval(boost::optional<storm::expressions::Expression> const& lower, boost::optional<bool> const& lowerExclusive,
                                              boost::optional<storm::expressions::Expression> const& upper, boost::optional<bool> const& upperExclusive) const;
@@ -88,6 +91,7 @@ class FormulaToJaniJson : public storm::logic::FormulaVisitor {
 
     storm::jani::Model const& model;
     mutable bool stateExitRewards;
+    mutable bool multiObjectiveProperties;
 };
 
 class JsonExporter {
@@ -103,7 +107,6 @@ class JsonExporter {
    private:
     void convertModel(storm::jani::Model const& model, bool commentExpressions = true);
     void convertProperties(std::vector<storm::jani::Property> const& formulas, storm::jani::Model const& model);
-    void appendVariableDeclaration(storm::jani::Variable const& variable);
 
     ExportJsonType finalize();
 

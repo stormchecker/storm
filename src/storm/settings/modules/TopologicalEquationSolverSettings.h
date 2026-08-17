@@ -60,6 +60,11 @@ class TopologicalEquationSolverSettings : public ModuleSettings {
      */
     storm::solver::MinMaxMethod getUnderlyingMinMaxMethod() const;
 
+    /*!
+     * If true, the relevant states of each SCC are computed and passed to the underlying equation solver.
+     */
+    bool isExtendRelevantValues() const;
+
     bool check() const override;
 
     // The name of the module.
@@ -69,6 +74,7 @@ class TopologicalEquationSolverSettings : public ModuleSettings {
     // Define the string names of the options as constants.
     static const std::string underlyingEquationSolverOptionName;
     static const std::string underlyingMinMaxMethodOptionName;
+    static const std::string extendRelevantValuesOptionName;
 };
 
 }  // namespace modules

@@ -66,21 +66,16 @@ SolverRequirement const& MinMaxLinearEquationSolverRequirements::get(Element con
     switch (element) {
         case Element::Acyclic:
             return acyclic();
-            break;
         case Element::UniqueSolution:
             return uniqueSolution();
-            break;
         case Element::ValidInitialScheduler:
             return validInitialScheduler();
-            break;
         case Element::LowerBounds:
             return lowerBounds();
-            break;
         case Element::UpperBounds:
             return upperBounds();
-            break;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ElementType");
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ElementType.");
 }
 
 void MinMaxLinearEquationSolverRequirements::clearAcyclic() {

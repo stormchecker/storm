@@ -12,7 +12,6 @@
 
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
 #include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
-#include "storm/models/sparse/Dtmc.h"
 #include "storm/utility/vector.h"
 
 #include "storm/environment/Environment.h"
@@ -76,17 +75,15 @@ BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPTyp
     // intentionally left empty;
 }
 
-/* Constructor */
-
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
 BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp,
                                                                                                                        Options options)
-    : options(options), inputPomdp(pomdp) {
+    : options(options),
+      inputPomdp(pomdp),
+      beliefTypeCC(storm::utility::convertNumber<BeliefValueType>(this->options.numericPrecision), false),
+      valueTypeCC(this->options.numericPrecision, false) {
     STORM_LOG_ASSERT(inputPomdp, "The given POMDP is not initialized.");
     STORM_LOG_ERROR_COND(inputPomdp->isCanonic(), "Input Pomdp is not known to be canonic. This might lead to unexpected verification results.");
-
-    beliefTypeCC = storm::utility::ConstantsComparator<BeliefValueType>(storm::utility::convertNumber<BeliefValueType>(this->options.numericPrecision), false);
-    valueTypeCC = storm::utility::ConstantsComparator<ValueType>(this->options.numericPrecision, false);
 }
 
 /* Public Functions */
@@ -187,7 +184,7 @@ BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPTyp
                     pomdp().getTransitionMatrix(), formulaInfo.getSinkStates().states, formulaInfo.getSinkStates().states, ~formulaInfo.getSinkStates().states);
                 reachableFromSinkStates &= ~formulaInfo.getSinkStates().states;
                 STORM_LOG_THROW(reachableFromSinkStates.empty(), storm::exceptions::NotSupportedException,
-                                "There are sink states that can reach non-sink states. This is currently not supported");
+                                "There are sink states that can reach non-sink states. This is currently not supported.");
             }
         } else {
             // Expected reward formula!
@@ -362,7 +359,7 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                 underApproxHeuristicPar.sizeThreshold = std::numeric_limits<uint64_t>::max();
             } else {
                 underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
-                STORM_PRINT_AND_LOG("Heuristically selected an under-approximation MDP size threshold of " << underApproxHeuristicPar.sizeThreshold << ".\n");
+                STORM_LOG_INFO("Heuristically selected an under-approximation MDP size threshold of " << underApproxHeuristicPar.sizeThreshold << ".\n");
             }
         }
 
@@ -539,7 +536,10 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                             auto candidateIndex = (chosenRow.end() - 1)->getColumn();
                             transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
                         } else if (label.rfind("mem_node", 0) == 0) {
-                            newLabeling.addLabelToState("finite_mem", i);
+                            if (!newLabeling.containsLabel("finite_mem_" + label.substr(9, 1))) {
+                                newLabeling.addLabel("finite_mem_" + label.substr(9, 1));
+                            }
+                            newLabeling.addLabelToState("finite_mem_" + label.substr(9, 1), i);
                             newLabeling.addLabelToState("cutoff", i);
                         } else {
                             newLabeling.addLabelToState(label, i);
@@ -650,7 +650,10 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                                     auto candidateIndex = (chosenRow.end() - 1)->getColumn();
                                     transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
                                 } else if (label.rfind("mem_node", 0) == 0) {
-                                    newLabeling.addLabelToState("finite_mem", i);
+                                    if (!newLabeling.containsLabel("finite_mem_" + label.substr(9, 1))) {
+                                        newLabeling.addLabel("finite_mem_" + label.substr(9, 1));
+                                    }
+                                    newLabeling.addLabelToState("finite_mem_" + label.substr(9, 1), i);
                                     newLabeling.addLabelToState("cutoff", i);
                                 } else {
                                     newLabeling.addLabelToState(label, i);
@@ -721,7 +724,9 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
         // While we tell the procedure to be paused, idle
         while (unfoldingControl ==
                    storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::UnfoldingControl::Pause &&
-               !storm::utility::resources::isTerminate());
+               !storm::utility::resources::isTerminate()) {
+            // Intentionally left empty
+        }
     }
     STORM_LOG_INFO("\tInteractive Unfolding terminated.\n");
 }
@@ -924,13 +929,13 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
             for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                 bool expandCurrentAction = exploreAllActions || truncateAllActions;
                 if (checkRewireForAllActions) {
-                    assert(refine);
+                    STORM_LOG_ASSERT(refine, "Expected refine to be true.");
                     // In this case, we still need to check whether this action needs to be expanded
-                    assert(!expandCurrentAction);
+                    STORM_LOG_ASSERT(!expandCurrentAction, "Action should not be expanded.");
                     // Check the action dependent conditions for rewiring
                     // First, check whether this action has been rewired since the last refinement of one of the successor observations (i.e. whether rewiring
                     // would actually change the successor states)
-                    assert(overApproximation->currentStateHasOldBehavior());
+                    STORM_LOG_ASSERT(overApproximation->currentStateHasOldBehavior(), "Expected old behavior.");
                     if (overApproximation->getCurrentStateActionExplorationWasDelayed(action) ||
                         overApproximation->currentStateHasSuccessorObservationInObservationSet(action, refinedObservations)) {
                         // Then, check whether the other criteria for rewiring are satisfied
@@ -961,7 +966,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                     expandedAtLeastOneAction = true;
                     if (!truncateAllActions) {
                         // Cases 1.1, 2.1, or 3.1
-                        auto successorGridPoints = beliefManager->expandAndTriangulate(currId, action, observationResolutionVector);
+                        auto successorGridPoints = beliefManager->expandAndTriangulate(env, currId, action, observationResolutionVector);
                         for (auto const& successor : successorGridPoints) {
                             overApproximation->addTransitionToBelief(action, successor.first, successor.second, false);
                         }
@@ -972,7 +977,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                         // Cases 1.2 or 2.2
                         auto truncationProbability = storm::utility::zero<ValueType>();
                         auto truncationValueBound = storm::utility::zero<ValueType>();
-                        auto successorGridPoints = beliefManager->expandAndTriangulate(currId, action, observationResolutionVector);
+                        auto successorGridPoints = beliefManager->expandAndTriangulate(env, currId, action, observationResolutionVector);
                         for (auto const& successor : successorGridPoints) {
                             bool added = overApproximation->addTransitionToBelief(action, successor.first, successor.second, true);
                             if (!added) {
@@ -1047,7 +1052,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
 
     unfoldingStatus = Status::Exploring;
     if (options.useClipping) {
-        STORM_PRINT_AND_LOG("Use Belief Clipping with grid beliefs \n");
+        STORM_LOG_INFO("Use Belief Clipping with grid beliefs \n");
         statistics.nrClippingAttempts = 0;
         statistics.nrClippedStates = 0;
     }
@@ -1089,11 +1094,11 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
         }
         if (printUpdateStopwatch.getTimeInSeconds() >= 60) {
             printUpdateStopwatch.restart();
-            STORM_PRINT_AND_LOG("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP" << " ##### "
-                                       << underApproximation->getUnexploredStates().size() << " beliefs queued\n");
+            STORM_LOG_INFO("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP"
+                                  << " ##### " << underApproximation->getUnexploredStates().size() << " beliefs queued\n");
             if (underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useClipping) {
-                STORM_PRINT_AND_LOG("##### Clipping Attempts: " << statistics.nrClippingAttempts.value() << " ##### "
-                                                                << "Clipped States: " << statistics.nrClippedStates.value() << "\n");
+                STORM_LOG_INFO("##### Clipping Attempts: " << statistics.nrClippingAttempts.value() << " ##### "
+                                                           << "Clipped States: " << statistics.nrClippedStates.value() << "\n");
             }
         }
         if (unfoldingControl == UnfoldingControl::Pause && !stateStored) {
@@ -1132,14 +1137,14 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
             if (clipBelief && !underApproximation->isMarkedAsGridBelief(currId)) {
                 // Use a belief grid as clipping candidates
                 if (!options.useStateEliminationCutoff) {
-                    bool successfulClip = clipToGridExplicitly(currId, computeRewards, beliefManager, underApproximation, 0);
+                    bool successfulClip = clipToGridExplicitly(env, currId, computeRewards, beliefManager, underApproximation, 0);
                     // Set again as the current belief might have been detected to be a grid belief
                     stopExploration = !underApproximation->isMarkedAsGridBelief(currId);
                     if (successfulClip) {
                         addedActions += 1;
                     }
                 } else {
-                    clipToGrid(currId, computeRewards, min, beliefManager, underApproximation);
+                    clipToGrid(env, currId, computeRewards, min, beliefManager, underApproximation);
                     addedActions += beliefManager->getBeliefNumberOfChoices(currId);
                 }
             }  // end Clipping Procedure
@@ -1167,7 +1172,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                     } else {
                         auto truncationProbability = storm::utility::zero<ValueType>();
                         auto truncationValueBound = storm::utility::zero<ValueType>();
-                        auto successors = beliefManager->expand(currId, action);
+                        auto successors = beliefManager->expand(env, currId, action);
                         for (auto const& successor : successors) {
                             bool added = underApproximation->addTransitionToBelief(addedActions + action, successor.first, successor.second, stopExploration);
                             if (!added) {
@@ -1277,7 +1282,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
     underApproximation->finishExploration();
     statistics.underApproximationBuildTime.stop();
     printUpdateStopwatch.stop();
-    STORM_PRINT_AND_LOG("Finished exploring under-approximation MDP.\nStart analysis...\n");
+    STORM_LOG_INFO("Finished exploring under-approximation MDP.\nStart analysis...\n");
     unfoldingStatus = Status::ModelExplorationFinished;
     statistics.underApproximationCheckTime.start();
     underApproximation->computeValuesOfExploredMdp(env, min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
@@ -1293,14 +1298,15 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
 }
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGrid(uint64_t clippingStateId, bool computeRewards, bool min,
+void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGrid(storm::Environment const& env, uint64_t clippingStateId,
+                                                                                                    bool computeRewards, bool min,
                                                                                                     std::shared_ptr<BeliefManagerType>& beliefManager,
                                                                                                     std::shared_ptr<ExplorerType>& beliefExplorer) {
     // Add all transitions to states which are already in the MDP, clip all others to a grid
     // To make the resulting MDP smaller, we eliminate intermediate successor states when clipping is applied
     for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(clippingStateId); action < numActions; ++action) {
         auto rewardBound = utility::zero<BeliefValueType>();
-        auto successors = beliefManager->expand(clippingStateId, action);
+        auto successors = beliefManager->expand(env, clippingStateId, action);
         auto absDelta = utility::zero<BeliefValueType>();
         for (auto const& successor : successors) {
             // Add transition if successor is in explored space.
@@ -1310,8 +1316,9 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
             if (!added) {
                 // The successor is not in the explored space. Clip it
                 statistics.nrClippingAttempts = statistics.nrClippingAttempts.value() + 1;
-                auto clipping = beliefManager->clipBeliefToGrid(
-                    successor.first, options.clippingGridRes, computeRewards ? beliefExplorer->getStateExtremeBoundIsInfinite() : storm::storage::BitVector());
+                auto clipping =
+                    beliefManager->clipBeliefToGrid(env, successor.first, options.clippingGridRes,
+                                                    computeRewards ? beliefExplorer->getStateExtremeBoundIsInfinite() : storm::storage::BitVector());
                 if (clipping.isClippable) {
                     // The belief is not on the grid and there is a candidate with finite reward
                     statistics.nrClippedStates = statistics.nrClippedStates.value() + 1;
@@ -1367,12 +1374,13 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
 }
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards,
+bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(storm::Environment const& env,
+                                                                                                              uint64_t clippingStateId, bool computeRewards,
                                                                                                               std::shared_ptr<BeliefManagerType>& beliefManager,
                                                                                                               std::shared_ptr<ExplorerType>& beliefExplorer,
                                                                                                               uint64_t localActionIndex) {
     statistics.nrClippingAttempts = statistics.nrClippingAttempts.value() + 1;
-    auto clipping = beliefManager->clipBeliefToGrid(clippingStateId, options.clippingGridRes,
+    auto clipping = beliefManager->clipBeliefToGrid(env, clippingStateId, options.clippingGridRes,
                                                     computeRewards ? beliefExplorer->getStateExtremeBoundIsInfinite() : storm::storage::BitVector());
     if (clipping.isClippable) {
         // The belief is not on the grid and there is a candidate with finite reward
@@ -1455,6 +1463,12 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
 std::shared_ptr<storm::builder::BeliefMdpExplorer<PomdpModelType, BeliefValueType>>
 BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getInteractiveBeliefExplorer() {
     return interactiveUnderApproximationExplorer;
+}
+
+template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::setFMSchedValueList(
+    std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> valueList) {
+    interactiveUnderApproximationExplorer->setFMSchedValueList(valueList);
 }
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>

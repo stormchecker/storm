@@ -1,15 +1,18 @@
 #include "storm/storage/dd/cudd/CuddAddIterator.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/DdMetaVariable.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/utility/macros.h"
-
-#include "storm/utility/constants.h"
 
 #include <cmath>
 
+#include "storm/exceptions/MissingLibraryException.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/DdMetaVariable.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+
 namespace storm {
 namespace dd {
+
+#ifdef STORM_HAVE_CUDD
 template<typename ValueType>
 AddIterator<DdType::CUDD, ValueType>::AddIterator()
     : ddManager(),
@@ -216,11 +219,63 @@ std::pair<storm::expressions::SimpleValuation, ValueType> AddIterator<DdType::CU
     return std::make_pair(currentValuation, storm::utility::convertNumber<ValueType>(valueAsDouble));
 }
 
+#else
+template<typename ValueType>
+AddIterator<DdType::CUDD, ValueType>::AddIterator() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+AddIterator<DdType::CUDD, ValueType>::AddIterator(AddIterator<DdType::CUDD, ValueType>&& other) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+AddIterator<DdType::CUDD, ValueType>& AddIterator<DdType::CUDD, ValueType>::operator=(AddIterator<DdType::CUDD, ValueType>&& other) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+AddIterator<DdType::CUDD, ValueType>::~AddIterator() {}
+
+template<typename ValueType>
+AddIterator<DdType::CUDD, ValueType>& AddIterator<DdType::CUDD, ValueType>::operator++() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+bool AddIterator<DdType::CUDD, ValueType>::operator==(AddIterator<DdType::CUDD, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+bool AddIterator<DdType::CUDD, ValueType>::operator!=(AddIterator<DdType::CUDD, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+std::pair<storm::expressions::SimpleValuation, ValueType> AddIterator<DdType::CUDD, ValueType>::operator*() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+#endif
+
 template class AddIterator<DdType::CUDD, double>;
 template class AddIterator<DdType::CUDD, uint_fast64_t>;
-
-#ifdef STORM_HAVE_CARL
 template class AddIterator<DdType::CUDD, storm::RationalNumber>;
-#endif
+
 }  // namespace dd
 }  // namespace storm

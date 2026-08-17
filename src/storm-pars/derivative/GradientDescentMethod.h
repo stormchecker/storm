@@ -1,5 +1,4 @@
-#ifndef STORM_DERIVATIVEGRADIENTDESCENTMETHOD_H
-#define STORM_DERIVATIVEGRADIENTDESCENTMETHOD_H
+#pragma once
 #include <boost/optional.hpp>
 #include <string>
 namespace storm {
@@ -22,4 +21,3 @@ enum class GradientDescentMethod {
 
 }  // namespace derivative
 }  // namespace storm
-#endif

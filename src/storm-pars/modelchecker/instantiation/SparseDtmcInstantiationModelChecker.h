@@ -7,7 +7,6 @@
 #include "storm-pars/utility/ModelInstantiator.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {
 namespace modelchecker {
@@ -22,6 +21,8 @@ class SparseDtmcInstantiationModelChecker : public SparseInstantiationModelCheck
 
     virtual std::unique_ptr<CheckResult> check(Environment const& env,
                                                storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
+
+    virtual bool isWellDefined(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
 
    protected:
     // Optimizations for the different formula types

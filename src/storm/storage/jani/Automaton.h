@@ -298,11 +298,6 @@ class Automaton {
     void finalize(Model const& containingModel);
 
     /*!
-     * Retrieves the action indices appearing at some edge of the automaton.
-     */
-    std::set<uint64_t> getUsedActionIndices() const;
-
-    /*!
      * Checks whether the provided variables only appear in the probability expressions or the expressions being
      * assigned in transient assignments.
      */
@@ -333,8 +328,6 @@ class Automaton {
      * Retrieves whether the automaton uses an assignment level other than zero.
      */
     bool usesAssignmentLevels(bool onlyTransient = false) const;
-
-    void simplifyIndexedAssignments();
 
     /*!
      * Checks the automaton for linearity.

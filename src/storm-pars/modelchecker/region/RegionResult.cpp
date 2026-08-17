@@ -19,6 +19,9 @@ std::ostream& operator<<(std::ostream& os, RegionResult const& regionResult) {
         case RegionResult::CenterSat:
             os << "CenterSat";
             break;
+        case RegionResult::CenterIllDefined:
+            os << "CenterIllDefined";
+            break;
         case RegionResult::CenterViolated:
             os << "CenterViolated";
             break;
@@ -31,9 +34,12 @@ std::ostream& operator<<(std::ostream& os, RegionResult const& regionResult) {
         case RegionResult::AllViolated:
             os << "AllViolated";
             break;
+        case RegionResult::AllIllDefined:
+            os << "AllIllDefined";
+            break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                            "Could not get a string from the region check result. The case has not been implemented");
+                            "Could not get a string from the region check result. The case has not been implemented.");
     }
     return os;
 }

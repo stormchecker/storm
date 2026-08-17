@@ -52,10 +52,9 @@ transformContinuousToDiscreteTimeSparseModel(std::shared_ptr<storm::models::spar
         return std::make_pair(transformer.transform(*model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), timeRewardName), newFormulas);
     } else {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                        "Transformation of a " << model->getType() << " to a discrete time model is not supported");
+                        "Transformation of a " << model->getType() << " to a discrete time model is not supported.");
     }
     return std::make_pair(nullptr, newFormulas);
-    ;
 }
 
 /*!
@@ -87,7 +86,6 @@ transformContinuousToDiscreteTimeSparseModel(storm::models::sparse::Model<ValueT
                         "Transformation of a " << model.getType() << " to a discrete time model is not supported.");
     }
     return std::make_pair(nullptr, newFormulas);
-    ;
 }
 
 template<typename ValueType>

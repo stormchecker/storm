@@ -191,13 +191,6 @@ class CommandAbstractor {
     void recomputeCachedBddWithDecomposition();
 
     /*!
-     * Computes the missing state identities.
-     *
-     * @return A BDD that represents the all missing state identities.
-     */
-    storm::dd::Bdd<DdType> computeMissingIdentities() const;
-
-    /*!
      * Computes the missing state identities for the updates.
      *
      * @return A BDD that represents the state identities for predicates that are irrelevant for the

@@ -1,5 +1,4 @@
-#ifndef STORM_PARSER_ATOMICPROPOSITIONLABELINGPARSER_H_
-#define STORM_PARSER_ATOMICPROPOSITIONLABELINGPARSER_H_
+#pragma once
 
 #include <cstdint>
 #include "storm/models/sparse/StateLabeling.h"
@@ -26,5 +25,3 @@ class AtomicPropositionLabelingParser {
 
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_ATOMICPROPOSITIONLABELINGPARSER_H_ */

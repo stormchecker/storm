@@ -1,11 +1,10 @@
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/FragmentSpecification.h"
-#include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
+#include "storm/modelchecker/multiobjective/MultiObjectiveModelChecking.h"
 #include "storm/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -13,10 +12,8 @@
 #include "storm/modelchecker/results/SymbolicParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/transformer/SymbolicToSparseTransformer.h"
 #include "storm/utility/FilteredRewardModel.h"
@@ -171,11 +168,12 @@ template<typename ModelType>
 std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<ModelType>::checkMultiObjectiveFormula(
     Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
     auto sparseModel = storm::transformer::SymbolicMdpToSparseMdpTransformer<DdType, ValueType>::translate(this->getModel());
-    std::unique_ptr<CheckResult> explicitResult = multiobjective::performMultiObjectiveModelChecking(env, *sparseModel, checkTask.getFormula());
+    std::unique_ptr<CheckResult> explicitResult =
+        multiobjective::performMultiObjectiveModelChecking(env, *sparseModel, checkTask.getFormula(), checkTask.isProduceSchedulersSet());
 
     // Convert the explicit result
     if (explicitResult->isExplicitQualitativeCheckResult()) {
-        if (explicitResult->asExplicitQualitativeCheckResult()[*sparseModel->getInitialStates().begin()]) {
+        if (explicitResult->template asExplicitQualitativeCheckResult<ValueType>()[*sparseModel->getInitialStates().begin()]) {
             return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(
                 this->getModel().getReachableStates(), this->getModel().getInitialStates(), this->getModel().getManager().getBddOne()));
         } else {
@@ -198,7 +196,6 @@ std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<ModelType>::checkMultiOb
 
 template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
 template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
-
 template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
 
 }  // namespace modelchecker

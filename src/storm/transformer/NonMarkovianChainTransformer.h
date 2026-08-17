@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm/logic/Formula.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 

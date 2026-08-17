@@ -1,15 +1,22 @@
-name: check-code-format
+name: Check code format
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: DoozyX/clang-format-lint-action@v0.18
+    - uses: actions/checkout@v7
+    - name: Read pinned clang versions
+      id: clang-versions
+      run: |
+        echo "FORMAT_VERSION=$(grep '^CLANG_FORMAT_VERSION=' resources/scripts/clang-versions | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+    - uses: DoozyX/clang-format-lint-action@v0.20
       with:
         source: './src'
-        clangFormatVersion: 18
+        clangFormatVersion: ${{ steps.clang-versions.outputs.FORMAT_VERSION }}
         style: file

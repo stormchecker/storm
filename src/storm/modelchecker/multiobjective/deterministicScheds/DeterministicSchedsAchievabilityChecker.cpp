@@ -29,7 +29,6 @@ DeterministicSchedsAchievabilityChecker<SparseModelType, GeometryValueType>::Det
 
 template<class SparseModelType, typename GeometryValueType>
 std::unique_ptr<CheckResult> DeterministicSchedsAchievabilityChecker<SparseModelType, GeometryValueType>::check(Environment const& env) {
-    using Point = typename std::vector<GeometryValueType>;
     uint64_t const numObj = objectiveHelper.size();
     // Create a polytope that contains all the points that would certify achievability of the point induced by the objective threshold
     std::vector<storm::storage::geometry::Halfspace<GeometryValueType>> thresholdHalfspaces;
@@ -63,13 +62,13 @@ std::unique_ptr<CheckResult> DeterministicSchedsAchievabilityChecker<SparseModel
     // Search achieving point
     auto achievingPoint = lpChecker->check(env, thresholdPolytope, eps);
     bool const isAchievable = achievingPoint.has_value();
+    using ValueType = typename SparseModelType::ValueType;
     if (isAchievable) {
         STORM_LOG_INFO(
             "Found achievable point: " << storm::utility::vector::toString(achievingPoint->first) << " ( approx. "
                                        << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(achievingPoint->first))
                                        << " ).");
         if (optimizingObjectiveIndex.has_value()) {
-            using ValueType = typename SparseModelType::ValueType;
             // Average between obtained lower- and upper bounds
             auto result =
                 storm::utility::convertNumber<ValueType, GeometryValueType>(achievingPoint->first[*optimizingObjectiveIndex] + achievingPoint->second);
@@ -80,7 +79,7 @@ std::unique_ptr<CheckResult> DeterministicSchedsAchievabilityChecker<SparseModel
             return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(originalModelInitialState, result);
         }
     }
-    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(originalModelInitialState, isAchievable);
+    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>>(originalModelInitialState, isAchievable);
 }
 
 template class DeterministicSchedsAchievabilityChecker<storm::models::sparse::Mdp<double>, storm::RationalNumber>;

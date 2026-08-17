@@ -1,10 +1,8 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_TORATIONALFUNCTIONVISITOR_H_
-#define STORM_STORAGE_EXPRESSIONS_TORATIONALFUNCTIONVISITOR_H_
+#pragma once
 
 #include <unordered_map>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionEvaluatorBase.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
@@ -14,7 +12,6 @@
 namespace storm {
 namespace expressions {
 
-#ifdef STORM_HAVE_CARL
 template<typename RationalFunctionType>
 class ToRationalFunctionVisitor : public ExpressionVisitor {
    public:
@@ -58,8 +55,5 @@ class ToRationalFunctionVisitor : public ExpressionVisitor {
     // A reference to an expression evaluator (mainly for resolving the boolean condition in IfThenElse expressions)
     ExpressionEvaluatorBase<RationalFunctionType> const& evaluator;
 };
-#endif
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_TORATIONALFUNCTIONVISITOR_H_ */

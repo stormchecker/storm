@@ -1,6 +1,7 @@
 // Exported by storm
 // Original model type: MDP
 @type: MDP
+@value_type: double-interval
 @nr_states
 3
 @nr_choices

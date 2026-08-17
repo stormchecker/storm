@@ -16,6 +16,14 @@ bool ModelBase::isSymbolicModel() const {
     return false;
 }
 
+std::optional<storm::dd::DdType> ModelBase::getDdType() const {
+    return std::nullopt;
+}
+
+bool ModelBase::supportsUncertainty() const {
+    return false;
+}
+
 bool ModelBase::isOfType(storm::models::ModelType const& modelType) const {
     return this->getType() == modelType;
 }

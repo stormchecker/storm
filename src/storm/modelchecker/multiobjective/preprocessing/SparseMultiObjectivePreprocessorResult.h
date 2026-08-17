@@ -7,6 +7,8 @@
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/storage/BitVector.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 
@@ -22,6 +24,9 @@ struct SparseMultiObjectivePreprocessorResult {
     // Original data
     storm::logic::MultiObjectiveFormula const& originalFormula;
     SparseModelType const& originalModel;
+
+    // Mapping of incorporated memory to model+memory
+    std::optional<storm::storage::SparseModelMemoryProductReverseData> memoryIncorporationReverseData;
 
     // The preprocessed model and objectives
     std::shared_ptr<SparseModelType> preprocessedModel;
@@ -66,25 +71,18 @@ struct SparseMultiObjectivePreprocessorResult {
         return getNumberOfLongRunAverageRewardFormulas() > 0;
     }
 
-    bool containsOnlyTrivialObjectives() const {
-        // Trivial objectives are either total reward formulas, LRA reward formulas or single-dimensional step or time bounded cumulative reward formulas
-        for (auto const& obj : objectives) {
-            if (obj.formula->isRewardOperatorFormula() && obj.formula->getSubformula().isTotalRewardFormula()) {
-                continue;
-            }
-            if (obj.formula->isRewardOperatorFormula() && obj.formula->getSubformula().isLongRunAverageRewardFormula()) {
-                continue;
-            }
+    bool containsRewardBoundedObjective() const {
+        return std::any_of(objectives.begin(), objectives.end(), [](Objective<typename SparseModelType::ValueType> const& obj) {
             if (obj.formula->isRewardOperatorFormula() && obj.formula->getSubformula().isCumulativeRewardFormula()) {
                 auto const& subf = obj.formula->getSubformula().asCumulativeRewardFormula();
-                if (!subf.isMultiDimensional() && (subf.getTimeBoundReference().isTimeBound() || subf.getTimeBoundReference().isStepBound())) {
-                    continue;
-                }
+                return subf.isMultiDimensional() || subf.getTimeBoundReference().isRewardBound();
+            } else if (obj.formula->isProbabilityOperatorFormula() && obj.formula->getSubformula().isBoundedUntilFormula()) {
+                auto const& subf = obj.formula->getSubformula().asBoundedUntilFormula();
+                return subf.isMultiDimensional() || subf.getTimeBoundReference().isRewardBound();
+            } else {
+                return false;
             }
-            // Reaching this point means that the objective is considered as non-trivial
-            return false;
-        }
-        return true;
+        });
     }
 
     void printToStream(std::ostream& out) const {

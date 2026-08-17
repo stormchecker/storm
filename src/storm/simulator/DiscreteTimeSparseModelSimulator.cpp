@@ -39,7 +39,7 @@ bool DiscreteTimeSparseModelSimulator<ValueType, RewardModelType>::step(uint64_t
     //  E.g., do not sample random numbers if there is only a single transition
     lastRewards = zeroRewards;
     ValueType probability = generator.random();
-    STORM_LOG_ASSERT(action < model.getTransitionMatrix().getRowGroupSize(currentState), "Action index higher than number of actions");
+    STORM_LOG_ASSERT(action < model.getTransitionMatrix().getRowGroupSize(currentState), "Action index higher than number of actions.");
     uint64_t row = model.getTransitionMatrix().getRowGroupIndices()[currentState] + action;
     uint64_t i = 0;
     for (auto const& rewModPair : model.getRewardModels()) {

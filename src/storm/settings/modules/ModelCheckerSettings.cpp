@@ -4,12 +4,8 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
-
-namespace storm {
-namespace settings {
-namespace modules {
+namespace storm::settings::modules {
 
 const std::string ModelCheckerSettings::moduleName = "modelchecker";
 const std::string ModelCheckerSettings::filterRewZeroOptionName = "filterrewzero";
@@ -41,6 +37,4 @@ std::string ModelCheckerSettings::getLtl2daTool() const {
     return this->getOption(ltl2daToolOptionName).getArgumentByName("filename").getValueAsString();
 }
 
-}  // namespace modules
-}  // namespace settings
-}  // namespace storm
+}  // namespace storm::settings::modules

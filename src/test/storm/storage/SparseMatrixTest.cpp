@@ -1,10 +1,12 @@
+#include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/permutation.h"
-#include "test/storm_gtest.h"
 
 TEST(SparseMatrixBuilder, CreationEmpty) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder;
@@ -989,4 +991,24 @@ TEST(SparseMatrix, DropZeroEntries) {
 
     ASSERT_TRUE(matrixX == matrix4);
     ASSERT_FALSE(matrixX.getEntryCount() == matrix4.getEntryCount());
+}
+
+TEST(SparseMatrix, isProbabilistic) {
+    storm::storage::SparseMatrixBuilder<double> builder(4, 4, 7, true);
+    ASSERT_NO_THROW(builder.addNextValue(0, 1, storm::utility::sqrt(2.0)));
+    ASSERT_NO_THROW(builder.addNextValue(0, 2, 1.0 - storm::utility::sqrt(2.0)));
+    ASSERT_NO_THROW(builder.addNextValue(1, 2, storm::utility::sqrt(2.0)));
+    ASSERT_NO_THROW(builder.addNextValue(1, 3, 1.0 - storm::utility::sqrt(2.0)));
+    ASSERT_NO_THROW(builder.addNextValue(2, 0, storm::utility::sqrt(2.0)));
+    ASSERT_NO_THROW(builder.addNextValue(2, 3, 1.0 - storm::utility::sqrt(2.0)));
+    ASSERT_NO_THROW(builder.addNextValue(3, 3, 1.0));
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = builder.build());
+    std::string reason;
+    ASSERT_FALSE(matrix.isProbabilistic(0.0, reason)) << reason;
+    ASSERT_TRUE(matrix.isProbabilistic(0.5, reason)) << reason;
+    for (auto& entry : matrix) {
+        entry.setValue(storm::utility::abs(entry.getValue()) / 2.0);
+    }
+    ASSERT_FALSE(matrix.isProbabilistic(0, reason)) << reason;
 }

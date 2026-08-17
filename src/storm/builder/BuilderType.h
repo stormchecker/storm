@@ -1,7 +1,8 @@
 #pragma once
 
-#include <boost/optional.hpp>
 #include <vector>
+
+#include "storm/utility/OptionalRef.h"
 
 namespace storm {
 namespace storage {
@@ -19,6 +20,6 @@ storm::jani::ModelFeatures getSupportedJaniFeatures(BuilderType const& builderTy
 
 template<typename ValueType>
 bool canHandle(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription,
-               boost::optional<std::vector<storm::jani::Property>> const& properties = boost::none);
+               storm::OptionalRef<std::vector<storm::jani::Property> const> properties = storm::NullRef);
 }  // namespace builder
 }  // namespace storm

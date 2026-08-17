@@ -22,11 +22,6 @@ class ToParametricSettings : public ModuleSettings {
 
     virtual ~ToParametricSettings() = default;
 
-    bool isExportToParametricSet() const;
-    std::string getExportToParametricFilename() const;
-
-    bool isQualitativeReductionSet() const;
-
     bool isMecReductionSet() const;
     bool isTransformSimpleSet() const;
     bool isTransformBinarySet() const;

@@ -1,11 +1,12 @@
-#include <storm/exceptions/InvalidArgumentException.h>
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/parser/JaniParser.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/ModelType.h"
 #include "storm/storage/jani/Property.h"
-#include "test/storm_gtest.h"
 
 TEST(JaniParser, DieExampleTest) {
     std::string testInput = R"({
@@ -424,4 +425,24 @@ TEST(JaniParser, TrigonometryAndTranscendentalNumbersTest) {
     EXPECT_EQ(model.getNumberOfAutomata(), 1U);
     EXPECT_EQ(properties.size(), 2U);
     EXPECT_NO_THROW(model.substitute({}, true));
+}
+
+TEST(JaniParser, MultiobjectiveTest) {
+    std::pair<storm::jani::Model, std::vector<storm::jani::Property>> result;
+    EXPECT_NO_THROW(result = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/multiobj_consensus2_3_2.jani"));
+    auto& model = result.first;
+    EXPECT_EQ(storm::jani::ModelType::MDP, model.getModelType());
+    auto& properties = result.second;
+    ASSERT_EQ(properties.size(), 6U);
+    for (size_t i = 0; i < properties.size(); ++i) {
+        auto const& f = properties[i].getRawFormula();
+        ASSERT_TRUE(f->isMultiObjectiveFormula()) << "Property #" << i << ": " << *f;
+        // First three formulas are tradeoff, last three are lexicographic
+        EXPECT_EQ(i < 3, f->asMultiObjectiveFormula().isTradeoff()) << "Property #" << i << ": " << *f;
+        EXPECT_EQ(i >= 3, f->asMultiObjectiveFormula().isLexicographic()) << "Property #" << i << ": " << *f;
+        // Formulas #0 and #3 have Boolean results
+        EXPECT_EQ(i == 0 || i == 3, f->asMultiObjectiveFormula().hasQualitativeResult()) << "Property #" << i << ": " << *f;
+        // Formulas #2 and #5 have multi-dimensional results
+        EXPECT_EQ(i == 2 || i == 5, f->asMultiObjectiveFormula().hasMultiDimensionalResult()) << "Property #" << i << ": " << *f;
+    }
 }

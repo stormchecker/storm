@@ -162,6 +162,12 @@ class FragmentSpecification {
     bool areGameFormulasAllowed() const;
     FragmentSpecification& setGameFormulasAllowed(bool newValue);
 
+    bool areDiscountedCumulativeRewardFormulasAllowed() const;
+    FragmentSpecification& setDiscountedCumulativeRewardFormulasAllowed(bool newValue);
+
+    bool areDiscountedTotalRewardFormulasAllowed() const;
+    FragmentSpecification& setDiscountedTotalRewardFormulasAllowed(bool newValue);
+
     FragmentSpecification& setOperatorsAllowed(bool newValue);
     FragmentSpecification& setTimeAllowed(bool newValue);
     FragmentSpecification& setLongRunAverageProbabilitiesAllowed(bool newValue);
@@ -226,6 +232,9 @@ class FragmentSpecification {
     bool operatorsAtTopLevelOfMultiObjectiveFormulasRequired;
 
     bool rewardAccumulation;
+
+    bool discountedCumulativeRewardFormula;
+    bool discountedTotalRewardFormula;
 };
 
 // Propositional.

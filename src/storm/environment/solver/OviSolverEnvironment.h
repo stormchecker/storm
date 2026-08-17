@@ -1,9 +1,9 @@
 #pragma once
 
 #include <optional>
-#include "storm/environment/solver/SolverEnvironment.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 
 namespace storm {
 

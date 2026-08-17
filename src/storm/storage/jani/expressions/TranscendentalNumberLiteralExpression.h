@@ -1,9 +1,7 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_TRANSCENDENTALNUMBERLITERALEXPRESSION_H_
-#define STORM_STORAGE_EXPRESSIONS_TRANSCENDENTALNUMBERLITERALEXPRESSION_H_
+#pragma once
 
 #include "storm/storage/expressions/BaseExpression.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace expressions {
@@ -60,5 +58,3 @@ class TranscendentalNumberLiteralExpression : public BaseExpression {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_TRANSCENDENTALNUMBERLITERALEXPRESSION_H_ */

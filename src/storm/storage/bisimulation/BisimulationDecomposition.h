@@ -1,19 +1,12 @@
-#ifndef STORM_STORAGE_BISIMULATIONDECOMPOSITION_H_
-#define STORM_STORAGE_BISIMULATIONDECOMPOSITION_H_
+#pragma once
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BisimulationSettings.h"
+#include "storm/logic/Formulas.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/StateBlock.h"
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/bisimulation/Partition.h"
-#include "storm/storage/sparse/StateType.h"
-
-#include "storm/logic/Formulas.h"
-
 #include "storm/utility/ConstantsComparator.h"
-#include "storm/utility/constants.h"
 
 namespace storm {
 namespace logic {
@@ -21,22 +14,6 @@ class Formula;
 }
 
 namespace storage {
-
-inline BisimulationType resolveBisimulationTypeChoice(BisimulationTypeChoice c) {
-    switch (c) {
-        case BisimulationTypeChoice::Strong:
-            return BisimulationType::Strong;
-        case BisimulationTypeChoice::Weak:
-            return BisimulationType::Weak;
-        case BisimulationTypeChoice::FromSettings:
-            if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
-                return BisimulationType::Weak;
-            } else {
-                return BisimulationType::Strong;
-            }
-    }
-    return BisimulationType::Strong;
-}
 
 /*!
  * This class is the superclass of all decompositions of a sparse model into its bisimulation quotient.
@@ -49,28 +26,35 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
 
     // A class that offers the possibility to customize the bisimulation.
     struct Options {
-        // Creates an object representing the default values for all options.
-        Options();
-
         /*!
          * Creates an object representing the options necessary to obtain the quotient while still preserving
          * the given formula.
          *
-         * @param The model for which the quotient model shall be computed. This needs to be given in order to
+         * @param model The model for which the quotient model shall be computed. This needs to be given in order to
          * derive a suitable initial partition.
          * @param formula The formula that is to be preserved.
+         * @param tolerance The tolerance used for comparing constants (irrelevant if ValueType is exact).
          */
-        Options(ModelType const& model, storm::logic::Formula const& formula);
+        Options(ModelType const& model, storm::logic::Formula const& formula, ValueType const& tolerance);
 
         /*!
          * Creates an object representing the options necessary to obtain the smallest quotient while still
          * preserving the given formulas.
          *
-         * @param The model for which the quotient model shall be computed. This needs to be given in order to
+         * @param model The model for which the quotient model shall be computed. This needs to be given in order to
          * derive a suitable initial partition.
          * @param formulas The formulas that need to be preserved.
+         * @param tolerance The tolerance used for comparing constants (irrelevant if ValueType is exact).
          */
-        Options(ModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
+        Options(ModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, ValueType const& tolerance);
+
+        /*!
+         * Creates an object representing the options necessary to obtain the quotient that respects all atomic
+         * propositions of the model (rather than those relevant to some formula).
+         *
+         * @param tolerance The tolerance used for comparing constants (irrelevant if ValueType is exact).
+         */
+        static Options preservingAllLabels(ValueType const& tolerance);
 
         /*!
          * Changes the options in a way that the given formula is preserved.
@@ -86,7 +70,10 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
          */
         void setType(BisimulationType t) {
             if (t == BisimulationType::Weak) {
+                STORM_LOG_WARN_COND(!bounded, "Weak bisimulation does not preserve bounded properties.");
+                STORM_LOG_WARN_COND(!discounted, "Weak bisimulation does not preserve discounted properties.");
                 bounded = false;
+                discounted = false;
             }
             type = t;
         }
@@ -99,46 +86,75 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
             return this->bounded;
         }
 
+        bool getDiscounted() const {
+            return this->discounted;
+        }
+
         bool getKeepRewards() const {
             return this->keepRewards;
+        }
+
+        void setKeepRewards(bool keepRewards) {
+            this->keepRewards = keepRewards;
         }
 
         bool isOptimizationDirectionSet() const {
             return static_cast<bool>(optimalityType);
         }
 
+        ValueType getTolerance() const {
+            return storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : tolerance;
+        }
+
+        void setTolerance(ValueType value) {
+            tolerance = value;
+        }
+
         OptimizationDirection getOptimizationDirection() const {
             STORM_LOG_ASSERT(optimalityType, "Optimality type not set.");
-            return optimalityType.get();
+            return optimalityType.value();
         }
 
         // A flag that indicates whether a measure driven initial partition is to be used. If this flag is set
         // to true, the two optional pairs phiStatesAndLabel and psiStatesAndLabel must be set. Then, the
         // measure driven initial partition wrt. to the states phi and psi is taken.
-        bool measureDrivenInitialPartition;
-        boost::optional<storm::storage::BitVector> phiStates;
-        boost::optional<storm::storage::BitVector> psiStates;
+        bool measureDrivenInitialPartition = false;
+        std::optional<storm::storage::BitVector> phiStates;
+        std::optional<storm::storage::BitVector> psiStates;
 
         /// An optional set of strings that indicate which of the atomic propositions of the model are to be
         /// respected and which may be ignored. If not given, all atomic propositions of the model are respected.
-        boost::optional<std::set<std::string>> respectedAtomicPropositions;
+        std::optional<std::set<std::string>> respectedAtomicPropositions;
 
         /// A flag that governs whether the quotient model is actually built or only the decomposition is computed.
-        bool buildQuotient;
+        bool buildQuotient = true;
 
        private:
-        boost::optional<OptimizationDirection> optimalityType;
+        std::optional<OptimizationDirection> optimalityType;
 
-        /// A flag that indicates whether or not the state-rewards of the model are to be respected (and should
+        /// A flag that indicates whether the state-rewards of the model are to be respected (and should
         /// be kept in the quotient model, if one is built).
-        bool keepRewards;
+        bool keepRewards = false;
 
         /// A flag that indicates whether a strong or a weak bisimulation is to be computed.
-        BisimulationType type;
+        BisimulationType type = BisimulationType::Strong;
 
         /// A flag that indicates whether step-bounded properties are to be preserved. This may only be set to tru
         /// when computing strong bisimulation equivalence.
-        bool bounded;
+        bool bounded = false;
+
+        /// A flag that indicates whether discounted properties are to be preserved. This may only be set to true
+        /// when computing strong bisimulation equivalence.
+        bool discounted = false;
+
+        /// The tolerance used for comparing constants (irrelevant if ValueType is exact).
+        ValueType tolerance;
+
+        /*!
+         * Creates an object representing the default values for all options except the tolerance, which must
+         * always be supplied deliberately by the caller.
+         */
+        explicit Options(ValueType const& tolerance);
 
         /*!
          * Sets the options under the assumption that the given formula is the only one that is to be checked.
@@ -169,7 +185,7 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
     };
 
     /*!
-     * Decomposes the given model into equivalance classes of a bisimulation.
+     * Decomposes the given model into equivalence classes of a bisimulation.
      *
      * @param model The model to decompose.
      * @param options The options to use during for the decomposition.
@@ -193,10 +209,10 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
 
    protected:
     /*!
-     * Decomposes the given model into equivalance classes of a bisimulation.
+     * Decomposes the given model into equivalence classes of a bisimulation.
      *
      * @param model The model to decompose.
-     * @param backwardTransition The backward transitions of the model.
+     * @param backwardTransitions The backward transitions of the model.
      * @param options The options to use during for the decomposition.
      */
     BisimulationDecomposition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Options const& options);
@@ -216,11 +232,10 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
      * @param splitterVector The vector into which to insert the newly discovered potential splitters.
      */
     virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter,
-                                                std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) = 0;
+                                                std::vector<bisimulation::Block<BlockDataType>*>& splitterVector) = 0;
 
     /*!
-     * Builds the quotient model based on the previously computed equivalence classes (stored in the blocks
-     * of the decomposition.
+     * Builds the quotient model based on the previously computed equivalence classes (stored in the blocks of the decomposition).
      */
     virtual void buildQuotient() = 0;
 
@@ -282,10 +297,8 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
     // A comparator used for comparing the distances of constants.
     storm::utility::ConstantsComparator<ValueType> comparator;
 
-    // The quotient, if it was build. Otherwhise a null pointer.
+    // The quotient, if it was build. Otherwise a null pointer.
     std::shared_ptr<ModelType> quotient;
 };
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_BISIMULATIONDECOMPOSITION_H_ */

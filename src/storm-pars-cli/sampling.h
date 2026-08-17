@@ -4,14 +4,16 @@
 #include "storm-cli-utilities/model-handling.h"
 
 #include "storm-pars-cli/print.h"
+#include "storm/exceptions/WrongFormatException.h"
 
-#include "storm-pars/analysis/MonotonicityHelper.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/api/storm-pars.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseCtmcInstantiationModelChecker.h"
+#include "storm-pars/modelchecker/instantiation/SparseMdpInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 
@@ -185,7 +187,7 @@ void verifyPropertiesAtSamplePoints(ModelType const& model, cli::SymbolicInput c
                 valuationWatch.stop();
 
                 if (result) {
-                    result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model.getInitialStates()));
+                    result->filter(storm::modelchecker::ExplicitQualitativeCheckResult<SolveValueType>(model.getInitialStates()));
                 }
                 printInitialStatesResult<ValueType>(result, &valuationWatch, &valuation);
 
@@ -350,7 +352,7 @@ void sampleDerivatives(std::shared_ptr<storm::models::sparse::Model<ValueType>> 
 
     derivative::SparseDerivativeInstantiationModelChecker<ValueType, storm::RationalNumber> modelChecker(*dtmc);
 
-    modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber> referenceCheckTask(*formula);
+    storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber> referenceCheckTask(*formula);
     std::shared_ptr<storm::logic::Formula> formulaWithoutBound;
     if (!referenceCheckTask.isRewardModelSet()) {
         formulaWithoutBound = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
@@ -369,6 +371,5 @@ void sampleDerivatives(std::shared_ptr<storm::models::sparse::Model<ValueType>> 
         auto result = modelChecker.check(Environment(), instantiation, parameter);
         std::cout << *result << '\n';
     }
-    return;
 }
 }  // namespace storm::pars

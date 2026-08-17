@@ -1,13 +1,10 @@
-#ifndef STORM_STORAGE_PRISM_SYSTEMCOMPOSITIONCONSTRUCT_H_
-#define STORM_STORAGE_PRISM_SYSTEMCOMPOSITIONCONSTRUCT_H_
+#pragma once
 
 #include <memory>
 #include <string>
 
-#include "storm/storage/prism/LocatedInformation.h"
-#include "storm/utility/OsDetection.h"
-
 #include "storm/storage/prism/Composition.h"
+#include "storm/storage/prism/LocatedInformation.h"
 
 namespace storm {
 namespace prism {
@@ -38,5 +35,3 @@ class SystemCompositionConstruct : public LocatedInformation {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_SYSTEMCOMPOSITIONCONSTRUCT_H_ */

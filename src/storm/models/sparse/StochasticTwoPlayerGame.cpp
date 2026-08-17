@@ -1,8 +1,9 @@
 #include "storm/models/sparse/StochasticTwoPlayerGame.h"
 
-#include "storm/models/sparse/StandardRewardModel.h"
-
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {
 namespace models {
@@ -61,14 +62,12 @@ storm::models::sparse::ChoiceLabeling const& StochasticTwoPlayerGame<ValueType, 
 }
 
 template class StochasticTwoPlayerGame<double>;
-
-#ifdef STORM_HAVE_CARL
 template class StochasticTwoPlayerGame<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-template class StochasticTwoPlayerGame<storm::RationalFunction>;
 template class StochasticTwoPlayerGame<storm::RationalNumber>;
+template class StochasticTwoPlayerGame<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
 template class StochasticTwoPlayerGame<storm::Interval>;
-
-#endif
+template class StochasticTwoPlayerGame<storm::RationalInterval>;
+template class StochasticTwoPlayerGame<storm::RationalFunction>;
 
 }  // namespace sparse
 }  // namespace models

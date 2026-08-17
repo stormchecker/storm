@@ -17,10 +17,8 @@ double TranscendentalNumberLiteralExpression::evaluateAsDouble(Valuation const*)
     switch (value) {
         case TranscendentalNumber::PI:
             return M_PI;
-            break;
         case TranscendentalNumber::E:
             return std::exp(1.0);
-            break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected constant value.");
             break;
@@ -33,7 +31,6 @@ bool TranscendentalNumberLiteralExpression::isLiteral() const {
 
 void TranscendentalNumberLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>&) const {
     // A constant value is not supposed to have any variable
-    return;
 }
 
 std::shared_ptr<BaseExpression const> TranscendentalNumberLiteralExpression::simplify() const {

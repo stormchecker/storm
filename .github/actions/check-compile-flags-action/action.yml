@@ -1,0 +1,45 @@
+name: 'Check compile flags'
+description: 'Check compile flags of Storm'
+inputs:
+  buildType:
+    description: 'CMake build type'
+    required: true
+    type: string
+    default: 'Release'
+  docker:
+    description: 'Whether the checks should be performed in a Docker container'
+    required: true
+    type: boolean
+    default: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check release flags (Docker)
+      if: ${{ (inputs.docker == 'true') && (inputs.buildType == 'Release') }}
+      run: |
+        docker exec ci bash -c "if grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi"
+        docker exec ci bash -c "if ! grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi"
+        docker exec ci bash -c "if ! grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi"
+      shell: bash
+    - name: Check release flags (MacOS)
+      if: ${{ (inputs.docker == 'false') && (inputs.buildType == 'Release') }}
+      run: |
+        if grep -q -e '-g' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi
+        if ! grep -q -e '-O3' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi
+        if ! grep -q -e '-DNDEBUG' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi
+      shell: bash
+    - name: Check debug flags (Docker)
+      if: ${{ (inputs.docker == 'true') && (inputs.buildType == 'Debug') }}
+      run: |
+        docker exec ci bash -c "if ! grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi"
+        docker exec ci bash -c "if grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
+        docker exec ci bash -c "if grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
+      shell: bash
+    - name: Check debug flags (MacOS)
+      if: ${{ (inputs.docker == 'false') && (inputs.buildType == 'Debug') }}
+      run: |
+        if ! grep -q -e '-g' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi
+        if grep -q -e '-O3' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi
+        if grep -q -e '-DNDEBUG' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi
+      shell: bash

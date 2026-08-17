@@ -1,6 +1,7 @@
+#pragma once
+
 #include <string>
 
-#pragma once
 namespace storm {
 namespace jani {
 class Action {

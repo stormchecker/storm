@@ -2,6 +2,7 @@
 #define SYLVAN_STORM_RATIONAL_NUMBER_H
 
 #include <storm_wrapper.h>
+#include <sylvan.h>
 
 #ifdef __cplusplus
 extern "C" {

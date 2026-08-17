@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_PROGRAM_H_
-#define STORM_STORAGE_PRISM_PROGRAM_H_
+#pragma once
 
 #include <boost/optional.hpp>
 #include <map>
@@ -19,7 +18,6 @@
 #include "storm/storage/prism/Player.h"
 #include "storm/storage/prism/RewardModel.h"
 #include "storm/storage/prism/SystemCompositionConstruct.h"
-#include "storm/utility/OsDetection.h"
 #include "storm/utility/solver.h"
 
 namespace storm {
@@ -258,9 +256,10 @@ class Program : public LocatedInformation {
     /*!
      * Retrieves all expression variables used by this program.
      *
+     * @param includeConstants Whether to include constants in the set of expression variables.
      * @return The set of expression variables used by this program.
      */
-    std::set<storm::expressions::Variable> getAllExpressionVariables() const;
+    std::set<storm::expressions::Variable> getAllExpressionVariables(bool includeConstants = true) const;
 
     /*!
      * Retrieves a list of expressions that characterize the legal ranges of all variables.
@@ -289,6 +288,16 @@ class Program : public LocatedInformation {
      * @return The formulas defined in the program.
      */
     std::vector<Formula> const& getFormulas() const;
+
+    /*!
+     * @return true iff a formula with the given name is known
+     */
+    bool hasFormula(std::string const& formulaName) const;
+
+    /*!
+     * @return The formula with the given name. Assumes that such a formula is known.
+     */
+    Formula const& getFormula(std::string const& formulaName) const;
 
     /*!
      * Retrieves the number of formulas in the program.
@@ -396,6 +405,11 @@ class Program : public LocatedInformation {
      * @return an expression characterizing the initial states.
      */
     storm::expressions::Expression getInitialStatesExpression() const;
+
+    /*!
+     * Retrieves whether the program considers at least one update with an interval probability/rate
+     */
+    bool hasIntervalUpdates() const;
 
     /*!
      * Retrieves whether the program specifies a system composition in terms of process algebra operations over
@@ -689,6 +703,24 @@ class Program : public LocatedInformation {
     Program substituteConstantsFormulas(bool substituteConstants = true, bool substituteFormulas = true) const;
 
     /*!
+     * Preprocesses the program by defining the given constant definitions, substituting constants and formulas,
+     * and substituting non-standard predicates.
+     *
+     * @param constantDefinitions A mapping from undefined constant to the expressions they are supposed to be replaced with.
+     * @return The preprocessed program.
+     */
+    Program preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const;
+
+    /*!
+     * Preprocesses the program by parsing the given constant definition string, defining the constants,
+     * substituting constants and formulas, and substituting non-standard predicates.
+     *
+     * @param constantDefinitionString A string of constant definitions, e.g., "p=0.5, n=10".
+     * @return The preprocessed program.
+     */
+    Program preprocess(std::string const& constantDefinitionString = "") const;
+
+    /*!
      * Replace the initialization in variables by an init-expression. This should not change the semantics of the program and can be a preprocessing step.
      *
      * @return
@@ -898,5 +930,3 @@ std::ostream& operator<<(std::ostream& out, Program::ModelType const& type);
 
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_PROGRAM_H_ */

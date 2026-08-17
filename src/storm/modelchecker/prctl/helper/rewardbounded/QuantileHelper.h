@@ -44,7 +44,6 @@ class QuantileHelper {
      */
     storm::storage::BitVector getOpenDimensions() const;
 
-    storm::storage::BitVector getDimensionsForVariable(storm::expressions::Variable const& var) const;
     storm::expressions::Variable const& getVariableForDimension(uint64_t const& dim) const;
 
     ModelType const& model;

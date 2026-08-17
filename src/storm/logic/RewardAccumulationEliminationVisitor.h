@@ -29,6 +29,8 @@ class RewardAccumulationEliminationVisitor : public CloneVisitor {
     virtual boost::any visit(LongRunAverageRewardFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(RewardOperatorFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(TotalRewardFormula const& f, boost::any const& data) const override;
+    virtual boost::any visit(DiscountedCumulativeRewardFormula const& f, boost::any const& data) const override;
+    virtual boost::any visit(DiscountedTotalRewardFormula const& f, boost::any const& data) const override;
 
    private:
     bool canEliminate(storm::logic::RewardAccumulation const& accumulation, boost::optional<std::string> rewardModelName) const;

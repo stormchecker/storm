@@ -3,12 +3,13 @@
 #include <algorithm>
 #include <iostream>
 
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
 namespace storage {
@@ -57,7 +58,10 @@ bool Distribution<ValueType, StateType>::equals(Distribution<ValueType, StateTyp
 
 template<typename ValueType, typename StateType>
 void Distribution<ValueType, StateType>::addProbability(StateType const& state, ValueType const& probability) {
-    this->distribution[state] += probability;
+    auto [iterator, newEntry] = this->distribution.try_emplace(state, probability);
+    if (!newEntry) {
+        iterator->second += probability;
+    }
 }
 
 template<typename ValueType, typename StateType>
@@ -211,7 +215,6 @@ template std::ostream& operator<<(std::ostream& out, Distribution<double> const&
 template class Distribution<double, uint64_t>;
 template std::ostream& operator<<(std::ostream& out, Distribution<double, uint_fast64_t> const& distribution);
 
-#ifdef STORM_HAVE_CARL
 template class Distribution<storm::RationalNumber>;
 template std::ostream& operator<<(std::ostream& out, Distribution<storm::RationalNumber> const& distribution);
 template class Distribution<storm::RationalNumber, uint64_t>;
@@ -227,6 +230,10 @@ template std::ostream& operator<<(std::ostream& out, Distribution<storm::Interva
 template class Distribution<storm::Interval, uint64_t>;
 template std::ostream& operator<<(std::ostream& out, Distribution<storm::Interval, uint64_t> const& distribution);
 
-#endif
+template class Distribution<storm::RationalInterval>;
+template std::ostream& operator<<(std::ostream& out, Distribution<storm::RationalInterval> const& distribution);
+template class Distribution<storm::RationalInterval, uint64_t>;
+template std::ostream& operator<<(std::ostream& out, Distribution<storm::RationalInterval, uint64_t> const& distribution);
+
 }  // namespace storage
 }  // namespace storm

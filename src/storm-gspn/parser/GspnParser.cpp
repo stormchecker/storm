@@ -2,6 +2,7 @@
 #include "storm-config.h"
 #include "storm-gspn/adapters/XercesAdapter.h"
 
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
@@ -17,9 +18,9 @@ storm::gspn::GSPN* GspnParser::parse(std::string const& filename, std::string co
     // initialize xercesc
     try {
         xercesc::XMLPlatformUtils::Initialize();
-    } catch (xercesc::XMLException const& toCatch) {
+    } catch (xercesc::XMLException const&) {
         // Error occurred during the initialization process. Abort parsing since it is not possible.
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Failed to initialize xercesc\n");
+        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Failed to initialize xercesc.");
     }
 
     auto parser = new xercesc::XercesDOMParser();
@@ -74,7 +75,7 @@ storm::gspn::GSPN* GspnParser::parse(std::string const& filename, std::string co
     delete errHandler;
     xercesc::XMLPlatformUtils::Terminate();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Storm is not compiled with XML support: " << filename << " can not be parsed");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is not compiled with XML support: " << filename << " can not be parsed.");
 #endif
 }
 }  // namespace parser

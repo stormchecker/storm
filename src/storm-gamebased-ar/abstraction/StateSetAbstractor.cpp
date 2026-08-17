@@ -1,14 +1,10 @@
 #include "storm-gamebased-ar/abstraction/StateSetAbstractor.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/dd/DdManager.h"
-
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::gbar {
 namespace abstraction {
@@ -175,8 +171,6 @@ AbstractionInformation<DdType> const& StateSetAbstractor<DdType, ValueType>::get
 
 template class StateSetAbstractor<storm::dd::DdType::CUDD, double>;
 template class StateSetAbstractor<storm::dd::DdType::Sylvan, double>;
-#ifdef STORM_HAVE_CARL
 template class StateSetAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-#endif
 }  // namespace abstraction
 }  // namespace storm::gbar

@@ -12,7 +12,6 @@
 #include "storm-dft/storage/DFTState.h"
 #include "storm-dft/storage/DFTStateSpaceGenerationQueues.h"
 #include "storm-dft/storage/elements/DFTElementType.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"
 
 namespace storm::dft {

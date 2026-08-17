@@ -7,6 +7,8 @@
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
 
 namespace storm {
 
@@ -30,8 +32,11 @@ class SparseMultiObjectivePreprocessor {
      * Preprocesses the given model w.r.t. the given formulas
      * @param originalModel The considered model
      * @param originalFormula the considered formula. The subformulas should only contain one OperatorFormula at top level.
+     * @param produceScheduler if true, extra data is generated to ensure that schedulers from the preprocessed model can be translated back to the original one
+     *
      */
-    static ReturnType preprocess(Environment const& env, SparseModelType const& originalModel, storm::logic::MultiObjectiveFormula const& originalFormula);
+    static ReturnType preprocess(Environment const& env, SparseModelType const& originalModel, storm::logic::MultiObjectiveFormula const& originalFormula,
+                                 bool produceScheduler);
 
    private:
     struct PreprocessorData {
@@ -41,13 +46,13 @@ class SparseMultiObjectivePreprocessor {
         // Indices of the objectives that require a check for finite reward
         storm::storage::BitVector finiteRewardCheckObjectives;
 
-        // Indices of the objectives for which we need to compute an upper bound for the result
-        storm::storage::BitVector upperResultBoundObjectives;
-
         std::string rewardModelNamePrefix;
 
         // If set, some states have been merged to a deadlock state with this label.
         boost::optional<std::string> deadlockLabel;
+
+        // Mapping of incorporated memory to model+memory
+        std::optional<storm::storage::SparseModelMemoryProductReverseData> memoryIncorporationReverseData;
 
         PreprocessorData(std::shared_ptr<SparseModelType> model);
     };

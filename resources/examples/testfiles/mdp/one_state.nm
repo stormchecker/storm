@@ -1,0 +1,13 @@
+mdp
+
+module model
+    s : [0..0] init 0;
+    
+    [a] s=0 -> 1 : (s'=0);
+    [b] s=0 -> 1 : (s'=0);
+endmodule
+
+rewards
+	[a] s=0 : 1;
+	[b] s=0 : 100;
+endrewards

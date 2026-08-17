@@ -1,12 +1,4 @@
-/*
- * MappedFile.h
- *
- *  Created on: Jan 21, 2014
- *      Author: Manuel Sascha Weiand
- */
-
-#ifndef STORM_PARSER_MAPPEDFILE_H_
-#define STORM_PARSER_MAPPEDFILE_H_
+#pragma once
 
 #include <sys/stat.h>
 #include <cstddef>
@@ -15,10 +7,6 @@
 
 namespace storm {
 namespace parser {
-
-#if !defined LINUX && !defined MACOSX && !defined WINDOWS
-#error Platform not supported
-#endif
 
 /*!
  * Opens a file and maps it to memory providing a char*
@@ -73,34 +61,17 @@ class MappedFile {
     //! A pointer to end of the mapped file content.
     char* dataEnd;
 
-#if defined LINUX || defined MACOSX
-
     //! The file descriptor obtained by open().
     int file;
-#elif defined WINDOWS
-    //! The file handle obtained by opening the file.
-    HANDLE file;
 
-    //! The handle referencing the created memory mapping.
-    HANDLE mapping;
-#endif
-
-#if defined LINUX
-
+#if defined LINUX && defined(__GLIBC__)
     //! Stat information about the file.
     struct stat64 st;
-#elif defined MACOSX
-
+#else
     //! Stat information about the file.
     struct stat st;
-#elif defined WINDOWS
-
-    //! Stat information about the file.
-    struct __stat64 st;
 #endif
 };
 
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_MAPPEDFILE_H_ */

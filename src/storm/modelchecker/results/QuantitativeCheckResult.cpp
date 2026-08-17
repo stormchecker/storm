@@ -1,8 +1,6 @@
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
 
-#include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"
 
@@ -21,9 +19,7 @@ bool QuantitativeCheckResult<ValueType>::isQuantitative() const {
 
 template class QuantitativeCheckResult<double>;
 
-#ifdef STORM_HAVE_CARL
 template class QuantitativeCheckResult<RationalNumber>;
 template class QuantitativeCheckResult<RationalFunction>;
-#endif
 }  // namespace modelchecker
 }  // namespace storm

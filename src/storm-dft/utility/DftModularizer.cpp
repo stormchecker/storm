@@ -1,5 +1,7 @@
 #include "DftModularizer.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 namespace storm::dft {
 namespace utility {
 

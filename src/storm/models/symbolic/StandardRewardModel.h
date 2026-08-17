@@ -1,9 +1,7 @@
-#ifndef STORM_MODELS_SYMBOLIC_STANDARDREWARDMODEL_H_
-#define STORM_MODELS_SYMBOLIC_STANDARDREWARDMODEL_H_
-
-#include <set>
+#pragma once
 
 #include <boost/optional.hpp>
+#include <set>
 
 #include "storm/storage/dd/DdType.h"
 
@@ -240,5 +238,3 @@ class StandardRewardModel {
 }  // namespace symbolic
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SYMBOLIC_STANDARDREWARDMODEL_H_ */

@@ -115,6 +115,14 @@ boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryNumericalFunc
             result = storm::utility::ceil(operandAsRationalNumber);
             return result;
             break;
+        case UnaryNumericalFunctionExpression::OperatorType::Sin:
+            result = storm::utility::sin(operandAsRationalNumber);
+            return result;
+            break;
+        case UnaryNumericalFunctionExpression::OperatorType::Cos:
+            result = storm::utility::cos(operandAsRationalNumber);
+            return result;
+            break;
     }
     // Dummy return.
     return result;

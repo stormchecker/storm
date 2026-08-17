@@ -1,12 +1,10 @@
-
 #include "storm/modelchecker/results/SymbolicParetoCurveCheckResult.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -70,7 +68,6 @@ storm::dd::Bdd<Type> const& SymbolicParetoCurveCheckResult<Type, ValueType>::get
 
 template class SymbolicParetoCurveCheckResult<storm::dd::DdType::CUDD, double>;
 template class SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, double>;
-
 template class SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 }  // namespace modelchecker
 }  // namespace storm

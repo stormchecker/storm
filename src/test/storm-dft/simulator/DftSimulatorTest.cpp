@@ -100,6 +100,8 @@ TEST(DftSimulatorTest, FdepUnreliability) {
     EXPECT_NEAR(result, 0.1548181217, 0.01);
     result = simulateDftProb(STORM_TEST_RESOURCES_DIR "/dft/fdep6.dft", 1, 10000);
     EXPECT_NEAR(result, 0.9985116987, 0.01);
+    result = simulateDftProb(STORM_TEST_RESOURCES_DIR "/dft/fdep7.dft", 1, 10000);
+    EXPECT_NEAR(result, 0.9343760449, 0.01);
 }
 
 TEST(DftSimulatorTest, PdepUnreliability) {

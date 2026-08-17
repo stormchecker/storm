@@ -1,7 +1,8 @@
-#ifndef STORM_STORAGE_BISIMULATION_DETERMINISTICBLOCKDATA_H_
-#define STORM_STORAGE_BISIMULATION_DETERMINISTICBLOCKDATA_H_
+#pragma once
 
 #include <cstdint>
+#include <iosfwd>
+#include <optional>
 
 #include "storm/storage/bisimulation/Block.h"
 
@@ -43,7 +44,7 @@ class DeterministicBlockData {
     // Marks the block as needing refinement (or not).
     void setNeedsRefinement(bool value = true);
 
-    // Sets whether or not the block is to be interpreted as absorbing.
+    // Sets whether the block is to be interpreted as absorbing.
     void setAbsorbing(bool absorbing);
 
     // Retrieves whether the block is to be interpreted as absorbing.
@@ -77,20 +78,18 @@ class DeterministicBlockData {
     uint_fast64_t valMarker2;
 
     // Some bits to store flags: splitter flag, refinement flag, absorbing flag.
-    static const uint64_t SPLITTER_FLAG = 1ull;
-    static const uint64_t REFINEMENT_FLAG = 1ull << 1;
-    static const uint64_t ABSORBING_FLAG = 1ull << 2;
-    static const uint64_t REWARD_FLAG = 1ull << 3;
+    static constexpr uint64_t SPLITTER_FLAG = 1ull;
+    static constexpr uint64_t REFINEMENT_FLAG = 1ull << 1;
+    static constexpr uint64_t ABSORBING_FLAG = 1ull << 2;
+    static constexpr uint64_t REWARD_FLAG = 1ull << 3;
     uint8_t flags;
 
     // An optional representative state for the block. If this is set, this state is used to derive the
     // atomic propositions of the meta state in the quotient model.
-    boost::optional<storm::storage::sparse::state_type> valRepresentativeState;
+    std::optional<storm::storage::sparse::state_type> valRepresentativeState;
 };
 
 std::ostream& operator<<(std::ostream& out, DeterministicBlockData const& data);
 }  // namespace bisimulation
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_BISIMULATION_DETERMINISTICBLOCKDATA_H_ */

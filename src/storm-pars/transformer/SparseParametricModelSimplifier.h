@@ -40,6 +40,18 @@ class SparseParametricModelSimplifier {
      */
     std::shared_ptr<storm::logic::Formula const> getSimplifiedFormula() const;
 
+    /**
+     * Set whether to preserve parametric transions (i.e. for robust PLA, where it returns unfavourable MCs).
+     *
+     * @param preserveParametricTransitions
+     */
+    void setPreserveParametricTransitions(bool preserveParametricTransitions);
+
+    /**
+     * Whether this SparseParametricDtmcSimplifier preserves parametric transitions.
+     */
+    bool isPreserveParametricTransitionsSet() const;
+
    protected:
     // Perform the simplification for the corresponding formula type
     virtual bool simplifyForUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula);
@@ -58,14 +70,14 @@ class SparseParametricModelSimplifier {
      * The resulting model will only have the rewardModel with the provided name (or no reward model at all if no name was given).
      * Labelings of eliminated states will be lost
      */
-    static std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model,
-                                                                                 storm::storage::BitVector const& consideredStates,
-                                                                                 boost::optional<std::string> const& rewardModelName = boost::none);
+    std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model, storm::storage::BitVector const& consideredStates,
+                                                                          boost::optional<std::string> const& rewardModelName = boost::none);
 
     SparseModelType const& originalModel;
 
     std::shared_ptr<SparseModelType> simplifiedModel;
     std::shared_ptr<storm::logic::Formula const> simplifiedFormula;
+    bool preserveParametricTransitions = false;
 };
 }  // namespace transformer
 }  // namespace storm

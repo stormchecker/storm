@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_GMMXXLINEAREQUATIONSOLVER_H_
-#define STORM_SOLVER_GMMXXLINEAREQUATIONSOLVER_H_
+#pragma once
 
 #include <ostream>
 
@@ -36,13 +35,14 @@ class GmmxxLinearEquationSolver : public LinearEquationSolver<ValueType> {
 
     virtual uint64_t getMatrixRowCount() const override;
     virtual uint64_t getMatrixColumnCount() const override;
-
+#ifdef STORM_HAVE_GMM
     // The matrix in gmm++ format.
     std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxA;
 
     // cached data obtained during solving
     mutable std::unique_ptr<gmm::ilu_precond<gmm::csr_matrix<ValueType>>> iluPreconditioner;
     mutable std::unique_ptr<gmm::diagonal_precond<gmm::csr_matrix<ValueType>>> diagonalPreconditioner;
+#endif
 };
 
 template<typename ValueType>
@@ -57,5 +57,3 @@ class GmmxxLinearEquationSolverFactory : public LinearEquationSolverFactory<Valu
 
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_GMMXXLINEAREQUATIONSOLVER_H_ */

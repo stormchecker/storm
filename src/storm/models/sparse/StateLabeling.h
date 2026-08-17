@@ -1,13 +1,10 @@
 #pragma once
 
-#include <ostream>
 #include <set>
-#include <unordered_map>
 
 #include "storm/models/sparse/ItemLabeling.h"
-#include "storm/storage/sparse/StateType.h"
-
 #include "storm/storage/BitVector.h"
+#include "storm/storage/sparse/StateType.h"
 
 namespace storm {
 namespace models {

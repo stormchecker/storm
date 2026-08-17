@@ -1,4 +1,5 @@
 #include "storm/logic/MultiObjectiveFormula.h"
+#include <algorithm>
 #include <boost/any.hpp>
 #include <ostream>
 
@@ -9,7 +10,7 @@
 namespace storm {
 namespace logic {
 
-MultiObjectiveFormula::MultiObjectiveFormula(std::vector<std::shared_ptr<Formula const>> const& subformulas) : subformulas(subformulas) {
+MultiObjectiveFormula::MultiObjectiveFormula(std::vector<std::shared_ptr<Formula const>> const& subformulas, Type type) : subformulas(subformulas), type(type) {
     // Intentionally left empty
 }
 
@@ -21,13 +22,20 @@ bool MultiObjectiveFormula::isMultiObjectiveFormula() const {
     return true;
 }
 
+bool MultiObjectiveFormula::isTradeoff() const {
+    return this->type == Type::Tradeoff;
+}
+
+bool MultiObjectiveFormula::isLexicographic() const {
+    return this->type == Type::Lexicographic;
+}
+
+MultiObjectiveFormula::Type MultiObjectiveFormula::getType() const {
+    return this->type;
+}
+
 bool MultiObjectiveFormula::hasQualitativeResult() const {
-    for (auto const& subformula : this->subformulas) {
-        if (subformula->hasQuantitativeResult()) {
-            return false;
-        }
-    }
-    return true;
+    return std::all_of(subformulas.begin(), subformulas.end(), [](auto const& f) { return f->hasQualitativeResult(); });
 }
 
 bool MultiObjectiveFormula::hasQuantitativeResult() const {
@@ -35,20 +43,13 @@ bool MultiObjectiveFormula::hasQuantitativeResult() const {
 }
 
 bool MultiObjectiveFormula::hasNumericalResult() const {
-    bool hasExactlyOneQuantitativeSubformula = false;
-    for (auto const& subformula : this->subformulas) {
-        if (subformula->hasQuantitativeResult()) {
-            if (hasExactlyOneQuantitativeSubformula) {
-                return false;
-            }
-            hasExactlyOneQuantitativeSubformula = true;
-        }
-    }
-    return hasExactlyOneQuantitativeSubformula;
+    auto numQuant = std::count_if(subformulas.begin(), subformulas.end(), [](auto const& f) { return f->hasQuantitativeResult(); });
+    return numQuant == 1;
 }
 
-bool MultiObjectiveFormula::hasParetoCurveResult() const {
-    return hasQuantitativeResult() && !hasNumericalResult();
+bool MultiObjectiveFormula::hasMultiDimensionalResult() const {
+    auto numQuant = std::count_if(subformulas.begin(), subformulas.end(), [](auto const& f) { return f->hasQuantitativeResult(); });
+    return numQuant > 1;
 }
 
 Formula const& MultiObjectiveFormula::getSubformula(uint_fast64_t index) const {
@@ -87,9 +88,19 @@ void MultiObjectiveFormula::gatherReferencedRewardModels(std::set<std::string>& 
     }
 }
 
+void MultiObjectiveFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+    for (auto const& subformula : this->subformulas) {
+        subformula->gatherUsedVariables(usedVariables);
+    }
+}
+
 std::ostream& MultiObjectiveFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
     // No parentheses necessary
-    out << "multi(";
+    out << "multi";
+    if (isLexicographic()) {
+        out << "lex";
+    }
+    out << "(";
     for (uint_fast64_t index = 0; index < this->getNumberOfSubformulas(); ++index) {
         if (index > 0) {
             out << ", ";

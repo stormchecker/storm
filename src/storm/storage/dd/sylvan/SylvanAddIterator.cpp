@@ -1,19 +1,17 @@
 #include "storm/storage/dd/sylvan/SylvanAddIterator.h"
 
-#include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
-
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/utility/macros.h"
-
 #include <cmath>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace dd {
+
+#ifdef STORM_HAVE_SYLVAN
 template<typename ValueType>
 AddIterator<DdType::Sylvan, ValueType>::AddIterator() {
     // Intentionally left empty.
@@ -207,14 +205,46 @@ void AddIterator<DdType::Sylvan, ValueType>::treatNextInCube() {
         }
     }
 }
+#else
+template<typename ValueType>
+AddIterator<DdType::Sylvan, ValueType>::AddIterator() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+AddIterator<DdType::Sylvan, ValueType>& AddIterator<DdType::Sylvan, ValueType>::operator++() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+bool AddIterator<DdType::Sylvan, ValueType>::operator==(AddIterator<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+bool AddIterator<DdType::Sylvan, ValueType>::operator!=(AddIterator<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+std::pair<storm::expressions::SimpleValuation, ValueType> AddIterator<DdType::Sylvan, ValueType>::operator*() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+#endif
 
 template class AddIterator<DdType::Sylvan, double>;
 template class AddIterator<DdType::Sylvan, uint_fast64_t>;
-
 template class AddIterator<DdType::Sylvan, storm::RationalNumber>;
-
-#ifdef STORM_HAVE_CARL
 template class AddIterator<DdType::Sylvan, storm::RationalFunction>;
-#endif
 }  // namespace dd
 }  // namespace storm

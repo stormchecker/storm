@@ -15,9 +15,13 @@ struct ModularizerTestData {
 class BddModularizerTest : public testing::TestWithParam<ModularizerTestData> {
    protected:
     void SetUp() override {
+#ifdef STORM_HAVE_SYLVAN
         auto const &param{TestWithParam::GetParam()};
         auto dft{storm::dft::api::loadDFTGalileoFile<double>(param.filepath)};
         checker = std::make_shared<storm::dft::modelchecker::DftModularizationChecker<double>>(dft);
+#else
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
     }
 
     std::shared_ptr<storm::dft::modelchecker::DftModularizationChecker<double>> checker;
@@ -28,7 +32,7 @@ TEST_P(BddModularizerTest, ProbabilityAtTimeOne) {
     EXPECT_NEAR(checker->getProbabilityAtTimebound(1), param.probabilityAtTimeboundOne, 1e-6);
 }
 
-static std::vector<ModularizerTestData> modularizerTestData{
+std::vector<ModularizerTestData> modularizerTestData{
     {
         "And",
         STORM_TEST_RESOURCES_DIR "/dft/bdd/AndTest.dft",

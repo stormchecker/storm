@@ -28,7 +28,7 @@ bool SignatureIterator<DdType, ValueType>::hasNext() const {
         case SignatureMode::Lazy:
             return position < 2;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown SignatureMode");
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown SignatureMode.");
 }
 
 template<storm::dd::DdType DdType, typename ValueType>

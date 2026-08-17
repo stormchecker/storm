@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_UNARYPATHFORMULA_H_
-#define STORM_LOGIC_UNARYPATHFORMULA_H_
+#pragma once
 
 #include <memory>
 
@@ -32,5 +31,3 @@ class UnaryPathFormula : public PathFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_UNARYPATHFORMULA_H_ */

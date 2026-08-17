@@ -1,8 +1,6 @@
-#ifndef STORM_MODELS_SPARSE_DETERMINISTICMODEL_H_
-#define STORM_MODELS_SPARSE_DETERMINISTICMODEL_H_
+#pragma once
 
 #include "storm/models/sparse/Model.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {
@@ -41,5 +39,3 @@ class DeterministicModel : public Model<ValueType, RewardModelType> {
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SPARSE_DETERMINISTICMODEL_H_ */

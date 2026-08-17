@@ -1,6 +1,8 @@
 #include "storm/generator/StateBehavior.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 namespace generator {
@@ -71,10 +73,9 @@ std::size_t StateBehavior<ValueType, StateType>::getNumberOfChoices() const {
 }
 
 template class StateBehavior<double>;
-
-#ifdef STORM_HAVE_CARL
 template class StateBehavior<storm::RationalNumber>;
 template class StateBehavior<storm::RationalFunction>;
-#endif
+template class StateBehavior<storm::Interval>;
+template class StateBehavior<storm::RationalInterval>;
 }  // namespace generator
 }  // namespace storm

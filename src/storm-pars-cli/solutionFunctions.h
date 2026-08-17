@@ -1,6 +1,29 @@
 #pragma once
 
-#include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include <functional>
+#include <memory>
+#include <vector>
+
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/models/sparse/ModelForward.h"
+#include "storm/storage/dd/DdType.h"
+
+namespace storm::jani {
+class Property;
+}
+namespace storm::logic {
+class Formula;
+}
+namespace storm::modelchecker {
+class CheckResult;
+}
+namespace storm::models::symbolic {
+template<storm::dd::DdType DdType, typename ValueType>
+class Model;
+}
+namespace storm::cli {
+struct SymbolicInput;
+}
 
 namespace storm::pars {
 
@@ -8,69 +31,24 @@ template<typename ValueType>
 void verifyProperties(
     std::vector<storm::jani::Property> const& properties,
     std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> const& verificationCallback,
-    std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const& postprocessingCallback) {
-    for (auto const& property : properties) {
-        storm::cli::printModelCheckingProperty(property);
-        STORM_LOG_THROW(property.getRawFormula()->isOperatorFormula(), storm::exceptions::NotSupportedException,
-                        "We only support operator formulas (P=?, R=?, etc).");
-        STORM_LOG_THROW(!property.getRawFormula()->asOperatorFormula().hasBound(), storm::exceptions::NotSupportedException,
-                        "We only support unbounded operator formulas (P=?, R=?, etc).");
-        storm::utility::Stopwatch watch(true);
-        std::unique_ptr<storm::modelchecker::CheckResult> result = verificationCallback(property.getRawFormula());
-        watch.stop();
-        printInitialStatesResult<ValueType>(result, &watch);
-        postprocessingCallback(result);
-    }
-}
+    std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const& postprocessingCallback);
 
 template<typename ValueType>
-void computeSolutionFunctionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, cli::SymbolicInput const& input) {
-    verifyProperties<ValueType>(
-        input.properties,
-        [&model](std::shared_ptr<storm::logic::Formula const> const& formula) {
-            std::unique_ptr<storm::modelchecker::CheckResult> result =
-                storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true));
-            if (result) {
-                result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
-            }
-            return result;
-        },
-        [&model](std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
-            auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
-            if (parametricSettings.exportResultToFile() && model->isOfType(storm::models::ModelType::Dtmc)) {
-                auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
-                std::optional<ValueType> rationalFunction = result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
-                auto constraintCollector = storm::analysis::ConstraintCollector<ValueType>(*dtmc);
-                storm::api::exportParametricResultToFile<ValueType>(rationalFunction, constraintCollector, parametricSettings.exportResultPath());
-            } else if (parametricSettings.exportResultToFile() && model->isOfType(storm::models::ModelType::Ctmc)) {
-                auto ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
-                std::optional<ValueType> rationalFunction = result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
-                auto constraintCollector = storm::analysis::ConstraintCollector<ValueType>(*ctmc);
-                storm::api::exportParametricResultToFile<ValueType>(rationalFunction, constraintCollector, parametricSettings.exportResultPath());
-            }
-        });
-}
+void computeSolutionFunctionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::cli::SymbolicInput const& input);
 
 template<storm::dd::DdType DdType, typename ValueType>
 void computeSolutionFunctionsWithSymbolicEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model,
-                                                cli::SymbolicInput const& input) {
-    verifyProperties<ValueType>(
-        input.properties,
-        [&model](std::shared_ptr<storm::logic::Formula const> const& formula) {
-            std::unique_ptr<storm::modelchecker::CheckResult> result =
-                storm::api::verifyWithDdEngine<DdType, ValueType>(model, storm::api::createTask<ValueType>(formula, true));
-            if (result) {
-                result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(model->getReachableStates(), model->getInitialStates()));
-            }
-            return result;
-        },
-        [&model](std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
-            auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
-            if (parametricSettings.exportResultToFile() && model->isOfType(storm::models::ModelType::Dtmc)) {
-                STORM_LOG_WARN("For symbolic engines, we currently do not support collecting graph-preserving constraints.");
-                std::optional<ValueType> rationalFunction = result->asSymbolicQuantitativeCheckResult<DdType, ValueType>().sum();
-                storm::api::exportParametricResultToFile<ValueType>(rationalFunction, storm::NullRef, parametricSettings.exportResultPath());
-            }
-        });
-}
+                                                storm::cli::SymbolicInput const& input);
+
+extern template void verifyProperties<storm::RationalFunction>(
+    std::vector<storm::jani::Property> const&,
+    std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const&)> const&,
+    std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const&);
+
+extern template void computeSolutionFunctionsWithSparseEngine<storm::RationalFunction>(
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const&, storm::cli::SymbolicInput const&);
+
+extern template void computeSolutionFunctionsWithSymbolicEngine<storm::dd::DdType::Sylvan, storm::RationalFunction>(
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>> const&, storm::cli::SymbolicInput const&);
+
 }  // namespace storm::pars

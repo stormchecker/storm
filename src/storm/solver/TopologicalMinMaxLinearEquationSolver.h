@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 
 #include "storm/solver/SolverSelectionOptions.h"
@@ -38,13 +40,14 @@ class TopologicalMinMaxLinearEquationSolver : public StandardMinMaxLinearEquatio
 
     // Solves the SCC with the given index
     // ... for the case that the SCC is trivial
-    bool solveTrivialScc(uint64_t const& sccState, OptimizationDirection d, std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB) const;
+    bool solveTrivialScc(uint64_t const& sccState, OptimizationDirection d, std::vector<SolutionType>& globalX, std::vector<ValueType> const& globalB) const;
     // ... for the case that there is just one large SCC
     bool solveFullyConnectedEquationSystem(storm::Environment const& sccSolverEnvironment, OptimizationDirection d, std::vector<SolutionType>& x,
                                            std::vector<ValueType> const& b) const;
     // ... for the remaining cases (1 < scc.size() < x.size())
     bool solveScc(storm::Environment const& sccSolverEnvironment, OptimizationDirection d, storm::storage::BitVector const& sccRowGroups,
-                  storm::storage::BitVector const& sccRows, std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB) const;
+                  storm::storage::BitVector const& sccRows, std::vector<SolutionType>& globalX, std::vector<ValueType> const& globalB,
+                  std::optional<storm::storage::BitVector> const& globalRelevantValues) const;
 
     // cached auxiliary data
     mutable std::unique_ptr<storm::storage::StronglyConnectedComponentDecomposition<ValueType>> sortedSccDecomposition;

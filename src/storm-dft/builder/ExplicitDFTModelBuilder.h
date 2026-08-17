@@ -252,16 +252,6 @@ class ExplicitDFTModelBuilder {
      */
     ValueType computeMTTFAnd(std::vector<ValueType> const& rates, size_t size) const;
 
-    /*!
-     * Compares the priority of two states.
-     *
-     * @param idA Id of first state
-     * @param idB Id of second state
-     *
-     * @return True if the priority of the first state is greater then the priority of the second one.
-     */
-    bool isPriorityGreater(StateType idA, StateType idB) const;
-
     void printNotExplored() const;
 
     /*!

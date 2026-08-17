@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm/logic/AtomicExpressionFormula.h"
 #include "storm/logic/AtomicLabelFormula.h"
 #include "storm/logic/BinaryBooleanPathFormula.h"
@@ -9,6 +11,8 @@
 #include "storm/logic/ComparisonType.h"
 #include "storm/logic/ConditionalFormula.h"
 #include "storm/logic/CumulativeRewardFormula.h"
+#include "storm/logic/DiscountedCumulativeRewardFormula.h"
+#include "storm/logic/DiscountedTotalRewardFormula.h"
 #include "storm/logic/EventuallyFormula.h"
 #include "storm/logic/Formula.h"
 #include "storm/logic/GameFormula.h"

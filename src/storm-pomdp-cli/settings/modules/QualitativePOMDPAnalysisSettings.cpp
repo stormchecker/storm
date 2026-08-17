@@ -3,7 +3,6 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -25,7 +24,7 @@ const std::string exportWinningRegionOption = "exportwinningregion";
 const std::string preventGraphPreprocessing = "nographprocessing";
 const std::string beliefSupportMCOption = "belsupmc";
 const std::string memlessSearchOption = "memlesssearch";
-std::vector<std::string> memlessSearchMethods = {"one-shot", "iterative"};
+const std::vector<std::string> memlessSearchMethods = {"one-shot", "iterative"};
 
 QualitativePOMDPAnalysisSettings::QualitativePOMDPAnalysisSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, memlessSearchOption, false, "Search for a qualitative memoryless scheduler")
@@ -126,6 +125,10 @@ bool QualitativePOMDPAnalysisSettings::isExportWinningRegionSet() const {
 
 bool QualitativePOMDPAnalysisSettings::isPrintWinningRegionSet() const {
     return this->getOption(printWinningRegionOption).getHasOptionBeenSet();
+}
+
+bool QualitativePOMDPAnalysisSettings::isGraphPreprocessingAllowed() const {
+    return this->getOption(preventGraphPreprocessing).getHasOptionBeenSet();
 }
 
 bool QualitativePOMDPAnalysisSettings::isMemlessSearchSet() const {

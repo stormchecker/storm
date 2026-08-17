@@ -1,29 +1,23 @@
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 
-#include <cmath>
-#include <iostream>
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/SylvanSettings.h"
-
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/sylvan.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/adapters/sylvan.h"
-
-#include "storm-config.h"
-
 namespace storm {
 namespace dd {
 
-#if defined(__clang__)
+#ifdef STORM_HAVE_SYLVAN
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-length-array"
 #pragma clang diagnostic ignored "-Wc99-extensions"
-#endif
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma clang diagnostic ignored "-Wzero-length-array"
 
 #ifndef NDEBUG
 VOID_TASK_0(gc_start) {
@@ -38,14 +32,13 @@ VOID_TASK_0(gc_end) {
 VOID_TASK_2(execute_sylvan, std::function<void()> const*, f, std::exception_ptr*, e) {
     try {
         (*f)();
-    } catch (std::exception& exception) {
+    } catch (std::exception&) {
         *e = std::current_exception();
     }
 }
 
-#if defined(__clang__)
 #pragma clang diagnostic pop
-#endif
+#pragma GCC diagnostic pop
 
 uint_fast64_t InternalDdManager<DdType::Sylvan>::numberOfInstances = 0;
 bool InternalDdManager<DdType::Sylvan>::suspended = false;
@@ -63,16 +56,15 @@ uint_fast64_t findLargestPowerOfTwoFitting(uint_fast64_t number) {
     return 0;
 }
 
-InternalDdManager<DdType::Sylvan>::InternalDdManager() {
+InternalDdManager<DdType::Sylvan>::InternalDdManager(storm::SylvanDdManagerEnvironment const& environment) {
     if (numberOfInstances == 0) {
-        storm::settings::modules::SylvanSettings const& settings = storm::settings::getModule<storm::settings::modules::SylvanSettings>();
         size_t const task_deque_size = 1024 * 1024;
 
         lace_set_stacksize(1024 * 1024 * 16);  // 16 MiB
 
-        lace_start(settings.getNumberOfThreads(), task_deque_size);
+        lace_start(environment.getNumberOfThreads(), task_deque_size);
 
-        sylvan_set_limits(storm::settings::getModule<storm::settings::modules::SylvanSettings>().getMaximalMemory() * 1024 * 1024, 0, 0);
+        sylvan_set_limits(environment.getMaximalMemory() * 1024 * 1024, 0, 0);
         sylvan_init_package();
 
         sylvan::Sylvan::initBdd();
@@ -122,13 +114,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalDdManager<DdType::Syl
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(this, sylvan::Mtbdd::stormRationalNumberTerminal(storm::utility::one<storm::RationalNumber>()));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddOne() const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this,
                                                                 sylvan::Mtbdd::stormRationalFunctionTerminal(storm::utility::one<storm::RationalFunction>()));
 }
-#endif
 
 InternalBdd<DdType::Sylvan> InternalDdManager<DdType::Sylvan>::getBddZero() const {
     return InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddZero());
@@ -176,13 +166,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalDdManager<DdType::Syl
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(this, sylvan::Mtbdd::stormRationalNumberTerminal(storm::utility::zero<storm::RationalNumber>()));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this,
                                                                 sylvan::Mtbdd::stormRationalFunctionTerminal(storm::utility::zero<storm::RationalFunction>()));
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalDdManager<DdType::Sylvan>::getAddUndefined() const {
@@ -204,12 +192,10 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalDdManager<DdType::Syl
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(this, sylvan::Mtbdd::stormRationalNumberTerminal(value));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::stormRationalFunctionTerminal(value));
 }
-#endif
 
 std::vector<InternalBdd<DdType::Sylvan>> InternalDdManager<DdType::Sylvan>::createDdVariables(uint64_t numberOfLayers,
                                                                                               boost::optional<uint_fast64_t> const& position) {
@@ -251,12 +237,18 @@ void InternalDdManager<DdType::Sylvan>::execute(std::function<void()> const& f) 
     if (suspended) {
         lace_resume();
         suspended = false;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
         RUN(execute_sylvan, &f, &e);
+#pragma clang diagnostic pop
         lace_suspend();
         suspended = true;
     } else {
         // The sylvan threads are already running, don't suspend afterwards.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
         RUN(execute_sylvan, &f, &e);
+#pragma clang diagnostic pop
     }
     if (e) {
         std::rethrow_exception(e);
@@ -266,14 +258,131 @@ void InternalDdManager<DdType::Sylvan>::execute(std::function<void()> const& f) 
 uint_fast64_t InternalDdManager<DdType::Sylvan>::getNumberOfDdVariables() const {
     return nextFreeVariableIndex;
 }
+#else
+InternalDdManager<DdType::Sylvan>::InternalDdManager(storm::SylvanDdManagerEnvironment const&) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
 
+InternalDdManager<DdType::Sylvan>::~InternalDdManager() {}
+
+InternalBdd<DdType::Sylvan> InternalDdManager<DdType::Sylvan>::getBddOne() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalDdManager<DdType::Sylvan>::getAddOne() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalDdManager<DdType::Sylvan>::getBddZero() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalDdManager<DdType::Sylvan>::getBddEncodingLessOrEqualThan(uint64_t bound, InternalBdd<DdType::Sylvan> const& cube,
+                                                                                             uint64_t numberOfDdVariables) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalDdManager<DdType::Sylvan>::getAddZero() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalDdManager<DdType::Sylvan>::getAddUndefined() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalDdManager<DdType::Sylvan>::getConstant(ValueType const& value) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<InternalBdd<DdType::Sylvan>> InternalDdManager<DdType::Sylvan>::createDdVariables(uint64_t numberOfLayers,
+                                                                                              boost::optional<uint_fast64_t> const& position) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+bool InternalDdManager<DdType::Sylvan>::supportsOrderedInsertion() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+void InternalDdManager<DdType::Sylvan>::allowDynamicReordering(bool) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+bool InternalDdManager<DdType::Sylvan>::isDynamicReorderingAllowed() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+void InternalDdManager<DdType::Sylvan>::triggerReordering() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+void InternalDdManager<DdType::Sylvan>::debugCheck() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+void InternalDdManager<DdType::Sylvan>::execute(std::function<void()> const& f) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+uint_fast64_t InternalDdManager<DdType::Sylvan>::getNumberOfDdVariables() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+#endif
+
+#ifndef STORM_HAVE_SYLVAN
+// There is already an explicit template instantiations if Sylvan is available
+template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+template InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+template InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const;
+template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;
+template InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalNumber const& value) const;
+template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const;
+#endif
 template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
 template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
-
 template InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
-
-#ifdef STORM_HAVE_CARL
 template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
-#endif
+
 }  // namespace dd
 }  // namespace storm

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "storm/logic/StateFormula.h"
 
 namespace storm {
@@ -14,7 +16,7 @@ class QuantileFormula : public StateFormula {
 
     virtual bool hasQuantitativeResult() const override;  // Result is numerical or a pareto curve
     virtual bool hasNumericalResult() const;              // Result is numerical
-    virtual bool hasParetoCurveResult() const;            // Result is a pareto curve
+    virtual bool hasMultiDimensionalResult() const;       // Result is a pareto curve
 
     Formula const& getSubformula() const;
     uint64_t getDimension() const;

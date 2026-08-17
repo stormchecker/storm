@@ -1,13 +1,14 @@
-#ifndef STORM_SETTINGS_MODULES_IOSETTINGS_H_
-#define STORM_SETTINGS_MODULES_IOSETTINGS_H_
+#pragma once
 
 #include <boost/optional.hpp>
 
 #include "storm-config.h"
 #include "storm/builder/ExplorationOrder.h"
+#include "storm/io/CompressionMode.h"
 #include "storm/io/ModelExportFormat.h"
 #include "storm/modelchecker/helper/infinitehorizon/SteadyStateDistributionAlgorithm.h"
 #include "storm/settings/modules/ModuleSettings.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 
 namespace storm {
 namespace settings {
@@ -57,7 +58,29 @@ class IOSettings : public ModuleSettings {
     /*!
      * Retrieves the specified export format for the exportbuild option
      */
-    storm::exporter::ModelExportFormat getExportBuildFormat() const;
+    storm::io::ModelExportFormat getExportBuildFormat() const;
+
+    /*!
+     * Retrieves whether a preferred compression mode has been set
+     * @note The export might not support compression
+     */
+    bool isCompressionSet() const;
+
+    /*!
+     * Retrieves the preferred compression mode
+     * @note The export might not support compression
+     */
+    storm::io::CompressionMode getCompressionMode() const;
+
+    /*!
+     * Retrieves whether the number of digits for exporting floating point numbers was set
+     */
+    bool isExportDigitsSet() const;
+
+    /*!
+     * Retrieves the number of digits for exporting floating point numbers
+     */
+    size_t getExportDigits() const;
 
     /*!
      * Retrieves whether the export-to-dot option for jani was set.
@@ -173,6 +196,20 @@ class IOSettings : public ModuleSettings {
      * @return
      */
     bool isExplicitExportPlaceholdersDisabled() const;
+
+    /*!
+     * Retrieves whether the explicit option with UMB was set.
+     *
+     * @return True if the explicit option with UMB was set.
+     */
+    bool isExplicitUmbSet() const;
+
+    /*!
+     * Retrieves the name of the file that contains the model in the UMB format.
+     *
+     * @return The name of the UMB file that contains the model.
+     */
+    std::string getExplicitUmbFilename() const;
 
     /*!
      * Retrieves whether the explicit option with IMCA was set.
@@ -374,6 +411,18 @@ class IOSettings : public ModuleSettings {
      */
     bool isPropertiesAsMultiSet() const;
 
+    /*!
+     * Retrieves the mode deciding how the uncertainty should be resolved.
+     *
+     * @return The nature resolution mode
+     */
+    UncertaintyResolutionModeSetting getUncertaintyResolutionMode() const;
+
+    /*!
+     * @return whether the mode for how the uncertainty should be resolved has been set.
+     */
+    bool isUncertaintyResolutionModeSet() const;
+
     bool check() const override;
     void finalize() override;
 
@@ -392,10 +441,14 @@ class IOSettings : public ModuleSettings {
     static const std::string exportCdfOptionShortName;
     static const std::string exportSchedulerOptionName;
     static const std::string exportCheckResultOptionName;
+    static const std::string exportCompressionOptionName;
+    static const std::string exportDigitsOptionName;
     static const std::string explicitOptionName;
     static const std::string explicitOptionShortName;
     static const std::string explicitDrnOptionName;
     static const std::string explicitDrnOptionShortName;
+    static const std::string explicitUmbOptionName;
+    static const std::string explicitUmbOptionShortName;
     static const std::string explicitImcaOptionName;
     static const std::string explicitImcaOptionShortName;
     static const std::string prismInputOptionName;
@@ -416,10 +469,9 @@ class IOSettings : public ModuleSettings {
     static const std::string qvbsInputOptionShortName;
     static const std::string qvbsRootOptionName;
     static const std::string propertiesAsMultiOptionName;
+    static const std::string uncertaintyResolutionModeName;
 };
 
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_IOSETTINGS_H_ */

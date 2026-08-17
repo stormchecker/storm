@@ -149,6 +149,19 @@ boost::any LiftableTransitionRewardsVisitor::visit(HOAPathFormula const& f, boos
     return true;
 }
 
+boost::any LiftableTransitionRewardsVisitor::visit(DiscountedCumulativeRewardFormula const& f, boost::any const&) const {
+    for (unsigned i = 0; i < f.getDimension(); ++i) {
+        if (f.getTimeBoundReference(i).isRewardBound() && rewardModelHasTransitionRewards(f.getTimeBoundReference(i).getRewardName())) {
+            return false;
+        }
+    }
+    return true;
+}
+
+boost::any LiftableTransitionRewardsVisitor::visit(DiscountedTotalRewardFormula const&, boost::any const&) const {
+    return true;
+}
+
 bool LiftableTransitionRewardsVisitor::rewardModelHasTransitionRewards(std::string const& rewardModelName) const {
     if (symbolicModelDescription.hasModel()) {
         if (symbolicModelDescription.isJaniModel()) {

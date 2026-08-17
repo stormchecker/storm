@@ -63,6 +63,11 @@ typename storm::storage::ParameterRegion<ValueType>::CoefficientType const& Regi
 }
 
 template<typename ValueType>
+typename storm::storage::ParameterRegion<ValueType>::CoefficientType const& RegionCheckResult<ValueType>::getIllDefinedFraction() const {
+    return illDefinedFraction;
+}
+
+template<typename ValueType>
 std::ostream& RegionCheckResult<ValueType>::writeToStream(std::ostream& out) const {
     writeCondensedToStream(out);
     out << "\nRegion results: \n";
@@ -76,11 +81,15 @@ template<typename ValueType>
 std::ostream& RegionCheckResult<ValueType>::writeCondensedToStream(std::ostream& out) const {
     double satPercent = storm::utility::convertNumber<double>(satFraction) * 100.0;
     double unsatPercent = storm::utility::convertNumber<double>(unsatFraction) * 100.0;
+    double illDefinedPercent = storm::utility::convertNumber<double>(illDefinedFraction) * 100.0;
     auto oneHundred = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(100.0);
     auto one = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(1.0);
     out << "  Fraction of satisfied area: " << satPercent << "%\n";
     out << "Fraction of unsatisfied area: " << unsatPercent << "%\n";
-    out << "            Unknown fraction: " << (100.0 - satPercent - unsatPercent) << "%\n";
+    if (illDefinedPercent > 0) {
+        out << "Fraction of ill-defined area: " << illDefinedPercent << "%\n";
+    }
+    out << "            Unknown fraction: " << (100.0 - satPercent - unsatPercent - illDefinedPercent) << "%\n";
     out << "     Total number of regions: " << regionResults.size() << '\n';
     std::map<storm::modelchecker::RegionResult, uint_fast64_t> counters;
     for (auto const& res : this->regionResults) {
@@ -102,15 +111,19 @@ template<typename ValueType>
 void RegionCheckResult<ValueType>::initFractions(typename storm::storage::ParameterRegion<ValueType>::CoefficientType const& overallArea) {
     auto satArea = storm::utility::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
     auto unsatArea = storm::utility::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
+    auto illDefinedArea = storm::utility::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
     for (auto const& res : this->regionResults) {
         if (res.second == storm::modelchecker::RegionResult::AllSat) {
             satArea += res.first.area();
         } else if (res.second == storm::modelchecker::RegionResult::AllViolated) {
             unsatArea += res.first.area();
+        } else if (res.second == storm::modelchecker::RegionResult::AllIllDefined) {
+            illDefinedArea += res.first.area();
         }
     }
     satFraction = satArea / overallArea;
     unsatFraction = unsatArea / overallArea;
+    illDefinedFraction = illDefinedArea / overallArea;
 }
 
 template<typename ValueType>
@@ -119,8 +132,6 @@ void RegionCheckResult<ValueType>::filter(QualitativeCheckResult const& filter) 
     // Hence, this is intentionally left empty.
 }
 
-#ifdef STORM_HAVE_CARL
 template class RegionCheckResult<storm::RationalFunction>;
-#endif
 }  // namespace modelchecker
 }  // namespace storm

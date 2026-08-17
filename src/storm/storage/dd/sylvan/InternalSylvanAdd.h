@@ -1,20 +1,16 @@
-#ifndef STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANADD_H_
-#define STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANADD_H_
+#pragma once
 
 #include <set>
 #include <unordered_map>
 
+#include "storm-config.h"
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalAdd.h"
 #include "storm/storage/dd/Odd.h"
-
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/storage/dd/sylvan/SylvanAddIterator.h"
-
 #include "storm/storage/expressions/Variable.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionForward.h"
 
 namespace storm {
 namespace storage {
@@ -46,6 +42,7 @@ class InternalAdd<DdType::Sylvan, ValueType> {
     friend class AddIterator<DdType::Sylvan, ValueType>;
     friend class InternalBdd<DdType::Sylvan>;
 
+#ifdef STORM_HAVE_SYLVAN
     /*!
      * Creates an ADD that encapsulates the given Sylvan MTBDD.
      *
@@ -53,6 +50,7 @@ class InternalAdd<DdType::Sylvan, ValueType> {
      * @param sylvanMtbdd The sylvan MTBDD to store.
      */
     InternalAdd(InternalDdManager<DdType::Sylvan> const* ddManager, sylvan::Mtbdd const& sylvanMtbdd);
+#endif
 
     // Instantiate all copy/move constructors/assignments with the default implementation.
     InternalAdd();
@@ -662,6 +660,7 @@ class InternalAdd<DdType::Sylvan, ValueType> {
 
     InternalDdManager<DdType::Sylvan> const& getInternalDdManager() const;
 
+#ifdef STORM_HAVE_SYLVAN
     /*!
      * Retrieves the underlying sylvan MTBDD.
      *
@@ -675,10 +674,12 @@ class InternalAdd<DdType::Sylvan, ValueType> {
      * @return The value of the leaf.
      */
     static ValueType getValue(MTBDD const& node);
+#endif
 
     std::string getStringId() const;
 
    private:
+#ifdef STORM_HAVE_SYLVAN
     /*!
      * Recursively builds the ODD from an ADD.
      *
@@ -834,22 +835,19 @@ class InternalAdd<DdType::Sylvan, ValueType> {
      */
     static MTBDD getLeaf(storm::RationalNumber const& value);
 
-#ifdef STORM_HAVE_CARL
     /*!
      * Retrieves the sylvan representation of the given storm::Rat�onalFunction.
      *
      * @return The sylvan node for the given value.
      */
     static MTBDD getLeaf(storm::RationalFunction const& value);
-#endif
 
     // The manager responsible for this MTBDD.
     InternalDdManager<DdType::Sylvan> const* ddManager;
 
     // The underlying sylvan MTBDD.
     sylvan::Mtbdd sylvanMtbdd;
+#endif
 };
 }  // namespace dd
 }  // namespace storm
-
-#endif /* STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANADD_H_ */

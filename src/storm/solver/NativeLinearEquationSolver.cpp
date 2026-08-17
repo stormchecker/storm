@@ -4,16 +4,15 @@
 
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/OviSolverEnvironment.h"
-
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/solver/helper/GuessingValueIterationHelper.h"
 #include "storm/solver/helper/IntervalterationHelper.h"
 #include "storm/solver/helper/OptimisticValueIterationHelper.h"
 #include "storm/solver/helper/RationalSearchHelper.h"
 #include "storm/solver/helper/SoundValueIterationHelper.h"
 #include "storm/solver/helper/ValueIterationHelper.h"
 #include "storm/solver/multiplier/Multiplier.h"
-#include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
@@ -457,7 +456,7 @@ template<typename ValueType>
 bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(Environment const& env, std::vector<ValueType>& x,
                                                                               std::vector<ValueType> const& b) const {
     // Prepare the solution vectors and the helper.
-    assert(x.size() == this->A->getRowGroupCount());
+    STORM_LOG_ASSERT(x.size() == this->A->getRowGroupCount(), "Solution vector size mismatch.");
 
     std::optional<ValueType> lowerBound, upperBound;
     if (this->hasLowerBound()) {
@@ -533,6 +532,44 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIterati
         clearCache();
     }
 
+    return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
+}
+
+template<typename ValueType>
+bool NativeLinearEquationSolver<ValueType>::solveEquationsGuessingValueIteration(const Environment& env, std::vector<ValueType>& x,
+                                                                                 const std::vector<ValueType>& b) const {
+    if (!this->cachedRowVector) {
+        this->cachedRowVector = std::make_unique<std::vector<ValueType>>(this->A->getRowCount());
+    }
+    setUpViOperator();
+
+    std::vector<ValueType>* lowerX = &x;
+    this->createLowerBoundsVector(*lowerX);
+    this->createUpperBoundsVector(this->cachedRowVector, this->getMatrixRowCount());
+    std::vector<ValueType>* upperX = this->cachedRowVector.get();
+
+    storm::solver::helper::GuessingValueIterationHelper<ValueType, true> helper(viOperator, *this->A);
+
+    uint64_t numIterations{0};
+    auto gviCallback = [&](helper::GVIData<ValueType> const& data) {
+        this->showProgressIterative(numIterations);
+        bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
+                              this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+        return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().native().getMaximalNumberOfIterations());
+    };
+
+    this->startMeasureProgress();
+    auto status = helper.solveEquations(*lowerX, *upperX, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
+                                        {},  // No optimization dir
+                                        gviCallback);
+    auto two = storm::utility::convertNumber<ValueType>(2.0);
+    storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
+        *lowerX, *upperX, x, [&two](ValueType const& first, ValueType const& second) -> ValueType { return (first + second) / two; });
+    this->reportStatus(status, numIterations);
+
+    if (!this->isCachingEnabled()) {
+        clearCache();
+    }
     return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
 }
 
@@ -618,6 +655,8 @@ bool NativeLinearEquationSolver<ValueType>::internalSolveEquations(Environment c
             return this->solveEquationsSoundValueIteration(env, x, b);
         case NativeLinearEquationSolverMethod::OptimisticValueIteration:
             return this->solveEquationsOptimisticValueIteration(env, x, b);
+        case NativeLinearEquationSolverMethod::GuessingValueIteration:
+            return this->solveEquationsGuessingValueIteration(env, x, b);
         case NativeLinearEquationSolverMethod::IntervalIteration:
             return this->solveEquationsIntervalIteration(env, x, b);
         case NativeLinearEquationSolverMethod::RationalSearch:
@@ -632,7 +671,7 @@ LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEqua
     auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
     if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::SoundValueIteration ||
         method == NativeLinearEquationSolverMethod::OptimisticValueIteration || method == NativeLinearEquationSolverMethod::RationalSearch ||
-        method == NativeLinearEquationSolverMethod::IntervalIteration) {
+        method == NativeLinearEquationSolverMethod::IntervalIteration || method == NativeLinearEquationSolverMethod::GuessingValueIteration) {
         return LinearEquationSolverProblemFormat::FixedPointSystem;
     } else {
         return LinearEquationSolverProblemFormat::EquationSystem;
@@ -643,7 +682,7 @@ template<typename ValueType>
 LinearEquationSolverRequirements NativeLinearEquationSolver<ValueType>::getRequirements(Environment const& env) const {
     LinearEquationSolverRequirements requirements;
     auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
-    if (method == NativeLinearEquationSolverMethod::IntervalIteration) {
+    if (method == NativeLinearEquationSolverMethod::IntervalIteration || method == NativeLinearEquationSolverMethod::GuessingValueIteration) {
         requirements.requireBounds();
     } else if (method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::OptimisticValueIteration) {
         requirements.requireLowerBounds();
@@ -686,10 +725,8 @@ std::unique_ptr<LinearEquationSolverFactory<ValueType>> NativeLinearEquationSolv
 template class NativeLinearEquationSolver<double>;
 template class NativeLinearEquationSolverFactory<double>;
 
-#ifdef STORM_HAVE_CARL
 template class NativeLinearEquationSolver<storm::RationalNumber>;
 template class NativeLinearEquationSolverFactory<storm::RationalNumber>;
 
-#endif
 }  // namespace solver
 }  // namespace storm

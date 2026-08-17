@@ -1,10 +1,9 @@
 #include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
 namespace solver {
@@ -18,7 +17,7 @@ NondeterministicModelStateEliminator<ValueType>::NondeterministicModelStateElimi
     STORM_LOG_THROW(
         transitionMatrix.getRowCount() == backwardTransitions.getColumnCount() && transitionMatrix.getColumnCount() == backwardTransitions.getRowCount(),
         storm::exceptions::InvalidArgumentException, "Invalid matrix dimensions of forward/backwards transition matrices.");
-    STORM_LOG_THROW(rowValues.size() == transitionMatrix.getRowCount(), storm::exceptions::InvalidArgumentException, "Invalid size of row value vector");
+    STORM_LOG_THROW(rowValues.size() == transitionMatrix.getRowCount(), storm::exceptions::InvalidArgumentException, "Invalid size of row value vector.");
     // Intentionally left empty
 }
 
@@ -36,10 +35,8 @@ void NondeterministicModelStateEliminator<ValueType>::updatePredecessor(storm::s
 
 template class NondeterministicModelStateEliminator<double>;
 
-#ifdef STORM_HAVE_CARL
 template class NondeterministicModelStateEliminator<storm::RationalNumber>;
 template class NondeterministicModelStateEliminator<storm::RationalFunction>;
-#endif
 }  // namespace stateelimination
 }  // namespace solver
 }  // namespace storm

@@ -1,14 +1,12 @@
 #include "storm/transformer/StatePermuter.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Ctmc.h"
-#include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Pomdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/utility/OptionalRef.h"
@@ -77,4 +75,8 @@ template std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> pe
     storm::models::sparse::Model<storm::RationalNumber> const& originalModel, std::vector<uint64_t> const& permutation);
 template std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> permuteStates(
     storm::models::sparse::Model<storm::RationalFunction> const& originalModel, std::vector<uint64_t> const& permutation);
+template std::shared_ptr<storm::models::sparse::Model<storm::Interval>> permuteStates(storm::models::sparse::Model<storm::Interval> const& originalModel,
+                                                                                      std::vector<uint64_t> const& permutation);
+template std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> permuteStates(
+    storm::models::sparse::Model<storm::RationalInterval> const& originalModel, std::vector<uint64_t> const& permutation);
 }  // namespace storm::transformer

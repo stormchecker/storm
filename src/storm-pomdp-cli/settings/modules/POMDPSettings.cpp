@@ -3,7 +3,6 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -16,13 +15,13 @@ const std::string POMDPSettings::moduleName = "pomdp";
 const std::string noCanonicOption = "nocanonic";
 const std::string exportAsParametricModelOption = "parametric-drn";
 const std::string beliefExplorationOption = "belief-exploration";
-std::vector<std::string> beliefExplorationModes = {"both", "discretize", "unfold"};
+const std::vector<std::string> beliefExplorationModes = {"both", "discretize", "unfold"};
 const std::string qualitativeReductionOption = "qualitativereduction";
 const std::string analyzeUniqueObservationsOption = "uniqueobservations";
 const std::string selfloopReductionOption = "selfloopreduction";
 const std::string memoryBoundOption = "memorybound";
 const std::string memoryPatternOption = "memorypattern";
-std::vector<std::string> memoryPatterns = {"trivial", "fixedcounter", "selectivecounter", "ring", "fixedring", "settablebits", "full"};
+const std::vector<std::string> memoryPatterns = {"trivial", "fixedcounter", "selectivecounter", "ring", "fixedring", "settablebits", "full"};
 const std::string checkFullyObservableOption = "check-fully-observable";
 const std::string isQualitativeOption = "qualitative-analysis";
 

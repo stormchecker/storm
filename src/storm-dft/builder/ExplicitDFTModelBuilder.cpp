@@ -1,10 +1,11 @@
-#include "ExplicitDFTModelBuilder.h"
+#include "storm-dft/builder/ExplicitDFTModelBuilder.h"
 
 #include <map>
 
-#include <storm/exceptions/IllegalArgumentException.h>
+#include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/settings/SettingsManager.h"
@@ -14,8 +15,6 @@
 #include "storm/utility/bitoperations.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-
-#include "storm-dft/settings/modules/FaultTreeSettings.h"
 
 namespace storm::dft {
 namespace builder {
@@ -45,7 +44,7 @@ ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::df
     // Set relevant events
     STORM_LOG_DEBUG("Relevant events: " << this->dft.getRelevantEventsString());
     if (dft.getRelevantEvents().size() <= 1) {
-        STORM_LOG_ASSERT(dft.getRelevantEvents()[0] == dft.getTopLevelIndex(), "TLE is not relevant");
+        STORM_LOG_ASSERT(dft.getRelevantEvents()[0] == dft.getTopLevelIndex(), "TLE is not relevant.");
         // Only interested in top level event -> introduce unique failed state
         this->uniqueFailedState = true;
         STORM_LOG_DEBUG("Using unique failed state with id 0.");
@@ -188,7 +187,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(size_t iteration,
         }
 
         // Initialize heuristic values for inital state
-        STORM_LOG_ASSERT(!statesNotExplored.at(initialStateIndex).second, "Heuristic for initial state is already initialized");
+        STORM_LOG_ASSERT(!statesNotExplored.at(initialStateIndex).second, "Heuristic for initial state is already initialized.");
         ExplorationHeuristicPointer heuristic;
         switch (usedHeuristic) {
             case storm::dft::builder::ApproximationHeuristic::DEPTH:
@@ -377,8 +376,8 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double app
         auto itFind = statesNotExplored.find(currentId);
         STORM_LOG_ASSERT(itFind != statesNotExplored.end(), "Id " << currentId << " not found");
         DFTStatePointer currentState = itFind->second.first;
-        STORM_LOG_ASSERT(currentExplorationHeuristic == itFind->second.second, "Exploration heuristics do not match");
-        STORM_LOG_ASSERT(currentState->getId() == currentId, "Ids do not match");
+        STORM_LOG_ASSERT(currentExplorationHeuristic == itFind->second.second, "Exploration heuristics do not match.");
+        STORM_LOG_ASSERT(currentState->getId() == currentId, "Ids do not match.");
         // Remove it from the list of not explored states
         statesNotExplored.erase(itFind);
         STORM_LOG_ASSERT(stateStorage.stateToId.contains(currentState->status()), "State is not contained in state storage.");
@@ -407,7 +406,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double app
             setMarkovian(true);
             // Add transition to target state with temporary value 0
             // TODO: what to do when there is no unique target state?
-            // STORM_LOG_ASSERT(this->uniqueFailedState, "Approximation only works with unique failed state");
+            // STORM_LOG_ASSERT(this->uniqueFailedState, "Approximation only works with unique failed state.");
             matrixBuilder.addTransition(0, storm::utility::zero<ValueType>());
             // Remember skipped state
             skippedStates[matrixBuilder.getCurrentRowGroup() - 1] = std::make_pair(currentState, currentExplorationHeuristic);
@@ -518,7 +517,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double app
 
     STORM_LOG_INFO("Expanded " << nrExpandedStates << " states");
     STORM_LOG_INFO("Skipped " << nrSkippedStates << " states");
-    STORM_LOG_ASSERT(nrSkippedStates == skippedStates.size(), "Nr skipped states is wrong");
+    STORM_LOG_ASSERT(nrSkippedStates == skippedStates.size(), "Nr skipped states is wrong.");
 }
 
 template<typename ValueType, typename StateType>
@@ -613,7 +612,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder
             modelComponents.stateLabeling.addLabelToState("skipped", it->first);
         }
     } else {
-        STORM_LOG_ASSERT(skippedStates.size() == 0, "Concrete model has skipped states");
+        STORM_LOG_ASSERT(skippedStates.size() == 0, "Concrete model has skipped states.");
     }
 
     return createModel(false);
@@ -825,7 +824,7 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getUpperBound(DFTStateP
                 }
             }
         }
-        STORM_LOG_ASSERT(rates.size() > 0, "No rates failable");
+        STORM_LOG_ASSERT(rates.size() > 0, "No rates failable.");
 
         // Sort rates
         std::sort(rates.begin(), rates.end());
@@ -852,8 +851,8 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getUpperBound(DFTStateP
     }
 
     STORM_LOG_TRACE("Upper bound is " << (rateSum / upperBound) << " for state " << state->getId());
-    STORM_LOG_ASSERT(!storm::utility::isZero(upperBound), "Upper bound is 0");
-    STORM_LOG_ASSERT(!storm::utility::isZero(rateSum), "State is absorbing");
+    STORM_LOG_ASSERT(!storm::utility::isZero(upperBound), "Upper bound is 0.");
+    STORM_LOG_ASSERT(!storm::utility::isZero(rateSum), "State is absorbing.");
     return rateSum / upperBound;
 }
 
@@ -879,7 +878,7 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::computeMTTFAnd(std::vec
                 }
             }
             permutation = nextBitPermutation(permutation);
-            STORM_LOG_ASSERT(!storm::utility::isZero(permResult), "PermResult is 0");
+            STORM_LOG_ASSERT(!storm::utility::isZero(permResult), "PermResult is 0.");
             sum += storm::utility::one<ValueType>() / permResult;
         } while(permutation < (static_cast<size_t>(1) << rates.size()) && permutation != 0);
         if (i % 2 == 0) {
@@ -906,7 +905,7 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::computeMTTFAnd(std::vec
         }
     }
 
-    STORM_LOG_ASSERT(!storm::utility::isZero(result), "UpperBound is 0");
+    STORM_LOG_ASSERT(!storm::utility::isZero(result), "UpperBound is 0.");
     return result;
 }
 

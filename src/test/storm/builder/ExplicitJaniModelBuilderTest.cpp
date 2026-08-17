@@ -1,4 +1,6 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/storm.h"
@@ -7,10 +9,8 @@
 #include "storm/generator/JaniNextStateGenerator.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingMemento.h"
+#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Model.h"
-#include "storm/utility/cli.h"
-#include "test/storm_gtest.h"
 
 namespace {
 
@@ -70,7 +70,7 @@ TEST_F(ExplicitJaniModelBuilderTest, Dtmc) {
     EXPECT_EQ(2505ul, model->getNumberOfTransitions());
 
     janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/test_trigonometry.jani").first;
-    auto constants = storm::utility::cli::parseConstantDefinitionString(janiModel.getManager(), "step_size_rad=0.523599");  // step_size = 30 deg
+    auto constants = storm::storage::parseConstantDefinitionString(janiModel.getManager(), "step_size_rad=0.523599");  // step_size = 30 deg
     janiModel = janiModel.defineUndefinedConstants(constants);
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(5ul, model->getNumberOfStates());
@@ -161,6 +161,17 @@ TEST_F(ExplicitJaniModelBuilderTest, Mdp) {
     EXPECT_EQ(5ul, model->getNumberOfStates());
     EXPECT_EQ(24ul, model->getNumberOfTransitions());
     EXPECT_EQ(12ul, model->getNumberOfChoices());
+
+    janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards.jani").first;
+    storm::generator::NextStateGeneratorOptions options;
+    options.setBuildChoiceLabels();
+    model = storm::builder::ExplicitModelBuilder<double>(janiModel, options).build();
+    EXPECT_EQ(2ul, model->getChoiceLabeling().getNumberOfLabels());
+
+    janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards4.jani").first;
+    options.setBuildChoiceLabels();
+    model = storm::builder::ExplicitModelBuilder<double>(janiModel, options).build();
+    EXPECT_EQ(2ul, model->getChoiceLabeling().getNumberOfLabels());
 }
 
 TEST_F(ExplicitJaniModelBuilderTest, Ma) {
@@ -187,7 +198,7 @@ TEST_F(ExplicitJaniModelBuilderTest, Ma) {
     EXPECT_EQ(7ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
 
     janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/ma/ftwc.jani").first;
-    auto constants = storm::utility::cli::parseConstantDefinitionString(janiModel.getManager(), "N=2,TIME_BOUND=1");
+    auto constants = storm::storage::parseConstantDefinitionString(janiModel.getManager(), "N=2,TIME_BOUND=1");
     janiModel = janiModel.defineUndefinedConstants(constants);
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(1536ul, model->getNumberOfStates());
@@ -215,5 +226,34 @@ TEST_F(ExplicitJaniModelBuilderTest, enumerateInitial) {
     EXPECT_EQ(94ul, model->getNumberOfStates());
     EXPECT_EQ(145ul, model->getNumberOfTransitions());
     EXPECT_EQ(72ul, model->getInitialStates().getNumberOfSetBits());
+}
+
+TEST_F(ExplicitJaniModelBuilderTest, SynchronizationVectorOutputActionIndex) {
+    auto janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/synchronization_vector_output_action_index.jani").first;
+
+    storm::generator::JaniNextStateGenerator<double> generator(janiModel);
+    std::deque<storm::generator::CompressedState> states;
+    auto stateToIdCallback = [&states](storm::generator::CompressedState const& state) {
+        for (uint32_t index = 0; index < states.size(); ++index) {
+            if (states[index] == state) {
+                return index;
+            }
+        }
+        states.push_back(state);
+        return static_cast<uint32_t>(states.size() - 1);
+    };
+
+    auto initialStates = generator.getInitialStates(stateToIdCallback);
+    ASSERT_EQ(1ul, initialStates.size());
+    generator.load(states[initialStates.front()]);
+
+    auto behavior = generator.expand(stateToIdCallback);
+    ASSERT_EQ(3ul, behavior.getNumberOfChoices());
+
+    std::set<std::string> actionNames;
+    for (auto const& choice : behavior.getChoices()) {
+        actionNames.insert(janiModel.getAction(choice.getActionIndex()).getName());
+    }
+    EXPECT_EQ(std::set<std::string>({"d", "e", "f"}), actionNames);
 }
 }  // namespace

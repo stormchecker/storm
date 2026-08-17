@@ -27,6 +27,17 @@ struct Objective {
     // Can be used to guide the underlying solver
     boost::optional<ValueType> lowerResultBound, upperResultBound;
 
+    ValueType clipResult(ValueType const& value) const {
+        STORM_LOG_ASSERT(!lowerResultBound || !upperResultBound || *lowerResultBound <= *upperResultBound, "Invalid result bounds.");
+        if (lowerResultBound && value < *lowerResultBound) {
+            return *lowerResultBound;
+        } else if (upperResultBound && value > *upperResultBound) {
+            return *upperResultBound;
+        } else {
+            return value;
+        }
+    }
+
     void printToStream(std::ostream& out) const {
         out << "Original: " << *originalFormula;
         out << " \t";

@@ -4,7 +4,6 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/eigen.h"
-
 #include "storm/storage/SparseMatrix.h"
 
 namespace storm {

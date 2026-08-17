@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_FORMULASFORWARDDECLARATIONS_H_
-#define STORM_LOGIC_FORMULASFORWARDDECLARATIONS_H_
+#pragma once
 
 namespace storm {
 namespace logic {
@@ -38,7 +37,7 @@ class UnaryPathFormula;
 class UnaryStateFormula;
 class UntilFormula;
 class HOAPathFormula;
+class DiscountedCumulativeRewardFormula;
+class DiscountedTotalRewardFormula;
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_FORMULASFORWARDDECLARATIONS_H_ */

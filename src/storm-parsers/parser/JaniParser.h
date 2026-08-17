@@ -54,7 +54,7 @@ class JaniParser {
               globalVars(globalVars),
               globalFunctions(globalFunctions),
               localVars(localVars),
-              localFunctions(localFunctions) {};
+              localFunctions(localFunctions) {}
 
         Scope(Scope const& other) = default;
         std::string description;

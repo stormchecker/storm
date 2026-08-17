@@ -3,10 +3,9 @@
 #include <limits>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/utility/graph.h"
-
-#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
 namespace transformer {
@@ -21,7 +20,7 @@ PomdpMemoryUnfolder<ValueType>::PomdpMemoryUnfolder(storm::models::sparse::Pomdp
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> PomdpMemoryUnfolder<ValueType>::transform(bool dropUnreachableStates) const {
     // For simplicity we first build the 'full' product of pomdp and memory (with pomdp.numStates * memory.numStates states).
-    STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::InvalidArgumentException, "POMDP must be canonical to unfold memory into it");
+    STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::InvalidArgumentException, "POMDP must be canonical to unfold memory into it.");
     storm::storage::sparse::ModelComponents<ValueType> components;
     components.transitionMatrix = transformTransitions();
     components.stateLabeling = transformStateLabeling();
@@ -40,7 +39,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> PomdpMemoryUnfolder<Val
             for (uint64_t newState = 0; newState < newToOldStates.size(); newState++) {
                 newToOldStates[newState] = getModelState(newState);
             }
-            components.stateValuations = pomdp.getStateValuations().blowup(newToOldStates).selectStates(reachableStates);
+            components.stateValuations = pomdp.getStateValuations().selectEntities(newToOldStates).selectEntities(reachableStates);
         }
     }
 
@@ -73,7 +72,7 @@ storm::storage::SparseMatrix<ValueType> PomdpMemoryUnfolder<ValueType>::transfor
             builder.newRowGroup(row);
             for (uint64_t origRow = origTransitions.getRowGroupIndices()[modelState]; origRow < origTransitions.getRowGroupIndices()[modelState + 1];
                  ++origRow) {
-                for (auto const& memStatePrime : memory.getTransitions(memState)) {
+                for (auto memStatePrime : memory.getTransitions(memState)) {
                     for (auto const& entry : origTransitions.getRow(origRow)) {
                         builder.addNextValue(row, getUnfoldingState(entry.getColumn(), memStatePrime), entry.getValue());
                     }
@@ -208,9 +207,8 @@ uint64_t PomdpMemoryUnfolder<ValueType>::getMemoryStateFromObservation(uint32_t 
     return unfoldingObservation % memory.getNumberOfStates();
 }
 
+template class PomdpMemoryUnfolder<double>;
 template class PomdpMemoryUnfolder<storm::RationalNumber>;
 template class PomdpMemoryUnfolder<storm::RationalFunction>;
-
-template class PomdpMemoryUnfolder<double>;
 }  // namespace transformer
 }  // namespace storm

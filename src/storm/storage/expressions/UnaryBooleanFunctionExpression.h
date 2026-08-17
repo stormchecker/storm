@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_UNARYBOOLEANFUNCTIONEXPRESSION_H_
-#define STORM_STORAGE_EXPRESSIONS_UNARYBOOLEANFUNCTIONEXPRESSION_H_
+#pragma once
 
 #include "storm/storage/expressions/UnaryExpression.h"
 #include "storm/utility/OsDetection.h"
@@ -55,5 +54,3 @@ class UnaryBooleanFunctionExpression : public UnaryExpression {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_UNARYBOOLEANFUNCTIONEXPRESSION_H_ */

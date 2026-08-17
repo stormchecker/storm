@@ -1,6 +1,5 @@
-#include "storm/exceptions/InvalidEnvironmentException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/UnexpectedException.h"
+#pragma once
+
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/constants.h"

@@ -2,22 +2,19 @@
 
 #include <boost/functional/hash.hpp>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/PairHash.h"
 #include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 #include "storm/storage/dd/sylvan/SylvanAddIterator.h"
-
-#include "storm/storage/BitVector.h"
-#include "storm/storage/PairHash.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace dd {
+
+#ifdef STORM_HAVE_SYLVAN
 InternalBdd<DdType::Sylvan>::InternalBdd() : ddManager(nullptr), sylvanBdd() {
     // Intentionally left empty.
 }
@@ -77,7 +74,10 @@ BDD InternalBdd<DdType::Sylvan>::fromVectorRec(uint_fast64_t& currentOffset, uin
         BDD currentVar = sylvan_ithvar(static_cast<BDDVAR>(ddVariableIndices[currentLevel]));
         bdd_refs_push(currentVar);
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
         BDD result = sylvan_ite(currentVar, thenSuccessor, elseSuccessor);
+#pragma clang diagnostic pop
 
         // Dispose of the intermediate results.
         bdd_refs_pop(3);
@@ -279,15 +279,11 @@ InternalAdd<DdType::Sylvan, ValueType> InternalBdd<DdType::Sylvan>::toAdd() cons
         return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toDoubleMtbdd());
     } else if (std::is_same<ValueType, uint_fast64_t>::value) {
         return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toInt64Mtbdd());
-    }
-#ifdef STORM_HAVE_CARL
-    else if (std::is_same<ValueType, storm::RationalNumber>::value) {
+    } else if (std::is_same<ValueType, storm::RationalNumber>::value) {
         return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toStormRationalNumberMtbdd());
     } else if (std::is_same<ValueType, storm::RationalFunction>::value) {
         return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toStormRationalFunctionMtbdd());
-    }
-#endif
-    else {
+    } else {
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal ADD type.");
     }
 }
@@ -620,6 +616,275 @@ storm::expressions::Variable InternalBdd<DdType::Sylvan>::toExpressionRec(
     // Return the variable for this node.
     return newNodeVariable;
 }
+#else
+InternalBdd<DdType::Sylvan>::InternalBdd() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::fromVector(InternalDdManager<DdType::Sylvan> const* ddManager, Odd const& odd,
+                                                                    std::vector<uint_fast64_t> const& sortedDdVariableIndices,
+                                                                    std::function<bool(uint64_t)> const& filter) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+bool InternalBdd<DdType::Sylvan>::operator==(InternalBdd<DdType::Sylvan> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+bool InternalBdd<DdType::Sylvan>::operator!=(InternalBdd<DdType::Sylvan> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::relationalProduct(InternalBdd<DdType::Sylvan> const& relation,
+                                                                           std::vector<InternalBdd<DdType::Sylvan>> const&,
+                                                                           std::vector<InternalBdd<DdType::Sylvan>> const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::inverseRelationalProduct(InternalBdd<DdType::Sylvan> const& relation,
+                                                                                  std::vector<InternalBdd<DdType::Sylvan>> const&,
+                                                                                  std::vector<InternalBdd<DdType::Sylvan>> const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::inverseRelationalProductWithExtendedRelation(
+    InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& rowVariables,
+    std::vector<InternalBdd<DdType::Sylvan>> const& columnVariables) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::ite(InternalBdd<DdType::Sylvan> const& thenDd, InternalBdd<DdType::Sylvan> const& elseDd) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalBdd<DdType::Sylvan>::ite(InternalAdd<DdType::Sylvan, ValueType> const& thenAdd,
+                                                                        InternalAdd<DdType::Sylvan, ValueType> const& elseAdd) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::operator||(InternalBdd<DdType::Sylvan> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan>& InternalBdd<DdType::Sylvan>::operator|=(InternalBdd<DdType::Sylvan> const& other) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::operator&&(InternalBdd<DdType::Sylvan> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan>& InternalBdd<DdType::Sylvan>::operator&=(InternalBdd<DdType::Sylvan> const& other) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::iff(InternalBdd<DdType::Sylvan> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::exclusiveOr(InternalBdd<DdType::Sylvan> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::implies(InternalBdd<DdType::Sylvan> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::operator!() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan>& InternalBdd<DdType::Sylvan>::complement() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::existsAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::existsAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::universalAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::andExists(InternalBdd<DdType::Sylvan> const& other, InternalBdd<DdType::Sylvan> const& cube) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::constrain(InternalBdd<DdType::Sylvan> const& constraint) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::restrict(InternalBdd<DdType::Sylvan> const& constraint) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::swapVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from,
+                                                                       std::vector<InternalBdd<DdType::Sylvan>> const& to) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::getSupport() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+uint_fast64_t InternalBdd<DdType::Sylvan>::getNonZeroCount(uint_fast64_t numberOfDdVariables) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+uint_fast64_t InternalBdd<DdType::Sylvan>::getLeafCount() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+uint_fast64_t InternalBdd<DdType::Sylvan>::getNodeCount() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+bool InternalBdd<DdType::Sylvan>::isOne() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+bool InternalBdd<DdType::Sylvan>::isZero() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+uint_fast64_t InternalBdd<DdType::Sylvan>::getIndex() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+uint_fast64_t InternalBdd<DdType::Sylvan>::getLevel() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+void InternalBdd<DdType::Sylvan>::exportToDot(std::string const& filename, std::vector<std::string> const&, bool) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+void InternalBdd<DdType::Sylvan>::exportToText(std::string const& filename) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalBdd<DdType::Sylvan>::toAdd() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+storm::storage::BitVector InternalBdd<DdType::Sylvan>::toVector(storm::dd::Odd const& rowOdd, std::vector<uint_fast64_t> const& ddVariableIndices) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+Odd InternalBdd<DdType::Sylvan>::createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+void InternalBdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices,
+                                                       std::vector<ValueType> const& sourceValues, std::vector<ValueType>& targetValues) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+void InternalBdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices,
+                                                       storm::storage::BitVector const& sourceValues, storm::storage::BitVector& targetValues) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<InternalBdd<DdType::Sylvan>> InternalBdd<DdType::Sylvan>::splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>>
+InternalBdd<DdType::Sylvan>::toExpression(storm::expressions::ExpressionManager& manager) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+#endif
 
 template InternalAdd<DdType::Sylvan, double> InternalBdd<DdType::Sylvan>::toAdd() const;
 template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalBdd<DdType::Sylvan>::toAdd() const;

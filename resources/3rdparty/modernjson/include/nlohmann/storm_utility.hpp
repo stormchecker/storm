@@ -107,6 +107,11 @@ constexpr ToType convert(FromType const& v)
     {
         return static_cast<ToType>(v);
     }
+	else if constexpr (std::is_same_v<ToType, int>)
+	{
+		// Conversion to int is e.g. necessary for scoped enums with default underlying type (enum class Name {...};)
+		return static_cast<int>(::storm::utility::convertNumber<int64_t>(v));
+	}
     else
     {
         return ::storm::utility::convertNumber<ToType>(v);

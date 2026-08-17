@@ -1,9 +1,8 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATOR_H_
-#define STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATOR_H_
+#pragma once
 
 #include <unordered_map>
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExprtkExpressionEvaluator.h"
 #include "storm/storage/expressions/ToRationalFunctionVisitor.h"
@@ -35,7 +34,6 @@ class ExpressionEvaluatorWithVariableToExpressionMap : public ExprtkExpressionEv
     std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> variableToExpressionMap;
 };
 
-#ifdef STORM_HAVE_CARL
 template<>
 class ExpressionEvaluator<RationalNumber> : public ExprtkExpressionEvaluatorBase<RationalNumber> {
    public:
@@ -75,8 +73,5 @@ class ExpressionEvaluator<RationalFunction> : public ExprtkExpressionEvaluatorBa
     // A visitor that can be used to translate expressions to rational functions.
     mutable ToRationalFunctionVisitor<RationalFunction> rationalFunctionVisitor;
 };
-#endif
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATOR_H_ */

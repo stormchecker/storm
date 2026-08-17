@@ -1,9 +1,9 @@
-#include "DftTransformer.h"
-
-#include "storm/exceptions/UnexpectedException.h"
-#include "storm/utility/macros.h"
+#include "storm-dft/transformations/DftTransformer.h"
 
 #include "storm-dft/builder/DFTBuilder.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/utility/macros.h"
 
 namespace storm::dft {
 namespace transformations {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 
 namespace storm {
@@ -14,7 +15,8 @@ class ImcaMarkovAutomatonParser {
      * @param filename The name of the file to parse.
      * @return The obtained Markov automaton
      */
-    static std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> parseImcaFile(std::string const& filename);
+    static std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> parseImcaFile(
+        std::string const& filename, ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 };
 
 }  // namespace parser

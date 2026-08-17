@@ -1,12 +1,10 @@
 #include "storm/models/symbolic/MarkovAutomaton.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace models {
@@ -136,8 +134,8 @@ std::shared_ptr<MarkovAutomaton<Type, NewValueType>> MarkovAutomaton<Type, Value
 
 // Explicitly instantiate the template class.
 template class MarkovAutomaton<storm::dd::DdType::CUDD, double>;
-template class MarkovAutomaton<storm::dd::DdType::Sylvan, double>;
 
+template class MarkovAutomaton<storm::dd::DdType::Sylvan, double>;
 template class MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template std::shared_ptr<MarkovAutomaton<storm::dd::DdType::Sylvan, double>> MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType()
     const;

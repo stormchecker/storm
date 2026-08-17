@@ -1,6 +1,10 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm-gamebased-ar/abstraction/MenuGameRefiner.h"
+#include "storm/environment/Environment.h"
+
+#include "storm-gamebased-ar/abstraction/prism/PrismMenuGameAbstractor.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/builder/ExplicitModelBuilder.h"
@@ -14,18 +18,51 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-#include "storm/utility/graph.h"
-
-#ifdef STORM_HAVE_MSAT
-
-#include "storm-gamebased-ar/abstraction/MenuGameRefiner.h"
-#include "storm-gamebased-ar/abstraction/prism/PrismMenuGameAbstractor.h"
-
 #include "storm/storage/expressions/Expression.h"
-
+#include "storm/utility/graph.h"
 #include "storm/utility/solver.h"
 
-TEST(GraphTestAR, SymbolicProb01StochasticGameDieSmall) {
+class Cudd {
+   public:
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
+    static const storm::dd::DdType DdType = storm::dd::DdType::CUDD;
+};
+
+class Sylvan {
+   public:
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_SYLVAN
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
+    }
+
+    static const storm::dd::DdType DdType = storm::dd::DdType::Sylvan;
+};
+
+template<typename TestType>
+class GraphTestAR : public ::testing::Test {
+   public:
+    static const storm::dd::DdType DdType = TestType::DdType;
+
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_MATHSAT
+        GTEST_SKIP() << "MathSAT not available.";
+#endif
+        TestType::checkLibraryAvailable();
+    }
+};
+
+typedef ::testing::Types<Cudd, Sylvan> TestingTypes;
+TYPED_TEST_SUITE(GraphTestAR, TestingTypes, );
+
+TYPED_TEST(GraphTestAR, SymbolicProb01StochasticGameDieSmall) {
+    const storm::dd::DdType DdType = TestFixture::DdType;
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
 
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -34,16 +71,16 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameDieSmall) {
     initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
 
     auto smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(storm::Environment(), program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
 
     // The target states are those states where !(s < 3).
-    storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = !abstractor.getStates(initialPredicates[0]) && game.getReachableStates();
+    storm::dd::Bdd<DdType> targetStates = !abstractor.getStates(initialPredicates[0]) && game.getReachableStates();
 
-    storm::utility::graph::SymbolicGameProb01Result<storm::dd::DdType::CUDD> result =
+    storm::utility::graph::SymbolicGameProb01Result<DdType> result =
         storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates,
                                             storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true, true);
     EXPECT_EQ(0ull, result.getPlayer1States().getNonZeroCount());
@@ -93,17 +130,17 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameDieSmall) {
     ASSERT_TRUE(result.hasPlayer2Strategy());
 
     // Check the validity of the strategies. Start by checking whether only prob0 states have a strategy.
-    storm::dd::Bdd<storm::dd::DdType::CUDD> nonProb0StatesWithStrategy = !result.getPlayer1States() && result.player1Strategy.get();
+    storm::dd::Bdd<DdType> nonProb0StatesWithStrategy = !result.getPlayer1States() && result.player1Strategy.get();
     EXPECT_TRUE(nonProb0StatesWithStrategy.isZero());
 
     // Proceed by checking whether they select exactly one action in each state.
-    storm::dd::Add<storm::dd::DdType::CUDD, double> stateDistributionsUnderStrategies =
+    storm::dd::Add<DdType, double> stateDistributionsUnderStrategies =
         (game.getTransitionMatrix() * result.player1Strategy.get().template toAdd<double>() * result.player2Strategy.get().template toAdd<double>())
             .sumAbstract(game.getColumnVariables());
     EXPECT_EQ(0ull, stateDistributionsUnderStrategies.getNonZeroCount());
 
     // Check that the number of distributions per state is one (or zero in the case where there are no prob0 states).
-    storm::dd::Add<storm::dd::DdType::CUDD> stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
+    storm::dd::Add<DdType> stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
     EXPECT_EQ(0.0, stateDistributionCount.getMax());
 
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates,
@@ -137,7 +174,7 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameDieSmall) {
     EXPECT_TRUE(result.hasPlayer2Strategy());
 
     // Check the validity of the strategies. Start by checking whether only prob1 states have a strategy.
-    storm::dd::Bdd<storm::dd::DdType::CUDD> nonProb1StatesWithStrategy = !result.getPlayer1States() && result.player1Strategy.get();
+    storm::dd::Bdd<DdType> nonProb1StatesWithStrategy = !result.getPlayer1States() && result.player1Strategy.get();
     EXPECT_TRUE(nonProb1StatesWithStrategy.isZero());
 
     // Proceed by checking whether they select exactly one action in each state.
@@ -151,7 +188,8 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameDieSmall) {
     EXPECT_EQ(1.0, stateDistributionCount.getMax());
 }
 
-TEST(GraphTestAR, SymbolicProb01StochasticGameTwoDice) {
+TYPED_TEST(GraphTestAR, SymbolicProb01StochasticGameTwoDice) {
+    const storm::dd::DdType DdType = TestFixture::DdType;
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -194,18 +232,18 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameTwoDice) {
     initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(6));
 
     auto smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(storm::Environment(), program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
 
     // The target states are those states where s1 == 7 & s2 == 7 & d1 + d2 == 2.
-    storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = abstractor.getStates(initialPredicates[7]) && abstractor.getStates(initialPredicates[22]) &&
-                                                           abstractor.getStates(initialPredicates[9]) && abstractor.getStates(initialPredicates[24]) &&
-                                                           game.getReachableStates();
+    storm::dd::Bdd<DdType> targetStates = abstractor.getStates(initialPredicates[7]) && abstractor.getStates(initialPredicates[22]) &&
+                                          abstractor.getStates(initialPredicates[9]) && abstractor.getStates(initialPredicates[24]) &&
+                                          game.getReachableStates();
 
-    storm::utility::graph::SymbolicGameProb01Result<storm::dd::DdType::CUDD> result =
+    storm::utility::graph::SymbolicGameProb01Result<DdType> result =
         storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates,
                                             storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true, true);
     EXPECT_EQ(153ull, result.getPlayer1States().getNonZeroCount());
@@ -213,16 +251,16 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameTwoDice) {
     ASSERT_TRUE(result.hasPlayer2Strategy());
 
     // Check the validity of the strategies. Start by checking whether only prob0 states have a strategy.
-    storm::dd::Bdd<storm::dd::DdType::CUDD> nonProb0StatesWithStrategy = !result.getPlayer1States() && result.player1Strategy.get();
+    storm::dd::Bdd<DdType> nonProb0StatesWithStrategy = !result.getPlayer1States() && result.player1Strategy.get();
     EXPECT_TRUE(nonProb0StatesWithStrategy.isZero());
 
     // Proceed by checking whether they select exactly one exaction in each state.
-    storm::dd::Add<storm::dd::DdType::CUDD, double> stateDistributionsUnderStrategies =
+    storm::dd::Add<DdType, double> stateDistributionsUnderStrategies =
         (game.getTransitionMatrix() * result.player1Strategy.get().template toAdd<double>() * result.player2Strategy.get().template toAdd<double>())
             .sumAbstract(game.getColumnVariables());
     EXPECT_EQ(153ull, stateDistributionsUnderStrategies.getNonZeroCount());
 
-    storm::dd::Add<storm::dd::DdType::CUDD> stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
+    storm::dd::Add<DdType> stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
     EXPECT_EQ(1.0, stateDistributionCount.getMax());
 
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates,
@@ -256,7 +294,7 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameTwoDice) {
     EXPECT_TRUE(result.hasPlayer2Strategy());
 
     // Check the validity of the strategies. Start by checking whether only prob1 states have a strategy.
-    storm::dd::Bdd<storm::dd::DdType::CUDD> nonProb1StatesWithStrategy = !result.getPlayer1States() && result.player1Strategy.get();
+    storm::dd::Bdd<DdType> nonProb1StatesWithStrategy = !result.getPlayer1States() && result.player1Strategy.get();
     EXPECT_TRUE(nonProb1StatesWithStrategy.isZero());
 
     // Proceed by checking whether they select exactly one action in each state.
@@ -270,7 +308,8 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameTwoDice) {
     EXPECT_EQ(1.0, stateDistributionCount.getMax());
 }
 
-TEST(GraphTestAR, SymbolicProb01StochasticGameWlan) {
+TYPED_TEST(GraphTestAR, SymbolicProb01StochasticGameWlan) {
+    const storm::dd::DdType DdType = TestFixture::DdType;
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
     program = program.substituteConstantsFormulas();
     program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -381,16 +420,16 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameWlan) {
     initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(1));
 
     auto smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(storm::Environment(), program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
 
     // The target states are those states where col == 2.
-    storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = abstractor.getStates(initialPredicates[2]) && game.getReachableStates();
+    storm::dd::Bdd<DdType> targetStates = abstractor.getStates(initialPredicates[2]) && game.getReachableStates();
 
-    storm::utility::graph::SymbolicGameProb01Result<storm::dd::DdType::CUDD> result =
+    storm::utility::graph::SymbolicGameProb01Result<DdType> result =
         storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates,
                                             storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true, true);
     EXPECT_EQ(2831ull, result.getPlayer1States().getNonZeroCount());
@@ -398,18 +437,17 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameWlan) {
     EXPECT_TRUE(result.hasPlayer2Strategy());
 
     // Check the validity of the strategies. Start by checking whether only prob0 states have a strategy.
-    storm::dd::Bdd<storm::dd::DdType::CUDD> nonProb0StatesWithStrategy = !result.getPlayer1States() && result.player1Strategy.get();
+    storm::dd::Bdd<DdType> nonProb0StatesWithStrategy = !result.getPlayer1States() && result.player1Strategy.get();
     EXPECT_TRUE(nonProb0StatesWithStrategy.isZero());
 
     // Proceed by checking whether they select exactly one action in each state.
-    storm::dd::Add<storm::dd::DdType::CUDD, double> stateDistributionsUnderStrategies =
+    storm::dd::Add<DdType, double> stateDistributionsUnderStrategies =
         (game.getTransitionMatrix() * result.player1Strategy.get().template toAdd<double>() * result.player2Strategy.get().template toAdd<double>())
             .sumAbstract(game.getColumnVariables());
-    ;
     EXPECT_EQ(2831ull, stateDistributionsUnderStrategies.getNonZeroCount());
 
     // Check that the number of distributions per state is one (or zero in the case where there are no prob0 states).
-    storm::dd::Add<storm::dd::DdType::CUDD> stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
+    storm::dd::Add<DdType> stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
     EXPECT_EQ(1.0, stateDistributionCount.getMax());
 
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates,
@@ -443,7 +481,7 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameWlan) {
     EXPECT_TRUE(result.hasPlayer2Strategy());
 
     // Check the validity of the strategies. Start by checking whether only prob1 states have a strategy.
-    storm::dd::Bdd<storm::dd::DdType::CUDD> nonProb1StatesWithStrategy = !result.getPlayer1States() && result.player1Strategy.get();
+    storm::dd::Bdd<DdType> nonProb1StatesWithStrategy = !result.getPlayer1States() && result.player1Strategy.get();
     EXPECT_TRUE(nonProb1StatesWithStrategy.isZero());
 
     // Proceed by checking whether they select exactly one action in each state.
@@ -456,5 +494,3 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameWlan) {
     stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
     EXPECT_EQ(1.0, stateDistributionCount.getMax());
 }
-
-#endif

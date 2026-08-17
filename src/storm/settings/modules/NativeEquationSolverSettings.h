@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_NATIVEEQUATIONSOLVERSETTINGS_H_
-#define STORM_SETTINGS_MODULES_NATIVEEQUATIONSOLVERSETTINGS_H_
+#pragma once
 
 #include "storm/settings/modules/ModuleSettings.h"
 
@@ -105,11 +104,6 @@ class NativeEquationSolverSettings : public ModuleSettings {
      */
     storm::solver::MultiplicationStyle getPowerMethodMultiplicationStyle() const;
 
-    /*!
-     * Retrieves whether the  force bounds option has been set.
-     */
-    bool isForceBoundsSet() const;
-
     bool check() const override;
 
     // The name of the module.
@@ -125,11 +119,8 @@ class NativeEquationSolverSettings : public ModuleSettings {
     static const std::string absoluteOptionName;
     static const std::string intervalIterationSymmetricUpdatesOptionName;
     static const std::string powerMethodMultiplicationStyleOptionName;
-    static const std::string forceBoundsOptionName;
 };
 
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_NATIVEEQUATIONSOLVERSETTINGS_H_ */

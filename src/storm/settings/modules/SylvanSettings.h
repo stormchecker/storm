@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_SYLVANSETTINGS_H_
-#define STORM_SETTINGS_MODULES_SYLVANSETTINGS_H_
+#pragma once
 
 #include "storm/settings/modules/ModuleSettings.h"
 
@@ -22,7 +21,7 @@ class SylvanSettings : public ModuleSettings {
      *
      * @return The maximal amount of memory to use.
      */
-    uint_fast64_t getMaximalMemory() const;
+    uint64_t getMaximalMemory() const;
 
     /*!
      * Retrieves the amount of threads available to Sylvan. Note that a value of zero means that the number
@@ -30,7 +29,7 @@ class SylvanSettings : public ModuleSettings {
      *
      * @rreturn The number of threads.
      */
-    uint_fast64_t getNumberOfThreads() const;
+    uint64_t getNumberOfThreads() const;
 
     /*!
      * Retrieves whether the number of threads to use was set.
@@ -51,5 +50,3 @@ class SylvanSettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_SYLVANSETTINGS_H_ */

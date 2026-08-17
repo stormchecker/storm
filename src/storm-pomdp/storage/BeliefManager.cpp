@@ -81,8 +81,7 @@ std::size_t BeliefManager<storm::models::sparse::Pomdp<double>, double, uint64_t
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefManager(PomdpType const &pomdp, BeliefValueType const &precision,
                                                                     TriangulationMode const &triangulationMode)
-    : pomdp(pomdp), triangulationMode(triangulationMode) {
-    cc = storm::utility::ConstantsComparator<BeliefValueType>(precision, false);
+    : pomdp(pomdp), cc(precision, false), triangulationMode(triangulationMode) {
     beliefToIdMap.resize(pomdp.getNrObservations());
     initialBeliefId = computeInitialBelief();
 }
@@ -227,24 +226,24 @@ typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId BeliefMa
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId,
                       typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
-BeliefManager<PomdpType, BeliefValueType, StateType>::expandAndTriangulate(BeliefId const &beliefId, uint64_t actionIndex,
+BeliefManager<PomdpType, BeliefValueType, StateType>::expandAndTriangulate(storm::Environment const &env, BeliefId const &beliefId, uint64_t actionIndex,
                                                                            std::vector<BeliefValueType> const &observationResolutions) {
-    return expandInternal(beliefId, actionIndex, observationResolutions);
+    return expandInternal(env, beliefId, actionIndex, observationResolutions);
 }
 
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId,
                       typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
-BeliefManager<PomdpType, BeliefValueType, StateType>::expandAndClip(BeliefId const &beliefId, uint64_t actionIndex,
+BeliefManager<PomdpType, BeliefValueType, StateType>::expandAndClip(storm::Environment const &env, BeliefId const &beliefId, uint64_t actionIndex,
                                                                     std::vector<uint64_t> const &observationResolutions) {
-    return expandInternal(beliefId, actionIndex, std::nullopt, observationResolutions);
+    return expandInternal(env, beliefId, actionIndex, std::nullopt, observationResolutions);
 }
 
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId,
                       typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
-BeliefManager<PomdpType, BeliefValueType, StateType>::expand(BeliefId const &beliefId, uint64_t actionIndex) {
-    return expandInternal(beliefId, actionIndex);
+BeliefManager<PomdpType, BeliefValueType, StateType>::expand(storm::Environment const &env, BeliefId const &beliefId, uint64_t actionIndex) {
+    return expandInternal(env, beliefId, actionIndex);
 }
 
 template<typename PomdpType, typename BeliefValueType, typename StateType>
@@ -395,8 +394,8 @@ uint32_t BeliefManager<PomdpType, BeliefValueType, StateType>::getBeliefObservat
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 void BeliefManager<PomdpType, BeliefValueType, StateType>::triangulateBeliefFreudenthal(BeliefType const &belief, BeliefValueType const &resolution,
                                                                                         Triangulation &result) {
-    STORM_LOG_ASSERT(resolution != 0, "Invalid resolution: 0");
-    STORM_LOG_ASSERT(storm::utility::isInteger(resolution), "Expected an integer resolution");
+    STORM_LOG_ASSERT(resolution != 0, "Invalid resolution: 0.");
+    STORM_LOG_ASSERT(storm::utility::isInteger(resolution), "Expected an integer resolution.");
     StateType numEntries = belief.size();
     // This is the Freudenthal Triangulation as described in Lovejoy (a whole lotta math)
     // Probabilities will be triangulated to values in 0/N, 1/N, 2/N, ..., N/N
@@ -454,7 +453,7 @@ void BeliefManager<PomdpType, BeliefValueType, StateType>::triangulateBeliefDyna
                                                                                     Triangulation &result) {
     // Find the best resolution for this belief, i.e., N such that the largest distance between one of the belief values to a value in {i/N | 0 ≤ i ≤ N} is
     // minimal
-    STORM_LOG_ASSERT(storm::utility::isInteger(resolution), "Expected an integer resolution");
+    STORM_LOG_ASSERT(storm::utility::isInteger(resolution), "Expected an integer resolution.");
     BeliefValueType finalResolution = resolution;
     uint64_t finalResolutionMisses = belief.size() + 1;
     // We don't need to check resolutions that are smaller than the maximal resolution divided by 2 (as we already checked multiples of these)
@@ -517,7 +516,7 @@ typename BeliefManager<PomdpType, BeliefValueType, StateType>::Triangulation Bel
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId,
                       typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
-BeliefManager<PomdpType, BeliefValueType, StateType>::expandInternal(BeliefId const &beliefId, uint64_t actionIndex,
+BeliefManager<PomdpType, BeliefValueType, StateType>::expandInternal(storm::Environment const &env, BeliefId const &beliefId, uint64_t actionIndex,
                                                                      std::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions,
                                                                      std::optional<std::vector<uint64_t>> const &observationGridClippingResolutions) {
     std::vector<std::pair<BeliefId, ValueType>> destinations;
@@ -561,7 +560,7 @@ BeliefManager<PomdpType, BeliefValueType, StateType>::expandInternal(BeliefId co
                 destinations.emplace_back(triangulation.gridPoints[j], storm::utility::convertNumber<ValueType>(a));
             }
         } else if (observationGridClippingResolutions) {
-            BeliefClipping clipping = clipBeliefToGrid(successorBelief, observationGridClippingResolutions.value()[successor.first],
+            BeliefClipping clipping = clipBeliefToGrid(env, successorBelief, observationGridClippingResolutions.value()[successor.first],
                                                        storm::storage::BitVector(pomdp.getNumberOfStates()));
             if (clipping.isClippable) {
                 BeliefValueType a = (storm::utility::one<BeliefValueType>() - clipping.delta) * successor.second;
@@ -580,19 +579,19 @@ BeliefManager<PomdpType, BeliefValueType, StateType>::expandInternal(BeliefId co
 
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping BeliefManager<PomdpType, BeliefValueType, StateType>::clipBeliefToGrid(
-    BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite) {
-    auto res = clipBeliefToGrid(getBelief(beliefId), resolution, isInfinite);
+    storm::Environment const &env, BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite) {
+    auto res = clipBeliefToGrid(env, getBelief(beliefId), resolution, isInfinite);
     res.startingBelief = beliefId;
     return res;
 }
 
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping BeliefManager<PomdpType, BeliefValueType, StateType>::clipBeliefToGrid(
-    BeliefType const &belief, uint64_t resolution, const storm::storage::BitVector &isInfinite) {
-    uint32_t obs = getBeliefObservation(belief);
+    storm::Environment const &env, BeliefType const &belief, uint64_t resolution, const storm::storage::BitVector &isInfinite) {
+    [[maybe_unused]] uint32_t obs = getBeliefObservation(belief);
     STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
     if (!lpSolver) {
-        lpSolver = storm::utility::solver::getLpSolver<BeliefValueType>("POMDP LP Solver");
+        lpSolver = storm::utility::solver::getLpSolver<BeliefValueType>(env, "POMDP LP Solver");
     } else {
         lpSolver->pop();
     }
@@ -685,7 +684,7 @@ typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping Be
             while (*helperIt == *(helperIt - 1)) {
                 --helperIt;
             }
-            STORM_LOG_ASSERT(helperIt != helper.begin(), "Error in grid clipping - index wrong");
+            STORM_LOG_ASSERT(helperIt != helper.begin(), "Error in grid clipping - index wrong.");
             // Increment the value at the index
             *helperIt += 1;
             // Reset all indices greater than the changed one to 0
@@ -757,8 +756,8 @@ typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping Be
 
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId BeliefManager<PomdpType, BeliefValueType, StateType>::computeInitialBelief() {
-    STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() < 2, "POMDP contains more than one initial state");
-    STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() == 1, "POMDP does not contain an initial state");
+    STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() < 2, "POMDP contains more than one initial state.");
+    STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() == 1, "POMDP does not contain an initial state.");
     BeliefType belief;
     belief[*pomdp.getInitialStates().begin()] = storm::utility::one<BeliefValueType>();
 
@@ -788,7 +787,7 @@ uint64_t BeliefManager<PomdpType, BeliefValueType, StateType>::getRepresentative
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 std::string BeliefManager<PomdpType, BeliefValueType, StateType>::getObservationLabel(BeliefId const &beliefId) {
     if (pomdp.hasObservationValuations()) {
-        return pomdp.getObservationValuations().getStateInfo(getBeliefObservation(beliefId));
+        return pomdp.getObservationValuations().toString(getBeliefObservation(beliefId));
     } else {
         STORM_LOG_TRACE("Cannot get observation labels as no observation valuation has been defined for the POMDP. Return empty label instead.");
         return "";
@@ -819,11 +818,9 @@ std::vector<BeliefValueType> BeliefManager<PomdpType, BeliefValueType, StateType
 }
 
 template class BeliefManager<storm::models::sparse::Pomdp<double>>;
-
 template class BeliefManager<storm::models::sparse::Pomdp<double>, storm::RationalNumber>;
 
 template class BeliefManager<storm::models::sparse::Pomdp<storm::RationalNumber>, double>;
-
 template class BeliefManager<storm::models::sparse::Pomdp<storm::RationalNumber>>;
 }  // namespace storage
 }  // namespace storm

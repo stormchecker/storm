@@ -1,23 +1,17 @@
 #include "storm-gamebased-ar/abstraction/jani/EdgeAbstractor.h"
 
-#include <chrono>
-
 #include <boost/iterator/transform_iterator.hpp>
+#include <chrono>
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm-gamebased-ar/abstraction/BottomStateResult.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/DdManager.h"
-
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/EdgeDestination.h"
-
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::gbar {
 namespace abstraction {
@@ -802,9 +796,7 @@ void EdgeAbstractor<DdType, ValueType>::notifyGuardIsPredicate() {
 
 template class EdgeAbstractor<storm::dd::DdType::CUDD, double>;
 template class EdgeAbstractor<storm::dd::DdType::Sylvan, double>;
-#ifdef STORM_HAVE_CARL
 template class EdgeAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-#endif
 }  // namespace jani
 }  // namespace abstraction
 }  // namespace storm::gbar

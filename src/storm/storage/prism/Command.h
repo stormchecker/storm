@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_COMMAND_H_
-#define STORM_STORAGE_PRISM_COMMAND_H_
+#pragma once
 
 #include <map>
 #include <string>
@@ -7,7 +6,6 @@
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/prism/Update.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace prism {
@@ -169,5 +167,3 @@ class Command : public LocatedInformation {
 
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_COMMAND_H_ */

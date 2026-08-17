@@ -1,6 +1,5 @@
 #pragma once
 
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 

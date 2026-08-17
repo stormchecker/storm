@@ -1,11 +1,9 @@
-#ifndef STORM_PARSER_AUTOPARSER_H_
-#define STORM_PARSER_AUTOPARSER_H_
+#pragma once
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
 #include "storm/models/sparse/Model.h"
 
 #include <string>
-
-#define STORM_PARSER_AUTOPARSER_HINT_LENGTH (10ull)
 
 namespace storm {
 
@@ -48,11 +46,12 @@ class AutoParser {
      */
     static std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>> parseModel(
         std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "",
-        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "");
+        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "",
+        ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 
    private:
     // Define the maximal length of a hint in the file.
-    static uint_fast64_t hintLength;
+    static constexpr std::size_t hintLength = 10;
 
     /*!
      *	Opens the given file and parses the file format hint.
@@ -65,5 +64,3 @@ class AutoParser {
 
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_AUTOPARSER_H_ */

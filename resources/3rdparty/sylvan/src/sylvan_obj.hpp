@@ -353,9 +353,7 @@ public:
     Mtbdd toStormRationalNumberMtbdd() const;
 
     void PrintText(FILE *out) const;
-    #if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
     Mtbdd toStormRationalFunctionMtbdd() const;
-    #endif
 
     // Other functions to add to sylvan's Bdd class.
     Mtbdd Ite(Mtbdd const& thenDd, Mtbdd const& elseDd) const;
@@ -893,7 +891,6 @@ public:
     Mtbdd ToDoubleRN() const;
 
     // Functions that operate on Mtbdds over rational functions.
-    #if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
     static Mtbdd stormRationalFunctionTerminal(storm::RationalFunction const& value);
 
     Bdd EqualsRF(const Mtbdd& other) const;
@@ -926,7 +923,6 @@ public:
     bool EqualNormRelRF(const Mtbdd& other, storm::RationalFunction const& epsilon) const;
 
     Mtbdd ToDoubleRF() const;
-    #endif
 
     /////////////////////
 

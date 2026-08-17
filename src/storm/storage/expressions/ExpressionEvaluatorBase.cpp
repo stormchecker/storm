@@ -17,9 +17,7 @@ storm::expressions::ExpressionManager const& ExpressionEvaluatorBase<RationalTyp
 
 template class ExpressionEvaluatorBase<double>;
 
-#ifdef STORM_HAVE_CARL
 template class ExpressionEvaluatorBase<storm::RationalNumber>;
 template class ExpressionEvaluatorBase<storm::RationalFunction>;
-#endif
 }  // namespace expressions
 }  // namespace storm

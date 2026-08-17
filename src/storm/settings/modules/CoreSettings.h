@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_CoreSettings_H_
-#define STORM_SETTINGS_MODULES_CoreSettings_H_
+#pragma once
 
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
@@ -96,13 +95,6 @@ class CoreSettings : public ModuleSettings {
     bool isShowStatisticsSet() const;
 
     /*!
-     * Retrieves whether the option to use Intel TBB is set.
-     *
-     * @return True iff the option was set.
-     */
-    bool isUseIntelTbbSet() const;
-
-    /*!
      * Retrieves the selected engine.
      *
      * @return The selected engine.
@@ -132,12 +124,8 @@ class CoreSettings : public ModuleSettings {
     static const std::string engineOptionName;
     static const std::string engineOptionShortName;
     static const std::string ddLibraryOptionName;
-    static const std::string intelTbbOptionName;
-    static const std::string intelTbbOptionShortName;
 };
 
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_CoreSettings_H_ */

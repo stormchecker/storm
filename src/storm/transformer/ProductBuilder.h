@@ -1,12 +1,16 @@
 #pragma once
 
+#include <cstddef>
+#include <deque>
+#include <map>
+#include <utility>
+#include <vector>
+
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-
-#include <deque>
-#include <map>
-#include <vector>
+#include "storm/storage/sparse/StateType.h"
+#include "storm/transformer/Product.h"
 
 namespace storm {
 namespace transformer {
@@ -47,7 +51,7 @@ class ProductBuilder {
             todo.push_back(index);
         }
 
-        storm::storage::SparseMatrixBuilder<typename Model::ValueType> builder(0, 0, 0, false, deterministic ? false : true, 0);
+        storm::storage::SparseMatrixBuilder<typename Model::ValueType> builder(0, 0, 0, false, !deterministic, 0);
         std::size_t curRow = 0;
         while (!todo.empty()) {
             state_type prodIndexFrom = todo.front();

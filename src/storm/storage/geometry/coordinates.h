@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

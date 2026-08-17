@@ -1,107 +1,81 @@
 /*
- * StoRM - Build-in Options
+ * Storm - Build Options
  *
- * This file is parsed by CMake during makefile generation
- * It contains information such as the base path to the test/example data
+ * This file is parsed by CMake during Makefile generation
+ * It contains build and configuration information
  */
 
-#ifndef STORM_GENERATED_STORMCONFIG_H_
-#define STORM_GENERATED_STORMCONFIG_H_
+#pragma once
 
+
+// Directories
+// ###########
 // The directory of the sources from which Storm was built.
 #define STORM_SOURCE_DIR "@PROJECT_SOURCE_DIR@"
-
+// The directory in which Storm was built.
+#define STORM_BUILD_DIR "@PROJECT_BINARY_DIR@"
 // The directory of the test resources used in the tests (model files, ...).
 #define STORM_TEST_RESOURCES_DIR "@STORM_TEST_RESOURCES_DIR@"
-
-// The directory in which Storm was built.
-#define STORM_BUILD_DIR "@CMAKE_BINARY_DIR@"
-
-// Boost include directory used during compilation.
-#define STORM_BOOST_INCLUDE_DIR "@STORM_BOOST_INCLUDE_DIR@"
-
 // Carl include directory used during compilation.
 #define STORM_CARL_INCLUDE_DIR "@carl_INCLUDE_DIR@"
 
-// Whether Gurobi is available and to be used (define/undef)
-#cmakedefine STORM_HAVE_GUROBI
 
-// Whether GLPK is available and to be used (define/undef)
-#cmakedefine STORM_HAVE_GLPK
-
-// Whether Z3 is available and to be used (define/undef)
-#cmakedefine STORM_HAVE_Z3
-
-// Whether the optimization feature of Z3 is available and to be used (define/undef)
-#cmakedefine STORM_HAVE_Z3_OPTIMIZE
-
-// Version of Z3 used by Storm.
-#define STORM_Z3_VERSION_MAJOR @STORM_Z3_VERSION_MAJOR@
-#define STORM_Z3_VERSION_MINOR @STORM_Z3_VERSION_MINOR@
-#define STORM_Z3_VERSION_PATCH @STORM_Z3_VERSION_PATCH@
-#define STORM_Z3_VERSION @Z3_VERSION@
-#cmakedefine STORM_Z3_API_USES_STANDARD_INTEGERS
-
-// Whether MathSAT is available and to be used (define/undef)
-#cmakedefine STORM_HAVE_MSAT
-
-// Whether SoPlex is available and to be used
-#cmakedefine STORM_HAVE_SOPLEX
-
+// Storm configuration options
+// ###########################
 // Whether benchmarks from QVBS can be used as input
 #cmakedefine STORM_HAVE_QVBS
-
 // The root directory of QVBS
 #cmakedefine STORM_QVBS_ROOT "@STORM_QVBS_ROOT@"
+// Logging configuration
+#cmakedefine STORM_LOGGING_FRAMEWORK
+#cmakedefine STORM_LOG_DISABLE_DEBUG
 
-// Whether Intel Threading Building Blocks are available and to be used (define/undef)
-#cmakedefine STORM_HAVE_INTELTBB
 
-// Whether support for parametric systems should be enabled
-#cmakedefine PARAMETRIC_SYSTEMS
-
-// Whether CLN is available and to be used (define/undef)
-#cmakedefine STORM_HAVE_CLN
-
-// Include directory for CLN headers
-#cmakedefine CLN_INCLUDE_DIR "@CLN_INCLUDE_DIR@"
-
-// Whether GMP is available  (it is always available nowadays)
-#define STORM_HAVE_GMP
-
-// Include directory for GMP headers
-#cmakedefine GMP_INCLUDE_DIR "@GMP_INCLUDE_DIR@"
-#cmakedefine GMPXX_INCLUDE_DIR "@GMPXX_INCLUDE_DIR@"
-
-// Whether carl is available and to be used.
-#cmakedefine STORM_HAVE_CARL
-// Whether carl has headers for forward declarations
-#cmakedefine STORM_CARL_SUPPORTS_FWD_DECL
+// Carl configuration
+// ###################
 // Version of CARL used by Storm.
 #define STORM_CARL_VERSION_MAJOR @carl_VERSION_MAJOR@
 #define STORM_CARL_VERSION_MINOR @carl_VERSION_MINOR@
 #define STORM_CARL_VERSION @carl_VERSION@
-#cmakedefine STORM_Z3_API_USES_STANDARD_INTEGERS
 
+
+// GMP
+// ###
+// Whether GMP is available  (it is always available nowadays)
+#define STORM_HAVE_GMP
+// Include directory for GMP headers
+#cmakedefine GMP_INCLUDE_DIR "@GMP_INCLUDE_DIR@"
+#cmakedefine GMPXX_INCLUDE_DIR "@GMPXX_INCLUDE_DIR@"
+
+
+// CLN
+// ###
+// Whether CLN is available and to be used
+#cmakedefine STORM_HAVE_CLN
+// Whether Storm uses CLN for rationals and rational functions
 #cmakedefine STORM_USE_CLN_EA
-
 #cmakedefine STORM_USE_CLN_RF
 
-#cmakedefine STORM_HAVE_XERCES
 
-// Whether Spot is available and to be used
+// Dependencies
+// ############
+// Whether the libraries are available and to be used
+#cmakedefine STORM_HAVE_CUDD
+#cmakedefine STORM_HAVE_GMM
+#cmakedefine STORM_HAVE_GLPK
+#cmakedefine STORM_HAVE_GUROBI
+#cmakedefine STORM_HAVE_HIGHS
+#cmakedefine STORM_HAVE_LIBARCHIVE
+#cmakedefine STORM_HAVE_MATHSAT
+#cmakedefine STORM_HAVE_SOPLEX
 #cmakedefine STORM_HAVE_SPOT
-
+#cmakedefine STORM_HAVE_SYLVAN
+#cmakedefine STORM_HAVE_XERCES
+#cmakedefine STORM_HAVE_Z3
+// Whether a general type of support is available
+#cmakedefine STORM_HAVE_DD_LIBRARY
+#cmakedefine STORM_HAVE_LP_SOLVER
 // Whether LTL model checking shall be enabled
 #ifdef STORM_HAVE_SPOT
-        #define STORM_HAVE_LTL_MODELCHECKING_SUPPORT
+   #define STORM_HAVE_LTL_MODELCHECKING_SUPPORT
 #endif // STORM_HAVE_SPOT
-
-// Whether smtrat is available and to be used.
-#cmakedefine STORM_HAVE_SMTRAT
-
-#cmakedefine STORM_LOGGING_FRAMEWORK
-
-#cmakedefine STORM_LOG_DISABLE_DEBUG
-
-#endif // STORM_GENERATED_STORMCONFIG_H_

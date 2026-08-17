@@ -10,6 +10,11 @@ class Environment;
 
 namespace solver {
 
+/*!
+ * Solves a MinMaxLinearEquationSystem using a linear programming solver.
+ * @see doi.org/10.1007/978-3-031-30823-9_24 for a description of the algorithm as implemented here.
+ * @tparam ValueType
+ */
 template<typename ValueType>
 class LpMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationSolver<ValueType> {
    public:
@@ -29,6 +34,10 @@ class LpMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationSolver<V
                                                                    bool const& hasInitialScheduler = false) const override;
 
    private:
+    bool solveEquationsViToLp(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+    bool solveEquationsLp(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b,
+                          std::vector<ValueType> const* lowerBounds = nullptr, std::vector<ValueType> const* upperBounds = nullptr) const;
+
     std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> lpSolverFactory;
 };
 

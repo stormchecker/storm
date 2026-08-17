@@ -40,7 +40,6 @@ class DFTBuilder {
     std::unordered_map<DFTRestrictionPointer, std::vector<std::string>> mRestrictionChildNames;
     std::unordered_map<DFTDependencyPointer, std::vector<std::string>> mDependencyChildNames;
     std::unordered_map<std::string, storm::dft::storage::DFTLayoutInfo> mLayoutInfo;
-    storm::utility::ConstantsComparator<ValueType> comparator;
 
    public:
     /*!

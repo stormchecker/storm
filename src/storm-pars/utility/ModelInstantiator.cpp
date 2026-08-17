@@ -1,7 +1,7 @@
 #include "storm-pars/utility/ModelInstantiator.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {
 namespace utility {
@@ -99,7 +99,7 @@ void ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::init
     auto parametricEntryIt = parametricMatrix.begin();
     while (parametricEntryIt != parametricMatrix.end()) {
         STORM_LOG_ASSERT(parametricEntryIt->getColumn() == constantEntryIt->getColumn(),
-                         "Entries of parametric and constant matrix are not at the same position");
+                         "Entries of parametric and constant matrix are not at the same position.");
         if (storm::utility::isConstant(parametricEntryIt->getValue())) {
             // Constant entries can be inserted directly
             constantEntryIt->setValue(storm::utility::convertNumber<ConstantType>(parametricEntryIt->getValue()));
@@ -112,7 +112,7 @@ void ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::init
         ++constantEntryIt;
         ++parametricEntryIt;
     }
-    STORM_LOG_ASSERT(constantEntryIt == constantMatrix.end(), "Parametric matrix seems to have more or less entries then the constant matrix");
+    STORM_LOG_ASSERT(constantEntryIt == constantMatrix.end(), "Parametric matrix seems to have more or less entries then the constant matrix.");
     constantMatrix.updateNonzeroEntryCount();
 }
 
@@ -136,7 +136,7 @@ void ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::init
         ++constantEntryIt;
         ++parametricEntryIt;
     }
-    STORM_LOG_ASSERT(constantEntryIt == constantVector.end(), "Parametric vector seems to have more or less entries then the constant vector");
+    STORM_LOG_ASSERT(constantEntryIt == constantVector.end(), "Parametric vector seems to have more or less entries then the constant vector.");
 }
 
 template<typename ParametricSparseModelType, typename ConstantSparseModelType>
@@ -161,7 +161,6 @@ void ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::chec
     // TODO write some checks
 }
 
-#ifdef STORM_HAVE_CARL
 template class ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<double>>;
 template class ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Mdp<double>>;
 template class ModelInstantiator<storm::models::sparse::Ctmc<storm::RationalFunction>, storm::models::sparse::Ctmc<double>>;
@@ -183,6 +182,5 @@ template class ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunct
 template class ModelInstantiator<storm::models::sparse::Ctmc<storm::RationalFunction>, storm::models::sparse::Ctmc<storm::RationalFunction>>;
 template class ModelInstantiator<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>,
                                  storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>;
-#endif
 }  // namespace utility
 }  // namespace storm

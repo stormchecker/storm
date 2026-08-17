@@ -1,6 +1,6 @@
-#ifndef STORM_SOLVER_LINEAREQUATIONSOLVER_H_
-#define STORM_SOLVER_LINEAREQUATIONSOLVER_H_
+#pragma once
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -9,9 +9,6 @@
 #include "storm/solver/LinearEquationSolverRequirements.h"
 #include "storm/solver/MultiplicationStyle.h"
 #include "storm/solver/OptimizationDirection.h"
-
-#include "storm/utility/VectorHelper.h"
-
 #include "storm/storage/SparseMatrix.h"
 
 namespace storm {
@@ -95,9 +92,6 @@ class LinearEquationSolver : public AbstractEquationSolver<ValueType> {
 
     /// Whether some of the generated data during solver calls should be cached.
     mutable bool cachingEnabled;
-
-    /// An object that can be used to reduce vectors.
-    storm::utility::VectorHelper<ValueType> vectorHelper;
 };
 
 enum class EquationSolverType;
@@ -160,5 +154,3 @@ class GeneralLinearEquationSolverFactory : public LinearEquationSolverFactory<Va
 
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_LINEAREQUATIONSOLVER_H_ */

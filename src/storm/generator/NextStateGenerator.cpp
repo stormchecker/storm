@@ -1,18 +1,18 @@
 #include "storm/generator/NextStateGenerator.h"
-#include <storm/exceptions/NotImplementedException.h>
-#include <storm/exceptions/WrongFormatException.h>
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/logic/Formulas.h"
-
+#include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/SimpleValuation.h"
-
-#include "storm/models/sparse/StateLabeling.h"
-
+#include "storm/storage/valuations/ValuationDescriptionBuilder.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -41,6 +41,8 @@ NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions:
       variableInformation(variableInformation),
       evaluator(nullptr),
       state(nullptr),
+      comparator(storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>()
+                                                         : storm::utility::convertNumber<ValueType>(options.getStochasticTolerance())),
       actionMask(mask) {
     initializeSpecialStates();
 }
@@ -49,7 +51,14 @@ template<typename ValueType, typename StateType>
 NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager,
                                                              NextStateGeneratorOptions const& options,
                                                              std::shared_ptr<ActionMask<ValueType, StateType>> const& mask)
-    : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(), evaluator(nullptr), state(nullptr), actionMask(mask) {}
+    : options(options),
+      expressionManager(expressionManager.getSharedPointer()),
+      variableInformation(),
+      evaluator(nullptr),
+      state(nullptr),
+      comparator(storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>()
+                                                         : storm::utility::convertNumber<ValueType>(options.getStochasticTolerance())),
+      actionMask(mask) {}
 
 template<typename ValueType, typename StateType>
 NextStateGenerator<ValueType, StateType>::~NextStateGenerator() = default;
@@ -75,37 +84,46 @@ void NextStateGenerator<ValueType, StateType>::initializeSpecialStates() {
 }
 
 template<typename ValueType, typename StateType>
-storm::storage::sparse::StateValuationsBuilder NextStateGenerator<ValueType, StateType>::initializeStateValuationsBuilder() const {
-    storm::storage::sparse::StateValuationsBuilder result;
+storm::storage::sparse::Valuations NextStateGenerator<ValueType, StateType>::initializeStateValuations() const {
+    storm::storage::sparse::ValuationDescriptionBuilder builder(expressionManager);
+    if (variableInformation.hasOutOfBoundsBit()) {
+        builder.addBooleanVariable(variableInformation.outOfBoundsBit->variable);
+    }
     for (auto const& v : variableInformation.locationVariables) {
-        result.addVariable(v.variable);
+        builder.addIntegerVariable(v.variable, 0, v.highestValue);
     }
     for (auto const& v : variableInformation.booleanVariables) {
-        result.addVariable(v.variable);
+        builder.addBooleanVariable(v.variable);
     }
     for (auto const& v : variableInformation.integerVariables) {
-        result.addVariable(v.variable);
+        builder.addIntegerVariable(v.variable, v.lowerBound, v.upperBound);
     }
-    return result;
+    return storm::storage::sparse::Valuations(builder.buildClassDescription(), expressionManager);
 }
 
 template<typename ValueType, typename StateType>
-storm::storage::sparse::StateValuationsBuilder NextStateGenerator<ValueType, StateType>::initializeObservationValuationsBuilder() const {
-    storm::storage::sparse::StateValuationsBuilder result;
+storm::storage::sparse::Valuations NextStateGenerator<ValueType, StateType>::initializeObservationValuations() const {
+    storm::storage::sparse::ValuationDescriptionBuilder builder(expressionManager);
     for (auto const& v : variableInformation.booleanVariables) {
         if (v.observable) {
-            result.addVariable(v.variable);
+            builder.addBooleanVariable(v.variable);
         }
     }
     for (auto const& v : variableInformation.integerVariables) {
         if (v.observable) {
-            result.addVariable(v.variable);
+            builder.addIntegerVariable(v.variable, v.lowerBound, v.upperBound);
         }
     }
     for (auto const& l : variableInformation.observationLabels) {
-        result.addObservationLabel(l.name);
+        if (l.variable.hasBooleanType()) {
+            builder.addBooleanVariable(l.variable);
+        } else {
+            STORM_LOG_ASSERT(l.variable.hasIntegerType(), "Observation label " << l.variable.getName() << " has neither boolean nor integer type.");
+            builder.addIntegerVariable(l.variable, std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max());
+        }
     }
-    return result;
+    storm::storage::sparse::Valuations res(builder.buildClassDescription(), expressionManager, observabilityMap.size());
+    return res;
 }
 
 template<typename ValueType, typename StateType>
@@ -132,43 +150,17 @@ VariableInformation const& NextStateGenerator<ValueType, StateType>::getVariable
 
 template<typename ValueType, typename StateType>
 void NextStateGenerator<ValueType, StateType>::addStateValuation(storm::storage::sparse::state_type const& currentStateIndex,
-                                                                 storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const {
-    std::vector<bool> booleanValues;
-    booleanValues.reserve(variableInformation.booleanVariables.size());
-    std::vector<int64_t> integerValues;
-    integerValues.reserve(variableInformation.locationVariables.size() + variableInformation.integerVariables.size());
-    extractVariableValues(*this->state, variableInformation, integerValues, booleanValues, integerValues);
-    valuationsBuilder.addState(currentStateIndex, std::move(booleanValues), std::move(integerValues));
+                                                                 storm::storage::sparse::Valuations& valuations) const {
+    unpackStateAppendToValuations(*this->state, variableInformation, valuations.getStorage());
 }
 
 template<typename ValueType, typename StateType>
-storm::storage::sparse::StateValuations NextStateGenerator<ValueType, StateType>::makeObservationValuation() const {
-    storm::storage::sparse::StateValuationsBuilder valuationsBuilder = initializeObservationValuationsBuilder();
+storm::storage::sparse::Valuations NextStateGenerator<ValueType, StateType>::makeObservationValuation() const {
+    storm::storage::sparse::Valuations valuations = initializeObservationValuations();
     for (auto const& observationEntry : observabilityMap) {
-        std::vector<bool> booleanValues;
-        booleanValues.reserve(variableInformation.booleanVariables.size());  // TODO: use number of observable boolean variables
-        std::vector<int64_t> integerValues;
-        integerValues.reserve(variableInformation.locationVariables.size() +
-                              variableInformation.integerVariables.size());  // TODO: use number of observable integer variables
-        std::vector<int64_t> observationLabelValues;
-        observationLabelValues.reserve(variableInformation.observationLabels.size());
-        expressions::SimpleValuation val = unpackStateIntoValuation(observationEntry.first, variableInformation, *expressionManager);
-        for (auto const& v : variableInformation.booleanVariables) {
-            if (v.observable) {
-                booleanValues.push_back(val.getBooleanValue(v.variable));
-            }
-        }
-        for (auto const& v : variableInformation.integerVariables) {
-            if (v.observable) {
-                integerValues.push_back(val.getIntegerValue(v.variable));
-            }
-        }
-        for (uint64_t labelStart = variableInformation.getTotalBitOffset(true); labelStart < observationEntry.first.size(); labelStart += 64) {
-            observationLabelValues.push_back(observationEntry.first.getAsInt(labelStart, 64));
-        }
-        valuationsBuilder.addState(observationEntry.second, std::move(booleanValues), std::move(integerValues), {}, std::move(observationLabelValues));
+        unpackObservationClassIntoValuations(observationEntry.first, observationEntry.second, variableInformation, valuations.getStorage());
     }
-    return valuationsBuilder.build();
+    return valuations;
 }
 
 template<typename ValueType, typename StateType>
@@ -225,7 +217,7 @@ storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::l
     }
     if (this->options.isAddOverlappingGuardLabelSet()) {
         STORM_LOG_THROW(!result.containsLabel("overlap_guards"), storm::exceptions::WrongFormatException,
-                        "Label 'overlap_guards' is reserved when adding overlapping guard labels");
+                        "Label 'overlap_guards' is reserved when adding overlapping guard labels.");
         addSpecialLabel("overlap_guards", overlappingGuardStates.get());
     }
     if (this->options.isAddOutOfBoundsStateSet() && stateStorage.stateToId.contains(outOfBoundsState)) {
@@ -244,7 +236,7 @@ bool NextStateGenerator<ValueType, StateType>::isSpecialLabel(std::string const&
 
 template<typename ValueType, typename StateType>
 void NextStateGenerator<ValueType, StateType>::unpackTransientVariableValuesIntoEvaluator(CompressedState const&,
-                                                                                          storm::expressions::ExpressionEvaluator<ValueType>&) const {
+                                                                                          storm::expressions::ExpressionEvaluator<BaseValueType>&) const {
     // Intentionally left empty.
     // This method should be overwritten in case there are transient variables (e.g. JANI).
 }
@@ -298,7 +290,7 @@ std::string NextStateGenerator<ValueType, StateType>::stateToString(CompressedSt
 
 template<typename ValueType, typename StateType>
 storm::json<ValueType> NextStateGenerator<ValueType, StateType>::currentStateToJson(bool onlyObservable) const {
-    storm::json<ValueType> result = unpackStateIntoJson<ValueType>(*state, variableInformation, onlyObservable);
+    storm::json<BaseValueType> result = unpackStateIntoJson<BaseValueType>(*state, variableInformation, onlyObservable);
     extendStateInformation(result);
     return result;
 }
@@ -309,7 +301,7 @@ storm::expressions::SimpleValuation NextStateGenerator<ValueType, StateType>::cu
 }
 
 template<typename ValueType, typename StateType>
-void NextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<ValueType>&) const {
+void NextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<BaseValueType>&) const {
     // Intentionally left empty.
 }
 
@@ -331,31 +323,34 @@ uint32_t NextStateGenerator<ValueType, StateType>::observabilityClass(Compressed
 
 template<typename ValueType, typename StateType>
 std::map<std::string, storm::storage::PlayerIndex> NextStateGenerator<ValueType, StateType>::getPlayerNameToIndexMap() const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Generating player mappings is not supported for this model input format");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Generating player mappings is not supported for this model input format.");
 }
 
 template<typename ValueType, typename StateType>
 void NextStateGenerator<ValueType, StateType>::remapStateIds(std::function<StateType(StateType const&)> const& /*remapping*/) {
-    if (overlappingGuardStates != boost::none) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                        "Remapping of Ids during model building is not supported for overlapping guard statements.");
-    }
+    STORM_LOG_THROW(overlappingGuardStates == boost::none, storm::exceptions::NotImplementedException,
+                    "Remapping of Ids during model building is not supported for overlapping guard statements.");
     // Nothing to be done.
 }
 
-template class NextStateGenerator<double>;
-
 template class ActionMask<double>;
 template class StateValuationFunctionMask<double>;
+template class NextStateGenerator<double>;
 
-#ifdef STORM_HAVE_CARL
 template class ActionMask<storm::RationalNumber>;
 template class StateValuationFunctionMask<storm::RationalNumber>;
+template class NextStateGenerator<storm::RationalNumber>;
+
 template class ActionMask<storm::RationalFunction>;
 template class StateValuationFunctionMask<storm::RationalFunction>;
-
-template class NextStateGenerator<storm::RationalNumber>;
 template class NextStateGenerator<storm::RationalFunction>;
-#endif
+
+template class ActionMask<storm::Interval>;
+template class StateValuationFunctionMask<storm::Interval>;
+template class NextStateGenerator<storm::Interval>;
+
+template class ActionMask<storm::RationalInterval>;
+template class StateValuationFunctionMask<storm::RationalInterval>;
+template class NextStateGenerator<storm::RationalInterval>;
 }  // namespace generator
 }  // namespace storm

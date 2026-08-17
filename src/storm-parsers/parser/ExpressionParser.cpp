@@ -134,11 +134,19 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
         identifier[qi::_val = phoenix::bind(&ExpressionCreator::getIdentifierExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
     identifierExpression.name("identifier expression");
 
+    // Integer literals. We Handle 64-bit overflows with a nice error message, while silently rejecting non-integer inputs
+    // i.e., these rules imply "if we have an integer literal, then there must not be an overflow."
+    integerOverflowHelperRule = qi::eps[qi::_pass = !qi::_r1];
+    integerOverflowHelperRule.name("no 64-bit integer overflow");
+    integerLiteralExpression = integerLiteral_[qi::_val = phoenix::bind(&ExpressionCreator::createIntegerLiteralExpression, phoenix::ref(*expressionCreator),
+                                                                        qi::_1, qi::_pass, qi::_a)] > integerOverflowHelperRule(qi::_a);
+    integerLiteralExpression.name("integer literal");
+
     literalExpression =
         qi::lit("true")[qi::_val = phoenix::bind(&ExpressionCreator::createBooleanLiteralExpression, phoenix::ref(*expressionCreator), true, qi::_pass)] |
         qi::lit("false")[qi::_val = phoenix::bind(&ExpressionCreator::createBooleanLiteralExpression, phoenix::ref(*expressionCreator), false, qi::_pass)] |
-        rationalLiteral_[qi::_val = phoenix::bind(&ExpressionCreator::createRationalLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)] |
-        qi::long_long[qi::_val = phoenix::bind(&ExpressionCreator::createIntegerLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
+        floatLiteral_[qi::_val = phoenix::bind(&ExpressionCreator::createRationalLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)] |
+        integerLiteralExpression[qi::_val = qi::_1];
     literalExpression.name("literal expression");
 
     atomicExpression = predicateExpression | floorCeilExpression | roundExpression | prefixPowerModuloLogarithmExpression | minMaxExpression |
@@ -270,6 +278,8 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
     debug(unaryExpression);
     debug(atomicExpression);
     debug(literalExpression);
+    debug(integerLiteralExpression);
+    debug(integerOverflowHelperRule);
     debug(identifierExpression);
     */
 
@@ -286,6 +296,8 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
         qi::on_error<qi::fail>(unaryExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         qi::on_error<qi::fail>(atomicExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         qi::on_error<qi::fail>(literalExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+        qi::on_error<qi::fail>(integerLiteralExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+        qi::on_error<qi::fail>(integerOverflowHelperRule, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         qi::on_error<qi::fail>(identifierExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         qi::on_error<qi::fail>(minMaxExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         qi::on_error<qi::fail>(floorCeilExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));

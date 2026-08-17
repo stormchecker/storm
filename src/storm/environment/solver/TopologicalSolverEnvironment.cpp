@@ -15,6 +15,7 @@ TopologicalSolverEnvironment::TopologicalSolverEnvironment() {
 
     underlyingMinMaxMethod = topologicalSettings.getUnderlyingMinMaxMethod();
     underlyingMinMaxMethodSetFromDefault = topologicalSettings.isUnderlyingMinMaxMethodSetFromDefaultValue();
+    extendRelevantValues = topologicalSettings.isExtendRelevantValues();
 }
 
 TopologicalSolverEnvironment::~TopologicalSolverEnvironment() {
@@ -49,6 +50,14 @@ void TopologicalSolverEnvironment::setUnderlyingMinMaxMethod(storm::solver::MinM
                     "Can not use the topological solver as underlying solver of the topological solver.");
     underlyingMinMaxMethodSetFromDefault = false;
     underlyingMinMaxMethod = value;
+}
+
+bool TopologicalSolverEnvironment::isExtendRelevantValues() const {
+    return extendRelevantValues;
+}
+
+void TopologicalSolverEnvironment::setExtendRelevantValues(bool value) {
+    extendRelevantValues = value;
 }
 
 }  // namespace storm

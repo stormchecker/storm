@@ -1,14 +1,12 @@
 #include "storm/api/properties.h"
 
 #include <boost/algorithm/string.hpp>
+
+#include "storm/logic/Formula.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/prism/Program.h"
-
-#include "storm/logic/Formula.h"
-
-#include "storm/utility/cli.h"
 
 namespace storm {
 namespace api {
@@ -69,7 +67,7 @@ std::vector<std::shared_ptr<storm::logic::Formula const>> extractFormulasFromPro
     return formulas;
 }
 
-storm::jani::Property createMultiObjectiveProperty(std::vector<storm::jani::Property> const& properties) {
+storm::jani::Property createMultiObjectiveProperty(std::vector<storm::jani::Property> const& properties, bool lexicographic) {
     std::set<storm::expressions::Variable> undefConstants;
     std::string name = "";
     std::string comment = "";
@@ -80,7 +78,9 @@ storm::jani::Property createMultiObjectiveProperty(std::vector<storm::jani::Prop
         STORM_LOG_WARN_COND(prop.getFilter().isDefault(),
                             "Non-default property filter of property " + prop.getName() + " will be dropped during conversion to multi-objective property.");
     }
-    auto multiFormula = std::make_shared<storm::logic::MultiObjectiveFormula>(extractFormulasFromProperties(properties));
+    auto multiFormula = std::make_shared<storm::logic::MultiObjectiveFormula>(
+        extractFormulasFromProperties(properties),
+        lexicographic ? storm::logic::MultiObjectiveFormula::Type::Lexicographic : storm::logic::MultiObjectiveFormula::Type::Tradeoff);
     return storm::jani::Property(name, multiFormula, undefConstants, comment);
 }
 }  // namespace api

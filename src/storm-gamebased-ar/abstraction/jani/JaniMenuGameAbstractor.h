@@ -22,6 +22,8 @@ class SmtSolverFactory;
 }
 }  // namespace utility
 
+class Environment;
+
 namespace models {
 namespace symbolic {
 template<storm::dd::DdType Type, typename ValueType>
@@ -45,10 +47,12 @@ class JaniMenuGameAbstractor : public MenuGameAbstractor<DdType, ValueType> {
     /*!
      * Constructs an abstractor for the given model.
      *
+     * @param env The environment providing the settings for the DD manager.
      * @param model The concrete model for which to build the abstraction.
      * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
      */
-    JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
+    JaniMenuGameAbstractor(storm::Environment const& env, storm::jani::Model const& model,
+                           std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
                            MenuGameAbstractorOptions const& options = MenuGameAbstractorOptions());
 
     JaniMenuGameAbstractor(JaniMenuGameAbstractor const&) = default;
@@ -140,14 +144,6 @@ class JaniMenuGameAbstractor : public MenuGameAbstractor<DdType, ValueType> {
      * @return The stochastic game.
      */
     std::unique_ptr<MenuGame<DdType, ValueType>> buildGame();
-
-    /*!
-     * Decodes the given choice over the auxiliary and successor variables to a mapping from update indices
-     * to bit vectors representing the successors under these updates.
-     *
-     * @param choice The choice to decode.
-     */
-    std::map<uint_fast64_t, storm::storage::BitVector> decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const;
 
     // The concrete model this abstractor refers to.
     std::reference_wrapper<storm::jani::Model const> model;

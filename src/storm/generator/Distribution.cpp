@@ -1,7 +1,8 @@
 #include "storm/generator/Distribution.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/BitVector.h"
 
 namespace storm::generator {
@@ -127,9 +128,13 @@ typename Distribution<IndexType, ValueType>::ContainerType::const_iterator Distr
 template class Distribution<uint32_t, double>;
 template class Distribution<uint32_t, storm::RationalNumber>;
 template class Distribution<uint32_t, storm::RationalFunction>;
+template class Distribution<uint32_t, storm::Interval>;
+template class Distribution<uint32_t, storm::RationalInterval>;
 
 template class Distribution<storm::storage::BitVector, double>;
 template class Distribution<storm::storage::BitVector, storm::RationalNumber>;
 template class Distribution<storm::storage::BitVector, storm::RationalFunction>;
+template class Distribution<storm::storage::BitVector, storm::Interval>;
+template class Distribution<storm::storage::BitVector, storm::RationalInterval>;
 
 }  // namespace storm::generator

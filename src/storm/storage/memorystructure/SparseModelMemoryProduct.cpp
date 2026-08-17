@@ -2,19 +2,17 @@
 
 #include <boost/optional.hpp>
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/models/sparse/Ctmc.h"
-#include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/models/sparse/Mdp.h"
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/utility/builder.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
 namespace storage {
@@ -92,7 +90,7 @@ void SparseModelMemoryProduct<ValueType, RewardModelType>::setBuildFullProduct()
 }
 
 template<typename ValueType, typename RewardModelType>
-std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> SparseModelMemoryProduct<ValueType, RewardModelType>::build() {
+std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> SparseModelMemoryProduct<ValueType, RewardModelType>::build(bool preserveModelType) {
     initialize();
 
     // Build the model components
@@ -107,7 +105,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Sparse
     storm::models::sparse::StateLabeling labeling = buildStateLabeling(transitionMatrix);
     std::unordered_map<std::string, RewardModelType> rewardModels = buildRewardModels(transitionMatrix);
 
-    return buildResult(std::move(transitionMatrix), std::move(labeling), std::move(rewardModels));
+    return buildResult(std::move(transitionMatrix), std::move(labeling), std::move(rewardModels), preserveModelType);
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -517,11 +515,16 @@ std::unordered_map<std::string, RewardModelType> SparseModelMemoryProduct<ValueT
 template<typename ValueType, typename RewardModelType>
 std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> SparseModelMemoryProduct<ValueType, RewardModelType>::buildResult(
     storm::storage::SparseMatrix<ValueType>&& matrix, storm::models::sparse::StateLabeling&& labeling,
-    std::unordered_map<std::string, RewardModelType>&& rewardModels) {
+    std::unordered_map<std::string, RewardModelType>&& rewardModels, bool preserveModelType) {
     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components(std::move(matrix), std::move(labeling), std::move(rewardModels));
 
+    auto targetModelType = model.getType();
     if (model.isOfType(storm::models::ModelType::Ctmc)) {
         components.rateTransitions = true;
+    } else if (model.isOfType(storm::models::ModelType::Mdp)) {
+        if (!preserveModelType && matrix.hasTrivialRowGrouping()) {
+            targetModelType = storm::models::ModelType::Dtmc;
+        }
     } else if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
         // We also need to translate the exit rates and the Markovian states
         uint64_t numResStates = components.transitionMatrix.getRowGroupCount();
@@ -534,7 +537,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Sparse
         uint64_t stateIndex = 0;
         for (auto const& resState : toResultStateMapping) {
             if (resState < numResStates) {
-                assert(resState == resultExitRates.size());
+                STORM_LOG_ASSERT(resState == resultExitRates.size(), "Result state index mismatch.");
                 uint64_t modelState = stateIndex / memoryStateCount;
                 resultExitRates.push_back(modelExitRates[modelState]);
                 if (modelMarkovianStates.get(modelState)) {
@@ -547,7 +550,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Sparse
         components.exitRates = std::move(resultExitRates);
     }
 
-    return storm::utility::builder::buildModelFromComponents(model.getType(), std::move(components));
+    return storm::utility::builder::buildModelFromComponents(targetModelType, std::move(components));
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -560,11 +563,19 @@ storm::storage::MemoryStructure const& SparseModelMemoryProduct<ValueType, Rewar
     return memory;
 }
 
+template<typename ValueType, typename RewardModelType>
+SparseModelMemoryProductReverseData SparseModelMemoryProduct<ValueType, RewardModelType>::computeReverseData() const {
+    STORM_LOG_ASSERT(isInitialized, "The product model has not been built yet. Cannot extract reverse data.");
+    return SparseModelMemoryProductReverseData(getOriginalModel().getNumberOfStates(), getMemory(), toResultStateMapping);
+}
+
 template class SparseModelMemoryProduct<double>;
 template class SparseModelMemoryProduct<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+template class SparseModelMemoryProduct<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
 template class SparseModelMemoryProduct<storm::RationalNumber>;
 template class SparseModelMemoryProduct<storm::RationalFunction>;
 template class SparseModelMemoryProduct<storm::Interval>;
+template class SparseModelMemoryProduct<storm::RationalInterval>;
 
 }  // namespace storage
 }  // namespace storm

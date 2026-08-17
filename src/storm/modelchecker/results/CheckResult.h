@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_CHECKRESULT_H_
-#define STORM_MODELCHECKER_CHECKRESULT_H_
+#pragma once
 
 #include <iosfwd>
 #include <memory>
@@ -13,6 +12,7 @@ namespace modelchecker {
 class QualitativeCheckResult;
 template<typename ValueType>
 class QuantitativeCheckResult;
+template<typename ValueType>
 class ExplicitQualitativeCheckResult;
 
 template<typename ValueType>
@@ -77,8 +77,11 @@ class CheckResult {
     template<typename ValueType>
     QuantitativeCheckResult<ValueType> const& asQuantitativeCheckResult() const;
 
-    ExplicitQualitativeCheckResult& asExplicitQualitativeCheckResult();
-    ExplicitQualitativeCheckResult const& asExplicitQualitativeCheckResult() const;
+    template<typename ValueType>
+    ExplicitQualitativeCheckResult<ValueType>& asExplicitQualitativeCheckResult();
+
+    template<typename ValueType>
+    ExplicitQualitativeCheckResult<ValueType> const& asExplicitQualitativeCheckResult() const;
 
     template<typename ValueType>
     ExplicitQuantitativeCheckResult<ValueType>& asExplicitQuantitativeCheckResult();
@@ -124,11 +127,22 @@ class CheckResult {
 
     virtual bool hasScheduler() const;
 
+    /*!
+     * Checks whether the ValueType of the result matches the given type.
+     * @tparam T type to match
+     * @return
+     */
+    template<typename T>
+    bool hasValueType() const {
+        return hasValueType(typeid(T));
+    }
+
     virtual std::ostream& writeToStream(std::ostream& out) const = 0;
+
+   private:
+    virtual bool hasValueType(std::type_info const& t) const;
 };
 
 std::ostream& operator<<(std::ostream& out, CheckResult const& checkResult);
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_CHECKRESULT_H_ */

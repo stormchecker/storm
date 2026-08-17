@@ -6,6 +6,7 @@
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/utility/RelevantEvents.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/bitoperations.h"
 
@@ -18,10 +19,12 @@ namespace transformations {
 template<typename ValueType>
 class SftToBddTransformator {
    public:
+#ifdef STORM_HAVE_SYLVAN
     using Bdd = sylvan::Bdd;
+#endif
 
-    SftToBddTransformator(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft,
-                          std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::dft::storage::SylvanBddManager>(),
+#ifdef STORM_HAVE_SYLVAN
+    SftToBddTransformator(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft, std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager,
                           storm::dft::utility::RelevantEvents relevantEvents = {})
         : dft{std::move(dft)}, sylvanBddManager{std::move(sylvanBddManager)}, relevantEvents{relevantEvents} {
         // create Variables for the BEs
@@ -96,8 +99,35 @@ class SftToBddTransformator {
     std::shared_ptr<storm::dft::storage::SylvanBddManager> getSylvanBddManager() const noexcept {
         return sylvanBddManager;
     }
+#else
+    SftToBddTransformator(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft, std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager,
+                          storm::dft::utility::RelevantEvents relevantEvents = {}) {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+
+    std::vector<uint32_t> const& getDdVariables() const noexcept {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> getDFT() const noexcept {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+
+    std::shared_ptr<storm::dft::storage::SylvanBddManager> getSylvanBddManager() const noexcept {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+#endif
 
    private:
+#ifdef STORM_HAVE_SYLVAN
     std::map<std::string, Bdd> relevantEventBdds{};
     std::vector<uint32_t> variables{};
     std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft;
@@ -222,6 +252,7 @@ class SftToBddTransformator {
     Bdd translate(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> const basicElement) {
         return sylvanBddManager->getPositiveLiteral(basicElement->name());
     }
+#endif
 };
 
 }  // namespace transformations

@@ -61,8 +61,8 @@ LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentTyp
             STORM_LOG_ASSERT(nondetIs() || element.second.size() == 1, "Instant state has multiple choices but only a single choice was expected.");
         }
     }
-    assert(numIsSubModelStates + numTsSubModelStates == _component.size());
-    assert(_hasInstantStates || numIsSubModelStates == 0);
+    STORM_LOG_ASSERT(numIsSubModelStates + numTsSubModelStates == _component.size(), "Submodel state count mismatch.");
+    STORM_LOG_ASSERT(_hasInstantStates || numIsSubModelStates == 0, "Unexpected instant states.");
     STORM_LOG_ASSERT(nondetTs() || numTsSubModelStates == numTsSubModelChoices, "Unexpected choice count of deterministic timed submodel.");
     STORM_LOG_ASSERT(nondetIs() || numIsSubModelStates == numIsSubModelChoices, "Unexpected choice count of deterministic instant submodel.");
     _hasInstantStates = _hasInstantStates && numIsSubModelStates > 0;
@@ -112,11 +112,11 @@ LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentTyp
                     uint64_t subModelColumn = toSubModelStateMapping[entry.getColumn()];
                     if (isTimedState(entry.getColumn())) {
                         // We have a transition from a timed state to a timed state
-                        STORM_LOG_ASSERT(subModelColumn < numTsSubModelStates, "Invalid state for timed submodel");
+                        STORM_LOG_ASSERT(subModelColumn < numTsSubModelStates, "Invalid state for timed submodel.");
                         tsTransitionsBuilder.addNextValue(currTsRow, subModelColumn, uniformizationFactor * entry.getValue());
                     } else {
                         // We have a transition from a timed to a instant state
-                        STORM_LOG_ASSERT(subModelColumn < numIsSubModelStates, "Invalid state for instant submodel");
+                        STORM_LOG_ASSERT(subModelColumn < numIsSubModelStates, "Invalid state for instant submodel.");
                         tsToIsTransitionsBuilder.addNextValue(currTsRow, subModelColumn, uniformizationFactor * entry.getValue());
                     }
                 }
@@ -133,11 +133,11 @@ LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentTyp
                     uint64_t subModelColumn = toSubModelStateMapping[entry.getColumn()];
                     if (isTimedState(entry.getColumn())) {
                         // We have a transition from an instant state to a timed state
-                        STORM_LOG_ASSERT(subModelColumn < numTsSubModelStates, "Invalid state for timed submodel");
+                        STORM_LOG_ASSERT(subModelColumn < numTsSubModelStates, "Invalid state for timed submodel.");
                         isToTsTransitionsBuilder.addNextValue(currIsRow, subModelColumn, entry.getValue());
                     } else {
                         // We have a transition from an instant to an instant state
-                        STORM_LOG_ASSERT(subModelColumn < numIsSubModelStates, "Invalid state for instant submodel");
+                        STORM_LOG_ASSERT(subModelColumn < numIsSubModelStates, "Invalid state for instant submodel.");
                         isTransitionsBuilder.addNextValue(currIsRow, subModelColumn, entry.getValue());
                     }
                 }
@@ -354,7 +354,7 @@ void LraViHelper<ValueType, ComponentType, TransitionsType>::setInputModelChoice
 template<typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
 void LraViHelper<ValueType, ComponentType, TransitionsType>::performIterationStep(Environment const& env, storm::solver::OptimizationDirection const* dir,
                                                                                   std::vector<uint64_t>* choices) {
-    STORM_LOG_ASSERT(!((nondetTs() || nondetIs()) && dir == nullptr), "No optimization direction provided for model with nondeterminism");
+    STORM_LOG_ASSERT(!((nondetTs() || nondetIs()) && dir == nullptr), "No optimization direction provided for model with nondeterminism.");
     // Initialize value vectors, multiplers, and solver if this has not been done, yet
     if (!_TsMultiplier) {
         prepareSolversAndMultipliers(env, dir);
@@ -373,7 +373,7 @@ void LraViHelper<ValueType, ComponentType, TransitionsType>::performIterationSte
         } else {
             // Also keep track of the choices made.
             std::vector<uint64_t> tsChoices(_TsTransitions.getRowGroupCount());
-            _TsMultiplier->multiplyAndReduce(env, *dir, xOld(), &_TsChoiceValues, xNew(), &tsChoices);
+            _TsMultiplier->multiplyAndReduce(env, *dir, xOld(), &_TsChoiceValues, xNew(), UncertaintyResolutionMode::Unset, &tsChoices);
             // Note that nondeterminism within the timed states means that there can not be instant states (We either have MDPs or MAs)
             // Hence, in this branch we don't have to care for choices at instant states.
             STORM_LOG_ASSERT(!_hasInstantStates, "Nondeterministic timed states are only supported if there are no instant states.");
@@ -425,7 +425,7 @@ void LraViHelper<ValueType, ComponentType, TransitionsType>::performIterationSte
 template<typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
 typename LraViHelper<ValueType, ComponentType, TransitionsType>::ConvergenceCheckResult
 LraViHelper<ValueType, ComponentType, TransitionsType>::checkConvergence(bool relative, ValueType precision) const {
-    STORM_LOG_ASSERT(_TsMultiplier, "tried to check for convergence without doing an iteration first.");
+    STORM_LOG_ASSERT(_TsMultiplier, "Tried to check for convergence without doing an iteration first.");
     // All values are scaled according to the uniformizationRate.
     // We need to 'revert' this scaling when computing the absolute precision.
     // However, for relative precision, the scaling cancels out.

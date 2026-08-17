@@ -5,7 +5,6 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 
 namespace storm::dft {
@@ -32,6 +31,7 @@ const std::string DftIOSettings::exportToBddDotOptionName = "export-bdd-dot";
 const std::string DftIOSettings::dftStatisticsOptionName = "dft-statistics";
 const std::string DftIOSettings::dftStatisticsOptionShortName = "dftstats";
 const std::string DftIOSettings::importanceMeasureOptionName = "importance";
+const std::string DftIOSettings::variableOrderingFileOptionName = "be-order";
 
 DftIOSettings::DftIOSettings() : ModuleSettings(moduleName) {
     this->addOption(
@@ -96,6 +96,13 @@ DftIOSettings::DftIOSettings() : ModuleSettings(moduleName) {
         storm::settings::OptionBuilder(moduleName, importanceMeasureOptionName, false, "Calculate importance measures for all basic events in the SFT.")
             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("measure", "The name of the measure. Valid values: [MIF,DIF,CIF,RAW,RRW]")
                              .addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"MIF", "DIF", "CIF", "RAW", "RRW"}))
+                             .build())
+            .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, variableOrderingFileOptionName, false,
+                                       "File containing the order of BEs used as variable ordering for the BDD.")
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the variable ordering.")
+                             .addValidatorString(storm::settings::ArgumentValidatorFactory::createExistingFileValidator())
                              .build())
             .build());
 }
@@ -199,9 +206,20 @@ std::string DftIOSettings::getImportanceMeasure() const {
     return this->getOption(importanceMeasureOptionName).getArgumentByName("measure").getValueAsString();
 }
 
+bool DftIOSettings::isVariableOrderingFileSet() const {
+    return this->getOption(variableOrderingFileOptionName).getHasOptionBeenSet();
+}
+
+std::string DftIOSettings::getVariableOrderingFilename() const {
+    return this->getOption(variableOrderingFileOptionName).getArgumentByName("filename").getValueAsString();
+}
+
 void DftIOSettings::finalize() {}
 
 bool DftIOSettings::check() const {
+    // Ensure that at most one input file is set
+    STORM_LOG_THROW(!isDftFileSet() || !isDftJsonFileSet(), storm::exceptions::InvalidSettingsException,
+                    "The DFT may be either given in Galileo or JSON format, but not both.");
     // Ensure that at most one of min or max is set
     STORM_LOG_THROW(!isComputeMinimalValue() || !isComputeMaximalValue(), storm::exceptions::InvalidSettingsException, "Min and max can not both be set.");
     return true;

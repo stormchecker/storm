@@ -1,23 +1,20 @@
-#include "SparseDeterministicVisitingTimesHelper.h"
+#include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
 
 #include <algorithm>
-#include "storm/adapters/RationalFunctionAdapter.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
-#include "storm/solver/LinearEquationSolver.h"
-
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
-
+#include "storm/solver/LinearEquationSolver.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnmetRequirementException.h"
-#include "storm/utility/graph.h"
 
 namespace storm {
 namespace modelchecker {
@@ -40,8 +37,7 @@ SparseDeterministicVisitingTimesHelper<ValueType>::SparseDeterministicVisitingTi
       backwardTransitions(storm::NullRef),
       sccDecomposition(storm::NullRef),
       nonBsccStates(transitionMatrix.getRowCount(), false) {
-    // For the CTMC case we assert that the caller actually provided the probabilistic transitions
-    STORM_LOG_ASSERT(this->transitionMatrix.isProbabilistic(), "Non-probabilistic transitions");
+    // Note that we are not checking assumptions regarding well-formedness of the input, even in debug mode.
 }
 
 template<typename ValueType>
@@ -60,7 +56,7 @@ void SparseDeterministicVisitingTimesHelper<ValueType>::provideSCCDecomposition(
 template<typename ValueType>
 std::vector<ValueType> SparseDeterministicVisitingTimesHelper<ValueType>::computeExpectedVisitingTimes(Environment const& env,
                                                                                                        storm::storage::BitVector const& initialStates) {
-    STORM_LOG_ASSERT(!initialStates.empty(), "provided an empty set of initial states.");
+    STORM_LOG_ASSERT(!initialStates.empty(), "Provided an empty set of initial states.");
     STORM_LOG_ASSERT(initialStates.size() == transitionMatrix.getRowCount(), "Dimension mismatch.");
     ValueType const p = storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(initialStates.getNumberOfSetBits());
     std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
@@ -287,7 +283,7 @@ storm::Environment SparseDeterministicVisitingTimesHelper<ValueType>::getEnviron
             // the precision is relevant (e.g. not the case for elimination, sparselu etc.)
             ValueType min = *std::min_element(exitRates->begin(), exitRates->end());
             STORM_LOG_THROW(!storm::utility::isZero(min), storm::exceptions::InvalidOperationException,
-                            "An error occurred during the adjustment of the precision. Min. rate = " << min);
+                            "An error occurred during the adjustment of the precision. Min. rate = " << min << ".");
             newEnv.solver().setLinearEquationSolverPrecision(
                 static_cast<storm::RationalNumber>(prec.first.get() * storm::utility::convertNumber<storm::RationalNumber>(min)));
         }
@@ -420,7 +416,7 @@ void SparseDeterministicVisitingTimesHelper<ValueType>::processSingletonScc(uint
         ValueType divisor = storm::utility::one<ValueType>();
         for (auto const& entry : backwardRow) {
             if (entry.getColumn() == sccState) {
-                STORM_LOG_ASSERT(!storm::utility::isOne(entry.getValue()), "found a self-loop state. This is not expected");
+                STORM_LOG_ASSERT(!storm::utility::isOne(entry.getValue()), "Found a self-loop state. This is not expected.");
                 divisor -= entry.getValue();
             } else {
                 stateVal += entry.getValue() * stateValues[entry.getColumn()];

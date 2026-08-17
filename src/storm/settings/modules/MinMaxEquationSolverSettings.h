@@ -95,6 +95,19 @@ class MinMaxEquationSolverSettings : public ModuleSettings {
      */
     bool isForceUniqueSolutionRequirementSet() const;
 
+    /*!
+     * Retrieves whether only initial states should occur in the optimization objective.
+     */
+    bool getLpUseOnlyInitialStateAsObjective() const;
+    /*!
+     * Retrieves whether additional bounds should be used when constructing the LP.
+     */
+    bool getLpUseNonTrivialBounds() const;
+    /*!
+     * Retrieves whether equality should be enforced where possible
+     */
+    bool getLpUseEqualityForTrivialActions() const;
+
     // The name of the module.
     static const std::string moduleName;
 };

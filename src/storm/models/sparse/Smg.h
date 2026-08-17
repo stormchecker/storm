@@ -1,5 +1,4 @@
-#ifndef STORM_MODELS_SPARSE_SMG_H_
-#define STORM_MODELS_SPARSE_SMG_H_
+#pragma once
 
 #include "storm/logic/PlayerCoalition.h"
 #include "storm/models/sparse/NondeterministicModel.h"
@@ -33,7 +32,9 @@ class Smg : public NondeterministicModel<ValueType, RewardModelType> {
     std::vector<storm::storage::PlayerIndex> const& getStatePlayerIndications() const;
     storm::storage::PlayerIndex getPlayerOfState(uint64_t stateIndex) const;
     storm::storage::PlayerIndex getPlayerIndex(std::string const& playerName) const;
+    std::map<std::string, storm::storage::PlayerIndex> const& getPlayerNamesToIndex() const;
     storm::storage::BitVector computeStatesOfCoalition(storm::logic::PlayerCoalition const& coalition) const;
+    uint64_t getNumberOfPlayers() const;
 
    private:
     // Assigns the controlling player to each state.
@@ -46,5 +47,3 @@ class Smg : public NondeterministicModel<ValueType, RewardModelType> {
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SPARSE_SMG_H_ */

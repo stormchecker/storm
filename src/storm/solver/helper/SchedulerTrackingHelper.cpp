@@ -1,8 +1,10 @@
 #include "storm/solver/helper/SchedulerTrackingHelper.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/utility/Extremum.h"
+#include "storm/utility/macros.h"
 
 namespace storm::solver::helper {
 
@@ -66,42 +68,65 @@ class SchedulerTrackingBackend {
     uint64_t currChoice;
 };
 
-template<typename ValueType, typename SolutionType>
-SchedulerTrackingHelper<ValueType, SolutionType>::SchedulerTrackingHelper(std::shared_ptr<ValueIterationOperator<ValueType, false, SolutionType>> viOperator)
+template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
+SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::SchedulerTrackingHelper(
+    std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator)
     : viOperator(viOperator) {
     // Intentionally left empty
 }
 
-template<typename ValueType, typename SolutionType>
+template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
 template<storm::OptimizationDirection Dir, storm::OptimizationDirection RobustDir>
-bool SchedulerTrackingHelper<ValueType, SolutionType>::computeScheduler(std::vector<SolutionType>& operandIn, std::vector<ValueType> const& offsets,
-                                                                        std::vector<uint64_t>& schedulerStorage, std::vector<SolutionType>* operandOut) const {
+bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::computeScheduler(std::vector<SolutionType>& operandIn,
+                                                                                            std::vector<ValueType> const& offsets,
+                                                                                            std::vector<uint64_t>& schedulerStorage,
+                                                                                            std::vector<SolutionType>* operandOut,
+                                                                                            boost::optional<std::vector<uint64_t>> const& robustIndices) const {
     bool const applyUpdates = operandOut != nullptr;
-    SchedulerTrackingBackend<SolutionType, Dir> backend(schedulerStorage, viOperator->getRowGroupIndices(), applyUpdates);
-    if (applyUpdates) {
-        return viOperator->template applyRobust<RobustDir>(*operandOut, operandIn, offsets, backend);
+    if constexpr (TrivialRowGrouping && std::is_same<SolutionType, double>::value) {
+        STORM_LOG_ASSERT(robustIndices, "Tracking scheduler with trivial row grouping but no robust indices => there is no scheduler.");
+        RobustSchedulerTrackingBackend<SolutionType, RobustDir, TrivialRowGrouping> backend(schedulerStorage, *robustIndices, applyUpdates);
+        if (applyUpdates) {
+            return viOperator->template applyRobust<RobustDir>(*operandOut, operandIn, offsets, backend);
+        } else {
+            return viOperator->template applyInPlaceRobust<RobustDir>(operandIn, offsets, backend);
+        }
     } else {
-        return viOperator->template applyInPlaceRobust<RobustDir>(operandIn, offsets, backend);
+        STORM_LOG_WARN_COND(!robustIndices, "Only tracking nondeterminism, not ordering of intervals.");
+        SchedulerTrackingBackend<SolutionType, Dir> backend(schedulerStorage, viOperator->getRowGroupIndices(), applyUpdates);
+        if (applyUpdates) {
+            return viOperator->template applyRobust<RobustDir>(*operandOut, operandIn, offsets, backend);
+        } else {
+            return viOperator->template applyInPlaceRobust<RobustDir>(operandIn, offsets, backend);
+        }
     }
 }
 
-template<typename ValueType, typename SolutionType>
-bool SchedulerTrackingHelper<ValueType, SolutionType>::computeScheduler(std::vector<SolutionType>& operandIn, std::vector<ValueType> const& offsets,
-                                                                        storm::OptimizationDirection const& dir, std::vector<uint64_t>& schedulerStorage,
-                                                                        bool robust, std::vector<SolutionType>* operandOut) const {
+template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
+bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::computeScheduler(
+    std::vector<SolutionType>& operandIn, std::vector<ValueType> const& offsets, storm::OptimizationDirection const& dir,
+    std::vector<uint64_t>& schedulerStorage, UncertaintyResolutionMode uncertaintyResolutionMode, std::vector<SolutionType>* operandOut,
+    boost::optional<std::vector<uint64_t>> const& robustIndices) const {
+    bool robustUncertainty = false;
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        robustUncertainty = isUncertaintyResolvedRobust(uncertaintyResolutionMode, dir);
+    }
+
     if (maximize(dir)) {
-        if (robust) {
+        if (robustUncertainty) {
             return computeScheduler<storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize>(operandIn, offsets, schedulerStorage,
-                                                                                                                    operandOut);
+                                                                                                                    operandOut, robustIndices);
         } else {
             return computeScheduler<storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize>(operandIn, offsets, schedulerStorage,
-                                                                                                                    operandOut);
+                                                                                                                    operandOut, robustIndices);
         }
     } else {
-        if (robust) {
-            return computeScheduler<storm::OptimizationDirection::Minimize, OptimizationDirection::Maximize>(operandIn, offsets, schedulerStorage, operandOut);
+        if (robustUncertainty) {
+            return computeScheduler<storm::OptimizationDirection::Minimize, OptimizationDirection::Maximize>(operandIn, offsets, schedulerStorage, operandOut,
+                                                                                                             robustIndices);
         } else {
-            return computeScheduler<storm::OptimizationDirection::Minimize, OptimizationDirection::Minimize>(operandIn, offsets, schedulerStorage, operandOut);
+            return computeScheduler<storm::OptimizationDirection::Minimize, OptimizationDirection::Minimize>(operandIn, offsets, schedulerStorage, operandOut,
+                                                                                                             robustIndices);
         }
     }
 }
@@ -109,5 +134,8 @@ bool SchedulerTrackingHelper<ValueType, SolutionType>::computeScheduler(std::vec
 template class SchedulerTrackingHelper<double>;
 template class SchedulerTrackingHelper<storm::RationalNumber>;
 template class SchedulerTrackingHelper<storm::Interval, double>;
+template class SchedulerTrackingHelper<storm::Interval, double, true>;
+template class SchedulerTrackingHelper<storm::RationalInterval, storm::RationalNumber>;
+template class SchedulerTrackingHelper<storm::RationalInterval, storm::RationalNumber, true>;
 
 }  // namespace storm::solver::helper

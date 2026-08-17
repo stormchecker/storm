@@ -1,6 +1,11 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
+#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm-pars/utility/FeasibilitySynthesisTask.h"
+#include "storm-parsers/api/storm-parsers.h"
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/builder.h"
 #include "storm/api/storm.h"
@@ -8,29 +13,11 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/logic/Formulas.h"
-#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/solver/EliminationLinearEquationSolver.h"
-#include "storm/storage/SparseMatrix.h"
-#include "storm/storage/expressions/BinaryRelationExpression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-
-#include "storm-parsers/api/storm-parsers.h"
-#include "storm-parsers/parser/AutoParser.h"
-#include "storm-parsers/parser/FormulaParser.h"
-#include "storm-parsers/parser/PrismParser.h"
-
-#include "storm-pars/analysis/OrderExtender.h"
-#include "storm-pars/api/storm-pars.h"
-#include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-#include "storm-pars/utility/FeasibilitySynthesisTask.h"
 
 using namespace storm::pars;
 
 namespace {
-class RationalGmmxxEnvironment {
+/*class RationalGmmxxEnvironment {
    public:
     typedef storm::RationalFunction FunctionType;
     typedef storm::RationalNumber ConstantType;
@@ -39,7 +26,7 @@ class RationalGmmxxEnvironment {
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
         return env;
     }
-};
+};*/
 class DoubleGmmxxEnvironment {
    public:
     typedef storm::RationalFunction FunctionType;
@@ -50,7 +37,7 @@ class DoubleGmmxxEnvironment {
         return env;
     }
 };
-class RationalEigenEnvironment {
+/*class RationalEigenEnvironment {
    public:
     typedef storm::RationalFunction FunctionType;
     typedef storm::RationalNumber ConstantType;
@@ -59,7 +46,7 @@ class RationalEigenEnvironment {
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
         return env;
     }
-};
+};*/
 class DoubleEigenEnvironment {
    public:
     typedef storm::RationalFunction FunctionType;
@@ -105,8 +92,11 @@ class GradientDescentInstantiationSearcherTest : public ::testing::Test {
 };
 
 typedef ::testing::Types<
-    // The rational environments take ages... sorry, but GD is just not made for rational arithmetic.
-    DoubleGmmxxEnvironment, DoubleEigenEnvironment, DoubleEigenTopologicalEnvironment>
+// The rational environments take ages... GD is just not made for rational arithmetic.
+#ifdef STORM_HAVE_GMM
+    DoubleGmmxxEnvironment, /*RationalGmmxxEnvironment,*/
+#endif
+    DoubleEigenEnvironment, DoubleEigenTopologicalEnvironment /*, RationalEigenEnvironment*/>
     TestingTypes;
 }  // namespace
 
@@ -119,7 +109,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Simple) {
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -151,7 +141,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
+    program = program.preprocess(constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
@@ -174,8 +164,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     // First, test an ADAM instance. We will check that we have implemented ADAM correctly by comparing our results to results gathered by an ADAM
     // implementation in tensorflow :)
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> adamChecker(
-        *dtmc, storm::derivative::GradientDescentMethod::ADAM, 0.01, 0.9, 0.999, 2, 1e-6, boost::none,
-        storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, true);
+        *dtmc, storm::derivative::GradientDescentMethod::ADAM, 0.01, 0.9, 0.999, 2, 1e-6, std::nullopt,
+        storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, std::nullopt, true);
     adamChecker.setup(this->env(), feasibilityTask);
     auto doubleInstantiation = adamChecker.gradientDescent();
     auto walk = adamChecker.getVisualizationWalk();
@@ -285,8 +275,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
 
     // Same thing with RAdam
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> radamChecker(
-        *dtmc, storm::derivative::GradientDescentMethod::RADAM, 0.01, 0.9, 0.999, 2, 1e-6, boost::none,
-        storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, true);
+        *dtmc, storm::derivative::GradientDescentMethod::RADAM, 0.01, 0.9, 0.999, 2, 1e-6, std::nullopt,
+        storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, std::nullopt, true);
     radamChecker.setup(this->env(), feasibilityTask);
     auto radamInstantiation = radamChecker.gradientDescent();
     auto radamWalk = radamChecker.getVisualizationWalk();
@@ -382,8 +372,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
 
     // Same thing with momentum
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> momentumChecker(
-        *dtmc, storm::derivative::GradientDescentMethod::MOMENTUM, 0.001, 0.9, 0.999, 2, 1e-6, boost::none,
-        storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, true);
+        *dtmc, storm::derivative::GradientDescentMethod::MOMENTUM, 0.001, 0.9, 0.999, 2, 1e-6, std::nullopt,
+        storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, std::nullopt, true);
     momentumChecker.setup(this->env(), feasibilityTask);
     auto momentumInstantiation = momentumChecker.gradientDescent();
     auto momentumWalk = momentumChecker.getVisualizationWalk();
@@ -410,8 +400,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
 
     // Same thing with nesterov
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> nesterovChecker(
-        *dtmc, storm::derivative::GradientDescentMethod::NESTEROV, 0.001, 0.9, 0.999, 2, 1e-6, boost::none,
-        storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, true);
+        *dtmc, storm::derivative::GradientDescentMethod::NESTEROV, 0.001, 0.9, 0.999, 2, 1e-6, std::nullopt,
+        storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, std::nullopt, true);
     nesterovChecker.setup(this->env(), feasibilityTask);
     auto nesterovInstantiation = nesterovChecker.gradientDescent();
     auto nesterovWalk = nesterovChecker.getVisualizationWalk();

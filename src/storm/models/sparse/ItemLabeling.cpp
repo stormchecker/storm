@@ -1,10 +1,9 @@
 #include "storm/models/sparse/ItemLabeling.h"
 
-#include "storm/models/sparse/ChoiceLabeling.h"
-#include "storm/models/sparse/StateLabeling.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
+#include "storm/models/sparse/ChoiceLabeling.h"
+#include "storm/models/sparse/StateLabeling.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -52,7 +51,7 @@ bool ItemLabeling::operator==(ItemLabeling const& other) const {
     return true;
 }
 
-ItemLabeling ItemLabeling::getSubLabeling(storm::storage::BitVector const& items) const {
+ItemLabeling ItemLabeling::getSubItemLabeling(storm::storage::BitVector const& items) const {
     ItemLabeling result(items.getNumberOfSetBits());
     for (auto const& labelIndexPair : nameToLabelingIndexMap) {
         result.addLabel(labelIndexPair.first, labelings[labelIndexPair.second] % items);
@@ -114,7 +113,7 @@ std::set<std::string> ItemLabeling::getLabelsOfItem(uint64_t item) const {
 }
 
 void ItemLabeling::permuteItems(std::vector<uint64_t> const& inversePermutation) {
-    STORM_LOG_THROW(inversePermutation.size() == itemCount, storm::exceptions::InvalidArgumentException, "Permutation does not match number of items");
+    STORM_LOG_THROW(inversePermutation.size() == itemCount, storm::exceptions::InvalidArgumentException, "Permutation does not match number of items.");
     std::vector<storm::storage::BitVector> newLabelings;
     for (storm::storage::BitVector const& source : this->labelings) {
         newLabelings.push_back(source.permute(inversePermutation));
@@ -126,7 +125,7 @@ void ItemLabeling::permuteItems(std::vector<uint64_t> const& inversePermutation)
 void ItemLabeling::addLabel(std::string const& label, storage::BitVector const& labeling) {
     STORM_LOG_THROW(!this->containsLabel(label), storm::exceptions::InvalidArgumentException, "Label '" << label << "' already exists.");
     STORM_LOG_THROW(labeling.size() == itemCount, storm::exceptions::InvalidArgumentException,
-                    "Labeling vector has invalid size. Expected: " << itemCount << " Actual: " << labeling.size());
+                    "Labeling vector has invalid size. Expected: " << itemCount << " Actual: " << labeling.size() << ".");
     nameToLabelingIndexMap.emplace(label, labelings.size());
     labelings.push_back(labeling);
 }
@@ -134,7 +133,7 @@ void ItemLabeling::addLabel(std::string const& label, storage::BitVector const& 
 void ItemLabeling::addLabel(std::string const& label, storage::BitVector&& labeling) {
     STORM_LOG_THROW(!this->containsLabel(label), storm::exceptions::InvalidArgumentException, "Label '" << label << "' already exists.");
     STORM_LOG_THROW(labeling.size() == itemCount, storm::exceptions::InvalidArgumentException,
-                    "Labeling vector has invalid size. Expected: " << itemCount << " Actual: " << labeling.size());
+                    "Labeling vector has invalid size. Expected: " << itemCount << " Actual: " << labeling.size() << ".");
     nameToLabelingIndexMap.emplace(label, labelings.size());
     labelings.emplace_back(std::move(labeling));
 }

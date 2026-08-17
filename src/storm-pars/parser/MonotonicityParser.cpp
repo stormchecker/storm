@@ -1,9 +1,9 @@
 #include "storm-pars/parser/MonotonicityParser.h"
+
 #include <boost/algorithm/string.hpp>
-#include <storm/exceptions/WrongFormatException.h>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -16,7 +16,7 @@ std::pair<std::set<VariableType>, std::set<VariableType>> MonotonicityParser<Var
     std::string const& fileName, std::set<VariableType> const& consideredVariables) {
     // Open file and initialize result.
     std::ifstream inputFileStream;
-    storm::utility::openFile(fileName, inputFileStream);
+    storm::io::openFile(fileName, inputFileStream);
 
     std::set<VariableType> monotoneIncrVars;
     std::set<VariableType> monotoneDecrVars;
@@ -27,7 +27,7 @@ std::pair<std::set<VariableType>, std::set<VariableType>> MonotonicityParser<Var
         std::vector<std::string> fileSplitted;
 
         boost::split(fileSplitted, fileContent, boost::is_any_of(";"));
-        STORM_LOG_THROW(fileSplitted.size() == 2, storm::exceptions::WrongFormatException, "Expecting content to contain \";\" between monotone variables");
+        STORM_LOG_THROW(fileSplitted.size() == 2, storm::exceptions::WrongFormatException, "Expecting content to contain \";\" between monotone variables.");
         std::vector<std::string> monotoneIncrVarsString;
         boost::split(monotoneIncrVarsString, fileSplitted[0], boost::is_any_of(" "));
         std::vector<std::string> monotoneDecrVarsString;
@@ -60,12 +60,12 @@ std::pair<std::set<VariableType>, std::set<VariableType>> MonotonicityParser<Var
 
     } catch (std::exception& e) {
         // In case of an exception properly close the file before passing exception.
-        storm::utility::closeFile(inputFileStream);
+        storm::io::closeFile(inputFileStream);
         throw e;
     }
 
     // Close the stream in case everything went smoothly and return result.
-    storm::utility::closeFile(inputFileStream);
+    storm::io::closeFile(inputFileStream);
     return {std::move(monotoneIncrVars), std::move(monotoneDecrVars)};
 }
 

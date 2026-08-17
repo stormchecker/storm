@@ -1,13 +1,13 @@
 
 #include "storm/logic/CumulativeRewardFormula.h"
+
 #include <boost/any.hpp>
 #include <ostream>
 
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/logic/FormulaVisitor.h"
-
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/logic/FormulaVisitor.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

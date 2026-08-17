@@ -1,21 +1,18 @@
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbAchievabilityQuery.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -26,7 +23,7 @@ SparseCbAchievabilityQuery<SparseModelType>::SparseCbAchievabilityQuery(
     preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult)
     : SparseCbQuery<SparseModelType>(preprocessorResult) {
     STORM_LOG_ASSERT(preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability,
-                     "Invalid query Type");
+                     "Invalid query Type.");
     solver = storm::utility::solver::SmtSolverFactory().create(*this->expressionManager);
 }
 
@@ -34,7 +31,7 @@ template<class SparseModelType>
 std::unique_ptr<CheckResult> SparseCbAchievabilityQuery<SparseModelType>::check(Environment const& env) {
     bool result = this->checkAchievability();
 
-    return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(this->originalModel.getInitialStates().getNextSetIndex(0), result));
+    return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<ValueType>(this->originalModel.getInitialStates().getNextSetIndex(0), result));
 }
 
 template<class SparseModelType>
@@ -52,10 +49,8 @@ bool SparseCbAchievabilityQuery<SparseModelType>::checkAchievability() {
     storm::solver::SmtSolver::CheckResult result = solver->check();
     swCheck.stop();
 
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Building the constraintsystem took " << swInitialization << " seconds and checking the SMT formula took " << swCheck
-                                                                  << " seconds.\n");
-    }
+    STORM_LOG_STATISTICS("Building the constraintsystem took " << swInitialization << " seconds and checking the SMT formula took " << swCheck
+                                                               << " seconds.\n");
 
     switch (result) {
         case storm::solver::SmtSolver::CheckResult::Sat:
@@ -69,7 +64,7 @@ bool SparseCbAchievabilityQuery<SparseModelType>::checkAchievability() {
             // std::cout << "}\n";
             return false;
         default:
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "SMT solver yielded an unexpected result");
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "SMT solver yielded an unexpected result.");
     }
 
     return false;
@@ -110,26 +105,30 @@ void SparseCbAchievabilityQuery<SparseModelType>::initializeConstraintSystem() {
     // assert that the "incoming" value of each state equals the "outgoing" value
     storm::storage::SparseMatrix<ValueType> backwardsTransitions = this->preprocessedModel->getTransitionMatrix().transpose();
     auto bottomStateVariableIt = bottomStateVariables.begin();
+    std::vector<storm::expressions::Expression> valueSummands;  // initialization here to avoid re-allocations
     for (uint_fast64_t state = 0; state < numStates; ++state) {
         // get the "incomming" value
-        storm::expressions::Expression value = this->preprocessedModel->getInitialStates().get(state) ? one : zero;
+        valueSummands.clear();
+        if (this->preprocessedModel->getInitialStates().get(state)) {
+            valueSummands.push_back(one);
+        }
         for (auto const& backwardsEntry : backwardsTransitions.getRow(state)) {
-            value =
-                value + (this->expressionManager->rational(backwardsEntry.getValue()) * expectedChoiceVariables[backwardsEntry.getColumn()].getExpression());
+            valueSummands.push_back(this->expressionManager->rational(backwardsEntry.getValue()) *
+                                    expectedChoiceVariables[backwardsEntry.getColumn()].getExpression());
         }
 
         // subtract the "outgoing" value
         for (uint_fast64_t choice = this->preprocessedModel->getTransitionMatrix().getRowGroupIndices()[state];
              choice < this->preprocessedModel->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
-            value = value - expectedChoiceVariables[choice];
+            valueSummands.push_back(-expectedChoiceVariables[choice]);
         }
         if (this->reward0EStates.get(state)) {
-            value = value - (*bottomStateVariableIt);
+            valueSummands.push_back(-(*bottomStateVariableIt));
             ++bottomStateVariableIt;
         }
-        solver->add(value == zero);
+        solver->add(storm::expressions::sum(valueSummands) == zero);
     }
-    assert(bottomStateVariableIt == bottomStateVariables.end());
+    STORM_LOG_ASSERT(bottomStateVariableIt == bottomStateVariables.end(), "Unexpected bottom state variable.");
 }
 
 template<class SparseModelType>
@@ -173,7 +172,7 @@ void SparseCbAchievabilityQuery<SparseModelType>::addObjectiveConstraints() {
                 solver->add(objValue <= threshold);
                 break;
             default:
-                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "One or more objectives have an invalid comparison type");
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "One or more objectives have an invalid comparison type.");
         }
     }
 }
@@ -225,13 +224,11 @@ std::vector<storm::RationalNumber> SparseCbAchievabilityQuery<storm::models::spa
     return this->preprocessedModel->getRewardModel(rewardModelName).getTotalRewardVector(this->preprocessedModel->getTransitionMatrix());
 }
 
-#ifdef STORM_HAVE_CARL
 template class SparseCbAchievabilityQuery<storm::models::sparse::Mdp<double>>;
 template class SparseCbAchievabilityQuery<storm::models::sparse::MarkovAutomaton<double>>;
 
 template class SparseCbAchievabilityQuery<storm::models::sparse::Mdp<storm::RationalNumber>>;
 template class SparseCbAchievabilityQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
-#endif
 }  // namespace multiobjective
 }  // namespace modelchecker
 }  // namespace storm

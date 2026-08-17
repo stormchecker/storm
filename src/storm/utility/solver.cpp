@@ -1,11 +1,16 @@
 #include "storm/utility/solver.h"
 
+#include <type_traits>
+
+#include "storm/environment/Environment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
+#include "storm/solver/HighsLpSolver.h"
 #include "storm/solver/MathsatSmtSolver.h"
 #include "storm/solver/SoplexLpSolver.h"
 #include "storm/solver/Z3LpSolver.h"
@@ -17,13 +22,16 @@ namespace utility {
 namespace solver {
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LpSolver<ValueType>> GlpkLpSolverFactory<ValueType>::create(std::string const& name) const {
-    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::GlpkLpSolver<ValueType>(name));
+std::unique_ptr<storm::solver::LpSolver<ValueType>> GlpkLpSolverFactory<ValueType>::create(storm::Environment const& env, std::string const& name) const {
+    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(
+        new storm::solver::GlpkLpSolver<ValueType>(env.solver().glpk(), env.solver().isDebugSet(), name));
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LpSolver<ValueType, true>> GlpkLpSolverFactory<ValueType>::createRaw(std::string const& name) const {
-    return std::unique_ptr<storm::solver::LpSolver<ValueType, true>>(new storm::solver::GlpkLpSolver<ValueType, true>(name));
+std::unique_ptr<storm::solver::LpSolver<ValueType, true>> GlpkLpSolverFactory<ValueType>::createRaw(storm::Environment const& env,
+                                                                                                    std::string const& name) const {
+    return std::unique_ptr<storm::solver::LpSolver<ValueType, true>>(
+        new storm::solver::GlpkLpSolver<ValueType, true>(env.solver().glpk(), env.solver().isDebugSet(), name));
 }
 
 template<typename ValueType>
@@ -32,12 +40,13 @@ std::unique_ptr<LpSolverFactory<ValueType>> GlpkLpSolverFactory<ValueType>::clon
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LpSolver<ValueType>> SoplexLpSolverFactory<ValueType>::create(std::string const& name) const {
+std::unique_ptr<storm::solver::LpSolver<ValueType>> SoplexLpSolverFactory<ValueType>::create(storm::Environment const&, std::string const& name) const {
     return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::SoplexLpSolver<ValueType>(name));
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LpSolver<ValueType, true>> SoplexLpSolverFactory<ValueType>::createRaw(std::string const& name) const {
+std::unique_ptr<storm::solver::LpSolver<ValueType, true>> SoplexLpSolverFactory<ValueType>::createRaw(storm::Environment const&,
+                                                                                                      std::string const& name) const {
     return std::unique_ptr<storm::solver::LpSolver<ValueType, true>>(new storm::solver::SoplexLpSolver<ValueType, true>(name));
 }
 
@@ -47,19 +56,39 @@ std::unique_ptr<LpSolverFactory<ValueType>> SoplexLpSolverFactory<ValueType>::cl
 }
 
 template<typename ValueType>
-GurobiLpSolverFactory<ValueType>::GurobiLpSolverFactory() {
-    environment = std::make_shared<storm::solver::GurobiEnvironment>();
-    environment->initialize();
+std::unique_ptr<storm::solver::LpSolver<ValueType>> HighsLpSolverFactory<ValueType>::create(storm::Environment const&, std::string const& name) const {
+    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::HighsLpSolver<ValueType>(name));
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LpSolver<ValueType>> GurobiLpSolverFactory<ValueType>::create(std::string const& name) const {
-    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::GurobiLpSolver<ValueType>(environment, name));
+std::unique_ptr<storm::solver::LpSolver<ValueType, true>> HighsLpSolverFactory<ValueType>::createRaw(storm::Environment const&, std::string const& name) const {
+    return std::unique_ptr<storm::solver::LpSolver<ValueType, true>>(new storm::solver::HighsLpSolver<ValueType, true>(name));
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LpSolver<ValueType, true>> GurobiLpSolverFactory<ValueType>::createRaw(std::string const& name) const {
-    return std::unique_ptr<storm::solver::LpSolver<ValueType, true>>(new storm::solver::GurobiLpSolver<ValueType, true>(environment, name));
+std::unique_ptr<LpSolverFactory<ValueType>> HighsLpSolverFactory<ValueType>::clone() const {
+    return std::make_unique<HighsLpSolverFactory<ValueType>>(*this);
+}
+
+template<typename ValueType>
+std::shared_ptr<storm::solver::GurobiEnvironment> const& GurobiLpSolverFactory<ValueType>::getOrCreateGurobiEnvironment(storm::Environment const& env) const {
+    if (!environment) {
+        environment = std::make_shared<storm::solver::GurobiEnvironment>();
+        environment->initialize(env.solver().gurobi(), env.solver().isDebugSet());
+    }
+    return environment;
+}
+
+template<typename ValueType>
+std::unique_ptr<storm::solver::LpSolver<ValueType>> GurobiLpSolverFactory<ValueType>::create(storm::Environment const& env, std::string const& name) const {
+    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::GurobiLpSolver<ValueType>(getOrCreateGurobiEnvironment(env), name));
+}
+
+template<typename ValueType>
+std::unique_ptr<storm::solver::LpSolver<ValueType, true>> GurobiLpSolverFactory<ValueType>::createRaw(storm::Environment const& env,
+                                                                                                      std::string const& name) const {
+    return std::unique_ptr<storm::solver::LpSolver<ValueType, true>>(
+        new storm::solver::GurobiLpSolver<ValueType, true>(getOrCreateGurobiEnvironment(env), name));
 }
 
 template<typename ValueType>
@@ -68,12 +97,12 @@ std::unique_ptr<LpSolverFactory<ValueType>> GurobiLpSolverFactory<ValueType>::cl
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LpSolver<ValueType>> Z3LpSolverFactory<ValueType>::create(std::string const& name) const {
+std::unique_ptr<storm::solver::LpSolver<ValueType>> Z3LpSolverFactory<ValueType>::create(storm::Environment const&, std::string const& name) const {
     return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::Z3LpSolver<ValueType>(name));
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LpSolver<ValueType, true>> Z3LpSolverFactory<ValueType>::createRaw(std::string const& name) const {
+std::unique_ptr<storm::solver::LpSolver<ValueType, true>> Z3LpSolverFactory<ValueType>::createRaw(storm::Environment const&, std::string const& name) const {
     return std::unique_ptr<storm::solver::LpSolver<ValueType, true>>(new storm::solver::Z3LpSolver<ValueType, true>(name));
 }
 
@@ -83,42 +112,48 @@ std::unique_ptr<LpSolverFactory<ValueType>> Z3LpSolverFactory<ValueType>::clone(
 }
 
 template<typename ValueType>
-std::unique_ptr<LpSolverFactory<ValueType>> getLpSolverFactory(storm::solver::LpSolverTypeSelection solvType) {
+std::unique_ptr<LpSolverFactory<ValueType>> getLpSolverFactory(storm::Environment const& env, storm::solver::LpSolverTypeSelection solvType) {
     storm::solver::LpSolverType t;
     if (solvType == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
-        t = storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver();
-        bool useExact =
-            storm::NumberTraits<ValueType>::IsExact || storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactFinitePrecisionSet();
-        if (useExact && t != storm::solver::LpSolverType::Z3 &&
-            storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue()) {
+        t = env.solver().getLpSolverType();
+        bool useExact = storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact();
+        if (useExact && t != storm::solver::LpSolverType::Z3 && env.solver().isLpSolverTypeSetFromDefaultValue()) {
             t = storm::solver::LpSolverType::Z3;
         }
     } else {
         t = convert(solvType);
     }
     switch (t) {
-        case storm::solver::LpSolverType::Gurobi:
-            return std::unique_ptr<LpSolverFactory<ValueType>>(new GurobiLpSolverFactory<ValueType>());
         case storm::solver::LpSolverType::Glpk:
             return std::unique_ptr<LpSolverFactory<ValueType>>(new GlpkLpSolverFactory<ValueType>());
-        case storm::solver::LpSolverType::Z3:
-            return std::unique_ptr<LpSolverFactory<ValueType>>(new Z3LpSolverFactory<ValueType>());
+        case storm::solver::LpSolverType::Gurobi:
+            return std::unique_ptr<LpSolverFactory<ValueType>>(new GurobiLpSolverFactory<ValueType>());
+        case storm::solver::LpSolverType::Highs:
+            if constexpr (std::is_same_v<ValueType, double>) {
+                return std::unique_ptr<LpSolverFactory<ValueType>>(new HighsLpSolverFactory<ValueType>());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "The HiGHS LP solver only supports double precision.");
+            }
         case storm::solver::LpSolverType::Soplex:
             return std::unique_ptr<LpSolverFactory<ValueType>>(new SoplexLpSolverFactory<ValueType>());
+        case storm::solver::LpSolverType::Z3:
+            return std::unique_ptr<LpSolverFactory<ValueType>>(new Z3LpSolverFactory<ValueType>());
     }
     return nullptr;
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LpSolver<ValueType>> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType) {
-    std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> factory = getLpSolverFactory<ValueType>(solvType);
-    return factory->create(name);
+std::unique_ptr<storm::solver::LpSolver<ValueType>> getLpSolver(storm::Environment const& env, std::string const& name,
+                                                                storm::solver::LpSolverTypeSelection solvType) {
+    std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> factory = getLpSolverFactory<ValueType>(env, solvType);
+    return factory->create(env, name);
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LpSolver<ValueType, true>> getRawLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType) {
-    std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> factory = getLpSolverFactory<ValueType>(solvType);
-    return factory->createRaw(name);
+std::unique_ptr<storm::solver::LpSolver<ValueType, true>> getRawLpSolver(storm::Environment const& env, std::string const& name,
+                                                                         storm::solver::LpSolverTypeSelection solvType) {
+    std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> factory = getLpSolverFactory<ValueType>(env, solvType);
+    return factory->createRaw(env, name);
 }
 
 std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
@@ -128,10 +163,10 @@ std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expres
     } else {
 #ifdef STORM_HAVE_Z3
         smtSolverType = storm::solver::SmtSolverType::Z3;
-#elif STORM_HAVE_MSAT
+#elif defined STORM_HAVE_MATHSAT
         smtSolverType = storm::solver::SmtSolverType::Mathsat;
 #else
-        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Requested an SMT solver but none was installed.");
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Requested an SMT solver but none was installed.");
 #endif
     }
     switch (smtSolverType) {
@@ -166,13 +201,18 @@ template class Z3LpSolverFactory<double>;
 template class Z3LpSolverFactory<storm::RationalNumber>;
 template class SoplexLpSolverFactory<double>;
 template class SoplexLpSolverFactory<storm::RationalNumber>;
+template class HighsLpSolverFactory<double>;
 
-template std::unique_ptr<LpSolverFactory<double>> getLpSolverFactory(storm::solver::LpSolverTypeSelection solvType);
-template std::unique_ptr<LpSolverFactory<storm::RationalNumber>> getLpSolverFactory(storm::solver::LpSolverTypeSelection solvType);
-template std::unique_ptr<storm::solver::LpSolver<double>> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType);
-template std::unique_ptr<storm::solver::LpSolver<storm::RationalNumber>> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType);
-template std::unique_ptr<storm::solver::LpSolver<double, true>> getRawLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType);
-template std::unique_ptr<storm::solver::LpSolver<storm::RationalNumber, true>> getRawLpSolver(std::string const& name,
+template std::unique_ptr<LpSolverFactory<double>> getLpSolverFactory(storm::Environment const& env, storm::solver::LpSolverTypeSelection solvType);
+template std::unique_ptr<LpSolverFactory<storm::RationalNumber>> getLpSolverFactory(storm::Environment const& env,
+                                                                                    storm::solver::LpSolverTypeSelection solvType);
+template std::unique_ptr<storm::solver::LpSolver<double>> getLpSolver(storm::Environment const& env, std::string const& name,
+                                                                      storm::solver::LpSolverTypeSelection solvType);
+template std::unique_ptr<storm::solver::LpSolver<storm::RationalNumber>> getLpSolver(storm::Environment const& env, std::string const& name,
+                                                                                     storm::solver::LpSolverTypeSelection solvType);
+template std::unique_ptr<storm::solver::LpSolver<double, true>> getRawLpSolver(storm::Environment const& env, std::string const& name,
+                                                                               storm::solver::LpSolverTypeSelection solvType);
+template std::unique_ptr<storm::solver::LpSolver<storm::RationalNumber, true>> getRawLpSolver(storm::Environment const& env, std::string const& name,
                                                                                               storm::solver::LpSolverTypeSelection solvType);
 }  // namespace solver
 }  // namespace utility

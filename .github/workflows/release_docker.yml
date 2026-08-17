@@ -1,54 +1,146 @@
 name: Release Docker
-# Builds and deploys images to Dockerhub
+# Builds Storm and deploys images to DockerHub
+# Build is distributed across multiple runners based on:
+# https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
 
-on: 
+on:
+  # needed to reuse the workflow from another one
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Docker tag (e.g. 1.1.0 or stable)'
+        required: true
+        type: string
+        default: 'x.y.z'
+  # needed to trigger the workflow manually
   workflow_dispatch:
     inputs:
       tag:
         description: 'Docker tag (e.g. 1.1.0 or stable)'
         required: true
+        type: string
         default: 'x.y.z'
 
 env:
+  IMAGE: movesrwth/storm
   # GitHub runners currently have 4 cores
   NR_JOBS: "4"
 
 jobs:
-  deploy:
-    name: Deploy (${{ matrix.buildType.name }})
-    runs-on: ubuntu-latest
+  build:
+    name: Build ${{ matrix.image.tag }} on ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
-        buildType:
-          - {name: "Debug",
-             suffix: "-debug",
-             Developer: "ON"
+        image:
+          - {tag: "${{ inputs.tag }}-debug",
+             baseImg: "movesrwth/storm-dependencies:latest",
+             file: ".github/workflows/Dockerfile.release",
+             buildType: "Debug",
+             developer: "ON"
             }
-          - {name: "Release",
-             suffix: "",
-             Developer: "OFF"
+          - {tag: "${{ inputs.tag }}",
+             baseImg: "movesrwth/storm-dependencies:latest",
+             file: ".github/workflows/Dockerfile.release",
+             buildType: "Release",
+             developer: "OFF"
             }
+        platform:
+          - {name: linux/amd64, runner: "ubuntu-latest"}
+          - {name: linux/arm64, runner: "ubuntu-24.04-arm"}
     steps:
       - name: Git clone
-        uses: actions/checkout@v4
-      - name: Build storm from Dockerfile
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Prepare
+        # Sanitize platform name
         run: |
-          docker build -t movesrwth/storm:${{ github.event.inputs.tag }}${{ matrix.buildType.suffix }} . \
-            --build-arg BASE_IMG=movesrwth/storm-dependencies:latest${{ matrix.buildType.suffix }} \
-            --build-arg build_type="${{ matrix.buildType.name }}" \
-            --build-arg developer="${{ matrix.buildType.Developer }}" \
-            --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" \
-            --build-arg no_threads=${NR_JOBS}
-            # Omitting arguments gurobi_support, soplex_support, spot_support, cln_exact, cln_ratfunc, all_sanitizers
+          platform=${{ matrix.platform.name }}
+          echo "PLATFORM=${platform//\//-}" >> $GITHUB_ENV
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,${{ matrix.image.tag }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
       - name: Login to Docker Hub
         # Only login if using original repo
-        if: github.repository_owner == 'moves-rwth'
-        uses: docker/login-action@v3
+        if: github.repository_owner == 'stormchecker'
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.STORM_CI_DOCKER_USERNAME }}
           password: ${{ secrets.STORM_CI_DOCKER_TOKEN }}
-      - name: Deploy storm
-        # Only deploy if using original repo
-        if: github.repository_owner == 'moves-rwth'
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          file: ${{ matrix.image.file }}
+          # Set build arguments
+          build-args: |
+            BASE_IMAGE=${{ matrix.image.baseImg }}
+            build_type=${{ matrix.image.buildType }}
+            developer=${{ matrix.image.developer }}
+            no_threads=${{ env.NR_JOBS }}
+            # Omitting arguments cmake_args, disable_*, cln_exact, cln_ratfunc, all_sanitizers
+          platforms: ${{ matrix.platform.name }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+      - name: Export digest
         run: |
-          docker push movesrwth/storm:${{ github.event.inputs.tag }}${{ matrix.buildType.suffix }}
+          mkdir -p ${{ runner.temp }}/digests/${{ matrix.image.tag }}
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${{ matrix.image.tag }}/${digest#sha256:}"
+      - name: Upload digest
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.image.tag }}-digests-${{ env.PLATFORM }}
+          path: ${{ runner.temp }}/digests/${{ matrix.image.tag }}/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: Merge manifests for ${{ matrix.image.tag }}
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    strategy:
+      matrix:
+        image:
+          # Must be the same as above
+          - {tag: "${{ inputs.tag }}-debug"}
+          - {tag: "${{ inputs.tag }}"}
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v8
+        with:
+          path: ${{ runner.temp }}/digests/${{ matrix.image.tag }}
+          pattern: ${{ matrix.image.tag }}-digests-*
+          merge-multiple: true
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,${{ matrix.image.tag }}
+      - name: Login to Docker Hub
+        # Only login if using original repo
+        if: github.repository_owner == 'stormchecker'
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.STORM_CI_DOCKER_USERNAME }}
+          password: ${{ secrets.STORM_CI_DOCKER_TOKEN }}
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests/${{ matrix.image.tag }}
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< '${{ steps.meta.outputs.json}}') \
+            $(printf '${{ env.IMAGE }}@sha256:%s ' *)
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ${{ env.IMAGE }}:${{ steps.meta.outputs.version }}

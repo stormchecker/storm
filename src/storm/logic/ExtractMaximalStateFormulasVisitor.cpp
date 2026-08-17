@@ -41,7 +41,7 @@ boost::any ExtractMaximalStateFormulasVisitor::visit(BoundedUntilFormula const& 
     }
 
     STORM_LOG_THROW(!f.hasMultiDimensionalSubformulas(), storm::exceptions::InvalidOperationException,
-                    "Can not extract maximal state formulas for multi-dimensional bounded until");
+                    "Can not extract maximal state formulas for multi-dimensional bounded until.");
 
     std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
     if (left->hasQualitativeResult()) {
@@ -204,7 +204,7 @@ void ExtractMaximalStateFormulasVisitor::incrementNestingLevel() const {
     const_cast<std::size_t&>(nestingLevel)++;
 }
 void ExtractMaximalStateFormulasVisitor::decrementNestingLevel() const {
-    STORM_LOG_ASSERT(nestingLevel > 0, "Illegal nesting level decrement");
+    STORM_LOG_ASSERT(nestingLevel > 0, "Illegal nesting level decrement.");
     const_cast<std::size_t&>(nestingLevel)--;
 }
 

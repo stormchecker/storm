@@ -1,8 +1,8 @@
+#pragma once
+
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm-pomdp/storage/BeliefManager.h"
-#include "storm/utility/logging.h"
-
 #include "storm/storage/jani/Property.h"
 #include "storm/utility/Stopwatch.h"
 
@@ -186,6 +186,8 @@ class BeliefExplorationPomdpModelChecker {
      */
     std::shared_ptr<ExplorerType> getInteractiveBeliefExplorer();
 
+    void setFMSchedValueList(std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> valueList);
+
     /**
      * Get the current status of the interactive unfolding
      * @return the interactive unfolding
@@ -295,25 +297,27 @@ class BeliefExplorationPomdpModelChecker {
     /**
      * Clips the belief with the given state ID to a belief grid by clipping its direct successor ("grid clipping")
      * Transitions to explored successors and successors on the grid are added, otherwise successors are not generated
+     * @param env Environment
      * @param clippingStateId the state ID of the clipping belief
      * @param computeRewards true, if rewards are computed
      * @param min true, if objective is to minimise
      * @param beliefManager the belief manager used
      * @param beliefExplorer the belief MDP explorer used
      */
-    void clipToGrid(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType>& beliefManager,
+    void clipToGrid(storm::Environment const& env, uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType>& beliefManager,
                     std::shared_ptr<ExplorerType>& beliefExplorer);
 
     /**
      * Clips the belief with the given state ID to a belief grid.
      * If a new candidate is added to the belief space, it is expanded. If necessary, its direct successors are added to the exploration queue to be
      * handled by the main exploration routine.
+     * @param env Environment
      * @param clippingStateId the state ID of the clipping belief
      * @param computeRewards true, if rewards are computed
      * @param beliefManager the belief manager used
      * @param beliefExplorer the belief MDP explorer used
      */
-    bool clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, std::shared_ptr<BeliefManagerType>& beliefManager,
+    bool clipToGridExplicitly(storm::Environment const& env, uint64_t clippingStateId, bool computeRewards, std::shared_ptr<BeliefManagerType>& beliefManager,
                               std::shared_ptr<ExplorerType>& beliefExplorer, uint64_t localActionIndex);
 
     /**

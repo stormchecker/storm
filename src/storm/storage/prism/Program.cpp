@@ -4,9 +4,6 @@
 #include <boost/algorithm/string/join.hpp>
 #include <sstream>
 
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/Property.h"
-
 #include "storm/exceptions/InternalException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -14,17 +11,17 @@
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/solver/SmtSolver.h"
+#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
-#include "storm/utility/macros.h"
-#include "storm/utility/solver.h"
-#include "storm/utility/vector.h"
-
 #include "storm/storage/prism/CompositionVisitor.h"
 #include "storm/storage/prism/Compositions.h"
 #include "storm/storage/prism/ToJaniConverter.h"
-
 #include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace prism {
@@ -36,9 +33,8 @@ class CompositionValidityChecker : public CompositionVisitor {
 
     void check(Composition const& composition) {
         composition.accept(*this, boost::any());
-        if (appearingModules.size() != program.getNumberOfModules()) {
-            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Not every module is used in the system composition.");
-        }
+        STORM_LOG_THROW(appearingModules.size() == program.getNumberOfModules(), storm::exceptions::WrongFormatException,
+                        "Not every module is used in the system composition.");
     }
 
     virtual boost::any visit(ModuleComposition const& composition, boost::any const&) override {
@@ -435,7 +431,7 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> Program::
     std::map<storm::expressions::Variable, storm::expressions::Expression> renamingAsSubstitution;
     for (auto const& renamingPair : renaming) {
         if (getManager().hasVariable(renamingPair.first)) {
-            assert(getManager().hasVariable(renamingPair.second));
+            STORM_LOG_ASSERT(getManager().hasVariable(renamingPair.second), "Variable not found in renaming.");
             renamingAsSubstitution.emplace(getManager().getVariable(renamingPair.first), getManager().getVariableExpression(renamingPair.second));
         }
     }
@@ -453,14 +449,14 @@ std::map<std::string, std::string> Program::getFinalRenamingOfModule(Module cons
         moduleStack.push_back(&getModule(moduleStack.back()->getBaseModule()));
     }
 
-    assert(!moduleStack.back()->isRenamedFromModule());
+    STORM_LOG_ASSERT(!moduleStack.back()->isRenamedFromModule(), "Last module should not be renamed.");
     moduleStack.pop_back();
-    assert(moduleStack.empty() || moduleStack.back()->isRenamedFromModule());
+    STORM_LOG_ASSERT(moduleStack.empty() || moduleStack.back()->isRenamedFromModule(), "Expected renamed module.");
     std::map<std::string, std::string> currentRenaming;
     while (!moduleStack.empty()) {
         Module const& currentModule = *moduleStack.back();
         moduleStack.pop_back();
-        assert(currentModule.isRenamedFromModule());
+        STORM_LOG_ASSERT(currentModule.isRenamedFromModule(), "Expected renamed module.");
         std::map<std::string, std::string> newRenaming = currentModule.getRenaming();
         for (auto const& renaimingPair : newRenaming) {
             auto findRes = currentRenaming.find(renaimingPair.second);
@@ -487,11 +483,13 @@ std::vector<IntegerVariable> const& Program::getGlobalIntegerVariables() const {
     return this->globalIntegerVariables;
 }
 
-std::set<storm::expressions::Variable> Program::getAllExpressionVariables() const {
+std::set<storm::expressions::Variable> Program::getAllExpressionVariables(bool includeConstants) const {
     std::set<storm::expressions::Variable> result;
 
-    for (auto const& constant : constants) {
-        result.insert(constant.getExpressionVariable());
+    if (includeConstants) {
+        for (auto const& constant : constants) {
+            result.insert(constant.getExpressionVariable());
+        }
     }
     for (auto const& variable : globalBooleanVariables) {
         result.insert(variable.getExpressionVariable());
@@ -578,7 +576,7 @@ std::vector<storm::storage::PlayerIndex> Program::buildModuleIndexToPlayerIndexM
     for (storm::storage::PlayerIndex i = 0; i < this->getPlayers().size(); ++i) {
         for (auto const& module : this->getPlayers()[i].getModules()) {
             STORM_LOG_ASSERT(hasModule(module), "Module " << module << " not found.");
-            STORM_LOG_ASSERT(moduleToIndexMap.at(module) < this->getModules().size(), "module index " << moduleToIndexMap.at(module) << " out of range.");
+            STORM_LOG_ASSERT(moduleToIndexMap.at(module) < this->getModules().size(), "Module index " << moduleToIndexMap.at(module) << " out of range.");
             result[moduleToIndexMap.at(module)] = i;
         }
     }
@@ -703,6 +701,19 @@ storm::expressions::Expression Program::getInitialStatesExpression() const {
 
         return result;
     }
+}
+
+bool Program::hasIntervalUpdates() const {
+    for (auto const& module : this->modules) {
+        for (auto const& command : module.getCommands()) {
+            for (auto const& update : command.getUpdates()) {
+                if (update.isLikelihoodInterval()) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 bool Program::specifiesSystemComposition() const {
@@ -830,6 +841,15 @@ bool Program::hasLabel(std::string const& labelName) const {
 
 std::vector<Label> const& Program::getLabels() const {
     return this->labels;
+}
+
+bool Program::hasFormula(std::string const& formulaName) const {
+    return this->formulaToIndexMap.find(formulaName) != this->formulaToIndexMap.end();
+}
+
+Formula const& Program::getFormula(std::string const& formulaName) const {
+    STORM_LOG_ASSERT(this->hasFormula(formulaName), "Formula with name '" << formulaName << "' does not exist.");
+    return formulas[this->formulaToIndexMap.at(formulaName)];
 }
 
 std::vector<storm::expressions::Expression> Program::getAllGuards(bool negated) const {
@@ -1147,6 +1167,14 @@ Program Program::substituteConstantsFormulas(bool substituteConstants, bool subs
                    this->getOptionalSystemCompositionConstruct(), prismCompatibility);
 }
 
+Program Program::preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
+    return this->defineUndefinedConstants(constantDefinitions).substituteConstantsFormulas().substituteNonStandardPredicates();
+}
+
+Program Program::preprocess(std::string const& constantDefinitionString) const {
+    return this->preprocess(storm::storage::parseConstantDefinitionString(this->getManager(), constantDefinitionString));
+}
+
 Program Program::labelUnlabelledCommands(std::map<uint64_t, std::string> const& nameSuggestions) const {
     for (auto const& entry : nameSuggestions) {
         STORM_LOG_THROW(!hasAction(entry.second), storm::exceptions::InvalidArgumentException, "Cannot suggest names already in the program.");
@@ -1203,7 +1231,7 @@ Program Program::replaceVariableInitializationByInitExpression() const {
 Program Program::replaceConstantByVariable(Constant const& c, expressions::Expression const& lowerBound, expressions::Expression const& upperBound,
                                            bool observable) const {
     STORM_LOG_THROW(this->getModelType() == ModelType::POMDP || observable, storm::exceptions::InvalidArgumentException,
-                    "Variables can only be unobservable in POMDPs");
+                    "Variables can only be unobservable in POMDPs.");
     std::vector<BooleanVariable> newBooleanVariables = globalBooleanVariables;
     std::vector<IntegerVariable> newIntegerVariables = globalIntegerVariables;
     std::vector<Constant> newConstants = constants;
@@ -1551,7 +1579,13 @@ void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
 
             // Check all updates.
             for (auto const& update : command.getUpdates()) {
-                containedVariables = update.getLikelihoodExpression().getVariables();
+                containedVariables.clear();
+                if (update.isLikelihoodInterval()) {
+                    update.getLikelihoodExpressionInterval().first.gatherVariables(containedVariables);
+                    update.getLikelihoodExpressionInterval().second.gatherVariables(containedVariables);
+                } else {
+                    update.getLikelihoodExpression().gatherVariables(containedVariables);
+                }
                 illegalVariables.clear();
                 std::set_difference(containedVariables.begin(), containedVariables.end(), variablesAndConstants.begin(), variablesAndConstants.end(),
                                     std::inserter(illegalVariables, illegalVariables.begin()));
@@ -1779,20 +1813,16 @@ void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
                 }
             }
             for (auto const& entry : globalIVarsWrittenToByCommandInThisModule) {
-                if (globalIVarsWrittenToByCommand.find(entry) != globalIVarsWrittenToByCommand.end()) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                                    "Error in " << module.getFilename() << ", line " << module.getLineNumber()
-                                                << ": assignment of (possibly) synchronizing command with label '" << entry.second
-                                                << "' writes to global variable '" << entry.first << "'.");
-                }
+                STORM_LOG_THROW(globalIVarsWrittenToByCommand.find(entry) == globalIVarsWrittenToByCommand.end(), storm::exceptions::WrongFormatException,
+                                "Error in " << module.getFilename() << ", line " << module.getLineNumber()
+                                            << ": assignment of (possibly) synchronizing command with label '" << entry.second
+                                            << "' writes to global variable '" << entry.first << "'.");
             }
             for (auto const& entry : globalBVarsWrittenToByCommandInThisModule) {
-                if (globalBVarsWrittenToByCommand.find(entry) != globalBVarsWrittenToByCommand.end()) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                                    "Error in " << module.getFilename() << ", line " << module.getLineNumber()
-                                                << ": assignment of (possibly) synchronizing command with label '" << entry.second
-                                                << "' writes to global variable '" << entry.first << "'.");
-                }
+                STORM_LOG_THROW(globalBVarsWrittenToByCommand.find(entry) == globalBVarsWrittenToByCommand.end(), storm::exceptions::WrongFormatException,
+                                "Error in " << module.getFilename() << ", line " << module.getLineNumber()
+                                            << ": assignment of (possibly) synchronizing command with label '" << entry.second
+                                            << "' writes to global variable '" << entry.first << "'.");
             }
         }
     }

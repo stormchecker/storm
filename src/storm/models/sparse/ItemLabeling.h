@@ -6,7 +6,6 @@
 #include <unordered_map>
 
 #include "storm/storage/BitVector.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {
@@ -163,7 +162,7 @@ class ItemLabeling {
      *
      * @param items The selected set of items.
      */
-    ItemLabeling getSubLabeling(storm::storage::BitVector const& items) const;
+    ItemLabeling getSubItemLabeling(storm::storage::BitVector const& items) const;
 
     /*!
      * Retrieves the set of labels attached to the given item.

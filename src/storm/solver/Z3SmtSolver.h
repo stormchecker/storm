@@ -1,13 +1,12 @@
-#ifndef STORM_SOLVER_Z3SMTSOLVER
-#define STORM_SOLVER_Z3SMTSOLVER
+#pragma once
 
 #include "storm-config.h"
 #include "storm/adapters/Z3ExpressionAdapter.h"
 #include "storm/solver/SmtSolver.h"
 
 #ifdef STORM_HAVE_Z3
-#include "z3++.h"
-#include "z3.h"
+#include <z3++.h>
+#include <z3.h>
 #endif
 
 namespace storm {
@@ -48,13 +47,13 @@ class Z3SmtSolver : public SmtSolver {
 
     virtual void add(storm::expressions::Expression const& assertion) override;
 
+    virtual void addNotCurrentModel(bool performSolverReset = true) override;
+
     virtual CheckResult check() override;
 
     virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) override;
 
-#ifndef WINDOWS
     virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) override;
-#endif
 
     virtual storm::expressions::SimpleValuation getModelAsValuation() override;
 
@@ -103,4 +102,3 @@ class Z3SmtSolver : public SmtSolver {
 };
 }  // namespace solver
 }  // namespace storm
-#endif  // STORM_SOLVER_Z3SMTSOLVER

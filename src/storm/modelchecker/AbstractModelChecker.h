@@ -2,9 +2,9 @@
 
 #include <string>
 
+#include "storm/adapters/IntervalForward.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/CheckTask.h"
-#include "storm/solver/OptimizationDirection.h"
 
 namespace storm {
 
@@ -15,13 +15,31 @@ class CheckResult;
 
 template<typename ModelType>
 class AbstractModelChecker {
+   private:
+    // Due to a GCC bug we have to add this dummy template type here
+    // https://stackoverflow.com/questions/49707184/explicit-specialization-in-non-namespace-scope-does-not-compile-in-gcc
+    template<typename T, typename Dummy>
+    struct GetSolutionType {
+        using type = T;
+    };
+
+    template<typename Dummy>
+    struct GetSolutionType<storm::Interval, Dummy> {
+        using type = double;
+    };
+
+    template<typename Dummy>
+    struct GetSolutionType<storm::RationalInterval, Dummy> {
+        using type = storm::RationalNumber;
+    };
+
    public:
     virtual ~AbstractModelChecker() {
         // Intentionally left empty.
     }
 
     typedef typename ModelType::ValueType ValueType;
-    using SolutionType = typename std::conditional<std::is_same_v<ValueType, storm::Interval>, double, ValueType>::type;
+    using SolutionType = typename GetSolutionType<ValueType, void>::type;
 
     /*!
      * Returns the name of the model checker class (e.g., for display in error messages).
@@ -83,6 +101,10 @@ class AbstractModelChecker {
                                                              CheckTask<storm::logic::TotalRewardFormula, SolutionType> const& checkTask);
     virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(Environment const& env,
                                                                       CheckTask<storm::logic::LongRunAverageRewardFormula, SolutionType> const& checkTask);
+    virtual std::unique_ptr<CheckResult> computeDiscountedCumulativeRewards(
+        Environment const& env, CheckTask<storm::logic::DiscountedCumulativeRewardFormula, SolutionType> const& checkTask);
+    virtual std::unique_ptr<CheckResult> computeDiscountedTotalRewards(Environment const& env,
+                                                                       CheckTask<storm::logic::DiscountedTotalRewardFormula, SolutionType> const& checkTask);
 
     // The methods to compute the long-run average probabilities and timing measures.
     virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(Environment const& env,

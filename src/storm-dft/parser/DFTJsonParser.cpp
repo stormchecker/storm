@@ -1,11 +1,11 @@
-#include "DFTJsonParser.h"
+#include "storm-dft/parser/DFTJsonParser.h"
 
 #include <boost/algorithm/string.hpp>
-#include <iostream>
 
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/utility/RelevantEvents.h"
 #include "storm/adapters/JsonAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -18,10 +18,10 @@ namespace parser {
 template<typename ValueType>
 storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromFile(std::string const& filename) {
     std::ifstream file;
-    storm::utility::openFile(filename, file);
+    storm::io::openFile(filename, file);
     Json jsonInput;
     file >> jsonInput;
-    storm::utility::closeFile(file);
+    storm::io::closeFile(file);
     return parseJson(jsonInput);
 }
 
@@ -124,6 +124,11 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
                 STORM_LOG_THROW(data.count("probability") > 0, storm::exceptions::WrongFormatException,
                                 "PDEP '" << name << "' requires parameter 'probability'.");
                 ValueType probability = valueParser.parseValue(parseValue(data.at("probability")));
+                if (storm::utility::isZero<ValueType>(probability)) {
+                    // Skip element. Otherwise, trying to add layout information later on will fail
+                    STORM_LOG_WARN("Dependency " << name << " with probability 0 is superfluous and will not be added.");
+                    continue;
+                }
                 builder.addPdep(name, childNames, probability);
             } else if (boost::starts_with(type, "be")) {
                 parseBasicElement(name, type, data, builder, valueParser);
@@ -150,15 +155,14 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
         builder.setTopLevel(nameMapping.at(topLevelId));
 
     } catch (storm::exceptions::BaseException const& exception) {
-        STORM_LOG_THROW(false, storm::exceptions::FileIoException, "A parsing exception occurred in " << currentLocation << ": " << exception.what());
+        STORM_LOG_THROW(false, storm::exceptions::FileIoException, "A parsing exception occurred in " << currentLocation << ": " << exception.what() << ".");
     } catch (std::exception const& exception) {
-        STORM_LOG_THROW(false, storm::exceptions::FileIoException, "An exception occurred during parsing in " << currentLocation << ": " << exception.what());
+        STORM_LOG_THROW(false, storm::exceptions::FileIoException,
+                        "An exception occurred during parsing in " << currentLocation << ": " << exception.what() << ".");
     }
 
     // Build DFT
     storm::dft::storage::DFT<ValueType> dft = builder.build();
-    STORM_LOG_DEBUG("DFT elements:\n" << dft.getElementsString());
-    STORM_LOG_DEBUG("Spare modules:\n" << dft.getModulesString());
     // Set relevant events
     dft.setRelevantEvents(relevantEvents, false);
     STORM_LOG_DEBUG("Relevant events: " << dft.getRelevantEventsString());

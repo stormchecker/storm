@@ -1,12 +1,12 @@
 #include "storm-config.h"
-#include "storm-parsers/parser/PrismParser.h"
 #include "test/storm_gtest.h"
 
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/utility/solver.h"
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 TEST(PrismProgramTest, FlattenModules) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm"));

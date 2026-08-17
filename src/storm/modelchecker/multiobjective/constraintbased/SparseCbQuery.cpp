@@ -1,17 +1,13 @@
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbQuery.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/modelchecker/multiobjective/Objective.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/transformer/GoalStateMerger.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -28,7 +24,7 @@ SparseCbQuery<SparseModelType>::SparseCbQuery(preprocessing::SparseMultiObjectiv
 
     STORM_LOG_THROW(rewardAnalysis.totalRewardLessInfinityEStates, storm::exceptions::UnexpectedException,
                     "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
-    STORM_LOG_THROW(preprocessorResult.containsOnlyTrivialObjectives(), storm::exceptions::NotSupportedException,
+    STORM_LOG_THROW(!preprocessorResult.containsRewardBoundedObjective(), storm::exceptions::NotSupportedException,
                     "At least one objective was not reduced to an expected (total or cumulative) reward objective during preprocessing. This is not supported "
                     "by the considered weight vector checker.");
     STORM_LOG_THROW(preprocessorResult.preprocessedModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
@@ -54,13 +50,11 @@ SparseCbQuery<SparseModelType>::SparseCbQuery(preprocessing::SparseMultiObjectiv
     expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
 }
 
-#ifdef STORM_HAVE_CARL
 template class SparseCbQuery<storm::models::sparse::Mdp<double>>;
 template class SparseCbQuery<storm::models::sparse::MarkovAutomaton<double>>;
 
 template class SparseCbQuery<storm::models::sparse::Mdp<storm::RationalNumber>>;
 template class SparseCbQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
-#endif
 }  // namespace multiobjective
 }  // namespace modelchecker
 }  // namespace storm

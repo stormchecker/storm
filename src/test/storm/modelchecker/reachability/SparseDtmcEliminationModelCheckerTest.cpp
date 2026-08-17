@@ -1,15 +1,13 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
-
-#include "storm-parsers/parser/AutoParser.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
 TEST(SparseDtmcEliminationModelCheckerTest, Die) {
@@ -109,7 +107,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
     EXPECT_NEAR(0.96592521978041668, quantitativeResult5[0], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 }
 
-TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
+STORM_EXPENSIVE_TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel =
         storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/leader4_8.tra", STORM_TEST_RESOURCES_DIR "/lab/leader4_8.lab", "",
                                                 STORM_TEST_RESOURCES_DIR "/rew/leader4_8.pick.trans.rew");

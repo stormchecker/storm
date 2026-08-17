@@ -205,15 +205,6 @@ class DFTState {
     bool claimNew(size_t spareId, size_t currentlyUses, std::vector<std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>> const& children);
 
     /**
-     * Get the failure rate of the currently failable BE on the given index.
-     *
-     * @param index           Index of BE in list of currently failable BEs.
-     *
-     * @return Failure rate of the BE.
-     */
-    ValueType getFailableBERate(size_t index) const;
-
-    /**
      * Get the current failure rate of the given BE.
      *
      * @param id        Id of BE.

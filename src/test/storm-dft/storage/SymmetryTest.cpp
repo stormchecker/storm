@@ -80,6 +80,10 @@ TEST(SymmetryTest, SymmetriesDynamicFT) {
     EXPECT_EQ(symmetries.nrSymmetries(), 1ul);
     EXPECT_EQ(symmetries.getSymmetryGroup(1).size(), 1ul);
     EXPECT_EQ(symmetries.getSymmetryGroup(1)[0].size(), 2ul);
+    symmetries = findSymmetries(STORM_TEST_RESOURCES_DIR "/dft/fdep6.dft");
+    EXPECT_EQ(symmetries.nrSymmetries(), 0ul);
+    symmetries = findSymmetries(STORM_TEST_RESOURCES_DIR "/dft/fdep7.dft");
+    EXPECT_EQ(symmetries.nrSymmetries(), 0ul);
 
     symmetries = findSymmetries(STORM_TEST_RESOURCES_DIR "/dft/pdep.dft");
     EXPECT_EQ(symmetries.nrSymmetries(), 0ul);

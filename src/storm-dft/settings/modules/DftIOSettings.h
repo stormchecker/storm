@@ -177,6 +177,20 @@ class DftIOSettings : public storm::settings::modules::ModuleSettings {
      */
     std::string getImportanceMeasure() const;
 
+    /*!
+     * Retrieves whether the varialble ordering file option was set.
+     *
+     * @return True if the variable ordering file option was set.
+     */
+    bool isVariableOrderingFileSet() const;
+
+    /*!
+     * Retrieves the name of the file that contains the variable ordering.
+     *
+     * @return The name of the file that contains the variable ordering.
+     */
+    std::string getVariableOrderingFilename() const;
+
     bool check() const override;
     void finalize() override;
 
@@ -204,6 +218,7 @@ class DftIOSettings : public storm::settings::modules::ModuleSettings {
     static const std::string dftStatisticsOptionName;
     static const std::string dftStatisticsOptionShortName;
     static const std::string importanceMeasureOptionName;
+    static const std::string variableOrderingFileOptionName;
 };
 
 }  // namespace modules

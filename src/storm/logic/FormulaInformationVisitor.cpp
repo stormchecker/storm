@@ -197,5 +197,23 @@ boost::any FormulaInformationVisitor::visit(HOAPathFormula const& f, boost::any 
     return info;
 }
 
+boost::any FormulaInformationVisitor::visit(DiscountedCumulativeRewardFormula const& f, boost::any const&) const {
+    FormulaInformation result;
+    result.setContainsCumulativeRewardFormula(true);
+    result.setContainsDiscountFormula(true);
+    for (unsigned i = 0; i < f.getDimension(); ++i) {
+        if (f.getTimeBoundReference(i).isRewardBound()) {
+            result.setContainsRewardBoundedFormula(true);
+        }
+    }
+    return result;
+}
+
+boost::any FormulaInformationVisitor::visit(DiscountedTotalRewardFormula const&, boost::any const&) const {
+    FormulaInformation result;
+    result.setContainsDiscountFormula(true);
+    return result;
+}
+
 }  // namespace logic
 }  // namespace storm

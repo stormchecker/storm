@@ -1,21 +1,16 @@
 #include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
-#include <storm/models/symbolic/MarkovAutomaton.h>
 
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/DdManager.h"
-
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/logic/FragmentSpecification.h"
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-
-#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-
-#include "storm/logic/FragmentSpecification.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

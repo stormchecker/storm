@@ -16,14 +16,14 @@ PrismChoiceOrigins::PrismChoiceOrigins(std::shared_ptr<storm::prism::Program con
                                        std::vector<uint_fast64_t> const& indexToIdentifierMapping, std::vector<CommandSet> const& identifierToCommandSetMapping)
     : ChoiceOrigins(indexToIdentifierMapping), program(prismProgram), identifierToCommandSet(identifierToCommandSetMapping) {
     STORM_LOG_THROW(identifierToCommandSet[this->getIdentifierForChoicesWithNoOrigin()].empty(), storm::exceptions::InvalidArgumentException,
-                    "The given command set for the choices without origin is non-empty");
+                    "The given command set for the choices without origin is non-empty.");
 }
 
 PrismChoiceOrigins::PrismChoiceOrigins(std::shared_ptr<storm::prism::Program const> const& prismProgram, std::vector<uint_fast64_t>&& indexToIdentifierMapping,
                                        std::vector<CommandSet>&& identifierToCommandSetMapping)
     : ChoiceOrigins(std::move(indexToIdentifierMapping)), program(prismProgram), identifierToCommandSet(std::move(identifierToCommandSetMapping)) {
     STORM_LOG_THROW(identifierToCommandSet[this->getIdentifierForChoicesWithNoOrigin()].empty(), storm::exceptions::InvalidArgumentException,
-                    "The given command set for the choices without origin is non-empty");
+                    "The given command set for the choices without origin is non-empty.");
 }
 
 bool PrismChoiceOrigins::isPrismChoiceOrigins() const {
@@ -88,7 +88,7 @@ void PrismChoiceOrigins::computeIdentifierInfos() const {
                 moduleCommandPair = program->getModuleCommandIndexByGlobalCommandIndex(*commandIndexIt);
                 storm::prism::Module const& module = program->getModule(moduleCommandPair.first);
                 storm::prism::Command const& command = module.getCommand(moduleCommandPair.second);
-                STORM_LOG_THROW(command.getActionName() == actionName, storm::exceptions::UnexpectedException, "Inconsistent action names for choice origin");
+                STORM_LOG_THROW(command.getActionName() == actionName, storm::exceptions::UnexpectedException, "Inconsistent action names for choice origin.");
 
                 actionNameIsUniqueInModule = firstCommand.isLabeled() && module.getCommandIndicesByActionIndex(command.getActionIndex()).size() == 1;
                 if (!actionNameIsUniqueInModule || setNameNeedsAllModuleNames) {

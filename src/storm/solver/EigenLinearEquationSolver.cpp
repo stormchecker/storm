@@ -1,12 +1,8 @@
 #include "storm/solver/EigenLinearEquationSolver.h"
 
 #include "storm/adapters/EigenAdapter.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/environment/solver/EigenSolverEnvironment.h"
-
-#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
@@ -67,7 +63,6 @@ EigenLinearEquationSolverMethod EigenLinearEquationSolver<ValueType>::getMethod(
     return method;
 }
 
-#ifdef STORM_HAVE_CARL
 // Specialization for storm::RationalNumber
 template<>
 bool EigenLinearEquationSolver<storm::RationalNumber>::internalSolveEquations(Environment const& env, std::vector<storm::RationalNumber>& x,
@@ -104,7 +99,6 @@ bool EigenLinearEquationSolver<storm::RationalFunction>::internalSolveEquations(
     solver._solve_impl(eigenB, eigenX);
     return solver.info() == Eigen::ComputationInfo::Success;
 }
-#endif
 
 template<typename ValueType>
 bool EigenLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
@@ -276,12 +270,10 @@ std::unique_ptr<LinearEquationSolverFactory<ValueType>> EigenLinearEquationSolve
 template class EigenLinearEquationSolver<double>;
 template class EigenLinearEquationSolverFactory<double>;
 
-#ifdef STORM_HAVE_CARL
 template class EigenLinearEquationSolver<storm::RationalNumber>;
 template class EigenLinearEquationSolver<storm::RationalFunction>;
 
 template class EigenLinearEquationSolverFactory<storm::RationalNumber>;
 template class EigenLinearEquationSolverFactory<storm::RationalFunction>;
-#endif
 }  // namespace solver
 }  // namespace storm

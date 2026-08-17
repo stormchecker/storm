@@ -1,14 +1,16 @@
 #include "storm/generator/JaniNextStateGenerator.h"
 
 #include "storm/adapters/JsonAdapter.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/generator/Distribution.h"
 #include "storm/models/sparse/StateLabeling.h"
-
 #include "storm/solver/SmtSolver.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/SimpleValuation.h"
-
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/Edge.h"
@@ -16,21 +18,11 @@
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/traverser/ArrayExpressionFinder.h"
 #include "storm/storage/jani/traverser/AssignmentLevelFinder.h"
 #include "storm/storage/jani/traverser/RewardModelInformation.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
-
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
-
-#include "storm/generator/Distribution.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
-#include "storm/exceptions/WrongFormatException.h"
+#include "storm/storage/valuations/ValuationDescriptionBuilder.h"
 #include "storm/utility/combinatorics.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -54,12 +46,10 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
       hasStateActionRewards(false),
       evaluateRewardExpressionsAtEdges(false),
       evaluateRewardExpressionsAtDestinations(false) {
-    STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::NotSupportedException,
-                    "JANI next-state generator cannot generate choice labels.");
-
     auto features = this->model.getModelFeatures();
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::StateExitRewards);
+    features.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
     features.remove(storm::jani::ModelFeature::TrigonometricFunctions);
     // Eliminate arrays if necessary.
     if (features.hasArrays()) {
@@ -82,6 +72,19 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
         for (auto const& rewardModelName : this->options.getRewardModelNames()) {
             rewardExpressions.emplace_back(rewardModelName, this->model.getRewardModelExpression(rewardModelName));
             hasNonTrivialRewardExpressions = hasNonTrivialRewardExpressions || this->model.isNonTrivialRewardModelExpression(rewardModelName);
+        }
+    }
+    // If a transient variable has a non-zero default value, we also consider that non-trivial.
+    // In those cases, lifting edge destination assignments to the edges would mean that reward is collected twice:
+    // once at the edge (assigned value), once at the edge destinations (default value).
+    if (!hasNonTrivialRewardExpressions) {
+        for (auto const& rewExpr : rewardExpressions) {
+            STORM_LOG_ASSERT(rewExpr.second.isVariable(), "Expected trivial reward expression to be a variable. Got " << rewExpr.second << " instead.");
+            auto const& var = this->model.getGlobalVariables().getVariable(rewExpr.second.getBaseExpression().asVariableExpression().getVariable());
+            if (var.isTransient() && var.hasInitExpression() && !storm::utility::isZero(var.getInitExpression().evaluateAsRational())) {
+                hasNonTrivialRewardExpressions = true;
+                break;
+            }
         }
     }
 
@@ -144,6 +147,7 @@ storm::jani::ModelFeatures JaniNextStateGenerator<ValueType, StateType>::getSupp
     storm::jani::ModelFeatures features;
     features.add(storm::jani::ModelFeature::DerivedOperators);
     features.add(storm::jani::ModelFeature::StateExitRewards);
+    features.add(storm::jani::ModelFeature::MultiObjectiveProperties);
     features.add(storm::jani::ModelFeature::Arrays);
     features.add(storm::jani::ModelFeature::TrigonometricFunctions);
     // We do not add Functions as these should ideally be substituted before creating this generator.
@@ -158,6 +162,7 @@ bool JaniNextStateGenerator<ValueType, StateType>::canHandle(storm::jani::Model 
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::Functions);  // can be substituted
     features.remove(storm::jani::ModelFeature::StateExitRewards);
+    features.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
     features.remove(storm::jani::ModelFeature::TrigonometricFunctions);
     if (!features.empty()) {
         STORM_LOG_INFO("The model can not be build as it contains these unsupported features: " << features.toString());
@@ -268,7 +273,7 @@ std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialS
                     STORM_LOG_THROW(variableValue >= integerVariable.lowerBound, storm::exceptions::WrongFormatException,
                                     "The initial value for variable " << integerVariable.variable.getName() << " is lower than the lower bound.");
                     STORM_LOG_THROW(variableValue <= integerVariable.upperBound, storm::exceptions::WrongFormatException,
-                                    "The initial value for variable " << integerVariable.variable.getName() << " is higher than the upper bound");
+                                    "The initial value for variable " << integerVariable.variable.getName() << " is higher than the upper bound.");
                 }
                 storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
                 blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
@@ -307,7 +312,7 @@ std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialS
         std::vector<std::vector<uint64_t>> allValues;
         for (auto const& aRef : this->parallelAutomata) {
             auto const& aInitLocs = aRef.get().getInitialLocationIndices();
-            allValues.template emplace_back(aInitLocs.begin(), aInitLocs.end());
+            allValues.emplace_back(aInitLocs.begin(), aInitLocs.end());
         }
         uint64_t locEndIndex = allValues.size();
         for (auto const& intVar : this->variableInformation.integerVariables) {
@@ -342,7 +347,7 @@ std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialS
                     initialState.setFromInt(intVar.bitOffset, intVar.bitWidth, value);
                 } else {
                     // Boolean variable
-                    STORM_LOG_ASSERT(index - intEndIndex < this->variableInformation.booleanVariables.size(), "Unexpected index");
+                    STORM_LOG_ASSERT(index - intEndIndex < this->variableInformation.booleanVariables.size(), "Unexpected index.");
                     auto const& boolVar = this->variableInformation.booleanVariables[index - intEndIndex];
                     STORM_LOG_ASSERT(value <= 1u, "Unexpected value for boolean variable.");
                     initialState.set(boolVar.bitOffset, static_cast<bool>(value));
@@ -559,75 +564,49 @@ void JaniNextStateGenerator<ValueType, StateType>::unpackTransientVariableValues
 }
 
 template<typename ValueType, typename StateType>
-storm::storage::sparse::StateValuationsBuilder JaniNextStateGenerator<ValueType, StateType>::initializeStateValuationsBuilder() const {
-    auto result = NextStateGenerator<ValueType, StateType>::initializeStateValuationsBuilder();
+storm::storage::sparse::Valuations JaniNextStateGenerator<ValueType, StateType>::initializeStateValuations() const {
+    storm::storage::sparse::ValuationDescriptionBuilder builder(this->model.getManager().shared_from_this());
+    if (this->variableInformation.hasOutOfBoundsBit()) {
+        builder.addBooleanVariable(this->variableInformation.outOfBoundsBit->variable);
+    }
+    for (auto const& v : this->variableInformation.locationVariables) {
+        builder.addIntegerVariable(v.variable, 0, v.highestValue);
+    }
+    for (auto const& v : this->variableInformation.booleanVariables) {
+        builder.addBooleanVariable(v.variable);
+    }
+    for (auto const& v : this->variableInformation.integerVariables) {
+        builder.addIntegerVariable(v.variable, v.lowerBound, v.upperBound);
+    }
     // Also add information for transient variables
     for (auto const& varInfo : transientVariableInformation.booleanVariableInformation) {
-        result.addVariable(varInfo.variable);
+        builder.addBooleanVariable(varInfo.variable);
     }
     for (auto const& varInfo : transientVariableInformation.integerVariableInformation) {
-        result.addVariable(varInfo.variable);
+        builder.addIntegerVariable(varInfo.variable, varInfo.lowerBound.value_or(std::numeric_limits<int64_t>::min()),
+                                   varInfo.upperBound.value_or(std::numeric_limits<int64_t>::max()));
     }
     for (auto const& varInfo : transientVariableInformation.rationalVariableInformation) {
-        result.addVariable(varInfo.variable);
+        if (std::is_same_v<ValueType, storm::RationalNumber>) {
+            uint64_t const bitSize = std::max<uint64_t>(64, this->getOptions().getReservedBitsForUnboundedVariables());
+            builder.addRationalVariable(varInfo.variable, bitSize * 2);  // reserve bits for numerator and denominator
+        } else {
+            STORM_LOG_THROW((std::is_same_v<ValueType, double>), storm::exceptions::NotSupportedException,
+                            "State valuations for transient variables of the given value type are not supported.");
+            builder.addDoubleVariable(varInfo.variable);
+        }
     }
-    return result;
+    return storm::storage::sparse::Valuations(builder.buildClassDescription(), builder.getManager().shared_from_this());
 }
 
 template<typename ValueType, typename StateType>
 void JaniNextStateGenerator<ValueType, StateType>::addStateValuation(storm::storage::sparse::state_type const& currentStateIndex,
-                                                                     storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const {
-    std::vector<bool> booleanValues;
-    booleanValues.reserve(this->variableInformation.booleanVariables.size() + transientVariableInformation.booleanVariableInformation.size());
-    std::vector<int64_t> integerValues;
-    integerValues.reserve(this->variableInformation.locationVariables.size() + this->variableInformation.integerVariables.size() +
-                          transientVariableInformation.integerVariableInformation.size());
-    std::vector<storm::RationalNumber> rationalValues;
-    rationalValues.reserve(transientVariableInformation.rationalVariableInformation.size());
-
+                                                                     storm::storage::sparse::Valuations& valuations) const {
     // Add values for non-transient variables
-    extractVariableValues(*this->state, this->variableInformation, integerValues, booleanValues, integerValues);
+    unpackStateAppendToValuations(*this->state, this->variableInformation, valuations.getStorage());
 
-    // Add values for transient variables
     auto transientVariableValuation = getTransientVariableValuationAtLocations(getLocations(*this->state), *this->evaluator);
-    {
-        auto varIt = transientVariableValuation.booleanValues.begin();
-        auto varIte = transientVariableValuation.booleanValues.end();
-        for (auto const& varInfo : transientVariableInformation.booleanVariableInformation) {
-            if (varIt != varIte && varIt->first->variable == varInfo.variable) {
-                booleanValues.push_back(varIt->second);
-                ++varIt;
-            } else {
-                booleanValues.push_back(varInfo.defaultValue);
-            }
-        }
-    }
-    {
-        auto varIt = transientVariableValuation.integerValues.begin();
-        auto varIte = transientVariableValuation.integerValues.end();
-        for (auto const& varInfo : transientVariableInformation.integerVariableInformation) {
-            if (varIt != varIte && varIt->first->variable == varInfo.variable) {
-                integerValues.push_back(varIt->second);
-                ++varIt;
-            } else {
-                integerValues.push_back(varInfo.defaultValue);
-            }
-        }
-    }
-    {
-        auto varIt = transientVariableValuation.rationalValues.begin();
-        auto varIte = transientVariableValuation.rationalValues.end();
-        for (auto const& varInfo : transientVariableInformation.rationalVariableInformation) {
-            if (varIt != varIte && varIt->first->variable == varInfo.variable) {
-                rationalValues.push_back(storm::utility::convertNumber<storm::RationalNumber>(varIt->second));
-                ++varIt;
-            } else {
-                rationalValues.push_back(storm::utility::convertNumber<storm::RationalNumber>(varInfo.defaultValue));
-            }
-        }
-    }
-
-    valuationsBuilder.addState(currentStateIndex, std::move(booleanValues), std::move(integerValues), std::move(rationalValues));
+    transientVariableValuation.setInValuations(currentStateIndex, transientVariableInformation, valuations.getStorage());
 }
 
 template<typename ValueType, typename StateType>
@@ -748,7 +727,7 @@ Choice<ValueType> JaniNextStateGenerator<ValueType, StateType>::expandNonSynchro
         exitRate = this->evaluator->asRational(edge.getRate());
     }
 
-    Choice<ValueType> choice(edge.getActionIndex(), static_cast<bool>(exitRate));
+    Choice<ValueType> choice(outputActionIndex, static_cast<bool>(exitRate));
     std::vector<ValueType> stateActionRewards;
 
     // Perform the transient edge assignments and create the state action rewards
@@ -1017,9 +996,15 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
 
         if (this->options.isExplorationChecksSet()) {
             // Check that the resulting distribution is in fact a distribution.
-            STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
+            STORM_LOG_THROW(!this->isDiscreteTimeModel() || !storm::utility::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
                             storm::exceptions::WrongFormatException,
                             "Sum of update probabilities do not sum to one for some edge (actually sum to " << probabilitySum << ").");
+        }
+
+        if (this->options.isBuildChoiceLabelsSet()) {
+            if (outputActionIndex != storm::jani::Model::SILENT_ACTION_INDEX) {
+                choice.addLabel(model.getAction(outputActionIndex).getName());
+            }
         }
 
         // Now, check whether there is one more command combination to consider.
@@ -1070,19 +1055,26 @@ std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::get
                         continue;
                     }
 
-                    result.push_back(expandNonSynchronizingEdge(*indexAndEdge.second,
-                                                                outputAndEdges.first ? outputAndEdges.first.get() : indexAndEdge.second->getActionIndex(),
-                                                                automatonIndex, state, stateToIdCallback));
+                    uint64_t actionIndex = outputAndEdges.first ? outputAndEdges.first.get() : indexAndEdge.second->getActionIndex();
+                    result.push_back(expandNonSynchronizingEdge(*indexAndEdge.second, actionIndex, automatonIndex, state, stateToIdCallback));
 
                     if (this->getOptions().isBuildChoiceOriginsSet()) {
                         auto modelAutomatonIndex = model.getAutomatonIndex(parallelAutomata[automatonIndex].get().getName());
                         EdgeIndexSet edgeIndex{model.encodeAutomatonAndEdgeIndices(modelAutomatonIndex, indexAndEdge.first)};
                         result.back().addOriginData(boost::any(std::move(edgeIndex)));
                     }
+
+                    if (this->getOptions().isBuildChoiceLabelsSet()) {
+                        if (actionIndex != storm::jani::Model::SILENT_ACTION_INDEX) {
+                            result.back().addLabel(model.getAction(actionIndex).getName());
+                        }
+                    }
                 }
             }
         } else {
             // If the element has more than one set of edges, we need to perform a synchronization.
+            // We require that some output action for the synchronisation must have been set before.
+            // This might be the silent action, if the Jani model does not specify an output action.
             STORM_LOG_ASSERT(outputAndEdges.first, "Need output action index for synchronization.");
 
             uint64_t outputActionIndex = outputAndEdges.first.get();
@@ -1244,7 +1236,7 @@ std::vector<ValueType> JaniNextStateGenerator<ValueType, StateType>::evaluateRew
 
 template<typename ValueType, typename StateType>
 void JaniNextStateGenerator<ValueType, StateType>::addEvaluatedRewardExpressions(std::vector<ValueType>& rewards, ValueType const& factor) const {
-    assert(rewards.size() == rewardExpressions.size());
+    STORM_LOG_ASSERT(rewards.size() == rewardExpressions.size(), "Reward count mismatch.");
     auto rewIt = rewards.begin();
     for (auto const& rewardExpression : rewardExpressions) {
         (*rewIt) += factor * this->evaluator->asRational(rewardExpression.second);
@@ -1369,7 +1361,7 @@ std::shared_ptr<storm::storage::sparse::ChoiceOrigins> JaniNextStateGenerator<Va
 
     std::map<EdgeIndexSet, uint_fast64_t> edgeIndexSetToIdentifierMap;
     // The empty edge set (i.e., the choices without origin) always has to get identifier getIdentifierForChoicesWithNoOrigin() -- which is assumed to be 0
-    STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero");
+    STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero.");
     edgeIndexSetToIdentifierMap.insert(std::make_pair(EdgeIndexSet(), 0));
     uint_fast64_t currentIdentifier = 1;
     for (boost::any& originData : dataForChoiceOrigins) {
@@ -1402,11 +1394,7 @@ storm::storage::BitVector JaniNextStateGenerator<ValueType, StateType>::evaluate
 template<typename ValueType, typename StateType>
 void JaniNextStateGenerator<ValueType, StateType>::checkValid() const {
     // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
-#ifdef STORM_HAVE_CARL
     if (!std::is_same<ValueType, storm::RationalFunction>::value && model.hasUndefinedConstants()) {
-#else
-    if (model.hasUndefinedConstants()) {
-#endif
         std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = model.getUndefinedConstants();
         std::stringstream stream;
         bool printComma = false;
@@ -1419,21 +1407,15 @@ void JaniNextStateGenerator<ValueType, StateType>::checkValid() const {
             stream << constant.get().getName() << " (" << constant.get().getType() << ")";
         }
         stream << ".";
-        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
-    }
-#ifdef STORM_HAVE_CARL
-    else if (std::is_same<ValueType, storm::RationalFunction>::value && !model.undefinedConstantsAreGraphPreserving()) {
+        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str() + ".");
+    } else if (std::is_same<ValueType, storm::RationalFunction>::value && !model.undefinedConstantsAreGraphPreserving()) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
                         "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
     }
-#endif
 }
 
 template class JaniNextStateGenerator<double>;
-
-#ifdef STORM_HAVE_CARL
 template class JaniNextStateGenerator<storm::RationalNumber>;
 template class JaniNextStateGenerator<storm::RationalFunction>;
-#endif
 }  // namespace generator
 }  // namespace storm

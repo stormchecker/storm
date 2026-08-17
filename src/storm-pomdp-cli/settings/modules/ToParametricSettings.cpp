@@ -3,7 +3,6 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -14,9 +13,8 @@ namespace modules {
 
 const std::string ToParametricSettings::moduleName = "toparametric";
 const std::string mecReductionOption = "mecreduction";
-const std::string selfloopReductionOption = "selfloopreduction";
 const std::string fscmode = "fscmode";
-std::vector<std::string> fscModes = {"standard", "simple-linear", "simple-linear-inverse"};
+const std::vector<std::string> fscModes = {"standard", "simple-linear", "simple-linear-inverse"};
 const std::string transformBinaryOption = "transformbinary";
 const std::string transformSimpleOption = "transformsimple";
 const std::string allowSimplificationOption = "simplify-pmc";

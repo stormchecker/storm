@@ -97,7 +97,7 @@ std::shared_ptr<Variable> Variable::makeVariable(std::string const& name, JaniTy
     if (initValue) {
         return std::make_shared<Variable>(name, type, variable, initValue.get(), transient);
     } else {
-        STORM_LOG_ASSERT(!transient, "Expecting variable without init value to be not a transient variable");
+        STORM_LOG_ASSERT(!transient, "Expecting variable without init value to be not a transient variable.");
         return std::make_shared<Variable>(name, type, variable);
     }
 }

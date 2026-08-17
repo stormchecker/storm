@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_STATEFORMULA_H_
-#define STORM_LOGIC_STATEFORMULA_H_
+#pragma once
 
 #include "storm/logic/Formula.h"
 
@@ -9,7 +8,7 @@ class StateFormula : public Formula {
    public:
     virtual ~StateFormula() {
         // Intentionally left empty.
-    };
+    }
 
     virtual bool isStateFormula() const override;
 
@@ -17,5 +16,3 @@ class StateFormula : public Formula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_STATEFORMULA_H_ */

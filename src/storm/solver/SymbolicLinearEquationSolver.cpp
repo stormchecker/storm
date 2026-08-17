@@ -1,21 +1,14 @@
 #include "storm/solver/SymbolicLinearEquationSolver.h"
 
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/DdManager.h"
-
-#include "storm/utility/dd.h"
-
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/SymbolicEliminationLinearEquationSolver.h"
 #include "storm/solver/SymbolicNativeLinearEquationSolver.h"
-
-#include "storm/environment/solver/SolverEnvironment.h"
-
-#include "storm/exceptions/InvalidEnvironmentException.h"
-#include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/macros.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace solver {

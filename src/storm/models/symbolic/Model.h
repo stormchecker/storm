@@ -1,10 +1,10 @@
-#ifndef STORM_MODELS_SYMBOLIC_MODEL_H_
-#define STORM_MODELS_SYMBOLIC_MODEL_H_
+#pragma once
 
 #include <memory>
 #include <set>
 #include <unordered_map>
 
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/models/Model.h"
 #include "storm/models/ModelRepresentation.h"
 #include "storm/storage/dd/Add.h"
@@ -12,10 +12,6 @@
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
-#include "storm/utility/OsDetection.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionForward.h"
 
 namespace storm {
 namespace dd {
@@ -55,10 +51,8 @@ class Model : public storm::models::Model<CValueType> {
     Model(Model<Type, ValueType> const& other) = default;
     Model& operator=(Model<Type, ValueType> const& other) = default;
 
-#ifndef WINDOWS
     Model(Model<Type, ValueType>&& other) = default;
     Model& operator=(Model<Type, ValueType>&& other) = default;
-#endif
 
     /*!
      * Constructs a model from the given data.
@@ -303,16 +297,13 @@ class Model : public storm::models::Model<CValueType> {
     std::unordered_map<std::string, RewardModelType>& getRewardModels();
     std::unordered_map<std::string, RewardModelType> const& getRewardModels() const;
 
-    /*!
-     * Retrieves the number of reward models associated with this model.
-     *
-     * @return The number of reward models associated with this model.
-     */
-    uint_fast64_t getNumberOfRewardModels() const;
-
     virtual void printModelInformationToStream(std::ostream& out) const override;
 
     virtual bool isSymbolicModel() const override;
+
+    virtual std::optional<storm::dd::DdType> getDdType() const override;
+
+    virtual bool isExact() const override;
 
     virtual bool supportsParameters() const override;
 
@@ -339,13 +330,6 @@ class Model : public storm::models::Model<CValueType> {
     void writeDotToFile(std::string const& filename) const;
 
    protected:
-    /*!
-     * Sets the transition matrix of the model.
-     *
-     * @param transitionMatrix The new transition matrix of the model.
-     */
-    void setTransitionMatrix(storm::dd::Add<Type, ValueType> const& transitionMatrix);
-
     /*!
      * Retrieves the mapping of labels to their defining expressions.
      *
@@ -441,5 +425,3 @@ class Model : public storm::models::Model<CValueType> {
 }  // namespace symbolic
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SYMBOLIC_MODEL_H_ */

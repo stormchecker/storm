@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstdint>
+
 namespace storm {
 namespace utility {
-uint getNumberOfThreads();
+uint64_t getNumberOfThreads();
 }
 }  // namespace storm

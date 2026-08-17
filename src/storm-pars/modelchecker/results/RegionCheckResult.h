@@ -21,6 +21,7 @@ class RegionCheckResult : public CheckResult {
     std::vector<std::pair<storm::storage::ParameterRegion<ValueType>, storm::modelchecker::RegionResult>> const& getRegionResults() const;
     typename storm::storage::ParameterRegion<ValueType>::CoefficientType const& getSatFraction() const;
     typename storm::storage::ParameterRegion<ValueType>::CoefficientType const& getUnsatFraction() const;
+    typename storm::storage::ParameterRegion<ValueType>::CoefficientType const& getIllDefinedFraction() const;
 
     virtual std::ostream& writeToStream(std::ostream& out) const override;
     virtual std::ostream& writeCondensedToStream(std::ostream& out) const;
@@ -34,7 +35,7 @@ class RegionCheckResult : public CheckResult {
     virtual void initFractions(typename storm::storage::ParameterRegion<ValueType>::CoefficientType const& overallArea);
 
     std::vector<std::pair<storm::storage::ParameterRegion<ValueType>, storm::modelchecker::RegionResult>> regionResults;
-    typename storm::storage::ParameterRegion<ValueType>::CoefficientType satFraction, unsatFraction;
+    typename storm::storage::ParameterRegion<ValueType>::CoefficientType satFraction, unsatFraction, illDefinedFraction;
 };
 }  // namespace modelchecker
 }  // namespace storm

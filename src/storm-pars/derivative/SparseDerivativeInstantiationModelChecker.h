@@ -1,5 +1,4 @@
-#ifndef STORM_DERIVATIVEEVALUATIONHELPER_H
-#define STORM_DERIVATIVEEVALUATIONHELPER_H
+#pragma once
 
 #include <cstdint>
 #include <map>
@@ -82,7 +81,6 @@ class SparseDerivativeInstantiationModelChecker {
     void initializeInstantiatedMatrix(storage::SparseMatrix<FunctionType>& matrix, storage::SparseMatrix<ConstantType>& matrixInstantiated,
                                       std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>>& matrixMapping,
                                       std::unordered_map<FunctionType, ConstantType>& functions);
-    void setup(Environment const& env, modelchecker::CheckTask<storm::logic::Formula, FunctionType> const& checkTask);
 
     utility::Stopwatch instantiationWatch;
     utility::Stopwatch approximationWatch;
@@ -92,7 +90,7 @@ class SparseDerivativeInstantiationModelChecker {
 template<typename ValueType>
 class SignedGradientDescentTerminationCondition : public solver::TerminationCondition<ValueType> {
    public:
-    SignedGradientDescentTerminationCondition(uint64_t initialState) : initialState(initialState) {};
+    SignedGradientDescentTerminationCondition(uint64_t initialState) : initialState(initialState) {}
 
     bool terminateNow(std::function<ValueType(uint64_t const&)> const& valueGetter, solver::SolverGuarantee const& guarantee) const {
         if (guarantee == solver::SolverGuarantee::GreaterOrEqual && valueGetter(initialState) > utility::convertNumber<ValueType>(1e-6)) {
@@ -102,7 +100,7 @@ class SignedGradientDescentTerminationCondition : public solver::TerminationCond
             return true;
         }
         return false;
-    };
+    }
     bool requiresGuarantee(solver::SolverGuarantee const& guarantee) const {
         return guarantee == solver::SolverGuarantee::LessOrEqual || guarantee == solver::SolverGuarantee::GreaterOrEqual;
     }
@@ -112,5 +110,3 @@ class SignedGradientDescentTerminationCondition : public solver::TerminationCond
 };
 }  // namespace derivative
 }  // namespace storm
-
-#endif  // STORM_DERIVATIVEEVALUATIONHELPER_H

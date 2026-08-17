@@ -2,19 +2,15 @@
 
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/api/properties.h"
-
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/io/file.h"
+#include "storm/logic/Formula.h"
 #include "storm/logic/RewardAccumulationEliminationVisitor.h"
 #include "storm/storage/SymbolicModelDescription.h"
-
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/prism/Program.h"
-
-#include "storm/exceptions/WrongFormatException.h"
-
-#include "storm/logic/Formula.h"
-
-#include "storm/utility/cli.h"
+#include "storm/utility/string.h"
 
 namespace storm {
 namespace api {
@@ -23,7 +19,7 @@ boost::optional<std::set<std::string>> parsePropertyFilter(std::string const& pr
     if (propertyFilter == "all") {
         return boost::none;
     }
-    std::vector<std::string> propertyNames = storm::utility::cli::parseCommaSeparatedStrings(propertyFilter);
+    std::vector<std::string> propertyNames = storm::utility::string::parseCommaSeparatedStrings(propertyFilter);
     std::set<std::string> propertyNameSet(propertyNames.begin(), propertyNames.end());
     return propertyNameSet;
 }
@@ -32,10 +28,16 @@ std::vector<storm::jani::Property> parseProperties(storm::parser::FormulaParser&
                                                    boost::optional<std::set<std::string>> const& propertyFilter) {
     // If the given property is a file, we parse it as a file, otherwise we assume it's a property.
     std::vector<storm::jani::Property> properties;
-    if (std::ifstream(inputString).good()) {
+    if (storm::io::fileExistsAndIsReadable(inputString)) {
         STORM_LOG_INFO("Loading properties from file: " << inputString << '\n');
         properties = formulaParser.parseFromFile(inputString);
     } else {
+        // File does not exists -> parse as property string
+        // Provide warning if string could potentially be a property file
+        if (inputString.find(".prop") != std::string::npos || inputString.find(".pctl") != std::string::npos ||
+            inputString.find(".prctl") != std::string::npos || inputString.find(".csl") != std::string::npos) {
+            STORM_LOG_WARN("File with name '" << inputString << "' does not exist. Trying to parse as property string.");
+        }
         properties = formulaParser.parseFromString(inputString);
     }
 
@@ -50,8 +52,7 @@ std::vector<storm::jani::Property> parseProperties(std::string const& inputStrin
     } catch (storm::exceptions::WrongFormatException const& e) {
         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                         e.what() << "Note that the used API function does not have access to model variables. If the property you tried to parse contains "
-                                    "model variables, it will not "
-                                    "be parsed correctly.");
+                                    "model variables, it will not be parsed correctly.");
     }
 }
 

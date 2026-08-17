@@ -1,3 +1,4 @@
+#include "storm-pars/api/storm-pars.h"
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
 #include "storm-pars-cli/feasibility.h"
@@ -5,61 +6,38 @@
 #include "storm-pars-cli/print.h"
 #include "storm-pars-cli/sampling.h"
 #include "storm-pars-cli/solutionFunctions.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm-pars/analysis/MonotonicityHelper.h"
 #include "storm-pars/api/region.h"
-#include "storm-pars/api/storm-pars.h"
-
-#include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
-#include "storm-pars/modelchecker/instantiation/SparseCtmcInstantiationModelChecker.h"
+#include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
-#include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
-
-#include "storm-pars/transformer/TimeTravelling.h"
-
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 #include "storm-pars/settings/ParsSettings.h"
-#include "storm-pars/settings/modules/DerivativeSettings.h"
 #include "storm-pars/settings/modules/MonotonicitySettings.h"
 #include "storm-pars/settings/modules/ParametricSettings.h"
 #include "storm-pars/settings/modules/PartitionSettings.h"
 #include "storm-pars/settings/modules/RegionSettings.h"
 #include "storm-pars/settings/modules/RegionVerificationSettings.h"
 #include "storm-pars/settings/modules/SamplingSettings.h"
-
+#include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/transformer/BinaryDtmcTransformer.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
-
 #include "storm-pars/utility/parametric.h"
-
-#include "storm-parsers/parser/KeyValueParser.h"
 #include "storm/api/storm.h"
-
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotSupportedException.h"
-
 #include "storm/models/ModelBase.h"
-
 #include "storm/settings/SettingsManager.h"
-
+#include "storm/settings/modules/BisimulationSettings.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/TransformationSettings.h"
 #include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
-
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "storm/storage/SymbolicModelDescription.h"
-
-#include "storm/io/file.h"
 #include "storm/utility/Engine.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
-
-#include "storm/settings/modules/BisimulationSettings.h"
-#include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/TransformationSettings.h"
 
 namespace storm {
 namespace pars {
@@ -81,6 +59,23 @@ std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared
         result = storm::api::parseRegions<ValueType>(regionSettings.getRegionString(), *model);
     } else if (regionSettings.isRegionBoundSet()) {
         result = storm::api::createRegion<ValueType>(regionSettings.getRegionBoundString(), *model);
+    }
+    if (regionSettings.isAssumeGraphPreservingSet()) {
+        // We want to warn the user in case the model is actually not graph preserving.
+        // However, determining graph-preservingness precisely is hard.
+        // As an approximation, we only check if the region intersects 0 or 1.
+        for (auto const& region : result) {
+            for (auto const& variable : region.getVariables()) {
+                if (region.getLowerBoundary(variable) <= storm::utility::zero<typename storm::utility::parametric::CoefficientType<ValueType>::type>() ||
+                    region.getUpperBoundary(variable) >= storm::utility::one<typename storm::utility::parametric::CoefficientType<ValueType>::type>()) {
+                    STORM_LOG_WARN(
+                        "Region "
+                        << region
+                        << " appears to not preserve the graph structure of the parametric model. If this is the case, set --assume-graph-preserving false.");
+                    break;
+                }
+            }
+        }
     }
     return result;
 }
@@ -123,7 +118,7 @@ std::shared_ptr<storm::models::ModelBase> eliminateScc(std::shared_ptr<storm::mo
 
                 if (entryStates.size() != 1) {
                     STORM_LOG_THROW(entryStates.size() > 1, storm::exceptions::NotImplementedException,
-                                    "state elimination not implemented for scc with more than 1 entry points");
+                                    "State elimination not implemented for scc with more than 1 entry points.");
                 }
             }
         }
@@ -152,7 +147,7 @@ std::shared_ptr<storm::models::ModelBase> eliminateScc(std::shared_ptr<storm::mo
         result->printModelInformationToStream(std::cout);
     } else if (model->isOfType(storm::models::ModelType::Mdp)) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                        "Unable to perform SCC elimination for monotonicity analysis on MDP: Not mplemented");
+                        "Unable to perform SCC elimination for monotonicity analysis on MDP: Not implemented.");
     } else {
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform monotonicity analysis on the provided model type.");
     }
@@ -168,22 +163,18 @@ std::shared_ptr<storm::models::ModelBase> simplifyModel(std::shared_ptr<storm::m
             *(model->template as<storm::models::sparse::Dtmc<ValueType>>()));
 
         std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
-        STORM_LOG_THROW(formulas.begin() != formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported");
+        STORM_LOG_THROW(formulas.begin() != formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported.");
 
-        if (!simplifier.simplify(*(formulas[0]))) {
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-        }
+        STORM_LOG_THROW(simplifier.simplify(*(formulas[0])), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         result = simplifier.getSimplifiedModel();
     } else if (model->isOfType(storm::models::ModelType::Mdp)) {
         storm::transformer::SparseParametricMdpSimplifier<storm::models::sparse::Mdp<ValueType>> simplifier(
             *(model->template as<storm::models::sparse::Mdp<ValueType>>()));
 
         std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
-        STORM_LOG_THROW(formulas.begin() != formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported");
+        STORM_LOG_THROW(formulas.begin() != formulas.end(), storm::exceptions::NotSupportedException, "Only one formula at the time supported.");
 
-        if (!simplifier.simplify(*(formulas[0]))) {
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-        }
+        STORM_LOG_THROW(simplifier.simplify(*(formulas[0])), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         result = simplifier.getSimplifiedModel();
     } else {
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform monotonicity analysis on the provided model type.");
@@ -202,12 +193,13 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
     auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
     auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
     auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
+    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     PreprocessResult result(model, false);
     // TODO: why only simplify in these modes
     if (parametricSettings.getOperationMode() == storm::pars::utility::ParametricMode::Monotonicity ||
         parametricSettings.getOperationMode() == storm::pars::utility::ParametricMode::Feasibility) {
-        STORM_LOG_THROW(!input.properties.empty(), storm::exceptions::InvalidSettingsException, "Simplification requires property to be specified");
+        STORM_LOG_THROW(!input.properties.empty(), storm::exceptions::InvalidSettingsException, "Simplification requires property to be specified.");
         result.model = storm::pars::simplifyModel<ValueType>(result.model, input);
         result.changed = true;
     }
@@ -218,8 +210,8 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
     }
 
     if (mpi.applyBisimulation) {
-        result.model =
-            storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input, bisimulationSettings);
+        result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input,
+                                                                     bisimulationSettings, regionSettings.isAssumeGraphPreservingSet());
         result.changed = true;
     }
 
@@ -230,12 +222,17 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
         result.changed = true;
     }
 
-    if (parametricSettings.isTimeTravellingEnabled()) {
-        transformer::TimeTravelling tt;
+    if (parametricSettings.isBigStepEnabled()) {
+        transformer::BigStep tt;
         auto formulas = storm::api::extractFormulasFromProperties(input.properties);
-        modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);
-        result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(
-            tt.timeTravel(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask));
+        storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);
+        auto bigStepResult = tt.bigStep(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask);
+        result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(bigStepResult.first);
+
+        if (mpi.applyBisimulation) {
+            result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input,
+                                                                         bisimulationSettings, regionSettings.isAssumeGraphPreservingSet());
+        }
         result.changed = true;
     }
 
@@ -328,12 +325,41 @@ void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<V
     auto const& property = input.properties.front();
 
     auto const& rvs = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>();
+    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
+
     auto engine = rvs.getRegionCheckEngine();
-    bool generateSplitEstimates = rvs.isSplittingThresholdSet();
-    std::optional<uint64_t> maxSplitsPerStep = generateSplitEstimates ? std::make_optional(rvs.getSplittingThreshold()) : std::nullopt;
+    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet();
+
+    STORM_LOG_THROW(graphPreserving || engine == storm::modelchecker::RegionCheckEngine::RobustParameterLifting, storm::exceptions::NotSupportedException,
+                    "Selected region verification engine (--regionverif:engine) requires the assumption that the region is graph-preserving "
+                    "(--assume-graph-preserving true).");
+
+    auto splittingStrategy = storm::modelchecker::RegionSplittingStrategy();
+
+    splittingStrategy.heuristic = rvs.getRegionSplittingHeuristic();
+    splittingStrategy.estimateKind = rvs.getRegionSplittingEstimateMethod();
+    if (rvs.isSplittingThresholdSet()) {
+        splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
+    }
+
+    auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
+    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());
+
     storm::utility::Stopwatch watch(true);
-    if (storm::api::verifyRegion<ValueType>(model, *(property.getRawFormula()), region, engine, monotonicitySettings, generateSplitEstimates,
-                                            maxSplitsPerStep)) {
+
+    auto const& settings = storm::api::RefinementOptions<ValueType>{
+        model,
+        *(property.getRawFormula()),
+        engine,
+        splittingStrategy,
+        monotonicitySettings,
+        discreteVariables,
+        true,  // allow model simplification
+        graphPreserving,
+        false  // preconditions not yet validated
+    };
+
+    if (storm::api::verifyRegion<ValueType>(settings, region)) {
         STORM_PRINT_AND_LOG("Formula is satisfied by all parameter instantiations.\n");
     } else {
         STORM_PRINT_AND_LOG("Formula is not satisfied by all parameter instantiations.\n");
@@ -354,9 +380,10 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
     auto rvs = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>();
     auto partitionSettings = storm::settings::getModule<storm::settings::modules::PartitionSettings>();
+    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     ValueType refinementThreshold = storm::utility::convertNumber<ValueType>(partitionSettings.getCoverageThreshold());
-    boost::optional<uint64_t> optionalDepthLimit;
+    std::optional<uint64_t> optionalDepthLimit;
     if (partitionSettings.isDepthLimitSet()) {
         optionalDepthLimit = partitionSettings.getDepthLimit();
     }
@@ -366,6 +393,21 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
 
     auto engine = rvs.getRegionCheckEngine();
     STORM_PRINT_AND_LOG(" using " << engine);
+
+    auto splittingStrategy = storm::modelchecker::RegionSplittingStrategy();
+
+    splittingStrategy.heuristic = rvs.getRegionSplittingHeuristic();
+    splittingStrategy.estimateKind = rvs.getRegionSplittingEstimateMethod();
+    if (rvs.isSplittingThresholdSet()) {
+        splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
+    }
+
+    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet();
+
+    auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
+    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());
+
+    STORM_PRINT_AND_LOG(" and splitting heuristic " << splittingStrategy.heuristic);
     if (monotonicitySettings.useMonotonicity) {
         STORM_PRINT_AND_LOG(" with local monotonicity and");
     }
@@ -376,9 +418,20 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
 
     storm::cli::printModelCheckingProperty(property);
     storm::utility::Stopwatch watch(true);
+
+    auto settings = storm::api::RefinementOptions<ValueType>{
+        model,
+        storm::api::createTask<ValueType>(property.getRawFormula(), true),
+        engine,
+        splittingStrategy,
+        monotonicitySettings,
+        discreteVariables,
+        true,  // allow model simplification
+        graphPreserving,
+        false  // preconditions not yet validated
+    };
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(
-        model, storm::api::createTask<ValueType>((property.getRawFormula()), true), regions.front(), engine, refinementThreshold, optionalDepthLimit,
-        storm::modelchecker::RegionResultHypothesis::Unknown, false, monotonicitySettings, monThresh);
+        settings, regions.front(), refinementThreshold, optionalDepthLimit, storm::modelchecker::RegionResultHypothesis::Unknown, monThresh);
     watch.stop();
     printInitialStatesResult<ValueType>(result, &watch);
 
@@ -387,26 +440,32 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     }
 }
 
-template<storm::dd::DdType DdType, typename ValueType>
-void processInputWithValueTypeAndDdlib(cli::SymbolicInput& input, storm::cli::ModelProcessingInformation const& mpi) {
+void processInput(cli::SymbolicInput&& input, storm::cli::ModelProcessingInformation const& mpi) {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
     auto parSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
     auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
     auto sampleSettings = storm::settings::getModule<storm::settings::modules::SamplingSettings>();
+    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse || mpi.engine == storm::utility::Engine::Hybrid || mpi.engine == storm::utility::Engine::Dd,
                     storm::exceptions::InvalidSettingsException, "The selected engine is not supported for parametric models.");
-    STORM_LOG_THROW(parSettings.hasOperationModeBeenSet(), storm::exceptions::InvalidSettingsException, "An operation mode must be selected with --mode");
+    STORM_LOG_THROW(parSettings.hasOperationModeBeenSet(), storm::exceptions::InvalidSettingsException, "An operation mode must be selected with --mode.");
     std::shared_ptr<storm::models::ModelBase> model;
     if (!buildSettings.isNoBuildModelSet()) {
-        model = storm::cli::buildModel<DdType, ValueType>(input, ioSettings, mpi);
+        model = storm::cli::buildModel(input, ioSettings, mpi);
     }
 
     STORM_LOG_THROW(model, storm::exceptions::InvalidSettingsException, "No input model.");
     if (model) {
         model->printModelInformationToStream(std::cout);
     }
+
+    using ValueType = storm::RationalFunction;
+    auto const DdType = storm::dd::DdType::Sylvan;
+    STORM_LOG_THROW(model->supportsParameters(), storm::exceptions::UnexpectedException, "Expected a parametric model.");
+    STORM_LOG_THROW(model->isSparseModel() || model->getDdType().value() == DdType, storm::exceptions::UnexpectedException,
+                    "Expected type of model representation.");
 
     // If minimization is active and the model is parametric, parameters might be minimized away because they are inconsequential.
     // This is the set of all such inconsequential parameters.
@@ -445,7 +504,7 @@ void processInputWithValueTypeAndDdlib(cli::SymbolicInput& input, storm::cli::Mo
     if (!model) {
         return;
     } else {
-        storm::cli::exportModel<DdType, ValueType>(model, input);
+        storm::cli::castAndApply(model, [&input](auto const& m) { storm::cli::exportModel(m, input); });
     }
 
     // TODO move this.
@@ -456,7 +515,8 @@ void processInputWithValueTypeAndDdlib(cli::SymbolicInput& input, storm::cli::Mo
     if (mode == storm::pars::utility::ParametricMode::SolutionFunction) {
         STORM_LOG_INFO("Solution function mode started.");
         STORM_LOG_THROW(regions.empty(), storm::exceptions::InvalidSettingsException,
-                        "Solution function computations cannot be restricted to specific regions");
+                        "Solution function computations cannot be restricted to specific regions.");
+        STORM_LOG_ERROR_COND(!regionSettings.isAssumeGraphPreservingSet(), "Solution function computations assume graph preservation.");
 
         if (model->isSparseModel()) {
             computeSolutionFunctionsWithSparseEngine(model->as<storm::models::sparse::Model<ValueType>>(), input);
@@ -492,8 +552,8 @@ void processInputWithValueTypeAndDdlib(cli::SymbolicInput& input, storm::cli::Mo
         // TODO Partition mode does not support monotonicity. This should generally be possible.
         // TODO here setting monotone parameters from the outside may actually be useful
 
-        assert(!monotonicitySettings.useOnlyGlobalMonotonicity);
-        assert(!monotonicitySettings.useBoundsFromPLA);
+        STORM_LOG_ASSERT(!monotonicitySettings.useOnlyGlobalMonotonicity, "Unexpected setting of only using global monotonicity.");
+        STORM_LOG_ASSERT(!monotonicitySettings.useBoundsFromPLA, "Unexpected setting of using bounds from PLA.");
         storm::pars::parameterSpacePartitioningWithSparseEngine(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, monotonicitySettings,
                                                                 monThresh);
     } else if (mode == storm::pars::utility::ParametricMode::Sampling) {
@@ -543,7 +603,10 @@ void processOptions() {
     auto symbolicInput = storm::cli::parseSymbolicInput();
     storm::cli::ModelProcessingInformation mpi;
     std::tie(symbolicInput, mpi) = storm::cli::preprocessSymbolicInput(symbolicInput);
-    processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalFunction>(symbolicInput, mpi);
+    mpi.ddType = storm::dd::DdType::Sylvan;
+    mpi.buildValueType = storm::cli::ModelProcessingInformation::ValueType::Parametric;
+    mpi.verificationValueType = storm::cli::ModelProcessingInformation::ValueType::Parametric;
+    processInput(std::move(symbolicInput), mpi);
 }
 }  // namespace pars
 }  // namespace storm

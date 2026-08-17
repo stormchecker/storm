@@ -4,8 +4,6 @@
 
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
 
-#include "storm/utility/OsDetection.h"
-
 namespace storm::gbar {
 namespace abstraction {
 

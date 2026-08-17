@@ -1,14 +1,18 @@
 #include "storm-pars/transformer/BinaryDtmcTransformer.h"
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wthread-safety-negative"
+#pragma clang diagnostic ignored "-Wundefined-reinterpret-cast"
+#pragma clang diagnostic ignored "-Wunused-template"
 #include <carl/formula/Constraint.h>
-#include <cstdint>
+#pragma clang diagnostic pop
 #include <queue>
 
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/ModelComponents.h"
-
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
@@ -25,7 +29,7 @@ std::shared_ptr<storm::models::sparse::Dtmc<RationalFunction>> BinaryDtmcTransfo
     }
     components.transitionMatrix = std::move(data.simpleMatrix);
     if (keepStateValuations && dtmc.hasStateValuations()) {
-        components.stateValuations = dtmc.getStateValuations().blowup(data.simpleStateToOriginalState);
+        components.stateValuations = dtmc.getStateValuations().selectEntities(data.simpleStateToOriginalState);
     }
 
     return std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(std::move(components.transitionMatrix), std::move(components.stateLabeling),

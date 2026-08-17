@@ -1,8 +1,6 @@
-#ifndef STORM_MODELS_SYMBOLIC_NONDETERMINISTICMODEL_H_
-#define STORM_MODELS_SYMBOLIC_NONDETERMINISTICMODEL_H_
+#pragma once
 
 #include "storm/models/symbolic/Model.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {
@@ -19,10 +17,8 @@ class NondeterministicModel : public Model<Type, ValueType> {
     NondeterministicModel(NondeterministicModel<Type, ValueType> const& other) = default;
     NondeterministicModel& operator=(NondeterministicModel<Type, ValueType> const& other) = default;
 
-#ifndef WINDOWS
     NondeterministicModel(NondeterministicModel<Type, ValueType>&& other) = default;
     NondeterministicModel& operator=(NondeterministicModel<Type, ValueType>&& other) = default;
-#endif
 
     /*!
      * Constructs a model from the given data.
@@ -133,5 +129,3 @@ class NondeterministicModel : public Model<Type, ValueType> {
 }  // namespace symbolic
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SYMBOLIC_NONDETERMINISTICMODEL_H_ */

@@ -1,14 +1,13 @@
-#ifndef STORM_STORAGE_DD_DDMETAVARIBLE_H_
-#define STORM_STORAGE_DD_DDMETAVARIBLE_H_
+#pragma once
 
 #include <vector>
 
-#include "storm/storage/dd/AddIterator.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdType.h"
 
 namespace storm {
 namespace dd {
+
 template<DdType LibraryType>
 class DdManager;
 
@@ -17,6 +16,8 @@ class Add;
 
 // An enumeration for all legal types of meta variables.
 enum class MetaVariableType { Bool, Int, BitVector };
+// An enum that expresses the relation of two meta variables relative to each other.
+enum class MetaVariablePosition { Above, Below };
 
 // Declare DdMetaVariable class so we can then specialize it for the different DD types.
 template<DdType LibraryType>
@@ -118,7 +119,6 @@ class DdMetaVariable {
      * @param low The lowest value of the range of the variable.
      * @param high The highest value of the range of the variable.
      * @param ddVariables The vector of variables used to encode this variable.
-     * @param manager A pointer to the manager that is responsible for this meta variable.
      */
     DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Bdd<LibraryType>> const& ddVariables);
 
@@ -127,7 +127,6 @@ class DdMetaVariable {
      * @param type The type of the meta variable.
      * @param name The name of the meta variable.
      * @param ddVariables The vector of variables used to encode this variable.
-     * @param manager A pointer to the manager that is responsible for this meta variable.
      */
     DdMetaVariable(MetaVariableType const& type, std::string const& name, std::vector<Bdd<LibraryType>> const& ddVariables);
 
@@ -171,5 +170,3 @@ class DdMetaVariable {
 };
 }  // namespace dd
 }  // namespace storm
-
-#endif /* STORM_STORAGE_DD_DDMETAVARIBLE_H_ */

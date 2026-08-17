@@ -1,10 +1,8 @@
 #include "storm/solver/AbstractEquationSolver.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/SignalHandler.h"
@@ -73,6 +71,11 @@ boost::optional<storm::storage::BitVector> const& AbstractEquationSolver<ValueTy
 template<typename ValueType>
 void AbstractEquationSolver<ValueType>::setRelevantValues(storm::storage::BitVector&& relevantValues) {
     this->relevantValues = std::move(relevantValues);
+}
+
+template<typename ValueType>
+void AbstractEquationSolver<ValueType>::setRelevantValues(storm::storage::BitVector const& relevantValues) {
+    this->relevantValues = relevantValues;
 }
 
 template<typename ValueType>
@@ -371,10 +374,8 @@ SolverStatus AbstractEquationSolver<ValueType>::updateStatus(SolverStatus status
 
 template class AbstractEquationSolver<double>;
 
-#ifdef STORM_HAVE_CARL
 template class AbstractEquationSolver<storm::RationalNumber>;
 template class AbstractEquationSolver<storm::RationalFunction>;
-#endif
 
 }  // namespace solver
 }  // namespace storm

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/storage/MaximalEndComponent.h"
@@ -35,20 +37,20 @@ class SparseLTLSchedulerHelper {
     void setRandom();
 
     /*!
-     * Save choices for states in the accepting end component of the DA-Model product.
-     * We know the EC satisfies the given conjunction of the acceptance condition. Therefore, we want to reach each infinity set in the conjunction infinitely
-     * often. Choices are of the Form <s, q, InfSetID> -> choice.
+     * Save choices for states in the accepting end component of the DA-Model product and for the states in the maximal end component that contains the
+     * accepting EC. We know the acceptingEC satisfies the given conjunction of the acceptance condition. Therefore, we want to reach each infinity set in the
+     * conjunction infinitely often. Choices are of the Form <s, q, InfSetID> -> choice. For states in the containingMEC that are not in the accepting EC, this
+     * method will set a scheduler under which the states of the contained acceptingEC are reached almost surely.
      *
-     * @note The given end component might overlap with another accepting EC (that potentially satisfies another conjunction of the DNF-acceptance condition).
-     * If this is the case, this method will set a scheduler under which the states of the overlapping EC are reached almost surely.
-     * This method only sets new choices for states that are not in any other accepting EC (yet).
+     * @note This method only sets new choices for states that do not have a choice set yet.
      *
      * @param acceptance the acceptance condition (in DNF)
      * @param mec the accepting end component which shall only contain states that can be visited infinitely often (without violating the acc cond.)
      * @param conjunction the conjunction satisfied by the end component
      * @param product the product model
      */
-    void saveProductEcChoices(automata::AcceptanceCondition const& acceptance, storm::storage::MaximalEndComponent const& mec,
+    void saveProductEcChoices(automata::AcceptanceCondition const& acceptance, storm::storage::MaximalEndComponent const& acceptingEC,
+                              storm::storage::MaximalEndComponent const& containingMEC,
                               std::vector<automata::AcceptanceCondition::acceptance_expr::ptr> const& conjunction,
                               typename transformer::DAProduct<productModelType>::ptr product);
 

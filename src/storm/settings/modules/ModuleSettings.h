@@ -1,6 +1,6 @@
-#ifndef STORM_SETTINGS_MODULES_MODULESETTINGS_H_
-#define STORM_SETTINGS_MODULES_MODULESETTINGS_H_
+#pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -10,7 +10,6 @@ namespace storm {
 namespace settings {
 // Forward-declare some classes.
 class SettingsManager;
-class SettingMemento;
 class Option;
 
 namespace modules {
@@ -20,9 +19,6 @@ namespace modules {
  */
 class ModuleSettings {
    public:
-    // Declare the memento class as a friend so it can manipulate the internal state.
-    friend class storm::settings::SettingMemento;
-
     /*!
      * Constructs a new settings object.
      *
@@ -42,17 +38,6 @@ class ModuleSettings {
      * Prepares the modules for further usage, should be called at the end of the initialization, before checks are executed.
      */
     virtual void finalize();
-
-    /*!
-     * Sets the option with the given name to the required status. This requires the option to take no
-     * arguments. As a result, a pointer to an object is returned such that when the object is destroyed
-     * (i.e. the smart pointer goes out of scope), the option is reset to its original status.
-     *
-     * @param name The name of the option to (unset).
-     * @param requiredStatus The status that is to be set for the option.
-     * @return A pointer to an object that resets the change upon destruction.
-     */
-    std::unique_ptr<storm::settings::SettingMemento> overrideOption(std::string const& name, bool requiredStatus);
 
     /*!
      * Retrieves the name of the module to which these settings belong.
@@ -107,22 +92,6 @@ class ModuleSettings {
     bool isSet(std::string const& optionName) const;
 
     /*!
-     * Sets the option with the specified name. This requires the option to not have any arguments. This
-     * should be used with care and is primarily meant to be used by the SettingMemento.
-     *
-     * @param name The name of the option to set.
-     */
-    void set(std::string const& name);
-
-    /*!
-     * Unsets the option with the specified name. This requires the option to not have any arguments. This
-     * should be used with care and is primarily meant to be used by the SettingMemento.
-     *
-     * @param name The name of the option to unset.
-     */
-    void unset(std::string const& name);
-
-    /*!
      * Adds and registers the given option.
      *
      * @param option The option to add and register.
@@ -143,5 +112,3 @@ class ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_MODULESETTINGS_H_ */

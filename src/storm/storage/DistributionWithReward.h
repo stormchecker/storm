@@ -28,8 +28,7 @@ class DistributionWithReward : public Distribution<ValueType, StateType> {
      * @param other The distribution with which the current distribution is to be compared.
      * @return True iff the two distributions are equal.
      */
-    bool equals(DistributionWithReward<ValueType, StateType> const& other,
-                storm::utility::ConstantsComparator<ValueType> const& comparator = storm::utility::ConstantsComparator<ValueType>()) const;
+    bool equals(DistributionWithReward<ValueType, StateType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const;
 
     bool less(DistributionWithReward<ValueType, StateType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const;
 

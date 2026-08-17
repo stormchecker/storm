@@ -48,7 +48,7 @@ FormulaParser& FormulaParser::operator=(FormulaParser const& other) {
     this->manager = other.manager;
     this->grammar = std::shared_ptr<FormulaParserGrammar>(new FormulaParserGrammar(this->manager));
     other.grammar->getIdentifiers().for_each(
-        [=](std::string const& name, storm::expressions::Expression const& expression) { this->addIdentifierExpression(name, expression); });
+        [this](std::string const& name, storm::expressions::Expression const& expression) { this->addIdentifierExpression(name, expression); });
     return *this;
 }
 
@@ -62,7 +62,7 @@ std::shared_ptr<storm::logic::Formula const> FormulaParser::parseSingleFormulaFr
 std::vector<storm::jani::Property> FormulaParser::parseFromFile(std::string const& filename) const {
     // Open file and initialize result.
     std::ifstream inputFileStream;
-    storm::utility::openFile(filename, inputFileStream);
+    storm::io::openFile(filename, inputFileStream);
 
     std::vector<storm::jani::Property> properties;
 
@@ -72,12 +72,12 @@ std::vector<storm::jani::Property> FormulaParser::parseFromFile(std::string cons
         properties = parseFromString(fileContent);
     } catch (std::exception& e) {
         // In case of an exception properly close the file before passing exception.
-        storm::utility::closeFile(inputFileStream);
+        storm::io::closeFile(inputFileStream);
         throw e;
     }
 
     // Close the stream in case everything went smoothly and return result.
-    storm::utility::closeFile(inputFileStream);
+    storm::io::closeFile(inputFileStream);
     return properties;
 }
 
@@ -94,7 +94,7 @@ std::vector<storm::jani::Property> FormulaParser::parseFromString(std::string co
         // Start parsing.
         bool succeeded = qi::phrase_parse(
             iter, last, *grammar, storm::spirit_encoding::space_type() | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
-        STORM_LOG_THROW(succeeded, storm::exceptions::WrongFormatException, "Could not parse formula: " << formulaString);
+        STORM_LOG_THROW(succeeded, storm::exceptions::WrongFormatException, "Could not parse formula: " << formulaString << ".");
         STORM_LOG_DEBUG("Parsed formula successfully.");
     } catch (qi::expectation_failure<PositionIteratorType> const& e) {
         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, e.what_);

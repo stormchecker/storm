@@ -1,6 +1,9 @@
+#pragma once
+
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/BitVector.h"
+
 namespace storm {
 namespace analysis {
 template<typename ValueType>

@@ -1,24 +1,17 @@
 #include "storm/storage/dd/Add.h"
 
-#include <cstdint>
-
 #include <boost/algorithm/string/join.hpp>
 
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/DdMetaVariable.h"
-#include "storm/storage/dd/Odd.h"
-
-#include "storm/storage/BitVector.h"
-#include "storm/storage/SparseMatrix.h"
-
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/utility/constants.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/DdMetaVariable.h"
+#include "storm/storage/dd/Odd.h"
 #include "storm/utility/macros.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace dd {
@@ -733,7 +726,7 @@ storm::storage::SparseMatrix<ValueType> Add<LibraryType, ValueType>::toMatrix(st
 
     for (auto const& variable : this->getContainedMetaVariables()) {
         // If the meta variable is a group meta variable, we do not insert it into the set of row/column meta variables.
-        if (groupMetaVariables.find(variable) != groupMetaVariables.end()) {
+        if (groupMetaVariables.contains(variable)) {
             continue;
         }
 
@@ -797,7 +790,7 @@ typename Add<LibraryType, ValueType>::MatrixAndLabeling Add<LibraryType, ValueTy
             ddLabelVariableIndicesVector.emplace_back(ddGroupVariableIndices.size());
             uint64_t position = 0;
             for (auto const& index : ddGroupVariableIndices) {
-                if (ddLabelVariableIndicesSet.find(index) != ddLabelVariableIndicesSet.end()) {
+                if (ddLabelVariableIndicesSet.contains(index)) {
                     ddLabelVariableIndicesVector.back().set(position);
                 }
                 ++position;
@@ -921,7 +914,7 @@ std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Add<L
 
     for (auto const& variable : this->getContainedMetaVariables()) {
         // If the meta variable is a group meta variable, we do not insert it into the set of row/column meta variables.
-        if (groupMetaVariables.find(variable) != groupMetaVariables.end()) {
+        if (groupMetaVariables.contains(variable)) {
             continue;
         }
 
@@ -967,7 +960,7 @@ std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<std::vector<Value
 
     for (auto const& variable : this->getContainedMetaVariables()) {
         // If the meta variable is a group meta variable, we do not insert it into the set of row/column meta variables.
-        if (groupMetaVariables.find(variable) != groupMetaVariables.end()) {
+        if (groupMetaVariables.contains(variable)) {
             continue;
         }
 
@@ -1210,15 +1203,13 @@ Add<LibraryType, ValueType>::operator InternalAdd<LibraryType, ValueType>() cons
 
 template<DdType LibraryType, typename ValueType>
 template<typename TargetValueType>
-typename std::enable_if<std::is_same<TargetValueType, ValueType>::value, Add<LibraryType, TargetValueType>>::type Add<LibraryType, ValueType>::toValueType()
-    const {
+std::enable_if_t<std::is_same_v<TargetValueType, ValueType>, Add<LibraryType, TargetValueType>> Add<LibraryType, ValueType>::toValueType() const {
     return *this;
 }
 
 template<DdType LibraryType, typename ValueType>
 template<typename TargetValueType>
-typename std::enable_if<!std::is_same<TargetValueType, ValueType>::value, Add<LibraryType, TargetValueType>>::type Add<LibraryType, ValueType>::toValueType()
-    const {
+std::enable_if_t<!std::is_same_v<TargetValueType, ValueType>, Add<LibraryType, TargetValueType>> Add<LibraryType, ValueType>::toValueType() const {
     return Add<LibraryType, TargetValueType>(this->getDdManager(), internalAdd.template toValueType<TargetValueType>(), this->getContainedMetaVariables());
 }
 
@@ -1230,7 +1221,6 @@ template class Add<storm::dd::DdType::Sylvan, double>;
 template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, double> const& add);
 template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
 
-#ifdef STORM_HAVE_CARL
 template class Add<storm::dd::DdType::CUDD, storm::RationalNumber>;
 template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::CUDD, storm::RationalNumber> const& add);
 
@@ -1247,6 +1237,5 @@ template Add<storm::dd::DdType::Sylvan, storm::RationalNumber> Add<storm::dd::Dd
 template Add<storm::dd::DdType::Sylvan, storm::RationalNumber> Add<storm::dd::DdType::Sylvan, double>::toValueType<storm::RationalNumber>() const;
 template Add<storm::dd::DdType::Sylvan, double> Add<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType<double>() const;
 template Add<storm::dd::DdType::Sylvan, double> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::toValueType<double>() const;
-#endif
 }  // namespace dd
 }  // namespace storm

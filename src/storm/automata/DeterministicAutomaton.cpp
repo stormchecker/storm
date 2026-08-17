@@ -1,14 +1,17 @@
 #include "storm/automata/DeterministicAutomaton.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-exception-parameter"  // emitted from the flex-generated hoa_lexer.hh
 #include "cpphoafparser/consumer/hoa_intermediate_check_validity.hh"
 #include "cpphoafparser/parser/hoa_parser.hh"
 #include "cpphoafparser/parser/hoa_parser_helper.hh"
+#pragma clang diagnostic pop
 
 #include "storm/automata/AcceptanceCondition.h"
 #include "storm/automata/HOAConsumerDA.h"
-#include "storm/utility/macros.h"
-
 #include "storm/exceptions/FileIoException.h"
+#include "storm/io/file.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace automata {
@@ -95,9 +98,10 @@ DeterministicAutomaton::ptr DeterministicAutomaton::parse(std::istream& in) {
 }
 
 DeterministicAutomaton::ptr DeterministicAutomaton::parseFromFile(const std::string& filename) {
-    std::ifstream in(filename);
-    STORM_LOG_THROW(in.good(), storm::exceptions::FileIoException, "Can not open '" << filename << "' for reading.");
+    std::ifstream in;
+    storm::io::openFile(filename, in);
     auto da = parse(in);
+    storm::io::closeFile(in);
 
     STORM_LOG_INFO("Deterministic automaton from HOA file '" << filename << "' has " << da->getNumberOfStates() << " states, " << da->getAPSet().size()
                                                              << " atomic propositions and " << *da->getAcceptance()->getAcceptanceExpression()

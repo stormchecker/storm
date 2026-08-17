@@ -105,7 +105,7 @@ SolverStatus IntervalIterationHelper<ValueType, TrivialRowGrouping>::II(std::pai
     }
     while (status == SolverStatus::InProgress) {
         ++numIterations;
-        viOperator->template applyInPlace(xy, offsets, backend);
+        viOperator->applyInPlace(xy, offsets, backend);
         if (checkConvergence(xy, convergenceCheckState, getNextConvergenceCheckState, relative, precision)) {
             status = SolverStatus::Converged;
         } else if (iterationCallback) {

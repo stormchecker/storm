@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/adapters/RationalNumberForward.h"
 
@@ -39,6 +40,18 @@ struct NumberTraits<storm::GmpRationalNumber> {
     typedef GmpIntegerNumber IntegerType;
 };
 #endif
+
+template<>
+struct NumberTraits<storm::Interval> {
+    static const bool SupportsExponential = true;
+    static const bool IsExact = false;
+};
+
+template<>
+struct NumberTraits<storm::RationalInterval> {
+    static const bool SupportsExponential = true;
+    static const bool IsExact = true;
+};
 
 template<>
 struct NumberTraits<storm::RationalFunction> {

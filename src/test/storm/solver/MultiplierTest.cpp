@@ -4,8 +4,8 @@
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/solver/multiplier/Multiplier.h"
 #include "storm/storage/SparseMatrix.h"
-
 #include "storm/utility/vector.h"
+
 namespace {
 
 class NativeEnvironment {
@@ -19,13 +19,13 @@ class NativeEnvironment {
     }
 };
 
-class GmmxxEnvironment {
+class ViOperatorEnvironment {
    public:
     typedef double ValueType;
     static const bool isExact = false;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.solver().multiplier().setType(storm::solver::MultiplierType::Gmmxx);
+        env.solver().multiplier().setType(storm::solver::MultiplierType::ViOperator);
         return env;
     }
 };
@@ -49,7 +49,7 @@ class MultiplierTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<NativeEnvironment, GmmxxEnvironment> TestingTypes;
+typedef ::testing::Types<NativeEnvironment, ViOperatorEnvironment> TestingTypes;
 
 TYPED_TEST_SUITE(MultiplierTest, TestingTypes, );
 

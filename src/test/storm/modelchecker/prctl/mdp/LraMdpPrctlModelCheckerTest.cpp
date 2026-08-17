@@ -1,28 +1,22 @@
-#include "test/storm_gtest.h"
-
-#include "test/storm_gtest.h"
-
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #include "storm-conv/api/storm-conv.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
+#include "storm-parsers/parser/AutoParser.h"
+#include "storm-parsers/parser/FormulaParser.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
-
-#include "storm-parsers/parser/FormulaParser.h"
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/solver/StandardMinMaxLinearEquationSolver.h"
-
 #include "storm/settings/modules/GeneralSettings.h"
-
-#include "storm-parsers/parser/AutoParser.h"
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 
 namespace {
 
@@ -107,7 +101,7 @@ class LraMdpPrctlModelCheckerTest : public ::testing::Test {
         std::string const& pathToPrismFile, std::string const& formulasAsString, std::string const& constantDefinitionString = "") const {
         std::pair<std::shared_ptr<SparseModelType>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
         storm::prism::Program program = storm::api::parseProgram(pathToPrismFile);
-        program = storm::utility::prism::preprocess(program, constantDefinitionString);
+        program = program.preprocess(constantDefinitionString);
         result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
         result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<SparseModelType>();
         return result;
@@ -126,12 +120,8 @@ class LraMdpPrctlModelCheckerTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<SparseValueTypeValueIterationEnvironment, SparseValueTypeLinearProgrammingEnvironment, SparseSoundEnvironment
-#ifdef STORM_HAVE_Z3_OPTIMIZE
-                         ,
-                         SparseRationalLinearProgrammingEnvironment
-#endif
-                         >
+typedef ::testing::Types<SparseValueTypeValueIterationEnvironment, SparseValueTypeLinearProgrammingEnvironment, SparseSoundEnvironment,
+                         SparseRationalLinearProgrammingEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(LraMdpPrctlModelCheckerTest, TestingTypes, );

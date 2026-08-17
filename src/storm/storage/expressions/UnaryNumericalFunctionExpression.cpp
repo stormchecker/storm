@@ -1,14 +1,13 @@
+#include "storm/storage/expressions/UnaryNumericalFunctionExpression.h"
+
 #include <cmath>
 
-#include "ExpressionVisitor.h"
-
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidTypeException.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
 #include "storm/storage/expressions/IntegerLiteralExpression.h"
 #include "storm/storage/expressions/OperatorType.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"
-#include "storm/storage/expressions/UnaryNumericalFunctionExpression.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -59,10 +58,8 @@ int_fast64_t UnaryNumericalFunctionExpression::evaluateAsInt(Valuation const* va
         switch (this->getOperatorType()) {
             case OperatorType::Floor:
                 return static_cast<int_fast64_t>(std::floor(result));
-                break;
             case OperatorType::Ceil:
                 return static_cast<int_fast64_t>(std::ceil(result));
-                break;
             default:
                 STORM_LOG_ASSERT(false, "All other operator types should have been handled before.");
                 return 0;  // Warning suppression.

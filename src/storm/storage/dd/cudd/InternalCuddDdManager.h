@@ -1,16 +1,18 @@
-#ifndef STORM_STORAGE_DD_INTERNALCUDDDDMANAGER_H_
-#define STORM_STORAGE_DD_INTERNALCUDDDDMANAGER_H_
+#pragma once
 
 #include <boost/optional.hpp>
 #include <functional>
 
+#include "storm-config.h"
+#include "storm/environment/dd/CuddDdManagerEnvironment.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalDdManager.h"
-
 #include "storm/storage/dd/cudd/InternalCuddAdd.h"
 #include "storm/storage/dd/cudd/InternalCuddBdd.h"
 
+#ifdef STORM_HAVE_CUDD
 #include "cuddObj.hh"
+#endif
 
 namespace storm {
 namespace dd {
@@ -30,8 +32,10 @@ class InternalDdManager<DdType::CUDD> {
 
     /*!
      * Creates a new internal manager for CUDD DDs.
+     *
+     * @param environment The environment providing the settings for the CUDD manager.
      */
-    InternalDdManager();
+    explicit InternalDdManager(storm::CuddDdManagerEnvironment const& environment);
 
     /*!
      * Destroys the CUDD manager.
@@ -148,6 +152,7 @@ class InternalDdManager<DdType::CUDD> {
      */
     uint_fast64_t getNumberOfDdVariables() const;
 
+#ifdef STORM_HAVE_CUDD
     /*!
      * Retrieves the underlying CUDD manager.
      *
@@ -161,8 +166,10 @@ class InternalDdManager<DdType::CUDD> {
      * @return The underlying CUDD manager.
      */
     cudd::Cudd const& getCuddManager() const;
+#endif
 
    private:
+#ifdef STORM_HAVE_CUDD
     // Helper function to create the BDD whose encodings are below a given bound.
     DdNodePtr getBddEncodingLessOrEqualThanRec(uint64_t minimalValue, uint64_t maximalValue, uint64_t bound, DdNodePtr cube,
                                                uint64_t remainingDdVariables) const;
@@ -175,8 +182,7 @@ class InternalDdManager<DdType::CUDD> {
 
     // Keeps track of the number of registered DD variables.
     uint_fast64_t numberOfDdVariables;
+#endif
 };
 }  // namespace dd
 }  // namespace storm
-
-#endif /* STORM_STORAGE_DD_INTERNALCUDDDDMANAGER_H_ */

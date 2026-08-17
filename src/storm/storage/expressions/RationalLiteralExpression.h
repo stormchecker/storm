@@ -1,10 +1,7 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_RationalLiteralExpression_H_
-#define STORM_STORAGE_EXPRESSIONS_RationalLiteralExpression_H_
-
-#include "storm/storage/expressions/BaseExpression.h"
-#include "storm/utility/OsDetection.h"
+#pragma once
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/storage/expressions/BaseExpression.h"
 
 namespace storm {
 namespace expressions {
@@ -74,5 +71,3 @@ class RationalLiteralExpression : public BaseExpression {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_RationalLiteralExpression_H_ */

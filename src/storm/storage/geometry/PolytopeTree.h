@@ -82,7 +82,7 @@ class PolytopeTree {
      * @param offset coordinates that are added to the point before taking its downward closure
      */
     void substractDownwardClosure(std::vector<ValueType> const& point, std::vector<ValueType> const& offset) {
-        assert(point.size() == offset.size());
+        STORM_LOG_ASSERT(point.size() == offset.size(), "Point/offset size mismatch.");
         std::vector<ValueType> pointPrime(point.size());
         storm::utility::vector::addVectors(point, offset, pointPrime);
         setMinus(Polytope<ValueType>::createDownwardClosure({pointPrime}));

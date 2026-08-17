@@ -4,6 +4,7 @@
 #include <string>
 
 #include "storm/adapters/JsonAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/io/file.h"
@@ -14,9 +15,9 @@ namespace storage {
 template<typename ValueType>
 void DftJsonExporter<ValueType>::toFile(storm::dft::storage::DFT<ValueType> const& dft, std::string const& filepath) {
     std::ofstream stream;
-    storm::utility::openFile(filepath, stream);
+    storm::io::openFile(filepath, stream);
     toStream(dft, stream);
-    storm::utility::closeFile(stream);
+    storm::io::closeFile(stream);
 }
 
 template<typename ValueType>

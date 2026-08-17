@@ -1,32 +1,26 @@
 #include "storm-parsers/parser/DeterministicSparseTransitionParser.h"
 
 #include <clocale>
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
-#include <iostream>
 #include <string>
 
 #include "storm-parsers/parser/MappedFile.h"
 #include "storm-parsers/util/cstring.h"
-#include "storm/exceptions/FileIoException.h"
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
 #include "storm/utility/constants.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
+
 namespace storm {
 namespace parser {
 
 using namespace storm::utility::cstring;
 
 template<typename ValueType>
-storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<ValueType>::parseDeterministicTransitions(std::string const& filename) {
+storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<ValueType>::parseDeterministicTransitions(
+    std::string const& filename, ExplicitModelParserOptions const& options) {
     storm::storage::SparseMatrix<ValueType> emptyMatrix;
-    return DeterministicSparseTransitionParser<ValueType>::parse(filename, false, emptyMatrix);
+    return DeterministicSparseTransitionParser<ValueType>::parse(filename, false, emptyMatrix, options);
 }
 
 template<typename ValueType>
@@ -39,7 +33,8 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
 template<typename ValueType>
 template<typename MatrixValueType>
 storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<ValueType>::parse(
-    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) {
+    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix,
+    ExplicitModelParserOptions const& options) {
     // Enforce locale where decimal point is '.'.
     setlocale(LC_NUMERIC, "C");
 
@@ -54,10 +49,8 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
     STORM_LOG_TRACE("First pass on " << filename << " shows " << firstPass.numberOfNonzeroEntries << " non-zeros.");
 
     // If first pass returned zero, the file format was wrong.
-    if (firstPass.numberOfNonzeroEntries == 0) {
-        STORM_LOG_ERROR("Error while parsing " << filename << ": empty or erroneous file format.");
-        throw storm::exceptions::WrongFormatException();
-    }
+    STORM_LOG_THROW(firstPass.numberOfNonzeroEntries > 0, storm::exceptions::WrongFormatException,
+                    "Error while parsing " << filename << ": empty or erroneous file format.");
 
     // Perform second pass.
 
@@ -71,8 +64,7 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
     if (isRewardFile) {
         // The reward matrix should match the size of the transition matrix.
         if (firstPass.highestStateIndex + 1 > transitionMatrix.getRowCount() || firstPass.highestStateIndex + 1 > transitionMatrix.getColumnCount()) {
-            STORM_LOG_ERROR("Reward matrix has more rows or columns than transition matrix.");
-            throw storm::exceptions::WrongFormatException() << "Reward matrix has more rows or columns than transition matrix.";
+            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Reward matrix has more rows or columns than transition matrix.");
         } else {
             // If we found the right number of states or less, we set it to the number of states represented by the transition matrix.
             firstPass.highestStateIndex = transitionMatrix.getRowCount() - 1;
@@ -86,7 +78,7 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
 
     uint_fast64_t row, col, lastRow = 0;
     double val;
-    bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet();
+    bool fixDeadlocks = options.fixDeadlocks;
     bool hadDeadlocks = false;
 
     // Read all transitions from file. Note that we assume that the
@@ -112,7 +104,7 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
         if (row > 0) {
             for (uint_fast64_t skippedRow = 0; skippedRow < row; ++skippedRow) {
                 hadDeadlocks = true;
-                if (!dontFixDeadlocks) {
+                if (fixDeadlocks) {
                     resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::one<ValueType>());
                     STORM_LOG_WARN("Warning while parsing " << filename << ": state " << skippedRow
                                                             << " has no outgoing transitions. A self-loop was inserted.");
@@ -134,7 +126,7 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
             if (lastRow != row) {
                 for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
                     hadDeadlocks = true;
-                    if (!dontFixDeadlocks) {
+                    if (fixDeadlocks) {
                         resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::one<ValueType>());
                         STORM_LOG_INFO("Warning while parsing " << filename << ": state " << skippedRow
                                                                 << " has no outgoing transitions. A self-loop was inserted.");
@@ -151,8 +143,7 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
         }
 
         // If we encountered deadlock and did not fix them, now is the time to throw the exception.
-        if (dontFixDeadlocks && hadDeadlocks)
-            throw storm::exceptions::WrongFormatException() << "Some of the states do not have outgoing transitions.";
+        STORM_LOG_THROW(fixDeadlocks || !hadDeadlocks, storm::exceptions::WrongFormatException, "Some of the states do not have outgoing transitions.");
     }
 
     // Finally, build the actual matrix, test and return it.
@@ -160,10 +151,8 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
 
     // Since we cannot check if each transition for which there is a reward in the reward file also exists in the transition matrix during parsing, we have to
     // do it afterwards.
-    if (isRewardFile && !result.isSubmatrixOf(transitionMatrix)) {
-        STORM_LOG_ERROR("There are rewards for non existent transitions given in the reward file.");
-        throw storm::exceptions::WrongFormatException() << "There are rewards for non existent transitions given in the reward file.";
-    }
+    STORM_LOG_THROW(!isRewardFile || result.isSubmatrixOf(transitionMatrix), storm::exceptions::WrongFormatException,
+                    "There are rewards for non existent transitions given in the reward file.");
 
     return result;
 }
@@ -215,10 +204,8 @@ typename DeterministicSparseTransitionParser<ValueType>::FirstPassResult Determi
         ++result.numberOfNonzeroEntries;
 
         // Have we already seen this transition?
-        if (row == lastRow && col == lastCol) {
-            STORM_LOG_ERROR("The same transition (" << row << ", " << col << ") is given twice.");
-            throw storm::exceptions::InvalidArgumentException() << "The same transition (" << row << ", " << col << ") is given twice.";
-        }
+        STORM_LOG_THROW(row != lastRow || col != lastCol, storm::exceptions::InvalidArgumentException,
+                        "The same transition (" << row << ", " << col << ") is given twice.");
 
         lastRow = row;
         lastCol = col;
@@ -239,15 +226,14 @@ template class DeterministicSparseTransitionParser<double>;
 template storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser<double>::parseDeterministicTransitionRewards(
     std::string const& filename, storm::storage::SparseMatrix<double> const& transitionMatrix);
 template storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser<double>::parse(std::string const& filename, bool isRewardFile,
-                                                                                                 storm::storage::SparseMatrix<double> const& transitionMatrix);
+                                                                                                 storm::storage::SparseMatrix<double> const& transitionMatrix,
+                                                                                                 ExplicitModelParserOptions const& options);
 
-#ifdef STORM_HAVE_CARL
 template class DeterministicSparseTransitionParser<storm::Interval>;
 
 template storm::storage::SparseMatrix<storm::Interval> DeterministicSparseTransitionParser<storm::Interval>::parseDeterministicTransitionRewards(
     std::string const& filename, storm::storage::SparseMatrix<double> const& transitionMatrix);
 template storm::storage::SparseMatrix<storm::Interval> DeterministicSparseTransitionParser<storm::Interval>::parse(
-    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& transitionMatrix);
-#endif
+    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& transitionMatrix, ExplicitModelParserOptions const& options);
 }  // namespace parser
 }  // namespace storm

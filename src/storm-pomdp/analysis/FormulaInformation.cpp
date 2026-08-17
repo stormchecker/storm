@@ -1,13 +1,13 @@
 #include "storm-pomdp/analysis/FormulaInformation.h"
+
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -25,8 +25,9 @@ FormulaInformation::FormulaInformation() : type(Type::Unsupported) {
 
 FormulaInformation::FormulaInformation(Type const& type, storm::solver::OptimizationDirection const& dir, std::optional<std::string> const& rewardModelName)
     : type(type), optimizationDirection(dir), rewardModelName(rewardModelName) {
-    STORM_LOG_ASSERT(!this->rewardModelName.has_value() || this->type == Type::NonNestedExpectedRewardFormula,
-                     "Got a reward model name for a non-reward formula.");
+    STORM_LOG_ASSERT(
+        !this->rewardModelName.has_value() || this->type == Type::NonNestedExpectedRewardFormula || this->type == Type::DiscountedTotalRewardFormula,
+        "Got a reward model name for a non-reward formula.");
 }
 
 FormulaInformation::Type const& FormulaInformation::getType() const {
@@ -39,6 +40,10 @@ bool FormulaInformation::isNonNestedReachabilityProbability() const {
 
 bool FormulaInformation::isNonNestedExpectedRewardFormula() const {
     return type == Type::NonNestedExpectedRewardFormula;
+}
+
+bool FormulaInformation::isDiscountedTotalRewardFormula() const {
+    return type == Type::DiscountedTotalRewardFormula;
 }
 
 bool FormulaInformation::isUnsupported() const {
@@ -57,7 +62,8 @@ typename FormulaInformation::StateSet const& FormulaInformation::getSinkStates()
 }
 
 std::string const& FormulaInformation::getRewardModelName() const {
-    STORM_LOG_ASSERT(this->type == Type::NonNestedExpectedRewardFormula, "Reward model requested for unexpected formula type.");
+    STORM_LOG_ASSERT(this->type == Type::NonNestedExpectedRewardFormula || this->type == Type::DiscountedTotalRewardFormula,
+                     "Reward model requested for unexpected formula type.");
     return rewardModelName.value();
 }
 
@@ -108,7 +114,7 @@ template<typename PomdpType>
 storm::storage::BitVector getStates(storm::logic::Formula const& propositionalFormula, bool formulaInverted, PomdpType const& pomdp) {
     storm::modelchecker::SparsePropositionalModelChecker<PomdpType> mc(pomdp);
     auto checkResult = mc.check(propositionalFormula);
-    storm::storage::BitVector resultBitVector(checkResult->asExplicitQualitativeCheckResult().getTruthValuesVector());
+    storm::storage::BitVector resultBitVector(checkResult->template asExplicitQualitativeCheckResult<typename PomdpType::ValueType>().getTruthValuesVector());
     if (formulaInverted) {
         resultBitVector.complement();
     }
@@ -118,7 +124,7 @@ storm::storage::BitVector getStates(storm::logic::Formula const& propositionalFo
 template<typename PomdpType>
 FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::ProbabilityOperatorFormula const& formula) {
     STORM_LOG_THROW(formula.hasOptimalityType(), storm::exceptions::InvalidPropertyException,
-                    "The property does not specify an optimization direction (min/max)");
+                    "The property does not specify an optimization direction (min/max).");
     STORM_LOG_WARN_COND(!formula.hasBound(), "The probability threshold for the given property will be ignored.");
     auto const& subformula = formula.getSubformula();
     std::shared_ptr<storm::logic::Formula const> targetStatesFormula, constraintsStatesFormula;
@@ -143,7 +149,7 @@ FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::P
 template<typename PomdpType>
 FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::RewardOperatorFormula const& formula) {
     STORM_LOG_THROW(formula.hasOptimalityType(), storm::exceptions::InvalidPropertyException,
-                    "The property does not specify an optimization direction (min/max)");
+                    "The property does not specify an optimization direction (min/max).");
     STORM_LOG_WARN_COND(!formula.hasBound(), "The reward threshold for the given property will be ignored.");
     std::string rewardModelName = "";
     if (formula.hasRewardModelName()) {

@@ -3,17 +3,10 @@
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm-gamebased-ar/abstraction/BottomStateResult.h"
 #include "storm-gamebased-ar/abstraction/GameBddResult.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/DdManager.h"
-
 #include "storm/storage/prism/Module.h"
-
-#include "storm/settings/SettingsManager.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/utility/macros.h"
 
 namespace storm::gbar {
@@ -131,9 +124,7 @@ void ModuleAbstractor<DdType, ValueType>::notifyGuardsArePredicates() {
 
 template class ModuleAbstractor<storm::dd::DdType::CUDD, double>;
 template class ModuleAbstractor<storm::dd::DdType::Sylvan, double>;
-#ifdef STORM_HAVE_CARL
 template class ModuleAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-#endif
 }  // namespace prism
 }  // namespace abstraction
 }  // namespace storm::gbar

@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_BOUND_H_
-#define STORM_LOGIC_BOUND_H_
+#pragma once
 
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/exceptions/IllegalArgumentException.h"
@@ -44,5 +43,3 @@ inline std::ostream& operator<<(std::ostream& out, Bound const& bound) {
 }  // namespace logic
 
 }  // namespace storm
-
-#endif /* STORM_LOGIC_BOUND_H_ */

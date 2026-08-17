@@ -1,8 +1,13 @@
 #include "storm-pars-cli/feasibility.h"
+#include <optional>
 
+#include "storm-cli-utilities/print.h"
+#include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
+#include "storm-pars/storage/ParameterRegion.h"
 #include "storm/api/verification.h"
 
 #include "storm/settings/SettingsManager.h"
+#include "storm/utility/constants.h"
 
 #include "storm-pars/api/region.h"
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
@@ -97,7 +102,7 @@ void performFeasibility(std::shared_ptr<storm::models::sparse::Model<ValueType>>
     } else if (feasibilitySettings.getFeasibilityMethod() == storm::pars::FeasibilityMethod::PLA) {
         runFeasibilityWithPLA(model, task, omittedParameters, monotonicitySettings);
     } else {
-        STORM_LOG_ASSERT(feasibilitySettings.getFeasibilityMethod() == storm::pars::FeasibilityMethod::SCP, "Remaining method must be SCP");
+        STORM_LOG_ASSERT(feasibilitySettings.getFeasibilityMethod() == storm::pars::FeasibilityMethod::SCP, "Remaining method must be SCP.");
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SCP is not yet implemented.");
     }
 }
@@ -110,9 +115,7 @@ void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType
 
     STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException,
                     "Gradient descent is currently only supported for DTMCs.");
-    STORM_LOG_THROW(!task->isRegionSet(), storm::exceptions::NotSupportedException, "Gradient descent only works with *the* graph-preserving region.");
     std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
-
     STORM_LOG_THROW(task->getFormula().isProbabilityOperatorFormula() || task->getFormula().isRewardOperatorFormula(), storm::exceptions::NotSupportedException,
                     "Input formula needs to be either a probability operator formula or a reward operator formula.");
     STORM_LOG_THROW(task->isBoundSet(), storm::exceptions::NotImplementedException, "GD (right now) requires an explicitly given bound.");
@@ -145,14 +148,33 @@ void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType
         return;
     }
 
-    boost::optional<std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>>
+    std::optional<std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>>
         startPoint;
+
+    std::optional<storage::ParameterRegion<storm::RationalFunction>> region;
+    if (task->isRegionSet()) {
+        region = task->getRegion();
+        // Check if the region includes bounds at 0 or 1
+        bool hasZeroBound = false;
+        for (auto const& var : region->getVariables()) {
+            auto lowerBound = region->getLowerBoundary(var);
+            auto upperBound = region->getUpperBoundary(var);
+            if (storm::utility::isZero(lowerBound) || storm::utility::isOne(upperBound)) {
+                hasZeroBound = true;
+                break;
+            }
+        }
+        if (hasZeroBound) {
+            STORM_LOG_WARN(
+                "The region includes bounds at 0 or 1, which is not supported by Gradient Descent. Continuing anyway, but results may be incorrect.");
+        }
+    }
 
     STORM_PRINT("Finding an extremum using Gradient Descent\n");
     storm::utility::Stopwatch derivativeWatch(true);
     storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> gdsearch(
         *dtmc, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(),
-        derSettings.getTerminationEpsilon(), startPoint, *constraintMethod, derSettings.isPrintJsonSet());
+        derSettings.getTerminationEpsilon(), startPoint, *constraintMethod, region, derSettings.isPrintJsonSet());
 
     gdsearch.setup(Environment(), task);
     auto instantiationAndValue = gdsearch.gradientDescent();
@@ -194,13 +216,21 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
     // TODO handle omittedParameterss
     auto regionVerificationSettings = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>();
     auto engine = regionVerificationSettings.getRegionCheckEngine();
-    bool generateSplitEstimates = regionVerificationSettings.isSplittingThresholdSet();
+
+    auto regionSplittingStrategy = storm::modelchecker::RegionSplittingStrategy();
+
+    regionSplittingStrategy.heuristic = regionVerificationSettings.getRegionSplittingHeuristic();
+    regionSplittingStrategy.estimateKind = regionVerificationSettings.getRegionSplittingEstimateMethod();
+    if (regionVerificationSettings.isSplittingThresholdSet()) {
+        regionSplittingStrategy.maxSplitDimensions = regionVerificationSettings.getSplittingThreshold();
+    }
 
     if (task->isBoundSet()) {
         storm::utility::Stopwatch watch(true);
-        auto valueValuation = storm::api::computeExtremalValue<ValueType>(
-            model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true), task->getRegion(), engine, direction,
-            storm::utility::zero<ValueType>(), !task->isMaxGapRelative(), monotonicitySettings, task->getBound().getInvertedBound(), generateSplitEstimates);
+        auto const& settings = storm::api::RefinementOptions<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
+                                                                        engine, regionSplittingStrategy};
+        auto valueValuation = storm::api::computeExtremalValue<ValueType>(settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
+                                                                          !task->isMaxGapRelative(), task->getBound().getInvertedBound());
         watch.stop();
 
         printFeasibilityResult(task->getBound().isSatisfied(valueValuation.first), valueValuation, watch);
@@ -210,9 +240,10 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
 
         ValueType precision = storm::utility::convertNumber<ValueType>(task->getMaximalAllowedGap().value());
         storm::utility::Stopwatch watch(true);
-        auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
-                                                                          task->getRegion(), engine, direction, precision, !task->isMaxGapRelative(),
-                                                                          monotonicitySettings, std::nullopt, generateSplitEstimates);
+        auto const& settings = storm::api::RefinementOptions<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
+                                                                        engine, regionSplittingStrategy};
+        auto valueValuation = storm::api::computeExtremalValue<ValueType>(settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
+                                                                          !task->isMaxGapRelative(), std::nullopt);
         watch.stop();
 
         printFeasibilityResult(true, valueValuation, watch);

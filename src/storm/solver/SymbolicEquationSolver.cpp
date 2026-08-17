@@ -1,8 +1,6 @@
 #include "storm/solver/SymbolicEquationSolver.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/adapters/RationalNumberAdapter.h"
-
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/utility/macros.h"
 
@@ -125,11 +123,9 @@ storm::dd::Add<DdType, ValueType> SymbolicEquationSolver<DdType, ValueType>::get
 template class SymbolicEquationSolver<storm::dd::DdType::CUDD, double>;
 template class SymbolicEquationSolver<storm::dd::DdType::Sylvan, double>;
 
-#ifdef STORM_HAVE_CARL
 template class SymbolicEquationSolver<storm::dd::DdType::CUDD, storm::RationalNumber>;
 template class SymbolicEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 
 template class SymbolicEquationSolver<storm::dd::DdType::Sylvan, storm::RationalFunction>;
-#endif
 }  // namespace solver
 }  // namespace storm

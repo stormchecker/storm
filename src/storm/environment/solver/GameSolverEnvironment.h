@@ -1,8 +1,9 @@
 #pragma once
 
-#include "storm/environment/solver/SolverEnvironment.h"
+#include <cstdint>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/solver/MultiplicationStyle.h"
 #include "storm/solver/SolverSelectionOptions.h"
 
@@ -22,8 +23,6 @@ class GameSolverEnvironment {
     void setPrecision(storm::RationalNumber value);
     bool const& getRelativeTerminationCriterion() const;
     void setRelativeTerminationCriterion(bool value);
-    storm::solver::MultiplicationStyle const& getMultiplicationStyle() const;
-    void setMultiplicationStyle(storm::solver::MultiplicationStyle value);
 
    private:
     storm::solver::GameMethod gameMethod;

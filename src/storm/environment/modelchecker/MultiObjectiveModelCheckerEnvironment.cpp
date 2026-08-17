@@ -34,12 +34,15 @@ MultiObjectiveModelCheckerEnvironment::MultiObjectiveModelCheckerEnvironment() {
         encodingType = EncodingType::Flow;
     }
     STORM_LOG_ASSERT(multiobjectiveSettings.isBsccDetectionViaOrderConstraintsSet() || multiobjectiveSettings.isBsccDetectionViaFlowConstraintsSet(),
-                     "unexpected settings");
+                     "Unexpected settings.");
     bsccOrderEncoding = multiobjectiveSettings.isBsccDetectionViaOrderConstraintsSet();
-    STORM_LOG_ASSERT(multiobjectiveSettings.isIndicatorConstraintsSet() || multiobjectiveSettings.isBigMConstraintsSet(), "unexpected settings");
+    STORM_LOG_ASSERT(multiobjectiveSettings.isIndicatorConstraintsSet() || multiobjectiveSettings.isBigMConstraintsSet(), "Unexpected settings.");
     indicatorConstraints = multiobjectiveSettings.isIndicatorConstraintsSet();
     redundantBsccConstraints = multiobjectiveSettings.isRedundantBsccConstraintsSet();
 
+    if (multiobjectiveSettings.isWeightedSumApproximationTradeoffSet()) {
+        approximationTradeoff = storm::utility::convertNumber<storm::RationalNumber>(multiobjectiveSettings.getWeightedSumApproximationTradeoff());
+    }
     if (multiobjectiveSettings.isMaxStepsSet()) {
         maxSteps = multiobjectiveSettings.getMaxSteps();
     }
@@ -48,7 +51,6 @@ MultiObjectiveModelCheckerEnvironment::MultiObjectiveModelCheckerEnvironment() {
     }
 
     printResults = multiobjectiveSettings.isPrintResultsSet();
-    useLexicographicModelChecking = multiobjectiveSettings.isLexicographicModelCheckingSet();
 }
 
 MultiObjectiveModelCheckerEnvironment::~MultiObjectiveModelCheckerEnvironment() {
@@ -149,6 +151,22 @@ void MultiObjectiveModelCheckerEnvironment::setUseRedundantBsccConstraints(bool 
     redundantBsccConstraints = value;
 }
 
+bool MultiObjectiveModelCheckerEnvironment::isApproximationTradeoffSet() const {
+    return approximationTradeoff.is_initialized();
+}
+
+storm::RationalNumber const& MultiObjectiveModelCheckerEnvironment::getApproximationTradeoff() const {
+    return approximationTradeoff.get();
+}
+
+void MultiObjectiveModelCheckerEnvironment::setApproximationTradeoff(storm::RationalNumber const& value) {
+    approximationTradeoff = value;
+}
+
+void MultiObjectiveModelCheckerEnvironment::unsetApproximationTradeoff() {
+    approximationTradeoff = boost::none;
+}
+
 bool MultiObjectiveModelCheckerEnvironment::isMaxStepsSet() const {
     return maxSteps.is_initialized();
 }
@@ -189,11 +207,4 @@ void MultiObjectiveModelCheckerEnvironment::setPrintResults(bool value) {
     printResults = value;
 }
 
-bool MultiObjectiveModelCheckerEnvironment::isLexicographicModelCheckingSet() const {
-    return useLexicographicModelChecking;
-}
-
-void MultiObjectiveModelCheckerEnvironment::setLexicographicModelChecking(bool value) {
-    useLexicographicModelChecking = value;
-}
 }  // namespace storm

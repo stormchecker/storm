@@ -1,7 +1,7 @@
+#pragma once
+
 #include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
-
 #include "storm/modelchecker/helper/ltl/internal/SparseLTLSchedulerHelper.h"
-
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/storage/SparseMatrix.h"

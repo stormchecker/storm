@@ -122,7 +122,7 @@ class DFTExplorationHeuristicProbability : public DFTExplorationHeuristic<ValueT
     }
 
     bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) override {
-        STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(exitRate), "Exit rate is 0");
+        STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(exitRate), "Exit rate is 0.");
         probability += predecessor.getProbability() * rate / exitRate;
         return true;
     }

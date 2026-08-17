@@ -299,6 +299,9 @@ FragmentSpecification::FragmentSpecification() {
     quantileFormulaAtTopLevelRequired = false;
 
     rewardAccumulation = false;
+
+    discountedCumulativeRewardFormula = false;
+    discountedTotalRewardFormula = false;
 }
 
 FragmentSpecification FragmentSpecification::copy() const {
@@ -753,6 +756,24 @@ bool FragmentSpecification::areGameFormulasAllowed() const {
 
 FragmentSpecification& FragmentSpecification::setGameFormulasAllowed(bool newValue) {
     gameFormula = newValue;
+    return *this;
+}
+
+bool FragmentSpecification::areDiscountedCumulativeRewardFormulasAllowed() const {
+    return discountedCumulativeRewardFormula;
+}
+
+FragmentSpecification& FragmentSpecification::setDiscountedCumulativeRewardFormulasAllowed(bool newValue) {
+    this->discountedCumulativeRewardFormula = newValue;
+    return *this;
+}
+
+bool FragmentSpecification::areDiscountedTotalRewardFormulasAllowed() const {
+    return discountedTotalRewardFormula;
+}
+
+FragmentSpecification& FragmentSpecification::setDiscountedTotalRewardFormulasAllowed(bool newValue) {
+    this->discountedTotalRewardFormula = newValue;
     return *this;
 }
 

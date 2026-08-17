@@ -28,6 +28,7 @@ class FormulaInformation {
     enum class Type {
         NonNestedReachabilityProbability,  // e.g. 'Pmax=? [F "target"]' or 'Pmin=? [!"sink" U "target"]'
         NonNestedExpectedRewardFormula,    // e.g. 'Rmin=? [F x>0 ]'
+        DiscountedTotalRewardFormula,      // e.g. 'Rmax=? [Cdiscount=9/10}]'
         Unsupported                        // The formula type is unsupported
     };
 
@@ -37,6 +38,7 @@ class FormulaInformation {
     Type const& getType() const;
     bool isNonNestedReachabilityProbability() const;
     bool isNonNestedExpectedRewardFormula() const;
+    bool isDiscountedTotalRewardFormula() const;
     bool isUnsupported() const;
     StateSet const& getTargetStates() const;
     StateSet const& getSinkStates() const;          // Shall not be called for reward formulas

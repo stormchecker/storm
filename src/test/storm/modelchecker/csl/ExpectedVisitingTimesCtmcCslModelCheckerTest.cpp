@@ -16,6 +16,7 @@ namespace {
 
 enum class CtmcEngine { JaniSparse };
 
+#ifdef STORM_HAVE_GMM
 class SparseGmmxxGmresIluEnvironment {
    public:
     static const CtmcEngine engine = CtmcEngine::JaniSparse;
@@ -32,6 +33,7 @@ class SparseGmmxxGmresIluEnvironment {
         return env;
     }
 };
+#endif
 
 class SparseSoundEnvironment {
    public:
@@ -112,7 +114,12 @@ class ExpectedVisitingTimesCtmcCslModelCheckerTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, SparseSoundEnvironment, SparseEigenRationalLuEnvironment> TestingTypes;
+typedef ::testing::Types<
+#ifdef STORM_HAVE_GMM
+    SparseGmmxxGmresIluEnvironment,
+#endif
+    SparseSoundEnvironment, SparseEigenRationalLuEnvironment>
+    TestingTypes;
 
 TYPED_TEST_SUITE(ExpectedVisitingTimesCtmcCslModelCheckerTest, TestingTypes, );
 

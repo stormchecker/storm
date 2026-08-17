@@ -1,14 +1,13 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
-#include "storm-pars/analysis/LocalMonotonicityResult.h"
-#include "storm-pars/analysis/Order.h"
-#include "storm-pars/analysis/OrderExtender.h"
+#include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
+#include "storm-pars/modelchecker/region/RegionSplitEstimateKind.h"
 #include "storm-pars/modelchecker/results/RegionCheckResult.h"
-#include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
 #include "storm-pars/storage/ParameterRegion.h"
 
 #include "storm/modelchecker/CheckTask.h"
@@ -22,136 +21,130 @@ namespace modelchecker {
 
 // TODO type names are inconsistent and all over the place
 template<typename ParametricType>
+struct AnnotatedRegion;
+template<typename ParametricType>
+class MonotonicityBackend;
+
+template<typename ParametricType>
 class RegionModelChecker {
    public:
     typedef typename storm::storage::ParameterRegion<ParametricType>::CoefficientType CoefficientType;
     typedef typename storm::storage::ParameterRegion<ParametricType>::VariableType VariableType;
+    typedef typename storm::storage::ParameterRegion<ParametricType>::Valuation Valuation;
 
-    RegionModelChecker();
+    RegionModelChecker() = default;
     virtual ~RegionModelChecker() = default;
 
     virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel,
                            CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const = 0;
+
     virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
-                         CheckTask<storm::logic::Formula, ParametricType> const& checkTask, bool generateRegionSplitEstimates,
-                         bool allowModelSimplifications = true) = 0;
+                         CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
+                         std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
+                         std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
+                         bool graphPreserving = true) = 0;
 
     /*!
-     * Analyzes the given region.
+     * Analyzes the given region. Assumes that a property with a threshold was specified.
+     * @pre `specify` must be called before.
+     * @param region the region to analyze plus what is already known about this region. The annotations might be updated.
      * @param hypothesis if not 'unknown', the region checker only tries to show the hypothesis
-     * @param initialResult encodes what is already known about this region
      * @param sampleVerticesOfRegion enables sampling of the vertices of the region in cases where AllSat/AllViolated could not be shown.
      */
-    virtual RegionResult analyzeRegion(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
-                                       RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown,
-                                       RegionResult const& initialResult = RegionResult::Unknown, bool sampleVerticesOfRegion = false,
-                                       std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult = nullptr) = 0;
+    virtual RegionResult analyzeRegion(Environment const& env, AnnotatedRegion<ParametricType>& region,
+                                       RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, bool sampleVerticesOfRegion = false) = 0;
 
     /*!
-    * Analyzes the given regions.
-    * @param hypothesis if not 'unknown', we only try to show the hypothesis for each region
+     * Analyzes the given region. Assumes that a property with a threshold was specified.
+     * @pre `specify` must be called before.
+     * @param region the region to analyze plus what is already known about this region. The annotations might be updated.
+     * @param hypothesis if not 'unknown', the region checker only tries to show the hypothesis
+     * @param sampleVerticesOfRegion enables sampling of the vertices of the region in cases where AllSat/AllViolated could not be shown.
+     */
+    RegionResult analyzeRegion(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
+                               RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, bool sampleVerticesOfRegion = false);
 
-    * If supported by this model checker, it is possible to sample the vertices of the regions whenever AllSat/AllViolated could not be shown.
-    */
+    /*!
+     * Analyzes the given regions.
+     * @pre `specify` must be called before.
+     * @param hypothesis if not 'unknown', we only try to show the hypothesis for each region
+     * If supported by this model checker, it is possible to sample the vertices of the regions whenever AllSat/AllViolated could not be shown.
+     */
     std::unique_ptr<storm::modelchecker::RegionCheckResult<ParametricType>> analyzeRegions(
         Environment const& env, std::vector<storm::storage::ParameterRegion<ParametricType>> const& regions,
         std::vector<RegionResultHypothesis> const& hypotheses, bool sampleVerticesOfRegion = false);
 
-    virtual ParametricType getBoundAtInitState(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
-                                               storm::solver::OptimizationDirection const& dirForParameters);
+    /*!
+     * Over-approximates the value within the given region. If dirForParameters maximizes, the returned value is an upper bound on the maximum value within the
+     * region. If dirForParameters minimizes, the returned value is a lower bound on the minimum value within the region.
+     * @pre `specify` must be called before and the model has a single initial state.
+     * @param region the region to analyze plus what is already known about this region. The annotations might be updated.
+     * @param dirForParameters whether to maximize or minimize the value in the region
+     * @return the over-approximated value within the region
+     */
+    virtual CoefficientType getBoundAtInitState(Environment const& env, AnnotatedRegion<ParametricType>& region,
+                                                storm::solver::OptimizationDirection const& dirForParameters) = 0;
 
     /*!
-     * Iteratively refines the region until the region analysis yields a conclusive result (AllSat or AllViolated).
-     * @param region the considered region
-     * @param coverageThreshold if given, the refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then this
-     * threshold
-     * @param depthThreshold if given, the refinement stops at the given depth. depth=0 means no refinement.
-     * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds within the given region.
-     * @param monThresh if given, determines at which depth to start using monotonicity
+     * Over-approximates the value within the given region. If dirForParameters maximizes, the returned value is an upper bound on the maximum value within the
+     * region. If dirForParameters minimizes, the returned value is a lower bound on the minimum value within the region.
+     * @pre `specify` must be called before and the model has a single initial state.
+     * @param region the region to analyze plus what is already known about this region. The annotations might be updated.
+     * @param dirForParameters whether to maximize or minimize the value in the region
+     * @return the over-approximated value within the region
      */
-    std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> performRegionRefinement(
-        Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold,
-        boost::optional<uint64_t> depthThreshold = boost::none, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown,
-        uint64_t monThresh = 0);
-
-    // TODO return type is not quite nice
-    // TODO consider returning v' as well
-    /*!
-     * Finds the extremal value within the given region and with the given precision.
-     * The returned value v corresponds to the value at the returned valuation.
-     * The actual maximum (minimum) lies in the interval [v, v'] ([v', v])
-     * where v' is based on the precision. (With absolute precision, v' = v +/- precision).
-     * TODO: Check documentation, which was incomplete.
-     *
-     * @param env
-     * @param region The region in which to optimize
-     * @param dir The direction in which to optimize
-     * @param precision The required precision (unless boundInvariant is set).
-     * @param absolutePrecision true iff precision should be measured absolutely
-     * @param boundInvariant if this invariant on v is violated, the algorithm may return v while violating the precision requirements.
-     * @return
-     */
-    virtual std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> computeExtremalValue(
-        Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir,
-        ParametricType const& precision, bool absolutePrecision, std::optional<storm::logic::Bound> const& boundInvariant = std::nullopt);
-    /*!
-     * Checks whether the bound is satisfied on the complete region.
-     * @return
-     */
-    virtual bool verifyRegion(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::logic::Bound const& bound);
+    CoefficientType getBoundAtInitState(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
+                                        storm::solver::OptimizationDirection const& dirForParameters);
 
     /*!
-     * Returns true if region split estimation (a) was enabled when model and check task have been specified and (b) is supported by this region model checker.
+     * Heuristically finds a point within the region and computes the value at the initial state for that point.
+     * The heuristic potentially takes annotations from the region such as monotonicity into account. Also data from previous analysis results might be used.
+     * @pre `specify` must be called before and the model has a single initial state.
+     * @param region the region to analyze plus what is already known about this region. The annotations might be updated.
+     * @param dirForParameters whether the heuristic tries to find a point with a high or low value
+     * @return a pair of the value at the initial state and the point at which the value was computed
      */
-    virtual bool isRegionSplitEstimateSupported() const;
+    virtual std::pair<CoefficientType, Valuation> getAndEvaluateGoodPoint(Environment const& env, AnnotatedRegion<ParametricType>& region,
+                                                                          storm::solver::OptimizationDirection const& dirForParameters) = 0;
 
     /*!
-     * Returns an estimate of the benefit of splitting the last checked region with respect to each parameter. This method should only be called if region split
-     * estimation is supported and enabled. If a parameter is assigned a high value, we should prefer splitting with respect to this parameter.
+     * @return the default kind of region split estimate that this region model checker generates.
      */
-    virtual std::map<VariableType, double> getRegionSplitEstimate() const;
-
-    virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order,
-                                                                storm::storage::ParameterRegion<ParametricType> region);
-
-    virtual void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
-
-    bool isUseMonotonicitySet() const;
-    bool isUseBoundsSet();
-    bool isOnlyGlobalSet();
-
-    void setUseMonotonicity(bool monotonicity = true);
-    void setUseBounds(bool bounds = true);
-    void setUseOnlyGlobal(bool global = true);
+    virtual RegionSplitEstimateKind getDefaultRegionSplitEstimateKind(CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const;
 
     /*!
-     * When splitting, split in at most this many dimensions
+     * @return true if this can generate region split estimates of the given kind.
      */
-    virtual void setMaxSplitDimensions(uint64_t);
+    virtual bool isRegionSplitEstimateKindSupported(RegionSplitEstimateKind kind, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const;
+
     /*!
-     * When splitting, split in every dimension
+     * @return the kind of region split estimation that was selected in the last call to `specify` (if any)
      */
-    virtual void resetMaxSplitDimensions();
+    std::optional<RegionSplitEstimateKind> getSpecifiedRegionSplitEstimateKind() const;
 
-    void setMonotoneParameters(std::pair<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>,
-                                         std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>>
-                                   monotoneParameters);
+    /*!
+     * Returns an estimate of the benefit of splitting the last checked region with respect to each of the given parameters.
+     * If a parameter is assigned a high value, we should prefer splitting with respect to this parameter.
+     * @pre the last call to `specify` must have set `generateRegionSplitEstimates` to a non-empty value and either `analyzeRegion` or `getBoundAtInitState`
+     * must have been called before.
+     */
+    virtual std::vector<CoefficientType> obtainRegionSplitEstimates(std::set<VariableType> const& relevantParameters) const;
 
-   private:
-    bool useMonotonicity = false;
-    bool useOnlyGlobal = false;
-    bool useBounds = false;
+    /*!
+     * Returns whether this region model checker can work together with the given monotonicity backend.
+     */
+    virtual bool isMonotonicitySupported(MonotonicityBackend<ParametricType> const& backend,
+                                         CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const = 0;
 
    protected:
-    uint_fast64_t numberOfRegionsKnownThroughMonotonicity;
-    boost::optional<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>> monotoneIncrParameters;
-    boost::optional<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>> monotoneDecrParameters;
+    virtual void specifySplitEstimates(std::optional<RegionSplitEstimateKind> splitEstimates,
+                                       CheckTask<storm::logic::Formula, ParametricType> const& checkTask);
+    virtual void specifyMonotonicity(std::shared_ptr<MonotonicityBackend<ParametricType>> backend,
+                                     CheckTask<storm::logic::Formula, ParametricType> const& checkTask);
 
-    virtual void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> order,
-                                               std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
-
-    virtual void splitSmart(storm::storage::ParameterRegion<ParametricType>& region, std::vector<storm::storage::ParameterRegion<ParametricType>>& regionVector,
-                            storm::analysis::MonotonicityResult<VariableType>& monRes, bool splitForExtremum) const;
+    std::optional<storm::storage::ParameterRegion<ParametricType>> lastCheckedRegion;
+    std::optional<RegionSplitEstimateKind> specifiedRegionSplitEstimateKind;
+    std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend;
 };
 
 }  // namespace modelchecker

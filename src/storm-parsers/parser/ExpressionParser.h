@@ -1,12 +1,11 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
-#include <sstream>
 
 #include "storm-parsers/parser/SpiritErrorHandler.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/storage/expressions/OperatorType.h"
-
-#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 namespace expressions {
@@ -225,6 +224,8 @@ class ExpressionParser : public qi::grammar<Iterator, storm::expressions::Expres
     qi::rule<Iterator, storm::expressions::Expression(), Skipper> unaryExpression;
     qi::rule<Iterator, storm::expressions::Expression(), Skipper> atomicExpression;
     qi::rule<Iterator, storm::expressions::Expression(), Skipper> literalExpression;
+    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> integerLiteralExpression;
+    qi::rule<Iterator, qi::unused_type(bool), Skipper> integerOverflowHelperRule;
     qi::rule<Iterator, storm::expressions::Expression(), Skipper> identifierExpression;
     qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::OperatorType, storm::expressions::Expression>, Skipper>
         minMaxExpression;
@@ -234,7 +235,8 @@ class ExpressionParser : public qi::grammar<Iterator, storm::expressions::Expres
     qi::rule<Iterator, std::string(), Skipper> identifier;
 
     // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
-    boost::spirit::qi::real_parser<storm::RationalNumber, RationalPolicies<storm::RationalNumber>> rationalLiteral_;
+    boost::spirit::qi::real_parser<storm::RationalNumber, RationalPolicies<storm::RationalNumber>> floatLiteral_;
+    boost::spirit::qi::int_parser<storm::RationalNumber> integerLiteral_;
 
     bool isValidIdentifier(std::string const& identifier);
 

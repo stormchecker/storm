@@ -1,7 +1,5 @@
 #include "storm/storage/expressions/ToRationalFunctionVisitor.h"
 
-#include <sstream>
-
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/expressions/OperatorType.h"
 #include "storm/utility/constants.h"
@@ -10,7 +8,6 @@
 namespace storm {
 namespace expressions {
 
-#ifdef STORM_HAVE_CARL
 template<typename RationalFunctionType>
 ToRationalFunctionVisitor<RationalFunctionType>::ToRationalFunctionVisitor(ExpressionEvaluatorBase<RationalFunctionType> const& evaluator)
     : ExpressionVisitor(), cache(new storm::RawPolynomialCache()), evaluator(evaluator) {
@@ -124,6 +121,5 @@ void ToRationalFunctionVisitor<RationalFunctionType>::setMapping(storm::expressi
 }
 
 template class ToRationalFunctionVisitor<storm::RationalFunction>;
-#endif
 }  // namespace expressions
 }  // namespace storm

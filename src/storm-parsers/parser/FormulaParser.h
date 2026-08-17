@@ -1,5 +1,4 @@
-#ifndef STORM_PARSER_FORMULAPARSER_H_
-#define STORM_PARSER_FORMULAPARSER_H_
+#pragma once
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/jani/Property.h"
@@ -63,8 +62,6 @@ class FormulaParser {
     void addIdentifierExpression(std::string const& identifier, storm::expressions::Expression const& expression);
 
    private:
-    void addFormulasAsIdentifiers(storm::prism::Program const& program);
-
     // The manager used to parse expressions.
     std::shared_ptr<storm::expressions::ExpressionManager const> manager;
 
@@ -74,5 +71,3 @@ class FormulaParser {
 
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_FORMULAPARSER_H_ */

@@ -1,13 +1,12 @@
 #include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsLpChecker.h"
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/VisitingTimesHelper.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/solver.h"
@@ -184,7 +183,7 @@ std::vector<storm::expressions::Expression> classicConstraints(storm::solver::Lp
         for (auto const& state : objectiveHelper.getRewMinusInfEStates()) {
             reachVars[state] = lpModel.addBinaryVariable("c_" + std::to_string(objIndex) + "_" + std::to_string(state));
         }
-        STORM_LOG_ASSERT(objectiveHelper.getRewMinusInfEStates().get(initialState), "");
+        STORM_LOG_ASSERT(objectiveHelper.getRewMinusInfEStates().get(initialState), "Initial state must be in RewMinusInfEStates.");
         lpModel.update();
         lpModel.addConstraint("", reachVars[initialState] == lpModel.getConstant(storm::utility::one<ValueType>()));
     }
@@ -444,11 +443,11 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
     storm::storage::BitVector allZeroRewardChoices(matrix.getRowCount(), true);
     for (auto const& oh : objectiveHelper) {
         for (auto const& rew : oh.getChoiceRewards()) {
-            assert(!storm::utility::isZero(rew.second));
+            STORM_LOG_ASSERT(!storm::utility::isZero(rew.second), "Reward value is zero.");
             allZeroRewardChoices.set(rew.first, false);
         }
     }
-    storm::storage::MaximalEndComponentDecomposition mecs(matrix, backwardTransitions, anyMaybeStates, allZeroRewardChoices);
+    storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(matrix, backwardTransitions, anyMaybeStates, allZeroRewardChoices);
     storm::storage::BitVector mecStates(matrix.getRowGroupCount(), false);
     for (auto const& mec : mecs) {
         for (auto const& sc : mec) {
@@ -464,7 +463,7 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
     std::vector<storm::expressions::Expression> choiceVisitsVars(matrix.getRowCount()), botVisitsVars(matrix.getRowGroupCount()),
         bsccVars(matrix.getRowGroupCount());
     for (auto state : anyMaybeStates) {
-        assert(indicatorConstraints || maxVisits[state] >= storm::utility::zero<ValueType>());
+        STORM_LOG_ASSERT(indicatorConstraints || maxVisits[state] >= storm::utility::zero<ValueType>(), "Unexpected negative max visits.");
         for (auto choice : matrix.getRowGroupIndices(state)) {
             choiceVisitsVars[choice] =
                 lpModel.addLowerBoundedContinuousVariable("y_" + std::to_string(choice), storm::utility::zero<ValueType>()).getExpression();
@@ -511,7 +510,7 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
             visitsSummands.push_back(lpModel.getConstant(storm::utility::one<ValueType>()));
         }
         for (auto const& preEntry : backwardChoices.getRow(state)) {
-            assert(choiceVisitsVars[preEntry.getColumn()].isInitialized());
+            STORM_LOG_ASSERT(choiceVisitsVars[preEntry.getColumn()].isInitialized(), "Choice visit variable not initialized.");
             visitsSummands.push_back(lpModel.getConstant(preEntry.getValue()) * choiceVisitsVars[preEntry.getColumn()]);
         }
         lpModel.addConstraint("", storm::expressions::sum(visitsSummands) == lpModel.getConstant(storm::utility::zero<ValueType>()));
@@ -528,7 +527,7 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
                         if (storm::utility::isZero(succ.getValue())) {
                             continue;
                         }
-                        assert(mecStates.get(succ.getColumn()));
+                        STORM_LOG_ASSERT(mecStates.get(succ.getColumn()), "MEC state not set for successor.");
                         lpModel.addConstraint("", bsccVars[state] <= bsccVars[succ.getColumn()] + lpModel.getConstant(storm::utility::one<ValueType>()) -
                                                                          choiceVariables[choice]);
                     }
@@ -547,7 +546,7 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
             lpModel.update();
             std::vector<storm::expressions::Expression> summands;
             for (auto const& objRew : objectiveHelper[objIndex].getChoiceRewards()) {
-                assert(choiceVisitsVars[objRew.first].isInitialized());
+                STORM_LOG_ASSERT(choiceVisitsVars[objRew.first].isInitialized(), "Choice visit variable not initialized.");
                 summands.push_back(choiceVisitsVars[objRew.first] * lpModel.getConstant(objRew.second));
             }
             lpModel.addConstraint("", objectiveValueVariables.back() == storm::expressions::sum(summands));
@@ -581,10 +580,9 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initializeLpMod
     uint64_t initialState = *model.getInitialStates().begin();
     auto backwardTransitions = model.getBackwardTransitions();
     auto backwardChoices = model.getTransitionMatrix().transpose();
-    STORM_LOG_WARN_COND(!storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue() ||
-                            storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver() == storm::solver::LpSolverType::Gurobi,
+    STORM_LOG_WARN_COND(!env.solver().isLpSolverTypeSetFromDefaultValue() || env.solver().getLpSolverType() == storm::solver::LpSolverType::Gurobi,
                         "The selected MILP solver might not perform well. Consider installing / using Gurobi.");
-    lpModel = storm::utility::solver::getLpSolver<ValueType>("model");
+    lpModel = storm::utility::solver::getLpSolver<ValueType>(env, "model");
 
     lpModel->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
     initialStateResults.clear();
@@ -632,7 +630,7 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(
                                                                                 storm::storage::geometry::PolytopeTree<GeometryValueType>& polytopeTree,
                                                                                 Point const& eps, std::vector<Point>& foundPoints,
                                                                                 std::vector<Polytope>& infeasableAreas, uint64_t const& depth) {
-    STORM_LOG_ASSERT(!polytopeTree.isEmpty(), "Tree node is empty");
+    STORM_LOG_ASSERT(!polytopeTree.isEmpty(), "Tree node is empty.");
     STORM_LOG_ASSERT(!polytopeTree.getPolytope()->isEmpty(), "Tree node is empty.");
     STORM_LOG_TRACE("Checking at depth " << depth << ": " << polytopeTree.toString());
 
@@ -661,9 +659,6 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(
             swCheckAreas.stop();
             ++numLpQueries;
             STORM_LOG_TRACE("\tDone solving MILP...");
-
-            // STORM_PRINT_AND_LOG("Writing model to file '" << polytopeTree.toId() << ".lp'\n";);
-            // lpModel->writeModelToFile(polytopeTree.toId() + ".lp");
 
             if (lpModel->isInfeasible()) {
                 infeasableAreas.push_back(polytopeTree.getPolytope());
@@ -746,7 +741,7 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(
             }
             uint64_t newPointIndex = foundPoints.size();
             checkRecursive(env, polytopeTree.getChildren()[childId], eps, foundPoints, infeasableAreas, depth + 1);
-            STORM_LOG_ASSERT(polytopeTree.getChildren()[childId].isEmpty(), "expected empty children.");
+            STORM_LOG_ASSERT(polytopeTree.getChildren()[childId].isEmpty(), "Expected empty children.");
             // Make the new points known to the right siblings
             for (; newPointIndex < foundPoints.size(); ++newPointIndex) {
                 for (uint64_t siblingId = childId + 1; siblingId < polytopeTree.getChildren().size(); ++siblingId) {
@@ -774,9 +769,9 @@ typename DeterministicSchedsLpChecker<ModelType, GeometryValueType>::Point Deter
         } else {
             bool choiceFound = false;
             for (auto choice : choices) {
-                assert(choiceVariables[choice].isVariable());
+                STORM_LOG_ASSERT(choiceVariables[choice].isVariable(), "Choice variable is not a variable.");
                 if (lpModel->getBinaryValue(choiceVariables[choice].getBaseExpression().asVariableExpression().getVariable())) {
-                    STORM_LOG_THROW(!choiceFound, storm::exceptions::UnexpectedException, "Multiple choices selected at state " << state);
+                    STORM_LOG_THROW(!choiceFound, storm::exceptions::UnexpectedException, "Multiple choices selected at state " << state << ".");
                     selectedChoices.set(choice, true);
                     choiceFound = true;
                 }

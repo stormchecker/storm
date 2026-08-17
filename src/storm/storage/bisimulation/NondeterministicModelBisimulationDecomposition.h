@@ -1,10 +1,8 @@
-#ifndef STORM_STORAGE_BISIMULATION_NONDETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_
-#define STORM_STORAGE_BISIMULATION_NONDETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_
-
-#include "storm/storage/bisimulation/BisimulationDecomposition.h"
-#include "storm/storage/bisimulation/DeterministicBlockData.h"
+#pragma once
 
 #include "storm/storage/DistributionWithReward.h"
+#include "storm/storage/bisimulation/BisimulationDecomposition.h"
+#include "storm/storage/bisimulation/DeterministicBlockData.h"
 
 namespace storm {
 namespace storage {
@@ -27,8 +25,7 @@ class NondeterministicModelBisimulationDecomposition : public BisimulationDecomp
      * @param options The options that customize the computed bisimulation.
      */
     NondeterministicModelBisimulationDecomposition(ModelType const& model,
-                                                   typename BisimulationDecomposition<ModelType, BlockDataType>::Options const& options =
-                                                       typename BisimulationDecomposition<ModelType, BlockDataType>::Options());
+                                                   typename BisimulationDecomposition<ModelType, BlockDataType>::Options const& options);
 
    protected:
     virtual std::pair<storm::storage::BitVector, storm::storage::BitVector> getStatesWithProbability01() override;
@@ -70,7 +67,7 @@ class NondeterministicModelBisimulationDecomposition : public BisimulationDecomp
     bool printDistributions(storm::storage::sparse::state_type state) const;
     bool checkDistributionsDifferent(bisimulation::Block<BlockDataType> const& block, storm::storage::sparse::state_type end) const;
 
-    // A mapping from choice indices to the state state that has this choice.
+    // A mapping from choice indices to the state that has this choice.
     std::vector<storm::storage::sparse::state_type> choiceToStateMapping;
 
     // A vector that holds the quotient distributions for all nondeterministic choices of all states.
@@ -81,5 +78,3 @@ class NondeterministicModelBisimulationDecomposition : public BisimulationDecomp
 };
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_BISIMULATION_NONDETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_ */

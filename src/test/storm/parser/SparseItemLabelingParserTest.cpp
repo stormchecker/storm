@@ -1,12 +1,13 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
+#include <memory>
+
 #include "storm-parsers/parser/SparseItemLabelingParser.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/models/sparse/StateLabeling.h"
-#include "test/storm_gtest.h"
-
-#include <memory>
 
 TEST(SparseItemLabelingParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!

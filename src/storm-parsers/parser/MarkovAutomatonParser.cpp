@@ -1,14 +1,11 @@
-#include "MarkovAutomatonParser.h"
-#include "NondeterministicSparseTransitionParser.h"
-#include "SparseItemLabelingParser.h"
-#include "SparseStateRewardParser.h"
+#include "storm-parsers/parser/MarkovAutomatonParser.h"
 
+#include "storm-parsers/parser/NondeterministicSparseTransitionParser.h"
+#include "storm-parsers/parser/SparseItemLabelingParser.h"
+#include "storm-parsers/parser/SparseStateRewardParser.h"
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/sparse/ModelComponents.h"
-
-#include "storm/exceptions/WrongFormatException.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace parser {
@@ -17,10 +14,10 @@ template<typename ValueType, typename RewardValueType>
 storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>
 MarkovAutomatonParser<ValueType, RewardValueType>::parseMarkovAutomaton(std::string const& transitionsFilename, std::string const& labelingFilename,
                                                                         std::string const& stateRewardFilename, std::string const& transitionRewardFilename,
-                                                                        std::string const& choiceLabelingFilename) {
+                                                                        std::string const& choiceLabelingFilename, ExplicitModelParserOptions const& options) {
     // Parse the transitions of the Markov Automaton.
     typename storm::parser::MarkovAutomatonSparseTransitionParser<ValueType>::Result transitionResult(
-        storm::parser::MarkovAutomatonSparseTransitionParser<ValueType>::parseMarkovAutomatonTransitions(transitionsFilename));
+        storm::parser::MarkovAutomatonSparseTransitionParser<ValueType>::parseMarkovAutomatonTransitions(transitionsFilename, options));
 
     // Build the actual transition matrix using the MatrixBuilder provided by the transitionResult.
     storm::storage::SparseMatrix<ValueType> transitionMatrix(transitionResult.transitionMatrixBuilder.build());
@@ -68,10 +65,7 @@ MarkovAutomatonParser<ValueType, RewardValueType>::parseMarkovAutomaton(std::str
 }
 
 template class MarkovAutomatonParser<double, double>;
-
-#ifdef STORM_HAVE_CARL
 template class MarkovAutomatonParser<double, storm::Interval>;
-#endif
 
 }  // namespace parser
 }  // namespace storm

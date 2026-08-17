@@ -7,7 +7,6 @@
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/transformer/GoalStateMerger.h"
 #include "storm/utility/graph.h"
@@ -34,10 +33,12 @@ bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForUntilProbabiliti
         STORM_LOG_DEBUG("Can not simplify when Until-formula has non-propositional subformula(s). Formula: " << formula);
         return false;
     }
-    storm::storage::BitVector phiStates = std::move(
-        propositionalChecker.check(formula.getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
-    storm::storage::BitVector psiStates = std::move(
-        propositionalChecker.check(formula.getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
+    storm::storage::BitVector phiStates = std::move(propositionalChecker.check(formula.getSubformula().asUntilFormula().getLeftSubformula())
+                                                        ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
+                                                        .getTruthValuesVector());
+    storm::storage::BitVector psiStates = std::move(propositionalChecker.check(formula.getSubformula().asUntilFormula().getRightSubformula())
+                                                        ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
+                                                        .getTruthValuesVector());
     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
         minimizing ? storm::utility::graph::performProb01Min(this->originalModel, phiStates, psiStates)
                    : storm::utility::graph::performProb01Max(this->originalModel, phiStates, psiStates);
@@ -121,10 +122,10 @@ bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForBoundedUntilProb
         return false;
     }
     storm::storage::BitVector phiStates = std::move(propositionalChecker.check(formula.getSubformula().asBoundedUntilFormula().getLeftSubformula())
-                                                        ->asExplicitQualitativeCheckResult()
+                                                        ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
                                                         .getTruthValuesVector());
     storm::storage::BitVector psiStates = std::move(propositionalChecker.check(formula.getSubformula().asBoundedUntilFormula().getRightSubformula())
-                                                        ->asExplicitQualitativeCheckResult()
+                                                        ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
                                                         .getTruthValuesVector());
     storm::storage::BitVector probGreater0States =
         minimizing ? storm::utility::graph::performProbGreater0A(this->originalModel.getTransitionMatrix(),
@@ -181,8 +182,9 @@ bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForReachabilityRewa
         STORM_LOG_DEBUG("Can not simplify when reachability reward formula has non-propositional subformula(s). Formula: " << formula);
         return false;
     }
-    storm::storage::BitVector targetStates = std::move(
-        propositionalChecker.check(formula.getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
+    storm::storage::BitVector targetStates = std::move(propositionalChecker.check(formula.getSubformula().asEventuallyFormula().getSubformula())
+                                                           ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
+                                                           .getTruthValuesVector());
     // The set of target states can be extended by the states that reach target with probability 1 without collecting any reward
     // TODO for the call of Prob1E we could restrict the analysis to actions with zero reward instead of states with zero reward
     targetStates =
@@ -300,7 +302,7 @@ std::shared_ptr<SparseModelType> SparseParametricMdpSimplifier<SparseModelType>:
     SparseModelType const& model, storm::storage::BitVector const& ignoredStates, boost::optional<std::string> const& rewardModelName) {
     // Get the actions that can be part of an EC
     storm::storage::BitVector possibleECActions(model.getNumberOfChoices(), true);
-    for (auto const& state : ignoredStates) {
+    for (auto state : ignoredStates) {
         for (uint_fast64_t actionIndex = model.getTransitionMatrix().getRowGroupIndices()[state];
              actionIndex < model.getTransitionMatrix().getRowGroupIndices()[state + 1]; ++actionIndex) {
             possibleECActions.set(actionIndex, false);

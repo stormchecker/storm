@@ -1,4 +1,5 @@
 #include "storm-pomdp/transformer/MakeStateSetObservationClosed.h"
+
 #include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {

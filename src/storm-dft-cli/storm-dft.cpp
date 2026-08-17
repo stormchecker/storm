@@ -1,14 +1,17 @@
 #include "storm-dft/api/storm-dft.h"
 #include "storm-cli-utilities/cli.h"
+#include "storm-dft/parser/BEOrderParser.h"
 #include "storm-dft/settings/DftSettings.h"
 #include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm-parsers/api/storm-parsers.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/utility/initialize.h"
 
@@ -48,7 +51,10 @@ void processOptions() {
 
     // Check well-formedness of DFT
     auto wellFormedResult = storm::dft::api::isWellFormed(*dft, false);
-    STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::UnmetRequirementException, "DFT is not well-formed: " << wellFormedResult.second);
+    STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::UnmetRequirementException, "DFT is not well-formed: " << wellFormedResult.second << ".");
+    // Warn about potential modeling issues
+    auto modelingIssues = storm::dft::api::hasPotentialModelingIssues(*dft);
+    STORM_LOG_WARN_COND(!modelingIssues.first, modelingIssues.second);
 
     // Transformation to GSPN
     if (dftGspnSettings.isTransformToGspn()) {
@@ -138,6 +144,12 @@ void processOptions() {
         std::string importanceMeasureName{""};
         if (isImportanceMeasureSet) {
             importanceMeasureName = dftIOSettings.getImportanceMeasure();
+        }
+
+        // Set variable ordering
+        if (dftIOSettings.isVariableOrderingFileSet()) {
+            auto beOrder = storm::dft::parser::BEOrderParser<ValueType>::parseBEOrder(dftIOSettings.getVariableOrderingFilename(), *dft);
+            dft->setBEOrder(beOrder);
         }
 
         auto const additionalRelevantEventNames{faultTreeSettings.getRelevantEvents()};

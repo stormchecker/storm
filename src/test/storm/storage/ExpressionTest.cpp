@@ -1,3 +1,6 @@
+#include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include <map>
 #include <string>
 
@@ -11,7 +14,6 @@
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/expressions/ToRationalFunctionVisitor.h"
-#include "test/storm_gtest.h"
 
 TEST(Expression, FactoryMethodTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
@@ -304,15 +306,8 @@ TEST(Expression, SubstitutionTest) {
 
     storm::expressions::Expression tempExpression;
     ASSERT_NO_THROW(tempExpression = (intVarExpression < threeExpression || boolVarExpression) && boolVarExpression);
-
-#ifdef WINDOWS
-    storm::expressions::Expression twopointseven = manager->rational(2.7);
-    std::map<storm::expressions::Variable, storm::expressions::Expression> substution = {std::make_pair(manager->getVariable("y"), twopointseven),
-                                                                                         std::make_pair(manager->getVariable("x"), manager->boolean(true))};
-#else
     std::map<storm::expressions::Variable, storm::expressions::Expression> substution = {std::make_pair(manager->getVariable("y"), manager->rational(2.7)),
                                                                                          std::make_pair(manager->getVariable("x"), manager->boolean(true))};
-#endif
     storm::expressions::Expression substitutedExpression;
     ASSERT_NO_THROW(substitutedExpression = tempExpression.substitute(substution));
     EXPECT_TRUE(substitutedExpression.simplify().isTrue());

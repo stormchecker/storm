@@ -1,10 +1,12 @@
 #include "storm/solver/helper/RationalSearchHelper.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/solver/helper/ValueIterationHelper.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/utility/Extremum.h"
 #include "storm/utility/KwekMehlhorn.h"
+#include "storm/utility/vector.h"
 
 namespace storm::solver::helper {
 
@@ -168,7 +170,7 @@ template<typename TargetValueType, typename ExactValueType, typename ImpreciseVa
 SolverStatus RationalSearchHelper<TargetValueType, ExactValueType, ImpreciseValueType, TrivialRowGrouping>::RS(
     std::vector<TargetValueType>& operand, std::vector<TargetValueType> const& offsets, uint64_t& numIterations, TargetValueType const& precision,
     std::optional<storm::OptimizationDirection> const& dir, std::function<SolverStatus(SolverStatus const&)> const& iterationCallback) const {
-    STORM_LOG_ASSERT(TrivialRowGrouping || dir.has_value(), "no optimization direction given!");
+    STORM_LOG_ASSERT(TrivialRowGrouping || dir.has_value(), "No optimization direction given!");
     if (!dir.has_value() || maximize(*dir)) {
         return RS<storm::OptimizationDirection::Maximize>(operand, offsets, numIterations, precision, iterationCallback);
     } else {

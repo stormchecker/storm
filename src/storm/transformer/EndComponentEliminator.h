@@ -1,5 +1,4 @@
-#ifndef STORM_TRANSFORMER_ENDCOMPONENTELIMINATOR_H
-#define STORM_TRANSFORMER_ENDCOMPONENTELIMINATOR_H
+#pragma once
 
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/utility/constants.h"
@@ -207,4 +206,3 @@ class EndComponentEliminator {
 };
 }  // namespace transformer
 }  // namespace storm
-#endif  // STORM_TRANSFORMER_ENDCOMPONENTREMOVER_H

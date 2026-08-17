@@ -104,7 +104,7 @@ bool operator==(SynchronizationVector const& vector1, SynchronizationVector cons
     if (vector1.getOutput() != vector2.getOutput()) {
         return false;
     }
-    if (vector1.getInput() != vector1.getInput()) {
+    if (vector1.getInput() != vector2.getInput()) {
         return false;
     }
     return true;

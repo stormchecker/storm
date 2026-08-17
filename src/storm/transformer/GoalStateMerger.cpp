@@ -2,9 +2,10 @@
 
 #include <limits>
 #include <memory>
-#include <storm/exceptions/UnexpectedException.h>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
@@ -12,9 +13,6 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace transformer {
@@ -30,7 +28,7 @@ typename GoalStateMerger<SparseModelType>::ReturnType GoalStateMerger<SparseMode
     std::vector<std::string> const& selectedRewardModels, boost::optional<storm::storage::BitVector> const& choiceFilter) const {
     STORM_LOG_THROW(maybeStates.isDisjointFrom(targetStates) && targetStates.isDisjointFrom(sinkStates) && sinkStates.isDisjointFrom(maybeStates),
                     storm::exceptions::InvalidArgumentException,
-                    "maybestates, targetstates, and sinkstates are assumed to be disjoint when creating the submodel. However, this is not the case.");
+                    "Maybestates, targetstates, and sinkstates are assumed to be disjoint when creating the submodel. However, this is not the case.");
 
     auto result = initialize(maybeStates, targetStates, sinkStates, choiceFilter);
 

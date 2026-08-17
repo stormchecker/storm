@@ -1,7 +1,5 @@
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 
-#include <boost/variant.hpp>
-
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/storage/expressions/BooleanLiteralExpression.h"

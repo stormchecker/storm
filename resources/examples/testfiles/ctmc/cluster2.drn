@@ -1,6 +1,7 @@
 // Exported by storm
 // Original model type: CTMC
 @type: CTMC
+@value_type: double
 @parameters
 
 @reward_models

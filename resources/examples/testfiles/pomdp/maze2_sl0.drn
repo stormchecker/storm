@@ -1,0 +1,149 @@
+
+// Exported by storm
+// Original model type: POMDP
+@type: POMDP
+@value_type: double
+@parameters
+
+@reward_models
+rew
+@nr_states
+15
+@nr_choices
+54
+@model
+state 0 {6} [0] init
+	action init [0]
+		1 : 0.07692307692
+		2 : 0.07692307692
+		3 : 0.07692307692
+		4 : 0.07692307692
+		5 : 0.07692307692
+		6 : 0.07692307692
+		7 : 0.07692307692
+		8 : 0.07692307692
+		9 : 0.07692307692
+		10 : 0.07692307692
+		11 : 0.07692307692
+		12 : 0.07692307692
+		13 : 0.07692307692
+state 1 {1} [0]
+	action east [0.1428571429]
+		2 : 1
+	action west [0.1428571429]
+		1 : 1
+	action north [0.1428571429]
+		1 : 1
+	action south [0.1428571429]
+		6 : 1
+state 2 {4} [0]
+	action east [0.1428571429]
+		3 : 1
+	action west [0.1428571429]
+		1 : 1
+	action north [0.1428571429]
+		2 : 1
+	action south [0.1428571429]
+		2 : 1
+state 3 {7} [0]
+	action east [0.1428571429]
+		4 : 1
+	action west [0.1428571429]
+		2 : 1
+	action north [0.1428571429]
+		3 : 1
+	action south [0.1428571429]
+		7 : 1
+state 4 {4} [0]
+	action east [0.1428571429]
+		5 : 1
+	action west [0.1428571429]
+		3 : 1
+	action north [0.1428571429]
+		4 : 1
+	action south [0.1428571429]
+		4 : 1
+state 5 {3} [0]
+	action east [0.1428571429]
+		5 : 1
+	action west [0.1428571429]
+		4 : 1
+	action north [0.1428571429]
+		5 : 1
+	action south [0.1428571429]
+		8 : 1
+state 6 {0} [0]
+	action east [0.1428571429]
+		6 : 1
+	action west [0.1428571429]
+		6 : 1
+	action north [0.1428571429]
+		1 : 1
+	action south [0.1428571429]
+		9 : 1
+state 7 {0} [0]
+	action east [0.1428571429]
+		7 : 1
+	action west [0.1428571429]
+		7 : 1
+	action north [0.1428571429]
+		3 : 1
+	action south [0.1428571429]
+		10 : 1
+state 8 {0} [0]
+	action east [0.1428571429]
+		8 : 1
+	action west [0.1428571429]
+		8 : 1
+	action north [0.1428571429]
+		5 : 1
+	action south [0.1428571429]
+		11 : 1
+state 9 {0} [0]
+	action east [0.1428571429]
+		9 : 1
+	action west [0.1428571429]
+		9 : 1
+	action north [0.1428571429]
+		6 : 1
+	action south [0.1428571429]
+		12 : 1
+state 10 {0} [0]
+	action east [0.1428571429]
+		10 : 1
+	action west [0.1428571429]
+		10 : 1
+	action north [0.1428571429]
+		7 : 1
+	action south [0.1428571429]
+		14 : 1
+state 11 {0} [0]
+	action east [0.1428571429]
+		11 : 1
+	action west [0.1428571429]
+		11 : 1
+	action north [0.1428571429]
+		8 : 1
+	action south [0.1428571429]
+		13 : 1
+state 12 {2} [0] bad
+	action east [0.1428571429]
+		12 : 1
+	action west [0.1428571429]
+		12 : 1
+	action north [0.1428571429]
+		9 : 1
+	action south [0.1428571429]
+		12 : 1
+state 13 {2} [0] bad
+	action east [0.1428571429]
+		13 : 1
+	action west [0.1428571429]
+		13 : 1
+	action north [0.1428571429]
+		11 : 1
+	action south [0.1428571429]
+		13 : 1
+state 14 {5} [0] goal
+	action done [0]
+		14 : 1

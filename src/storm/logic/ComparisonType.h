@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_COMPARISONTYPE_H_
-#define STORM_LOGIC_COMPARISONTYPE_H_
+#pragma once
 
 #include <iosfwd>
 
@@ -28,7 +27,7 @@ inline ComparisonType invert(ComparisonType t) {
         case ComparisonType::GreaterEqual:
             return ComparisonType::Less;
     }
-    STORM_LOG_ASSERT(false, "Unknown ComparisonType");
+    STORM_LOG_ASSERT(false, "Unknown ComparisonType.");
     // Wrong, but this code should not be reachable. Still, GCC issues a warning.
     return t;
 }
@@ -44,7 +43,7 @@ inline ComparisonType invertPreserveStrictness(ComparisonType t) {
         case ComparisonType::GreaterEqual:
             return ComparisonType::LessEqual;
     }
-    STORM_LOG_ASSERT(false, "Unknown ComparisonType");
+    STORM_LOG_ASSERT(false, "Unknown ComparisonType.");
     // Wrong, but this code should not be reachable. Still, GCC issues a warning.
     return t;
 }
@@ -52,5 +51,3 @@ inline ComparisonType invertPreserveStrictness(ComparisonType t) {
 std::ostream& operator<<(std::ostream& out, ComparisonType const& comparisonType);
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_COMPARISONTYPE_H_ */

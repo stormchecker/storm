@@ -1,13 +1,11 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm/storage/SparseMatrix.h"
-
-#include "storm/settings/SettingsManager.h"
-
 #include "storm/environment/solver/GameSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/solver/StandardGameSolver.h"
+#include "storm/storage/SparseMatrix.h"
 
 namespace {
 

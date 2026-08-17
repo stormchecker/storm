@@ -1,12 +1,12 @@
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm::storage {
 
@@ -144,7 +144,7 @@ void performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& t
     while (!cache.recursionStateStack.empty()) {
         // Peek at the topmost state in the stack, but leave it on there for now.
         uint64_t currentState = cache.recursionStateStack.back();
-        assert(!subsystem || subsystem->get(currentState));
+        STORM_LOG_ASSERT(!subsystem || subsystem->get(currentState), "State not in subsystem.");
 
         // If the state has not yet been seen, we need to assign it a preorder number and iterate over its successors.
         if (!cache.hasPreorderNumber(currentState)) {
@@ -343,5 +343,6 @@ template class StronglyConnectedComponentDecomposition<double>;
 template class StronglyConnectedComponentDecomposition<storm::RationalNumber>;
 template class StronglyConnectedComponentDecomposition<storm::RationalFunction>;
 template class StronglyConnectedComponentDecomposition<storm::Interval>;
+template class StronglyConnectedComponentDecomposition<storm::RationalInterval>;
 
 }  // namespace storm::storage

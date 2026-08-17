@@ -1,11 +1,7 @@
 #include "storm/solver/TopologicalLinearEquationSolver.h"
 
-#include "storm/environment/solver/TopologicalSolverEnvironment.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/InvalidEnvironmentException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/UnexpectedException.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
@@ -97,6 +93,21 @@ bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environm
         }
     } else {
         // Solve each SCC individually
+        std::optional<storm::storage::BitVector> newRelevantValues;
+        if (env.solver().topological().isExtendRelevantValues() && this->hasRelevantValues() &&
+            this->sortedSccDecomposition->size() < this->A->getRowGroupCount()) {
+            newRelevantValues = this->getRelevantValues();
+            // Extend the relevant values towards those that have an incoming transition from another SCC
+            std::vector<uint64_t> rowGroupToScc = this->sortedSccDecomposition->computeStateToSccIndexMap(this->A->getRowGroupCount());
+            for (uint64_t rowGroup = 0; rowGroup < this->A->getRowGroupCount(); ++rowGroup) {
+                auto currScc = rowGroupToScc[rowGroup];
+                for (auto const& successor : this->A->getRowGroup(rowGroup)) {
+                    if (rowGroupToScc[successor.getColumn()] != currScc) {
+                        newRelevantValues->set(successor.getColumn(), true);
+                    }
+                }
+            }
+        }
         storm::storage::BitVector sccAsBitVector(x.size(), false);
         uint64_t sccIndex = 0;
         storm::utility::ProgressMeasurement progress("states");
@@ -110,7 +121,7 @@ bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environm
                 for (auto const& state : scc) {
                     sccAsBitVector.set(state, true);
                 }
-                returnValue = solveScc(sccSolverEnvironment, sccAsBitVector, x, b) && returnValue;
+                returnValue = solveScc(sccSolverEnvironment, sccAsBitVector, x, b, newRelevantValues) && returnValue;
             }
             ++sccIndex;
             progress.updateProgress(sccIndex);
@@ -174,26 +185,34 @@ bool TopologicalLinearEquationSolver<ValueType>::solveFullyConnectedEquationSyst
     if (!this->sccSolver) {
         this->sccSolver = GeneralLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
         this->sccSolver->setCachingEnabled(true);
-        this->sccSolver->setBoundsFromOtherSolver(*this);
-        if (this->sccSolver->getEquationProblemFormat(sccSolverEnvironment) == LinearEquationSolverProblemFormat::EquationSystem) {
-            // Convert the matrix to an equation system. Note that we need to insert diagonal entries.
-            storm::storage::SparseMatrix<ValueType> eqSysA(*this->A, true);
-            eqSysA.convertToEquationSystem();
-            this->sccSolver->setMatrix(std::move(eqSysA));
-        } else {
-            this->sccSolver->setMatrix(*this->A);
-        }
     }
+    if (this->hasRelevantValues()) {
+        this->sccSolver->setRelevantValues(this->getRelevantValues());
+    }
+    this->sccSolver->setBoundsFromOtherSolver(*this);
+    if (this->sccSolver->getEquationProblemFormat(sccSolverEnvironment) == LinearEquationSolverProblemFormat::EquationSystem) {
+        // Convert the matrix to an equation system. Note that we need to insert diagonal entries.
+        storm::storage::SparseMatrix<ValueType> eqSysA(*this->A, true);
+        eqSysA.convertToEquationSystem();
+        this->sccSolver->setMatrix(std::move(eqSysA));
+    } else {
+        this->sccSolver->setMatrix(*this->A);
+    }
+
     return this->sccSolver->solveEquations(sccSolverEnvironment, x, b);
 }
 
 template<typename ValueType>
 bool TopologicalLinearEquationSolver<ValueType>::solveScc(storm::Environment const& sccSolverEnvironment, storm::storage::BitVector const& scc,
-                                                          std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB) const {
+                                                          std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB,
+                                                          std::optional<storm::storage::BitVector> const& globalRelevantValues) const {
     // Set up the SCC solver
     if (!this->sccSolver) {
         this->sccSolver = GeneralLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
         this->sccSolver->setCachingEnabled(true);
+    }
+    if (globalRelevantValues) {
+        this->sccSolver->setRelevantValues((*globalRelevantValues) % scc);
     }
 
     // Matrix
@@ -283,13 +302,11 @@ std::unique_ptr<LinearEquationSolverFactory<ValueType>> TopologicalLinearEquatio
 template class TopologicalLinearEquationSolver<double>;
 template class TopologicalLinearEquationSolverFactory<double>;
 
-#ifdef STORM_HAVE_CARL
 template class TopologicalLinearEquationSolver<storm::RationalNumber>;
 template class TopologicalLinearEquationSolverFactory<storm::RationalNumber>;
 
 template class TopologicalLinearEquationSolver<storm::RationalFunction>;
 template class TopologicalLinearEquationSolverFactory<storm::RationalFunction>;
 
-#endif
 }  // namespace solver
 }  // namespace storm

@@ -27,7 +27,7 @@ void UnfoldAction::doAction(JaniLocalEliminator::Session &session) {
     // satisfy it. We therefore first store which old locations satisfy the property:
 
     STORM_LOG_THROW(session.getModel().hasAutomaton(automatonName), storm::exceptions::IllegalArgumentException,
-                    "Cannot find automaton with name " << automatonName);
+                    "Cannot find automaton with name " << automatonName << ".");
 
     uint64_t partOfPropCount = 0;
 

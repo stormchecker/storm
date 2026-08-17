@@ -11,7 +11,6 @@
 #include "storm/storage/prism/ClockVariable.h"
 #include "storm/storage/prism/Command.h"
 #include "storm/storage/prism/IntegerVariable.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace prism {

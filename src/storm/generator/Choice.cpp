@@ -1,12 +1,12 @@
 #include "storm/generator/Choice.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/utility/constants.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/storage/BoostTypes.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -202,9 +202,9 @@ std::ostream& operator<<(std::ostream& out, Choice<ValueType, StateType> const& 
 
 template struct Choice<double>;
 
-#ifdef STORM_HAVE_CARL
 template struct Choice<storm::RationalNumber>;
 template struct Choice<storm::RationalFunction>;
-#endif
+template struct Choice<storm::Interval>;
+template struct Choice<storm::RationalInterval>;
 }  // namespace generator
 }  // namespace storm

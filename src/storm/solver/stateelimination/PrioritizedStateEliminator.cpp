@@ -1,11 +1,9 @@
 #include "storm/solver/stateelimination/PrioritizedStateEliminator.h"
 
+#include "StaticStatePriorityQueue.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/solver/stateelimination/StatePriorityQueue.h"
 #include "storm/utility/constants.h"
-#include "storm/utility/macros.h"
-
-#include "StaticStatePriorityQueue.h"
 
 namespace storm {
 namespace solver {
@@ -59,10 +57,8 @@ void PrioritizedStateEliminator<ValueType>::clearStateValues(storm::storage::spa
 
 template class PrioritizedStateEliminator<double>;
 
-#ifdef STORM_HAVE_CARL
 template class PrioritizedStateEliminator<storm::RationalNumber>;
 template class PrioritizedStateEliminator<storm::RationalFunction>;
-#endif
 }  // namespace stateelimination
 }  // namespace solver
 }  // namespace storm

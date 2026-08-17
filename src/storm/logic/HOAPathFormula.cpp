@@ -1,12 +1,14 @@
 #include "storm/logic/HOAPathFormula.h"
+
 #include <boost/any.hpp>
 #include <ostream>
-#include "storm/logic/FormulaVisitor.h"
 
 #include "storm/automata/DeterministicAutomaton.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/io/file.h"
+#include "storm/logic/FormulaVisitor.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -72,8 +74,10 @@ void HOAPathFormula::gatherReferencedRewardModels(std::set<std::string>& referen
 }
 
 storm::automata::DeterministicAutomaton::ptr HOAPathFormula::readAutomaton() const {
-    std::ifstream in(automatonFile);
+    std::ifstream in;
+    storm::io::openFile(automatonFile, in);
     storm::automata::DeterministicAutomaton::ptr automaton = storm::automata::DeterministicAutomaton::parse(in);
+    storm::io::closeFile(in);
     for (auto& ap : automaton->getAPSet().getAPs()) {
         STORM_LOG_THROW(apToFormulaMap.find(ap) != apToFormulaMap.end(), storm::exceptions::ExpressionEvaluationException,
                         "For '" << automatonFile << "' HOA automaton, expression for atomic proposition '" << ap << "' is missing.");

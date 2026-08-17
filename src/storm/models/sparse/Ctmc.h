@@ -1,8 +1,6 @@
-#ifndef STORM_MODELS_SPARSE_CTMC_H_
-#define STORM_MODELS_SPARSE_CTMC_H_
+#pragma once
 
 #include "storm/models/sparse/DeterministicModel.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {
@@ -85,5 +83,3 @@ class Ctmc : public DeterministicModel<ValueType, RewardModelType> {
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SPARSE_CTMC_H_ */

@@ -1,5 +1,9 @@
-#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAQUERY_H_
-#define STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAQUERY_H_
+#pragma once
+
+#include <memory>
+#include <optional>
+#include <variant>
+#include <vector>
 
 #include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
@@ -10,105 +14,85 @@ namespace storm {
 
 class Environment;
 
-namespace modelchecker {
-namespace multiobjective {
+namespace modelchecker::multiobjective {
 
 /*
  * This class represents a query for the Pareto curve approximation algorithm (Pcaa).
  * It implements the necessary computations for the different query types.
+ * @See Section 3.4 of https://doi.org/10.18154/RWTH-2023-09669
  */
 template<class SparseModelType, typename GeometryValueType>
 class SparsePcaaQuery {
    public:
-    // Typedefs for simple geometric objects
-    typedef std::vector<GeometryValueType> Point;
-    typedef std::vector<GeometryValueType> WeightVector;
+    using Point = std::vector<GeometryValueType>;
+    using WeightVector = std::vector<GeometryValueType>;
+    using Polytope = storm::storage::geometry::Polytope<GeometryValueType>;
+    using Halfspace = storm::storage::geometry::Halfspace<GeometryValueType>;
+    using PolytopePtr = std::shared_ptr<Polytope>;
+    using PreprocessorResult = preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>;
+    using ModelValueType = typename SparseModelType::ValueType;
 
-    virtual ~SparsePcaaQuery();
+    /*!
+     * Creates a new query for the Pareto curve approximation algorithm (Pcaa)
+     * @param preprocessorResult the result from preprocessing
+     */
+    SparsePcaaQuery(PreprocessorResult& preprocessorResult);
 
-    /*
+    /*!
      * Invokes the computation and retrieves the result
      */
-    virtual std::unique_ptr<CheckResult> check(Environment const& env) = 0;
+    std::unique_ptr<CheckResult> check(Environment const& env, bool produceScheduler);
 
-    /*
+   private:
+    /*!
+     * Represents the information obtained in a single iteration of the algorithm
+     * We have achievablePoint * weightVector <= weightedSum
+     * The provided scheduler achieves the achievablePoint (if it is set)
+     * This assumes that minimizing objectives are implicitly negated. We have (using v_i as the actual value for objective i induced by the scheduler):
+     * (*) if objective i is Maximizing: achievablePoint[i] <= v_i
+     * (*) if objective i is Minimizing: achievablePoint[i] <= -v_i (or equivalently, -achievablePoint[i] >= v_i)
+     */
+    struct RefinementStep {
+        WeightVector weightVector;
+        Point achievablePoint;
+        GeometryValueType optimalWeightedSum;
+        std::optional<storm::storage::Scheduler<ModelValueType>> scheduler;
+    };
+
+    struct WeightedSumOptimizationInput {
+        WeightVector weightVector;
+        GeometryValueType epsilonWso;
+    };
+    using AnswerOrWeights = std::variant<std::unique_ptr<CheckResult>, WeightedSumOptimizationInput>;
+    AnswerOrWeights tryAnswerOrNextWeights(Environment const& env, std::vector<RefinementStep> const& refinementSteps, PolytopePtr overApproximation,
+                                           bool produceScheduler);
+    AnswerOrWeights tryAnswerOrNextWeightsAchievability(Environment const& env, std::optional<uint64_t> const optObjIndex,
+                                                        std::vector<GeometryValueType> const& thresholds, std::vector<RefinementStep> const& refinementSteps,
+                                                        PolytopePtr overApproximation, bool produceScheduler);
+    AnswerOrWeights tryAnswerOrNextWeightsPareto(Environment const& env, std::vector<RefinementStep> const& refinementSteps, PolytopePtr overApproximation,
+                                                 bool produceScheduler);
+
+    /*!
+     * @param approxDistance the current distance between over- and under approximation. Can be used to enforce that epsilonWso becomes smaller as the
+     * approximations get closer.
+     * @return the desired precision for the weighted sum optimization
+     */
+    GeometryValueType getEpsilonWso(Environment const& env, std::optional<GeometryValueType> approxDistance = std::nullopt);
+
+    /*!
      * Exports the current approximations and the currently processed points into respective .csv files located at the given directory.
      * The polytopes are represented as the set of vertices.
      * Note that the approximations will be intersected with a  (sufficiently large) hyperrectangle in order to ensure that the polytopes are bounded
      * This only works for 2 dimensional queries.
      */
-    void exportPlotOfCurrentApproximation(Environment const& env) const;
+    void exportPlotOfCurrentApproximation(Environment const& env, std::vector<RefinementStep> const& refinementSteps, PolytopePtr overApproximation) const;
 
-   protected:
-    /*
-     * Represents the information obtained in a single iteration of the algorithm
-     */
-    struct RefinementStep {
-        WeightVector weightVector;
-        Point lowerBoundPoint;
-        Point upperBoundPoint;
-    };
-
-    /*
-     * Creates a new query for the Pareto curve approximation algorithm (Pcaa)
-     * @param preprocessorResult the result from preprocessing
-     */
-    SparsePcaaQuery(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult);
-
-    /*
-     * Returns a weight vector w that separates the under approximation from the given point p, i.e.,
-     * For each x in the under approximation, it holds that w*x <= w*p
-     *
-     * @param pointToBeSeparated the point that is to be seperated
-     */
-    WeightVector findSeparatingVector(Point const& pointToBeSeparated);
-
-    /*
-     * Refines the current result w.r.t. the given direction vector.
-     */
-    void performRefinementStep(Environment const& env, WeightVector&& direction);
-
-    /*
-     * Updates the overapproximation after a refinement step has been performed
-     *
-     * @note The last entry of this->refinementSteps should be the newest step whose information is not yet included in the approximation.
-     */
-    void updateOverApproximation();
-
-    /*
-     * Updates the underapproximation after a refinement step has been performed
-     *
-     * @note The last entry of this->refinementSteps should be the newest step whose information is not yet included in the approximation.
-     */
-    void updateUnderApproximation();
-
-    /*
-     * Returns true iff the maximum number of refinement steps (as possibly specified in the settings) has been reached
-     */
-    bool maxStepsPerformed(Environment const& env) const;
-
-    SparseModelType const& originalModel;
-    storm::logic::MultiObjectiveFormula const& originalFormula;
-
-    std::vector<Objective<typename SparseModelType::ValueType>> objectives;
+    uint64_t const initialStateOfOriginalModel;  // needed to prepare the CheckResult.
+    std::vector<Objective<ModelValueType>> objectives;
 
     // The corresponding weight vector checker
     std::unique_ptr<PcaaWeightVectorChecker<SparseModelType>> weightVectorChecker;
-
-    // The results in each iteration of the algorithm
-    std::vector<RefinementStep> refinementSteps;
-    // Overapproximation of the set of achievable values
-    std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> overApproximation;
-    // Underapproximation of the set of achievable values
-    std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> underApproximation;
-
-    // stores for each objective whether it still makes sense to check for this objective individually (i.e., with weight vector given by w_{i}>0 iff i=objIndex
-    // )
-    storm::storage::BitVector diracWeightVectorsToBeChecked;
 };
 
-}  // namespace multiobjective
-}  // namespace modelchecker
+}  // namespace modelchecker::multiobjective
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAQUERY_H_ */

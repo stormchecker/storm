@@ -1,19 +1,27 @@
 #include "storm/storage/dd/bisimulation/InternalSylvanSignatureRefiner.h"
 
-#include "storm/storage/dd/DdManager.h"
-
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/Signature.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
+#ifdef STORM_HAVE_SYLVAN
 #include "sylvan_cache.h"
+#endif
 
 namespace storm {
 namespace dd {
 namespace bisimulation {
+
+#ifdef STORM_HAVE_SYLVAN
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Watomic-implicit-seq-cst"
+#pragma clang diagnostic ignored "-Wextra-semi-stmt"
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 
 static const uint64_t NO_ELEMENT_MARKER = -1ull;
 
@@ -119,12 +127,6 @@ static uint64_t sylvan_hash(uint64_t a, uint64_t b) {
  * The code was modified in minor places to account for necessary changes, for example to handle
  * nondeterminism variables.
  */
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc99-extensions"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-
 VOID_TASK_3(sylvan_rehash, size_t, first, size_t, count, InternalSylvanSignatureRefinerBase*, refiner) {
     if (count > 128) {
         SPAWN(sylvan_rehash, first, count / 2, refiner);
@@ -142,7 +144,7 @@ VOID_TASK_3(sylvan_rehash, size_t, first, size_t, count, InternalSylvanSignature
         uint64_t hash = sylvan_hash(a, b);
         uint64_t pos = hash % refiner->currentCapacity;
 
-        volatile uint64_t* ptr = 0;
+        volatile uint64_t* ptr = nullptr;
         for (;;) {
             ptr = refiner->table.data() + pos * 3;
             if (*ptr == 0) {
@@ -179,7 +181,7 @@ VOID_TASK_1(sylvan_grow, InternalSylvanSignatureRefinerBase*, refiner) {
         refiner->resizeFlag = 0;
     } else {
         /* wait for new frame to appear */
-        while (ATOMIC_READ(lace_newframe.t) == 0) {
+        while (ATOMIC_READ(lace_newframe.t) == nullptr) {
         }
         lace_yield(__lace_worker, __lace_dq_head);
     }
@@ -189,7 +191,7 @@ static uint64_t sylvan_search_or_insert(uint64_t sig, uint64_t previous_block, I
     uint64_t hash = sylvan_hash(sig, previous_block);
     uint64_t pos = hash % refiner->currentCapacity;
 
-    volatile uint64_t* ptr = 0;
+    volatile uint64_t* ptr = nullptr;
     uint64_t a, b, c;
     int count = 0;
     for (;;) {
@@ -245,7 +247,7 @@ TASK_3(BDD, sylvan_encode_block, BDD, vars, uint64_t, numberOfVariables, uint64_
 }
 
 TASK_3(BDD, sylvan_assign_block, BDD, sig, BDD, previous_block, InternalSylvanSignatureRefinerBase*, refiner) {
-    assert(previous_block != mtbdd_false);  // if so, incorrect call!
+    STORM_LOG_ASSERT(previous_block != mtbdd_false, "Incorrect call: previous_block is mtbdd_false.");
 
     // maybe do garbage collection
     sylvan_gc_test();
@@ -257,9 +259,9 @@ TASK_3(BDD, sylvan_assign_block, BDD, sig, BDD, previous_block, InternalSylvanSi
 
     if (refiner->options.reuseBlockNumbers) {
         // try to claim previous block number
-        assert(previous_block != sylvan_false);
+        STORM_LOG_ASSERT(previous_block != sylvan_false, "Previous_block is sylvan_false.");
         const uint64_t p_b = CALL(sylvan_decode_block, previous_block);
-        assert(p_b < refiner->signatures.size());
+        STORM_LOG_ASSERT(p_b < refiner->signatures.size(), "Block index out of range.");
 
         for (;;) {
             BDD cur = *(volatile BDD*)&refiner->signatures[p_b];
@@ -366,8 +368,40 @@ TASK_5(BDD, sylvan_refine_partition, BDD, dd, BDD, previous_partition, BDD, nond
     return result;
 }
 
-#pragma GCC diagnostic pop
 #pragma clang diagnostic pop
+#pragma GCC diagnostic pop
+
+#else
+InternalSylvanSignatureRefinerBase::InternalSylvanSignatureRefinerBase(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager,
+                                                                       storm::expressions::Variable const& blockVariable,
+                                                                       std::set<storm::expressions::Variable> const& stateVariables,
+                                                                       storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nondeterminismVariables,
+                                                                       storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nonBlockVariables,
+                                                                       InternalSignatureRefinerOptions const& options) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType>::InternalSignatureRefiner(
+    storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager, storm::expressions::Variable const& blockVariable,
+    std::set<storm::expressions::Variable> const& stateVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nondeterminismVariables,
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nonBlockVariables, InternalSignatureRefinerOptions const& options)
+    : storm::dd::bisimulation::InternalSylvanSignatureRefinerBase(manager, blockVariable, stateVariables, nondeterminismVariables, nonBlockVariables, options) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+Partition<storm::dd::DdType::Sylvan, ValueType> InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType>::refine(
+    Partition<storm::dd::DdType::Sylvan, ValueType> const& oldPartition, Signature<storm::dd::DdType::Sylvan, ValueType> const& signature) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+#endif
 
 template class InternalSignatureRefiner<storm::dd::DdType::Sylvan, double>;
 template class InternalSignatureRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;

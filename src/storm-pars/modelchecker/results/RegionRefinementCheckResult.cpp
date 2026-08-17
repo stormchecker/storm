@@ -1,7 +1,6 @@
 #include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
 
-#include <map>
-
+#include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -69,21 +68,24 @@ std::ostream& RegionRefinementCheckResult<ValueType>::writeIllustrationToStream(
                 CoefficientType xUpper = xLower + deltaX;
                 bool currRegionSafe = false;
                 bool currRegionUnSafe = false;
+                bool currRegionIllDefined = false;
                 bool currRegionComplete = false;
                 CoefficientType coveredArea = storm::utility::zero<CoefficientType>();
                 for (auto const& r : this->getRegionResults()) {
-                    if (r.second != storm::modelchecker::RegionResult::AllSat && r.second != storm::modelchecker::RegionResult::AllViolated) {
+                    if (r.second != storm::modelchecker::RegionResult::AllSat && r.second != storm::modelchecker::RegionResult::AllViolated &&
+                        r.second != storm::modelchecker::RegionResult::AllIllDefined) {
                         continue;
                     }
                     CoefficientType interesctionSizeY = std::min(yUpper, r.first.getUpperBoundary(y)) - std::max(yLower, r.first.getLowerBoundary(y));
                     interesctionSizeY = std::max(interesctionSizeY, storm::utility::zero<CoefficientType>());
                     CoefficientType interesctionSizeX = std::min(xUpper, r.first.getUpperBoundary(x)) - std::max(xLower, r.first.getLowerBoundary(x));
                     interesctionSizeX = std::max(interesctionSizeX, storm::utility::zero<CoefficientType>());
-                    CoefficientType instersectionArea = interesctionSizeY * interesctionSizeX;
-                    if (!storm::utility::isZero(instersectionArea)) {
+                    CoefficientType intersectionArea = interesctionSizeY * interesctionSizeX;
+                    if (!storm::utility::isZero(intersectionArea)) {
                         currRegionSafe = currRegionSafe || r.second == storm::modelchecker::RegionResult::AllSat;
                         currRegionUnSafe = currRegionUnSafe || r.second == storm::modelchecker::RegionResult::AllViolated;
-                        coveredArea += instersectionArea;
+                        currRegionIllDefined = currRegionIllDefined || r.second == storm::modelchecker::RegionResult::AllIllDefined;
+                        coveredArea += intersectionArea;
                         if (currRegionSafe && currRegionUnSafe) {
                             break;
                         }
@@ -97,6 +99,8 @@ std::ostream& RegionRefinementCheckResult<ValueType>::writeIllustrationToStream(
                     out << "S";
                 } else if (currRegionComplete && currRegionUnSafe && !currRegionSafe) {
                     out << " ";
+                } else if (currRegionComplete && currRegionIllDefined) {
+                    out << "*";
                 } else {
                     out << "-";
                 }
@@ -113,8 +117,6 @@ std::ostream& RegionRefinementCheckResult<ValueType>::writeIllustrationToStream(
     return out;
 }
 
-#ifdef STORM_HAVE_CARL
 template class RegionRefinementCheckResult<storm::RationalFunction>;
-#endif
 }  // namespace modelchecker
 }  // namespace storm

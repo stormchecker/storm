@@ -15,13 +15,12 @@ namespace storm {
 namespace storage {
 
 storm::json<storm::RationalNumber> readQvbsJsonFile(std::string const& filePath) {
-    STORM_LOG_THROW(storm::utility::fileExistsAndIsReadable(filePath), storm::exceptions::WrongFormatException,
-                    "QVBS json file " << filePath << " was not found.");
+    STORM_LOG_THROW(storm::io::fileExistsAndIsReadable(filePath), storm::exceptions::WrongFormatException, "QVBS json file " << filePath << " was not found.");
     storm::json<storm::RationalNumber> result;
     std::ifstream file;
-    storm::utility::openFile(filePath, file);
+    storm::io::openFile(filePath, file);
     file >> result;
-    storm::utility::closeFile(file);
+    storm::io::closeFile(file);
     return result;
 }
 
@@ -35,7 +34,8 @@ std::string getString(storm::json<storm::RationalNumber> const& structure, std::
     } else if (structure.is_boolean()) {
         return structure.get<bool>() ? "true" : "false";
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Expected a string, number, or bool, got '" << structure.dump() << "' " << errorInfo);
+        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                        "Expected a string, number, or bool, got '" << structure.dump() << "' " << errorInfo << ".");
     }
     return "";
 }
@@ -55,7 +55,7 @@ std::string findModelPath(std::string const& modelName) {
             similarNames.add(currModelName);
         }
     }
-    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "QVBS model '" + modelName + "' was not found. " + similarNames.toDidYouMeanString());
+    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "QVBS model '" + modelName + "' was not found. " + similarNames.toDidYouMeanString() + ".");
     return "";
 }
 

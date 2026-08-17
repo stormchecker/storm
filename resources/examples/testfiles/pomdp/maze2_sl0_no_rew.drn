@@ -1,0 +1,149 @@
+
+// Exported by storm
+// Original model type: POMDP
+@type: POMDP
+@value_type: double
+@parameters
+
+@reward_models
+
+@nr_states
+15
+@nr_choices
+54
+@model
+state 0 {6} init
+	action init
+		1 : 0.07692307692
+		2 : 0.07692307692
+		3 : 0.07692307692
+		4 : 0.07692307692
+		5 : 0.07692307692
+		6 : 0.07692307692
+		7 : 0.07692307692
+		8 : 0.07692307692
+		9 : 0.07692307692
+		10 : 0.07692307692
+		11 : 0.07692307692
+		12 : 0.07692307692
+		13 : 0.07692307692
+state 1 {1}
+	action east
+		2 : 1
+	action west
+		1 : 1
+	action north
+		1 : 1
+	action south
+		6 : 1
+state 2 {4}
+	action east
+		3 : 1
+	action west
+		1 : 1
+	action north
+		2 : 1
+	action south
+		2 : 1
+state 3 {7}
+	action east
+		4 : 1
+	action west
+		2 : 1
+	action north
+		3 : 1
+	action south
+		7 : 1
+state 4 {4}
+	action east
+		5 : 1
+	action west
+		3 : 1
+	action north
+		4 : 1
+	action south
+		4 : 1
+state 5 {3}
+	action east
+		5 : 1
+	action west
+		4 : 1
+	action north
+		5 : 1
+	action south
+		8 : 1
+state 6 {0}
+	action east
+		6 : 1
+	action west
+		6 : 1
+	action north
+		1 : 1
+	action south
+		9 : 1
+state 7 {0}
+	action east
+		7 : 1
+	action west
+		7 : 1
+	action north
+		3 : 1
+	action south
+		10 : 1
+state 8 {0}
+	action east
+		8 : 1
+	action west
+		8 : 1
+	action north
+		5 : 1
+	action south
+		11 : 1
+state 9 {0}
+	action east
+		9 : 1
+	action west
+		9 : 1
+	action north
+		6 : 1
+	action south
+		12 : 1
+state 10 {0}
+	action east
+		10 : 1
+	action west
+		10 : 1
+	action north
+		7 : 1
+	action south
+		14 : 1
+state 11 {0}
+	action east
+		11 : 1
+	action west
+		11 : 1
+	action north
+		8 : 1
+	action south
+		13 : 1
+state 12 {2} bad
+	action east
+		12 : 1
+	action west
+		12 : 1
+	action north
+		9 : 1
+	action south
+		12 : 1
+state 13 {2} bad
+	action east
+		13 : 1
+	action west
+		13 : 1
+	action north
+		11 : 1
+	action south
+		13 : 1
+state 14 {5} goal
+	action done
+		14 : 1

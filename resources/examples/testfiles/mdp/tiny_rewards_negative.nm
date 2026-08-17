@@ -1,0 +1,19 @@
+mdp
+
+module model
+    state : [0..2];
+
+    [] state=0 -> (state'=1);
+    [a] state=0 -> true;
+    [b] state=1 -> true;
+	[] state=1 -> (state'=2);
+	[] state=2 -> true;
+endmodule
+
+rewards "a"
+    [a] true : -1;
+endrewards
+
+rewards "b"
+    [b] true : 1;
+endrewards

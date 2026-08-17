@@ -1,5 +1,7 @@
-#include "DftInstantiator.h"
+#include "storm-dft/transformations/DftInstantiator.h"
+
 #include "storm-dft/builder/DFTBuilder.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 
 namespace storm::dft {
@@ -24,19 +26,47 @@ std::shared_ptr<storm::dft::storage::DFT<ConstantType>> DftInstantiator<Parametr
                         builder.addBasicElementConst(beConst->name(), beConst->canFail());
                         break;
                     }
+                    case storm::dft::storage::elements::BEType::PROBABILITY: {
+                        auto beProb = std::static_pointer_cast<storm::dft::storage::elements::BEProbability<ParametricType> const>(element);
+                        ConstantType activeFailureProbability = instantiate_helper(beProb->activeFailureProbability(), valuation);
+                        ConstantType dormancyFactor = instantiate_helper(beProb->dormancyFactor(), valuation);
+                        builder.addBasicElementProbability(beProb->name(), activeFailureProbability, dormancyFactor);
+                        break;
+                    }
                     case storm::dft::storage::elements::BEType::EXPONENTIAL: {
                         auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ParametricType> const>(element);
-                        ConstantType activeFailureRate = storm::utility::convertNumber<ConstantType>(beExp->activeFailureRate().evaluate(valuation));
-                        ConstantType dormancyFactor = storm::utility::convertNumber<ConstantType>(beExp->dormancyFactor().evaluate(valuation));
+                        ConstantType activeFailureRate = instantiate_helper(beExp->activeFailureRate(), valuation);
+                        ConstantType dormancyFactor = instantiate_helper(beExp->dormancyFactor(), valuation);
                         builder.addBasicElementExponential(beExp->name(), activeFailureRate, dormancyFactor, beExp->isTransient());
+                        break;
+                    }
+                    case storm::dft::storage::elements::BEType::ERLANG: {
+                        auto beErlang = std::static_pointer_cast<storm::dft::storage::elements::BEErlang<ParametricType> const>(element);
+                        ConstantType activeFailureRate = instantiate_helper(beErlang->activeFailureRate(), valuation);
+                        ConstantType dormancyFactor = instantiate_helper(beErlang->dormancyFactor(), valuation);
+                        builder.addBasicElementErlang(beErlang->name(), activeFailureRate, beErlang->phases(), dormancyFactor);
+                        break;
+                    }
+                    case storm::dft::storage::elements::BEType::WEIBULL: {
+                        auto beWeibull = std::static_pointer_cast<storm::dft::storage::elements::BEWeibull<ParametricType> const>(element);
+                        ConstantType shape = instantiate_helper(beWeibull->shape(), valuation);
+                        ConstantType rate = instantiate_helper(beWeibull->rate(), valuation);
+                        builder.addBasicElementWeibull(beWeibull->name(), shape, rate);
+                        break;
+                    }
+                    case storm::dft::storage::elements::BEType::LOGNORMAL: {
+                        auto beLogNormal = std::static_pointer_cast<storm::dft::storage::elements::BELogNormal<ParametricType> const>(element);
+                        ConstantType mean = instantiate_helper(beLogNormal->mean(), valuation);
+                        ConstantType stddev = instantiate_helper(beLogNormal->standardDeviation(), valuation);
+                        builder.addBasicElementLogNormal(beLogNormal->name(), mean, stddev);
                         break;
                     }
                     case storm::dft::storage::elements::BEType::SAMPLES: {
                         auto beSamples = std::static_pointer_cast<storm::dft::storage::elements::BESamples<ParametricType> const>(element);
                         std::map<ConstantType, ConstantType> activeSamples{};
                         for (auto &[time, prob] : beSamples->activeSamples()) {
-                            ConstantType timeInst = storm::utility::convertNumber<ConstantType>(time.evaluate(valuation));
-                            ConstantType probInst = storm::utility::convertNumber<ConstantType>(prob.evaluate(valuation));
+                            ConstantType timeInst = instantiate_helper(time, valuation);
+                            ConstantType probInst = instantiate_helper(prob, valuation);
                             activeSamples[timeInst] = probInst;
                         }
                         builder.addBasicElementSamples(beSamples->name(), activeSamples);
@@ -82,7 +112,7 @@ std::shared_ptr<storm::dft::storage::DFT<ConstantType>> DftInstantiator<Parametr
             case storm::dft::storage::elements::DFTElementType::PDEP: {
                 auto dependency = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ParametricType> const>(element);
                 // Instantiate probability
-                ConstantType probability = storm::utility::convertNumber<ConstantType>(dependency->probability().evaluate(valuation));
+                ConstantType probability = instantiate_helper(dependency->probability(), valuation);
                 std::vector<std::string> children = {dependency->triggerEvent()->name()};
                 for (auto const &depEvent : dependency->dependentEvents()) {
                     children.push_back(depEvent->name());

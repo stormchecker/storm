@@ -3,8 +3,6 @@
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
-#include "storm/builder/ExplorationOrder.h"
-
 namespace storm {
 namespace settings {
 namespace modules {

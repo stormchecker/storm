@@ -1,5 +1,4 @@
-#ifndef STORM_UTILITY_EXPORT_H_
-#define STORM_UTILITY_EXPORT_H_
+#pragma once
 
 #include <boost/optional.hpp>
 #include <iostream>
@@ -8,14 +7,14 @@
 #include "storm/utility/macros.h"
 
 namespace storm {
-namespace utility {
+namespace io {
 
 template<typename DataType, typename Header1Type = DataType, typename Header2Type = DataType>
 inline void exportDataToCSVFile(std::string filepath, std::vector<std::vector<DataType>> const& data,
                                 boost::optional<std::vector<Header1Type>> const& header1 = boost::none,
                                 boost::optional<std::vector<Header2Type>> const& header2 = boost::none) {
     std::ofstream filestream;
-    storm::utility::openFile(filepath, filestream);
+    storm::io::openFile(filepath, filestream);
 
     if (header1) {
         for (auto columnIt = header1->begin(); columnIt != header1->end(); ++columnIt) {
@@ -46,7 +45,7 @@ inline void exportDataToCSVFile(std::string filepath, std::vector<std::vector<Da
         }
         filestream << '\n';
     }
-    storm::utility::closeFile(filestream);
+    storm::io::closeFile(filestream);
 }
 
 /*!
@@ -73,7 +72,5 @@ inline void outputFixedWidth(std::ostream& stream, Container const& output, size
         }
     }
 }
-}  // namespace utility
+}  // namespace io
 }  // namespace storm
-
-#endif

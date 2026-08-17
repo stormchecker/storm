@@ -1,10 +1,7 @@
-#ifndef STORM_EXCEPTIONS_BASEEXCEPTION_H_
-#define STORM_EXCEPTIONS_BASEEXCEPTION_H_
+#pragma once
 
 #include <exception>
 #include <sstream>
-
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace exceptions {
@@ -41,7 +38,7 @@ class BaseException : public std::exception {
      *
      * @return The message associated with this exception.
      */
-    virtual const char* what() const NOEXCEPT override;
+    virtual const char* what() const noexcept override;
 
     /*!
      * Returns the type of the exception.
@@ -64,5 +61,3 @@ class BaseException : public std::exception {
 
 }  // namespace exceptions
 }  // namespace storm
-
-#endif  // STORM_EXCEPTIONS_BASEEXCEPTION_H_

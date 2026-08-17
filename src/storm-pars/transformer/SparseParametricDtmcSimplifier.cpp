@@ -7,7 +7,6 @@
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/transformer/GoalStateMerger.h"
 #include "storm/utility/graph.h"
 
@@ -29,10 +28,12 @@ bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForUntilProbabilit
         STORM_LOG_DEBUG("Can not simplify when Until-formula has non-propositional subformula(s). Formula: " << formula);
         return false;
     }
-    storm::storage::BitVector phiStates = std::move(
-        propositionalChecker.check(formula.getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
-    storm::storage::BitVector psiStates = std::move(
-        propositionalChecker.check(formula.getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
+    storm::storage::BitVector phiStates = std::move(propositionalChecker.check(formula.getSubformula().asUntilFormula().getLeftSubformula())
+                                                        ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
+                                                        .getTruthValuesVector());
+    storm::storage::BitVector psiStates = std::move(propositionalChecker.check(formula.getSubformula().asUntilFormula().getRightSubformula())
+                                                        ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
+                                                        .getTruthValuesVector());
     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
         storm::utility::graph::performProb01(this->originalModel, phiStates, psiStates);
     // Only consider the maybestates that are reachable from one initial state without hopping over a target (i.e., prob1) state
@@ -97,10 +98,10 @@ bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForBoundedUntilPro
         return false;
     }
     storm::storage::BitVector phiStates = std::move(propositionalChecker.check(formula.getSubformula().asBoundedUntilFormula().getLeftSubformula())
-                                                        ->asExplicitQualitativeCheckResult()
+                                                        ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
                                                         .getTruthValuesVector());
     storm::storage::BitVector psiStates = std::move(propositionalChecker.check(formula.getSubformula().asBoundedUntilFormula().getRightSubformula())
-                                                        ->asExplicitQualitativeCheckResult()
+                                                        ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
                                                         .getTruthValuesVector());
     storm::storage::BitVector probGreater0States =
         storm::utility::graph::performProbGreater0(this->originalModel.getBackwardTransitions(), phiStates, psiStates, true, upperStepBound);
@@ -151,8 +152,9 @@ bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForReachabilityRew
         STORM_LOG_DEBUG("Can not simplify when reachability reward formula has non-propositional subformula(s). Formula: " << formula);
         return false;
     }
-    storm::storage::BitVector targetStates = std::move(
-        propositionalChecker.check(formula.getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
+    storm::storage::BitVector targetStates = std::move(propositionalChecker.check(formula.getSubformula().asEventuallyFormula().getSubformula())
+                                                           ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
+                                                           .getTruthValuesVector());
     // The set of target states can be extended by the states that reach target with probability 1 without collecting any reward
     targetStates = storm::utility::graph::performProb1(this->originalModel.getBackwardTransitions(),
                                                        originalRewardModel.getStatesWithZeroReward(this->originalModel.getTransitionMatrix()), targetStates);

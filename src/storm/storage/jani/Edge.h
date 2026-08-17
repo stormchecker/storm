@@ -153,8 +153,6 @@ class Edge {
 
     std::string toString() const;
 
-    void assertValid() const;
-
    private:
     /// The index of the source location.
     uint64_t sourceLocationIndex;

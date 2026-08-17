@@ -10,6 +10,7 @@
 #include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolverSelectionOptions.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/storage/sparse/StateType.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -72,14 +73,14 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
     void unsetOptimizationDirection();
 
     /*!
-     * Set whether uncertainty should be interpreted adverserially (robust) or not
+     * Sets how the uncertainty should be resolved.
      */
-    void setUncertaintyIsRobust(bool robust);
+    void setUncertaintyResolutionMode(UncertaintyResolutionMode uncertaintyResolutionMode);
 
     /*!
-     * Is the uncertainty to be interpreted robustly (adverserially) or not?
+     * Retrieves the mode indicating how the uncertainty should be resolved.
      */
-    bool isUncertaintyRobust() const;
+    UncertaintyResolutionMode getUncertaintyResolutionMode() const;
 
     /*!
      * Sets the states for which the choices are fixed.
@@ -136,6 +137,11 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
      * Retrieves the generated (deterministic) choices of the optimal scheduler. Note: it is only legal to call this function if a scheduler was generated.
      */
     std::vector<uint_fast64_t> const& getSchedulerChoices() const;
+
+    /*!
+     * Retrieves the generated robust index into the scheduler. Note: it is only legal to call this function if a scheduler was generated.
+     */
+    std::vector<uint_fast64_t> const& getRobustSchedulerIndex() const;
 
     /*!
      * Sets whether some of the generated data during solver calls should be cached.
@@ -200,6 +206,17 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
     /// The scheduler choices that induce the optimal values (if they could be successfully generated).
     mutable boost::optional<std::vector<uint_fast64_t>> schedulerChoices;
 
+    /// For interval models, this index points into the schedulerChoices and is a state -> index map.
+    /// In an MDP, the scheduler choices are just one number for each row group
+    /// - the row that was chosen. In an iMC (this is currently the only
+    /// interval model that supports extracting schedulers here), a scheduler is
+    /// an order of entries within a single row. In the current representation,
+    /// the schedulerChoices from robustSchedulerIndex[i] to
+    /// robustSchedulerIndex[i+1] (exclusive) are this permutation. So, the
+    /// robustSchedulerIndex[i] currently just counts how many matrix entries
+    /// come before row i.
+    mutable boost::optional<std::vector<uint_fast64_t>> robustSchedulerIndex;
+
     /// A scheduler that can be used by solvers that require a valid initial scheduler.
     boost::optional<std::vector<uint_fast64_t>> initialScheduler;
 
@@ -219,8 +236,8 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
     /// A flag storing whether the requirements of the solver were checked.
     bool requirementsChecked;
 
-    /// For uncertain models, if this flag is set to true, the uncertainty is resolved adverserially and angelically otherwise.
-    bool robustUncertainty;
+    /// For uncertain models, this mode decides how the uncertainty will be resolved by nature.
+    UncertaintyResolutionMode uncertaintyResolutionMode;
 };
 
 template<typename ValueType, typename SolutionType = ValueType>
@@ -257,6 +274,9 @@ class GeneralMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolv
     using MinMaxLinearEquationSolverFactory<ValueType, SolutionType>::create;
 
     virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> create(Environment const& env) const override;
+
+   protected:
+    MinMaxMethod getMethod(Environment env) const;
 };
 
 }  // namespace solver

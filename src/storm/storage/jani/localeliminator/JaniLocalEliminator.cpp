@@ -23,7 +23,7 @@ JaniLocalEliminator::JaniLocalEliminator(const Model &original, std::vector<stor
     if (properties.size() > 1) {
         STORM_LOG_WARN("Only the first property will be used for local elimination.");
     }
-    STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidArgumentException, "Local elimination requires at least one property");
+    STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidArgumentException, "Local elimination requires at least one property.");
 
     setProperty(properties[0]);
 
@@ -173,10 +173,10 @@ bool JaniLocalEliminator::Session::computeIsPartOfProp(const std::map<expression
             if (untilFormula.getLeftSubformula().isTrueFormula() && untilFormula.getRightSubformula().isAtomicExpressionFormula()) {
                 expression = untilFormula.getRightSubformula().toExpression(model.getExpressionManager());
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Until formulas are only supported if the left subformula is \"true\"");
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Until formulas are only supported if the left subformula is \"true\".");
             }
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This type of formula is not supported");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This type of formula is not supported.");
         }
     }
     auto simplified = expression.simplify();
@@ -239,7 +239,7 @@ void JaniLocalEliminator::setProperty(storm::jani::Property &newProperty) {
         }
     }
 
-    STORM_LOG_THROW(supported, storm::exceptions::NotSupportedException, "This type of property is not supported for location elimination");
+    STORM_LOG_THROW(supported, storm::exceptions::NotSupportedException, "This type of property is not supported for location elimination.");
 
     this->property = newProperty;
 }
@@ -272,7 +272,7 @@ JaniLocalEliminator::Session::Session(Model model, Property property, bool flatt
     } else if (property.getRawFormula()->isProbabilityOperatorFormula()) {
         isRewardFormula = false;
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This type of property is currently not supported");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This type of property is currently not supported.");
     }
 
     for (auto &var : property.getUsedVariablesAndConstants()) {
@@ -312,7 +312,7 @@ expressions::Expression JaniLocalEliminator::Session::getProbability(const EdgeD
 OrderedAssignments JaniLocalEliminator::Session::executeInSequence(const EdgeDestination &first, const EdgeDestination &then,
                                                                    std::set<std::string> &rewardVariables) {
     STORM_LOG_THROW(!first.usesAssignmentLevels() && !then.usesAssignmentLevels(), storm::exceptions::NotImplementedException,
-                    "Assignment levels are currently not supported");
+                    "Assignment levels are currently not supported.");
 
     OrderedAssignments newOa;
 
@@ -341,7 +341,7 @@ OrderedAssignments JaniLocalEliminator::Session::executeInSequence(const EdgeDes
         bool isReward = rewardVariables.count(assignment.getExpressionVariable().getName());
         auto firstAssignment = substitutionMap.find(assignment.getExpressionVariable());
         if (isReward && firstAssignment != substitutionMap.end()) {
-            auto newAssignment = (*firstAssignment).second + assignment.getAssignedExpression().substitute(substitutionMap);
+            auto newAssignment = firstAssignment->second + assignment.getAssignedExpression().substitute(substitutionMap);
 
             newOa.add(Assignment(assignment.getVariable(), newAssignment));
         } else {

@@ -1,24 +1,21 @@
 #include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
-#include "storm/storage/dd/sylvan/SylvanAddIterator.h"
-
-#include "storm/storage/BitVector.h"
-#include "storm/storage/SparseMatrix.h"
-
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
+#include "storm/storage/dd/sylvan/SylvanAddIterator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
-#include "storm-config.h"
-
 namespace storm {
 namespace dd {
+
+#ifdef STORM_HAVE_SYLVAN
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType>::InternalAdd() : ddManager(nullptr), sylvanMtbdd() {
     // Intentionally left empty.
@@ -43,13 +40,9 @@ ValueType InternalAdd<DdType::Sylvan, ValueType>::getValue(MTBDD const& node) {
     } else if (std::is_same<ValueType, uint_fast64_t>::value) {
         STORM_LOG_ASSERT(mtbdd_gettype(node) == 0, "Expected an unsigned value.");
         return negated ? -mtbdd_getint64(node) : mtbdd_getint64(node);
-    }
-#ifdef STORM_HAVE_CARL
-    else if (std::is_same<ValueType, storm::RationalFunction>::value) {
+    } else if (std::is_same<ValueType, storm::RationalFunction>::value) {
         STORM_LOG_ASSERT(false, "Non-specialized version of getValue() called for storm::RationalFunction value.");
-    }
-#endif
-    else {
+    } else {
         STORM_LOG_ASSERT(false, "Illegal or unknown type in MTBDD.");
     }
 }
@@ -67,7 +60,6 @@ storm::RationalNumber InternalAdd<DdType::Sylvan, storm::RationalNumber>::getVal
     return negated ? -(*rationalNumber) : (*rationalNumber);
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 storm::RationalFunction InternalAdd<DdType::Sylvan, storm::RationalFunction>::getValue(MTBDD const& node) {
     STORM_LOG_ASSERT(mtbdd_isleaf(node), "Expected leaf, but got variable " << mtbdd_getvar(node) << ".");
@@ -82,7 +74,6 @@ storm::RationalFunction InternalAdd<DdType::Sylvan, storm::RationalFunction>::ge
 
     return negated ? -(*rationalFunction) : (*rationalFunction);
 }
-#endif
 
 template<typename ValueType>
 bool InternalAdd<DdType::Sylvan, ValueType>::operator==(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -105,13 +96,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.PlusRN(other.sylvanMtbdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator+(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.PlusRF(other.sylvanMtbdd));
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType>& InternalAdd<DdType::Sylvan, ValueType>::operator+=(InternalAdd<DdType::Sylvan, ValueType> const& other) {
@@ -126,14 +115,12 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber>& InternalAdd<DdType::Sylvan, 
     return *this;
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction>& InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator+=(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) {
     this->sylvanMtbdd = this->sylvanMtbdd.PlusRF(other.sylvanMtbdd);
     return *this;
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::operator*(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -146,13 +133,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.TimesRN(other.sylvanMtbdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator*(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.TimesRF(other.sylvanMtbdd));
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType>& InternalAdd<DdType::Sylvan, ValueType>::operator*=(InternalAdd<DdType::Sylvan, ValueType> const& other) {
@@ -167,14 +152,12 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber>& InternalAdd<DdType::Sylvan, 
     return *this;
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction>& InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator*=(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) {
     this->sylvanMtbdd = this->sylvanMtbdd.TimesRF(other.sylvanMtbdd);
     return *this;
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::operator-(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -187,13 +170,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.MinusRN(other.sylvanMtbdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator-(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.MinusRF(other.sylvanMtbdd));
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType>& InternalAdd<DdType::Sylvan, ValueType>::operator-=(InternalAdd<DdType::Sylvan, ValueType> const& other) {
@@ -208,14 +189,12 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber>& InternalAdd<DdType::Sylvan, 
     return *this;
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction>& InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator-=(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) {
     this->sylvanMtbdd = this->sylvanMtbdd.MinusRF(other.sylvanMtbdd);
     return *this;
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::operator/(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -228,13 +207,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.DivideRN(other.sylvanMtbdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator/(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.DivideRF(other.sylvanMtbdd));
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType>& InternalAdd<DdType::Sylvan, ValueType>::operator/=(InternalAdd<DdType::Sylvan, ValueType> const& other) {
@@ -249,14 +226,12 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber>& InternalAdd<DdType::Sylvan, 
     return *this;
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction>& InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator/=(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) {
     this->sylvanMtbdd = this->sylvanMtbdd.DivideRF(other.sylvanMtbdd);
     return *this;
 }
-#endif
 
 template<typename ValueType>
 InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::equals(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -268,13 +243,11 @@ InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalNumber>::
     return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.EqualsRN(other.sylvanMtbdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::equals(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
     return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.EqualsRF(other.sylvanMtbdd));
 }
-#endif
 
 template<typename ValueType>
 InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::notEquals(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -291,13 +264,11 @@ InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalNumber>::
     return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.LessRN(other.sylvanMtbdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::less(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
     return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.LessRF(other.sylvanMtbdd));
 }
-#endif
 
 template<typename ValueType>
 InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::lessOrEqual(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -310,13 +281,11 @@ InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalNumber>::
     return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.LessOrEqualRN(other.sylvanMtbdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::lessOrEqual(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
     return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.LessOrEqualRF(other.sylvanMtbdd));
 }
-#endif
 
 template<typename ValueType>
 InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::greater(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -339,13 +308,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.PowRN(other.sylvanMtbdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::pow(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.PowRF(other.sylvanMtbdd));
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::mod(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -358,13 +325,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.ModRN(other.sylvanMtbdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::mod(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Operation (mod) not supported by rational functions.");
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::logxy(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -377,13 +342,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Operation (logxy) not supported by rational numbers.");
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::logxy(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Operation (logxy) not supported by rational functions.");
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::floor() const {
@@ -395,12 +358,10 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.FloorRN());
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::floor() const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.FloorRF());
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::ceil() const {
@@ -412,24 +373,20 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.CeilRN());
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::ceil() const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.CeilRF());
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, ValueType>::sharpenKwekMehlhorn(size_t precision) const {
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.SharpenKwekMehlhorn(precision));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalFunction>::sharpenKwekMehlhorn(size_t /*precision*/) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::minimum(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -442,13 +399,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.MinRN(other.sylvanMtbdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::minimum(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.MinRF(other.sylvanMtbdd));
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::maximum(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -461,13 +416,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.MaxRN(other.sylvanMtbdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::maximum(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.MaxRF(other.sylvanMtbdd));
 }
-#endif
 
 template<typename ValueType>
 template<typename TargetValueType>
@@ -490,13 +443,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, d
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.ToRationalNumber());
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 template<>
 InternalAdd<DdType::Sylvan, double> InternalAdd<DdType::Sylvan, storm::RationalFunction>::toValueType() const {
     return InternalAdd<DdType::Sylvan, double>(ddManager, this->sylvanMtbdd.ToDoubleRF());
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::sumAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
@@ -509,13 +460,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.AbstractPlusRN(cube.sylvanBdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::sumAbstract(
     InternalBdd<DdType::Sylvan> const& cube) const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.AbstractPlusRF(cube.sylvanBdd));
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::minAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
@@ -538,13 +487,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.AbstractMinRN(cube.sylvanBdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::minAbstract(
     InternalBdd<DdType::Sylvan> const& cube) const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.AbstractMinRF(cube.sylvanBdd));
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::maxAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
@@ -567,13 +514,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, s
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.AbstractMaxRN(cube.sylvanBdd));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::maxAbstract(
     InternalBdd<DdType::Sylvan> const& cube) const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.AbstractMaxRF(cube.sylvanBdd));
 }
-#endif
 
 template<typename ValueType>
 bool InternalAdd<DdType::Sylvan, ValueType>::equalModuloPrecision(InternalAdd<DdType::Sylvan, ValueType> const& other, ValueType const& precision,
@@ -585,7 +530,6 @@ bool InternalAdd<DdType::Sylvan, ValueType>::equalModuloPrecision(InternalAdd<Dd
     }
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 bool InternalAdd<DdType::Sylvan, storm::RationalNumber>::equalModuloPrecision(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other,
                                                                               storm::RationalNumber const& precision, bool relative) const {
@@ -605,7 +549,6 @@ bool InternalAdd<DdType::Sylvan, storm::RationalFunction>::equalModuloPrecision(
         return this->sylvanMtbdd.EqualNormRF(other.sylvanMtbdd, precision);
     }
 }
-#endif
 
 template<typename ValueType>
 InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::swapVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from,
@@ -644,7 +587,6 @@ InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::m
     return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.AndExists(otherMatrix.sylvanMtbdd, summationVariables.getSylvanBdd()));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::multiplyMatrix(
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const {
@@ -656,7 +598,6 @@ InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan,
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager,
                                                                 this->sylvanMtbdd.AndExistsRF(otherMatrix.sylvanMtbdd, summationVariables.getSylvanBdd()));
 }
-#endif
 
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::multiplyMatrix(
@@ -682,7 +623,6 @@ InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::m
         ddManager, this->sylvanMtbdd.AndExists(sylvan::Bdd(otherMatrix.getSylvanBdd().GetBDD()), summationVariables.getSylvanBdd()));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::multiplyMatrix(
     InternalBdd<DdType::Sylvan> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const {
@@ -694,7 +634,6 @@ InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan,
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(
         ddManager, this->sylvanMtbdd.AndExistsRF(sylvan::Bdd(otherMatrix.getSylvanBdd().GetBDD()), summationVariables.getSylvanBdd()));
 }
-#endif
 
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::multiplyMatrix(
@@ -718,12 +657,10 @@ InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalNumber>::
     return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.BddStrictThresholdRN(value));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::greater(storm::RationalFunction const& value) const {
     return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.BddStrictThresholdRF(value));
 }
-#endif
 
 template<typename ValueType>
 InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::greaterOrEqual(ValueType const& value) const {
@@ -735,12 +672,10 @@ InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalNumber>::
     return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.BddThresholdRN(value));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::greaterOrEqual(storm::RationalFunction const& value) const {
     return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.BddThresholdRF(value));
 }
-#endif
 
 template<typename ValueType>
 InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::less(ValueType const& value) const {
@@ -800,12 +735,10 @@ storm::RationalNumber InternalAdd<DdType::Sylvan, storm::RationalNumber>::getMin
     return getValue(this->sylvanMtbdd.MinimumRN().GetMTBDD());
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 storm::RationalFunction InternalAdd<DdType::Sylvan, storm::RationalFunction>::getMin() const {
     return getValue(this->sylvanMtbdd.MinimumRF().GetMTBDD());
 }
-#endif
 
 template<typename ValueType>
 ValueType InternalAdd<DdType::Sylvan, ValueType>::getMax() const {
@@ -817,12 +750,10 @@ storm::RationalNumber InternalAdd<DdType::Sylvan, storm::RationalNumber>::getMax
     return getValue(this->sylvanMtbdd.MaximumRN().GetMTBDD());
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 storm::RationalFunction InternalAdd<DdType::Sylvan, storm::RationalFunction>::getMax() const {
     return getValue(this->sylvanMtbdd.MaximumRF().GetMTBDD());
 }
-#endif
 
 template<typename ValueType>
 ValueType InternalAdd<DdType::Sylvan, ValueType>::getValue() const {
@@ -1355,7 +1286,11 @@ MTBDD InternalAdd<DdType::Sylvan, ValueType>::fromVectorRec(uint_fast64_t& curre
         // Create a node representing ITE(currentVar, thenSuccessor, elseSuccessor);
         MTBDD currentVar = mtbdd_makenode(ddVariableIndices[currentLevel], mtbdd_false, mtbdd_true);
         mtbdd_refs_push(thenSuccessor);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wextra-semi-stmt"
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
         MTBDD result = mtbdd_ite(currentVar, thenSuccessor, elseSuccessor);
+#pragma clang diagnostic pop
 
         // Dispose of the intermediate results
         mtbdd_refs_pop(3);
@@ -1398,13 +1333,551 @@ std::string InternalAdd<DdType::Sylvan, ValueType>::getStringId() const {
     return ss.str();
 }
 
+#else
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType>::InternalAdd() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+bool InternalAdd<DdType::Sylvan, ValueType>::operator==(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+bool InternalAdd<DdType::Sylvan, ValueType>::operator!=(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::operator+(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType>& InternalAdd<DdType::Sylvan, ValueType>::operator+=(InternalAdd<DdType::Sylvan, ValueType> const& other) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::operator*(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType>& InternalAdd<DdType::Sylvan, ValueType>::operator*=(InternalAdd<DdType::Sylvan, ValueType> const& other) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::operator-(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType>& InternalAdd<DdType::Sylvan, ValueType>::operator-=(InternalAdd<DdType::Sylvan, ValueType> const& other) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::operator/(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType>& InternalAdd<DdType::Sylvan, ValueType>::operator/=(InternalAdd<DdType::Sylvan, ValueType> const& other) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::equals(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::notEquals(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::less(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::lessOrEqual(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::greater(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::greaterOrEqual(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::pow(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::mod(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::logxy(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::floor() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::ceil() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, ValueType>::sharpenKwekMehlhorn(size_t precision) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::minimum(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::maximum(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+template<typename TargetValueType>
+InternalAdd<DdType::Sylvan, TargetValueType> InternalAdd<DdType::Sylvan, ValueType>::toValueType() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<>
+template<>
+InternalAdd<DdType::Sylvan, double> InternalAdd<DdType::Sylvan, storm::RationalNumber>::toValueType() const {
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot convert this ADD to the target type.");
+}
+
+template<>
+template<>
+InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, double>::toValueType() const {
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot convert this ADD to the target type.");
+}
+
+template<>
+template<>
+InternalAdd<DdType::Sylvan, double> InternalAdd<DdType::Sylvan, storm::RationalFunction>::toValueType() const {
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot convert this ADD to the target type.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::sumAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::minAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::minAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::maxAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::maxAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+bool InternalAdd<DdType::Sylvan, ValueType>::equalModuloPrecision(InternalAdd<DdType::Sylvan, ValueType> const& other, ValueType const& precision,
+                                                                  bool relative) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::swapVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from,
+                                                                                             std::vector<InternalBdd<DdType::Sylvan>> const& to) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::permuteVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from,
+                                                                                                std::vector<InternalBdd<DdType::Sylvan>> const& to) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::multiplyMatrix(
+    InternalAdd<DdType::Sylvan, ValueType> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::multiplyMatrix(
+    InternalBdd<DdType::Sylvan> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::greater(ValueType const& value) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::greaterOrEqual(ValueType const& value) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::less(ValueType const& value) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::lessOrEqual(ValueType const& value) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::notZero() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::constrain(InternalAdd<DdType::Sylvan, ValueType> const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::restrict(InternalAdd<DdType::Sylvan, ValueType> const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::getSupport() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+uint_fast64_t InternalAdd<DdType::Sylvan, ValueType>::getNonZeroCount(uint_fast64_t numberOfDdVariables) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+uint_fast64_t InternalAdd<DdType::Sylvan, ValueType>::getLeafCount() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+uint_fast64_t InternalAdd<DdType::Sylvan, ValueType>::getNodeCount() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+ValueType InternalAdd<DdType::Sylvan, ValueType>::getMin() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+ValueType InternalAdd<DdType::Sylvan, ValueType>::getMax() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+ValueType InternalAdd<DdType::Sylvan, ValueType>::getValue() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+bool InternalAdd<DdType::Sylvan, ValueType>::isOne() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+bool InternalAdd<DdType::Sylvan, ValueType>::isZero() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+bool InternalAdd<DdType::Sylvan, ValueType>::isConstant() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+uint_fast64_t InternalAdd<DdType::Sylvan, ValueType>::getIndex() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+uint_fast64_t InternalAdd<DdType::Sylvan, ValueType>::getLevel() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+void InternalAdd<DdType::Sylvan, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const&, bool) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+void InternalAdd<DdType::Sylvan, ValueType>::exportToText(std::string const& filename) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+AddIterator<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::begin(DdManager<DdType::Sylvan> const& fullDdManager,
+                                                                                     InternalBdd<DdType::Sylvan> const& variableCube,
+                                                                                     uint_fast64_t numberOfDdVariables,
+                                                                                     std::set<storm::expressions::Variable> const& metaVariables,
+                                                                                     bool enumerateDontCareMetaVariables) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+AddIterator<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::end(DdManager<DdType::Sylvan> const& fullDdManager) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+Odd InternalAdd<DdType::Sylvan, ValueType>::createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalDdManager<DdType::Sylvan> const& InternalAdd<DdType::Sylvan, ValueType>::getInternalDdManager() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices,
+                                                                       std::vector<ValueType>& targetVector,
+                                                                       std::function<ValueType(ValueType const&, ValueType const&)> const& function) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices,
+                                                                       std::vector<uint_fast64_t> const& offsets, std::vector<ValueType>& targetVector,
+                                                                       std::function<ValueType(ValueType const&, ValueType const&)> const& function) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+void InternalAdd<DdType::Sylvan, ValueType>::forEach(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices,
+                                                     std::function<void(uint64_t const&, ValueType const&)> const& function) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+std::vector<uint64_t> InternalAdd<DdType::Sylvan, ValueType>::decodeGroupLabels(std::vector<uint_fast64_t> const& ddGroupVariableIndices,
+                                                                                storm::storage::BitVector const& ddLabelVariableIndices) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+std::vector<InternalAdd<DdType::Sylvan, ValueType>> InternalAdd<DdType::Sylvan, ValueType>::splitIntoGroups(
+    std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+std::vector<std::pair<InternalAdd<DdType::Sylvan, ValueType>, InternalAdd<DdType::Sylvan, ValueType>>> InternalAdd<DdType::Sylvan, ValueType>::splitIntoGroups(
+    InternalAdd<DdType::Sylvan, ValueType> vector, std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+std::vector<std::vector<InternalAdd<DdType::Sylvan, ValueType>>> InternalAdd<DdType::Sylvan, ValueType>::splitIntoGroups(
+    std::vector<InternalAdd<DdType::Sylvan, ValueType>> const& vectors, std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+void InternalAdd<DdType::Sylvan, ValueType>::toMatrixComponents(std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<uint_fast64_t>& rowIndications,
+                                                                std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues,
+                                                                Odd const& rowOdd, Odd const& columnOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices,
+                                                                std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool writeValues) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::fromVector(InternalDdManager<DdType::Sylvan> const* ddManager,
+                                                                                          std::vector<ValueType> const& values, storm::dd::Odd const& odd,
+                                                                                          std::vector<uint_fast64_t> const& ddVariableIndices) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+template<typename ValueType>
+std::string InternalAdd<DdType::Sylvan, ValueType>::getStringId() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+#endif
+
 template class InternalAdd<DdType::Sylvan, double>;
 template class InternalAdd<DdType::Sylvan, uint_fast64_t>;
-
 template class InternalAdd<DdType::Sylvan, storm::RationalNumber>;
-
-#ifdef STORM_HAVE_CARL
 template class InternalAdd<DdType::Sylvan, storm::RationalFunction>;
-#endif
+
 }  // namespace dd
 }  // namespace storm

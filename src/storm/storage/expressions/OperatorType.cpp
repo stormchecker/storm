@@ -74,6 +74,12 @@ std::ostream& operator<<(std::ostream& stream, OperatorType const& operatorType)
         case OperatorType::Ceil:
             stream << "ceil";
             break;
+        case OperatorType::Sin:
+            stream << "sin";
+            break;
+        case OperatorType::Cos:
+            stream << "cos";
+            break;
         case OperatorType::Ite:
             stream << "ite";
             break;

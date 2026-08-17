@@ -1,6 +1,6 @@
-#ifndef STORM_PARSER_MARKOVAUTOMATONPARSER_H_
-#define STORM_PARSER_MARKOVAUTOMATONPARSER_H_
+#pragma once
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
 #include "storm-parsers/parser/MarkovAutomatonSparseTransitionParser.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 
@@ -32,10 +32,9 @@ class MarkovAutomatonParser {
      */
     static storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> parseMarkovAutomaton(
         std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "",
-        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "");
+        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "",
+        ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 };
 
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_MARKOVAUTOMATONPARSER_H_ */

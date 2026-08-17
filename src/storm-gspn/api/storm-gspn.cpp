@@ -8,6 +8,7 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/utility/solver.h"
 
 namespace storm {
 namespace api {
@@ -22,30 +23,30 @@ void handleGSPNExportSettings(storm::gspn::GSPN const& gspn,
     storm::settings::modules::GSPNExportSettings const& exportSettings = storm::settings::getModule<storm::settings::modules::GSPNExportSettings>();
     if (exportSettings.isWriteToDotSet()) {
         std::ofstream fs;
-        storm::utility::openFile(exportSettings.getWriteToDotFilename(), fs);
+        storm::io::openFile(exportSettings.getWriteToDotFilename(), fs);
         gspn.writeDotToStream(fs);
-        storm::utility::closeFile(fs);
+        storm::io::closeFile(fs);
     }
 
     if (exportSettings.isWriteToPnproSet()) {
         std::ofstream fs;
-        storm::utility::openFile(exportSettings.getWriteToPnproFilename(), fs);
+        storm::io::openFile(exportSettings.getWriteToPnproFilename(), fs);
         gspn.toPnpro(fs);
-        storm::utility::closeFile(fs);
+        storm::io::closeFile(fs);
     }
 
     if (exportSettings.isWriteToPnmlSet()) {
         std::ofstream fs;
-        storm::utility::openFile(exportSettings.getWriteToPnmlFilename(), fs);
+        storm::io::openFile(exportSettings.getWriteToPnmlFilename(), fs);
         gspn.toPnml(fs);
-        storm::utility::closeFile(fs);
+        storm::io::closeFile(fs);
     }
 
     if (exportSettings.isWriteToJsonSet()) {
         std::ofstream fs;
-        storm::utility::openFile(exportSettings.getWriteToJsonFilename(), fs);
+        storm::io::openFile(exportSettings.getWriteToJsonFilename(), fs);
         gspn.toJson(fs);
-        storm::utility::closeFile(fs);
+        storm::io::closeFile(fs);
     }
 
     if (exportSettings.isDisplayStatsSet()) {
@@ -56,9 +57,9 @@ void handleGSPNExportSettings(storm::gspn::GSPN const& gspn,
 
     if (exportSettings.isWriteStatsToFileSet()) {
         std::ofstream fs;
-        storm::utility::openFile(exportSettings.getWriteStatsFilename(), fs);
+        storm::io::openFile(exportSettings.getWriteStatsFilename(), fs);
         gspn.writeStatsToStream(fs);
-        storm::utility::closeFile(fs);
+        storm::io::closeFile(fs);
     }
 
     if (exportSettings.isWriteToJaniSet()) {
@@ -74,7 +75,7 @@ void handleGSPNExportSettings(storm::gspn::GSPN const& gspn,
             properties.insert(properties.end(), deadlockProperties.begin(), deadlockProperties.end());
         }
 
-        storm::api::transformJani(*model, properties, options);
+        storm::api::transformJani(*model, properties, options, std::make_shared<storm::utility::solver::SmtSolverFactory>());
 
         storm::api::exportJaniToFile(*model, properties, exportSettings.getWriteToJaniFilename(), jani.isCompactJsonSet());
         delete model;
@@ -93,13 +94,13 @@ std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const&
     std::unordered_map<std::string, uint64_t> map;
 
     std::ifstream stream;
-    storm::utility::openFile(filename, stream);
+    storm::io::openFile(filename, stream);
 
     std::string line;
-    while (storm::utility::getline(stream, line)) {
+    while (storm::io::getline(stream, line)) {
         std::vector<std::string> strs;
         boost::split(strs, line, boost::is_any_of("\t "));
-        STORM_LOG_THROW(strs.size() == 2, storm::exceptions::WrongFormatException, "Expect key value pairs");
+        STORM_LOG_THROW(strs.size() == 2, storm::exceptions::WrongFormatException, "Expect key value pairs.");
         storm::expressions::Expression expr = expressionParser.parseFromString(strs[1]);
         if (!gspn.getConstantsSubstitution().empty()) {
             expr = expr.substitute(gspn.getConstantsSubstitution());
@@ -108,7 +109,7 @@ std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const&
                         "The capacity expression '" << strs[1] << "' still contains undefined constants.");
         map[strs[0]] = expr.evaluateAsInt();
     }
-    storm::utility::closeFile(stream);
+    storm::io::closeFile(stream);
     return map;
 }
 }  // namespace api

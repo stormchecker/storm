@@ -1,10 +1,11 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/storm.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/storage/jani/Property.h"
-#include "test/storm_gtest.h"
 
 TEST(NonMarkovianChainTransformerTest, StreamExampleTest) {
 #ifndef STORM_HAVE_Z3
@@ -82,7 +83,7 @@ TEST(NonMarkovianChainTransformerTest, StreamExampleTest) {
 }
 
 TEST(NonMarkovianChainTransformerTest, ChainElimination1ExampleTest) {
-    auto model = storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/ma/chain_elimination1.drn")
+    auto model = storm::parser::parseDirectEncodingModel<double>(STORM_TEST_RESOURCES_DIR "/ma/chain_elimination1.drn")
                      ->template as<storm::models::sparse::MarkovAutomaton<double>>();
     std::string formulasString = "Pmin=? [ F \"Fail\"];Pmin=? [ F<=300 \"Fail\"];Tmin=? [ F \"Fail\" ]";
     auto formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulasString));
@@ -162,7 +163,7 @@ TEST(NonMarkovianChainTransformerTest, ChainElimination1ExampleTest) {
 }
 
 TEST(NonMarkovianChainTransformerTest, ChainElimination2ExampleTest) {
-    auto model = storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/ma/chain_elimination2.drn")
+    auto model = storm::parser::parseDirectEncodingModel<double>(STORM_TEST_RESOURCES_DIR "/ma/chain_elimination2.drn")
                      ->template as<storm::models::sparse::MarkovAutomaton<double>>();
     std::string formulasString = "Pmin=? [ F \"Fail\"];Pmin=? [ F<=300 \"Fail\"];Tmin=? [ F \"Fail\" ]";
     auto formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulasString));

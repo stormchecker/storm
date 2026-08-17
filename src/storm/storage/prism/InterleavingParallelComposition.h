@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_INTERLEAVINGPARALLELCOMPOSITION_H_
-#define STORM_STORAGE_PRISM_INTERLEAVINGPARALLELCOMPOSITION_H_
+#pragma once
 
 #include "storm/storage/prism/ParallelComposition.h"
 
@@ -16,5 +15,3 @@ class InterleavingParallelComposition : public ParallelComposition {
 };
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_INTERLEAVINGPARALLELCOMPOSITION_H_ */

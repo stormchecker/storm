@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm/api/storm.h"
 #include "storm/models/sparse/Pomdp.h"
 

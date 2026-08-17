@@ -278,7 +278,7 @@ SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSea
             this->choiceVariables, this->rowColumnMetaVariablePairs, std::make_unique<GeneralSymbolicLinearEquationSolverFactory<DdType, ImpreciseType>>());
 
         rationalResult = solveEquationsRationalSearchHelper<ValueType, ImpreciseType>(env, dir, *this, impreciseSolver, b, impreciseX, impreciseB);
-    } catch (storm::exceptions::PrecisionExceededException const& e) {
+    } catch (storm::exceptions::PrecisionExceededException const&) {
         STORM_LOG_WARN("Precision of value type was exceeded, trying to recover by switching to rational arithmetic.");
 
         // Fall back to precise value type if the precision of the imprecise value type was exceeded.

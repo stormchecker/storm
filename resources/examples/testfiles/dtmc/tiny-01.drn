@@ -1,0 +1,29 @@
+@type: DTMC
+@value_type: double
+@parameters
+
+@reward_models
+
+@nr_states
+4
+@nr_choices
+4
+
+@model
+state 0 init
+	action 0
+		1 : 0.5
+		2 : 0.3
+		3 : 0.2
+state 1
+    action 0
+        1 : 0.5
+        2 : 0.3
+        3 : 0.2
+state 2
+    action 0
+        2 : 0.78
+        3 : 0.22
+state 3 a
+    action 0
+        3 : 1

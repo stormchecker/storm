@@ -118,7 +118,6 @@ void SymbolicQualitativeCheckResult<Type>::filter(QualitativeCheckResult const& 
     STORM_LOG_THROW(filter.isSymbolicQualitativeCheckResult(), storm::exceptions::InvalidOperationException,
                     "Cannot filter symbolic check result with non-symbolic filter.");
     this->states &= filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector();
-    ;
     this->truthValues &= filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector();
     this->states &= filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector();
 }

@@ -18,7 +18,7 @@ BaseException::~BaseException() {
     // Intentionally left empty.
 }
 
-const char* BaseException::what() const NOEXCEPT {
+const char* BaseException::what() const noexcept {
     errorString = this->type() + ": " + this->stream.str();
     if (!this->additionalInfo().empty()) {
         errorString += " " + this->additionalInfo();

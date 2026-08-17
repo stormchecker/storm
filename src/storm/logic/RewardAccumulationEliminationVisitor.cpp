@@ -165,5 +165,38 @@ bool RewardAccumulationEliminationVisitor::canEliminate(storm::logic::RewardAccu
     }
     return true;
 }
+
+boost::any RewardAccumulationEliminationVisitor::visit(DiscountedCumulativeRewardFormula const& f, boost::any const& data) const {
+    boost::optional<storm::logic::RewardAccumulation> rewAcc;
+    STORM_LOG_THROW(!data.empty(), storm::exceptions::UnexpectedException, "Formula " << f << " does not seem to be a subformula of a reward operator.");
+    auto rewName = boost::any_cast<boost::optional<std::string>>(data);
+    if (f.hasRewardAccumulation() && !canEliminate(f.getRewardAccumulation(), rewName)) {
+        rewAcc = f.getRewardAccumulation();
+    }
+
+    std::vector<TimeBound> bounds;
+    std::vector<TimeBoundReference> timeBoundReferences;
+    for (uint64_t i = 0; i < f.getDimension(); ++i) {
+        bounds.emplace_back(TimeBound(f.isBoundStrict(i), f.getBound(i)));
+        storm::logic::TimeBoundReference tbr = f.getTimeBoundReference(i);
+        if (tbr.hasRewardAccumulation() && canEliminate(tbr.getRewardAccumulation(), tbr.getRewardName())) {
+            // Eliminate accumulation
+            tbr = storm::logic::TimeBoundReference(tbr.getRewardName(), boost::none);
+        }
+        timeBoundReferences.push_back(std::move(tbr));
+    }
+
+    return std::static_pointer_cast<Formula>(std::make_shared<DiscountedCumulativeRewardFormula>(f.getDiscountFactor(), bounds, timeBoundReferences, rewAcc));
+}
+
+boost::any RewardAccumulationEliminationVisitor::visit(DiscountedTotalRewardFormula const& f, boost::any const& data) const {
+    STORM_LOG_THROW(!data.empty(), storm::exceptions::UnexpectedException, "Formula " << f << " does not seem to be a subformula of a reward operator.");
+    auto rewName = boost::any_cast<boost::optional<std::string>>(data);
+    if (!f.hasRewardAccumulation() || canEliminate(f.getRewardAccumulation(), rewName)) {
+        return std::static_pointer_cast<Formula>(std::make_shared<DiscountedTotalRewardFormula>(f.getDiscountFactor()));
+    } else {
+        return std::static_pointer_cast<Formula>(std::make_shared<DiscountedTotalRewardFormula>(f.getDiscountFactor(), f.getRewardAccumulation()));
+    }
+}
 }  // namespace logic
 }  // namespace storm

@@ -1,14 +1,15 @@
 #include "storm/builder/BuilderType.h"
 
-#include "storm/storage/dd/DdType.h"
-
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/builder/DdJaniModelBuilder.h"
 #include "storm/builder/DdPrismModelBuilder.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/generator/JaniNextStateGenerator.h"
 #include "storm/generator/PrismNextStateGenerator.h"
+#include "storm/storage/dd/DdType.h"
 #include "storm/storage/jani/ModelFeatures.h"
-
-#include "storm/exceptions/UnexpectedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -29,7 +30,7 @@ storm::jani::ModelFeatures getSupportedJaniFeatures(BuilderType const& builderTy
 
 template<typename ValueType>
 bool canHandle(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription,
-               boost::optional<std::vector<storm::jani::Property>> const& properties) {
+               storm::OptionalRef<std::vector<storm::jani::Property> const> properties) {
     storm::dd::DdType const ddType = storm::dd::DdType::Sylvan;
     if (!modelDescription.hasModel()) {
         // If there is no model to be build, we assume that the task of obtaining a model is either not required or can be accomplished somehow.
@@ -56,11 +57,11 @@ bool canHandle(BuilderType const& builderType, storm::storage::SymbolicModelDesc
 }
 
 template bool canHandle<double>(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription,
-                                boost::optional<std::vector<storm::jani::Property>> const& properties);
+                                storm::OptionalRef<std::vector<storm::jani::Property> const> properties);
 template bool canHandle<storm::RationalNumber>(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription,
-                                               boost::optional<std::vector<storm::jani::Property>> const& properties);
+                                               storm::OptionalRef<std::vector<storm::jani::Property> const> properties);
 template bool canHandle<storm::RationalFunction>(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription,
-                                                 boost::optional<std::vector<storm::jani::Property>> const& properties);
+                                                 storm::OptionalRef<std::vector<storm::jani::Property> const> properties);
 
 }  // namespace builder
 }  // namespace storm

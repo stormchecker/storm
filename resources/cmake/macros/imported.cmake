@@ -1,13 +1,20 @@
 # copied from CARL
 
 
-macro(add_imported_library_interface name include)
+macro(storm_add_imported_library_interface name include install_include)
 	add_library(${name} INTERFACE IMPORTED)
-	set_target_properties(${name} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${include}")
-endmacro(add_imported_library_interface)
+	if("${install_include}" STREQUAL "")
+		target_include_directories(${name} INTERFACE ${include})
+	else()
+		target_include_directories(${name} INTERFACE
+				$<BUILD_INTERFACE:${include}>
+				$<INSTALL_INTERFACE:${install_include}>
+		)
+	endif()
+endmacro(storm_add_imported_library_interface)
 
 macro(add_imported_library name type lib include)
-# Workaround from https://cmake.org/Bug/view.php?id=15052
+# Workaround from https://gitlab.kitware.com/cmake/cmake/-/issues/15052
 	file(MAKE_DIRECTORY "${include}")
 	if("${lib}" STREQUAL "")
 		if("${type}" STREQUAL "SHARED")

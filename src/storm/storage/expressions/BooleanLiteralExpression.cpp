@@ -25,9 +25,7 @@ bool BooleanLiteralExpression::isFalse() const {
     return this->getValue() == false;
 }
 
-void BooleanLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>&) const {
-    return;
-}
+void BooleanLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>&) const {}
 
 std::shared_ptr<BaseExpression const> BooleanLiteralExpression::simplify() const {
     return this->shared_from_this();

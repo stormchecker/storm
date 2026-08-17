@@ -1,21 +1,147 @@
-set(storm_VERSION @STORM_VERSION@)
+include(CMakeFindDependencyMacro)
 
-get_filename_component(storm_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
-include("@carl_CMAKE_DIR@/carlConfig.cmake")
-
-@DEP_TARGETS@
-
+@PACKAGE_INIT@
 @EXP_OPTIONS@
+
+
+# Compute the installation prefix relative to this file.
+get_filename_component(_IMPORT_PREFIX "${CMAKE_CURRENT_LIST_FILE}" PATH)
+get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+if(_IMPORT_PREFIX STREQUAL "/")
+  set(_IMPORT_PREFIX "")
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/_deps/carl-build/carlConfig.cmake")
+if(NOT TARGET lib_carl)
+    message(FATAL_ERROR "Including _deps/carl-build/carlConfig.cmake did not define target lib_carl.")
+endif()
+set(storm_carl_DIR "_deps/carl-build")
+
+set(CMAKE_MODULE_PATH_save "${CMAKE_MODULE_PATH}")
+# Note that this currently assumes that the sources are not moved away from the build tree.
+list(INSERT CMAKE_MODULE_PATH 0 "@PROJECT_SOURCE_DIR@/resources/cmake/find_modules/")
+
+
+# Dependencies
+find_dependency(Boost QUIET NO_MODULE)
+find_dependency(Threads)
+
+if(@STORM_HAVE_CUDD@)  # STORM_HAVE_CUDD
+    add_library(cuddstorm STATIC IMPORTED)
+    set_target_properties(
+            cuddstorm
+            PROPERTIES
+            IMPORTED_LOCATION @STORM_3RDPARTY_BINARY_DIR@/storm-cudd/lib/libcudd@STATIC_EXT@
+            INTERFACE_INCLUDE_DIRECTORIES "@STORM_3RDPARTY_BINARY_DIR@/storm-cudd/include/"
+    )
+endif()
+
+if(@STORM_HAVE_GLPK@)  # STORM_HAVE_GLPK
+    find_dependency(GLPK)
+    add_library(glpk SHARED IMPORTED)
+    set_target_properties(
+            glpk
+            PROPERTIES
+            IMPORTED_LOCATION ${GLPK_LIBRARIES}
+            INTERFACE_INCLUDE_DIRECTORIES ${GLPK_INCLUDE_DIR}
+    )
+endif()
+
+if(@STORM_HAVE_GUROBI@)  # STORM_HAVE_GUROBI
+    find_dependency(GUROBI)
+    add_library(GUROBI UNKNOWN IMPORTED)
+    set_target_properties(
+            GUROBI
+            PROPERTIES
+            IMPORTED_LOCATION ${GUROBI_LIBRARY}
+            INTERFACE_INCLUDE_DIRECTORIES ${GUROBI_INCLUDE_DIRS}
+    )
+endif()
+
+if(@STORM_HAVE_HIGHS@)  # STORM_HAVE_HIGHS
+    find_dependency(highs)
+endif()
+
+if(@STORM_HAVE_LIBARCHIVE@) # STORM_HAVE_LIBARCHIVE
+     set(LibArchive_ROOT "@LibArchive_ROOT@")
+     find_dependency(LibArchive)
+endif()
+
+if(@STORM_HAVE_MATHSAT@)  # STORM_HAVE_MATHSAT
+    set(MATHSAT_ROOT "@MATHSAT_ROOT@")
+    find_dependency(MATHSAT QUIET)
+    add_library(mathsat UNKNOWN IMPORTED)
+    set_target_properties(
+            mathsat
+            PROPERTIES
+            IMPORTED_LOCATION ${MATHSAT_LIBRARIES}
+            INTERFACE_INCLUDE_DIRECTORIES ${MATHSAT_INCLUDE_DIRS}
+    )
+endif()
+
+if(@STORM_HAVE_SOPLEX@)  # STORM_HAVE_SOPLEX
+    find_dependency(soplex)
+endif()
+
+if(@STORM_HAVE_SPOT@)  # STORM_HAVE_SPOT
+    if(@STORM_SHIPPED_SPOT@)  # STORM_SHIPPED_SPOT
+        add_library(Storm::Spot-bddx SHARED IMPORTED)
+        set_target_properties(Storm::Spot-bddx PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "@STORM_3RDPARTY_BINARY_DIR@/spot/include/"
+                IMPORTED_LOCATION @STORM_3RDPARTY_BINARY_DIR@/spot/lib/libbddx@DYNAMIC_EXT@
+        )
+
+        add_library(Storm::Spot SHARED IMPORTED)
+        set_target_properties(Storm::Spot PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "@STORM_3RDPARTY_BINARY_DIR@/spot/include/"
+                IMPORTED_LOCATION @STORM_3RDPARTY_BINARY_DIR@/spot/lib/libspot@DYNAMIC_EXT@
+                INTERFACE_LINK_LIBRARIES Storm::Spot-bddx
+        )
+    else()
+        find_dependency(Spot)
+        add_library(Storm::Spot UNKNOWN IMPORTED)
+        set_target_properties(
+                Storm::Spot
+                PROPERTIES
+                IMPORTED_LOCATION ${Spot_LIBRARIES}
+                INTERFACE_INCLUDE_DIRECTORIES ${Spot_INCLUDE_DIR}
+        )
+
+    endif()
+endif()
+
+if(@STORM_HAVE_SYLVAN@)  # STORM_HAVE_SYLVAN
+    include("${CMAKE_CURRENT_LIST_DIR}/_deps/sylvanfetch-build/src/cmake/sylvan-config.cmake")
+endif()
+
+if(@STORM_HAVE_XERCES@)  # STORM_HAVE_XERCES
+    find_dependency(XercesC)
+endif()
+
+if(@STORM_HAVE_Z3@)  # STORM_HAVE_Z3
+    if(@STORM_Z3_CONFIG@)
+        find_dependency(Z3 4.8.7 NO_MODULE)
+    else()
+        find_dependency(Z3)
+        add_library(z3 SHARED IMPORTED)
+        set_target_properties(
+                z3
+                PROPERTIES
+                IMPORTED_LOCATION ${Z3_LIBRARIES}
+                INTERFACE_INCLUDE_DIRECTORIES ${Z3_INCLUDE_DIR}
+        )
+    endif()
+endif()
+
+
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH_save}")
+unset(CMAKE_MODULE_PATH_save)
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 if(NOT TARGET storm)
-  include("${storm_CMAKE_DIR}/stormTargets.cmake")
+  include("${CMAKE_CURRENT_LIST_DIR}/stormTargets.cmake")
 endif()
 
-@PACKAGE_INIT@
-
-set(storm_INCLUDE_DIR "@CONF_INCLUDE_DIRS@")
-
-set(storm_LIBRARIES storm)
-check_required_components(storm)

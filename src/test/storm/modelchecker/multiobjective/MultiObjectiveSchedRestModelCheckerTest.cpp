@@ -5,15 +5,14 @@
 #include "storm/api/storm.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
-#include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
+#include "storm/modelchecker/multiobjective/MultiObjectiveModelChecking.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/storage/SchedulerClass.h"
-
-#ifdef STORM_HAVE_Z3_OPTIMIZE
 
 namespace {
 
@@ -118,6 +117,12 @@ class MultiObjectiveSchedRestModelCheckerTest : public ::testing::Test {
    public:
     typedef storm::RationalNumber ValueType;
 
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+
     bool isFlowEncoding() const {
         return TestType::getEnv().modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow;
     }
@@ -125,6 +130,7 @@ class MultiObjectiveSchedRestModelCheckerTest : public ::testing::Test {
     storm::Environment getPositionalDeterministicEnvironment() {
         auto env = TestType::getEnv();
         env.modelchecker().multi().setSchedulerRestriction(storm::storage::SchedulerClass().setPositional().setIsDeterministic());
+        env.solver().setForceExact(true);
         return env;
     }
 
@@ -132,6 +138,7 @@ class MultiObjectiveSchedRestModelCheckerTest : public ::testing::Test {
         auto env = TestType::getEnv();
         env.modelchecker().multi().setSchedulerRestriction(
             storm::storage::SchedulerClass().setMemoryPattern(storm::storage::SchedulerClass::MemoryPattern::GoalMemory).setIsDeterministic());
+        env.solver().setForceExact(true);
         return env;
     }
 
@@ -245,7 +252,6 @@ TYPED_TEST_SUITE(MultiObjectiveSchedRestModelCheckerTest, TestingTypes, );
 
 TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, steps) {
     typedef typename TestFixture::ValueType ValueType;
-    typedef typename TestFixture::Point Point;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/multiobj_stairs.nm";
     std::string constantsString = "N=3";
@@ -257,7 +263,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, steps) {
 
     // programm, model, formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsString);
+    program = program.preprocess(constantsString);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp =
@@ -274,13 +280,13 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, steps) {
     {
         auto result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-        EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[*mdp->getInitialStates().begin()]);
+        EXPECT_TRUE(result->template asExplicitQualitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]);
     }
     ++formulaIndex;
     {
         auto result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-        EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[*mdp->getInitialStates().begin()]);
+        EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]);
     }
     ++formulaIndex;
     {
@@ -293,7 +299,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, steps) {
     {
         auto result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-        EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[*mdp->getInitialStates().begin()]);
+        EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]);
     }
 }
 
@@ -310,7 +316,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, mecs) {
     formulasAsString += "\nmulti(R{\"test\"}<=1 [C], P<=1 [F \"t2\"], P>=0.1 [F \"t1\"]);";
     // programm, model, formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsString);
+    program = program.preprocess(constantsString);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp =
@@ -359,7 +365,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, mecs) {
         } else {
             auto result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
             ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-            EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[*mdp->getInitialStates().begin()]);
+            EXPECT_TRUE(result->template asExplicitQualitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]);
         }
     }
     ++formulaIndex;
@@ -371,7 +377,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, mecs) {
         } else {
             auto result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
             ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-            EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[*mdp->getInitialStates().begin()]);
+            EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]);
         }
     }
 }
@@ -387,7 +393,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     formulasAsString += "\nmulti(R{\"test\"}min=? [C], Pmin=? [F x=2 ], Pmin=? [F x=3]);";
     // programm, model, formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsString);
+    program = program.preprocess(constantsString);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp =
@@ -450,7 +456,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, infrew) {
     std::string formulasAsString = "multi(R{\"one\"}min=? [ F x=2], R{\"two\"}min=? [ C ]);";
     // programm, model, formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsString);
+    program = program.preprocess(constantsString);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp =
@@ -477,5 +483,3 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, infrew) {
 }
 
 }  // namespace
-
-#endif /* defined STORM_HAVE_Z3_OPTIMIZE */

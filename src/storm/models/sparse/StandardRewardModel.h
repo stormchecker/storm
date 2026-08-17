@@ -7,7 +7,6 @@
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/OptionalRef.h"
-#include "storm/utility/OsDetection.h"
 #include "storm/utility/constants.h"
 
 namespace storm {
@@ -331,6 +330,16 @@ class StandardRewardModel {
      * @return True iff every reward defined by this reward model is zero.
      */
     bool isAllZero() const;
+
+    /*!
+     * @return Whether the reward model has at least one negative reward value
+     */
+    bool hasNegativeRewards() const;
+
+    /*!
+     * @return Whether the reward model has at least one positive reward value
+     */
+    bool hasPositiveRewards() const;
 
     /*!
      * Checks whether the reward model is compatible with key model characteristics.

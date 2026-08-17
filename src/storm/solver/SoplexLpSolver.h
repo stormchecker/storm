@@ -7,7 +7,7 @@
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_SOPLEX
-#include "soplex.h"
+#include <soplex.h>
 #endif
 
 namespace storm::solver {
@@ -43,12 +43,6 @@ class SoplexLpSolver : public LpSolver<ValueType, RawMode> {
      * maximized.
      */
     SoplexLpSolver(OptimizationDirection const& optDir = OptimizationDirection::Minimize);
-
-    /*!
-     * Creates a (deep) copy of this solver.
-     * @param other
-     */
-    SoplexLpSolver(SoplexLpSolver<ValueType> const& other);
 
     /*!
      * Destructs a solver by freeing the pointers to Gurobi's structures.

@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_CONDITIONALFORMULA_H_
-#define STORM_LOGIC_CONDITIONALFORMULA_H_
+#pragma once
 
 #include "storm/logic/BinaryPathFormula.h"
 #include "storm/logic/FormulaContext.h"
@@ -41,5 +40,3 @@ class ConditionalFormula : public Formula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_CONDITIONALFORMULA_H_ */

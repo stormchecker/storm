@@ -1,5 +1,9 @@
 #pragma once
 
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_CUDD
+
 #include <boost/functional/hash.hpp>
 
 // Include the C++-interface of CUDD.
@@ -19,3 +23,4 @@ struct CuddPointerPairHash {
 
 }  // namespace dd
 }  // namespace storm
+#endif

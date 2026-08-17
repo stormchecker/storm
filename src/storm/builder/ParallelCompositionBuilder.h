@@ -1,5 +1,4 @@
-#ifndef PARALLELCOMPOSITIONBUILDER_H
-#define PARALLELCOMPOSITIONBUILDER_H
+#pragma once
 
 #include "storm/models/sparse/Ctmc.h"
 
@@ -18,5 +17,3 @@ class ParallelCompositionBuilder {
 
 }  // namespace builder
 }  // namespace storm
-
-#endif /* PARALLELCOMPOSITIONBUILDER_*/

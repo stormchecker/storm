@@ -1,9 +1,12 @@
 #include "storm/logic/OperatorFormula.h"
-#include <ostream>
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/logic/Bound.h"
 
+#include <ostream>
+
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/logic/Bound.h"
 
 namespace storm {
 namespace logic {
@@ -23,7 +26,7 @@ bool OperatorFormula::hasBound() const {
 }
 
 ComparisonType OperatorFormula::getComparisonType() const {
-    STORM_LOG_ASSERT(operatorInformation.bound.is_initialized(), "Cannot get Formula comparison type (has no bound?)");
+    STORM_LOG_ASSERT(operatorInformation.bound.is_initialized(), "Cannot get Formula comparison type (has no bound?).");
     return operatorInformation.bound.get().comparisonType;
 }
 
@@ -54,6 +57,20 @@ storm::RationalFunction OperatorFormula::getThresholdAs() const {
     STORM_LOG_THROW(!operatorInformation.bound.get().threshold.containsVariables(), storm::exceptions::InvalidOperationException,
                     "Cannot evaluate threshold '" << operatorInformation.bound.get().threshold << "' as it contains undefined constants.");
     return storm::utility::convertNumber<storm::RationalFunction>(operatorInformation.bound.get().threshold.evaluateAsRational());
+}
+
+template<>
+storm::Interval OperatorFormula::getThresholdAs() const {
+    STORM_LOG_THROW(!operatorInformation.bound.get().threshold.containsVariables(), storm::exceptions::InvalidOperationException,
+                    "Cannot evaluate threshold '" << operatorInformation.bound.get().threshold << "' as it contains undefined constants.");
+    return storm::utility::convertNumber<storm::Interval>(operatorInformation.bound.get().threshold.evaluateAsRational());
+}
+
+template<>
+storm::RationalInterval OperatorFormula::getThresholdAs() const {
+    STORM_LOG_THROW(!operatorInformation.bound.get().threshold.containsVariables(), storm::exceptions::InvalidOperationException,
+                    "Cannot evaluate threshold '" << operatorInformation.bound.get().threshold << "' as it contains undefined constants.");
+    return storm::utility::convertNumber<storm::RationalInterval>(operatorInformation.bound.get().threshold.evaluateAsRational());
 }
 
 void OperatorFormula::setThreshold(storm::expressions::Expression const& newThreshold) {

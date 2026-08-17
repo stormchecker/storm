@@ -24,12 +24,14 @@
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 namespace {
 
 enum class CtmcEngine { PrismSparse, JaniSparse, JaniHybrid };
 
+#ifdef STORM_HAVE_GMM
 class GBSparseGmmxxGmresIluEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // unused for sparse models
@@ -79,6 +81,13 @@ class GBJaniHybridCuddGmmxxGmresEnvironment {
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::symbolic::Ctmc<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
@@ -100,6 +109,13 @@ class GBJaniHybridSylvanGmmxxGmresEnvironment {
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::symbolic::Ctmc<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_SYLVAN
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
@@ -113,6 +129,7 @@ class GBJaniHybridSylvanGmmxxGmresEnvironment {
         return env;
     }
 };
+#endif
 
 class GBSparseEigenDGmresEnvironment {
    public:
@@ -165,6 +182,7 @@ class GBSparseNativeSorEnvironment {
     }
 };
 
+#ifdef STORM_HAVE_GMM
 class DistrSparseGmmxxGmresIluEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // unused for sparse models
@@ -185,6 +203,7 @@ class DistrSparseGmmxxGmresIluEnvironment {
         return env;
     }
 };
+#endif
 
 class DistrSparseEigenDoubleLUEnvironment {
    public:
@@ -245,6 +264,9 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
 #ifndef STORM_HAVE_Z3
         GTEST_SKIP() << "Z3 not available.";
 #endif
+        if constexpr (TestType::engine == CtmcEngine::JaniHybrid) {
+            TestType::checkLibraryAvailable();
+        }
     }
 
     storm::Environment const& env() const {
@@ -272,7 +294,7 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
     buildModelFormulas(std::string const& pathToPrismFile, std::string const& formulasAsString, std::string const& constantDefinitionString = "") const {
         std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
         storm::prism::Program program = storm::api::parseProgram(pathToPrismFile, true);
-        program = storm::utility::prism::preprocess(program, constantDefinitionString);
+        program = program.preprocess(constantDefinitionString);
         if (TestType::engine == CtmcEngine::PrismSparse) {
             result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
@@ -291,12 +313,12 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
     buildModelFormulas(std::string const& pathToPrismFile, std::string const& formulasAsString, std::string const& constantDefinitionString = "") const {
         std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
         storm::prism::Program program = storm::api::parseProgram(pathToPrismFile, true);
-        program = storm::utility::prism::preprocess(program, constantDefinitionString);
+        program = program.preprocess(constantDefinitionString);
         if (TestType::engine == CtmcEngine::JaniHybrid) {
             auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             janiData.first.substituteFunctions();
             result.second = storm::api::extractFormulasFromProperties(janiData.second);
-            result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(janiData.first, result.second)->template as<MT>();
+            result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(this->env(), janiData.first, result.second)->template as<MT>();
         }
         return result;
     }
@@ -328,6 +350,18 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
         return nullptr;
     }
 
+    template<typename MT = typename TestType::ModelType>
+    typename std::enable_if<std::is_same<MT, SparseModelType>::value, void>::type execute(std::shared_ptr<MT> const& model,
+                                                                                          std::function<void()> const& f) const {
+        f();
+    }
+
+    template<typename MT = typename TestType::ModelType>
+    typename std::enable_if<std::is_same<MT, SymbolicModelType>::value, void>::type execute(std::shared_ptr<MT> const& model,
+                                                                                            std::function<void()> const& f) const {
+        model->getManager().execute(f);
+    }
+
     bool getQualitativeResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
                                             std::unique_ptr<storm::modelchecker::CheckResult>& result) {
         auto filter = getInitialStateFilter(model);
@@ -347,7 +381,7 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
 
     std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(std::shared_ptr<storm::models::Model<ValueType>> const& model) const {
         if (isSparseModel()) {
-            return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(model->template as<SparseModelType>()->getInitialStates());
+            return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>>(model->template as<SparseModelType>()->getInitialStates());
         } else {
             return std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<TestType::ddType>>(
                 model->template as<SymbolicModelType>()->getReachableStates(), model->template as<SymbolicModelType>()->getInitialStates());
@@ -355,10 +389,13 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
     }
 };
 
-typedef ::testing::Types<GBSparseGmmxxGmresIluEnvironment, GBJaniSparseGmmxxGmresIluEnvironment, GBJaniHybridCuddGmmxxGmresEnvironment,
-                         GBJaniHybridSylvanGmmxxGmresEnvironment, GBSparseEigenDGmresEnvironment, GBSparseEigenDoubleLUEnvironment,
-                         GBSparseNativeSorEnvironment, DistrSparseGmmxxGmresIluEnvironment, DistrSparseEigenDoubleLUEnvironment,
-                         ValueIterationSparseEnvironment, SoundEnvironment>
+typedef ::testing::Types<
+#ifdef STORM_HAVE_GMM
+    GBSparseGmmxxGmresIluEnvironment, GBJaniSparseGmmxxGmresIluEnvironment, GBJaniHybridCuddGmmxxGmresEnvironment, GBJaniHybridSylvanGmmxxGmresEnvironment,
+    DistrSparseGmmxxGmresIluEnvironment,
+#endif
+    GBSparseEigenDGmresEnvironment, GBSparseEigenDoubleLUEnvironment, GBSparseNativeSorEnvironment, DistrSparseEigenDoubleLUEnvironment,
+    ValueIterationSparseEnvironment, SoundEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(LraCtmcCslModelCheckerTest, TestingTypes, );
@@ -369,14 +406,16 @@ TYPED_TEST(LraCtmcCslModelCheckerTest, Cluster) {
     auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", formulasString);
     auto model = std::move(modelFormulas.first);
     auto tasks = this->getTasks(modelFormulas.second);
-    EXPECT_EQ(276ul, model->getNumberOfStates());
-    EXPECT_EQ(1120ul, model->getNumberOfTransitions());
-    ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
-    auto checker = this->createModelChecker(model);
-    std::unique_ptr<storm::modelchecker::CheckResult> result;
+    this->execute(model, [&]() {
+        EXPECT_EQ(276ul, model->getNumberOfStates());
+        EXPECT_EQ(1120ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-    result = checker->check(this->env(), tasks[0]);
-    EXPECT_NEAR(this->parseNumber("0.99999766034263426"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("0.99999766034263426"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    });
 }
 
 TYPED_TEST(LraCtmcCslModelCheckerTest, Embedded) {
@@ -385,14 +424,16 @@ TYPED_TEST(LraCtmcCslModelCheckerTest, Embedded) {
     auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", formulasString);
     auto model = std::move(modelFormulas.first);
     auto tasks = this->getTasks(modelFormulas.second);
-    EXPECT_EQ(3478ul, model->getNumberOfStates());
-    EXPECT_EQ(14639ul, model->getNumberOfTransitions());
-    ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
-    auto checker = this->createModelChecker(model);
-    std::unique_ptr<storm::modelchecker::CheckResult> result;
+    this->execute(model, [&]() {
+        EXPECT_EQ(3478ul, model->getNumberOfStates());
+        EXPECT_EQ(14639ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-    result = checker->check(this->env(), tasks[0]);
-    EXPECT_NEAR(this->parseNumber("6201111489217/6635130141055"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("6201111489217/6635130141055"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    });
 }
 
 TYPED_TEST(LraCtmcCslModelCheckerTest, Polling) {
@@ -401,14 +442,16 @@ TYPED_TEST(LraCtmcCslModelCheckerTest, Polling) {
     auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm", formulasString);
     auto model = std::move(modelFormulas.first);
     auto tasks = this->getTasks(modelFormulas.second);
-    EXPECT_EQ(12ul, model->getNumberOfStates());
-    EXPECT_EQ(22ul, model->getNumberOfTransitions());
-    ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
-    auto checker = this->createModelChecker(model);
-    std::unique_ptr<storm::modelchecker::CheckResult> result;
+    this->execute(model, [&]() {
+        EXPECT_EQ(12ul, model->getNumberOfStates());
+        EXPECT_EQ(22ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-    result = checker->check(this->env(), tasks[0]);
-    EXPECT_NEAR(this->parseNumber("0.20079750055570736"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("0.20079750055570736"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    });
 }
 
 TYPED_TEST(LraCtmcCslModelCheckerTest, Tandem) {
@@ -417,14 +460,16 @@ TYPED_TEST(LraCtmcCslModelCheckerTest, Tandem) {
     auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm", formulasString);
     auto model = std::move(modelFormulas.first);
     auto tasks = this->getTasks(modelFormulas.second);
-    EXPECT_EQ(66ul, model->getNumberOfStates());
-    EXPECT_EQ(189ul, model->getNumberOfTransitions());
-    ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
-    auto checker = this->createModelChecker(model);
-    std::unique_ptr<storm::modelchecker::CheckResult> result;
+    this->execute(model, [&]() {
+        EXPECT_EQ(66ul, model->getNumberOfStates());
+        EXPECT_EQ(189ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-    result = checker->check(this->env(), tasks[0]);
-    EXPECT_NEAR(this->parseNumber("0.9100373532"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("0.9100373532"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    });
 }
 
 TYPED_TEST(LraCtmcCslModelCheckerTest, Rewards) {
@@ -433,14 +478,16 @@ TYPED_TEST(LraCtmcCslModelCheckerTest, Rewards) {
     auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/lrarewards.sm", formulasString);
     auto model = std::move(modelFormulas.first);
     auto tasks = this->getTasks(modelFormulas.second);
-    EXPECT_EQ(4ul, model->getNumberOfStates());
-    EXPECT_EQ(6ul, model->getNumberOfTransitions());
-    ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
-    auto checker = this->createModelChecker(model);
-    std::unique_ptr<storm::modelchecker::CheckResult> result;
+    this->execute(model, [&]() {
+        EXPECT_EQ(4ul, model->getNumberOfStates());
+        EXPECT_EQ(6ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-    result = checker->check(this->env(), tasks[0]);
-    EXPECT_NEAR(this->parseNumber("11/15"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("11/15"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    });
 }
 
 TYPED_TEST(LraCtmcCslModelCheckerTest, kanban) {
@@ -449,18 +496,21 @@ TYPED_TEST(LraCtmcCslModelCheckerTest, kanban) {
     auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/kanban.prism", formulasString);
     auto model = std::move(modelFormulas.first);
     auto tasks = this->getTasks(modelFormulas.second);
-    EXPECT_EQ(160ul, model->getNumberOfStates());
-    EXPECT_EQ(616ul, model->getNumberOfTransitions());
-    ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
-    auto checker = this->createModelChecker(model);
-    std::unique_ptr<storm::modelchecker::CheckResult> result;
+    this->execute(model, [&]() {
+        EXPECT_EQ(160ul, model->getNumberOfStates());
+        EXPECT_EQ(616ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-    result = checker->check(this->env(), tasks[0]);
-    EXPECT_NEAR(this->parseNumber("1132372552133951639536770152429724263999896896549676426094918302160613340902023133969841067385167041200690481843915870926707"
-                                  "11590526535239899047608853509681914074220789038015289373871985431257486278/"
-                                  "1223067474012215838745994023624181143448435715858923491568712969277184634645504346456117443333632535902774869182827010789201"
-                                  "972713368729205674432492059242349591780604188152950845769793378621446766887"),
-                this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(
+            this->parseNumber("1132372552133951639536770152429724263999896896549676426094918302160613340902023133969841067385167041200690481843915870926707"
+                              "11590526535239899047608853509681914074220789038015289373871985431257486278/"
+                              "1223067474012215838745994023624181143448435715858923491568712969277184634645504346456117443333632535902774869182827010789201"
+                              "972713368729205674432492059242349591780604188152950845769793378621446766887"),
+            this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    });
 }
 
 }  // namespace

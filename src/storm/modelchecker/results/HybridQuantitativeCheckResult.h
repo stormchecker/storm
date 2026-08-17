@@ -1,12 +1,10 @@
-#ifndef STORM_MODELCHECKER_HYBRIDQUANTITATIVECHECKRESULT_H_
-#define STORM_MODELCHECKER_HYBRIDQUANTITATIVECHECKRESULT_H_
+#pragma once
 
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/Odd.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace modelchecker {
@@ -20,10 +18,8 @@ class HybridQuantitativeCheckResult : public QuantitativeCheckResult<ValueType> 
 
     HybridQuantitativeCheckResult(HybridQuantitativeCheckResult const& other) = default;
     HybridQuantitativeCheckResult& operator=(HybridQuantitativeCheckResult const& other) = default;
-#ifndef WINDOWS
     HybridQuantitativeCheckResult(HybridQuantitativeCheckResult&& other) = default;
     HybridQuantitativeCheckResult& operator=(HybridQuantitativeCheckResult&& other) = default;
-#endif
 
     virtual std::unique_ptr<CheckResult> clone() const override;
 
@@ -61,6 +57,10 @@ class HybridQuantitativeCheckResult : public QuantitativeCheckResult<ValueType> 
     virtual void oneMinus() override;
 
    private:
+    bool hasValueType(std::type_info const& t) const override {
+        return t == typeid(ValueType);
+    }
+
     // The set of all reachable states.
     storm::dd::Bdd<Type> reachableStates;
 
@@ -81,5 +81,3 @@ class HybridQuantitativeCheckResult : public QuantitativeCheckResult<ValueType> 
 };
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_HYBRIDQUANTITATIVECHECKRESULT_H_ */

@@ -1,6 +1,4 @@
-// #ifndef STORM_BUILDER_EXPLICITGSPNMODELBUILDER_H_
-// #define STORM_BUILDER_EXPLICITGSPNMODELBUILDER_H_
-//
+// #pragma once
 // #include <string>
 //
 // #include "storm/models/sparse/MarkovAutomaton.h"
@@ -172,4 +170,3 @@
 //     }
 // }
 //
-// #endif //STORM_BUILDER_EXPLICITGSPNMODELBUILDER_H_

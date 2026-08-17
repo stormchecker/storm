@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_CLONEVISITOR_H_
-#define STORM_LOGIC_CLONEVISITOR_H_
+#pragma once
 
 #include <memory>
 
@@ -37,9 +36,9 @@ class CloneVisitor : public FormulaVisitor {
     virtual boost::any visit(UnaryBooleanPathFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(UntilFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(HOAPathFormula const& f, boost::any const& data) const override;
+    virtual boost::any visit(DiscountedCumulativeRewardFormula const& f, boost::any const& data) const override;
+    virtual boost::any visit(DiscountedTotalRewardFormula const& f, boost::any const& data) const override;
 };
 
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_CLONEVISITOR_H_ */

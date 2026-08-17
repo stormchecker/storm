@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm/storage/expressions/BinaryBooleanFunctionExpression.h"
 #include "storm/storage/expressions/BinaryNumericalFunctionExpression.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"

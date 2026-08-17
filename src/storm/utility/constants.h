@@ -1,5 +1,4 @@
-#ifndef STORM_UTILITY_CONSTANTS_H_
-#define STORM_UTILITY_CONSTANTS_H_
+#pragma once
 
 #ifdef max
 #undef max
@@ -79,6 +78,21 @@ ValueType zero();
 
 template<typename ValueType>
 ValueType infinity();
+
+template<typename ValueType>
+bool isApproxEqual(ValueType const& a, ValueType const& b, ValueType const& precision, bool relative);
+
+template<typename ValueType>
+bool isPositive(ValueType const& a);
+
+template<typename ValueType>
+bool isNonNegative(ValueType const& a);
+
+/*!
+ * Check whether a <= b <= c holds (if not strict, the default) or a < b < c (if strict).
+ */
+template<typename ValueType>
+bool isBetween(ValueType const& a, ValueType const& b, ValueType const& c, bool strict = false);
 
 template<typename ValueType>
 bool isOne(ValueType const& a);
@@ -174,6 +188,15 @@ template<typename ValueType>
 ValueType sin(ValueType const& number);
 
 template<typename ValueType>
+uint64_t numDigits(ValueType const& number);
+
+/*!
+ * Returns the minimum number of bits to represent the given number. Ignores sign, i.e. number and -number have the same size.
+ */
+template<typename ValueType>
+uint64_t bitsize(ValueType const& number);
+
+template<typename ValueType>
 typename NumberTraits<ValueType>::IntegerType trunc(ValueType const& number);
 
 template<typename RationalType>
@@ -195,5 +218,3 @@ template<typename ValueType>
 std::string to_string(ValueType const& value);
 }  // namespace utility
 }  // namespace storm
-
-#endif /* STORM_UTILITY_CONSTANTS_H_ */

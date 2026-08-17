@@ -1,15 +1,12 @@
 #include "storm/solver/SolveGoal.h"
 
-#include <memory>
-
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/modelchecker/CheckTask.h"
-
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/utility/solver.h"
 
 namespace storm {
 namespace storage {
@@ -90,6 +87,7 @@ bool SolveGoal<ValueType, SolutionType>::minimize() const {
 
 template<typename ValueType, typename SolutionType>
 OptimizationDirection SolveGoal<ValueType, SolutionType>::direction() const {
+    STORM_LOG_THROW(optimizationDirection.has_value(), storm::exceptions::InvalidPropertyException, "Optimization direction not set.");
     return optimizationDirection.get();
 }
 
@@ -109,8 +107,13 @@ bool SolveGoal<ValueType, SolutionType>::boundIsStrict() const {
 }
 
 template<typename ValueType, typename SolutionType>
-bool SolveGoal<ValueType, SolutionType>::isRobust() const {
-    return robustAgainstUncertainty;
+UncertaintyResolutionMode SolveGoal<ValueType, SolutionType>::getUncertaintyResolutionMode() const {
+    return uncertaintyResolutionMode;
+}
+
+template<typename ValueType, typename SolutionType>
+storm::logic::ComparisonType SolveGoal<ValueType, SolutionType>::boundComparisonType() const {
+    return comparisonType.get();
 }
 
 template<typename ValueType, typename SolutionType>
@@ -149,6 +152,7 @@ template class SolveGoal<double>;
 template class SolveGoal<storm::RationalNumber>;
 template class SolveGoal<storm::RationalFunction>;
 template class SolveGoal<storm::Interval, double>;
+template class SolveGoal<storm::RationalInterval, storm::RationalNumber>;
 
 }  // namespace solver
 }  // namespace storm

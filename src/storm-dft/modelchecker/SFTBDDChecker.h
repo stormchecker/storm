@@ -10,7 +10,7 @@
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
-#include "storm/storage/PairHash.h"
+#include "storm/environment/Environment.h"
 
 namespace storm::dft {
 namespace modelchecker {
@@ -22,27 +22,28 @@ namespace modelchecker {
 class SFTBDDChecker {
    public:
     using ValueType = double;
+#ifdef STORM_HAVE_SYLVAN
     using Bdd = sylvan::Bdd;
+#endif
 
-    SFTBDDChecker(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft,
-                  std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::dft::storage::SylvanBddManager>());
+    SFTBDDChecker(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft, std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager);
 
     SFTBDDChecker(std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> transformator);
 
     /**
      * \return The internal DFT
      */
-    std::shared_ptr<storm::dft::storage::DFT<ValueType>> getDFT() const noexcept;
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> getDFT() const;
 
     /**
      * \return The internal sylvanBddManager
      */
-    std::shared_ptr<storm::dft::storage::SylvanBddManager> getSylvanBddManager() const noexcept;
+    std::shared_ptr<storm::dft::storage::SylvanBddManager> getSylvanBddManager() const;
 
     /**
      * \return The internal SftToBddTransformator
      */
-    std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> getTransformator() const noexcept;
+    std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> getTransformator() const;
 
     /**
      * Exports the Bdd that represents the top level event to a file
@@ -52,7 +53,13 @@ class SFTBDDChecker {
      * The name of the file the dot graph is written to
      */
     void exportBddToDot(std::string const &filename) {
+#ifdef STORM_HAVE_SYLVAN
         getSylvanBddManager()->exportBddToDot(getTopLevelElementBdd(), filename);
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
     /**
@@ -75,9 +82,16 @@ class SFTBDDChecker {
      * The Probability that the top level event fails.
      */
     ValueType getProbabilityAtTimebound(ValueType timebound) {
+#ifdef STORM_HAVE_SYLVAN
         return getProbabilityAtTimebound(getTopLevelElementBdd(), timebound);
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
+#ifdef STORM_HAVE_SYLVAN
     /**
      * \return
      * The Probabilities that the given Event fails at the given timebound.
@@ -87,6 +101,7 @@ class SFTBDDChecker {
      * Must be from a call to some function of *this.
      */
     ValueType getProbabilityAtTimebound(Bdd bdd, ValueType timebound) const;
+#endif
 
     /**
      * \return
@@ -100,9 +115,16 @@ class SFTBDDChecker {
      * A value of 0 represents to calculate the whole array at once.
      */
     std::vector<ValueType> getProbabilitiesAtTimepoints(std::vector<ValueType> const &timepoints, size_t const chunksize = 0) {
+#ifdef STORM_HAVE_SYLVAN
         return getProbabilitiesAtTimepoints(getTopLevelElementBdd(), timepoints, chunksize);
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
+#ifdef STORM_HAVE_SYLVAN
     /**
      * \return
      * The Probabilities that the given Event fails at the given timepoints.
@@ -119,6 +141,7 @@ class SFTBDDChecker {
      * A value of 0 represents to calculate the whole array at once.
      */
     std::vector<ValueType> getProbabilitiesAtTimepoints(Bdd bdd, std::vector<ValueType> const &timepoints, size_t chunksize = 0) const;
+#endif
 
     /**
      * \return
@@ -341,6 +364,7 @@ class SFTBDDChecker {
     std::vector<std::vector<ValueType>> getAllRRWsAtTimepoints(std::vector<ValueType> const &timepoints, size_t chunksize = 0);
 
    private:
+#ifdef STORM_HAVE_SYLVAN
     /**
      * Recursively traverses the given BDD and returns the minimalCutSets.
      *
@@ -380,6 +404,7 @@ class SFTBDDChecker {
     Bdd getTopLevelElementBdd();
 
     std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> transformator;
+#endif
 };
 
 }  // namespace modelchecker

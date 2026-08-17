@@ -1,54 +1,37 @@
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
-#include <boost/container/flat_map.hpp>
-
-#include "storm/modelchecker/prctl/helper/SemanticSolutionType.h"
-
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/io/export.h"
+#include "storm/modelchecker/helper/DiscountingHelper.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
+#include "storm/modelchecker/prctl/helper/SemanticSolutionType.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpEndComponentInformation.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-
 #include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-
-#include "storm/utility/graph.h"
-#include "storm/utility/macros.h"
-#include "storm/utility/vector.h"
-
-#include "storm/storage/Scheduler.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
-
-#include "storm/solver/LpSolver.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/solver/multiplier/Multiplier.h"
-
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
-
-#include "storm/io/export.h"
-#include "storm/utility/NumberTraits.h"
+#include "storm/solver/LpSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/multiplier/Multiplier.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/Scheduler.h"
+#include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
-
-#include "storm/transformer/EndComponentEliminator.h"
-
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-
-#include "storm/exceptions/IllegalArgumentException.h"
-#include "storm/exceptions/IllegalFunctionCallException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/utility/graph.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace modelchecker {
@@ -58,7 +41,7 @@ template<typename ValueType, typename SolutionType>
 std::map<storm::storage::sparse::state_type, SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeRewardBoundedValues(
     Environment const& env, OptimizationDirection dir, rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding,
     storm::storage::BitVector const& initialStates) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support computing reward bounded values with interval models.");
     } else {
         storm::utility::Stopwatch swAll(true), swBuild, swCheck;
@@ -125,20 +108,18 @@ std::map<storm::storage::sparse::state_type, SolutionType> SparseMdpPrctlHelper<
                 headers.push_back(rewardUnfolding.getDimension(i).formula->toString());
             }
             headers.push_back("Result");
-            storm::utility::exportDataToCSVFile<ValueType, std::string, std::string>(
+            storm::io::exportDataToCSVFile<ValueType, std::string, std::string>(
                 storm::settings::getModule<storm::settings::modules::IOSettings>().getExportCdfDirectory() + "cdf.csv", cdfData, headers);
         }
 
-        if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-            STORM_PRINT_AND_LOG("---------------------------------\n");
-            STORM_PRINT_AND_LOG("Statistics:\n");
-            STORM_PRINT_AND_LOG("---------------------------------\n");
-            STORM_PRINT_AND_LOG("          #checked epochs: " << epochOrder.size() << ".\n");
-            STORM_PRINT_AND_LOG("             overall Time: " << swAll << ".\n");
-            STORM_PRINT_AND_LOG("Epoch Model building Time: " << swBuild << ".\n");
-            STORM_PRINT_AND_LOG("Epoch Model checking Time: " << swCheck << ".\n");
-            STORM_PRINT_AND_LOG("---------------------------------\n");
-        }
+        STORM_LOG_STATISTICS("---------------------------------\n");
+        STORM_LOG_STATISTICS("Statistics:\n");
+        STORM_LOG_STATISTICS("---------------------------------\n");
+        STORM_LOG_STATISTICS("          #checked epochs: " << epochOrder.size() << ".\n");
+        STORM_LOG_STATISTICS("             overall Time: " << swAll << ".\n");
+        STORM_LOG_STATISTICS("Epoch Model building Time: " << swBuild << ".\n");
+        STORM_LOG_STATISTICS("Epoch Model checking Time: " << swCheck << ".\n");
+        STORM_LOG_STATISTICS("---------------------------------\n");
 
         return result;
     }
@@ -146,20 +127,16 @@ std::map<storm::storage::sparse::state_type, SolutionType> SparseMdpPrctlHelper<
 
 template<typename ValueType, typename SolutionType>
 std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeNextProbabilities(
-    Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-    storm::storage::BitVector const& nextStates) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support next probabilities with reward models.");
-    } else {
-        // Create the vector with which to multiply and initialize it correctly.
-        std::vector<ValueType> result(transitionMatrix.getRowGroupCount());
-        storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
+    Environment const& env, OptimizationDirection dir, UncertaintyResolutionMode uncertaintyResolutionMode,
+    storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates) {
+    // Create the vector with which to multiply and initialize it correctly.
+    std::vector<SolutionType> result(transitionMatrix.getRowGroupCount());
+    storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<SolutionType>());
 
-        auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
-        multiplier->multiplyAndReduce(env, dir, result, nullptr, result);
+    auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, transitionMatrix);
+    multiplier->multiplyAndReduce(env, dir, result, nullptr, result, uncertaintyResolutionMode);
 
-        return result;
-    }
+    return result;
 }
 
 template<typename ValueType, typename SolutionType = ValueType>
@@ -464,7 +441,7 @@ MaybeStateResult<SolutionType> computeValuesForMaybeStates(Environment const& en
     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver =
         storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
     solver->setRequirementsChecked();
-    solver->setUncertaintyIsRobust(goal.isRobust());
+    solver->setUncertaintyResolutionMode(goal.getUncertaintyResolutionMode());
     solver->setHasUniqueSolution(hint.hasUniqueSolution());
     solver->setHasNoEndComponents(hint.hasNoEndComponents());
     if (hint.hasLowerResultBound()) {
@@ -487,12 +464,19 @@ MaybeStateResult<SolutionType> computeValuesForMaybeStates(Environment const& en
 #ifndef NDEBUG
     // As a sanity check, make sure our local upper bounds were in fact correct.
     if (solver->hasUpperBound(storm::solver::AbstractEquationSolver<SolutionType>::BoundType::Local)) {
-        auto resultIt = x.begin();
-        for (auto const& entry : solver->getUpperBounds()) {
-            STORM_LOG_ASSERT(
-                *resultIt <= entry + storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()),
-                "Expecting result value for state " << std::distance(x.begin(), resultIt) << " to be <= " << entry << ", but got " << *resultIt << ".");
-            ++resultIt;
+        uint64_t relevantState = solver->hasRelevantValues() ? solver->getRelevantValues().getNextSetIndex(0ull) : 0ull;
+        std::function<void()> getNextRelevantStateIndex;
+        if (solver->hasRelevantValues()) {
+            storm::storage::BitVector const& relevantValues = solver->getRelevantValues();
+            getNextRelevantStateIndex = [&relevantState, &relevantValues]() { relevantState = relevantValues.getNextSetIndex(++relevantState); };
+        } else {
+            getNextRelevantStateIndex = [&relevantState]() { ++relevantState; };
+        }
+        for (; relevantState < solver->getUpperBounds().size(); getNextRelevantStateIndex()) {
+            STORM_LOG_ASSERT(x.at(relevantState) <=
+                                 solver->getUpperBounds().at(relevantState) + storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()),
+                             "Expecting result value for state " << relevantState << " to be <= " << solver->getUpperBounds().at(relevantState) << ", but got "
+                                                                 << x.at(relevantState) << ".");
         }
     }
 #endif
@@ -528,7 +512,7 @@ QualitativeStateSetsUntilProbabilities getQualitativeStateSetsUntilProbabilities
             result.statesWithProbability1.set(state, true);
         } else {
             STORM_LOG_THROW(storm::utility::isZero(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException,
-                            "Expected that the result hint specifies probabilities in {0,1} for non-maybe states");
+                            "Expected that the result hint specifies probabilities in {0,1} for non-maybe states.");
             result.statesWithProbability0.set(state, true);
         }
     }
@@ -582,7 +566,7 @@ void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler,
             scheduler.setChoice(*subChoiceIt, maybeState);
             ++subChoiceIt;
         }
-        assert(subChoiceIt == subChoices.end());
+        STORM_LOG_ASSERT(subChoiceIt == subChoices.end(), "Subchoice iterator not at end.");
     } else {
         // See computeFixedPointSystemUntilProbabilities, where we create a different equation system.
         // Consequentially, we run a slightly different code here for interval-based models.
@@ -620,7 +604,7 @@ void computeFixedPointSystemUntilProbabilities(storm::solver::SolveGoal<ValueTyp
                                                storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                QualitativeStateSetsUntilProbabilities const& qualitativeStateSets,
                                                storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         // For non-interval based models, we can eliminate the rows and columns from the original transition probability matrix for states
         // whose probabilities are already known... However, there is information in the transition to those states.
         // Thus, we cannot eliminate them all.
@@ -765,7 +749,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
             // If we eliminated end components, we need to extract the result differently.
             if (ecInformation && ecInformation.get().getEliminatedEndComponents()) {
-                if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+                if constexpr (storm::IsIntervalType<ValueType>) {
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support this end component with interval models.");
                 } else {
                     ecInformation.get().setValues(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
@@ -776,17 +760,17 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                 }
             } else {
                 // Set values of resulting vector according to result.
-                if constexpr (!std::is_same_v<ValueType, storm::Interval>) {
+                if constexpr (!storm::IsIntervalType<ValueType>) {
                     // For non-interval models, we only operated on the maybe states, and we must recover the qualitative values for the other state.
                     storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                 } else {
                     // For interval models, the result for maybe states indeed also holds values for all qualitative states.
-                    STORM_LOG_ASSERT(resultForMaybeStates.getValues().size() == transitionMatrix.getColumnCount(), "Dimensions do not match");
+                    STORM_LOG_ASSERT(resultForMaybeStates.getValues().size() == transitionMatrix.getColumnCount(), "Dimensions do not match.");
                     result = resultForMaybeStates.getValues();
                 }
                 if (produceScheduler) {
-                    extractSchedulerChoices<SolutionType, !std::is_same_v<ValueType, storm::Interval>>(*scheduler, resultForMaybeStates.getScheduler(),
-                                                                                                       qualitativeStateSets.maybeStates);
+                    extractSchedulerChoices<SolutionType, !storm::IsIntervalType<ValueType>>(*scheduler, resultForMaybeStates.getScheduler(),
+                                                                                             qualitativeStateSets.maybeStates);
                 }
             }
         }
@@ -799,9 +783,9 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
     // Sanity check for created scheduler.
     STORM_LOG_ASSERT(!produceScheduler || scheduler, "Expected that a scheduler was obtained.");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
 
     // Return result.
     return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(result), std::move(scheduler));
@@ -841,7 +825,7 @@ template<typename RewardModelType>
 std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeInstantaneousRewards(
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     RewardModelType const& rewardModel, uint_fast64_t stepCount) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support instantenous rewards with interval models.");
     } else {
         // Only compute the result if the model has a state-based reward this->getModel().
@@ -851,7 +835,7 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
         std::vector<SolutionType> result(rewardModel.getStateRewardVector());
 
         auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
-        multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, nullptr, stepCount);
+        multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, nullptr, stepCount, goal.getUncertaintyResolutionMode());
 
         return result;
     }
@@ -862,7 +846,7 @@ template<typename RewardModelType>
 std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeCumulativeRewards(
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     RewardModelType const& rewardModel, uint_fast64_t stepBound) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support cumulative rewards with interval models.");
     } else {
         // Only compute the result if the model has at least one reward this->getModel().
@@ -875,7 +859,7 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
         std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
 
         auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
-        multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, &totalRewardVector, stepBound);
+        multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, &totalRewardVector, stepBound, goal.getUncertaintyResolutionMode());
 
         return result;
     }
@@ -887,6 +871,8 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, bool qualitative, bool produceScheduler,
     ModelCheckerHint const& hint) {
+    STORM_LOG_THROW(!rewardModel.hasNegativeRewards(), storm::exceptions::NotImplementedException,
+                    "The reward model contains negative rewards. This is not implemented by the total rewards computation.");
     // Reduce to reachability rewards
     if (goal.minimize()) {
         // Identify the states from which no reward can be collected under some scheduler
@@ -982,6 +968,56 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
 template<typename ValueType, typename SolutionType>
 template<typename RewardModelType>
+std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeDiscountedCumulativeRewards(
+    Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+    RewardModelType const& rewardModel, uint_fast64_t stepBound, ValueType discountFactor) {
+    // Only compute the result if the model has at least one reward this->getModel().
+    STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+
+    // Compute the reward vector to add in each step based on the available reward models.
+    std::vector<SolutionType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix);
+
+    // Initialize result to the zero vector.
+    std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+
+    auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
+    multiplier->repeatedMultiplyAndReduceWithFactor(env, goal.direction(), result, &totalRewardVector, stepBound, discountFactor,
+                                                    goal.getUncertaintyResolutionMode());
+
+    return result;
+}
+
+template<typename ValueType, typename SolutionType>
+template<typename RewardModelType>
+MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeDiscountedTotalRewards(
+    Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+    storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, bool qualitative, bool produceScheduler,
+    ValueType discountFactor, ModelCheckerHint const& hint) {
+    // If the solver is set to force exact results, throw an error
+    STORM_LOG_THROW(!env.solver().isForceExact(), storm::exceptions::NotSupportedException,
+                    "Exact solving of discounted total reward objectives is currently not supported.");
+
+    std::vector<ValueType> b;
+
+    std::vector<SolutionType> x = std::vector<SolutionType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
+    b = rewardModel.getTotalRewardVector(transitionMatrix);
+    storm::modelchecker::helper::DiscountingHelper<ValueType> discountingHelper(transitionMatrix, discountFactor, produceScheduler);
+
+    discountingHelper.solveWithDiscountedValueIteration(env, goal.direction(), x, b);
+
+    std::unique_ptr<storm::storage::Scheduler<SolutionType>> scheduler;
+    if (produceScheduler) {
+        scheduler = std::make_unique<storm::storage::Scheduler<ValueType>>(discountingHelper.computeScheduler());
+    }
+    STORM_LOG_ASSERT(!produceScheduler || scheduler, "Expected that a scheduler was obtained.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
+    return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(x), std::move(scheduler));
+}
+
+template<typename ValueType, typename SolutionType>
+template<typename RewardModelType>
 MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeReachabilityRewards(
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates,
@@ -990,8 +1026,8 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Reward model for formula is empty. Skipping formula.");
     return computeReachabilityRewardsHelper(
         env, std::move(goal), transitionMatrix, backwardTransitions,
-        [&rewardModel](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
-            return rewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
+        [&rewardModel](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transMatrix, storm::storage::BitVector const& maybeStates) {
+            return rewardModel.getTotalRewardVector(rowCount, transMatrix, maybeStates);
         },
         targetStates, qualitative, produceScheduler, [&]() { return rewardModel.getStatesWithZeroReward(transitionMatrix); },
         [&]() { return rewardModel.getChoicesWithZeroReward(transitionMatrix); }, hint);
@@ -1011,45 +1047,43 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
         [&]() { return storm::storage::BitVector(transitionMatrix.getRowCount(), false); }, hint);
 }
 
-#ifdef STORM_HAVE_CARL
 template<typename ValueType, typename SolutionType>
+template<typename IntervalRewardType>
 std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeReachabilityRewards(
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-    storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel,
-    bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative) {
+    storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+    storm::models::sparse::StandardRewardModel<IntervalRewardType> const& intervalRewardModel, bool lowerBoundOfIntervals,
+    storm::storage::BitVector const& targetStates, bool qualitative) {
     // Only compute the result if the reward model is not empty.
     STORM_LOG_THROW(!intervalRewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-    return computeReachabilityRewardsHelper(
-               env, std::move(goal), transitionMatrix, backwardTransitions,
-               [&](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
-                   std::vector<ValueType> result;
-                   result.reserve(rowCount);
-                   std::vector<storm::Interval> subIntervalVector = intervalRewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
-                   for (auto const& interval : subIntervalVector) {
-                       result.push_back(lowerBoundOfIntervals ? interval.lower() : interval.upper());
-                   }
-                   return result;
-               },
-               targetStates, qualitative, false,
-               [&]() {
-                   return intervalRewardModel.getStatesWithFilter(
-                       transitionMatrix, [&](storm::Interval const& i) { return storm::utility::isZero(lowerBoundOfIntervals ? i.lower() : i.upper()); });
-               },
-               [&]() {
-                   return intervalRewardModel.getChoicesWithFilter(
-                       transitionMatrix, [&](storm::Interval const& i) { return storm::utility::isZero(lowerBoundOfIntervals ? i.lower() : i.upper()); });
-               })
-        .values;
+    if constexpr (!std::is_same_v<IntervalBaseType<ValueType>, IntervalBaseType<IntervalRewardType>>) {
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support a valuetype and reward type having different base types.");
+    } else {
+        return computeReachabilityRewardsHelper(
+                   env, std::move(goal), transitionMatrix, backwardTransitions,
+                   [&](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                       std::vector<ValueType> result;
+                       result.reserve(rowCount);
+                       std::vector<IntervalRewardType> subIntervalVector = intervalRewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
+                       for (auto const& interval : subIntervalVector) {
+                           result.push_back(lowerBoundOfIntervals ? interval.lower() : interval.upper());
+                       }
+                       return result;
+                   },
+                   targetStates, qualitative, false,
+                   [&]() {
+                       return intervalRewardModel.getStatesWithFilter(transitionMatrix, [&](IntervalRewardType const& i) {
+                           return storm::utility::isZero(lowerBoundOfIntervals ? i.lower() : i.upper());
+                       });
+                   },
+                   [&]() {
+                       return intervalRewardModel.getChoicesWithFilter(transitionMatrix, [&](IntervalRewardType const& i) {
+                           return storm::utility::isZero(lowerBoundOfIntervals ? i.lower() : i.upper());
+                       });
+                   })
+            .values;
+    }
 }
-
-template<>
-std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeReachabilityRewards(
-    Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&&, storm::storage::SparseMatrix<storm::RationalNumber> const&,
-    storm::storage::SparseMatrix<storm::RationalNumber> const&, storm::models::sparse::StandardRewardModel<storm::Interval> const&, bool,
-    storm::storage::BitVector const&, bool) {
-    STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Computing reachability rewards is unsupported for this data type.");
-}
-#endif
 
 struct QualitativeStateSetsReachabilityRewards {
     storm::storage::BitVector maybeStates;
@@ -1073,7 +1107,7 @@ QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewar
             result.rewardZeroStates.set(state, true);
         } else {
             STORM_LOG_THROW(storm::utility::isInfinity(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException,
-                            "Expected that the result hint specifies probabilities in {0,infinity} for non-maybe states");
+                            "Expected that the result hint specifies probabilities in {0,infinity} for non-maybe states.");
             result.infinityStates.set(state, true);
         }
     }
@@ -1169,7 +1203,7 @@ void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler,
             ++subChoiceIt;
         }
     }
-    assert(subChoiceIt == subChoices.end());
+    STORM_LOG_ASSERT(subChoiceIt == subChoices.end(), "Subchoice iterator not at end.");
 }
 
 template<typename ValueType, typename SolutionType>
@@ -1291,7 +1325,7 @@ template<typename ValueType, typename SolutionType>
 void computeUpperRewardBounds(SparseMdpHintType<SolutionType>& hintInformation, storm::OptimizationDirection const& direction,
                               storm::storage::SparseMatrix<ValueType> const& submatrix, std::vector<ValueType> const& choiceRewards,
                               std::vector<ValueType> const& oneStepTargetProbabilities) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support computing upper reward bounds with interval models.");
     } else {
         // For the min-case, we use DS-MPI, for the max-case variant 2 of the Baier et al. paper (CAV'17).
@@ -1299,8 +1333,8 @@ void computeUpperRewardBounds(SparseMdpHintType<SolutionType>& hintInformation, 
             DsMpiMdpUpperRewardBoundsComputer<ValueType> dsmpi(submatrix, choiceRewards, oneStepTargetProbabilities);
             hintInformation.upperResultBounds = dsmpi.computeUpperBounds();
         } else {
-            BaierUpperRewardBoundsComputer<ValueType> baier(submatrix, choiceRewards, oneStepTargetProbabilities);
-            hintInformation.upperResultBound = baier.computeUpperBound();
+            BaierUpperRewardBoundsComputer<ValueType> baier(submatrix, oneStepTargetProbabilities);
+            hintInformation.upperResultBound = baier.computeTotalRewardBounds(choiceRewards).upper;
         }
     }
 }
@@ -1330,7 +1364,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     // If requested, we will produce a scheduler.
     std::unique_ptr<storm::storage::Scheduler<SolutionType>> scheduler;
     if (produceScheduler) {
-        if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support producing schedulers in this function with interval models.");
         } else {
             scheduler = std::make_unique<storm::storage::Scheduler<SolutionType>>(transitionMatrix.getRowGroupCount());
@@ -1375,7 +1409,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
             // If the hint information tells us that we have to eliminate MECs, we do so now.
             boost::optional<SparseMdpEndComponentInformation<ValueType>> ecInformation;
             if (hintInformation.getEliminateEndComponents()) {
-                if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+                if constexpr (storm::IsIntervalType<ValueType>) {
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support eliminating end components with interval models.");
                 } else {
                     ecInformation = computeFixedPointSystemReachabilityRewardsEliminateEndComponents(
@@ -1400,7 +1434,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
             // If we eliminated end components, we need to extract the result differently.
             if (ecInformation && ecInformation.get().getEliminatedEndComponents()) {
-                if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+                if constexpr (storm::IsIntervalType<ValueType>) {
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support eliminating end components with interval models.");
                 } else {
                     ecInformation.get().setValues(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
@@ -1427,187 +1461,14 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
     // Sanity check for created scheduler.
     STORM_LOG_ASSERT(!produceScheduler || scheduler, "Expected that a scheduler was obtained.");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
 
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(result));
     } else {
         return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(result), std::move(scheduler));
-    }
-}
-
-template<typename ValueType, typename SolutionType>
-std::unique_ptr<CheckResult> SparseMdpPrctlHelper<ValueType, SolutionType>::computeConditionalProbabilities(
-    Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-    storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates,
-    storm::storage::BitVector const& conditionStates) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support computing conditional probabilities with interval models.");
-    } else {
-        std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-
-        // For the max-case, we can simply take the given target states. For the min-case, however, we need to
-        // find the MECs of non-target states and make them the new target states.
-        storm::storage::BitVector fixedTargetStates;
-        if (!goal.minimize()) {
-            fixedTargetStates = targetStates;
-        } else {
-            fixedTargetStates = storm::storage::BitVector(targetStates.size());
-            storm::storage::MaximalEndComponentDecomposition<ValueType> mecDecomposition(transitionMatrix, backwardTransitions, ~targetStates);
-            for (auto const& mec : mecDecomposition) {
-                for (auto const& stateActionsPair : mec) {
-                    fixedTargetStates.set(stateActionsPair.first);
-                }
-            }
-        }
-
-        storm::storage::BitVector allStates(fixedTargetStates.size(), true);
-
-        // Extend the target states by computing all states that have probability 1 to go to a target state
-        // under *all* schedulers.
-        fixedTargetStates =
-            storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, fixedTargetStates);
-
-        // We solve the max-case and later adjust the result if the optimization direction was to minimize.
-        storm::storage::BitVector initialStatesBitVector = goal.relevantValues();
-        STORM_LOG_THROW(initialStatesBitVector.getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
-                        "Computing conditional probabilities in MDPs is only supported for models with exactly one initial state.");
-        storm::storage::sparse::state_type initialState = *initialStatesBitVector.begin();
-
-        // Extend the condition states by computing all states that have probability 1 to go to a condition state
-        // under *all* schedulers.
-        storm::storage::BitVector extendedConditionStates =
-            storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, conditionStates);
-
-        STORM_LOG_DEBUG("Computing probabilities to satisfy condition.");
-        std::chrono::high_resolution_clock::time_point conditionStart = std::chrono::high_resolution_clock::now();
-        std::vector<ValueType> conditionProbabilities =
-            std::move(computeUntilProbabilities(env, OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, extendedConditionStates,
-                                                false, false)
-                          .values);
-        std::chrono::high_resolution_clock::time_point conditionEnd = std::chrono::high_resolution_clock::now();
-        STORM_LOG_DEBUG("Computed probabilities to satisfy for condition in "
-                        << std::chrono::duration_cast<std::chrono::milliseconds>(conditionEnd - conditionStart).count() << "ms.");
-
-        // If the conditional probability is undefined for the initial state, we return directly.
-        if (storm::utility::isZero(conditionProbabilities[initialState])) {
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, storm::utility::infinity<ValueType>()));
-        }
-
-        STORM_LOG_DEBUG("Computing probabilities to reach target.");
-        std::chrono::high_resolution_clock::time_point targetStart = std::chrono::high_resolution_clock::now();
-        std::vector<ValueType> targetProbabilities = std::move(
-            computeUntilProbabilities(env, OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, fixedTargetStates, false, false)
-                .values);
-        std::chrono::high_resolution_clock::time_point targetEnd = std::chrono::high_resolution_clock::now();
-        STORM_LOG_DEBUG("Computed probabilities to reach target in " << std::chrono::duration_cast<std::chrono::milliseconds>(targetEnd - targetStart).count()
-                                                                     << "ms.");
-
-        storm::storage::BitVector statesWithProbabilityGreater0E(transitionMatrix.getRowGroupCount(), true);
-        storm::storage::sparse::state_type state = 0;
-        for (auto const& element : conditionProbabilities) {
-            if (storm::utility::isZero(element)) {
-                statesWithProbabilityGreater0E.set(state, false);
-            }
-            ++state;
-        }
-
-        // Determine those states that need to be equipped with a restart mechanism.
-        STORM_LOG_DEBUG("Computing problematic states.");
-        storm::storage::BitVector pureResetStates = storm::utility::graph::performProb0A(backwardTransitions, allStates, extendedConditionStates);
-        storm::storage::BitVector problematicStates = storm::utility::graph::performProb0E(
-            transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, extendedConditionStates | fixedTargetStates);
-
-        // Otherwise, we build the transformed MDP.
-        storm::storage::BitVector relevantStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStatesBitVector, allStates,
-                                                                                             extendedConditionStates | fixedTargetStates | pureResetStates);
-        STORM_LOG_TRACE("Found " << relevantStates.getNumberOfSetBits() << " relevant states for conditional probability computation.");
-        std::vector<uint_fast64_t> numberOfStatesBeforeRelevantStates = relevantStates.getNumberOfSetBitsBeforeIndices();
-        storm::storage::sparse::state_type newGoalState = relevantStates.getNumberOfSetBits();
-        storm::storage::sparse::state_type newStopState = newGoalState + 1;
-        storm::storage::sparse::state_type newFailState = newStopState + 1;
-
-        // Build the transitions of the (relevant) states of the original model.
-        storm::storage::SparseMatrixBuilder<ValueType> builder(0, newFailState + 1, 0, true, true);
-        uint_fast64_t currentRow = 0;
-        for (auto state : relevantStates) {
-            builder.newRowGroup(currentRow);
-            if (fixedTargetStates.get(state)) {
-                if (!storm::utility::isZero(conditionProbabilities[state])) {
-                    builder.addNextValue(currentRow, newGoalState, conditionProbabilities[state]);
-                }
-                if (!storm::utility::isOne(conditionProbabilities[state])) {
-                    builder.addNextValue(currentRow, newFailState, storm::utility::one<ValueType>() - conditionProbabilities[state]);
-                }
-                ++currentRow;
-            } else if (extendedConditionStates.get(state)) {
-                if (!storm::utility::isZero(targetProbabilities[state])) {
-                    builder.addNextValue(currentRow, newGoalState, targetProbabilities[state]);
-                }
-                if (!storm::utility::isOne(targetProbabilities[state])) {
-                    builder.addNextValue(currentRow, newStopState, storm::utility::one<ValueType>() - targetProbabilities[state]);
-                }
-                ++currentRow;
-            } else if (pureResetStates.get(state)) {
-                builder.addNextValue(currentRow, numberOfStatesBeforeRelevantStates[initialState], storm::utility::one<ValueType>());
-                ++currentRow;
-            } else {
-                for (uint_fast64_t row = transitionMatrix.getRowGroupIndices()[state]; row < transitionMatrix.getRowGroupIndices()[state + 1]; ++row) {
-                    for (auto const& successorEntry : transitionMatrix.getRow(row)) {
-                        builder.addNextValue(currentRow, numberOfStatesBeforeRelevantStates[successorEntry.getColumn()], successorEntry.getValue());
-                    }
-                    ++currentRow;
-                }
-                if (problematicStates.get(state)) {
-                    builder.addNextValue(currentRow, numberOfStatesBeforeRelevantStates[initialState], storm::utility::one<ValueType>());
-                    ++currentRow;
-                }
-            }
-        }
-
-        // Now build the transitions of the newly introduced states.
-        builder.newRowGroup(currentRow);
-        builder.addNextValue(currentRow, newGoalState, storm::utility::one<ValueType>());
-        ++currentRow;
-        builder.newRowGroup(currentRow);
-        builder.addNextValue(currentRow, newStopState, storm::utility::one<ValueType>());
-        ++currentRow;
-        builder.newRowGroup(currentRow);
-        builder.addNextValue(currentRow, numberOfStatesBeforeRelevantStates[initialState], storm::utility::one<ValueType>());
-        ++currentRow;
-
-        std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-        STORM_LOG_DEBUG("Computed transformed model in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
-
-        // Finally, build the matrix and dispatch the query as a reachability query.
-        STORM_LOG_DEBUG("Computing conditional probabilties.");
-        storm::storage::BitVector newGoalStates(newFailState + 1);
-        newGoalStates.set(newGoalState);
-        storm::storage::SparseMatrix<ValueType> newTransitionMatrix = builder.build();
-        STORM_LOG_DEBUG("Transformed model has " << newTransitionMatrix.getRowGroupCount() << " states and " << newTransitionMatrix.getNonzeroEntryCount()
-                                                 << " transitions.");
-        storm::storage::SparseMatrix<ValueType> newBackwardTransitions = newTransitionMatrix.transpose(true);
-
-        storm::solver::OptimizationDirection dir = goal.direction();
-        if (goal.minimize()) {
-            goal.oneMinus();
-        }
-
-        std::chrono::high_resolution_clock::time_point conditionalStart = std::chrono::high_resolution_clock::now();
-        std::vector<ValueType> goalProbabilities =
-            std::move(computeUntilProbabilities(env, std::move(goal), newTransitionMatrix, newBackwardTransitions,
-                                                storm::storage::BitVector(newFailState + 1, true), newGoalStates, false, false)
-                          .values);
-        std::chrono::high_resolution_clock::time_point conditionalEnd = std::chrono::high_resolution_clock::now();
-        STORM_LOG_DEBUG("Computed conditional probabilities in transformed model in "
-                        << std::chrono::duration_cast<std::chrono::milliseconds>(conditionalEnd - conditionalStart).count() << "ms.");
-
-        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(
-            initialState, dir == OptimizationDirection::Maximize
-                              ? goalProbabilities[numberOfStatesBeforeRelevantStates[initialState]]
-                              : storm::utility::one<ValueType>() - goalProbabilities[numberOfStatesBeforeRelevantStates[initialState]]));
     }
 }
 
@@ -1620,6 +1481,9 @@ template std::vector<double> SparseMdpPrctlHelper<double>::computeCumulativeRewa
                                                                                     storm::storage::SparseMatrix<double> const& transitionMatrix,
                                                                                     storm::models::sparse::StandardRewardModel<double> const& rewardModel,
                                                                                     uint_fast64_t stepBound);
+template std::vector<double> SparseMdpPrctlHelper<double>::computeDiscountedCumulativeRewards(
+    Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix,
+    storm::models::sparse::StandardRewardModel<double> const& rewardModel, uint_fast64_t stepBound, double discountFactor);
 template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<double>::computeReachabilityRewards(
     Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix,
     storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel,
@@ -1628,8 +1492,11 @@ template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<dou
     Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix,
     storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, bool qualitative,
     bool produceScheduler, ModelCheckerHint const& hint);
+template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<double>::computeDiscountedTotalRewards(
+    Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix,
+    storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, bool qualitative,
+    bool produceScheduler, double discountFactor, ModelCheckerHint const& hint);
 
-#ifdef STORM_HAVE_CARL
 template class SparseMdpPrctlHelper<storm::RationalNumber>;
 template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeInstantaneousRewards(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
@@ -1637,6 +1504,9 @@ template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::Rational
 template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeCumulativeRewards(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
     storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, uint_fast64_t stepBound);
+template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeDiscountedCumulativeRewards(
+    Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
+    storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, uint_fast64_t stepBound, storm::RationalNumber discountFactor);
 template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeReachabilityRewards(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions,
@@ -1647,7 +1517,11 @@ template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMdp
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions,
     storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, bool qualitative, bool produceScheduler,
     ModelCheckerHint const& hint);
-#endif
+template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeDiscountedTotalRewards(
+    Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
+    storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions,
+    storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, bool qualitative, bool produceScheduler,
+    storm::RationalNumber discountFactor, ModelCheckerHint const& hint);
 
 template class SparseMdpPrctlHelper<storm::Interval, double>;
 template std::vector<double> SparseMdpPrctlHelper<storm::Interval, double>::computeInstantaneousRewards(
@@ -1656,14 +1530,37 @@ template std::vector<double> SparseMdpPrctlHelper<storm::Interval, double>::comp
 template std::vector<double> SparseMdpPrctlHelper<storm::Interval, double>::computeCumulativeRewards(
     Environment const& env, storm::solver::SolveGoal<storm::Interval, double>&& goal, storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
     storm::models::sparse::StandardRewardModel<storm::Interval> const& rewardModel, uint_fast64_t stepBound);
-template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<storm::Interval, double>::computeReachabilityRewards(
+template std::vector<double> SparseMdpPrctlHelper<storm::Interval, double>::computeReachabilityRewards<storm::Interval>(
     Environment const& env, storm::solver::SolveGoal<storm::Interval, double>&& goal, storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
     storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::Interval> const& rewardModel,
-    storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, ModelCheckerHint const& hint);
+    bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative);
 template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<storm::Interval, double>::computeTotalRewards(
     Environment const& env, storm::solver::SolveGoal<storm::Interval, double>&& goal, storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
     storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::Interval> const& rewardModel,
     bool qualitative, bool produceScheduler, ModelCheckerHint const& hint);
+
+template class SparseMdpPrctlHelper<storm::RationalInterval, storm::RationalNumber>;
+template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalInterval, storm::RationalNumber>::computeInstantaneousRewards(
+    Environment const& env, storm::solver::SolveGoal<storm::RationalInterval, storm::RationalNumber>&& goal,
+    storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix,
+    storm::models::sparse::StandardRewardModel<storm::RationalInterval> const& rewardModel, uint_fast64_t stepCount);
+template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalInterval, storm::RationalNumber>::computeCumulativeRewards(
+    Environment const& env, storm::solver::SolveGoal<storm::RationalInterval, storm::RationalNumber>&& goal,
+    storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix,
+    storm::models::sparse::StandardRewardModel<storm::RationalInterval> const& rewardModel, uint_fast64_t stepBound);
+template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalInterval, storm::RationalNumber>::computeReachabilityRewards<
+    storm::RationalInterval>(Environment const& env, storm::solver::SolveGoal<storm::RationalInterval, storm::RationalNumber>&& goal,
+                             storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix,
+                             storm::storage::SparseMatrix<storm::RationalInterval> const& backwardTransitions,
+                             storm::models::sparse::StandardRewardModel<storm::RationalInterval> const& rewardModel, bool lowerBoundOfIntervals,
+                             storm::storage::BitVector const& targetStates, bool qualitative);
+template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber>
+SparseMdpPrctlHelper<storm::RationalInterval, storm::RationalNumber>::computeTotalRewards(
+    Environment const& env, storm::solver::SolveGoal<storm::RationalInterval, storm::RationalNumber>&& goal,
+    storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix,
+    storm::storage::SparseMatrix<storm::RationalInterval> const& backwardTransitions,
+    storm::models::sparse::StandardRewardModel<storm::RationalInterval> const& rewardModel, bool qualitative, bool produceScheduler,
+    ModelCheckerHint const& hint);
 
 }  // namespace helper
 }  // namespace modelchecker

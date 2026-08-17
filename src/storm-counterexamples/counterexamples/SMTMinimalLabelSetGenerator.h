@@ -1,26 +1,39 @@
 #pragma once
 
+#include <algorithm>
 #include <chrono>
+#include <iterator>
+#include <memory>
 #include <queue>
+#include <set>
+#include <sstream>
+#include <utility>
 
 #include "storm-counterexamples/counterexamples/GuaranteedLabelSet.h"
 #include "storm-counterexamples/counterexamples/HighLevelCounterexample.h"
-#include "storm-counterexamples/settings/modules/CounterexampleGeneratorSettings.h"
-
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/models/ModelType.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Model.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/CounterexampleGeneratorSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/prism/Program.h"
+#include "storm/storage/sparse/JaniChoiceOrigins.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
-#include "storm/utility/cli.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -37,7 +50,7 @@ inline size_t nrCommands(storm::storage::SymbolicModelDescription const& descr) 
     if (descr.isJaniModel()) {
         return descr.asJaniModel().getNumberOfEdges();
     } else {
-        assert(descr.isPrismProgram());
+        STORM_LOG_ASSERT(descr.isPrismProgram(), "Expected Prism program.");
         return descr.asPrismProgram().getNumberOfCommands();
     }
 }
@@ -355,7 +368,7 @@ class SMTMinimalLabelSetGenerator {
         //
         if (addBackwardImplications) {
             STORM_LOG_THROW(!symbolicModel.isJaniModel() || !symbolicModel.asJaniModel().usesAssignmentLevels(), storm::exceptions::NotSupportedException,
-                            "Counterexample generation with backward implications is not supported for indexed assignments");
+                            "Counterexample generation with backward implications is not supported for indexed assignments.");
         }
 
         storm::storage::FlatSet<uint_fast64_t> initialLabels;
@@ -892,9 +905,8 @@ class SMTMinimalLabelSetGenerator {
     static void assertReachabilityCuts(storm::models::sparse::Model<T> const& model, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets,
                                        storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation,
                                        RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
-        if (!variableInformation.hasReachabilityVariables) {
-            throw storm::exceptions::InvalidStateException() << "Impossible to assert reachability cuts without the necessary variables.";
-        }
+        STORM_LOG_THROW(variableInformation.hasReachabilityVariables, storm::exceptions::InvalidStateException,
+                        "Impossible to assert reachability cuts without the necessary variables.");
 
         // Get some data from the model for convenient access.
         storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
@@ -1051,7 +1063,7 @@ class SMTMinimalLabelSetGenerator {
         // Sanity check for sizes of input.
         if (in1.size() != in2.size() || in1.size() == 0) {
             STORM_LOG_ERROR("Illegal input to adder (" << in1.size() << ", " << in2.size() << ").");
-            throw storm::exceptions::InvalidArgumentException() << "Illegal input to adder.";
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal input to adder.");
         }
 
         // Prepare result.
@@ -1387,10 +1399,7 @@ class SMTMinimalLabelSetGenerator {
 
         STORM_LOG_DEBUG("Successfully performed reachability analysis.");
 
-        if (targetStateIsReachable) {
-            STORM_LOG_ERROR("Target must be unreachable for this analysis.");
-            throw storm::exceptions::InvalidStateException() << "Target must be unreachable for this analysis.";
-        }
+        STORM_LOG_THROW(!targetStateIsReachable, storm::exceptions::InvalidStateException, "Target must be unreachable for this analysis.");
 
         storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
         storm::storage::BitVector statesThatCanReachTargetStates =
@@ -1741,7 +1750,7 @@ class SMTMinimalLabelSetGenerator {
 #ifdef STORM_HAVE_Z3
         STORM_LOG_THROW(propertyThreshold.size() > 0, storm::exceptions::InvalidArgumentException, "At least one threshold has to be specified.");
         STORM_LOG_THROW(propertyThreshold.size() == 1 || (rewardName && rewardName.get().size() == propertyThreshold.size()),
-                        storm::exceptions::InvalidArgumentException, "Multiple thresholds is only supported for multiple reward structures");
+                        storm::exceptions::InvalidArgumentException, "Multiple thresholds is only supported for multiple reward structures.");
         std::vector<storm::storage::FlatSet<uint_fast64_t>> result;
         // Set up all clocks used for time measurement.
         auto totalClock = std::chrono::high_resolution_clock::now();
@@ -1779,7 +1788,7 @@ class SMTMinimalLabelSetGenerator {
                 labelSets[choice] = choiceOrigins.getEdgeIndexSet(choice);
             }
         }
-        assert(labelSets.size() == model.getNumberOfChoices());
+        STORM_LOG_ASSERT(labelSets.size() == model.getNumberOfChoices(), "Label set size mismatch.");
 
         // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
         std::vector<double> maximalReachabilityProbability;
@@ -1978,32 +1987,34 @@ class SMTMinimalLabelSetGenerator {
         stats.solverTime = std::chrono::duration_cast<std::chrono::milliseconds>(totalSolverTime);
         stats.iterations = iterations;
 
-        if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+        {
             storm::storage::FlatSet<uint64_t> allLabels;
             for (auto const& e : labelSets) {
                 allLabels.insert(e.begin(), e.end());
             }
 
-            std::cout << "Metrics:\n";
-            std::cout << "    * all labels: " << allLabels.size() << '\n';
-            std::cout << "    * known labels: " << relevancyInformation.knownLabels.size() << '\n';
-            std::cout << "    * relevant labels: " << (relevancyInformation.knownLabels.size() + relevancyInformation.relevantLabels.size()) << "\n\n";
-            std::cout << "Time breakdown:\n";
-            std::cout << "    * time for setup: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSetupTime).count() << "ms\n";
-            std::cout << "    * time for solving: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSolverTime).count() << "ms\n";
-            std::cout << "    * time for checking: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalModelCheckingTime).count() << "ms\n";
-            std::cout << "    * time for analysis: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalAnalysisTime).count() << "ms\n";
-            std::cout << "------------------------------------------\n";
-            std::cout << "    * total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms\n\n";
-            std::cout << "Other:\n";
-            std::cout << "    * number of models checked: " << iterations << '\n';
-            std::cout << "    * number of models that could not reach a target state: " << zeroProbabilityCount << " ("
-                      << 100 * static_cast<double>(zeroProbabilityCount) / iterations << "%)\n\n";
+            STORM_LOG_STATISTICS("Metrics:\n");
+            STORM_LOG_STATISTICS("    * all labels: " << allLabels.size() << '\n');
+            STORM_LOG_STATISTICS("    * known labels: " << relevancyInformation.knownLabels.size() << '\n');
+            STORM_LOG_STATISTICS("    * relevant labels: " << (relevancyInformation.knownLabels.size() + relevancyInformation.relevantLabels.size()) << "\n\n");
+            STORM_LOG_STATISTICS("Time breakdown:\n");
+            STORM_LOG_STATISTICS("    * time for setup: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSetupTime).count() << "ms\n");
+            STORM_LOG_STATISTICS("    * time for solving: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSolverTime).count() << "ms\n");
+            STORM_LOG_STATISTICS("    * time for checking: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalModelCheckingTime).count()
+                                                             << "ms\n");
+            STORM_LOG_STATISTICS("    * time for analysis: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalAnalysisTime).count() << "ms\n");
+            STORM_LOG_STATISTICS("------------------------------------------\n");
+            STORM_LOG_STATISTICS("    * total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms\n\n");
+            STORM_LOG_STATISTICS("Other:\n");
+            STORM_LOG_STATISTICS("    * number of models checked: " << iterations << '\n');
+            STORM_LOG_STATISTICS("    * number of models that could not reach a target state: "
+                                 << zeroProbabilityCount << " (" << 100 * static_cast<double>(zeroProbabilityCount) / iterations << "%)\n\n");
         }
 
         return result;
 #else
-        throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since storm has been compiled without support for Z3.";
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This functionality is unavailable since storm has been compiled without support for Z3.");
 #endif
     }
 
@@ -2051,7 +2062,7 @@ class SMTMinimalLabelSetGenerator {
                     if (model.getChoiceOrigins()->isPrismChoiceOrigins()) {
                         labelSetSize = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice).size();
                     } else {
-                        assert(model.getChoiceOrigins()->isJaniChoiceOrigins());
+                        STORM_LOG_ASSERT(model.getChoiceOrigins()->isJaniChoiceOrigins(), "Expected JANI choice origins.");
                         labelSetSize = model.getChoiceOrigins()->asJaniChoiceOrigins().getEdgeIndexSet(choice).size();
                     }
                     hasLabeledChoice |= (labelSetSize != 0);
@@ -2069,7 +2080,7 @@ class SMTMinimalLabelSetGenerator {
                     auto const& labelSet = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(smallestCommandChoice);
                     commandSet.insert(labelSet.begin(), labelSet.end());
                 } else {
-                    assert(model.getChoiceOrigins()->isJaniChoiceOrigins());
+                    STORM_LOG_ASSERT(model.getChoiceOrigins()->isJaniChoiceOrigins(), "Expected JANI choice origins.");
                     auto const& labelSet = model.getChoiceOrigins()->asJaniChoiceOrigins().getEdgeIndexSet(smallestCommandChoice);
                     commandSet.insert(labelSet.begin(), labelSet.end());
                 }
@@ -2103,7 +2114,7 @@ class SMTMinimalLabelSetGenerator {
         storm::storage::BitVector psiStates;
 
         void addRewardThresholdCombination(std::string reward, double thresh) {
-            STORM_LOG_THROW(rewardName, storm::exceptions::InvalidOperationException, "Can only add more reward names if a reward name is already set");
+            STORM_LOG_THROW(rewardName, storm::exceptions::InvalidOperationException, "Can only add more reward names if a reward name is already set.");
             rewardName.get().push_back(reward);
             threshold.push_back(thresh);
         }
@@ -2125,7 +2136,7 @@ class SMTMinimalLabelSetGenerator {
             result.comparisonType = probabilityOperator.getComparisonType();
             result.threshold.push_back(probabilityOperator.getThresholdAs<T>());
         } else {
-            assert(formula->isRewardOperatorFormula());
+            STORM_LOG_ASSERT(formula->isRewardOperatorFormula(), "Expected reward operator formula.");
             storm::logic::RewardOperatorFormula const& rewardOperator = formula->asRewardOperatorFormula();
             STORM_LOG_THROW(rewardOperator.hasBound(), storm::exceptions::InvalidPropertyException,
                             "Counterexample generation only supports bounded formulas.");
@@ -2157,8 +2168,8 @@ class SMTMinimalLabelSetGenerator {
             std::unique_ptr<storm::modelchecker::CheckResult> leftResult = modelchecker.check(env, untilFormula.getLeftSubformula());
             std::unique_ptr<storm::modelchecker::CheckResult> rightResult = modelchecker.check(env, untilFormula.getRightSubformula());
 
-            storm::modelchecker::ExplicitQualitativeCheckResult const& leftQualitativeResult = leftResult->asExplicitQualitativeCheckResult();
-            storm::modelchecker::ExplicitQualitativeCheckResult const& rightQualitativeResult = rightResult->asExplicitQualitativeCheckResult();
+            storm::modelchecker::ExplicitQualitativeCheckResult<T> const& leftQualitativeResult = leftResult->template asExplicitQualitativeCheckResult<T>();
+            storm::modelchecker::ExplicitQualitativeCheckResult<T> const& rightQualitativeResult = rightResult->template asExplicitQualitativeCheckResult<T>();
 
             result.phiStates = leftQualitativeResult.getTruthValuesVector();
             result.psiStates = rightQualitativeResult.getTruthValuesVector();
@@ -2167,7 +2178,7 @@ class SMTMinimalLabelSetGenerator {
 
             std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(env, eventuallyFormula.getSubformula());
 
-            storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult->asExplicitQualitativeCheckResult();
+            storm::modelchecker::ExplicitQualitativeCheckResult<T> const& subQualitativeResult = subResult->template asExplicitQualitativeCheckResult<T>();
 
             result.phiStates = storm::storage::BitVector(model.getNumberOfStates(), true);
             result.psiStates = subQualitativeResult.getTruthValuesVector();
@@ -2254,7 +2265,8 @@ class SMTMinimalLabelSetGenerator {
             return std::make_shared<HighLevelCounterexample>(symbolicModel.asJaniModel().restrictEdges(labelSets[0]));
         }
 #else
-        throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since storm has been compiled without support for Z3.";
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This functionality is unavailable since storm has been compiled without support for Z3.");
         return nullptr;
 #endif
     }

@@ -169,6 +169,8 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> instantaneousRewardFormula;
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> cumulativeRewardFormula;
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> totalRewardFormula;
+    qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> discountedCumulativeRewardFormula;
+    qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> discountedTotalRewardFormula;
 
     // Game Formulae
     qi::rule<Iterator, storm::logic::PlayerCoalition(), qi::locals<std::vector<std::variant<std::string, storm::storage::PlayerIndex>>>, Skipper>
@@ -177,6 +179,7 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
 
     // Multi-objective, quantiles
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> multiOperatorFormula;
+    qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> multiLexOperatorFormula;
     qi::rule<Iterator, storm::expressions::Variable(), Skipper> quantileBoundVariable;
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> quantileFormula;
 
@@ -201,8 +204,6 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
 
     bool areConstantDefinitionsAllowed() const;
     void addConstant(std::string const& name, ConstantDataType type, boost::optional<storm::expressions::Expression> const& expression);
-    void addProperty(std::vector<storm::jani::Property>& properties, boost::optional<std::string> const& name,
-                     std::shared_ptr<storm::logic::Formula const> const& formula);
 
     std::shared_ptr<storm::logic::TimeBoundReference> createTimeBoundReference(storm::logic::TimeBoundType const& type,
                                                                                boost::optional<std::string> const& rewardModelName) const;
@@ -218,7 +219,12 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
     std::shared_ptr<storm::logic::Formula const> createCumulativeRewardFormula(
         std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>,
                                std::shared_ptr<storm::logic::TimeBoundReference>>> const& timeBounds) const;
+    std::shared_ptr<storm::logic::Formula const> createDiscountedCumulativeRewardFormula(
+        storm::expressions::Expression const& discountFactor,
+        std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>,
+                               std::shared_ptr<storm::logic::TimeBoundReference>>> const& timeBounds) const;
     std::shared_ptr<storm::logic::Formula const> createTotalRewardFormula() const;
+    std::shared_ptr<storm::logic::Formula const> createDiscountedTotalRewardFormula(storm::expressions::Expression const& discountFactor) const;
     std::shared_ptr<storm::logic::Formula const> createLongRunAverageRewardFormula() const;
     std::shared_ptr<storm::logic::Formula const> createAtomicExpressionFormula(storm::expressions::Expression const& expression) const;
     std::shared_ptr<storm::logic::Formula const> createBooleanLiteralFormula(bool literal) const;
@@ -273,7 +279,8 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
         std::shared_ptr<storm::logic::Formula const> const& subformula, boost::optional<storm::logic::UnaryBooleanOperatorType> const& operatorType);
     bool isValidMultiBoundedPathFormulaOperand(std::shared_ptr<storm::logic::Formula const> const& operand);
     std::shared_ptr<storm::logic::Formula const> createMultiBoundedPathFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas);
-    std::shared_ptr<storm::logic::Formula const> createMultiOperatorFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas);
+    std::shared_ptr<storm::logic::Formula const> createMultiOperatorFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas,
+                                                                            storm::logic::MultiObjectiveFormula::Type type);
     storm::expressions::Variable createQuantileBoundVariables(boost::optional<storm::solver::OptimizationDirection> const& dir,
                                                               std::string const& variableName);
     std::shared_ptr<storm::logic::Formula const> createQuantileFormula(std::vector<storm::expressions::Variable> const& boundVariables,

@@ -1,7 +1,7 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include <storm/utility/random.h>
+#include "storm/utility/random.h"
 
 namespace {
 

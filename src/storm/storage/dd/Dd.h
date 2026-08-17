@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_DD_DD_H_
-#define STORM_STORAGE_DD_DD_H_
+#pragma once
 
 #include <set>
 #include <string>
@@ -197,5 +196,3 @@ class Dd {
 };
 }  // namespace dd
 }  // namespace storm
-
-#endif /* STORM_STORAGE_DD_DD_H_ */

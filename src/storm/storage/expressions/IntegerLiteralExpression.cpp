@@ -22,9 +22,7 @@ bool IntegerLiteralExpression::isLiteral() const {
     return true;
 }
 
-void IntegerLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>&) const {
-    return;
-}
+void IntegerLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>&) const {}
 
 std::shared_ptr<BaseExpression const> IntegerLiteralExpression::simplify() const {
     return this->shared_from_this();

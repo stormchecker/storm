@@ -1,21 +1,16 @@
-#ifndef STORM_UTILITY_GRAPH_H_
-#define STORM_UTILITY_GRAPH_H_
+#pragma once
 
 #include <limits>
 #include <set>
-#include <storm/storage/StronglyConnectedComponent.h>
-
-#include "storm/utility/OsDetection.h"
 
 #include "storm/models/sparse/DeterministicModel.h"
 #include "storm/models/sparse/NondeterministicModel.h"
+#include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/Scheduler.h"
-#include "storm/storage/sparse/StateType.h"
-
+#include "storm/storage/StronglyConnectedComponent.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdType.h"
-
-#include "storm/solver/OptimizationDirection.h"
+#include "storm/storage/sparse/StateType.h"
 
 namespace storm {
 namespace storage {
@@ -828,5 +823,3 @@ std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<T> const& mat
 }  // namespace graph
 }  // namespace utility
 }  // namespace storm
-
-#endif /* STORM_UTILITY_GRAPH_H_ */

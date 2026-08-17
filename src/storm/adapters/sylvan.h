@@ -1,23 +1,25 @@
 #pragma once
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wextra-semi"
-#pragma clang diagnostic ignored "-Wzero-length-array"
-#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
-#pragma clang diagnostic ignored "-Wdeprecated-register"
-#pragma clang diagnostic ignored "-Wc99-extensions"
-#pragma clang diagnostic ignored "-Wunknown-pragmas"
+#include <cstdint>
+
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_SYLVAN
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-
-#pragma GCC system_header  // Only way to suppress some warnings atm.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wextra-semi-stmt"
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 
 #include "sylvan_obj.hpp"
 #include "sylvan_storm_rational_function.h"
 #include "sylvan_storm_rational_number.h"
 
+#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
+
 #define cas(ptr, old, new) (__sync_bool_compare_and_swap((ptr), (old), (new)))
-#define ATOMIC_READ(x) (*(volatile decltype(x) *)&(x))
+#define ATOMIC_READ(x) (*(volatile decltype(x)*)&(x))
 
 namespace storm {
 namespace dd {
@@ -45,5 +47,4 @@ bool sylvan_mtbdd_matches_variable_index(MTBDD node, uint64_t variableIndex, int
 }  // namespace dd
 }  // namespace storm
 
-#pragma GCC diagnostic pop
-#pragma clang diagnostic pop
+#endif

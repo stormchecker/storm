@@ -1,19 +1,18 @@
-#ifndef STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANBDD_H_
-#define STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANBDD_H_
+#pragma once
 
 #include <functional>
 #include <memory>
 #include <unordered_map>
 #include <vector>
 
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-
+#include "storm-config.h"
+#include "storm/adapters/sylvan.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalAdd.h"
 #include "storm/storage/dd/InternalBdd.h"
-
-#include "storm/adapters/sylvan.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace storage {
@@ -32,7 +31,9 @@ class InternalBdd<DdType::Sylvan> {
     template<DdType LibraryType, typename ValueType>
     friend class InternalAdd;
 
+#ifdef STORM_HAVE_SYLVAN
     InternalBdd(InternalDdManager<DdType::Sylvan> const* ddManager, sylvan::Bdd const& sylvanBdd);
+#endif
 
     // Instantiate all copy/move constructors/assignments with the default implementation.
     InternalBdd();
@@ -402,6 +403,7 @@ class InternalBdd<DdType::Sylvan> {
 
     friend struct std::hash<storm::dd::InternalBdd<storm::dd::DdType::Sylvan>>;
 
+#ifdef STORM_HAVE_SYLVAN
     /*!
      * Retrieves the sylvan BDD.
      *
@@ -415,8 +417,10 @@ class InternalBdd<DdType::Sylvan> {
      * @return The sylvan BDD.
      */
     sylvan::Bdd const& getSylvanBdd() const;
+#endif
 
    private:
+#ifdef STORM_HAVE_SYLVAN
     /*!
      * Builds a BDD representing the values that make the given filter function evaluate to true.
      *
@@ -534,6 +538,7 @@ class InternalBdd<DdType::Sylvan> {
 
     // The sylvan BDD.
     sylvan::Bdd sylvanBdd;
+#endif
 };
 }  // namespace dd
 }  // namespace storm
@@ -541,10 +546,16 @@ class InternalBdd<DdType::Sylvan> {
 namespace std {
 template<>
 struct hash<storm::dd::InternalBdd<storm::dd::DdType::Sylvan>> {
+#ifdef STORM_HAVE_SYLVAN
     std::size_t operator()(storm::dd::InternalBdd<storm::dd::DdType::Sylvan> const& key) const {
         return static_cast<std::size_t>(key.sylvanBdd.GetBDD());
     }
+#else
+    std::size_t operator()(storm::dd::InternalBdd<storm::dd::DdType::Sylvan> const&) const {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+#endif
 };
 }  // namespace std
-
-#endif /* STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANBDD_H_ */

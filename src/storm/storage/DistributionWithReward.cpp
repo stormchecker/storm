@@ -1,7 +1,6 @@
 #include "storm/storage/DistributionWithReward.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
@@ -45,10 +44,8 @@ ValueType const& DistributionWithReward<ValueType, StateType>::getReward() const
 
 template class DistributionWithReward<double>;
 
-#ifdef STORM_HAVE_CARL
 template class DistributionWithReward<storm::RationalNumber>;
 template class DistributionWithReward<storm::RationalFunction>;
-#endif
 
 }  // namespace storage
 }  // namespace storm

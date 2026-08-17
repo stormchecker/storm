@@ -1,7 +1,7 @@
-#ifndef STORM_SETTINGS_MODULES_CUDDSETTINGS_H_
-#define STORM_SETTINGS_MODULES_CUDDSETTINGS_H_
+#pragma once
 
 #include "storm/settings/modules/ModuleSettings.h"
+#include "storm/storage/dd/cudd/CuddReorderingTechnique.h"
 
 namespace storm {
 namespace settings {
@@ -12,28 +12,6 @@ namespace modules {
  */
 class CuddSettings : public ModuleSettings {
    public:
-    // An enumeration of all available reordering techniques of CUDD.
-    enum class ReorderingTechnique {
-        None,
-        Random,
-        RandomPivot,
-        Sift,
-        SiftConv,
-        SymmetricSift,
-        SymmetricSiftConv,
-        GroupSift,
-        GroupSiftConv,
-        Win2,
-        Win2Conv,
-        Win3,
-        Win3Conv,
-        Win4,
-        Win4Conv,
-        Annealing,
-        Genetic,
-        Exact
-    };
-
     /*!
      * Creates a new set of CUDD settings.
      */
@@ -65,7 +43,7 @@ class CuddSettings : public ModuleSettings {
      *
      * @return The reordering technique to use.
      */
-    ReorderingTechnique getReorderingTechnique() const;
+    storm::dd::CuddReorderingTechnique getReorderingTechnique() const;
 
     // The name of the module.
     static const std::string moduleName;
@@ -81,5 +59,3 @@ class CuddSettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_CUDDSETTINGS_H_ */

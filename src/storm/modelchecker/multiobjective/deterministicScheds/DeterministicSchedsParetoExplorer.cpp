@@ -12,9 +12,6 @@
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/geometry/coordinates.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
-
 #include "storm/io/export.h"
 #include "storm/utility/solver.h"
 
@@ -29,13 +26,13 @@ namespace multiobjective {
 template<class SparseModelType, typename GeometryValueType>
 DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Point::Point(std::vector<GeometryValueType> const& coordinates)
     : coordinates(coordinates), onFacet(false), paretoOptimal(false) {
-    STORM_LOG_ASSERT(!this->coordinates.empty(), "Points with dimension 0 are not supported");
+    STORM_LOG_ASSERT(!this->coordinates.empty(), "Points with dimension 0 are not supported.");
 }
 
 template<class SparseModelType, typename GeometryValueType>
 DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Point::Point(std::vector<GeometryValueType>&& coordinates)
     : coordinates(std::move(coordinates)), onFacet(false), paretoOptimal(false) {
-    STORM_LOG_ASSERT(!this->coordinates.empty(), "Points with dimension 0 are not supported");
+    STORM_LOG_ASSERT(!this->coordinates.empty(), "Points with dimension 0 are not supported.");
 }
 
 template<class SparseModelType, typename GeometryValueType>
@@ -50,7 +47,7 @@ std::vector<GeometryValueType> const& DeterministicSchedsParetoExplorer<SparseMo
 
 template<class SparseModelType, typename GeometryValueType>
 uint64_t DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Point::dimension() const {
-    STORM_LOG_ASSERT(!coordinates.empty(), "Points with dimension 0 are not supported");
+    STORM_LOG_ASSERT(!coordinates.empty(), "Points with dimension 0 are not supported.");
     return coordinates.size();
 }
 
@@ -80,7 +77,7 @@ DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Point::ge
         }
         return DominanceResult::Dominates;
     } else {
-        assert(*thisIt < *otherIt);
+        STORM_LOG_ASSERT(*thisIt < *otherIt, "Expected iterator value less than other.");
         // *this might be dominated by other
         for (++thisIt, ++otherIt; thisIt != thisItE; ++thisIt, ++otherIt) {
             if (*thisIt > *otherIt) {
@@ -286,7 +283,7 @@ DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Facet::ge
     // This facet might lie at the 'border', which means that the downward closure has to be taken in some directions
     storm::storage::BitVector dimensionsForDownwardClosure = storm::utility::vector::filterZero(this->halfspace.normalVector());
     STORM_LOG_ASSERT(dimensionsForDownwardClosure.getNumberOfSetBits() + vertices.size() >= halfspace.normalVector().size() + 1,
-                     "The number of points on the facet is insufficient");
+                     "The number of points on the facet is insufficient.");
     if (dimensionsForDownwardClosure.empty()) {
         return storm::storage::geometry::Polytope<GeometryValueType>::create(vertices);
     } else {
@@ -306,7 +303,7 @@ DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Determini
     }
     lpChecker = std::make_shared<DeterministicSchedsLpChecker<SparseModelType, GeometryValueType>>(*model, objectiveHelper);
     if (preprocessorResult.containsOnlyTotalRewardFormulas()) {
-        wvChecker = storm::modelchecker::multiobjective::WeightVectorCheckerFactory<SparseModelType>::create(preprocessorResult);
+        wvChecker = storm::modelchecker::multiobjective::createWeightVectorChecker(preprocessorResult);
     } else {
         wvChecker = nullptr;
     }
@@ -468,12 +465,11 @@ void DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::init
         std::vector<GeometryValueType> pointCoord;
         GeometryValueType offset;
         if (wvChecker) {
+            wvChecker->setWeightedPrecision(storm::utility::convertNumber<ModelValueType>(env.solver().minMax().getPrecision()));
             wvChecker->check(env, storm::utility::vector::convertNumericVector<ModelValueType>(weightVector));
-            pointCoord = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
+            pointCoord = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getAchievablePoint());
             negateMinObjectives(pointCoord);
-            auto upperBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getOverApproximationOfInitialStateResults());
-            negateMinObjectives(upperBoundPoint);
-            offset = storm::utility::vector::dotProduct(weightVector, upperBoundPoint);
+            offset = storm::utility::convertNumber<GeometryValueType>(wvChecker->getOptimalWeightedSum());
         } else {
             lpChecker->setCurrentWeightVector(env, weightVector);
             auto optionalPoint = lpChecker->check(env, overApproximation);
@@ -563,12 +559,11 @@ bool DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::opti
     std::vector<GeometryValueType> pointCoord;
     GeometryValueType offset;
     if (wvChecker) {
+        wvChecker->setWeightedPrecision(storm::utility::convertNumber<ModelValueType>(env.solver().minMax().getPrecision()));
         wvChecker->check(env, storm::utility::vector::convertNumericVector<ModelValueType>(f.getHalfspace().normalVector()));
-        pointCoord = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
+        pointCoord = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getAchievablePoint());
         negateMinObjectives(pointCoord);
-        auto upperBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getOverApproximationOfInitialStateResults());
-        negateMinObjectives(upperBoundPoint);
-        offset = storm::utility::vector::dotProduct(f.getHalfspace().normalVector(), upperBoundPoint);
+        offset = storm::utility::convertNumber<GeometryValueType>(wvChecker->getOptimalWeightedSum());
     } else {
         auto currentArea = overApproximation->intersection(f.getHalfspace().invert());
         auto optionalPoint = lpChecker->check(env, overApproximation, eps);
@@ -622,13 +617,13 @@ bool DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::opti
                     auto vertexIt = vertices.begin();
                     ++vertexIt;
                     for (auto const& pId : f.getPoints()) {
-                        assert(pointset.getPoint(pId).get() == *vertexIt);
+                        STORM_LOG_ASSERT(pointset.getPoint(pId).get() == *vertexIt, "Vertex mismatch.");
                         if (fNew.getHalfspace().isPointOnBoundary(*vertexIt)) {
                             fNew.addPoint(pId, pointset.getPoint(pId));
                         }
                         ++vertexIt;
                     }
-                    assert(vertexIt == vertices.end());
+                    STORM_LOG_ASSERT(vertexIt == vertices.end(), "Vertex iterator not at end.");
                     unprocessedFacets.push(std::move(fNew));
                 }
             }
@@ -680,7 +675,7 @@ storm::utility::zero<GeometryValueType>()), std::vector<GeometryValueType>(objec
         for(auto const& v : underApproxVertices) {
             pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
         }
-        storm::utility::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathUnderApproximation().get(), pointsForPlotting,
+        storm::io::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathUnderApproximation().get(), pointsForPlotting,
 columnHeaders);
     }
 
@@ -691,7 +686,7 @@ columnHeaders);
         for(auto const& v : overApproxVertices) {
             pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
         }
-        storm::utility::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathOverApproximation().get(), pointsForPlotting,
+        storm::io::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathOverApproximation().get(), pointsForPlotting,
 columnHeaders);
     }
 
@@ -701,7 +696,7 @@ columnHeaders);
         for(auto const& v : paretoPoints) {
             pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
         }
-        storm::utility::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathParetoPoints().get(), pointsForPlotting, columnHeaders);
+        storm::io::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathParetoPoints().get(), pointsForPlotting, columnHeaders);
     }
 };
      */

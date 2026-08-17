@@ -6,6 +6,7 @@
 
 #include "storm/logic/ComparisonType.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/storage/BitVector.h"
 
 #include "storm/solver/LinearEquationSolver.h"
@@ -56,7 +57,7 @@ class SolveGoal {
             comparisonType = checkTask.getBoundComparisonType();
             threshold = checkTask.getBoundThreshold();
         }
-        robustAgainstUncertainty = checkTask.getRobustUncertainty();
+        uncertaintyResolutionMode = checkTask.getUncertaintyResolutionMode();
     }
 
     SolveGoal(bool minimize);
@@ -76,13 +77,15 @@ class SolveGoal {
 
     OptimizationDirection direction() const;
 
-    bool isRobust() const;
+    UncertaintyResolutionMode getUncertaintyResolutionMode() const;
 
     bool isBounded() const;
 
     bool boundIsALowerBound() const;
 
     bool boundIsStrict() const;
+
+    storm::logic::ComparisonType boundComparisonType() const;
 
     SolutionType const& thresholdValue() const;
 
@@ -100,15 +103,16 @@ class SolveGoal {
     boost::optional<storm::logic::ComparisonType> comparisonType;
     boost::optional<SolutionType> threshold;
     boost::optional<storm::storage::BitVector> relevantValueVector;
-    bool robustAgainstUncertainty = true;  // If set to false, the uncertainty is interpreted as controllable.
+    UncertaintyResolutionMode uncertaintyResolutionMode;
 };
 
 template<typename ValueType, typename MatrixType, typename SolutionType>
 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> configureMinMaxLinearEquationSolver(
     Environment const& env, SolveGoal<ValueType, SolutionType>&& goal, storm::solver::MinMaxLinearEquationSolverFactory<ValueType, SolutionType> const& factory,
-    MatrixType&& matrix) {
+    MatrixType&& matrix, OptimizationDirectionSetting optimizationDirectionSetting = OptimizationDirectionSetting::Unset) {
     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver = factory.create(env, std::forward<MatrixType>(matrix));
-    solver->setOptimizationDirection(goal.direction());
+    solver->setOptimizationDirection((optimizationDirectionSetting == OptimizationDirectionSetting::Unset) ? goal.direction()
+                                                                                                           : convert(optimizationDirectionSetting));
     if (goal.isBounded()) {
         if (goal.boundIsALowerBound()) {
             solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumExceedsThreshold<SolutionType>>(

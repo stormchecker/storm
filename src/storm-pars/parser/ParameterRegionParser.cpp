@@ -1,9 +1,10 @@
-#include <boost/algorithm/string.hpp>
-#include <storm/exceptions/WrongFormatException.h>
-
 #include "storm-pars/parser/ParameterRegionParser.h"
 
+#include <boost/algorithm/string.hpp>
+
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -17,17 +18,17 @@ void ParameterRegionParser<ParametricType>::parseParameterBoundaries(Valuation& 
                                                                      std::set<VariableType> const& consideredVariables) {
     std::string::size_type positionOfFirstRelation = parameterBoundariesString.find("<=");
     STORM_LOG_THROW(positionOfFirstRelation != std::string::npos, storm::exceptions::InvalidArgumentException,
-                    "When parsing the region" << parameterBoundariesString << " I could not find a '<=' after the first number");
+                    "When parsing the region" << parameterBoundariesString << " I could not find a '<=' after the first number.");
     std::string::size_type positionOfSecondRelation = parameterBoundariesString.find("<=", positionOfFirstRelation + 2);
     STORM_LOG_THROW(positionOfSecondRelation != std::string::npos, storm::exceptions::InvalidArgumentException,
-                    "When parsing the region" << parameterBoundariesString << " I could not find a '<=' after the parameter");
+                    "When parsing the region" << parameterBoundariesString << " I could not find a '<=' after the parameter.");
 
     std::string parameter = parameterBoundariesString.substr(positionOfFirstRelation + 2, positionOfSecondRelation - (positionOfFirstRelation + 2));
 
     // removes all whitespaces from the parameter string:
     parameter.erase(std::remove_if(parameter.begin(), parameter.end(), ::isspace), parameter.end());
     STORM_LOG_THROW(parameter.length() > 0, storm::exceptions::InvalidArgumentException,
-                    "When parsing the region" << parameterBoundariesString << " I could not find a parameter");
+                    "When parsing the region" << parameterBoundariesString << " I could not find a parameter.");
 
     std::unique_ptr<VariableType> var;
     for (auto const& v : consideredVariables) {
@@ -78,7 +79,6 @@ storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<Parametric
     Valuation upperBoundaries;
     std::vector<std::string> parameterBoundaries;
     CoefficientType bound = storm::utility::convertNumber<CoefficientType>(regionBound);
-    STORM_LOG_THROW(0 < bound && bound < 1, storm::exceptions::WrongFormatException, "Bound must be between 0 and 1, " << bound << " is not.");
     for (auto const& v : consideredVariables) {
         lowerBoundaries.emplace(std::make_pair(v, 0 + bound));
         upperBoundaries.emplace(std::make_pair(v, 1 - bound));
@@ -107,7 +107,7 @@ std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionPars
     std::string const& fileName, std::set<VariableType> const& consideredVariables) {
     // Open file and initialize result.
     std::ifstream inputFileStream;
-    storm::utility::openFile(fileName, inputFileStream);
+    storm::io::openFile(fileName, inputFileStream);
 
     std::vector<storm::storage::ParameterRegion<ParametricType>> result;
 
@@ -117,17 +117,15 @@ std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionPars
         result = parseMultipleRegions(fileContent, consideredVariables);
     } catch (std::exception& e) {
         // In case of an exception properly close the file before passing exception.
-        storm::utility::closeFile(inputFileStream);
+        storm::io::closeFile(inputFileStream);
         throw e;
     }
 
     // Close the stream in case everything went smoothly and return result.
-    storm::utility::closeFile(inputFileStream);
+    storm::io::closeFile(inputFileStream);
     return result;
 }
 
-#ifdef STORM_HAVE_CARL
 template class ParameterRegionParser<storm::RationalFunction>;
-#endif
 }  // namespace parser
 }  // namespace storm

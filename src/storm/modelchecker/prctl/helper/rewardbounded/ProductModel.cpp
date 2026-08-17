@@ -36,7 +36,7 @@ ProductModel<ValueType>::ProductModel(storm::models::sparse::Model<ValueType> co
     }
 
     storm::storage::MemoryStructure memory = computeMemoryStructure(model, objectives);
-    assert(memoryStateManager.getMemoryStateCount() == memory.getNumberOfStates());
+    STORM_LOG_ASSERT(memoryStateManager.getMemoryStateCount() == memory.getNumberOfStates(), "Memory state count mismatch.");
     std::vector<MemoryState> memoryStateMap = computeMemoryStateMap(memory);
 
     storm::storage::SparseModelMemoryProduct<ValueType> productBuilder(memory.product(model));
@@ -85,7 +85,8 @@ ProductModel<ValueType>::ProductModel(storm::models::sparse::Model<ValueType> co
                     if (productStateExists(modelState, memoryState)) {
                         uint64_t productState = getProductState(modelState, memoryState);
                         uint64_t productChoice = getProduct().getTransitionMatrix().getRowGroupIndices()[productState] + choiceOffset;
-                        assert(productChoice < getProduct().getTransitionMatrix().getRowGroupIndices()[productState + 1]);
+                        STORM_LOG_ASSERT(productChoice < getProduct().getTransitionMatrix().getRowGroupIndices()[productState + 1],
+                                         "Product choice out of range.");
                         steps[productChoice] = step;
                     }
                 }
@@ -122,7 +123,7 @@ storm::storage::MemoryStructure ProductModel<ValueType>::computeMemoryStructure(
             objMemStates.push_back(~m);
         }
         objMemStates.push_back(~m);
-        assert(objMemStates.size() == 1ull << dimensionIndexMap.size());
+        STORM_LOG_ASSERT(objMemStates.size() == 1ull << dimensionIndexMap.size(), "Memory states size mismatch.");
 
         // build objective memory
         auto objMemoryBuilder = storm::storage::MemoryStructureBuilder<ValueType>(objMemStates.size(), model);
@@ -131,10 +132,13 @@ storm::storage::MemoryStructure ProductModel<ValueType>::computeMemoryStructure(
         storm::storage::BitVector constraintStates(model.getNumberOfStates(), true);
         for (auto dim : objectiveDimensions[objIndex]) {
             auto const& dimension = dimensions[dim];
-            STORM_LOG_ASSERT(dimension.formula->isBoundedUntilFormula(), "Unexpected Formula type");
-            constraintStates &=
-                (mc.check(dimension.formula->asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector() |
-                 mc.check(dimension.formula->asBoundedUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
+            STORM_LOG_ASSERT(dimension.formula->isBoundedUntilFormula(), "Unexpected Formula type.");
+            constraintStates &= (mc.check(dimension.formula->asBoundedUntilFormula().getLeftSubformula())
+                                     ->template asExplicitQualitativeCheckResult<ValueType>()
+                                     .getTruthValuesVector() |
+                                 mc.check(dimension.formula->asBoundedUntilFormula().getRightSubformula())
+                                     ->template asExplicitQualitativeCheckResult<ValueType>()
+                                     .getTruthValuesVector());
         }
 
         // Build the transitions between the memory states
@@ -155,7 +159,8 @@ storm::storage::MemoryStructure ProductModel<ValueType>::computeMemoryStructure(
                             storm::logic::BinaryBooleanStateFormula::OperatorType::And, transitionFormula, subObjFormula);
                     }
 
-                    storm::storage::BitVector transitionStates = mc.check(*transitionFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                    storm::storage::BitVector transitionStates =
+                        mc.check(*transitionFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
                     if (memStatePrimeBV.empty()) {
                         transitionStates |= ~constraintStates;
                     } else {
@@ -259,7 +264,7 @@ void ProductModel<ValueType>::setReachableProductStates(storm::storage::SparseMo
             reachableProductStates[transformedMemoryState].set(initState, true);
             ++memStateIt;
         }
-        assert(memStateIt == memory.getInitialMemoryStates().end());
+        STORM_LOG_ASSERT(memStateIt == memory.getInitialMemoryStates().end(), "Memory state iterator not at end.");
     }
 
     // Find the reachable epoch classes
@@ -426,9 +431,11 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
                         }
                     }
 
-                    storm::storage::BitVector relevantStates = mc.check(*relevantStatesFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                    storm::storage::BitVector relevantStates =
+                        mc.check(*relevantStatesFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
                     storm::storage::BitVector relevantChoices = getProduct().getTransitionMatrix().getRowFilter(relevantStates);
-                    storm::storage::BitVector goalStates = mc.check(*goalStatesFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                    storm::storage::BitVector goalStates =
+                        mc.check(*goalStatesFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
                     for (auto choice : relevantChoices) {
                         objRew[choice] += getProduct().getTransitionMatrix().getConstrainedRowSum(choice, goalStates);
                     }
@@ -451,7 +458,7 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
                 }
             } else {
                 STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException,
-                                "Unexpected type of formula " << formula);
+                                "Unexpected type of formula " << formula << ".");
             }
             if (rewardCollectedInEpoch) {
                 objectiveRewards.push_back(rewModel.getTotalRewardVector(getProduct().getTransitionMatrix()));
@@ -459,7 +466,7 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
                 objectiveRewards.emplace_back(getProduct().getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
             }
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula);
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula << ".");
         }
     }
 
@@ -468,7 +475,7 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
 
 template<typename ValueType>
 storm::storage::BitVector const& ProductModel<ValueType>::getInStates(EpochClass const& epochClass) const {
-    STORM_LOG_ASSERT(inStates.find(epochClass) != inStates.end(), "Could not find InStates for the given epoch class");
+    STORM_LOG_ASSERT(inStates.find(epochClass) != inStates.end(), "Could not find InStates for the given epoch class.");
     return inStates.find(epochClass)->second;
 }
 
@@ -642,7 +649,7 @@ typename ProductModel<ValueType>::MemoryState ProductModel<ValueType>::transform
                 bool dimUpperBounded = dimension.boundType == DimensionBoundType::UpperBound;
                 bool dimBottom = epochManager.isBottomDimensionEpochClass(epochClass, dim);
                 if (dimUpperBounded && dimBottom && memoryStateManager.isRelevantDimension(predecessorMemoryState, dim)) {
-                    STORM_LOG_ASSERT(objDimensions == dimension.dependentDimensions, "Unexpected set of dependent dimensions");
+                    STORM_LOG_ASSERT(objDimensions == dimension.dependentDimensions, "Unexpected set of dependent dimensions.");
                     memoryStateManager.setRelevantDimensions(memoryStatePrime, objDimensions, false);
                     break;
                 } else if (!dimUpperBounded && !dimBottom && memoryStateManager.isRelevantDimension(predecessorMemoryState, dim)) {

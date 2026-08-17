@@ -7,7 +7,7 @@
 
 #include "storm-gamebased-ar/abstraction/SymbolicStateSet.h"
 
-#include "storm/storage/dd/BisimulationDecomposition.h"
+#include "storm/storage/dd/bisimulation/BisimulationDecomposition.h"
 
 #include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"

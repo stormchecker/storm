@@ -10,6 +10,7 @@
 #include "storm/storage/jani/eliminator/ArrayEliminator.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
@@ -44,7 +45,7 @@ LocationVariableInformation::LocationVariableInformation(storm::expressions::Var
     // Intentionally left empty.
 }
 
-ObservationLabelInformation::ObservationLabelInformation(const std::string& name) : name(name) {
+ObservationLabelInformation::ObservationLabelInformation(storm::expressions::Variable const& variable) : variable(variable) {
     // Intentionally left empty.
 }
 
@@ -64,7 +65,7 @@ uint64_t getBitWidthLowerUpperBound(bool const& hasLowerBound, int64_t& lowerBou
                                     uint64_t const& reservedBitsForUnboundedVariables) {
     if (hasLowerBound) {
         if (hasUpperBound) {
-            STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound");
+            STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound.");
             // We do not have to set any bounds in this case.
             // Return the number of bits required to store all the values between lower and upper bound
             return static_cast<uint64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
@@ -95,12 +96,9 @@ uint64_t getBitWidthLowerUpperBound(bool const& hasLowerBound, int64_t& lowerBou
 VariableInformation::VariableInformation(storm::prism::Program const& program, uint64_t reservedBitsForUnboundedVariables, bool outOfBoundsState)
     : totalBitOffset(0) {
     if (outOfBoundsState) {
-        outOfBoundsBit = 0;
+        outOfBoundsBit.emplace(program.getManager().declareBooleanVariable("_OutOfBoundsBit"), totalBitOffset, true, false);
         ++totalBitOffset;
-    } else {
-        outOfBoundsBit = boost::none;
     }
-
     for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
         booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset, true, booleanVariable.isObservable());
         ++totalBitOffset;
@@ -141,7 +139,34 @@ VariableInformation::VariableInformation(storm::prism::Program const& program, u
         }
     }
     for (auto const& oblab : program.getObservationLabels()) {
-        observationLabels.emplace_back(oblab.getName());
+        storm::expressions::Variable obVar;
+        if (program.getManager().hasVariable(oblab.getName())) {
+            obVar = program.getManager().getVariable(oblab.getName());
+            auto const& obPredicate = oblab.getStatePredicateExpression();
+            // Reaching this point means that the observation label is already known as a variable.
+            if (program.hasFormula(oblab.getName())) {
+                STORM_LOG_ASSERT(!program.getAllExpressionVariables(true).contains(obVar),
+                                 "There appears to be a formula and a variable with the same name " << obVar.getName() << " which is not expected.");
+                // The variable is actually a formula; We just need to check whether the type matches
+                // If the type doesn't match, we cannot use the expression variable for both, the formula and the observation label.
+                auto const& f = program.getFormula(oblab.getName());
+                STORM_LOG_THROW(f.getType() == obPredicate.getType(), storm::exceptions::NotSupportedException,
+                                "Observation valuations for '"
+                                    << oblab
+                                    << " is not supported since a formula with the same name is already known and its expression has a different type.");
+            } else {
+                // There is already a known variable with the same name as the observation label. The only case we accept is a declaration of the form
+                // `observable "x" = x;`
+                STORM_LOG_THROW(obPredicate.isVariable() && obPredicate.getBaseExpression().asVariableExpression().getVariable() == obVar,
+                                storm::exceptions::NotSupportedException,
+                                "Observation valuations for '" << oblab << " is not supported since a variable '" << oblab.getName()
+                                                               << "' is already known and the expression '" << oblab.getStatePredicateExpression()
+                                                               << "' is not equal to it.");
+            }
+        } else {
+            obVar = program.getManager().declareVariable(oblab.getName(), oblab.getStatePredicateExpression().getType());
+        }
+        observationLabels.emplace_back(obVar);
     }
 
     sortVariables();
@@ -160,10 +185,12 @@ VariableInformation::VariableInformation(storm::jani::Model const& model,
     }
 
     if (outOfBoundsState) {
-        outOfBoundsBit = 0;
+        std::string outOfBoundsVarName = "_OutOfBoundsBit";
+        while (model.getManager().hasVariable(outOfBoundsVarName)) {
+            outOfBoundsVarName += "_";
+        }
+        outOfBoundsBit.emplace(model.getManager().declareBooleanVariable(outOfBoundsVarName), totalBitOffset, true, false);
         ++totalBitOffset;
-    } else {
-        outOfBoundsBit = boost::none;
     }
 
     createVariablesForVariableSet(model.getGlobalVariables(), reservedBitsForUnboundedVariables, true);
@@ -260,12 +287,12 @@ uint_fast64_t VariableInformation::getTotalBitOffset(bool roundTo64Bit) const {
 }
 
 bool VariableInformation::hasOutOfBoundsBit() const {
-    return outOfBoundsBit != boost::none;
+    return outOfBoundsBit.has_value();
 }
 
 uint64_t VariableInformation::getOutOfBoundsBit() const {
-    assert(hasOutOfBoundsBit());
-    return outOfBoundsBit.get();
+    STORM_LOG_ASSERT(hasOutOfBoundsBit(), "Expected out-of-bounds bit.");
+    return outOfBoundsBit->bitOffset;
 }
 
 void VariableInformation::sortVariables() {

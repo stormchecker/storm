@@ -46,7 +46,7 @@ class TopologicalLinearEquationSolver : public LinearEquationSolver<ValueType> {
     bool solveFullyConnectedEquationSystem(storm::Environment const& sccSolverEnvironment, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
     // ... for the remaining cases (1 < scc.size() < x.size())
     bool solveScc(storm::Environment const& sccSolverEnvironment, storm::storage::BitVector const& scc, std::vector<ValueType>& globalX,
-                  std::vector<ValueType> const& globalB) const;
+                  std::vector<ValueType> const& globalB, std::optional<storm::storage::BitVector> const& globalRelevantValues) const;
 
     // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
     // when the solver is destructed.

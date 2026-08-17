@@ -74,6 +74,14 @@ bool TranscendentalNumberType::isTranscendentalNumberType() const {
     return true;
 }
 
+bool BaseType::isStringType() const {
+    return false;
+}
+
+bool StringType::isStringType() const {
+    return true;
+}
+
 uint64_t BooleanType::getMask() const {
     return BooleanType::mask;
 }
@@ -146,6 +154,14 @@ std::string TranscendentalNumberType::getStringRepresentation() const {
     return "transcendental";
 }
 
+uint64_t StringType::getMask() const {
+    return StringType::mask;
+}
+
+std::string StringType::getStringRepresentation() const {
+    return "string";
+}
+
 bool operator<(BaseType const& first, BaseType const& second) {
     if (first.getMask() < second.getMask()) {
         return true;
@@ -197,6 +213,10 @@ bool Type::isArrayType() const {
 
 bool Type::isTranscendentalNumberType() const {
     return this->innerType->isTranscendentalNumberType();
+}
+
+bool Type::isStringType() const {
+    return this->innerType->isStringType();
 }
 
 std::string Type::getStringRepresentation() const {
@@ -285,7 +305,6 @@ Type Type::ite(Type const& thenType, Type const& elseType) const {
                         "Operator 'ite' requires proper types.");
         return std::max(thenType, elseType);
     }
-    return thenType;
 }
 
 Type Type::floorCeil() const {

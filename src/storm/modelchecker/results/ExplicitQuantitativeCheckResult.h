@@ -10,13 +10,13 @@
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/storage/sparse/StateValuations.h"
-#include "storm/utility/OsDetection.h"
+#include "storm/storage/valuations/Valuations.h"
 
 namespace storm {
 
 namespace modelchecker {
 // Forward declaration
+template<typename ValueType>
 class ExplicitQualitativeCheckResult;
 
 template<typename ValueType>
@@ -32,17 +32,15 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
     ExplicitQuantitativeCheckResult(vector_type const& values);
     ExplicitQuantitativeCheckResult(vector_type&& values);
     ExplicitQuantitativeCheckResult(boost::variant<vector_type, map_type> const& values,
-                                    boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler = boost::none);
+                                    std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler = {});
     ExplicitQuantitativeCheckResult(boost::variant<vector_type, map_type>&& values,
-                                    boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler = boost::none);
+                                    std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler = {});
 
     ExplicitQuantitativeCheckResult(ExplicitQuantitativeCheckResult const& other) = default;
     ExplicitQuantitativeCheckResult& operator=(ExplicitQuantitativeCheckResult const& other) = default;
-#ifndef WINDOWS
     ExplicitQuantitativeCheckResult(ExplicitQuantitativeCheckResult&& other) = default;
     ExplicitQuantitativeCheckResult& operator=(ExplicitQuantitativeCheckResult&& other) = default;
-#endif
-    explicit ExplicitQuantitativeCheckResult(ExplicitQualitativeCheckResult const& other);
+    explicit ExplicitQuantitativeCheckResult(ExplicitQualitativeCheckResult<ValueType> const& other);
 
     virtual ~ExplicitQuantitativeCheckResult() = default;
 
@@ -79,15 +77,19 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
     storm::storage::Scheduler<ValueType> const& getScheduler() const;
     storm::storage::Scheduler<ValueType>& getScheduler();
 
-    storm::json<ValueType> toJson(std::optional<storm::storage::sparse::StateValuations> const& stateValuations = std::nullopt,
+    storm::json<ValueType> toJson(std::optional<storm::storage::sparse::Valuations> const& stateValuations = std::nullopt,
                                   std::optional<storm::models::sparse::StateLabeling> const& stateLabels = std::nullopt) const;
 
    private:
+    bool hasValueType(std::type_info const& t) const override {
+        return t == typeid(ValueType);
+    }
+
     // The values of the quantitative check result.
     boost::variant<vector_type, map_type> values;
 
     // An optional scheduler that accompanies the values.
-    boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler;
+    std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler;
 };
 }  // namespace modelchecker
 }  // namespace storm

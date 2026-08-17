@@ -1,18 +1,16 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
+#include "storm-parsers/parser/PrismParser.h"
+#include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
-
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-
-#include "storm-parsers/parser/AutoParser.h"
-#include "storm-parsers/parser/PrismParser.h"
-#include "storm/builder/ExplicitModelBuilder.h"
 
 TEST(ExplicitMdpPrctlModelCheckerTest, Dice) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel =

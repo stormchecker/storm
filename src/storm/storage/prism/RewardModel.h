@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_PRISM_REWARDMODEL_H_
-#define STORM_STORAGE_PRISM_REWARDMODEL_H_
+#pragma once
 
 #include <map>
 #include <string>
@@ -9,7 +8,6 @@
 #include "storm/storage/prism/StateActionReward.h"
 #include "storm/storage/prism/StateReward.h"
 #include "storm/storage/prism/TransitionReward.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace prism {
@@ -137,5 +135,3 @@ class RewardModel : public LocatedInformation {
 
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_REWARDMODEL_H_ */

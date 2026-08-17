@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_
-#define STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_
+#pragma once
 
 #include <functional>
 #include <map>
@@ -494,5 +493,3 @@ struct equal_to<storm::expressions::Expression> {
     }
 };
 }  // namespace std
-
-#endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_ */

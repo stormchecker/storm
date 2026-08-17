@@ -1,0 +1,17 @@
+mdp
+
+// operator parameters
+const double p; // probability to stop after a try
+
+module main
+	
+	s:[0..4] init 0;
+
+    [stop] true -> (s'=4);
+    [back] true -> p: (s'=4) + (1-p): (s'=0);
+    [a] s=0 -> (s'=1);
+    [b] s=0 -> (s'=2);
+    [c] s=0 -> (s'=3);
+endmodule
+
+

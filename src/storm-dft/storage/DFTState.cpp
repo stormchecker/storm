@@ -1,6 +1,8 @@
 #include "storm-dft/storage/DFTState.h"
+
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/elements/DFTElements.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm::dft {
@@ -25,7 +27,7 @@ DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo 
         this->setUses(spareId, elem->children()[0]->id());
     }
 
-    // Initialize activation
+    // Initialize activation and set failable BEs
     propagateActivation(mDft.getTopLevelIndex());
 
     // Initialize currently failable BEs
@@ -319,7 +321,7 @@ bool DFTState<ValueType>::updateFailableInRestrictions(size_t id) {
                 }
             }
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Restriction must be SEQ or MUTEX");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Restriction must be SEQ or MUTEX.");
         }
     }
     return addedFailableEvent;
@@ -331,7 +333,7 @@ void DFTState<ValueType>::updateDontCareDependencies(size_t id) {
     STORM_LOG_ASSERT(hasFailed(id), "Element has not failed.");
 
     for (auto dependency : mDft.getBasicElement(id)->ingoingDependencies()) {
-        assert(dependency->dependentEvents().size() == 1);
+        STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "Expected exactly one dependent event.");
         STORM_LOG_ASSERT(dependency->dependentEvents()[0]->id() == id, "Ids do not match.");
         setDependencyDontCare(dependency->id());
         failableElements.removeDependency(dependency->id());

@@ -51,7 +51,7 @@ void warnIfJsonExportNotAccurate(storm::json<ValueType> const& j) {
                 auto const& actualValue = v_json.template get_ref<ValueType const&>();
                 message << "Inaccurate JSON export: The number " << actualValue << " will be exported as " << v_json.dump() << ". ";
             }
-        };
+        }
     });
     STORM_LOG_WARN_COND(num_bad == 0, message.str() << "In total, " << num_bad << " of " << num_all << " numbers are inaccurate.");
 }

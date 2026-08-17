@@ -1,13 +1,10 @@
 #include "storm/models/symbolic/NondeterministicModel.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace models {
@@ -113,12 +110,10 @@ storm::dd::Bdd<Type> NondeterministicModel<Type, ValueType>::getQualitativeTrans
 
 // Explicitly instantiate the template class.
 template class NondeterministicModel<storm::dd::DdType::CUDD, double>;
-template class NondeterministicModel<storm::dd::DdType::Sylvan, double>;
 
-#ifdef STORM_HAVE_CARL
+template class NondeterministicModel<storm::dd::DdType::Sylvan, double>;
 template class NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalFunction>;
-#endif
 }  // namespace symbolic
 }  // namespace models
 }  // namespace storm

@@ -7,13 +7,13 @@
 #include "storm/models/Model.h"
 #include "storm/models/ModelRepresentation.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
+#include "storm/models/sparse/ModelForward.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/storage/sparse/StateValuations.h"
-#include "storm/utility/OsDetection.h"
+#include "storm/storage/valuations/Valuations.h"
 
 namespace storm {
 namespace storage {
@@ -23,13 +23,10 @@ class BitVector;
 namespace models {
 namespace sparse {
 
-template<typename ValueType>
-class StandardRewardModel;
-
 /*!
  * Base class for all sparse models.
  */
-template<class CValueType, class CRewardModelType = StandardRewardModel<CValueType>>
+template<class CValueType, class CRewardModelType>
 class Model : public storm::models::Model<CValueType> {
    public:
     typedef CValueType ValueType;
@@ -57,14 +54,6 @@ class Model : public storm::models::Model<CValueType> {
      * @return A sparse matrix that represents the backward transitions of this model.
      */
     storm::storage::SparseMatrix<ValueType> getBackwardTransitions() const;
-
-    /*!
-     * Returns an object representing the matrix rows associated with the given state.
-     *
-     * @param state The state for which to retrieve the rows.
-     * @return An object representing the matrix rows associated with the given state.
-     */
-    virtual typename storm::storage::SparseMatrix<ValueType>::const_rows getRows(storm::storage::sparse::state_type state) const;
 
     /*!
      * Returns the number of states of the model.
@@ -282,21 +271,21 @@ class Model : public storm::models::Model<CValueType> {
      *
      * @return The valuations of the states of the model.
      */
-    storm::storage::sparse::StateValuations const& getStateValuations() const;
+    storm::storage::sparse::Valuations const& getStateValuations() const;
 
     /*!
      * Retrieves an optional value that contains the state valuations if there are some.
      *
      * @return The state valuations, if they're saved.
      */
-    std::optional<storm::storage::sparse::StateValuations> const& getOptionalStateValuations() const;
+    std::optional<storm::storage::sparse::Valuations> const& getOptionalStateValuations() const;
 
     /*!
      * Retrieves an optional value that contains the state valuations if there are some.
      *
      * @return The state valuations, if they're saved.
      */
-    std::optional<storm::storage::sparse::StateValuations>& getOptionalStateValuations();
+    std::optional<storm::storage::sparse::Valuations>& getOptionalStateValuations();
 
     /*!
      * Retrieves whether this model was build with choice origins.
@@ -389,7 +378,7 @@ class Model : public storm::models::Model<CValueType> {
      *
      * @return
      */
-    virtual bool supportsUncertainty() const;
+    virtual bool supportsUncertainty() const override;
 
     /*!
      * Checks whether the model actually is uncertain, i.e., whether there is a non-singleton transition relation.
@@ -404,19 +393,6 @@ class Model : public storm::models::Model<CValueType> {
 
    protected:
     RewardModelType& rewardModel(std::string const& rewardModelName);
-    /*!
-     * Sets the transition matrix of the model.
-     *
-     * @param transitionMatrix The new transition matrix of the model.
-     */
-    void setTransitionMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix);
-
-    /*!
-     * Sets the transition matrix of the model.
-     *
-     * @param transitionMatrix The new transition matrix of the model.
-     */
-    void setTransitionMatrix(storm::storage::SparseMatrix<ValueType>&& transitionMatrix);
 
     /*!
      * Prints the information header (number of states and transitions) of the model to the specified stream.
@@ -464,7 +440,7 @@ class Model : public storm::models::Model<CValueType> {
     std::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
 
     // if set, retrieves for each state the variable valuation that this state represents
-    std::optional<storm::storage::sparse::StateValuations> stateValuations;
+    std::optional<storm::storage::sparse::Valuations> stateValuations;
 
     // if set, gives information about where each choice originates w.r.t. the input model description
     std::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;

@@ -1,4 +1,5 @@
 #include "storm/adapters/EigenAdapter.h"
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
@@ -35,7 +36,6 @@ template std::unique_ptr<Eigen::SparseMatrix<double>> EigenAdapter::toEigenSpars
 template std::vector<double> EigenAdapter::toStdVector(Eigen::Matrix<double, Eigen::Dynamic, 1> const& v);
 template Eigen::Matrix<double, Eigen::Dynamic, 1> EigenAdapter::toEigenVector(std::vector<double> const& v);
 
-#ifdef STORM_HAVE_CARL
 template std::unique_ptr<Eigen::SparseMatrix<storm::RationalNumber>> EigenAdapter::toEigenSparseMatrix(
     storm::storage::SparseMatrix<storm::RationalNumber> const& matrix);
 template std::vector<storm::RationalNumber> EigenAdapter::toStdVector(Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1> const& v);
@@ -45,6 +45,5 @@ template std::unique_ptr<Eigen::SparseMatrix<storm::RationalFunction>> EigenAdap
     storm::storage::SparseMatrix<storm::RationalFunction> const& matrix);
 template std::vector<storm::RationalFunction> EigenAdapter::toStdVector(Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1> const& v);
 template Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1> EigenAdapter::toEigenVector(std::vector<storm::RationalFunction> const& v);
-#endif
 }  // namespace adapters
 }  // namespace storm

@@ -1,15 +1,11 @@
 #include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 
 #include "storm-config.h"
-
 #include "storm/adapters/RationalNumberAdapter.h"
-
 #include "storm/storage/BitVector.h"
 #include "storm/storage/ConsecutiveUint64DynamicPriorityQueue.h"
 #include "storm/storage/SparseMatrix.h"
-
 #include "storm/storage/sparse/StateType.h"
-
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -105,9 +101,11 @@ ValueType DsMpiDtmcUpperRewardBoundsComputer<ValueType>::computeLambdaForChoice(
         for (auto const& e : transitionMatrix.getRow(choice)) {
             rewardSum += e.getValue() * w[e.getColumn()];
         }
-        STORM_LOG_WARN_COND(w[state] >= rewardSum || storm::utility::ConstantsComparator<ValueType>().isEqual(w[state], rewardSum),
+        // The following is a bit of a hack but I'd prefer not getting the settings into this part of the code for such a simple check.
+        storm::utility::ConstantsComparator<ValueType> cc(storm::utility::convertNumber<ValueType>(0.0001));
+        STORM_LOG_WARN_COND(w[state] >= rewardSum || cc.isEqual(w[state], rewardSum),
                             "Expected condition (II) to hold in state " << state << ", but " << w[state] << " < " << rewardSum << ".");
-        STORM_LOG_WARN_COND(storm::utility::ConstantsComparator<ValueType>().isEqual(probSum, p[state]),
+        STORM_LOG_WARN_COND(cc.isEqual(probSum, p[state]),
                             "Expected condition (II) to hold in state " << state << ", but " << probSum << " != " << p[state] << ".");
 #endif
     }
@@ -312,10 +310,8 @@ void DsMpiMdpUpperRewardBoundsComputer<ValueType>::setChoiceInState(uint64_t sta
 template class DsMpiDtmcUpperRewardBoundsComputer<double>;
 template class DsMpiMdpUpperRewardBoundsComputer<double>;
 
-#ifdef STORM_HAVE_CARL
 template class DsMpiDtmcUpperRewardBoundsComputer<storm::RationalNumber>;
 template class DsMpiMdpUpperRewardBoundsComputer<storm::RationalNumber>;
-#endif
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

@@ -1,4 +1,5 @@
-#include <cstdint>
+#pragma once
+
 #include "storm/models/sparse/Model.h"
 #include "storm/utility/random.h"
 

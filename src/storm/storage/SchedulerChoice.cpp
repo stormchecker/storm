@@ -1,11 +1,11 @@
 #include "storm/storage/SchedulerChoice.h"
 
-#include "storm/utility/constants.h"
-#include "storm/utility/macros.h"
-
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace storage {
@@ -44,7 +44,7 @@ bool SchedulerChoice<ValueType>::isDeterministic() const {
 template<typename ValueType>
 uint_fast64_t SchedulerChoice<ValueType>::getDeterministicChoice() const {
     STORM_LOG_THROW(isDeterministic(), storm::exceptions::InvalidOperationException,
-                    "Tried to obtain the deterministic choice of a scheduler, but the choice is not deterministic");
+                    "Tried to obtain the deterministic choice of a scheduler, but the choice is not deterministic.");
     return distribution.begin()->first;
 }
 
@@ -75,6 +75,8 @@ template class SchedulerChoice<storm::RationalFunction>;
 template std::ostream& operator<<(std::ostream& out, SchedulerChoice<storm::RationalFunction> const& schedulerChoice);
 template class SchedulerChoice<storm::Interval>;
 template std::ostream& operator<<(std::ostream& out, SchedulerChoice<storm::Interval> const& schedulerChoice);
+template class SchedulerChoice<storm::RationalInterval>;
+template std::ostream& operator<<(std::ostream& out, SchedulerChoice<storm::RationalInterval> const& schedulerChoice);
 
 }  // namespace storage
 }  // namespace storm

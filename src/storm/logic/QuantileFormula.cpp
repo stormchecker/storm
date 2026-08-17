@@ -31,7 +31,7 @@ bool QuantileFormula::hasNumericalResult() const {
     return !isMultiDimensional();
 }
 
-bool QuantileFormula::hasParetoCurveResult() const {
+bool QuantileFormula::hasMultiDimensionalResult() const {
     return isMultiDimensional();
 }
 

@@ -1,3 +1,4 @@
+#include "storm-config.h"
 #include "test/storm_gtest.h"
 
 #include "storm/transformer/EndComponentEliminator.h"

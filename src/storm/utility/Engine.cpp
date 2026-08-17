@@ -1,30 +1,24 @@
 #include "storm/utility/Engine.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/modelchecker/CheckTask.h"
+#include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
+#include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
-#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
-#include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
-#include "storm/modelchecker/rpatl/SparseSmgRpatlModelChecker.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/models/symbolic/MarkovAutomaton.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
-#include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
-
-#include "storm/modelchecker/CheckTask.h"
+#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
-
+#include "storm/modelchecker/rpatl/SparseSmgRpatlModelChecker.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Property.h"
-
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
 namespace utility {

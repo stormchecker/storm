@@ -1,4 +1,5 @@
 @type: MDP
+@value_type: double-interval
 @parameters
 
 @reward_models

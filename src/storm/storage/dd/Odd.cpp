@@ -2,16 +2,13 @@
 
 #include <boost/algorithm/string/join.hpp>
 #include <fstream>
-#include <set>
-
-#include "storm/storage/BitVector.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/io/file.h"
-#include "storm/utility/macros.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/io/file.h"
+#include "storm/storage/BitVector.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace dd {
@@ -126,7 +123,7 @@ void Odd::oldToNewIndexRec(uint_fast64_t oldOffset, storm::dd::Odd const& oldOdd
 
 void Odd::exportToDot(std::string const& filename) const {
     std::ofstream dotFile;
-    storm::utility::openFile(filename, dotFile);
+    storm::io::openFile(filename, dotFile);
 
     // Print header.
     dotFile << "digraph \"ODD\" {\n"
@@ -148,7 +145,6 @@ void Odd::exportToDot(std::string const& filename) const {
 
     for (auto const& levelNodes : levelToOddNodesMap) {
         dotFile << "{ rank = same; \"" << levelNodes.first << "\"\n";
-        ;
         for (auto const& node : levelNodes.second) {
             dotFile << "\"" << node << "\";\n";
         }
@@ -166,11 +162,11 @@ void Odd::exportToDot(std::string const& filename) const {
     }
 
     dotFile << "}\n";
-    storm::utility::closeFile(dotFile);
+    storm::io::closeFile(dotFile);
 }
 
 void Odd::exportToText(std::string const& filename) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
 void getEncodingRec(Odd const& odd, uint64_t index, uint64_t offset, storm::storage::BitVector& result) {

@@ -1,0 +1,245 @@
+{
+    "actions": [
+        {
+            "name": "a"
+        },
+        {
+            "name": "b"
+        }
+    ],
+    "automata": [
+        {
+            "edges": [
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 2",
+                                    "ref": "s",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "default_reward_model <- 1",
+                                    "ref": "default_reward_model",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 1)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 1
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "a",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "default_reward_model <- 1",
+                                    "ref": "default_reward_model",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 0)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "a",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 2",
+                                    "ref": "s",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "default_reward_model <- 1",
+                                    "ref": "default_reward_model",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 2)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 2
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "b",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 1",
+                                    "ref": "s",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "default_reward_model <- 5",
+                                    "ref": "default_reward_model",
+                                    "value": 5
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 0",
+                                    "ref": "s",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "default_reward_model <- 5",
+                                    "ref": "default_reward_model",
+                                    "value": 5
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 0)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l",
+                    "transient-values": [
+                        {
+                            "comment": "target <- (s = 2)",
+                            "ref": "target",
+                            "value": {
+                                "left": "s",
+                                "op": "=",
+                                "right": 2
+                            }
+                        }
+                    ]
+                }
+            ],
+            "name": "mod1",
+            "variables": []
+        }
+    ],
+    "constants": [],
+    "features": [
+        "derived-operators"
+    ],
+    "jani-version": 1,
+    "name": "tiny_rewards2",
+    "properties": [
+        {
+            "expression": {
+                "fun": "values",
+                "op": "filter",
+                "states": {
+                    "op": "initial"
+                },
+                "values": {
+                    "accumulate": [
+                        "steps"
+                    ],
+                    "exp": "default_reward_model",
+                    "op": "Emax",
+                    "reach": "target"
+                }
+            },
+            "name": "1"
+        }
+    ],
+    "restrict-initial": {
+        "exp": true
+    },
+    "system": {
+        "elements": [
+            {
+                "automaton": "mod1"
+            }
+        ],
+        "syncs": [
+            {
+                "result": "a",
+                "synchronise": [
+                    "a"
+                ]
+            },
+            {
+                "result": "b",
+                "synchronise": [
+                    "b"
+                ]
+            }
+        ]
+    },
+    "type": "mdp",
+    "variables": [
+        {
+            "initial-value": false,
+            "name": "target",
+            "transient": true,
+            "type": "bool"
+        },
+        {
+            "initial-value": 0.0,
+            "name": "default_reward_model",
+            "transient": true,
+            "type": "real"
+        },
+        {
+            "initial-value": 0,
+            "name": "s",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 2
+            }
+        }
+    ]
+}

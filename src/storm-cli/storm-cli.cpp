@@ -6,11 +6,13 @@
  * For more information, installation guides and tutorials on how to use Storm, visit the Storm website: http://www.stormchecker.org.
  */
 
+#include "storm-cli-utilities/cli.h"
+#include "storm-cli/model-handling-main-cli.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/BaseException.h"
 #include "storm/utility/macros.h"
-
-#include "storm-cli-utilities/cli.h"
-#include "storm-cli-utilities/model-handling.h"
 
 void processOptions() {
     // Parse symbolic input (PRISM, JANI, properties, etc.)
@@ -29,23 +31,7 @@ void processOptions() {
     // Export symbolic input (if requested)
     storm::cli::exportSymbolicInput(symbolicInput);
 
-#ifdef STORM_HAVE_CARL
-    switch (mpi.verificationValueType) {
-        case storm::cli::ModelProcessingInformation::ValueType::Parametric:
-            storm::cli::processInputWithValueType<storm::RationalFunction>(symbolicInput, mpi);
-            break;
-        case storm::cli::ModelProcessingInformation::ValueType::Exact:
-            storm::cli::processInputWithValueType<storm::RationalNumber>(symbolicInput, mpi);
-            break;
-        case storm::cli::ModelProcessingInformation::ValueType::FinitePrecision:
-            storm::cli::processInputWithValueType<double>(symbolicInput, mpi);
-            break;
-    }
-#else
-    STORM_LOG_THROW(mpi.verificationValueType == storm::cli::ModelProcessingInformation::ValueType::FinitePrecision, storm::exceptions::NotSupportedException,
-                    "No exact numbers or parameters are supported in this build.");
-    storm::cli::processInputWithValueType<double>(symbolicInput, mpi);
-#endif
+    storm::cli::processInput(symbolicInput, mpi);
 }
 
 void initSettings(std::string const& name, std::string const& executableName) {

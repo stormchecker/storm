@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/BitVector.h"
 

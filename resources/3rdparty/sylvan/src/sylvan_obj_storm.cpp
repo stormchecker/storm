@@ -46,12 +46,10 @@ Bdd::toStormRationalNumberMtbdd() const {
     return mtbdd_bool_to_storm_rational_number(bdd);
 }
 
-#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
 Mtbdd
 Bdd::toStormRationalFunctionMtbdd() const {
     return mtbdd_bool_to_storm_rational_function(bdd);
 }
-#endif
 
 Mtbdd
 Bdd::Ite(Mtbdd const& thenDd, Mtbdd const& elseDd) const {
@@ -357,7 +355,6 @@ Mtbdd::ToDoubleRN() const {
 }
 
 // Functions for Mtbdds over rational functions.
-#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
 Mtbdd
 Mtbdd::stormRationalFunctionTerminal(storm::RationalFunction const& value)
 {
@@ -480,4 +477,3 @@ Mtbdd
 Mtbdd::ToDoubleRF() const {
     return sylvan_storm_rational_function_to_double(mtbdd);
 }
-#endif

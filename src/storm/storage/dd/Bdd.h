@@ -1,14 +1,13 @@
-#ifndef STORM_STORAGE_DD_BDD_H_
-#define STORM_STORAGE_DD_BDD_H_
+#pragma once
 
 #include <functional>
 
+#include "storm/storage/BitVector.h"
+#include "storm/storage/PairHash.h"
 #include "storm/storage/dd/Dd.h"
 #include "storm/storage/dd/DdType.h"
-
-#include "storm/storage/PairHash.h"
-#include "storm/storage/dd/InternalBdd.h"
 #include "storm/storage/dd/cudd/InternalCuddBdd.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm {
 namespace logic {
@@ -305,8 +304,8 @@ class Bdd : public Dd<LibraryType> {
     Bdd<LibraryType> renameVariables(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const;
 
     /*!
-     * Renames the given meta variables in the BDD. The number of the underlying DD variables of the from meta
-     * variable set needs to be at least as large as the to meta variable set. If the amount of variables coincide,
+     * Renames the given meta variables in the BDD. The number of the underlying DD variables of the meta
+     * variable set needs to be at least as large as the meta variable set. If the amount of variables coincides,
      * this operation coincides with renameVariables. Otherwise, it first abstracts from the superfluous variables
      * and then performs the renaming.
      *
@@ -318,8 +317,8 @@ class Bdd : public Dd<LibraryType> {
     Bdd<LibraryType> renameVariablesAbstract(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const;
 
     /*!
-     * Renames the given meta variables in the BDD. The number of the underlying DD variables of the from meta
-     * variable set needs to be at most as large as the to meta variable set. If the amount of variables coincide,
+     * Renames the given meta variables in the BDD. The number of the underlying DD variables of the meta
+     * variable set needs to be at most as large as the meta variable set. If the amount of variables coincides,
      * this operation coincides with renameVariables. Otherwise, it first adds a unique encoding in terms of the
      * superfluous variables and then performs the renaming.
      *
@@ -395,6 +394,7 @@ class Bdd : public Dd<LibraryType> {
     /*!
      * Retrieves the cube of all given meta variables.
      *
+     * @param manager Dd manager.
      * @param metaVariables The variables for which to create the cube.
      * @return The resulting cube.
      */
@@ -451,5 +451,3 @@ struct hash<storm::dd::Bdd<LibraryType>> {
     }
 };
 }  // namespace std
-
-#endif /* STORM_STORAGE_DD_BDD_H_ */

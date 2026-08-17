@@ -1,9 +1,7 @@
-#ifndef STORM_STORAGE_STRONGLYCONNECTEDCOMPONENT_H_
-#define STORM_STORAGE_STRONGLYCONNECTEDCOMPONENT_H_
+#pragma once
 
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/StateBlock.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace storage {
@@ -16,11 +14,9 @@ class StronglyConnectedComponent : public StateBlock {
    public:
     StronglyConnectedComponent();
     StronglyConnectedComponent(StronglyConnectedComponent const& other) = default;
-#ifndef WINDOWS
     StronglyConnectedComponent(StronglyConnectedComponent&& other) = default;
     StronglyConnectedComponent& operator=(StronglyConnectedComponent const& other) = default;
     StronglyConnectedComponent& operator=(StronglyConnectedComponent&& other) = default;
-#endif
 
     /*!
      * Sets whether this SCC is trivial or not.
@@ -43,5 +39,3 @@ class StronglyConnectedComponent : public StateBlock {
 
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_STRONGLYCONNECTEDCOMPONENT_H_ */

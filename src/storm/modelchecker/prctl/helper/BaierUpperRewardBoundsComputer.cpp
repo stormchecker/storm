@@ -1,6 +1,7 @@
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
@@ -8,34 +9,25 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
-#include "storm/exceptions/InvalidOperationException.h"
-
 namespace storm::modelchecker::helper {
 
 template<typename ValueType>
 BaierUpperRewardBoundsComputer<ValueType>::BaierUpperRewardBoundsComputer(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                           storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                          std::vector<ValueType> const& rewards,
                                                                           std::vector<ValueType> const& oneStepTargetProbabilities,
                                                                           std::function<uint64_t(uint64_t)> const& stateToScc)
     : transitionMatrix(transitionMatrix),
       backwardTransitions(&backwardTransitions),
       stateToScc(stateToScc),
-      rewards(rewards),
       oneStepTargetProbabilities(oneStepTargetProbabilities) {
     // Intentionally left empty.
 }
 
 template<typename ValueType>
 BaierUpperRewardBoundsComputer<ValueType>::BaierUpperRewardBoundsComputer(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                          std::vector<ValueType> const& rewards,
                                                                           std::vector<ValueType> const& oneStepTargetProbabilities,
                                                                           std::function<uint64_t(uint64_t)> const& stateToScc)
-    : transitionMatrix(transitionMatrix),
-      backwardTransitions(nullptr),
-      stateToScc(stateToScc),
-      rewards(rewards),
-      oneStepTargetProbabilities(oneStepTargetProbabilities) {
+    : transitionMatrix(transitionMatrix), backwardTransitions(nullptr), stateToScc(stateToScc), oneStepTargetProbabilities(oneStepTargetProbabilities) {
     // Intentionally left empty.
 }
 
@@ -70,9 +62,9 @@ std::vector<ValueType> BaierUpperRewardBoundsComputer<ValueType>::computeUpperBo
     // While they only consider processed states from a previous iteration step, we immediately consider them once they are processed
 
     auto const numStates = transitionMatrix.getRowGroupCount();
-    assert(transitionMatrix.getRowCount() == oneStepTargetProbabilities.size());
-    assert(backwardTransitions.getRowCount() == numStates);
-    assert(backwardTransitions.getColumnCount() == numStates);
+    STORM_LOG_ASSERT(transitionMatrix.getRowCount() == oneStepTargetProbabilities.size(), "Row count mismatch.");
+    STORM_LOG_ASSERT(backwardTransitions.getRowCount() == numStates, "Backward transition row count mismatch.");
+    STORM_LOG_ASSERT(backwardTransitions.getColumnCount() == numStates, "Backward transition column count mismatch.");
     auto const& rowGroupIndices = transitionMatrix.getRowGroupIndices();
 
     // Initialize the 'valid' choices.
@@ -136,8 +128,8 @@ std::vector<ValueType> BaierUpperRewardBoundsComputer<ValueType>::computeUpperBo
     auto const candidateStateItEnd = candidateStates.rend();
     while (true) {
         // Assert invariant: all states with index >= unprocessedEnd are processed and state (unprocessedEnd - 1) is not processed
-        STORM_LOG_ASSERT(processedStates.getNextUnsetIndex(unprocessedEnd) == processedStates.size(), "Invalid index for last unexplored state");
-        STORM_LOG_ASSERT(candidateStates.isSubsetOf(~processedStates), "");
+        STORM_LOG_ASSERT(processedStates.getNextUnsetIndex(unprocessedEnd) == processedStates.size(), "Invalid index for last unexplored state.");
+        STORM_LOG_ASSERT(candidateStates.isSubsetOf(~processedStates), "Candidate states should be subset of unprocessed states.");
         uint64_t const state = *candidateStateIt;
         auto const group = transitionMatrix.getRowGroupIndices(state);
         if (std::all_of(group.begin(), group.end(), [&isValidChoice](auto const& choice) { return isValidChoice(choice); })) {
@@ -152,7 +144,7 @@ std::vector<ValueType> BaierUpperRewardBoundsComputer<ValueType>::computeUpperBo
             if (state == unprocessedEnd - 1) {
                 unprocessedEnd = processedStates.getStartOfOneSequenceBefore(unprocessedEnd - 1);
                 if (unprocessedEnd == 0) {
-                    STORM_LOG_ASSERT(processedStates.full(), "Expected all states to be processed");
+                    STORM_LOG_ASSERT(processedStates.full(), "Expected all states to be processed.");
                     break;
                 }
             }
@@ -182,31 +174,64 @@ std::vector<ValueType> BaierUpperRewardBoundsComputer<ValueType>::computeUpperBo
 }
 
 template<typename ValueType>
-ValueType BaierUpperRewardBoundsComputer<ValueType>::computeUpperBound() {
+typename BaierUpperRewardBoundsComputer<ValueType>::Bounds BaierUpperRewardBoundsComputer<ValueType>::computeTotalRewardBounds(
+    std::vector<ValueType> const& rewards) {
     STORM_LOG_TRACE("Computing upper reward bounds using variant-2 of Baier et al.");
 
+    // Ensure backward transitions are available.
     storm::storage::SparseMatrix<ValueType> computedBackwardTransitions;
     if (!backwardTransitions) {
         computedBackwardTransitions = transitionMatrix.transpose(true);
     }
     auto const& backwardTransRef = backwardTransitions ? *backwardTransitions : computedBackwardTransitions;
 
-    auto expVisits = stateToScc ? computeUpperBoundOnExpectedVisitingTimes(transitionMatrix, backwardTransRef, oneStepTargetProbabilities, stateToScc)
-                                : computeUpperBoundOnExpectedVisitingTimes(transitionMatrix, backwardTransRef, oneStepTargetProbabilities);
-
-    ValueType upperBound = storm::utility::zero<ValueType>();
-    for (uint64_t state = 0; state < expVisits.size(); ++state) {
-        ValueType maxReward = storm::utility::zero<ValueType>();
-        // By starting the maxReward with zero, negative rewards are essentially ignored which
-        // is necessary to provide a valid upper bound
-        for (auto row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
-            maxReward = std::max(maxReward, rewards[row]);
-        }
-        upperBound += expVisits[state] * maxReward;
+    // Ensure SCCs are available.
+    std::vector<uint64_t> computedStateToSccVec;
+    std::function<uint64_t(uint64_t)> stateToSccFct;
+    if (this->stateToScc) {
+        stateToSccFct = this->stateToScc;
+    } else {
+        // If no stateToScc function is given, we compute the SCCs from the transition matrix.
+        computedStateToSccVec =
+            storm::storage::StronglyConnectedComponentDecomposition<ValueType>(transitionMatrix).computeStateToSccIndexMap(transitionMatrix.getRowGroupCount());
+        stateToSccFct = [&computedStateToSccVec](uint64_t s) { return computedStateToSccVec[s]; };
     }
 
-    STORM_LOG_TRACE("Baier algorithm for reward bound computation (variant 2) computed bound " << upperBound << ".");
-    return upperBound;
+    auto expVisits = computeUpperBoundOnExpectedVisitingTimes(transitionMatrix, backwardTransRef, oneStepTargetProbabilities, stateToSccFct);
+
+    Bounds result{.lower = storm::utility::zero<ValueType>(), .upper = storm::utility::zero<ValueType>()};
+    for (uint64_t state = 0; state < expVisits.size(); ++state) {
+        // Get the maximum / minimum reward that can be collected in the state.
+        // We distinguish between choices that surely exit the current SCC and those that do not.
+        // The former can only be taken at most once so we do not have to multiply with the upper bound on the expected visits.
+        auto const currScc = stateToSccFct(state);
+        storm::utility::Maximum<ValueType> maxReward(storm::utility::zero<ValueType>()), maxRewardStay;
+        storm::utility::Minimum<ValueType> minReward(storm::utility::zero<ValueType>()), minRewardStay;
+        // By starting the maxRewards with zero, negative rewards are essentially ignored which is necessary to provide a valid upper bound
+        for (auto rowIndex : transitionMatrix.getRowGroupIndices(state)) {
+            auto const row = transitionMatrix.getRow(rowIndex);
+            bool const exitingChoice =
+                std::all_of(row.begin(), row.end(), [&stateToSccFct, &currScc](auto const& entry) { return currScc != stateToSccFct(entry.getColumn()); });
+            if (exitingChoice) {
+                maxReward &= rewards[rowIndex];
+                minReward &= rewards[rowIndex];
+            } else {
+                maxRewardStay &= rewards[rowIndex];
+                minRewardStay &= rewards[rowIndex];
+            }
+        }
+        if (!maxRewardStay.empty()) {
+            maxReward &= (*maxRewardStay * expVisits[state]);
+        }
+        result.upper += *maxReward;
+        if (!minRewardStay.empty()) {
+            minReward &= (*minRewardStay * expVisits[state]);
+        }
+        result.lower += *minReward;
+    }
+
+    STORM_LOG_TRACE("Baier algorithm for reward bound computation (variant 2) computed bounds [" << result.lower << ", " << result.upper << "].");
+    return result;
 }
 
 template class BaierUpperRewardBoundsComputer<double>;

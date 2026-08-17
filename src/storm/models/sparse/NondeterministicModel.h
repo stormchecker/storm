@@ -1,5 +1,4 @@
-#ifndef STORM_MODELS_SPARSE_NONDETERMINISTICMODEL_H_
-#define STORM_MODELS_SPARSE_NONDETERMINISTICMODEL_H_
+#pragma once
 
 #include "storm/models/sparse/Model.h"
 #include "storm/storage/StateActionPair.h"
@@ -77,5 +76,3 @@ class NondeterministicModel : public Model<ValueType, RewardModelType> {
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SPARSE_NONDETERMINISTICMODEL_H_ */

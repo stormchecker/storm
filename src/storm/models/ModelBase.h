@@ -1,9 +1,11 @@
-#ifndef STORM_MODELS_ABSTRACTMODEL_H_
-#define STORM_MODELS_ABSTRACTMODEL_H_
+#pragma once
 
+#include <cstdint>
 #include <memory>
+#include <optional>
 
 #include "storm/models/ModelType.h"
+#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 namespace models {
@@ -100,6 +102,19 @@ class ModelBase : public std::enable_shared_from_this<ModelBase> {
     virtual bool isSymbolicModel() const;
 
     /*!
+     * @return the type of Dd library used for this model (if any)
+     */
+    virtual std::optional<storm::dd::DdType> getDdType() const;
+
+    /*!
+     * Does it support uncertainty (e.g., via interval-valued entries).
+     * Notice that while parametric Markov models may be seen as uncertain, within storm,these models are not called uncertain.
+     *
+     * @return
+     */
+    virtual bool supportsUncertainty() const;
+
+    /*!
      * Checks whether the model is of the given type.
      *
      * @param modelType The model type to check for.
@@ -170,5 +185,3 @@ class ModelBase : public std::enable_shared_from_this<ModelBase> {
 
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_ABSTRACTMODEL_H_ */

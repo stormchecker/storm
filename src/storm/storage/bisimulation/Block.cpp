@@ -1,11 +1,9 @@
 #include "storm/storage/bisimulation/Block.h"
 
-#include <iomanip>
 #include <iostream>
 
 #include "storm/storage/bisimulation/DeterministicBlockData.h"
 #include "storm/storage/bisimulation/Partition.h"
-
 #include "storm/utility/macros.h"
 
 namespace storm {

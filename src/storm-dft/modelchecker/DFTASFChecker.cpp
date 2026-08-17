@@ -1,7 +1,8 @@
 #include "DFTASFChecker.h"
-#include <string>
-#include "SmtConstraint.cpp"
 
+#include <string>
+
+#include "storm-dft/modelchecker/SmtConstraint.h"
 #include "storm-parsers/parser/ExpressionCreator.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -47,7 +48,7 @@ void DFTASFChecker::convert() {
                         auto be = std::static_pointer_cast<storm::dft::storage::elements::BEConst<double> const>(element);
                         if (be->failed()) {
                             STORM_LOG_THROW(!failedBeIsSet, storm::exceptions::NotSupportedException,
-                                            "DFTs containing more than one constantly failed BE are not supported");
+                                            "DFTs containing more than one constantly failed BE are not supported.");
                             notFailed = dft.nrBasicElements();
                             failedBeVariables = varNames.size() - 1;
                             failedBeIsSet = true;
@@ -330,7 +331,7 @@ void DFTASFChecker::generateSpareConstraint(size_t i, std::vector<uint64_t> chil
     constraints.back()->setDescription("Last child & claimed -> SPARE fails");
 
     // Construct constraint for trying to claim next child
-    STORM_LOG_ASSERT(children.size() >= 2, "Spare has only one child");
+    STORM_LOG_ASSERT(children.size() >= 2, "Spare has only one child.");
     for (uint64_t currChild = 0; currChild < children.size() - 1; ++currChild) {
         uint64_t timeCurrChild = childVarIndices.at(currChild);  // Moment when current child fails
         // If i-th child fails after being claimed, then try to claim next child (constraint 6)
@@ -503,7 +504,7 @@ void DFTASFChecker::addMarkovianConstraints() {
 
 void DFTASFChecker::toFile(std::string const &filename) {
     std::ofstream stream;
-    storm::utility::openFile(filename, stream);
+    storm::io::openFile(filename, stream);
     stream << "; time point variables\n";
     for (auto const &timeVarEntry : timePointVariables) {
         stream << "(declare-fun " << varNames[timeVarEntry.second] << "() Int)\n";
@@ -533,7 +534,7 @@ void DFTASFChecker::toFile(std::string const &filename) {
         stream << "(assert " << constraint->toSmtlib2(varNames) << ")\n";
     }
     stream << "(check-sat)\n";
-    storm::utility::closeFile(stream);
+    storm::io::closeFile(stream);
 }
 
 void DFTASFChecker::toSolver() {
@@ -567,7 +568,7 @@ void DFTASFChecker::toSolver() {
 }
 
 storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithEq(uint64_t bound) {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries.");
 
     // Set backtracking marker to check several properties without reconstructing DFT encoding
     solver->push();
@@ -581,7 +582,7 @@ storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithEq(uint64_
 }
 
 storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithLeq(uint64_t bound) {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries.");
 
     // Set backtracking marker to check several properties without reconstructing DFT encoding
     solver->push();
@@ -595,22 +596,22 @@ storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithLeq(uint64
 }
 
 void DFTASFChecker::setSolverTimeout(uint_fast64_t milliseconds) {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, timeout cannot be set");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, timeout cannot be set.");
     solver->setTimeout(milliseconds);
 }
 
 void DFTASFChecker::unsetSolverTimeout() {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, timeout cannot be unset");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, timeout cannot be unset.");
     solver->unsetTimeout();
 }
 
 storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleNeverFailed() {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries.");
     return checkTleFailsWithEq(notFailed);
 }
 
 storm::solver::SmtSolver::CheckResult DFTASFChecker::checkFailsLeqWithEqNonMarkovianState(uint64_t checkbound, uint64_t nrNonMarkovian) {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries.");
     std::vector<uint64_t> markovianIndices;
     checkbound = std::min<int>(checkbound, markovianVariables.size());
     // Get Markovian variable indices up until given timepoint
@@ -632,7 +633,7 @@ storm::solver::SmtSolver::CheckResult DFTASFChecker::checkFailsLeqWithEqNonMarko
 }
 
 storm::solver::SmtSolver::CheckResult DFTASFChecker::checkFailsAtTimepointWithEqNonMarkovianState(uint64_t timepoint, uint64_t nrNonMarkovian) {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries.");
     std::vector<uint64_t> markovianIndices;
     timepoint = std::min<int>(timepoint, markovianVariables.size());
     // Get Markovian variable indices up until given timepoint
@@ -659,13 +660,13 @@ storm::solver::SmtSolver::CheckResult DFTASFChecker::checkDependencyConflict(uin
     STORM_LOG_DEBUG("Check " << dft.getElement(dep1Index)->name() << " and " << dft.getElement(dep2Index)->name());
     andConstr.clear();
     // AND FDEP1 is triggered before FDEP2 is resolved
-    andConstr.push_back(std::make_shared<IsGreaterEqual>(timePointVariables.at(dep1Index), timePointVariables.at(dep2Index)));
+    andConstr.push_back(std::make_shared<IsLessEqual>(timePointVariables.at(dep2Index), timePointVariables.at(dep1Index)));
     andConstr.push_back(std::make_shared<IsLess>(timePointVariables.at(dep1Index), dependencyVariables.at(dep2Index)));
     std::shared_ptr<SmtConstraint> betweenConstr1 = std::make_shared<And>(andConstr);
 
     andConstr.clear();
     // AND FDEP2 is triggered before FDEP1 is resolved
-    andConstr.push_back(std::make_shared<IsGreaterEqual>(timePointVariables.at(dep2Index), timePointVariables.at(dep1Index)));
+    andConstr.push_back(std::make_shared<IsLessEqual>(timePointVariables.at(dep1Index), timePointVariables.at(dep2Index)));
     andConstr.push_back(std::make_shared<IsLess>(timePointVariables.at(dep2Index), dependencyVariables.at(dep1Index)));
     std::shared_ptr<SmtConstraint> betweenConstr2 = std::make_shared<And>(andConstr);
 

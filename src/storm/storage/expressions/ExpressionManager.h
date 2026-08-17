@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSIONMANAGER_H_
-#define STORM_STORAGE_EXPRESSIONS_EXPRESSIONMANAGER_H_
+#pragma once
 
 #include <cstdint>
 #include <iosfwd>
@@ -36,8 +35,8 @@ class VariableIterator {
     VariableIterator(VariableIterator&& other) = default;
 
     // Define the basic input iterator operations.
-    bool operator==(VariableIterator const& other);
-    bool operator!=(VariableIterator const& other);
+    bool operator==(VariableIterator const& other) const;
+    bool operator!=(VariableIterator const& other) const;
     value_type& operator*();
     VariableIterator& operator++(int);
     VariableIterator& operator++();
@@ -169,6 +168,12 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
     Type const& getTranscendentalNumberType() const;
 
     /*!
+     * Retrieves the string type
+     * @return The string type
+     */
+    Type const& getStringType() const;
+
+    /*!
      * Declares a variable that is a copy of the provided variable (i.e. has the same type).
      *
      * @param variable The variable of which to create a copy.
@@ -233,6 +238,14 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
      * Declares a new array variable with the given name and the given element type.
      */
     Variable declareArrayVariable(std::string const& name, Type const& elementType, bool auxiliary = false);
+
+    /*!
+     * Declares a new string variable with the given name
+     *
+     * @param name The name of the variable.
+     * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
+     */
+    Variable declareStringVariable(std::string const& name, bool auxiliary = false);
 
     /*!
      * Declares a variable with the given name if it does not yet exist.
@@ -350,6 +363,11 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
     uint_fast64_t getNumberOfArrayVariables() const;
 
     /*!
+     * Retrieves the number of string variables.
+     */
+    uint_fast64_t getNumberOfStringVariables() const;
+
+    /*!
      * Retrieves the name of the variable with the given index.
      *
      * @param index The index of the variable whose name to retrieve.
@@ -446,14 +464,6 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
      */
     uint_fast64_t getNumberOfVariables(storm::expressions::Type const& variableType) const;
 
-    /*!
-     * Retrieves the number of auxiliary variables with the given type. Note that this considers bounded integer
-     * variables to be of the same type, no matter which bit width they have.
-     *
-     * @param variableType The type for which to query the number of auxiliary variables.
-     */
-    uint_fast64_t getNumberOfAuxiliaryVariables(storm::expressions::Type const& variableType) const;
-
     // The set of all known variables.
     std::set<Variable> variableSet;
 
@@ -472,16 +482,7 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
     uint_fast64_t numberOfBitVectorVariables;
     uint_fast64_t numberOfRationalVariables;
     uint_fast64_t numberOfArrayVariables;
-
-    // The number of declared auxiliary variables.
-    uint_fast64_t numberOfAuxiliaryVariables;
-
-    // Store counts for auxiliary variables.
-    uint_fast64_t numberOfAuxiliaryBooleanVariables;
-    uint_fast64_t numberOfAuxiliaryIntegerVariables;
-    uint_fast64_t numberOfAuxiliaryBitVectorVariables;
-    uint_fast64_t numberOfAuxiliaryRationalVariables;
-    uint_fast64_t numberOfAuxiliaryArrayVariables;
+    uint_fast64_t numberOfStringVariables;
 
     // A counter used to create fresh variables.
     uint_fast64_t freshVariableCounter;
@@ -493,6 +494,7 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
     mutable boost::optional<Type> rationalType;
     mutable std::unordered_set<Type> arrayTypes;
     mutable boost::optional<Type> transcendentalNumberType;
+    mutable boost::optional<Type> stringType;
 
     // A mask that can be used to query whether a variable is an auxiliary variable.
     static const uint64_t auxiliaryMask = (1ull << 50);
@@ -504,5 +506,3 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
 std::ostream& operator<<(std::ostream& out, ExpressionManager const& manager);
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSIONMANAGER_H_ */

@@ -1,5 +1,7 @@
+#pragma once
+
 #include <vector>
-#include "storm/exceptions/UnexpectedException.h"
+
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/storage/expressions/Expressions.h"

@@ -1,9 +1,10 @@
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/storage/SchedulerChoice.h"
-#include "storm/utility/macros.h"
 
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {
@@ -121,6 +122,7 @@ template class ExplicitModelCheckerHint<double>;
 template class ExplicitModelCheckerHint<storm::RationalNumber>;
 template class ExplicitModelCheckerHint<storm::RationalFunction>;
 template class ExplicitModelCheckerHint<storm::Interval>;
+template class ExplicitModelCheckerHint<storm::RationalInterval>;
 
 }  // namespace modelchecker
 }  // namespace storm

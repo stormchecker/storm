@@ -1,14 +1,8 @@
-/*
- * MappedFileTest.cpp
- *
- *  Created on: Feb 25, 2014
- *      Author: Manuel Sascha Weiand
- */
-
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
 #include <string>
+
 #include "storm-parsers/parser/MappedFile.h"
 #include "storm-parsers/util/cstring.h"
 #include "storm/exceptions/FileIoException.h"
@@ -39,12 +33,12 @@ TEST(MappedFileTest, ExistsAndReadble) {
     // Test the fileExistsAndIsReadable() method under various circumstances.
 
     // File exists and is readable.
-    ASSERT_TRUE(storm::utility::fileExistsAndIsReadable(STORM_TEST_RESOURCES_DIR "/txt/testStringFile.txt"));
+    ASSERT_TRUE(storm::io::fileExistsAndIsReadable(STORM_TEST_RESOURCES_DIR "/txt/testStringFile.txt"));
 
     // File does not exist.
-    ASSERT_FALSE(storm::utility::fileExistsAndIsReadable(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"));
+    ASSERT_FALSE(storm::io::fileExistsAndIsReadable(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"));
 
     // File exists but is not readable.
     // TODO: Find portable solution to providing a situation in which a file exists but is not readable.
-    // ASSERT_FALSE(storm::utility::fileExistsAndIsReadable(STORM_TEST_RESOURCES_DIR "/parser/unreadableFile.txt"));
+    // ASSERT_FALSE(storm::io::fileExistsAndIsReadable(STORM_TEST_RESOURCES_DIR "/parser/unreadableFile.txt"));
 }

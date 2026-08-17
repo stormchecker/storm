@@ -1,14 +1,13 @@
-#include "NonMarkovianChainTransformer.h"
+#include "storm/transformer/NonMarkovianChainTransformer.h"
 
-#include <queue>
-
-#include <storm/solver/stateelimination/NondeterministicModelStateEliminator.h>
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidModelException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
-#include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
 #include "storm/storage/FlexibleSparseMatrix.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/utility/constants.h"

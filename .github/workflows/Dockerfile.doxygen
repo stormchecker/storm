@@ -2,16 +2,22 @@
 ##############################################
 # The Docker image can be built by executing:
 # docker build -t yourusername/storm .
+# A different base image can be set from the commandline with:
+# --build-arg BASE_IMAGE=<new_base_image>
 
 # Set base image
-FROM movesrwth/storm-dependencies:latest
-MAINTAINER Matthias Volk <m.volk@tue.nl>
+ARG BASE_IMAGE=movesrwth/storm-dependencies:latest
+FROM $BASE_IMAGE
+LABEL org.opencontainers.image.authors="dev@stormchecker.org"
 
-# Specify configurations
-# These configurations can be set from the commandline with:
-# --build-arg <config_name>=<value>
+
+# Configuration arguments
+#########################
+# The arguments can be set from the commandline with:
+# --build-arg <arg_name>=<value>
+
 # Specify number of threads to use for parallel compilation
-ARG no_threads=1
+ARG no_threads=4
 
 
 # Install dependencies
@@ -33,11 +39,9 @@ RUN mkdir -p /opt/storm/build
 WORKDIR /opt/storm/build
 
 # Configure Storm
-RUN cmake .. -DCMAKE_BUILD_TYPE=Release \
-             -DSTORM_PORTABLE=ON \
-             -DSTORM_USE_GUROBI=ON \
-             -DSTORM_USE_SOPLEX=ON \
-             -DSTORM_USE_SPOT_SYSTEM=ON
+RUN cmake -DCMAKE_BUILD_TYPE=Release \
+          -DSTORM_PORTABLE=ON \
+	  ..
 
 # Build Doxygen
 RUN make doc -j $no_threads

@@ -1,6 +1,7 @@
 #include "SymmetryFinder.h"
 
 #include "storm-dft/storage/DFTIsomorphism.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/vector.h"
 
 namespace storm::dft {

@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_BITVECTORHASHMAP_H_
-#define STORM_STORAGE_BITVECTORHASHMAP_H_
+#pragma once
 
 #include <cstdint>
 #include <functional>
@@ -29,8 +28,8 @@ class BitVectorHashMap {
         BitVectorHashMapIterator(BitVectorHashMap const& map, BitVector::const_iterator indexIt);
 
         // Methods to compare two iterators.
-        bool operator==(BitVectorHashMapIterator const& other);
-        bool operator!=(BitVectorHashMapIterator const& other);
+        bool operator==(BitVectorHashMapIterator const& other) const;
+        bool operator!=(BitVectorHashMapIterator const& other) const;
 
         // Methods to move iterator forward.
         BitVectorHashMapIterator& operator++(int);
@@ -57,7 +56,7 @@ class BitVectorHashMap {
      * @param loadFactor The load factor that determines at which point the size of the underlying storage is
      * increased.
      */
-    BitVectorHashMap(uint64_t bucketSize = 64, uint64_t initialSize = 1000, double loadFactor = 0.75);
+    BitVectorHashMap(uint64_t bucketSize, uint64_t initialSize = 1000, double loadFactor = 0.75);
 
     BitVectorHashMap(BitVectorHashMap const&) = default;
     BitVectorHashMap(BitVectorHashMap&&) = default;
@@ -171,16 +170,6 @@ class BitVectorHashMap {
     std::pair<bool, uint64_t> findBucket(storm::storage::BitVector const& key) const;
 
     /*!
-     * Inserts the given key-value pair without resizing the underlying storage. If that fails, this is
-     * indicated by the return value.
-     *
-     * @param key The key to insert.
-     * @param value The value to insert.
-     * @return True iff the key-value pair could be inserted without resizing the storage.
-     */
-    bool insertWithoutIncreasingSize(storm::storage::BitVector const& key, ValueType const& value);
-
-    /*!
      * Increases the size of the hash map and performs the necessary rehashing of all entries.
      */
     void increaseSize();
@@ -224,5 +213,3 @@ class BitVectorHashMap {
 
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_BITVECTORHASHMAP_H_ */

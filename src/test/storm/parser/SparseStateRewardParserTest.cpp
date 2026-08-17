@@ -1,10 +1,3 @@
-/*
- * SparseStateRewardParserTest.cpp
- *
- *  Created on: 26.02.2014
- *      Author: Manuel Sascha Weiand
- */
-
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 

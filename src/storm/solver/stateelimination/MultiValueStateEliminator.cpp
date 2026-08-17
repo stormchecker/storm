@@ -53,10 +53,8 @@ void MultiValueStateEliminator<ValueType>::clearStateValues(storm::storage::spar
 
 template class MultiValueStateEliminator<double>;
 
-#ifdef STORM_HAVE_CARL
 template class MultiValueStateEliminator<storm::RationalNumber>;
 template class MultiValueStateEliminator<storm::RationalFunction>;
-#endif
 }  // namespace stateelimination
 }  // namespace solver
 }  // namespace storm

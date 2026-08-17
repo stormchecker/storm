@@ -16,9 +16,12 @@ std::ostream& operator<<(std::ostream& os, RegionCheckEngine const& e) {
         case RegionCheckEngine::ValidatingParameterLifting:
             os << "Validating Parameter Lifting";
             break;
+        case RegionCheckEngine::RobustParameterLifting:
+            os << "Robust Parameter Lifting";
+            break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                            "Could not get a string from the region check engine. The case has not been implemented");
+                            "Could not get a string from the region check engine. The case has not been implemented.");
     }
     return os;
 }

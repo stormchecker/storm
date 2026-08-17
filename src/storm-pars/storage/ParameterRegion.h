@@ -2,8 +2,9 @@
 
 #include <map>
 
-#include "storm-pars/analysis/MonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm-pars/utility/parametric.h"
+#include "storm/adapters/RationalFunctionAdapter.h"  // TODO: use forward header
 #include "storm/solver/OptimizationDirection.h"
 
 namespace storm {
@@ -32,6 +33,8 @@ class ParameterRegion {
     CoefficientType const& getUpperBoundary(const std::string varName) const;
     CoefficientType getDifference(const std::string varName) const;
     CoefficientType getDifference(VariableType const& variable) const;
+    CoefficientType getCenter(const std::string varName) const;
+    CoefficientType getCenter(VariableType const& variable) const;
     Valuation const& getLowerBoundaries() const;
     Valuation const& getUpperBoundaries() const;
 
@@ -62,13 +65,18 @@ class ParameterRegion {
     CoefficientType area() const;
 
     /*!
+     * Returns whether the given point is in this region
+     */
+    bool contains(Valuation const& point) const;
+
+    /*!
      * Splits the region at the given point and inserts the resulting subregions at the end of the given vector.
      * It is assumed that the point lies within this region.
      * Subregions with area()==0 are not inserted in the vector.
      */
     void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector) const;
-    void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector,
-               std::set<VariableType> const& consideredVariables) const;
+    void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, std::set<VariableType> const& consideredVariables,
+               std::set<VariableType> const& discreteVariables) const;
 
     Valuation getPoint(storm::solver::OptimizationDirection dir, storm::analysis::MonotonicityResult<VariableType>& monRes) const;
     Valuation getPoint(storm::solver::OptimizationDirection dir, std::set<VariableType> const& possibleMonotoneIncrParameters,

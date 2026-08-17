@@ -124,7 +124,7 @@ std::string comparisonTypeToJani(storm::logic::ComparisonType ct) {
         case storm::logic::ComparisonType::GreaterEqual:
             return "≥";
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType");
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType.");
 }
 
 ExportJsonType FormulaToJaniJson::constructPropertyInterval(boost::optional<storm::expressions::Expression> const& lower,
@@ -194,11 +194,18 @@ ExportJsonType FormulaToJaniJson::translate(storm::logic::Formula const& formula
     if (translator.containsStateExitRewards()) {
         modelFeatures.add(storm::jani::ModelFeature::StateExitRewards);
     }
+    if (translator.containsMultiObjectiveProperties()) {
+        modelFeatures.add(storm::jani::ModelFeature::MultiObjectiveProperties);
+    }
     return result;
 }
 
 bool FormulaToJaniJson::containsStateExitRewards() const {
     return stateExitRewards;
+}
+
+bool FormulaToJaniJson::containsMultiObjectiveProperties() const {
+    return multiObjectiveProperties;
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::AtomicExpressionFormula const& f, boost::any const&) const {
@@ -226,7 +233,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::BinaryBooleanPathFormula const
     return opDecl;
 }
 boost::any FormulaToJaniJson::visit(storm::logic::BooleanLiteralFormula const& f, boost::any const&) const {
-    ExportJsonType opDecl(f.isTrueFormula() ? true : false);
+    ExportJsonType opDecl(f.isTrueFormula());
     return opDecl;
 }
 boost::any FormulaToJaniJson::visit(storm::logic::BoundedUntilFormula const& f, boost::any const& data) const {
@@ -283,11 +290,11 @@ boost::any FormulaToJaniJson::visit(storm::logic::BoundedUntilFormula const& f, 
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::ConditionalFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani currently does not support conditional formulae");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani currently does not support conditional formulae.");
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::CumulativeRewardFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm currently does not support translating cumulative reward formulae");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm currently does not support translating cumulative reward formulae.");
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::EventuallyFormula const& f, boost::any const& data) const {
@@ -316,7 +323,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::TimeOperatorFormula const& f, 
             if (f.getSubformula().isEventuallyFormula()) {
                 opDecl["left"]["reach"] = anyToJson(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported subformula for time operator formula " << f);
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported subformula for time operator formula " << f << ".");
             }
         } else {
             opDecl["left"]["op"] =
@@ -333,7 +340,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::TimeOperatorFormula const& f, 
             if (f.getSubformula().isEventuallyFormula()) {
                 opDecl["reach"] = anyToJson(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported subformula for time operator formula " << f);
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported subformula for time operator formula " << f << ".");
             }
         } else {
             // TODO add checks
@@ -358,7 +365,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::GameFormula const&, boost::any
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::InstantaneousRewardFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of an instanteneous reward formula");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of an instanteneous reward formula.");
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageOperatorFormula const& f, boost::any const& data) const {
@@ -417,15 +424,48 @@ boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageRewardFormula co
     //            }
     //            return opDecl;
 
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of an LRA reward formula");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of an LRA reward formula.");
 }
 
-boost::any FormulaToJaniJson::visit(storm::logic::MultiObjectiveFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of a multi-objective formula");
+boost::any FormulaToJaniJson::visit(storm::logic::MultiObjectiveFormula const& f, boost::any const& data) const {
+    multiObjectiveProperties = true;
+    ExportJsonType opDecl;
+    opDecl["op"] = "Multi";
+    STORM_LOG_ASSERT(f.isTradeoff() || f.isLexicographic(), "Unexpected multi-objective formula type.");
+    opDecl["type"] = f.isTradeoff() ? "tradeoff" : "lexicographic";
+    opDecl["properties"] = ExportJsonType::array();
+    for (auto const& subformula : f.getSubformulas()) {
+        auto p = ExportJsonType::object();
+        auto subFormulaCopy = subformula->clone();
+        if (subFormulaCopy->isOperatorFormula()) {
+            auto& operatorFormula = subFormulaCopy->asOperatorFormula();
+            if (operatorFormula.hasBound()) {
+                if (!operatorFormula.hasOptimalityType()) {
+                    // Set a sane optimality type because JANI properties require some
+                    auto const derivedOptimalityType = storm::logic::isLowerBound(operatorFormula.getBound().comparisonType)
+                                                           ? storm::solver::OptimizationDirection::Maximize
+                                                           : storm::solver::OptimizationDirection::Minimize;
+                    operatorFormula.setOptimalityType(derivedOptimalityType);
+                }
+            } else {
+                STORM_LOG_THROW(
+                    operatorFormula.hasOptimalityType(), storm::exceptions::NotSupportedException,
+                    "Unable to export a multi-objective formula since the optimization direction for subformula " << *subFormulaCopy << " can not be derived.");
+                p["opt"] = storm::solver::minimize(subformula->asOperatorFormula().getOptimalityType()) ? "min" : "max";
+            }
+        } else {
+            STORM_LOG_THROW(
+                subFormulaCopy->hasQualitativeResult(), storm::exceptions::NotSupportedException,
+                "Unable to export a multi-objective formula since the optimization direction for subformula " << *subFormulaCopy << " can not be derived.");
+        }
+        p["exp"] = anyToJson(subFormulaCopy->accept(*this, data));
+        opDecl["properties"].push_back(std::move(p));
+    }
+    return opDecl;
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::QuantileFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of a Quantile formula");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of a Quantile formula.");
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::NextFormula const& f, boost::any const& data) const {
@@ -470,14 +510,6 @@ boost::any FormulaToJaniJson::visit(storm::logic::ProbabilityOperatorFormula con
 
 boost::any FormulaToJaniJson::visit(storm::logic::RewardOperatorFormula const& f, boost::any const& data) const {
     ExportJsonType opDecl;
-
-    std::string instantName;
-    if (model.isDiscreteTimeModel()) {
-        instantName = "step-instant";
-    } else {
-        instantName = "time-instant";
-    }
-
     std::string rewardModelName;
     if (f.hasRewardModelName()) {
         rewardModelName = f.getRewardModelName();
@@ -493,7 +525,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::RewardOperatorFormula const& f
             }
         }
     }
-    STORM_LOG_THROW(!rewardModelName.empty(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
+    STORM_LOG_THROW(!rewardModelName.empty(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion.");
 
     std::string opString = "";
     if (f.getSubformula().isLongRunAverageRewardFormula()) {
@@ -510,32 +542,70 @@ boost::any FormulaToJaniJson::visit(storm::logic::RewardOperatorFormula const& f
     }
 
     opDecl["op"] = opString;
+    auto setRewardAccumulation = [&opDecl, &rewardModelName, this](auto const& subformula) {
+        opDecl["accumulate"] = subformula.hasRewardAccumulation() ? constructRewardAccumulation(subformula.getRewardAccumulation(), rewardModelName)
+                                                                  : constructStandardRewardAccumulation(rewardModelName);
+    };
 
     if (f.getSubformula().isEventuallyFormula()) {
         opDecl["reach"] = anyToJson(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
-        if (f.getSubformula().asEventuallyFormula().hasRewardAccumulation()) {
-            opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asEventuallyFormula().getRewardAccumulation(), rewardModelName);
-        } else {
-            opDecl["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
-        }
+        setRewardAccumulation(f.getSubformula().asEventuallyFormula());
     } else if (f.getSubformula().isCumulativeRewardFormula()) {
-        // TODO: support for reward bounded formulas
-        STORM_LOG_WARN_COND(!f.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isRewardBound(),
-                            "Export for cumulative reward formulas with reward instant currently unsupported.");
-        opDecl[instantName] = buildExpression(f.getSubformula().asCumulativeRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
-        if (f.getSubformula().asCumulativeRewardFormula().hasRewardAccumulation()) {
-            opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asCumulativeRewardFormula().getRewardAccumulation(), rewardModelName);
+        auto const& subf = f.getSubformula().asCumulativeRewardFormula();
+        setRewardAccumulation(subf);
+        auto isStepInstant = [this, &subf](uint64_t i) {
+            return subf.getTimeBoundReference(i).isStepBound() || (model.isDiscreteTimeModel() && subf.getTimeBoundReference(i).isTimeBound());
+        };
+        auto getInstantExpression = [&subf, &isStepInstant](uint64_t i) {
+            auto instantExpr = subf.getBound(i);
+            // handle strict bounds
+            if (subf.isBoundStrict(i)) {
+                // Jani can't represent strict bounds. Only in case of step bounds we can decrease the bound by one as a workaround.
+                STORM_LOG_THROW(isStepInstant(i), storm::exceptions::NotSupportedException,
+                                "Jani export of cumulative reward formula " << subf << " with strict time or reward bound is not supported.");
+                instantExpr = instantExpr - subf.getBound(i).getManager().integer(1);
+            }
+            // ensure correct type for step instants
+            if (isStepInstant(i) && !instantExpr.getType().isIntegerType()) {
+                instantExpr = storm::expressions::floor(instantExpr);
+            }
+            return instantExpr;
+        };
+        if (subf.isMultiDimensional() || subf.getTimeBoundReference().isRewardBound()) {
+            opDecl["reward-instants"] = ExportJsonType::array();
+            for (uint64_t i = 0; i < subf.getDimension(); ++i) {
+                ExportJsonType instantDecl;
+                auto const& tbr = subf.getTimeBoundReference(i);
+                instantDecl["exp"] =
+                    tbr.isRewardBound() ? buildExpression(model.getRewardModelExpression(tbr.getRewardName()), model.getConstants(), model.getGlobalVariables())
+                                        : ExportJsonType(1);
+                if (tbr.isRewardBound()) {
+                    if (tbr.hasRewardAccumulation()) {
+                        instantDecl["accumulate"] = constructRewardAccumulation(tbr.getRewardAccumulation(), tbr.getRewardName());
+                    } else {
+                        instantDecl["accumulate"] = constructStandardRewardAccumulation(tbr.getRewardName());
+                    }
+                } else if (isStepInstant(i)) {
+                    instantDecl["accumulate"] = constructRewardAccumulation(storm::logic::RewardAccumulation(true, false, false));
+                } else {
+                    instantDecl["accumulate"] = constructRewardAccumulation(storm::logic::RewardAccumulation(false, true, false));
+                }
+                instantDecl["instant"] = buildExpression(getInstantExpression(i), model.getConstants(), model.getGlobalVariables());
+                opDecl["reward-instants"].push_back(std::move(instantDecl));
+            }
         } else {
-            opDecl["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
+            opDecl[isStepInstant(0) ? "step-instant" : "time-instant"] =
+                buildExpression(getInstantExpression(0), model.getConstants(), model.getGlobalVariables());
         }
+    } else if (f.getSubformula().isTotalRewardFormula()) {
+        setRewardAccumulation(f.getSubformula().asTotalRewardFormula());
     } else if (f.getSubformula().isInstantaneousRewardFormula()) {
-        opDecl[instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
+        opDecl[model.isDiscreteTimeModel() ? "step-instant" : "time-instant"] =
+            buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
     } else if (f.getSubformula().isLongRunAverageRewardFormula()) {
-        if (f.getSubformula().asLongRunAverageRewardFormula().hasRewardAccumulation()) {
-            opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asLongRunAverageRewardFormula().getRewardAccumulation(), rewardModelName);
-        } else {
-            opDecl["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
-        }
+        setRewardAccumulation(f.getSubformula().asLongRunAverageRewardFormula());
+    } else {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unhandled subformula for jani export: " << f.getSubformula() << ".");
     }
     opDecl["exp"] = buildExpression(model.getRewardModelExpression(rewardModelName), model.getConstants(), model.getGlobalVariables());
 
@@ -552,11 +622,11 @@ boost::any FormulaToJaniJson::visit(storm::logic::RewardOperatorFormula const& f
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::TotalRewardFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support a total reward formula");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support a total reward formula.");
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::UnaryBooleanStateFormula const& f, boost::any const& data) const {
-    STORM_LOG_ASSERT(f.getOperator() == storm::logic::UnaryBooleanStateFormula::OperatorType::Not, "Unsupported operator");
+    STORM_LOG_ASSERT(f.getOperator() == storm::logic::UnaryBooleanStateFormula::OperatorType::Not, "Unsupported operator.");
     ExportJsonType opDecl;
     opDecl["op"] = "¬";
     opDecl["exp"] = anyToJson(f.getSubformula().accept(*this, data));
@@ -564,7 +634,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::UnaryBooleanStateFormula const
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::UnaryBooleanPathFormula const& f, boost::any const& data) const {
-    STORM_LOG_ASSERT(f.getOperator() == storm::logic::UnaryBooleanStateFormula::OperatorType::Not, "Unsupported operator");
+    STORM_LOG_ASSERT(f.getOperator() == storm::logic::UnaryBooleanStateFormula::OperatorType::Not, "Unsupported operator.");
     ExportJsonType opDecl;
     opDecl["op"] = "¬";
     opDecl["exp"] = boost::any_cast<ExportJsonType>(f.getSubformula().accept(*this, data));
@@ -580,7 +650,15 @@ boost::any FormulaToJaniJson::visit(storm::logic::UntilFormula const& f, boost::
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::HOAPathFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani currently does not support HOA path formulae");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani currently does not support HOA path formulae.");
+}
+
+boost::any FormulaToJaniJson::visit(storm::logic::DiscountedCumulativeRewardFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support discounted cumulative reward formulae.");
+}
+
+boost::any FormulaToJaniJson::visit(storm::logic::DiscountedTotalRewardFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support discounted total reward formulae.");
 }
 
 std::string operatorTypeToJaniString(storm::expressions::OperatorType optype) {
@@ -639,7 +717,7 @@ std::string operatorTypeToJaniString(storm::expressions::OperatorType optype) {
         case OpType::Cos:
             return "cos";
         default:
-            STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Operator not supported by Jani");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Operator not supported by Jani.");
     }
 }
 
@@ -806,9 +884,9 @@ boost::any ExpressionToJson::visit(storm::expressions::TranscendentalNumberLiter
 void JsonExporter::toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid,
                           bool compact) {
     std::ofstream stream;
-    storm::utility::openFile(filepath, stream, false, true);
+    storm::io::openFile(filepath, stream, false, true);
     toStream(janiModel, formulas, stream, checkValid, compact);
-    storm::utility::closeFile(stream);
+    storm::io::closeFile(stream);
 }
 
 void JsonExporter::toStream(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::ostream& os, bool checkValid,
@@ -934,7 +1012,7 @@ ExportJsonType buildType(storm::jani::JaniType const& type, std::vector<storm::j
         typeDesc["kind"] = "array";
         typeDesc["base"] = buildType(type.asArrayType().getBaseType(), constants, globalVariables, localVariables);
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Variable type not recognized in JSONExporter");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Variable type not recognized in JSONExporter.");
     }
     return typeDesc;
 }
@@ -1052,7 +1130,7 @@ ExportJsonType buildInitialLocations(storm::jani::Automaton const& automaton) {
 ExportJsonType buildDestinations(std::vector<EdgeDestination> const& destinations, std::map<uint64_t, std::string> const& locationNames,
                                  std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables,
                                  bool commentExpressions) {
-    assert(destinations.size() > 0);
+    STORM_LOG_ASSERT(destinations.size() > 0, "Expected at least one destination.");
     ExportJsonType destDeclarations = std::vector<ExportJsonType>();
     for (auto const& destination : destinations) {
         ExportJsonType destEntry;
@@ -1188,7 +1266,7 @@ std::string janiFilterTypeString(storm::modelchecker::FilterType const& ft) {
         case storm::modelchecker::FilterType::VALUES:
             return "values";
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown FilterType");
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown FilterType.");
 }
 
 ExportJsonType convertFilterExpression(storm::jani::FilterExpression const& fe, storm::jani::Model const& model, storm::jani::ModelFeatures& modelFeatures) {
@@ -1203,8 +1281,10 @@ ExportJsonType convertFilterExpression(storm::jani::FilterExpression const& fe, 
 void JsonExporter::convertProperties(std::vector<storm::jani::Property> const& formulas, storm::jani::Model const& model) {
     ExportJsonType properties;
 
-    // Unset model-features that only relate to properties. These are only set if such properties actually exist.
+    // For now, unset model-features that only relate to properties.
+    // If such properties actually exist, these features will be re-added during formula conversion below.
     modelFeatures.remove(storm::jani::ModelFeature::StateExitRewards);
+    modelFeatures.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
     if (formulas.empty()) {
         jsonStruct["properties"] = ExportJsonType(ExportJsonType::value_t::array);
         return;

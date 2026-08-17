@@ -1,23 +1,18 @@
 #include "storm/solver/LinearEquationSolver.h"
-#include <storm/exceptions/InvalidEnvironmentException.h>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/solver/SolverSelectionOptions.h"
-
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/exceptions/InvalidEnvironmentException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/solver/AcyclicLinearEquationSolver.h"
 #include "storm/solver/EigenLinearEquationSolver.h"
 #include "storm/solver/EliminationLinearEquationSolver.h"
 #include "storm/solver/GmmxxLinearEquationSolver.h"
 #include "storm/solver/NativeLinearEquationSolver.h"
+#include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/TopologicalLinearEquationSolver.h"
-
-#include "storm/utility/vector.h"
-
-#include "storm/environment/solver/SolverEnvironment.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace solver {
@@ -153,8 +148,8 @@ template<typename ValueType>
 std::unique_ptr<LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
     EquationSolverType type = env.solver().getLinearEquationSolverType();
 
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not implemented interval-based linear equation solvers");
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not implemented interval-based linear equation solvers.");
     }
 
     // Adjust the solver type if none was specified and we want sound/exact computations

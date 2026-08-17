@@ -1,5 +1,6 @@
 #include "BESamples.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm::dft {

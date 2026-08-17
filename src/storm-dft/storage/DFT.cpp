@@ -2,13 +2,13 @@
 
 #include <map>
 
+#include "storm-dft/builder/DFTBuilder.h"
+#include "storm-dft/utility/RelevantEvents.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/vector.h"
-
-#include "storm-dft/builder/DFTBuilder.h"
-#include "storm-dft/utility/RelevantEvents.h"
 
 namespace storm::dft {
 namespace storage {
@@ -75,9 +75,6 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
             auto& spareModule = module.second;
             auto const& spareModuleElements = spareModule.getElements();
             if (std::find(spareModuleElements.begin(), spareModuleElements.end(), topModuleId) != spareModuleElements.end()) {
-                STORM_LOG_WARN("Elements of spare module '"
-                               << getElement(spareModule.getRepresentative())->name()
-                               << "' also contained in top module. All elements of this spare module will be activated from the beginning on.");
                 spareModule.clear();
             }
         }
@@ -99,6 +96,9 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
 
     // Set relevant events: empty list corresponds to only setting the top-level event as relevant
     setRelevantEvents({}, false);
+
+    STORM_LOG_DEBUG("DFT elements:\n" << getElementsString());
+    STORM_LOG_DEBUG("DFT modules:\n" << getModulesString());
 }
 
 template<typename ValueType>
@@ -145,7 +145,7 @@ DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::stor
                     }
                 } else {
                     STORM_LOG_ASSERT(restr->isMutex(), "Restriction " << *restr << " is neither SEQ nor MUTEX.");
-                    bool found = false;
+                    [[maybe_unused]] bool found = false;
                     for (auto it = restr->children().cbegin(); it != restr->children().cend(); ++it) {
                         if ((*it)->id() != elem->id()) {
                             mutexRestrictionElements.push_back((*it)->id());
@@ -197,7 +197,7 @@ DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::stor
                 STORM_LOG_ASSERT(symmetricElements.size() == noSymmetricElements, "No. of symmetric elements do not coincide.");
                 if (visited[symmetricElements[1]]) {
                     // Elements already mirrored
-                    for (size_t index : symmetricElements) {
+                    for ([[maybe_unused]] size_t index : symmetricElements) {
                         STORM_LOG_ASSERT(visited[index], "Element not mirrored.");
                     }
                     continue;
@@ -252,7 +252,7 @@ DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::stor
         visitQueue.push(dependency->dependentEvents()[0]->id());
     }
     stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
-    STORM_LOG_ASSERT(visitQueue.empty(), "VisitQueue not empty");
+    STORM_LOG_ASSERT(visitQueue.empty(), "VisitQueue not empty.");
 
     // Visit all remaining states
     for (size_t i = 0; i < visited.size(); ++i) {
@@ -649,8 +649,8 @@ std::vector<size_t> DFT<ValueType>::findModularisationRewrite() const {
                     if (isdElemId == child->id())
                         continue;
                     if (std::find_if(children.begin(), children.end(),
-                                     [&isdElemId](std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>> const& e) {
-                                         return e->id() == isdElemId;
+                                     [&isdElemId](std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>> const& element) {
+                                         return element->id() == isdElemId;
                                      }) != children.end()) {
                         // element in subtree is also child
                         rewrite.push_back(isdElemId);

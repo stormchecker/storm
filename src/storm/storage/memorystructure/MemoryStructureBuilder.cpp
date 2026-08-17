@@ -1,10 +1,12 @@
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
+
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
 namespace storage {
@@ -61,7 +63,7 @@ void MemoryStructureBuilder<ValueType, RewardModelType>::setInitialMemoryState(u
         }
     }
 
-    assert(initMemStateIt != initialMemoryStates.end());
+    STORM_LOG_ASSERT(initMemStateIt != initialMemoryStates.end(), "Initial memory state not found.");
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -133,9 +135,11 @@ MemoryStructure MemoryStructureBuilder<ValueType, RewardModelType>::buildTrivial
 
 template class MemoryStructureBuilder<double>;
 template class MemoryStructureBuilder<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+template class MemoryStructureBuilder<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
 template class MemoryStructureBuilder<storm::RationalNumber>;
 template class MemoryStructureBuilder<storm::RationalFunction>;
 template class MemoryStructureBuilder<storm::Interval>;
+template class MemoryStructureBuilder<storm::RationalInterval>;
 
 }  // namespace storage
 }  // namespace storm

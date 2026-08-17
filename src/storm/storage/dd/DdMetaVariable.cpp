@@ -1,6 +1,5 @@
 #include "storm/storage/dd/DdMetaVariable.h"
 
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -110,6 +109,7 @@ uint64_t DdMetaVariable<LibraryType>::getHighestLevel() const {
     for (auto const& v : ddVariables) {
         if (first) {
             result = v.getLevel();
+            first = false;
         } else {
             result = std::max(result, v.getLevel());
         }

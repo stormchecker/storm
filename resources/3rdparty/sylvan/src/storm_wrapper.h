@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <sylvan.h>
 
 #ifdef __cplusplus
 extern "C" {

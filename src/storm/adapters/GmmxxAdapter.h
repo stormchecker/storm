@@ -9,6 +9,7 @@
 namespace storm {
 namespace adapters {
 
+#ifdef STORM_HAVE_GMM
 template<typename T>
 class GmmxxAdapter {
    public:
@@ -18,6 +19,7 @@ class GmmxxAdapter {
      */
     static std::unique_ptr<gmm::csr_matrix<T>> toGmmxxSparseMatrix(storm::storage::SparseMatrix<T> const& matrix);
 };
+#endif
 
 }  // namespace adapters
 }  // namespace storm

@@ -1,14 +1,11 @@
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
+
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/cudd/CuddAddIterator.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-
-#include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

@@ -1,19 +1,13 @@
 #include "storm-gamebased-ar/abstraction/MenuGameAbstractor.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/io/file.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/AbstractionSettings.h"
-
-#include "storm/io/file.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/utility/dd.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::gbar {
 namespace abstraction {
@@ -75,7 +69,7 @@ template<storm::dd::DdType DdType, typename ValueType>
 void MenuGameAbstractor<DdType, ValueType>::exportToDot(storm::gbar::abstraction::MenuGame<DdType, ValueType> const& currentGame, std::string const& filename,
                                                         storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const {
     std::ofstream out;
-    storm::utility::openFile(filename, out);
+    storm::io::openFile(filename, out);
     AbstractionInformation<DdType> const& abstractionInformation = this->getAbstractionInformation();
 
     storm::dd::Add<DdType, ValueType> filteredTransitions = filter.template toAdd<ValueType>() * currentGame.getTransitionMatrix();
@@ -172,7 +166,7 @@ void MenuGameAbstractor<DdType, ValueType>::exportToDot(storm::gbar::abstraction
     }
 
     out << "}\n";
-    storm::utility::closeFile(out);
+    storm::io::closeFile(out);
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
@@ -192,9 +186,6 @@ bool MenuGameAbstractor<DdType, ValueType>::hasTargetStateExpression() const {
 
 template class MenuGameAbstractor<storm::dd::DdType::CUDD, double>;
 template class MenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
-
-#ifdef STORM_HAVE_CARL
 template class MenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-#endif
 }  // namespace abstraction
 }  // namespace storm::gbar

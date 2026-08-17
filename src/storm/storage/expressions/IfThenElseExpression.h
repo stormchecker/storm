@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_IFTHENELSEEXPRESSION_H_
-#define STORM_STORAGE_EXPRESSIONS_IFTHENELSEEXPRESSION_H_
+#pragma once
 
 #include "storm/storage/expressions/BaseExpression.h"
 #include "storm/utility/OsDetection.h"
@@ -78,5 +77,3 @@ class IfThenElseExpression : public BaseExpression {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_IFTHENELSEEXPRESSION_H_ */

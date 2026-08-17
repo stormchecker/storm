@@ -1,6 +1,8 @@
 #include "storm/models/sparse/DeterministicModel.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/io/export.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/constants.h"
@@ -41,7 +43,7 @@ void DeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostre
             arrowOrigin = "\"" + arrowOrigin + "c\"";
             outStream << "\t" << arrowOrigin << " [shape = \"point\"]\n";
             outStream << "\t" << i << " -> " << arrowOrigin << " [label= \"{";
-            storm::utility::outputFixedWidth(outStream, this->getChoiceLabeling().getLabelsOfChoice(i), maxWidthLabel);
+            storm::io::outputFixedWidth(outStream, this->getChoiceLabeling().getLabelsOfChoice(i), maxWidthLabel);
             outStream << "}\"];\n";
         }
 
@@ -61,13 +63,12 @@ void DeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostre
 }
 
 template class DeterministicModel<double>;
-#ifdef STORM_HAVE_CARL
-template class DeterministicModel<storm::RationalNumber>;
-
 template class DeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-template class DeterministicModel<storm::RationalFunction>;
+template class DeterministicModel<storm::RationalNumber>;
+template class DeterministicModel<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
 template class DeterministicModel<storm::Interval>;
-#endif
+template class DeterministicModel<storm::RationalInterval>;
+template class DeterministicModel<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm

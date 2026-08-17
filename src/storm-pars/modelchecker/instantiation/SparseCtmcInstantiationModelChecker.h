@@ -23,6 +23,8 @@ class SparseCtmcInstantiationModelChecker : public SparseInstantiationModelCheck
     virtual std::unique_ptr<CheckResult> check(Environment const& env,
                                                storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
 
+    virtual bool isWellDefined(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
+
     storm::utility::ModelInstantiator<SparseModelType, storm::models::sparse::Ctmc<ConstantType>> modelInstantiator;
 };
 }  // namespace modelchecker

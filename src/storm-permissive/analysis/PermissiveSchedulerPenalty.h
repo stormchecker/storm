@@ -1,8 +1,11 @@
 #pragma once
 
+#include <cstdint>
 #include <unordered_map>
+#include <utility>
 
 #include "storm/storage/StateActionPair.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace ps {

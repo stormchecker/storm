@@ -29,13 +29,12 @@ TEST_F(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_die) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalNumber>> dtmc =
         storm::api::buildSparseModel<storm::RationalNumber>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalNumber>>();
     uint_fast64_t const initState = *dtmc->getInitialStates().begin();
-    ;
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[0], true));
@@ -64,13 +63,12 @@ TEST_F(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_leader) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, "");
+    program = program.preprocess("");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalNumber>> dtmc =
         storm::api::buildSparseModel<storm::RationalNumber>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalNumber>>();
     uint_fast64_t const initState = *dtmc->getInitialStates().begin();
-    ;
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[0], true));
@@ -103,13 +101,12 @@ TEST_F(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_crowds) {
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, "CrowdSize=4");
+    program = program.preprocess("CrowdSize=4");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalNumber>> dtmc =
         storm::api::buildSparseModel<storm::RationalNumber>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalNumber>>();
     uint_fast64_t const initState = *dtmc->getInitialStates().begin();
-    ;
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[0], true));

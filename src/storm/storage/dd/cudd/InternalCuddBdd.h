@@ -1,20 +1,23 @@
-#ifndef STORM_STORAGE_DD_CUDD_INTERNALCUDDBDD_H_
-#define STORM_STORAGE_DD_CUDD_INTERNALCUDDBDD_H_
+#pragma once
+
+#include "storm-config.h"
 
 #include <functional>
 #include <memory>
 #include <set>
 #include <unordered_map>
 
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalAdd.h"
 #include "storm/storage/dd/InternalBdd.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
+#ifdef STORM_HAVE_CUDD
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
+#endif
 
 namespace storm {
 namespace storage {
@@ -36,6 +39,7 @@ class InternalBdd<DdType::CUDD> {
     template<DdType LibraryType, typename ValueType>
     friend class InternalAdd;
 
+#ifdef STORM_HAVE_CUDD
     /*!
      * Creates a DD that encapsulates the given CUDD ADD.
      *
@@ -44,6 +48,7 @@ class InternalBdd<DdType::CUDD> {
      * @param containedMetaVariables The meta variables that appear in the DD.
      */
     InternalBdd(InternalDdManager<DdType::CUDD> const* ddManager, cudd::BDD cuddBdd);
+#endif
 
     // Instantiate all copy/move constructors/assignments with the default implementation.
     InternalBdd() = default;
@@ -411,6 +416,7 @@ class InternalBdd<DdType::CUDD> {
 
     friend struct std::hash<storm::dd::InternalBdd<storm::dd::DdType::CUDD>>;
 
+#ifdef STORM_HAVE_CUDD
     /*!
      * Retrieves the CUDD BDD object associated with this DD.
      *
@@ -424,8 +430,10 @@ class InternalBdd<DdType::CUDD> {
      * @return The DD node of CUDD associated with this BDD.
      */
     DdNode* getCuddDdNode() const;
+#endif
 
    private:
+#ifdef STORM_HAVE_CUDD
     /*!
      * Builds a BDD representing the values that make the given filter function evaluate to true.
      *
@@ -547,6 +555,7 @@ class InternalBdd<DdType::CUDD> {
     InternalDdManager<DdType::CUDD> const* ddManager;
 
     cudd::BDD cuddBdd;
+#endif
 };
 }  // namespace dd
 }  // namespace storm
@@ -554,10 +563,16 @@ class InternalBdd<DdType::CUDD> {
 namespace std {
 template<>
 struct hash<storm::dd::InternalBdd<storm::dd::DdType::CUDD>> {
+#ifdef STORM_HAVE_CUDD
     std::size_t operator()(storm::dd::InternalBdd<storm::dd::DdType::CUDD> const& key) const {
         return reinterpret_cast<std::size_t>(key.cuddBdd.getNode());
     }
+#else
+    std::size_t operator()(storm::dd::InternalBdd<storm::dd::DdType::CUDD> const&) const {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with CUDD support.");
+    }
+#endif
 };
 }  // namespace std
-
-#endif /* STORM_STORAGE_DD_CUDD_INTERNALCUDDBDD_H_ */

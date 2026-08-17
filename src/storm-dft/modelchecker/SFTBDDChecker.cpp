@@ -1,9 +1,8 @@
-#include <gmm/gmm_std.h>
+#include "storm-dft/modelchecker/SFTBDDChecker.h"
 
 #include <memory>
 #include <vector>
 
-#include "storm-dft/modelchecker/SFTBDDChecker.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm/adapters/eigen.h"
 
@@ -11,10 +10,12 @@ namespace storm::dft {
 namespace modelchecker {
 
 using ValueType = SFTBDDChecker::ValueType;
+#ifdef STORM_HAVE_SYLVAN
 using Bdd = SFTBDDChecker::Bdd;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 namespace {
-
 /**
  * \returns
  * The probability that the bdd is true
@@ -246,14 +247,14 @@ Bdd SFTBDDChecker::getTopLevelElementBdd() {
     return transformator->transformTopLevel();
 }
 
-std::shared_ptr<storm::dft::storage::DFT<ValueType>> SFTBDDChecker::getDFT() const noexcept {
+std::shared_ptr<storm::dft::storage::DFT<ValueType>> SFTBDDChecker::getDFT() const {
     return transformator->getDFT();
 }
-std::shared_ptr<storm::dft::storage::SylvanBddManager> SFTBDDChecker::getSylvanBddManager() const noexcept {
+std::shared_ptr<storm::dft::storage::SylvanBddManager> SFTBDDChecker::getSylvanBddManager() const {
     return transformator->getSylvanBddManager();
 }
 
-std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> SFTBDDChecker::getTransformator() const noexcept {
+std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> SFTBDDChecker::getTransformator() const {
     return transformator;
 }
 
@@ -316,7 +317,7 @@ void SFTBDDChecker::chunkCalculationTemplate(std::vector<ValueType> const &timep
             // Vectorize known BETypes
             // fallback to getUnreliability() otherwise
             if (be->beType() == storm::dft::storage::elements::BEType::EXPONENTIAL) {
-                auto const failureRate{std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType>>(be)->activeFailureRate()};
+                auto const failureRate{std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be)->activeFailureRate()};
 
                 // exponential distribution
                 // p(T <= t) = 1 - exp(-lambda*t)
@@ -632,6 +633,170 @@ void SFTBDDChecker::recursiveMCS(Bdd const bdd, std::vector<uint32_t> &buffer, s
         recursiveMCS(bdd.Else(), buffer, minimalCutSets);
     }
 }
+#else
+SFTBDDChecker::SFTBDDChecker(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft,
+                             std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+SFTBDDChecker::SFTBDDChecker(std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> transformator) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::shared_ptr<storm::dft::storage::DFT<ValueType>> SFTBDDChecker::getDFT() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+std::shared_ptr<storm::dft::storage::SylvanBddManager> SFTBDDChecker::getSylvanBddManager() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> SFTBDDChecker::getTransformator() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<std::vector<std::string>> SFTBDDChecker::getMinimalCutSets() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<std::vector<uint32_t>> SFTBDDChecker::getMinimalCutSetsAsIndices() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+ValueType SFTBDDChecker::getBirnbaumFactorAtTimebound(std::string const &beName, ValueType timebound) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<ValueType> SFTBDDChecker::getAllBirnbaumFactorsAtTimebound(ValueType timebound) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<ValueType> SFTBDDChecker::getBirnbaumFactorsAtTimepoints(std::string const &beName, std::vector<ValueType> const &timepoints, size_t chunksize) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<std::vector<ValueType>> SFTBDDChecker::getAllBirnbaumFactorsAtTimepoints(std::vector<ValueType> const &timepoints, size_t chunksize) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+ValueType SFTBDDChecker::getCIFAtTimebound(std::string const &beName, ValueType timebound) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<ValueType> SFTBDDChecker::getAllCIFsAtTimebound(ValueType timebound) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<ValueType> SFTBDDChecker::getCIFsAtTimepoints(std::string const &beName, std::vector<ValueType> const &timepoints, size_t chunksize) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<std::vector<ValueType>> SFTBDDChecker::getAllCIFsAtTimepoints(std::vector<ValueType> const &timepoints, size_t chunksize) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+ValueType SFTBDDChecker::getDIFAtTimebound(std::string const &beName, ValueType timebound) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<ValueType> SFTBDDChecker::getAllDIFsAtTimebound(ValueType timebound) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<ValueType> SFTBDDChecker::getDIFsAtTimepoints(std::string const &beName, std::vector<ValueType> const &timepoints, size_t chunksize) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<std::vector<ValueType>> SFTBDDChecker::getAllDIFsAtTimepoints(std::vector<ValueType> const &timepoints, size_t chunksize) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+ValueType SFTBDDChecker::getRAWAtTimebound(std::string const &beName, ValueType timebound) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<ValueType> SFTBDDChecker::getAllRAWsAtTimebound(ValueType timebound) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<ValueType> SFTBDDChecker::getRAWsAtTimepoints(std::string const &beName, std::vector<ValueType> const &timepoints, size_t chunksize) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<std::vector<ValueType>> SFTBDDChecker::getAllRAWsAtTimepoints(std::vector<ValueType> const &timepoints, size_t chunksize) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+ValueType SFTBDDChecker::getRRWAtTimebound(std::string const &beName, ValueType timebound) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<ValueType> SFTBDDChecker::getAllRRWsAtTimebound(ValueType timebound) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<ValueType> SFTBDDChecker::getRRWsAtTimepoints(std::string const &beName, std::vector<ValueType> const &timepoints, size_t chunksize) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+std::vector<std::vector<ValueType>> SFTBDDChecker::getAllRRWsAtTimepoints(std::vector<ValueType> const &timepoints, size_t chunksize) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+}
+
+#endif
 
 }  // namespace modelchecker
 }  // namespace storm::dft

@@ -3,6 +3,9 @@
 #include <map>
 
 #include "storm/adapters/sylvan.h"
+#include "storm/environment/Environment.h"
+#include "storm/environment/dd/DdEnvironment.h"
+#include "storm/io/file.h"
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 #include "storm/utility/macros.h"
 
@@ -26,8 +29,26 @@ class SylvanBddManager {
      * \note
      * Internally Sylvan is initialized by a InternalSylvanDdManager.
      * This ensures compatibility.
+     *
+     * \param env
+     * The environment providing the settings for the Sylvan manager.
      */
-    SylvanBddManager() = default;
+#ifdef STORM_HAVE_SYLVAN
+    explicit SylvanBddManager(storm::Environment const &env) : internalManager{env.dd().get<storm::dd::DdType::Sylvan>()} {}
+#else
+    explicit SylvanBddManager(storm::Environment const &) {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+#endif
+
+    /*!
+     * Creates a new manager that is configured according to a default environment.
+     */
+    static std::shared_ptr<SylvanBddManager> createWithDefaultEnvironment() {
+        return std::make_shared<SylvanBddManager>(storm::Environment());
+    }
 
     // We can only initialize Sylvan once therefore no copy semantics
     SylvanBddManager(SylvanBddManager const &) = delete;
@@ -40,6 +61,7 @@ class SylvanBddManager {
      */
     ~SylvanBddManager() = default;
 
+#ifdef STORM_HAVE_SYLVAN
     /*!
      * All code that manipulates DDs shall be called through this function.
      * This is generally needed to set-up the correct context.
@@ -145,7 +167,7 @@ class SylvanBddManager {
      * \param filename
      * The name of the file the dot graph is written to
      */
-    static void exportBddToDot(sylvan::Bdd const &bdd, std::string const &filename) {
+    void exportBddToDot(sylvan::Bdd const &bdd, std::string const &filename) const {
         FILE *filePointer = fopen(filename.c_str(), "w+");
 
         // fopen returns a nullptr on failure
@@ -154,15 +176,49 @@ class SylvanBddManager {
         } else {
             bdd.PrintDot(filePointer);
             fclose(filePointer);
+            std::ofstream filestream;
+            storm::io::openFile(filename.c_str(), filestream, true);
+            filestream << "// Mapping from BDD nodes to DFT BEs as follows: \n";
+            for (auto const &[index, name] : indexToName) {
+                filestream << "// " << index << " -> " << name << '\n';
+            }
+            storm::io::closeFile(filestream);
         }
     }
+#else
+    void execute(std::function<void()> const &f) const {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+
+    uint32_t createVariable(std::string const name) {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+
+    uint32_t getIndex(std::string const name) const {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+
+    std::string getName(uint32_t const index) const {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+#endif
 
    private:
-    storm::dd::InternalDdManager<storm::dd::DdType::Sylvan> internalManager{};
+#ifdef STORM_HAVE_SYLVAN
+    storm::dd::InternalDdManager<storm::dd::DdType::Sylvan> internalManager;
     uint32_t nextFreeVariableIndex{0};
 
     std::map<std::string, uint32_t> nameToIndex{};
     std::map<uint32_t, std::string> indexToName{};
+#endif
 };
 
 }  // namespace storage

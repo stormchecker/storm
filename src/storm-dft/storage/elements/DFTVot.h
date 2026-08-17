@@ -22,7 +22,7 @@ class DFTVot : public DFTGate<ValueType> {
      */
     DFTVot(size_t id, std::string const& name, unsigned threshold, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {})
         : DFTGate<ValueType>(id, name, children), mThreshold(threshold) {
-        STORM_LOG_ASSERT(mThreshold > 1, "Should use OR gate instead of VOT1");
+        STORM_LOG_ASSERT(mThreshold > 1, "Should use OR gate instead of VOT1.");
         // k=n cannot be checked as children might be added later
     }
 

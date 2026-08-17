@@ -6,7 +6,7 @@ namespace storm::dft {
 namespace transformations {
 
 // Prevent some magic constants
-static constexpr const uint64_t defaultCapacity = 1;
+static constexpr uint64_t defaultCapacity = 1;
 
 template<typename ValueType>
 DftToGspnTransformator<ValueType>::DftToGspnTransformator(storm::dft::storage::DFT<ValueType> const &dft) : mDft(dft) {
@@ -45,8 +45,8 @@ std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePrioritie
         }
     } else {
         // Define some variables
-        u_int64_t maxNrOfChildren = 0;
-        u_int64_t maxNrDependentEvents = 0;
+        uint64_t maxNrOfChildren = 0;
+        uint64_t maxNrDependentEvents = 0;
         // Iterate over all elements of the DFT and sort them into the list
         std::list<size_t> elementList;
         for (std::size_t i = 0; i < mDft.nrElements(); i++) {
@@ -60,7 +60,7 @@ std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePrioritie
             }
             // Get the maximum number of children/ SPAREs need additional transitions
 
-            u_int64_t nrChildren = mDft.getElement(i)->nrChildren();
+            uint64_t nrChildren = mDft.getElement(i)->nrChildren();
             if (mDft.getElement(i)->type() == storm::dft::storage::elements::DFTElementType::SPARE) {
                 nrChildren *= 4;
             }
@@ -82,11 +82,11 @@ std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePrioritie
         }
         // Get the necessary length for priority intervals
         // Note that additional priorities are necessary
-        u_int64_t priorityIntervalLength = std::max(maxNrDependentEvents, maxNrOfChildren) + 4;
+        uint64_t priorityIntervalLength = std::max(maxNrDependentEvents, maxNrOfChildren) + 4;
 
         // Define a running variable for the current priority
         // Initialize it with an offset for the DC priorities + first interval length as prios give upper interval limit
-        u_int64_t currentPrio = mDft.nrElements() + priorityIntervalLength;
+        uint64_t currentPrio = mDft.nrElements() + priorityIntervalLength;
         // TODO Dependencies have to have same priority
         for (std::list<size_t>::iterator it = elementList.begin(); it != elementList.end(); ++it) {
             priorities[*it] = currentPrio;
@@ -191,7 +191,7 @@ void DftToGspnTransformator<ValueType>::translateBEExponential(std::shared_ptr<s
     builder.addOutputArc(tPassive, failedPlace);
 
     if (dontCareElements.count(dftBE->id()) && dftBE->id() != mDft.getTopLevelIndex()) {
-        u_int64_t tDontCare = addDontcareTransition(dftBE, storm::gspn::LayoutInfo(xcenter + 12.0, ycenter));
+        uint64_t tDontCare = addDontcareTransition(dftBE, storm::gspn::LayoutInfo(xcenter + 12.0, ycenter));
         if (!mergedDCFailed) {
             uint64_t dontCarePlace = builder.addPlace(1, 0, dftBE->name() + STR_DONTCARE);
             builder.setPlaceLayoutInfo(dontCarePlace, storm::gspn::LayoutInfo(xcenter + 12.0, ycenter + 5.0));
@@ -257,7 +257,7 @@ void DftToGspnTransformator<ValueType>::translateBEConst(std::shared_ptr<storm::
         // Constant failsafe BE
         size_t capacity = 0;  // It cannot contain a token, because it cannot fail.
         uint64_t failedPlace = builder.addPlace(capacity, 0, dftConst->name() + STR_FAILED);
-        assert(failedPlaces.size() == dftConst->id());
+        STORM_LOG_ASSERT(failedPlaces.size() == dftConst->id(), "Failed place index mismatch.");
         failedPlaces.push_back(failedPlace);
         builder.setPlaceLayoutInfo(failedPlace, storm::gspn::LayoutInfo(xcenter, ycenter - 3.0));
 
@@ -283,7 +283,7 @@ void DftToGspnTransformator<ValueType>::translateAND(std::shared_ptr<storm::dft:
 
     if (dontCareElements.count(dftAnd->id())) {
         if (dftAnd->id() != mDft.getTopLevelIndex()) {
-            u_int64_t tDontCare = addDontcareTransition(dftAnd, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
+            uint64_t tDontCare = addDontcareTransition(dftAnd, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
             if (!mergedDCFailed) {
                 uint64_t dontCarePlace = builder.addPlace(1, 0, dftAnd->name() + STR_DONTCARE);
                 builder.setPlaceLayoutInfo(dontCarePlace, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter + 4.0));
@@ -306,7 +306,7 @@ void DftToGspnTransformator<ValueType>::translateAND(std::shared_ptr<storm::dft:
                 builder.addOutputArc(tPropagationDontCare, propagationPlace);
                 for (auto const &child : dftAnd->children()) {
                     if (dontCareElements.count(child->id())) {
-                        u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                        uint64_t childDontCare = dontcareTransitions.at(child->id());
                         builder.addInputArc(propagationPlace, childDontCare);
                         builder.addOutputArc(childDontCare, propagationPlace);
                     }
@@ -316,7 +316,7 @@ void DftToGspnTransformator<ValueType>::translateAND(std::shared_ptr<storm::dft:
                 builder.addOutputArc(tDontCare, failedPlace);
                 for (auto const &child : dftAnd->children()) {
                     if (dontCareElements.count(child->id())) {
-                        u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                        uint64_t childDontCare = dontcareTransitions.at(child->id());
                         builder.addInputArc(failedPlace, childDontCare);
                         builder.addOutputArc(childDontCare, failedPlace);
                     }
@@ -326,7 +326,7 @@ void DftToGspnTransformator<ValueType>::translateAND(std::shared_ptr<storm::dft:
             // If AND is TLE, simple failure propagation suffices
             for (auto const &child : dftAnd->children()) {
                 if (dontCareElements.count(child->id())) {
-                    u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                    uint64_t childDontCare = dontcareTransitions.at(child->id());
                     builder.addInputArc(failedPlace, childDontCare);
                     builder.addOutputArc(childDontCare, failedPlace);
                 }
@@ -356,7 +356,7 @@ void DftToGspnTransformator<ValueType>::translateOR(std::shared_ptr<storm::dft::
 
     if (dontCareElements.count(dftOr->id())) {
         if (dftOr->id() != mDft.getTopLevelIndex()) {
-            u_int64_t tDontCare = addDontcareTransition(dftOr, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
+            uint64_t tDontCare = addDontcareTransition(dftOr, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
             if (!mergedDCFailed) {
                 uint64_t dontCarePlace = builder.addPlace(1, 0, dftOr->name() + STR_DONTCARE);
                 builder.setPlaceLayoutInfo(dontCarePlace, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter + 4.0));
@@ -379,7 +379,7 @@ void DftToGspnTransformator<ValueType>::translateOR(std::shared_ptr<storm::dft::
                 builder.addOutputArc(tPropagationDontCare, propagationPlace);
                 for (auto const &child : dftOr->children()) {
                     if (dontCareElements.count(child->id())) {
-                        u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                        uint64_t childDontCare = dontcareTransitions.at(child->id());
                         builder.addInputArc(propagationPlace, childDontCare);
                         builder.addOutputArc(childDontCare, propagationPlace);
                     }
@@ -389,7 +389,7 @@ void DftToGspnTransformator<ValueType>::translateOR(std::shared_ptr<storm::dft::
                 builder.addOutputArc(tDontCare, failedPlace);
                 for (auto const &child : dftOr->children()) {
                     if (dontCareElements.count(child->id())) {
-                        u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                        uint64_t childDontCare = dontcareTransitions.at(child->id());
                         builder.addInputArc(failedPlace, childDontCare);
                         builder.addOutputArc(childDontCare, failedPlace);
                     }
@@ -399,7 +399,7 @@ void DftToGspnTransformator<ValueType>::translateOR(std::shared_ptr<storm::dft::
             // If OR is TLE, simple failure propagation suffices
             for (auto const &child : dftOr->children()) {
                 if (dontCareElements.count(child->id())) {
-                    u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                    uint64_t childDontCare = dontcareTransitions.at(child->id());
                     builder.addInputArc(failedPlace, childDontCare);
                     builder.addOutputArc(childDontCare, failedPlace);
                 }
@@ -471,7 +471,7 @@ void DftToGspnTransformator<ValueType>::translateVOT(std::shared_ptr<storm::dft:
 
     if (dontCareElements.count(dftVot->id())) {
         if (dftVot->id() != mDft.getTopLevelIndex()) {
-            u_int64_t tDontCare = addDontcareTransition(dftVot, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
+            uint64_t tDontCare = addDontcareTransition(dftVot, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
             if (!mergedDCFailed) {
                 uint64_t dontCarePlace = builder.addPlace(1, 0, dftVot->name() + STR_DONTCARE);
                 builder.setPlaceLayoutInfo(dontCarePlace, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter + 4.0));
@@ -494,7 +494,7 @@ void DftToGspnTransformator<ValueType>::translateVOT(std::shared_ptr<storm::dft:
                 builder.addOutputArc(tPropagationDontCare, propagationPlace);
                 for (auto const &child : dftVot->children()) {
                     if (dontCareElements.count(child->id())) {
-                        u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                        uint64_t childDontCare = dontcareTransitions.at(child->id());
                         builder.addInputArc(propagationPlace, childDontCare);
                         builder.addOutputArc(childDontCare, propagationPlace);
                     }
@@ -504,7 +504,7 @@ void DftToGspnTransformator<ValueType>::translateVOT(std::shared_ptr<storm::dft:
                 builder.addOutputArc(tDontCare, failedPlace);
                 for (auto const &child : dftVot->children()) {
                     if (dontCareElements.count(child->id())) {
-                        u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                        uint64_t childDontCare = dontcareTransitions.at(child->id());
                         builder.addInputArc(failedPlace, childDontCare);
                         builder.addOutputArc(childDontCare, failedPlace);
                     }
@@ -514,7 +514,7 @@ void DftToGspnTransformator<ValueType>::translateVOT(std::shared_ptr<storm::dft:
             // If VOT is TLE, simple failure propagation suffices
             for (auto const &child : dftVot->children()) {
                 if (dontCareElements.count(child->id())) {
-                    u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                    uint64_t childDontCare = dontcareTransitions.at(child->id());
                     builder.addInputArc(failedPlace, childDontCare);
                     builder.addOutputArc(childDontCare, failedPlace);
                 }
@@ -609,14 +609,14 @@ void DftToGspnTransformator<ValueType>::translatePAND(std::shared_ptr<storm::dft
         // Connect children to propagation place
         for (auto const &child : dftPand->children()) {
             if (dontCareElements.count(child->id())) {
-                u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                uint64_t childDontCare = dontcareTransitions.at(child->id());
                 builder.addInputArc(propagationPlace, childDontCare);
                 builder.addOutputArc(childDontCare, propagationPlace);
             }
         }
 
         if (dftPand->id() != mDft.getTopLevelIndex()) {
-            u_int64_t tDontCare = addDontcareTransition(dftPand, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
+            uint64_t tDontCare = addDontcareTransition(dftPand, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
             if (!mergedDCFailed) {
                 uint64_t dontCarePlace = builder.addPlace(1, 0, dftPand->name() + STR_DONTCARE);
                 builder.setPlaceLayoutInfo(dontCarePlace, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter + 4.0));
@@ -723,14 +723,14 @@ void DftToGspnTransformator<ValueType>::translatePOR(std::shared_ptr<storm::dft:
         // Connect children to propagation place
         for (auto const &child : dftPor->children()) {
             if (dontCareElements.count(child->id())) {
-                u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                uint64_t childDontCare = dontcareTransitions.at(child->id());
                 builder.addInputArc(propagationPlace, childDontCare);
                 builder.addOutputArc(childDontCare, propagationPlace);
             }
         }
 
         if (dftPor->id() != mDft.getTopLevelIndex()) {
-            u_int64_t tDontCare = addDontcareTransition(dftPor, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
+            uint64_t tDontCare = addDontcareTransition(dftPor, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
             if (!mergedDCFailed) {
                 uint64_t dontCarePlace = builder.addPlace(1, 0, dftPor->name() + STR_DONTCARE);
                 builder.setPlaceLayoutInfo(dontCarePlace, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter + 4.0));
@@ -758,7 +758,7 @@ void DftToGspnTransformator<ValueType>::translateSPARE(std::shared_ptr<storm::df
     double xcenter = mDft.getElementLayoutInfo(dftSpare->id()).x;
     double ycenter = mDft.getElementLayoutInfo(dftSpare->id()).y;
 
-    u_int64_t prio = getFailPriority(dftSpare);
+    uint64_t prio = getFailPriority(dftSpare);
 
     uint64_t failedPlace = addFailedPlace(dftSpare, storm::gspn::LayoutInfo(xcenter + 10.0, ycenter - 8.0));
 
@@ -841,7 +841,7 @@ void DftToGspnTransformator<ValueType>::translateSPARE(std::shared_ptr<storm::df
     // Don't Care Mechanism
     if (dontCareElements.count(dftSpare->id())) {
         if (dftSpare->id() != mDft.getTopLevelIndex()) {
-            u_int64_t tDontCare = addDontcareTransition(dftSpare, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
+            uint64_t tDontCare = addDontcareTransition(dftSpare, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter));
             if (!mergedDCFailed) {
                 uint64_t dontCarePlace = builder.addPlace(1, 0, dftSpare->name() + STR_DONTCARE);
                 builder.setPlaceLayoutInfo(dontCarePlace, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter + 4.0));
@@ -864,7 +864,7 @@ void DftToGspnTransformator<ValueType>::translateSPARE(std::shared_ptr<storm::df
                 builder.addOutputArc(tPropagationDontCare, propagationPlace);
                 for (auto const &child : dftSpare->children()) {
                     if (dontCareElements.count(child->id())) {
-                        u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                        uint64_t childDontCare = dontcareTransitions.at(child->id());
                         builder.addInputArc(propagationPlace, childDontCare);
                         builder.addOutputArc(childDontCare, propagationPlace);
                     }
@@ -874,7 +874,7 @@ void DftToGspnTransformator<ValueType>::translateSPARE(std::shared_ptr<storm::df
                 builder.addOutputArc(tDontCare, failedPlace);
                 for (auto const &child : dftSpare->children()) {
                     if (dontCareElements.count(child->id())) {
-                        u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                        uint64_t childDontCare = dontcareTransitions.at(child->id());
                         builder.addInputArc(failedPlace, childDontCare);
                         builder.addOutputArc(childDontCare, failedPlace);
                     }
@@ -884,7 +884,7 @@ void DftToGspnTransformator<ValueType>::translateSPARE(std::shared_ptr<storm::df
             // If SPARE is TLE, simple failure propagation suffices
             for (auto const &child : dftSpare->children()) {
                 if (dontCareElements.count(child->id())) {
-                    u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                    uint64_t childDontCare = dontcareTransitions.at(child->id());
                     builder.addInputArc(failedPlace, childDontCare);
                     builder.addOutputArc(childDontCare, failedPlace);
                 }
@@ -962,16 +962,16 @@ void DftToGspnTransformator<ValueType>::translatePDEP(std::shared_ptr<storm::dft
 
     // Don't Care
     if (dontCareElements.count(dftDependency->id())) {
-        u_int64_t tDontCare = addDontcareTransition(dftDependency, storm::gspn::LayoutInfo(xcenter + 3.0, ycenter));
+        uint64_t tDontCare = addDontcareTransition(dftDependency, storm::gspn::LayoutInfo(xcenter + 3.0, ycenter));
         if (!mergedDCFailed) {
-            u_int64_t dontCarePlace = builder.addPlace(1, 0, dftDependency->name() + STR_DONTCARE);
+            uint64_t dontCarePlace = builder.addPlace(1, 0, dftDependency->name() + STR_DONTCARE);
             builder.setPlaceLayoutInfo(dontCarePlace, storm::gspn::LayoutInfo(xcenter + 4.0, ycenter));
             builder.addInhibitionArc(dontCarePlace, tDontCare);
             builder.addOutputArc(tDontCare, dontCarePlace);
             // Add the arcs for the dependent events
             for (auto const &dependentEvent : dftDependency->dependentEvents()) {
                 if (dontCareElements.count(dependentEvent->id())) {
-                    u_int64_t dependentEventPropagation = dependencyPropagationPlaces.at(dependentEvent->id());
+                    uint64_t dependentEventPropagation = dependencyPropagationPlaces.at(dependentEvent->id());
                     builder.addInputArc(dependentEventPropagation, tDontCare);
                     builder.addOutputArc(tDontCare, dependentEventPropagation);
                 }
@@ -990,7 +990,7 @@ void DftToGspnTransformator<ValueType>::translatePDEP(std::shared_ptr<storm::dft
             // Add the arcs for the dependent events
             for (auto const &dependentEvent : dftDependency->dependentEvents()) {
                 if (dontCareElements.count(dependentEvent->id())) {
-                    u_int64_t dependentEventFailed = failedPlaces.at(dependentEvent->id());
+                    uint64_t dependentEventFailed = failedPlaces.at(dependentEvent->id());
                     builder.addInputArc(dependentEventFailed, tDontCare);
                     builder.addOutputArc(tDontCare, dependentEventFailed);
                 }
@@ -1011,10 +1011,10 @@ void DftToGspnTransformator<ValueType>::translatePDEP(std::shared_ptr<storm::dft
 template<typename ValueType>
 void DftToGspnTransformator<ValueType>::translateSeq(std::shared_ptr<storm::dft::storage::elements::DFTSeq<ValueType> const> dftSeq) {
     STORM_LOG_THROW(dftSeq->allChildrenBEs(), storm::exceptions::NotImplementedException,
-                    "Sequence enforcers with gates as children are currently not supported");
+                    "Sequence enforcers with gates as children are currently not supported.");
     double xcenter = mDft.getElementLayoutInfo(dftSeq->id()).x;
     double ycenter = mDft.getElementLayoutInfo(dftSeq->id()).y;
-    u_int64_t failedPlace = 0;
+    uint64_t failedPlace = 0;
     if (!smart) {
         failedPlace = addFailedPlace(dftSeq, storm::gspn::LayoutInfo(xcenter + 10.0, ycenter - 8.0));
         addUnavailablePlace(dftSeq, storm::gspn::LayoutInfo(xcenter + 16.0, ycenter - 8.0));
@@ -1042,11 +1042,11 @@ void DftToGspnTransformator<ValueType>::translateSeq(std::shared_ptr<storm::dft:
     // Dont Care
     if (dontCareElements.count(dftSeq->id())) {
         if (!mergedDCFailed) {
-            u_int64_t dontCarePlace = builder.addPlace(1, 0, dftSeq->name() + STR_DONTCARE);
+            uint64_t dontCarePlace = builder.addPlace(1, 0, dftSeq->name() + STR_DONTCARE);
             builder.setPlaceLayoutInfo(dontCarePlace, storm::gspn::LayoutInfo(xcenter + 10.0, ycenter - 8.0));
             for (auto const &child : dftSeq->children()) {
                 if (dontCareElements.count(child->id())) {
-                    u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                    uint64_t childDontCare = dontcareTransitions.at(child->id());
                     builder.addInputArc(dontCarePlace, childDontCare);
                 }
             }
@@ -1056,7 +1056,7 @@ void DftToGspnTransformator<ValueType>::translateSeq(std::shared_ptr<storm::dft:
             }
             for (auto const &child : dftSeq->children()) {
                 if (dontCareElements.count(child->id())) {
-                    u_int64_t childDontCare = dontcareTransitions.at(child->id());
+                    uint64_t childDontCare = dontcareTransitions.at(child->id());
                     builder.addInputArc(failedPlace, childDontCare);
                 }
             }
@@ -1068,7 +1068,7 @@ template<typename ValueType>
 uint64_t DftToGspnTransformator<ValueType>::addFailedPlace(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> dftElement,
                                                            storm::gspn::LayoutInfo const &layoutInfo, bool initialFailed) {
     uint64_t failedPlace = builder.addPlace(defaultCapacity, initialFailed ? 1 : 0, dftElement->name() + STR_FAILED);
-    assert(failedPlaces.size() == dftElement->id());
+    STORM_LOG_ASSERT(failedPlaces.size() == dftElement->id(), "Failed place index mismatch.");
     failedPlaces.push_back(failedPlace);
     builder.setPlaceLayoutInfo(failedPlace, layoutInfo);
     return failedPlace;

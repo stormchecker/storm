@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_EVENTUALLYFORMULA_H_
-#define STORM_LOGIC_EVENTUALLYFORMULA_H_
+#pragma once
 
 #include <boost/optional.hpp>
 
@@ -40,5 +39,3 @@ class EventuallyFormula : public UnaryPathFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_EVENTUALLYFORMULA_H_ */

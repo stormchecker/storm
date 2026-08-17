@@ -302,7 +302,7 @@ SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSea
             this->A.template toValueType<ImpreciseType>(), this->allRows, this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
 
         rationalResult = solveEquationsRationalSearchHelper<ValueType, ImpreciseType>(env, *this, impreciseSolver, b, impreciseX, impreciseB);
-    } catch (storm::exceptions::PrecisionExceededException const& e) {
+    } catch (storm::exceptions::PrecisionExceededException const&) {
         STORM_LOG_WARN("Precision of value type was exceeded, trying to recover by switching to rational arithmetic.");
 
         // Fall back to precise value type if the precision of the imprecise value type was exceeded.

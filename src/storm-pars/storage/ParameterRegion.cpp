@@ -2,6 +2,7 @@
 
 #include <limits>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/utility/constants.h"
@@ -33,15 +34,15 @@ void ParameterRegion<ParametricType>::init() {
     for (auto const& variableWithLowerBoundary : this->lowerBoundaries) {
         auto variableWithUpperBoundary = this->upperBoundaries.find(variableWithLowerBoundary.first);
         STORM_LOG_THROW((variableWithUpperBoundary != upperBoundaries.end()), storm::exceptions::InvalidArgumentException,
-                        "Could not create region. No upper boundary specified for Variable " << variableWithLowerBoundary.first);
+                        "Could not create region. No upper boundary specified for Variable " << variableWithLowerBoundary.first << ".");
         STORM_LOG_THROW((variableWithLowerBoundary.second <= variableWithUpperBoundary->second), storm::exceptions::InvalidArgumentException,
-                        "Could not create region. The lower boundary for " << variableWithLowerBoundary.first << " is larger then the upper boundary");
+                        "Could not create region. The lower boundary for " << variableWithLowerBoundary.first << " is larger then the upper boundary.");
         this->variables.insert(variableWithLowerBoundary.first);
         this->sortedOnDifference.insert({variableWithLowerBoundary.second - variableWithUpperBoundary->second, variableWithLowerBoundary.first});
     }
     for (auto const& variableWithBoundary : this->upperBoundaries) {
         STORM_LOG_THROW((this->variables.find(variableWithBoundary.first) != this->variables.end()), storm::exceptions::InvalidArgumentException,
-                        "Could not create region. No lower boundary specified for Variable " << variableWithBoundary.first);
+                        "Could not create region. No lower boundary specified for Variable " << variableWithBoundary.first << ".");
     }
     this->splitThreshold = variables.size();
 }
@@ -61,7 +62,7 @@ template<typename ParametricType>
 typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getLowerBoundary(VariableType const& variable) const {
     auto const& result = lowerBoundaries.find(variable);
     STORM_LOG_THROW(result != lowerBoundaries.end(), storm::exceptions::InvalidArgumentException,
-                    "Tried to find a lower boundary for variable " << variable << " which is not specified by this region");
+                    "Tried to find a lower boundary for variable " << variable << " which is not specified by this region.");
     return (*result).second;
 }
 
@@ -73,14 +74,14 @@ typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion
         }
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
-                    "Tried to find a lower boundary for variableName " << varName << " which is not specified by this region");
+                    "Tried to find a lower boundary for variableName " << varName << " which is not specified by this region.");
 }
 
 template<typename ParametricType>
 typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getUpperBoundary(VariableType const& variable) const {
     auto const& result = upperBoundaries.find(variable);
     STORM_LOG_THROW(result != upperBoundaries.end(), storm::exceptions::InvalidArgumentException,
-                    "Tried to find an upper boundary for variable " << variable << " which is not specified by this region");
+                    "Tried to find an upper boundary for variable " << variable << " which is not specified by this region.");
     return (*result).second;
 }
 
@@ -92,7 +93,7 @@ typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion
         }
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
-                    "Tried to find an upper boundary for variableName " << varName << " which is not specified by this region");
+                    "Tried to find an upper boundary for variableName " << varName << " which is not specified by this region.");
 }
 
 template<typename ParametricType>
@@ -103,6 +104,16 @@ typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<Parame
 template<typename ParametricType>
 typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<ParametricType>::getDifference(const std::string varName) const {
     return getUpperBoundary(varName) - getLowerBoundary(varName);
+}
+
+template<typename ParametricType>
+typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<ParametricType>::getCenter(VariableType const& variable) const {
+    return (getLowerBoundary(variable) + getUpperBoundary(variable)) / 2;
+}
+
+template<typename ParametricType>
+typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<ParametricType>::getCenter(const std::string varName) const {
+    return (getLowerBoundary(varName) + getUpperBoundary(varName)) / 2;
 }
 
 template<typename ParametricType>
@@ -151,7 +162,7 @@ template<typename ParametricType>
 typename ParameterRegion<ParametricType>::Valuation ParameterRegion<ParametricType>::getCenterPoint() const {
     Valuation result;
     for (auto const& variable : this->variables) {
-        result.insert(typename Valuation::value_type(variable, (this->getLowerBoundary(variable) + this->getUpperBoundary(variable)) / 2));
+        result.emplace(variable, getCenter(variable));
     }
     return result;
 }
@@ -160,20 +171,49 @@ template<typename ParametricType>
 typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<ParametricType>::area() const {
     CoefficientType result = storm::utility::one<CoefficientType>();
     for (auto const& variable : this->variables) {
-        result *= (this->getUpperBoundary(variable) - this->getLowerBoundary(variable));
+        if (this->getUpperBoundary(variable) != this->getLowerBoundary(variable)) {
+            result *= (this->getUpperBoundary(variable) - this->getLowerBoundary(variable));
+        } else {
+            // HACK to get regions with zero area to work correctly
+            // (It's a hack but it's a harmless one for now, as regions with zero area do not exist without discrete parameters)
+            // This area represents half of the area of the region
+            result /= utility::convertNumber<CoefficientType>(2);
+        }
     }
     return result;
 }
 
 template<typename ParametricType>
+bool ParameterRegion<ParametricType>::contains(Valuation const& point) const {
+    for (auto const& variable : this->variables) {
+        STORM_LOG_ASSERT(point.count(variable) > 0,
+                         "Tried to check if a point is in a region, but the point does not contain a value for variable " << variable);
+        auto pointEntry = point.find(variable)->second;
+        if (pointEntry < this->getLowerBoundary(variable) || pointEntry > this->getUpperBoundary(variable)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template<typename ParametricType>
 void ParameterRegion<ParametricType>::split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector) const {
-    return split(splittingPoint, regionVector, variables);
+    return split(splittingPoint, regionVector, variables, {});
 }
 
 template<typename ParametricType>
 void ParameterRegion<ParametricType>::split(Valuation const& splittingPoint, std::vector<storm::storage::ParameterRegion<ParametricType>>& regionVector,
-                                            const std::set<VariableType>& consideredVariables) const {
-    auto vertices = getVerticesOfRegion(consideredVariables);
+                                            const std::set<VariableType>& consideredVariables, const std::set<VariableType>& discreteVariables) const {
+    std::set<VariableType> vertexVariables = consideredVariables;
+    // Remove the discrete variables that are already unit from the considered
+    // variables set, so we don't split them again
+    for (auto const& var : discreteVariables) {
+        if (this->getDifference(var) == storm::utility::zero<CoefficientType>()) {
+            vertexVariables.erase(var);
+        }
+    }
+
+    auto vertices = getVerticesOfRegion(vertexVariables);
 
     for (auto const& vertex : vertices) {
         // The resulting subregion is the smallest region containing vertex and splittingPoint.
@@ -182,9 +222,17 @@ void ParameterRegion<ParametricType>::split(Valuation const& splittingPoint, std
             VariableType variable = variableBound.first;
             auto vertexEntry = vertex.find(variable);
             if (vertexEntry != vertex.end()) {
-                auto splittingPointEntry = splittingPoint.find(variable);
-                subLower.insert(typename Valuation::value_type(variable, std::min(vertexEntry->second, splittingPointEntry->second)));
-                subUpper.insert(typename Valuation::value_type(variable, std::max(vertexEntry->second, splittingPointEntry->second)));
+                if (discreteVariables.find(variable) != discreteVariables.end()) {
+                    // As this parameter is discrete, we set this parameter to the vertex entry (splitting point does not matter)
+                    // e.g. we split the region p in [0,1], q in [0,1] at center with q being discrete
+                    // then we get the regions [0,0.5]x[0,1] and [0.5,1]x[0,1]
+                    subLower.insert(typename Valuation::value_type(variable, vertexEntry->second));
+                    subUpper.insert(typename Valuation::value_type(variable, vertexEntry->second));
+                } else {
+                    auto splittingPointEntry = splittingPoint.find(variable);
+                    subLower.insert(typename Valuation::value_type(variable, std::min(vertexEntry->second, splittingPointEntry->second)));
+                    subUpper.insert(typename Valuation::value_type(variable, std::max(vertexEntry->second, splittingPointEntry->second)));
+                }
             } else {
                 subLower.insert(typename Valuation::value_type(variable, getLowerBoundary(variable)));
                 subUpper.insert(typename Valuation::value_type(variable, getUpperBoundary(variable)));
@@ -290,10 +338,8 @@ std::ostream& operator<<(std::ostream& out, ParameterRegion<ParametricType> cons
     return out;
 }
 
-#ifdef STORM_HAVE_CARL
 template class ParameterRegion<storm::RationalFunction>;
 template std::ostream& operator<<(std::ostream& out, ParameterRegion<storm::RationalFunction> const& region);
-#endif
 
 }  // namespace storage
 }  // namespace storm

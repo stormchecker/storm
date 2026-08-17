@@ -1,8 +1,7 @@
 #include "storm-pomdp/transformer/ApplyFiniteSchedulerToPomdp.h"
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
-
-#include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -76,7 +75,7 @@ std::unordered_map<uint32_t, std::vector<storm::RationalFunction>> ApplyFiniteSc
             res.emplace(observation, weights);
         }
         STORM_LOG_ASSERT(it == res.end() || it->second.size() == pomdp.getNumberOfChoices(state),
-                         "Number of choices must be equal for every state with same number of actions");
+                         "Number of choices must be equal for every state with same number of actions.");
     }
     return res;
 }
@@ -84,7 +83,7 @@ std::unordered_map<uint32_t, std::vector<storm::RationalFunction>> ApplyFiniteSc
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> ApplyFiniteSchedulerToPomdp<ValueType>::transform(
     PomdpFscApplicationMode applicationMode) const {
-    STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::IllegalArgumentException, "POMDP needs to be canonic");
+    STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::IllegalArgumentException, "POMDP needs to be canonic.");
     storm::storage::sparse::ModelComponents<storm::RationalFunction> modelComponents;
 
     uint64_t nrStates = pomdp.getNumberOfStates();

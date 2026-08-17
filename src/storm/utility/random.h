@@ -1,7 +1,9 @@
 #pragma once
 
 #include <boost/random.hpp>
+#include <cstdint>
 #include <random>
+
 #include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {

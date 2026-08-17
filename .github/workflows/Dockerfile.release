@@ -1,0 +1,84 @@
+# Dockerfile for Storm
+######################
+# The Docker image can be built by executing:
+# docker build -t yourusername/storm .
+# A different base image can be set from the commandline with:
+# --build-arg BASE_IMAGE=<new_base_image>
+
+# Set base image
+ARG BASE_IMAGE=movesrwth/storm-dependencies:latest
+FROM $BASE_IMAGE
+LABEL org.opencontainers.image.authors="dev@stormchecker.org"
+
+
+# Configuration arguments
+#########################
+# The arguments can be set from the commandline with:
+# --build-arg <arg_name>=<value>
+
+# Specify number of threads to use for parallel compilation
+ARG no_threads=4
+# CMake build type
+ARG build_type=Release
+# Carl repo and tag to use
+ARG carl_repo="https://github.com/stormchecker/carl-storm.git"
+ARG carl_tag="14.36"
+# Specify Storm configuration (ON/OFF)
+ARG disable_cudd="OFF"
+ARG disable_glpk="OFF"
+ARG disable_gmm="OFF"
+ARG disable_gurobi="OFF"
+ARG disable_libarchive="OFF"
+ARG disable_mathsat="OFF"
+ARG disable_soplex="OFF"
+ARG disable_spot="OFF"
+ARG disable_sylvan="OFF"
+ARG disable_xerces="OFF"
+ARG disable_z3="OFF"
+ARG developer="OFF"
+ARG cln_exact="OFF"
+ARG cln_ratfunc="ON"
+ARG all_sanitizers="OFF"
+
+# Specify additional CMake arguments for Storm
+ARG cmake_args=""
+
+
+# Build Storm
+#############
+RUN mkdir /opt/storm
+WORKDIR /opt/storm
+
+# Copy the content of the current local Storm repository into the Docker image
+COPY . .
+
+# Build Storm
+RUN mkdir -p /opt/storm/build \
+    && cd /opt/storm/build \
+    && cmake -DCMAKE_BUILD_TYPE=$build_type \
+          -DSTORM_PORTABLE=ON \
+          -DSTORM_BUILD_TESTS=OFF \
+          -DSTORM_CARL_GIT_REPO=$carl_repo \
+          -DSTORM_CARL_GIT_TAG=$carl_tag \
+          -DSTORM_DISABLE_CUDD=$disable_cudd \
+          -DSTORM_DISABLE_GLPK=$disable_glpk \
+          -DSTORM_DISABLE_GMM=$disable_gmm \
+          -DSTORM_DISABLE_GUROBI=$disable_gurobi \
+          -DSTORM_DISABLE_LIBARCHIVE=$disable_libarchive \
+          -DSTORM_DISABLE_MATHSAT=$disable_mathsat \
+          -DSTORM_DISABLE_SOPLEX=$disable_soplex \
+          -DSTORM_DISABLE_SPOT=$disable_spot \
+          -DSTORM_DISABLE_SYLVAN=$disable_sylvan \
+          -DSTORM_DISABLE_XERCES=$disable_xerces \
+          -DSTORM_DISABLE_Z3=$disable_z3 \
+          -DSTORM_DEVELOPER=$developer \
+          -DSTORM_USE_CLN_EA=$cln_exact \
+          -DSTORM_USE_CLN_RF=$cln_ratfunc \
+          -DSTORM_COMPILE_WITH_ALL_SANITIZERS=$all_sanitizers \
+          $cmake_args .. \
+    && make -j $no_threads \
+    && make install -j $no_threads \
+    && cd /opt \
+    && rm -rf storm
+
+WORKDIR /opt

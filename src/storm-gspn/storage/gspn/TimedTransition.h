@@ -1,7 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 #include "storm-gspn/storage/gspn/Transition.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace gspn {
@@ -25,7 +28,7 @@ class TimedTransition : public storm::gspn::Transition {
      * Sets the semantics of this transition
      */
     void setKServerSemantics(uint64_t k) {
-        STORM_LOG_THROW(k > 0, storm::exceptions::InvalidArgumentException, "Invalid Parameter for server semantics: 0");
+        STORM_LOG_THROW(k > 0, storm::exceptions::InvalidArgumentException, "Invalid Parameter for server semantics: 0.");
         nServers = k;
     }
 

@@ -1,29 +1,19 @@
 #include "storm-gamebased-ar/abstraction/MenuGameRefiner.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
-#include "storm-gamebased-ar/abstraction/MenuGameAbstractor.h"
-
 #include "storm-gamebased-ar/abstraction/ExplicitQualitativeGameResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResultMinMax.h"
+#include "storm-gamebased-ar/abstraction/MenuGameAbstractor.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/solver/MathsatSmtSolver.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/ExplicitGameStrategyPair.h"
-
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Odd.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/shortestPaths.h"
-#include "storm/utility/solver.h"
-
-#include "storm/solver/MathsatSmtSolver.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/exceptions/InvalidStateException.h"
-
-#include "storm/settings/SettingsManager.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::gbar {
 namespace abstraction {
@@ -1421,8 +1411,6 @@ bool MenuGameRefiner<Type, ValueType>::refine(storm::gbar::abstraction::MenuGame
                 maxPlayer1Strategy && abstractionInformation.encodePlayer2Choice(player2Labeling[player2Choice], 0, game.getPlayer2Variables().size());
         }
     }
-    auto end = std::chrono::high_resolution_clock::now();
-
     boost::optional<RefinementPredicates> predicates;
     if (useInterpolation) {
         predicates = derivePredicatesFromInterpolation(game, pivotStateResult, odd);
@@ -1430,7 +1418,6 @@ bool MenuGameRefiner<Type, ValueType>::refine(storm::gbar::abstraction::MenuGame
     if (!predicates) {
         predicates = derivePredicatesFromPivotState(game, symbolicPivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
     }
-    end = std::chrono::high_resolution_clock::now();
     STORM_LOG_THROW(static_cast<bool>(predicates), storm::exceptions::InvalidStateException, "Predicates needed to continue.");
 
     std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.get().getPredicates(), predicates.get().getSource());
@@ -1703,11 +1690,6 @@ bool MenuGameRefiner<Type, ValueType>::addedAllGuards() const {
 template class MenuGameRefiner<storm::dd::DdType::CUDD, double>;
 template class MenuGameRefiner<storm::dd::DdType::Sylvan, double>;
 template class MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-
-#ifdef STORM_HAVE_CARL
-// Currently, this instantiation does not work.
-// template class MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction>;
-#endif
 
 }  // namespace abstraction
 }  // namespace storm::gbar

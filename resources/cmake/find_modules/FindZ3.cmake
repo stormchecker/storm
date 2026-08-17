@@ -1,47 +1,81 @@
-# - Try to find libz3
+# From https://github.com/SRI-CSL/sally/blob/master/cmake/FindZ3.cmake
+# - Try to find Z3
 # Once done this will define
-#  LIBZ3_FOUND - System has libz3
-#  LIBZ3_INCLUDE_DIRS - The libz3 include directories
-#  LIBZ3_LIBRARIES - The libraries needed to use libz3
+#  Z3_FOUND - System has Z3
+#  Z3_INCLUDE_DIRS - The Z3 include directories
+#  Z3_LIBRARIES - The libraries needed to use Z3
 
-# dependencies
-# -- TODO -- needed?
+if (Z3_ROOT)
+    find_path(Z3_INCLUDE_DIR z3.h PATHS "${Z3_ROOT}/include" NO_DEFAULT_PATH)
+else()
+    find_path(Z3_INCLUDE_DIR z3.h)
+endif()
 
-# find include dir by searching for a concrete file, which definitely must be in it
-find_path(Z3_INCLUDE_DIR 
-            NAMES z3++.h 
-            PATHS ENV PATH INCLUDE "${Z3_ROOT}/include" "/usr/include/z3" "/usr/local/include/z3/"
-         )
+if (Z3_ROOT)
+    find_library(Z3_LIBRARY z3 PATHS "${Z3_ROOT}/lib" NO_DEFAULT_PATH)
+else()
+    find_library(Z3_LIBRARY z3)
+endif()
 
-# find library
-find_library(Z3_LIBRARY 
-		NAMES z3
-                PATHS ENV PATH INCLUDE "${Z3_ROOT}/lib"
-            )
+# If library found, check the version
+if (Z3_INCLUDE_DIR AND Z3_LIBRARY AND Z3_FIND_VERSION)
 
-find_program(Z3_EXEC
-                NAMES z3
-                PATHS ENV PATH INCLUDE "${Z3_ROOT}/bin"
-)
+    # Check version from char *msat_get_version(void)
+    file(WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/z3.cpp" "
+    #include <stdio.h>
+    #include \"z3.h\"
 
-# set up the final variables
+    int main() {
+      unsigned major, minor, build_number, revision_number;
+      Z3_get_version(&major, &minor, &build_number, &revision_number);
+      printf(\"%u.%u.%u.%u\\n\", major, minor, build_number, revision_number);
+      return 0;
+    }
+  ")
+
+    # Run the test program
+    try_run(
+            VERSION_TEST_EXITCODE
+            VERSION_TEST_COMPILED
+            ${CMAKE_BINARY_DIR}
+            ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/z3.cpp
+            COMPILE_DEFINITIONS
+            -I"${Z3_INCLUDE_DIR}"
+            LINK_LIBRARIES ${Z3_LIBRARY} ${GMP_LIBRARY}
+            CMAKE_FLAGS
+            -DCMAKE_SKIP_RPATH:BOOL=${CMAKE_SKIP_RPATH}
+            RUN_OUTPUT_VARIABLE
+            VERSION_TEST_RUN_OUTPUT
+    )
+
+    if (NOT VERSION_TEST_COMPILED)
+        unset(Z3_INCLUDE_DIR CACHE)
+        unset(Z3_LIBRARY CACHE)
+    elseif (NOT ("${VERSION_TEST_EXITCODE}" EQUAL 0))
+        unset(Z3_INCLUDE_DIR CACHE)
+        unset(Z3_LIBRARY CACHE)
+    else()
+        # Output is of the form: major.minor.build_number.revision
+        if("${VERSION_TEST_RUN_OUTPUT}" MATCHES "([0-9]*\\.[0-9]*\\.[0-9]*\\.[0-9]*)")
+            set(Z3_VERSION "${CMAKE_MATCH_1}")
+            if ("${Z3_VERSION}" VERSION_LESS "${Z3_FIND_VERSION}")
+                unset(Z3_INCLUDE_DIR CACHE)
+                unset(Z3_LIBRARY CACHE)
+            elseif (Z3_FIND_VERSION_EXACT AND NOT "${Z3_VERSION}" VERSION_EQUAL "${Z3_FIND_VERSION}")
+                unset(Z3_INCLUDE_DIR CACHE)
+                unset(Z3_LIBRARY CACHE)
+            endif()
+        else()
+            unset(Z3_INCLUDE_DIR CACHE)
+            unset(Z3_LIBRARY CACHE)
+        endif()
+    endif()
+endif()
+
 set(Z3_LIBRARIES ${Z3_LIBRARY})
 set(Z3_INCLUDE_DIRS ${Z3_INCLUDE_DIR})
-set(Z3_SOLVER ${Z3_EXEC})
 
-# set the LIBZ3_FOUND variable by utilizing the following macro
-# (which also handles the REQUIRED and QUIET arguments)
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Z3 DEFAULT_MSG
-                                  Z3_LIBRARY Z3_INCLUDE_DIR)
+find_package_handle_standard_args(Z3 DEFAULT_MSG Z3_LIBRARY Z3_INCLUDE_DIR)
 
-IF (NOT Z3_FIND_QUIETLY)
-      MESSAGE(STATUS "Found Z3: ${Z3_LIBRARY}")
-ENDIF (NOT Z3_FIND_QUIETLY)
-
-# debug output to see if everything went well
-#message(${Z3_INCLUDE_DIR})
-#message(${Z3_LIBRARY})
-
-# make the set variables only visible in advanced mode
-mark_as_advanced(Z3_LIBRARY Z3_INCLUDE_DIR Z3_SOLVER, Z3_EXEC)
+mark_as_advanced(Z3_INCLUDE_DIR Z3_LIBRARY)

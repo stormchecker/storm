@@ -1,5 +1,5 @@
+#include "storm/analysis/GraphConditions.h"
 
-#include "GraphConditions.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Ctmc.h"
@@ -37,7 +37,7 @@ void ConstraintCollector<ValueType>::wellformedRequiresNonNegativeEntries(std::v
             auto const& transitionVars = entry.gatherVariables();
             variableSet.insert(transitionVars.begin(), transitionVars.end());
             if (entry.denominator().isConstant()) {
-                assert(entry.denominator().constantPart() != 0);
+                STORM_LOG_ASSERT(entry.denominator().constantPart() != 0, "Denominator should not be zero.");
                 if (entry.denominator().constantPart() > 0) {
                     wellformedConstraintSet.emplace(entry.nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ);
                 } else if (entry.denominator().constantPart() < 0) {
@@ -71,7 +71,7 @@ void ConstraintCollector<ValueType>::process(storm::models::sparse::Model<ValueT
                     variableSet.insert(transitionVars.begin(), transitionVars.end());
                     // Assert: 0 <= transition <= 1
                     if (transition.getValue().denominator().isConstant()) {
-                        assert(transition.getValue().denominator().constantPart() != 0);
+                        STORM_LOG_ASSERT(transition.getValue().denominator().constantPart() != 0, "Denominator should not be zero.");
                         if (transition.getValue().denominator().constantPart() > 0) {
                             // Assert: nom <= denom
                             wellformedConstraintSet.emplace(
@@ -87,7 +87,7 @@ void ConstraintCollector<ValueType>::process(storm::models::sparse::Model<ValueT
                             // Assert: nom <= 0
                             wellformedConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ);
                         } else {
-                            STORM_LOG_ASSERT(false, "Denominator must not equal 0.");
+                            STORM_LOG_ASSERT(false, "Denominator should not be zero.");
                         }
                     } else {
                         // Assert: denom != 0
@@ -116,7 +116,7 @@ void ConstraintCollector<ValueType>::process(storm::models::sparse::Model<ValueT
         for (auto const& transition : model.getTransitionMatrix()) {
             if (!transition.getValue().isConstant()) {
                 if (transition.getValue().denominator().isConstant()) {
-                    assert(transition.getValue().denominator().constantPart() != 0);
+                    STORM_LOG_ASSERT(transition.getValue().denominator().constantPart() != 0, "Denominator should not be zero.");
                     if (transition.getValue().denominator().constantPart() > 0) {
                         wellformedConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ);
                     } else if (transition.getValue().denominator().constantPart() < 0) {
@@ -157,7 +157,7 @@ void ConstraintCollector<ValueType>::process(storm::models::sparse::Model<ValueT
             for (auto const& entry : rewModelEntry.second.getTransitionRewardMatrix()) {
                 if (!entry.getValue().isConstant()) {
                     if (entry.getValue().denominator().isConstant()) {
-                        assert(entry.getValue().denominator().constantPart() != 0);
+                        STORM_LOG_ASSERT(entry.getValue().denominator().constantPart() != 0, "Denominator should not be zero.");
                         if (entry.getValue().denominator().constantPart() > 0) {
                             wellformedConstraintSet.emplace(entry.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ);
                         } else if (entry.getValue().denominator().constantPart() < 0) {

@@ -15,11 +15,10 @@ DiscreteTimePrismProgramSimulator<ValueType>::DiscreteTimePrismProgramSimulator(
       currentState(),
       stateGenerator(std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(program, options)),
       zeroRewards(stateGenerator->getNumberOfRewardModels(), storm::utility::zero<ValueType>()),
-      lastActionRewards(zeroRewards) {
+      lastActionRewards(zeroRewards),
+      stateToId(stateGenerator->getStateSize()),
+      idToState() {
     // Current state needs to be overwritten to actual initial state.
-    // But first, let us create a state generator.
-
-    clearStateCaches();
     resetToInitial();
 }
 
@@ -124,7 +123,7 @@ template<typename ValueType>
 bool DiscreteTimePrismProgramSimulator<ValueType>::resetToInitial() {
     lastActionRewards = zeroRewards;
     auto indices = stateGenerator->getInitialStates(stateToIdCallback);
-    STORM_LOG_THROW(indices.size() == 1, storm::exceptions::NotSupportedException, "Program must have a unique initial state");
+    STORM_LOG_THROW(indices.size() == 1, storm::exceptions::NotSupportedException, "Program must have a unique initial state.");
     currentState = idToState[indices[0]];
     return explore();
 }

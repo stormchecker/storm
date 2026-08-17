@@ -1,11 +1,13 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/parser/FormulaParser.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/automata/DeterministicAutomaton.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "test/storm_gtest.h"
 
 TEST(FormulaParserTest, LabelTest) {
     storm::parser::FormulaParser formulaParser;
@@ -197,6 +199,50 @@ TEST(FormulaParserTest, NestedPathFormulaTest) {
     ASSERT_TRUE(formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isNextFormula());
 }
 
+TEST(FormulaParserTest, DiscountedFormulaTest) {
+    storm::parser::FormulaParser formulaParser;
+
+    std::string input = "Rmax=? [Cdiscount=0.9]";
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+
+    EXPECT_TRUE(formula->isRewardOperatorFormula());
+    ASSERT_TRUE(formula->asRewardOperatorFormula().getSubformula().isDiscountedTotalRewardFormula());
+    ASSERT_FALSE(formula->asRewardOperatorFormula().getSubformula().isTotalRewardFormula());
+    static const std::string discountFactorString1 = "9/10";
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(discountFactorString1),
+              formula->asRewardOperatorFormula().getSubformula().asDiscountedTotalRewardFormula().getDiscountFactor<storm::RationalNumber>());
+    EXPECT_FLOAT_EQ(0.9, formula->asRewardOperatorFormula().getSubformula().asDiscountedTotalRewardFormula().getDiscountFactor<double>());
+
+    input = "Rmin=? [C<=5discount=(0.95)]";
+
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+
+    EXPECT_TRUE(formula->isRewardOperatorFormula());
+    ASSERT_TRUE(formula->asRewardOperatorFormula().getSubformula().isDiscountedCumulativeRewardFormula());
+    static const std::string discountFactorString2 = "19/20";
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(discountFactorString2),
+              formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getDiscountFactor().evaluateAsRational());
+    EXPECT_FLOAT_EQ(0.95, formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getDiscountFactor().evaluateAsDouble());
+    EXPECT_TRUE(formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getTimeBoundReference().isTimeBound());
+    EXPECT_EQ(5, formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getBound().evaluateAsInt());
+
+    input = "Rmax=? [Crew<8discount=(0.5)]";
+
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+
+    EXPECT_TRUE(formula->isRewardOperatorFormula());
+    ASSERT_TRUE(formula->asRewardOperatorFormula().getSubformula().isDiscountedCumulativeRewardFormula());
+    static const std::string discountFactorString3 = "1/2";
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(discountFactorString3),
+              formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getDiscountFactor().evaluateAsRational());
+    EXPECT_FLOAT_EQ(0.5, formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getDiscountFactor().evaluateAsDouble());
+    EXPECT_FALSE(formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getTimeBoundReference().isTimeBound());
+    EXPECT_TRUE(formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getTimeBoundReference().isRewardBound());
+    EXPECT_EQ(8, formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getBound().evaluateAsInt());
+}
+
 TEST(FormulaParserTest, CommentTest) {
     storm::parser::FormulaParser formulaParser;
 
@@ -244,29 +290,41 @@ TEST(FormulaParserTest, WrongFormatTest) {
 
 TEST(FormulaParserTest, MultiObjectiveFormulaTest) {
     storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> formula;
+
+    auto checkSubformulas = [](storm::logic::MultiObjectiveFormula const &mof) {
+        ASSERT_EQ(3ull, mof.getNumberOfSubformulas());
+
+        ASSERT_TRUE(mof.getSubformula(0).isProbabilityOperatorFormula());
+        ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
+        ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
+        ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().hasBound());
+
+        ASSERT_TRUE(mof.getSubformula(1).isRewardOperatorFormula());
+        ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().getSubformula().isEventuallyFormula());
+        ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
+        ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().hasBound());
+
+        ASSERT_TRUE(mof.getSubformula(2).isProbabilityOperatorFormula());
+        ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
+        ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
+        ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().hasOptimalityType());
+        ASSERT_TRUE(storm::solver::minimize(mof.getSubformula(2).asProbabilityOperatorFormula().getOptimalityType()));
+    };
 
     std::string input = "multi(P<0.9 [ F \"a\" ], R<42 [ F \"b\" ], Pmin=? [ F\"c\" ])";
-    std::shared_ptr<storm::logic::Formula const> formula;
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     ASSERT_TRUE(formula->isMultiObjectiveFormula());
-    storm::logic::MultiObjectiveFormula mof = formula->asMultiObjectiveFormula();
-    ASSERT_EQ(3ull, mof.getNumberOfSubformulas());
+    storm::logic::MultiObjectiveFormula const &mof = formula->asMultiObjectiveFormula();
+    ASSERT_TRUE(mof.isTradeoff());
+    checkSubformulas(mof);
 
-    ASSERT_TRUE(mof.getSubformula(0).isProbabilityOperatorFormula());
-    ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
-    ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
-    ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().hasBound());
-
-    ASSERT_TRUE(mof.getSubformula(1).isRewardOperatorFormula());
-    ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().getSubformula().isEventuallyFormula());
-    ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
-    ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().hasBound());
-
-    ASSERT_TRUE(mof.getSubformula(2).isProbabilityOperatorFormula());
-    ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
-    ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
-    ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().hasOptimalityType());
-    ASSERT_TRUE(storm::solver::minimize(mof.getSubformula(2).asProbabilityOperatorFormula().getOptimalityType()));
+    input = "multilex(P<0.9 [ F \"a\" ], R<42 [ F \"b\" ], Pmin=? [ F\"c\" ])";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    ASSERT_TRUE(formula->isMultiObjectiveFormula());
+    storm::logic::MultiObjectiveFormula const &mlof = formula->asMultiObjectiveFormula();
+    ASSERT_TRUE(mlof.isLexicographic());
+    checkSubformulas(mlof);
 }
 
 TEST(FormulaParserTest, LogicalPrecedenceTest) {

@@ -1,14 +1,15 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/generator/BeliefSupportTracker.h"
-#include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm/api/storm.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "test/storm_gtest.h"
+#include "storm/transformer/MakePOMDPCanonic.h"
 
 // TODO
 // These tests depend on the interpretation of action and observation numbers and those may change.
@@ -19,7 +20,7 @@ TEST(BeliefSupportTracking, Maze) {
     GTEST_SKIP() << "Z3 not available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism");
-    program = storm::utility::prism::preprocess(program, "sl=0.4");
+    program = program.preprocess("sl=0.4");
     std::shared_ptr<storm::logic::Formula const> formula = storm::api::parsePropertiesForPrismProgram("Pmax=? [F \"goal\" ]", program).front().getRawFormula();
     std::shared_ptr<storm::models::sparse::Pomdp<double>> pomdp =
         storm::api::buildSparseModel<double>(program, {formula})->as<storm::models::sparse::Pomdp<double>>();

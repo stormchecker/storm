@@ -1,12 +1,10 @@
 #include "storm/transformer/ChoiceSelector.h"
+
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/models/sparse/Mdp.h"
-
-#include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/models/sparse/Pomdp.h"
-
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Pomdp.h"
 
 namespace storm {
 namespace transformer {

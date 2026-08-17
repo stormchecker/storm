@@ -1,21 +1,16 @@
-#include "SparseLTLHelper.h"
+#include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/automata/DeterministicAutomaton.h"
 #include "storm/automata/LTL2DeterministicAutomaton.h"
-
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
-
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
-
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
-
 #include "storm/solver/SolveGoal.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/SchedulerChoice.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -86,9 +81,28 @@ storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeA
     std::size_t accMECs = 0;
     std::size_t allMECs = 0;
 
+    // All accepting states will be on a MEC. For efficiency, we compute the MECs of the MDP first to restrict the possible candidates.
+    // Compute MECs for the entire MDP
+    storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(transitionMatrix, backwardTransitions);
+    // Maps every state to the MEC it is in, or to InvalidMecIndex if it does not belong to any MEC.
+    std::vector<uint64_t> stateToMec(transitionMatrix.getRowGroupCount(), std::numeric_limits<uint64_t>::max());
+    // Contains states that are on a mec
+    storm::storage::BitVector mecStates(transitionMatrix.getRowGroupCount(), false);
+    for (uint64_t mec_counter = 0; auto const& mec : mecs) {
+        for (auto const& [state, _] : mec) {
+            stateToMec[state] = mec_counter;
+            mecStates.set(state, true);
+        }
+        ++mec_counter;
+    }
+
     for (auto const& conjunction : dnf) {
-        // Determine the set of states of the subMDP that can satisfy the condition, remove all states that would violate Fins in the conjunction.
-        storm::storage::BitVector allowed(transitionMatrix.getRowGroupCount(), true);
+        // get the states of the mdp that (a) are on a MEC, (b) are not already known to be accepting, and (c) don't violate Fins of the conjunction
+        storm::storage::BitVector allowed = mecStates & ~acceptingStates;
+
+        if (allowed.empty()) {
+            break;  // no more candidates
+        }
 
         for (auto const& literal : conjunction) {
             if (literal->isTRUE()) {
@@ -118,9 +132,15 @@ storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeA
         }
 
         // Compute MECs in the allowed fragment
-        storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(transitionMatrix, backwardTransitions, allowed);
-        allMECs += mecs.size();
-        for (const auto& mec : mecs) {
+        storm::storage::MaximalEndComponentDecomposition<ValueType> allowedECs(transitionMatrix, backwardTransitions, allowed);
+        allMECs += allowedECs.size();
+        for (const auto& ec : allowedECs) {
+            auto const representativeEcState = ec.begin()->first;
+            if (acceptingStates.get(representativeEcState)) {
+                // The ec is part of a mec that is already known to be accepting
+                continue;
+            }
+
             bool accepting = true;
             for (auto const& literal : conjunction) {
                 if (literal->isTRUE()) {
@@ -134,12 +154,12 @@ storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeA
                     const storm::storage::BitVector& accSet = acceptance.getAcceptanceSet(atom.getAcceptanceSet());
                     if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_INF) {
                         if (atom.isNegated()) {
-                            if (!mec.containsAnyState(~accSet)) {
+                            if (!ec.containsAnyState(~accSet)) {
                                 accepting = false;
                                 break;
                             }
                         } else {
-                            if (!mec.containsAnyState(accSet)) {
+                            if (!ec.containsAnyState(accSet)) {
                                 accepting = false;
                                 break;
                             }
@@ -147,8 +167,8 @@ storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeA
 
                     } else if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_FIN) {
                         // Do only sanity checks here.
-                        STORM_LOG_ASSERT(atom.isNegated() ? !mec.containsAnyState(~accSet) : !mec.containsAnyState(accSet),
-                                         "MEC contains Fin-states, which should have been removed");
+                        STORM_LOG_ASSERT(atom.isNegated() ? !ec.containsAnyState(~accSet) : !ec.containsAnyState(accSet),
+                                         "EC contains Fin-states, which should have been removed.");
                     }
                 }
             }
@@ -156,13 +176,19 @@ storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeA
             if (accepting) {
                 accMECs++;
 
-                for (auto const& stateChoicePair : mec) {
-                    acceptingStates.set(stateChoicePair.first);
+                // get the MEC containing the current EC
+                auto const mec_index = stateToMec[representativeEcState];
+                STORM_LOG_ASSERT(mec_index < mecs.size(), "MEC index out of range.");
+                auto const& mec = mecs[mec_index];
+
+                // All states of the (global) mec are accepting since we can almost surely reach the inner ec
+                for (auto const& [state, _] : mec) {
+                    acceptingStates.set(state);
                 }
 
                 if (this->isProduceSchedulerSet()) {
                     // save choices for states that weren't assigned to any other MEC yet.
-                    this->_schedulerHelper.get().saveProductEcChoices(acceptance, mec, conjunction, product);
+                    this->_schedulerHelper.get().saveProductEcChoices(acceptance, ec, mec, conjunction, product);
                 }
             }
         }
@@ -205,7 +231,7 @@ std::vector<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeDAPr
     for (const std::string& ap : apSet.getAPs()) {
         auto it = apSatSets.find(ap);
         STORM_LOG_THROW(it != apSatSets.end(), storm::exceptions::InvalidOperationException,
-                        "Deterministic automaton has AP " << ap << ", does not appear in formula");
+                        "Deterministic automaton has AP " << ap << ", does not appear in formula.");
 
         statesForAP.push_back(std::move(it->second));
     }
@@ -345,12 +371,9 @@ std::vector<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeLTLP
 template class SparseLTLHelper<double, false>;
 template class SparseLTLHelper<double, true>;
 
-#ifdef STORM_HAVE_CARL
 template class SparseLTLHelper<storm::RationalNumber, false>;
 template class SparseLTLHelper<storm::RationalNumber, true>;
 template class SparseLTLHelper<storm::RationalFunction, false>;
-
-#endif
 
 }  // namespace helper
 }  // namespace modelchecker

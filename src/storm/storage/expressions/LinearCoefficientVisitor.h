@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_LINEARCOEFFICIENTVISITOR_H_
-#define STORM_STORAGE_EXPRESSIONS_LINEARCOEFFICIENTVISITOR_H_
+#pragma once
 
 #include <stack>
 
@@ -79,5 +78,3 @@ class LinearCoefficientVisitor : public ExpressionVisitor {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif /* STORM_STORAGE_EXPRESSIONS_LINEARCOEFFICIENTVISITOR_H_ */

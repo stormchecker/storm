@@ -12,11 +12,9 @@ EquationSystemEliminator<ValueType>::EquationSystemEliminator(storm::storage::Fl
 }
 
 template class EquationSystemEliminator<double>;
-
-#ifdef STORM_HAVE_CARL
 template class EquationSystemEliminator<storm::RationalNumber>;
 template class EquationSystemEliminator<storm::RationalFunction>;
-#endif
+
 }  // namespace stateelimination
 }  // namespace solver
 }  // namespace storm

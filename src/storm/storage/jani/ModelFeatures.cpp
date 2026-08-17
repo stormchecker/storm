@@ -15,10 +15,12 @@ std::string toString(ModelFeature const& modelFeature) {
             return "functions";
         case ModelFeature::StateExitRewards:
             return "state-exit-rewards";
+        case ModelFeature::MultiObjectiveProperties:
+            return "multi-objective-properties";
         case ModelFeature::TrigonometricFunctions:
             return "trigonometric-functions";
     }
-    STORM_LOG_ASSERT(false, "Unhandled model feature");
+    STORM_LOG_ASSERT(false, "Unhandled model feature.");
     return "Unhandled-feature";
 }
 
@@ -52,6 +54,10 @@ bool ModelFeatures::hasStateExitRewards() const {
     return features.count(ModelFeature::StateExitRewards) > 0;
 }
 
+bool ModelFeatures::hasMultiObjectiveProperties() const {
+    return features.count(ModelFeature::MultiObjectiveProperties) > 0;
+}
+
 bool ModelFeatures::hasTrigonometricFunctions() const {
     return features.count(ModelFeature::TrigonometricFunctions) > 0;
 }
@@ -79,6 +85,7 @@ ModelFeatures getAllKnownModelFeatures() {
         .add(ModelFeature::DerivedOperators)
         .add(ModelFeature::Functions)
         .add(ModelFeature::StateExitRewards)
+        .add(ModelFeature::MultiObjectiveProperties)
         .add(ModelFeature::TrigonometricFunctions);
 }
 }  // namespace jani

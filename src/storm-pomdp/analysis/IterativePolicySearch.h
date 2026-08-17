@@ -1,26 +1,27 @@
+#pragma once
+
 #include <sstream>
 #include <vector>
-#include "storm/exceptions/UnexpectedException.h"
+
+#include "storm-pomdp/analysis/WinningRegion.h"
+#include "storm-pomdp/analysis/WinningRegionQueryInterface.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/solver.h"
 
-#include "storm-pomdp/analysis/WinningRegion.h"
-#include "storm-pomdp/analysis/WinningRegionQueryInterface.h"
-
 namespace storm {
 namespace pomdp {
 
 enum class MemlessSearchPathVariables { BooleanRanking, IntegerRanking, RealRanking };
-MemlessSearchPathVariables pathVariableTypeFromString(std::string const& in) {
+inline MemlessSearchPathVariables pathVariableTypeFromString(std::string const& in) {
     if (in == "int") {
         return MemlessSearchPathVariables::IntegerRanking;
     } else if (in == "real") {
         return MemlessSearchPathVariables::RealRanking;
     } else {
-        assert(in == "bool");
+        STORM_LOG_ASSERT(in == "bool", "Expected 'bool' path variable type.");
         return MemlessSearchPathVariables::BooleanRanking;
     }
 }
@@ -191,8 +192,6 @@ class IterativePolicySearch {
     void finalizeStatistics();
 
    private:
-    storm::expressions::Expression const& getDoneActionExpression(uint64_t obs) const;
-
     void reset() {
         STORM_LOG_INFO("Reset solver to restart with current winning region");
         schedulerForObs.clear();

@@ -1,18 +1,14 @@
-#ifndef STORM_SOLVER_SYMBOLICLINEAREQUATIONSOLVER_H_
-#define STORM_SOLVER_SYMBOLICLINEAREQUATIONSOLVER_H_
+#pragma once
 
 #include <set>
 #include <vector>
 
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/DdType.h"
-#include "storm/storage/expressions/Variable.h"
-
 #include "storm/solver/LinearEquationSolverProblemFormat.h"
 #include "storm/solver/LinearEquationSolverRequirements.h"
 #include "storm/solver/SymbolicEquationSolver.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 
@@ -157,5 +153,3 @@ class GeneralSymbolicLinearEquationSolverFactory : public SymbolicLinearEquation
 
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_SYMBOLICLINEAREQUATIONSOLVER_H_ */

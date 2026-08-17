@@ -1,17 +1,14 @@
 #include "storm/adapters/AddExpressionAdapter.h"
 
+#include "storm-config.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/utility/macros.h"
-
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace adapters {
@@ -227,10 +224,7 @@ boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::Rati
 // Explicitly instantiate the symbolic expression adapter
 template class AddExpressionAdapter<storm::dd::DdType::CUDD, double>;
 template class AddExpressionAdapter<storm::dd::DdType::Sylvan, double>;
-
-#ifdef STORM_HAVE_CARL
 template class AddExpressionAdapter<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class AddExpressionAdapter<storm::dd::DdType::Sylvan, storm::RationalFunction>;
-#endif
 }  // namespace adapters
 }  // namespace storm

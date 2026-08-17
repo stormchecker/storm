@@ -5,9 +5,6 @@
 #include "storm/logic/Formulas.h"
 #include "storm/logic/LiftableTransitionRewardsVisitor.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
-
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/utility/macros.h"
 
@@ -53,7 +50,8 @@ BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels)
       addOutOfBoundsState(false),
       reservedBitsForUnboundedVariables(32),
       showProgress(false),
-      showProgressDelay(0) {
+      showProgressDelay(0),
+      stochasticTolerance(0.0) {
     // Intentionally left empty.
 }
 
@@ -74,14 +72,11 @@ BuilderOptions::BuilderOptions(std::vector<std::shared_ptr<storm::logic::Formula
         }
     }
 
-    auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
     if (modelDescription.hasModel()) {
         this->setApplyMaximalProgressAssumption(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
         this->setBuildChoiceOrigins(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP);
         this->setBuildChoiceLabels(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP);
     }
-    showProgress = generalSettings.isVerboseSet();
-    showProgressDelay = generalSettings.getShowProgressDelay();
 }
 
 void BuilderOptions::preserveFormula(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription) {
@@ -207,6 +202,10 @@ uint64_t BuilderOptions::getShowProgressDelay() const {
     return showProgressDelay;
 }
 
+double BuilderOptions::getStochasticTolerance() const {
+    return stochasticTolerance;
+}
+
 BuilderOptions& BuilderOptions::setExplorationChecks(bool newValue) {
     explorationChecks = newValue;
     return *this;
@@ -288,6 +287,21 @@ BuilderOptions& BuilderOptions::setReservedBitsForUnboundedVariables(uint64_t ne
 
 BuilderOptions& BuilderOptions::setAddOverlappingGuardsLabel(bool newValue) {
     addOverlappingGuardsLabel = newValue;
+    return *this;
+}
+
+BuilderOptions& BuilderOptions::setStochasticTolerance(double newValue) {
+    stochasticTolerance = newValue;
+    return *this;
+}
+
+BuilderOptions& BuilderOptions::setShowProgress(bool newValue) {
+    showProgress = newValue;
+    return *this;
+}
+
+BuilderOptions& BuilderOptions::setShowProgressDelay(uint64_t newValue) {
+    showProgressDelay = newValue;
     return *this;
 }
 

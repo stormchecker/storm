@@ -1,0 +1,65 @@
+name: 'Starter project'
+description: 'Build and test starter project'
+inputs:
+  docker:
+    description: 'Whether the checks should be performed in a Docker container'
+    required: true
+    type: boolean
+    default: true
+  stormDir:
+    description: 'The Storm directory (or empty if the installed version should be used)'
+    required: true
+    type: string
+    default: ''
+  command:
+    description: 'The command to run for the starter project'
+    required: true
+    type: string
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    # Docker
+    - name: Checkout starter-project
+      if: ${{ (inputs.docker == 'true') && (inputs.stormDir != '') }}
+      run: |
+        docker exec ci bash -c "git clone https://github.com/stormchecker/storm-project-starter-cpp /opt/storm-starter"
+      shell: bash
+
+    - name: Configure and make starter project (intree Storm)
+      if: ${{ (inputs.docker == 'true') && (inputs.stormDir != '') }}
+      run: |
+        docker exec ci bash -c "cd /opt/storm-starter; mkdir build-intree; cd build-intree; cmake -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT='/opt/storm/build' .."
+        docker exec ci bash -c "cd /opt/storm-starter/build-intree; make -j ${NR_JOBS}"
+        docker exec ci bash -c "/opt/storm-starter/build-intree/bin/starter-project ${{ inputs.command }}"
+      shell: bash
+    - name: Configure and make starter project (installed Storm)
+      if: ${{ (inputs.docker == 'true') && (inputs.stormDir == '') }}
+      run: |
+        docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE .."
+        docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
+        docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project ${{ inputs.command }}"
+      shell: bash
+   
+    # macOS
+    - name: Checkout starter-project
+      if: ${{ (inputs.docker == 'false') && (inputs.stormDir != '') }}
+      run: |
+        cd ..; git clone https://github.com/stormchecker/storm-project-starter-cpp storm-starter
+      shell: bash
+
+    - name: Configure and make starter project (intree Storm)
+      if: ${{ (inputs.docker == 'false') && (inputs.stormDir != '') }}
+      run: |
+        cd ../storm-starter; mkdir build-intree; cd build-intree; cmake -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT="${GITHUB_WORKSPACE}/build"  ..
+        make -j ${NR_JOBS}
+        ./bin/starter-project ${{ inputs.command }}
+      shell: bash
+    - name: Configure and make starter project (installed Storm)
+      if: ${{ (inputs.docker == 'false') && (inputs.stormDir == '') }}
+      run: |
+        cd ../storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE  ..
+        make -j ${NR_JOBS}
+        ./bin/starter-project ${{ inputs.command }}
+      shell: bash

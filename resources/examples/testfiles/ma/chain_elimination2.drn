@@ -1,6 +1,7 @@
 // Exported by storm
 // Original model type: Markov Automaton
 @type: Markov Automaton
+@value_type: double
 @parameters
 
 @reward_models

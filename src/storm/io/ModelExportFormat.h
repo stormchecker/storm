@@ -3,9 +3,9 @@
 #include <string>
 
 namespace storm {
-namespace exporter {
+namespace io {
 
-enum class ModelExportFormat { Dot, Drdd, Drn, Json };
+enum class ModelExportFormat { Dot, Drdd, Drn, Json, Umb };
 
 /*!
  * @return The ModelExportFormat whose string representation matches the given input
@@ -23,5 +23,5 @@ std::string toString(ModelExportFormat const& input);
  * @throws InvalidArgumentException if there is no file extension or if it doesn't match any known format.
  */
 ModelExportFormat getModelExportFormatFromFileExtension(std::string const& filename);
-}  // namespace exporter
+}  // namespace io
 }  // namespace storm

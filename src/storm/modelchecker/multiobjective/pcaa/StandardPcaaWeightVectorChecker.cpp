@@ -3,6 +3,14 @@
 #include <map>
 #include <set>
 
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
@@ -11,19 +19,11 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/transformer/GoalStateMerger.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/IllegalFunctionCallException.h"
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UncheckedRequirementException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -42,9 +42,12 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
     auto rewardAnalysis = preprocessing::SparseMultiObjectiveRewardAnalysis<SparseModelType>::analyze(preprocessorResult);
     STORM_LOG_THROW(rewardAnalysis.rewardFinitenessType != preprocessing::RewardFinitenessType::Infinite, storm::exceptions::NotSupportedException,
                     "There is no Pareto optimal scheduler that yields finite reward for all objectives. This is not supported.");
+    STORM_LOG_WARN_COND(rewardAnalysis.rewardFinitenessType == preprocessing::RewardFinitenessType::AllFinite,
+                        "There might be infinite reward for some scheduler. Multi-objective model checking restricts to schedulers that yield finite reward "
+                        "for all objectives. Be aware that solutions yielding infinite reward are discarded.");
     STORM_LOG_THROW(rewardAnalysis.totalRewardLessInfinityEStates, storm::exceptions::UnexpectedException,
                     "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
-    STORM_LOG_THROW(preprocessorResult.containsOnlyTrivialObjectives(), storm::exceptions::NotSupportedException,
+    STORM_LOG_THROW(!preprocessorResult.containsRewardBoundedObjective(), storm::exceptions::NotSupportedException,
                     "At least one objective was not reduced to an expected (long run, total or cumulative) reward objective during preprocessing. This is not "
                     "supported by the considered weight vector checker.");
     STORM_LOG_THROW(preprocessorResult.preprocessedModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
@@ -63,7 +66,8 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
     auto mergerResult =
         merger.mergeTargetAndSinkStates(maybeStates, rewardAnalysis.reward0AStates, storm::storage::BitVector(maybeStates.size(), false),
                                         std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()), finiteTotalRewardChoices);
-
+    goalStateMergerInputToReducedStateIndexMapping = std::move(mergerResult.oldToNewStateIndexMapping);
+    goalStateMergerReducedToInputChoiceMapping = mergerResult.keptChoices.getNumberOfSetBitsBeforeIndices();
     // Initialize data specific for the considered model type
     initializeModelTypeSpecificData(*mergerResult.model);
 
@@ -114,32 +118,36 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
     // initialize data for the results
     checkHasBeenCalled = false;
     objectiveResults.resize(this->objectives.size());
-    offsetsToUnderApproximation.resize(this->objectives.size(), storm::utility::zero<ValueType>());
-    offsetsToOverApproximation.resize(this->objectives.size(), storm::utility::zero<ValueType>());
+    offsetsToAchievablePoint.resize(this->objectives.size(), storm::utility::zero<ValueType>());
+    offsetToWeightedSum = storm::utility::zero<ValueType>();
     optimalChoices.resize(transitionMatrix.getRowGroupCount(), 0);
 
-    // Print some statistics (if requested)
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Weight Vector Checker Statistics:\n");
-        STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowGroupCount() << " states.\n");
-        STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowCount() << " actions.\n");
-        if (lraMecDecomposition) {
-            STORM_PRINT_AND_LOG("Found " << lraMecDecomposition->mecs.size() << " end components that are relevant for LRA-analysis.\n");
-            uint64_t numLraMecStates = 0;
-            for (auto const& mec : this->lraMecDecomposition->mecs) {
-                numLraMecStates += mec.size();
-            }
-            STORM_PRINT_AND_LOG(numLraMecStates << " states lie on such an end component.\n");
+    STORM_LOG_STATISTICS("Weight Vector Checker Statistics:\n");
+    STORM_LOG_STATISTICS("Final preprocessed model has " << transitionMatrix.getRowGroupCount() << " states.\n");
+    STORM_LOG_STATISTICS("Final preprocessed model has " << transitionMatrix.getRowCount() << " actions.\n");
+    if (lraMecDecomposition) {
+        STORM_LOG_STATISTICS("Found " << lraMecDecomposition->mecs.size() << " end components that are relevant for LRA-analysis.\n");
+        uint64_t numLraMecStates = 0;
+        for (auto const& mec : this->lraMecDecomposition->mecs) {
+            numLraMecStates += mec.size();
         }
-        STORM_PRINT_AND_LOG('\n');
+        STORM_LOG_STATISTICS(numLraMecStates << " states lie on such an end component.\n");
     }
+    STORM_LOG_STATISTICS('\n');
 }
 
 template<class SparseModelType>
-void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& env, std::vector<ValueType> const& weightVector) {
-    checkHasBeenCalled = true;
+void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& env, std::vector<ValueType> weightVector) {
+    // See https://doi.org/10.18154/RWTH-2023-09669 Algorithm 4.2
     STORM_LOG_INFO("Invoked WeightVectorChecker with weights \n"
                    << "\t" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector)));
+    STORM_LOG_THROW(std::any_of(weightVector.begin(), weightVector.end(), [](auto const& w_i) { return !storm::utility::isZero(w_i); }),
+                    storm::exceptions::InvalidOperationException, "Weight vector must not be the zero vector.");
+    checkHasBeenCalled = true;
+    // Normalize weights so the vector has length 1
+    // This is necessary for ensuring the required accuracy, i.e. distance between halfspace induced by weightedSum and weightvector and achievable point.
+    ValueType const inputWeightVectorLength = storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
+    storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(weightVector, storm::utility::one<ValueType>() / (inputWeightVectorLength));
 
     // Prepare and invoke weighted infinite horizon (long run average) phase
     std::vector<ValueType> weightedRewardVector(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
@@ -156,7 +164,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& 
                 storm::utility::vector::addScaledVector(weightedStateRewardVector.get(), stateRewards[objIndex], weight);
             }
         }
-        infiniteHorizonWeightedPhase(env, weightedRewardVector, weightedStateRewardVector);
+        infiniteHorizonWeightedPhase(env, weightedRewardVector, weightedStateRewardVector, weightVector);
         // Clear all values of the weighted reward vector
         weightedRewardVector.assign(weightedRewardVector.size(), storm::utility::zero<ValueType>());
     }
@@ -181,55 +189,66 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& 
         }
     }
     STORM_LOG_INFO("Weight vector check done. Lower bounds for results in initial state: "
-                   << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(getUnderApproximationOfInitialStateResults())));
+                   << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(getAchievablePoint())));
     // Validate that the results are sufficiently precise
-    ValueType resultingWeightedPrecision =
-        storm::utility::abs<ValueType>(storm::utility::vector::dotProduct(getOverApproximationOfInitialStateResults(), weightVector) -
-                                       storm::utility::vector::dotProduct(getUnderApproximationOfInitialStateResults(), weightVector));
-    resultingWeightedPrecision /= storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
-    STORM_LOG_THROW(resultingWeightedPrecision <= this->getWeightedPrecision(), storm::exceptions::UnexpectedException,
-                    "The desired precision was not reached");
+    ValueType weightedSum = storm::utility::zero<ValueType>();
+    for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+        weightedSum += (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex]) *
+                       getAchievablePoint()[objIndex];
+    }
+    ValueType resultingWeightedPrecision = storm::utility::abs<ValueType>(getOptimalWeightedSum() - weightedSum);
+    // Since the weight vector is normalized (has length 1), the resultingWeightedPrecision coincides with the distance between over- and under-approximaiton
+    STORM_LOG_WARN_COND(resultingWeightedPrecision <= this->getWeightedPrecision() + storm::utility::convertNumber<ValueType>(1e-10),
+                        "The desired precision was not reached: resulting precision "
+                            << resultingWeightedPrecision << " exceeds specified value " << this->getWeightedPrecision() << " by approx. "
+                            << (storm::utility::convertNumber<double, ValueType>(resultingWeightedPrecision - this->getWeightedPrecision()))
+                            << ". Weight vector is" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector))
+                            << ".");
+    if (!storm::utility::isOne(inputWeightVectorLength)) {
+        // reverse the normalization of the weight vector for the returned optimal weighted sum.
+        storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(weightedResult, inputWeightVectorLength);
+        offsetToWeightedSum *= inputWeightVectorLength;
+    }
 }
 
 template<class SparseModelType>
-std::vector<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType>
-StandardPcaaWeightVectorChecker<SparseModelType>::getUnderApproximationOfInitialStateResults() const {
-    STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
+std::vector<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType> StandardPcaaWeightVectorChecker<SparseModelType>::getAchievablePoint() const {
+    STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
     std::vector<ValueType> res;
     res.reserve(this->objectives.size());
-    for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-        res.push_back(this->objectiveResults[objIndex][initialState] + this->offsetsToUnderApproximation[objIndex]);
+    for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+        res.push_back(this->objectives[objIndex].clipResult(this->objectiveResults[objIndex][initialState] + this->offsetsToAchievablePoint[objIndex]));
     }
     return res;
 }
 
 template<class SparseModelType>
-std::vector<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType>
-StandardPcaaWeightVectorChecker<SparseModelType>::getOverApproximationOfInitialStateResults() const {
-    STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
-    std::vector<ValueType> res;
-    res.reserve(this->objectives.size());
-    for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-        res.push_back(this->objectiveResults[objIndex][initialState] + this->offsetsToOverApproximation[objIndex]);
-    }
-    return res;
+typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType StandardPcaaWeightVectorChecker<SparseModelType>::getOptimalWeightedSum() const {
+    STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
+    return this->weightedResult[initialState] + this->offsetToWeightedSum;
 }
 
 template<class SparseModelType>
 storm::storage::Scheduler<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType>
 StandardPcaaWeightVectorChecker<SparseModelType>::computeScheduler() const {
-    STORM_LOG_THROW(this->checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException,
+    STORM_LOG_THROW(this->checkHasBeenCalled, storm::exceptions::InvalidOperationException,
                     "Tried to retrieve results but check(..) has not been called before.");
     for (auto const& obj : this->objectives) {
         STORM_LOG_THROW(obj.formula->getSubformula().isTotalRewardFormula() || obj.formula->getSubformula().isLongRunAverageRewardFormula(),
                         storm::exceptions::NotImplementedException, "Scheduler retrival is only implemented for objectives without time-bound.");
     }
-
-    storm::storage::Scheduler<ValueType> result(this->optimalChoices.size());
-    uint_fast64_t state = 0;
-    for (auto const& choice : optimalChoices) {
-        result.setChoice(choice, state);
-        ++state;
+    auto const numStatesOfInputModel = goalStateMergerInputToReducedStateIndexMapping.size();
+    storm::storage::Scheduler<ValueType> result(numStatesOfInputModel);
+    for (uint64_t inputModelState = 0; inputModelState < numStatesOfInputModel; ++inputModelState) {
+        auto const reducedModelState = goalStateMergerInputToReducedStateIndexMapping[inputModelState];
+        if (reducedModelState >= optimalChoices.size()) {
+            // This state is a "reward0AState", i.e., it has no reward for any scheduler. We can set an arbitrary choice here.
+            result.setChoice(0, inputModelState);
+        } else {
+            auto const reducedModelChoice = optimalChoices[reducedModelState];
+            auto const inputModelChoice = goalStateMergerReducedToInputChoiceMapping[reducedModelChoice];
+            result.setChoice(inputModelChoice, inputModelState);
+        }
     }
     return result;
 }
@@ -345,9 +364,19 @@ void computeSchedulerFinitelyOften(storm::storage::SparseMatrix<ValueType> const
 }
 
 template<class SparseModelType>
-void StandardPcaaWeightVectorChecker<SparseModelType>::infiniteHorizonWeightedPhase(Environment const& env,
+void StandardPcaaWeightVectorChecker<SparseModelType>::infiniteHorizonWeightedPhase(Environment const& inputEnv,
                                                                                     std::vector<ValueType> const& weightedActionRewardVector,
-                                                                                    boost::optional<std::vector<ValueType>> const& weightedStateRewardVector) {
+                                                                                    boost::optional<std::vector<ValueType>> const& weightedStateRewardVector,
+                                                                                    std::vector<ValueType> const& weightVector) {
+    auto solverEnv = inputEnv;
+    // see epsilon in https://doi.org/10.18154/RWTH-2023-09669 Algorithm 5.2
+    ValueType epsilon = this->getWeightedPrecisionUnboundedPhase() * storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector)) /
+                        storm::utility::convertNumber<ValueType>(2.0);
+    // We want to compute a value v_C for each MEC C that upper bounds the true MEC value and is also epsilon/2 close to it.
+    // We therefore compute a value that is epsilon/4 close to it and then add epsilon/4 as offset below.
+    ValueType const offset = epsilon / storm::utility::convertNumber<ValueType>(4.0);
+    solverEnv.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(offset));
+    solverEnv.solver().lra().setRelativeTerminationCriterion(false);
     // Compute the optimal (weighted) lra value for each mec, keeping track of the optimal choices
     STORM_LOG_ASSERT(lraMecDecomposition, "Mec decomposition for lra computations not initialized.");
     storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> helper = createNondetInfiniteHorizonHelper(this->transitionMatrix);
@@ -363,15 +392,38 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::infiniteHorizonWeightedPh
         } else {
             stateValueGetter = [](uint64_t const&) { return storm::utility::zero<ValueType>(); };
         }
-        lraMecDecomposition->auxMecValues[mecIndex] = helper.computeLraForComponent(env, stateValueGetter, actionValueGetter, mec);
+        lraMecDecomposition->auxMecValues[mecIndex] = helper.computeLraForComponent(solverEnv, stateValueGetter, actionValueGetter, mec) + offset;
     }
     // Extract the produced optimal choices for the MECs
     this->optimalChoices = std::move(helper.getProducedOptimalChoices());
 }
 
 template<class SparseModelType>
-void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedRewardVector,
+void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(Environment const& inputEnv, std::vector<ValueType> const& weightedRewardVector,
                                                                               std::vector<ValueType> const& weightVector) {
+    storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> solverFactory;
+    auto solverEnv = inputEnv;
+    solverEnv.solver().minMax().setRelativeTerminationCriterion(false);
+    solverEnv.solver().lra().setRelativeTerminationCriterion(false);
+    bool const requireSoundApproximation = !solverEnv.solver().isForceExact() && solverEnv.solver().isForceSoundness();
+    ValueType const two = storm::utility::convertNumber<ValueType>(2.0);
+    // see epsilon in https://doi.org/10.18154/RWTH-2023-09669 Algorithm 4.2
+    ValueType adjustedPrecision =
+        this->getWeightedPrecisionUnboundedPhase() * storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector)) / two;
+    if (solverEnv.solver().isForceExact()) {
+        // If we are already using an exact solver, we consider the precision to be zero
+        adjustedPrecision = storm::utility::zero<ValueType>();
+    } else if (requireSoundApproximation) {
+        adjustedPrecision /= two;  // need to be more precise to get a correct and sufficiently tight upper bound on the weighted sum
+    }
+    if (lraObjectives.empty()) {
+        solverEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(adjustedPrecision));
+    } else {
+        // need to be more precise to distribute the approximation error between lra and total reward phase
+        solverEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber, ValueType>(adjustedPrecision / two));
+        solverEnv.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber, ValueType>(adjustedPrecision / two));
+    }
+
     // Catch the case where all values on the RHS of the MinMax equation system are zero.
     if (this->objectivesWithNoUpperTimeBound.empty() ||
         ((this->lraObjectives.empty() || !storm::utility::vector::hasNonZeroEntry(lraMecDecomposition->auxMecValues)) &&
@@ -429,12 +481,11 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(En
         }
     }
 
-    storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> solverFactory;
-    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(env, ecQuotient->matrix);
+    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(solverEnv, ecQuotient->matrix);
     solver->setTrackScheduler(true);
     solver->setHasUniqueSolution(true);
     solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
-    auto req = solver->getRequirements(env, storm::solver::OptimizationDirection::Maximize);
+    auto req = solver->getRequirements(solverEnv, storm::solver::OptimizationDirection::Maximize);
     setBoundsToSolver(*solver, req.lowerBounds(), req.upperBounds(), weightVector, objectivesWithNoUpperTimeBound, ecQuotient->matrix,
                       ecQuotient->rowsWithSumLessOne, ecQuotient->auxChoiceValues);
     if (solver->hasLowerBound()) {
@@ -454,121 +505,133 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(En
     // Use the (0...0) vector as initial guess for the solution.
     std::fill(ecQuotient->auxStateValues.begin(), ecQuotient->auxStateValues.end(), storm::utility::zero<ValueType>());
 
-    solver->solveEquations(env, ecQuotient->auxStateValues, ecQuotient->auxChoiceValues);
+    solver->solveEquations(solverEnv, ecQuotient->auxStateValues, ecQuotient->auxChoiceValues);
     this->weightedResult = std::vector<ValueType>(transitionMatrix.getRowGroupCount());
 
     transformEcqSolutionToOriginalModel(ecQuotient->auxStateValues, solver->getSchedulerChoices(), ecqStateToOptimalMecMap, this->weightedResult,
                                         this->optimalChoices);
+
+    // Add offset to ensure that we have an upper bound on the true optimal value
+    offsetToWeightedSum = requireSoundApproximation ? adjustedPrecision : storm::utility::zero<ValueType>();
 }
 
 template<class SparseModelType>
-void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedIndividualPhase(Environment const& env, std::vector<ValueType> const& weightVector) {
-    if (objectivesWithNoUpperTimeBound.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*objectivesWithNoUpperTimeBound.begin()])) {
-        uint_fast64_t objIndex = *objectivesWithNoUpperTimeBound.begin();
-        objectiveResults[objIndex] = weightedResult;
-        if (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) {
-            storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], -storm::utility::one<ValueType>());
-        }
-        for (uint_fast64_t objIndex2 = 0; objIndex2 < this->objectives.size(); ++objIndex2) {
-            if (objIndex != objIndex2) {
-                objectiveResults[objIndex2] = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedIndividualPhase(Environment const& inputEnv, std::vector<ValueType> const& weightVector) {
+    auto solverEnv = inputEnv;
+    storm::storage::SparseMatrix<ValueType> deterministicMatrix = transitionMatrix.selectRowsFromRowGroups(this->optimalChoices, false);
+    storm::storage::SparseMatrix<ValueType> deterministicBackwardTransitions = deterministicMatrix.transpose();
+    std::vector<ValueType> deterministicStateRewards(deterministicMatrix.getRowCount());  // allocate here
+    storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
+    bool const requireSoundApproximation = !solverEnv.solver().isForceExact() && solverEnv.solver().isForceSoundness();
+    // see epsilon and epsilon_j in https://doi.org/10.18154/RWTH-2023-09669 Algorithm 4.2
+    ValueType const two = storm::utility::convertNumber<ValueType>(2.0);
+    ValueType epsilon = this->getWeightedPrecisionUnboundedPhase() * storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector)) / two;
+    if (solverEnv.solver().isForceExact()) {
+        // If we are already using an exact solver, we consider the precision to be zero
+        epsilon = storm::utility::zero<ValueType>();
+    } else if (requireSoundApproximation) {
+        epsilon /= two;  // need to be more precise to get a correct and sufficiently tight achievable value
+    }
+
+    auto infiniteHorizonHelper = createDetInfiniteHorizonHelper(deterministicMatrix);
+    infiniteHorizonHelper.provideBackwardTransitions(deterministicBackwardTransitions);
+
+    // We compute an estimate for the results of the individual objectives which is obtained from the weighted result and the result of the objectives
+    // computed so far. Note that weightedResult = Sum_{i=1}^{n} w_i * objectiveResult_i.
+    std::vector<ValueType> weightedSumOfUncheckedObjectives = weightedResult;
+    ValueType sumOfWeightsOfUncheckedObjectives = storm::utility::vector::sum_if(weightVector, objectivesWithNoUpperTimeBound);
+
+    for (uint_fast64_t const& objIndex : storm::utility::vector::getSortedIndices(weightVector)) {
+        auto const& obj = this->objectives[objIndex];
+        if (objectivesWithNoUpperTimeBound.get(objIndex)) {
+            ValueType epsilon_j = epsilon / storm::utility::convertNumber<ValueType, uint64_t>(objectivesWithNoUpperTimeBound.getNumberOfSetBits());
+            if (!storm::utility::isZero(weightVector[objIndex])) {
+                epsilon_j /= storm::utility::abs(weightVector[objIndex]);
             }
-        }
-    } else {
-        storm::storage::SparseMatrix<ValueType> deterministicMatrix = transitionMatrix.selectRowsFromRowGroups(this->optimalChoices, false);
-        storm::storage::SparseMatrix<ValueType> deterministicBackwardTransitions = deterministicMatrix.transpose();
-        std::vector<ValueType> deterministicStateRewards(deterministicMatrix.getRowCount());  // allocate here
-        storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
+            solverEnv.solver().setLinearEquationSolverPrecision(storm::utility::convertNumber<RationalNumber>(epsilon_j), false);
+            solverEnv.solver().lra().setPrecision(storm::utility::convertNumber<RationalNumber>(epsilon_j));
+            solverEnv.solver().lra().setRelativeTerminationCriterion(false);
 
-        auto infiniteHorizonHelper = createDetInfiniteHorizonHelper(deterministicMatrix);
-        infiniteHorizonHelper.provideBackwardTransitions(deterministicBackwardTransitions);
-
-        // We compute an estimate for the results of the individual objectives which is obtained from the weighted result and the result of the objectives
-        // computed so far. Note that weightedResult = Sum_{i=1}^{n} w_i * objectiveResult_i.
-        std::vector<ValueType> weightedSumOfUncheckedObjectives = weightedResult;
-        ValueType sumOfWeightsOfUncheckedObjectives = storm::utility::vector::sum_if(weightVector, objectivesWithNoUpperTimeBound);
-
-        for (uint_fast64_t const& objIndex : storm::utility::vector::getSortedIndices(weightVector)) {
-            auto const& obj = this->objectives[objIndex];
-            if (objectivesWithNoUpperTimeBound.get(objIndex)) {
-                offsetsToUnderApproximation[objIndex] = storm::utility::zero<ValueType>();
-                offsetsToOverApproximation[objIndex] = storm::utility::zero<ValueType>();
-                if (lraObjectives.get(objIndex)) {
-                    auto actionValueGetter = [&](uint64_t const& a) {
-                        return actionRewards[objIndex][transitionMatrix.getRowGroupIndices()[a] + this->optimalChoices[a]];
-                    };
-                    typename storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>::ValueGetter stateValueGetter;
-                    if (stateRewards.empty() || stateRewards[objIndex].empty()) {
-                        stateValueGetter = [](uint64_t const&) { return storm::utility::zero<ValueType>(); };
-                    } else {
-                        stateValueGetter = [&](uint64_t const& s) { return stateRewards[objIndex][s]; };
-                    }
-                    objectiveResults[objIndex] = infiniteHorizonHelper.computeLongRunAverageValues(env, stateValueGetter, actionValueGetter);
-                } else {  // i.e. a total reward objective
-                    storm::utility::vector::selectVectorValues(deterministicStateRewards, this->optimalChoices, transitionMatrix.getRowGroupIndices(),
-                                                               actionRewards[objIndex]);
-                    storm::storage::BitVector statesWithRewards = ~storm::utility::vector::filterZero(deterministicStateRewards);
-                    // As maybestates we pick the states from which a state with reward is reachable
-                    storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(
-                        deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
-
-                    // Compute the estimate for this objective
-                    if (!storm::utility::isZero(weightVector[objIndex])) {
-                        objectiveResults[objIndex] = weightedSumOfUncheckedObjectives;
-                        ValueType scalingFactor = storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives;
-                        if (storm::solver::minimize(obj.formula->getOptimalityType())) {
-                            scalingFactor *= -storm::utility::one<ValueType>();
-                        }
-                        storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], scalingFactor);
-                        storm::utility::vector::clip(objectiveResults[objIndex], obj.lowerResultBound, obj.upperResultBound);
-                    }
-                    // Make sure that the objectiveResult is initialized correctly
-                    objectiveResults[objIndex].resize(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-
-                    if (!maybeStates.empty()) {
-                        bool needEquationSystem =
-                            linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
-                        storm::storage::SparseMatrix<ValueType> submatrix =
-                            deterministicMatrix.getSubmatrix(true, maybeStates, maybeStates, needEquationSystem);
-                        if (needEquationSystem) {
-                            // Converting the matrix from the fixpoint notation to the form needed for the equation
-                            // system. That is, we go from x = A*x + b to (I-A)x = b.
-                            submatrix.convertToEquationSystem();
-                        }
-
-                        // Prepare solution vector and rhs of the equation system.
-                        std::vector<ValueType> x = storm::utility::vector::filterVector(objectiveResults[objIndex], maybeStates);
-                        std::vector<ValueType> b = storm::utility::vector::filterVector(deterministicStateRewards, maybeStates);
-
-                        // Now solve the resulting equation system.
-                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, submatrix);
-                        auto req = solver->getRequirements(env);
-                        solver->clearBounds();
-                        storm::storage::BitVector submatrixRowsWithSumLessOne = deterministicMatrix.getRowFilter(maybeStates, maybeStates) % maybeStates;
-                        submatrixRowsWithSumLessOne.complement();
-                        this->setBoundsToSolver(*solver, req.lowerBounds(), req.upperBounds(), objIndex, submatrix, submatrixRowsWithSumLessOne, b);
-                        if (solver->hasLowerBound()) {
-                            req.clearLowerBounds();
-                        }
-                        if (solver->hasUpperBound()) {
-                            req.clearUpperBounds();
-                        }
-                        STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException,
-                                        "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
-                        solver->solveEquations(env, x, b);
-                        // Set the result for this objective accordingly
-                        storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], maybeStates, x);
-                    }
-                    storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], ~maybeStates, storm::utility::zero<ValueType>());
+            if (lraObjectives.get(objIndex)) {
+                auto actionValueGetter = [&](uint64_t const& a) {
+                    return actionRewards[objIndex][transitionMatrix.getRowGroupIndices()[a] + this->optimalChoices[a]];
+                };
+                typename storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>::ValueGetter stateValueGetter;
+                if (stateRewards.empty() || stateRewards[objIndex].empty()) {
+                    stateValueGetter = [](uint64_t const&) { return storm::utility::zero<ValueType>(); };
+                } else {
+                    stateValueGetter = [&](uint64_t const& s) { return stateRewards[objIndex][s]; };
                 }
-                // Update the estimate for the next objectives.
-                if (!storm::utility::isZero(weightVector[objIndex])) {
-                    storm::utility::vector::addScaledVector(weightedSumOfUncheckedObjectives, objectiveResults[objIndex], -weightVector[objIndex]);
-                    sumOfWeightsOfUncheckedObjectives -= weightVector[objIndex];
+                objectiveResults[objIndex] = infiniteHorizonHelper.computeLongRunAverageValues(solverEnv, stateValueGetter, actionValueGetter);
+            } else {  // i.e. a total reward objective
+                storm::utility::vector::selectVectorValues(deterministicStateRewards, this->optimalChoices, transitionMatrix.getRowGroupIndices(),
+                                                           actionRewards[objIndex]);
+                storm::storage::BitVector statesWithRewards = ~storm::utility::vector::filterZero(deterministicStateRewards);
+                // As maybestates we pick the states from which a state with reward is reachable
+                storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(
+                    deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
+
+                // Compute the estimate for this objective
+                if (!storm::utility::isZero(weightVector[objIndex]) && !storm::utility::isZero(sumOfWeightsOfUncheckedObjectives)) {
+                    objectiveResults[objIndex] = weightedSumOfUncheckedObjectives;
+                    ValueType scalingFactor = storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives;
+                    if (storm::solver::minimize(obj.formula->getOptimalityType())) {
+                        scalingFactor *= -storm::utility::one<ValueType>();
+                    }
+                    storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], scalingFactor);
+                    storm::utility::vector::clip(objectiveResults[objIndex], obj.lowerResultBound, obj.upperResultBound);
                 }
-            } else {
-                objectiveResults[objIndex] = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                // Make sure that the objectiveResult is initialized correctly
+                objectiveResults[objIndex].resize(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+
+                if (!maybeStates.empty()) {
+                    bool needEquationSystem =
+                        linearEquationSolverFactory.getEquationProblemFormat(solverEnv) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                    storm::storage::SparseMatrix<ValueType> submatrix = deterministicMatrix.getSubmatrix(true, maybeStates, maybeStates, needEquationSystem);
+                    if (needEquationSystem) {
+                        // Converting the matrix from the fixpoint notation to the form needed for the equation
+                        // system. That is, we go from x = A*x + b to (I-A)x = b.
+                        submatrix.convertToEquationSystem();
+                    }
+
+                    // Prepare solution vector and rhs of the equation system.
+                    std::vector<ValueType> x = storm::utility::vector::filterVector(objectiveResults[objIndex], maybeStates);
+                    std::vector<ValueType> b = storm::utility::vector::filterVector(deterministicStateRewards, maybeStates);
+
+                    // Now solve the resulting equation system.
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(solverEnv, submatrix);
+                    auto req = solver->getRequirements(solverEnv);
+                    solver->clearBounds();
+                    storm::storage::BitVector submatrixRowsWithSumLessOne = deterministicMatrix.getRowFilter(maybeStates, maybeStates) % maybeStates;
+                    submatrixRowsWithSumLessOne.complement();
+                    this->setBoundsToSolver(*solver, req.lowerBounds(), req.upperBounds(), objIndex, submatrix, submatrixRowsWithSumLessOne, b);
+                    if (solver->hasLowerBound()) {
+                        req.clearLowerBounds();
+                    }
+                    if (solver->hasUpperBound()) {
+                        req.clearUpperBounds();
+                    }
+                    STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException,
+                                    "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
+                    solver->solveEquations(solverEnv, x, b);
+                    if (requireSoundApproximation) {
+                        // add offsets to ensure that we have an upper/lower bound on the true optimal value
+                        offsetsToAchievablePoint[objIndex] =
+                            storm::solver::maximize(this->objectives[objIndex].formula->getOptimalityType()) ? -epsilon_j : epsilon_j;
+                    }
+                    // Set the result for this objective accordingly
+                    storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], maybeStates, x);
+                }
+                storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], ~maybeStates, storm::utility::zero<ValueType>());
             }
+            // Update the estimate for the next objectives.
+            if (!storm::utility::isZero(weightVector[objIndex])) {
+                storm::utility::vector::addScaledVector(weightedSumOfUncheckedObjectives, objectiveResults[objIndex], -weightVector[objIndex]);
+                sumOfWeightsOfUncheckedObjectives -= weightVector[objIndex];
+            }
+        } else {
+            // Other objectives will be computed in bounded phase.
+            objectiveResults[objIndex] = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
         }
     }
 }
@@ -703,23 +766,27 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::computeAndSetBoundsToSolv
         oneStepTargetProbs[row] = storm::utility::one<ValueType>() - transitions.getRowSum(row);
     }
 
+    bool hasNegativeReward = false;
+    bool hasPositiveReward = false;
+    for (auto const& rew : rewards) {
+        if (rew < storm::utility::zero<ValueType>()) {
+            hasNegativeReward = true;
+        } else if (rew > storm::utility::zero<ValueType>()) {
+            hasPositiveReward = true;
+        }
+        if (hasNegativeReward && hasPositiveReward) {
+            break;
+        }
+    }
     if (requiresLower && !solver.hasLowerBound()) {
         // Compute lower bounds
-        std::vector<ValueType> negativeRewards;
-        negativeRewards.reserve(transitions.getRowCount());
-        uint64_t row = 0;
-        for (auto const& rew : rewards) {
-            if (rew < storm::utility::zero<ValueType>()) {
-                negativeRewards.resize(row, storm::utility::zero<ValueType>());
-                negativeRewards.push_back(-rew);
-            }
-            ++row;
-        }
-        if (!negativeRewards.empty()) {
-            negativeRewards.resize(row, storm::utility::zero<ValueType>());
+        if (hasNegativeReward) {
+            // For lower bounds we actually compute upper bounds for the negated rewards because DsMpi is not implemented for negative rewards.
+            std::vector<ValueType> tmpRewards(rewards.size());
+            storm::utility::vector::applyPointwise(rewards, tmpRewards,
+                                                   [](ValueType const& v) { return std::max<ValueType>(storm::utility::zero<ValueType>(), -v); });
             std::vector<ValueType> lowerBounds =
-                storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ValueType>(transitions, negativeRewards, oneStepTargetProbs)
-                    .computeUpperBounds();
+                storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ValueType>(transitions, tmpRewards, oneStepTargetProbs).computeUpperBounds();
             storm::utility::vector::scaleVectorInPlace(lowerBounds, -storm::utility::one<ValueType>());
             solver.setLowerBounds(std::move(lowerBounds));
         } else {
@@ -729,20 +796,10 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::computeAndSetBoundsToSolv
 
     // Compute upper bounds
     if (requiresUpper && !solver.hasUpperBound()) {
-        std::vector<ValueType> positiveRewards;
-        positiveRewards.reserve(transitions.getRowCount());
-        uint64_t row = 0;
-        for (auto const& rew : rewards) {
-            if (rew > storm::utility::zero<ValueType>()) {
-                positiveRewards.resize(row, storm::utility::zero<ValueType>());
-                positiveRewards.push_back(rew);
-            }
-            ++row;
-        }
-        if (!positiveRewards.empty()) {
-            positiveRewards.resize(row, storm::utility::zero<ValueType>());
-            solver.setUpperBound(
-                storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>(transitions, positiveRewards, oneStepTargetProbs).computeUpperBound());
+        if (hasPositiveReward) {
+            solver.setUpperBound(storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>(transitions, oneStepTargetProbs)
+                                     .computeTotalRewardBounds(rewards)
+                                     .upper);
         } else {
             solver.setUpperBound(storm::utility::zero<ValueType>());
         }
@@ -777,7 +834,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::transformEcqSolutionToOri
             if (!ecqStateToOptimalMecMap.empty()) {
                 // The current ecqState represents an elimnated EC and we need to stay in this EC and we need to make sure that optimal MEC decisions are
                 // performed within this EC.
-                STORM_LOG_ASSERT(ecqStateToOptimalMecMap.count(ecqState) > 0, "No Lra Mec associated to given eliminated EC");
+                STORM_LOG_ASSERT(ecqStateToOptimalMecMap.count(ecqState) > 0, "No Lra Mec associated to given eliminated EC.");
                 auto const& lraMec = lraMecDecomposition->mecs[ecqStateToOptimalMecMap.at(ecqState)];
                 if (lraMec.size() == origStates.size()) {
                     // LRA mec and eliminated EC coincide
@@ -913,10 +970,9 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::transformEcqSolutionToOri
 
 template class StandardPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
 template class StandardPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>;
-#ifdef STORM_HAVE_CARL
+
 template class StandardPcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
 template class StandardPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
-#endif
 
 }  // namespace multiobjective
 }  // namespace modelchecker

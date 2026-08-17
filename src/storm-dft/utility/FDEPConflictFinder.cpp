@@ -1,6 +1,7 @@
 #include "FDEPConflictFinder.h"
 
 #include "storm-dft/modelchecker/DFTASFChecker.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::dft {
 namespace utility {

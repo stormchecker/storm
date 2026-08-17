@@ -1,12 +1,12 @@
 #include "storm/storage/memorystructure/MemoryStructure.h"
 
-#include <iostream>
-
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
 namespace storage {
@@ -70,7 +70,7 @@ MemoryStructure MemoryStructure::product(MemoryStructure const& rhs) const {
     uint_fast64_t resState = 0;
     for (uint_fast64_t lhsState = 0; lhsState < lhsNumStates; ++lhsState) {
         for (uint_fast64_t rhsState = 0; rhsState < rhsNumStates; ++rhsState) {
-            assert(resState == (lhsState * rhsNumStates) + rhsState);
+            STORM_LOG_ASSERT(resState == (lhsState * rhsNumStates) + rhsState, "Memory product state index mismatch.");
             auto& resStateTransitions = resultTransitions[resState];
             for (uint_fast64_t lhsTransitionTarget = 0; lhsTransitionTarget < lhsNumStates; ++lhsTransitionTarget) {
                 auto& lhsTransition = this->getTransitionMatrix()[lhsState][lhsTransitionTarget];

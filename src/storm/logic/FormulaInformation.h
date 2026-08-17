@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_FORMULAINFORMATION_H_
-#define STORM_LOGIC_FORMULAINFORMATION_H_
+#pragma once
 
 namespace storm {
 namespace logic {
@@ -18,6 +17,7 @@ class FormulaInformation {
     bool containsCumulativeRewardFormula() const;
     bool containsRewardBoundedFormula() const;
     bool containsLongRunFormula() const;
+    bool containsDiscountFormula() const;
 
     /*!
      * @return true iff the formula contains nested temporal operators and/or boolean combinations of path formulas (e.g. '"safe" & F "goal"')
@@ -33,6 +33,7 @@ class FormulaInformation {
     FormulaInformation& setContainsRewardBoundedFormula(bool newValue = true);
     FormulaInformation& setContainsLongRunFormula(bool newValue = true);
     FormulaInformation& setContainsComplexPathFormula(bool newValue = true);
+    FormulaInformation& setContainsDiscountFormula(bool newValue = true);
 
    private:
     bool mContainsRewardOperator;
@@ -42,9 +43,8 @@ class FormulaInformation {
     bool mContainsRewardBoundedFormula;
     bool mContainsLongRunFormula;
     bool mContainsComplexPathFormula;
+    bool mContainsDiscountFormula;
 };
 
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_FORMULAINFORMATION_H_ */

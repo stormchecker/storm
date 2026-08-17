@@ -1,5 +1,6 @@
-#ifndef STORM_STORAGE_DD_CUDDADDITERATOR_H_
-#define STORM_STORAGE_DD_CUDDADDITERATOR_H_
+#pragma once
+
+#include "storm-config.h"
 
 #include <cstdint>
 #include <memory>
@@ -10,8 +11,10 @@
 #include "storm/storage/dd/AddIterator.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 
+#ifdef STORM_HAVE_CUDD
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
+#endif
 
 namespace storm {
 namespace dd {
@@ -75,6 +78,7 @@ class AddIterator<DdType::CUDD, ValueType> {
     bool operator!=(AddIterator<DdType::CUDD, ValueType> const& other) const;
 
    private:
+#ifdef STORM_HAVE_CUDD
     /*!
      * Constructs a forward iterator using the given generator with the given set of relevant meta variables.
      *
@@ -133,8 +137,7 @@ class AddIterator<DdType::CUDD, ValueType> {
 
     // The current valuation of meta variables.
     storm::expressions::SimpleValuation currentValuation;
+#endif
 };
 }  // namespace dd
 }  // namespace storm
-
-#endif /* STORM_STORAGE_DD_CUDDADDITERATOR_H_ */

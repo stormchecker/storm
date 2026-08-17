@@ -1,16 +1,14 @@
-#ifndef STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_
-#define STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_
+#pragma once
 
 #include <boost/optional.hpp>
 
-#include "storm/storage/dd/DdType.h"
-#include "storm/storage/dd/InternalDdManager.h"
-
-#include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
-
 #include "storm-config.h"
 #include "storm/adapters/RationalFunctionForward.h"
+#include "storm/environment/dd/SylvanDdManagerEnvironment.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/InternalDdManager.h"
+#include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm {
 namespace dd {
@@ -30,8 +28,10 @@ class InternalDdManager<DdType::Sylvan> {
 
     /*!
      * Creates a new internal manager for Sylvan DDs.
+     *
+     * @param environment The environment providing the settings for the Sylvan manager.
      */
-    InternalDdManager();
+    explicit InternalDdManager(storm::SylvanDdManagerEnvironment const& environment);
 
     /*!
      * Destroys the internal manager.
@@ -150,6 +150,8 @@ class InternalDdManager<DdType::Sylvan> {
     uint_fast64_t getNumberOfDdVariables() const;
 
    private:
+#ifdef STORM_HAVE_SYLVAN
+
     // Helper function to create the BDD whose encodings are below a given bound.
     BDD getBddEncodingLessOrEqualThanRec(uint64_t minimalValue, uint64_t maximalValue, uint64_t bound, BDD cube, uint64_t remainingDdVariables) const;
 
@@ -165,41 +167,8 @@ class InternalDdManager<DdType::Sylvan> {
     // The index of the next free variable index. This needs to be shared across all instances since the sylvan
     // manager is implicitly 'global'.
     static uint_fast64_t nextFreeVariableIndex;
+#endif
 };
 
-template<>
-InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddOne() const;
-
-template<>
-InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddOne() const;
-
-#ifdef STORM_HAVE_CARL
-template<>
-InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddOne() const;
-#endif
-
-template<>
-InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddZero() const;
-
-template<>
-InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddZero() const;
-
-#ifdef STORM_HAVE_CARL
-template<>
-InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const;
-#endif
-
-template<>
-InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const;
-
-template<>
-InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;
-
-#ifdef STORM_HAVE_CARL
-template<>
-InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const;
-#endif
 }  // namespace dd
 }  // namespace storm
-
-#endif /* STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_ */

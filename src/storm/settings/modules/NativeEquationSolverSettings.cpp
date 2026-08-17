@@ -26,9 +26,13 @@ const std::string NativeEquationSolverSettings::powerMethodMultiplicationStyleOp
 const std::string NativeEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
 
 NativeEquationSolverSettings::NativeEquationSolverSettings() : ModuleSettings(moduleName) {
-    std::vector<std::string> methods = {"jacobi", "gaussseidel",           "sor", "walkerchae",
-                                        "power",  "sound-value-iteration", "svi", "optimistic-value-iteration",
-                                        "ovi",    "interval-iteration",    "ii",  "ratsearch"};
+    std::vector<std::string> methods = {"jacobi", "gaussseidel",
+                                        "sor",    "walkerchae",
+                                        "power",  "sound-value-iteration",
+                                        "svi",    "optimistic-value-iteration",
+                                        "ovi",    "guessing-value-iteration",
+                                        "gvi",    "interval-iteration",
+                                        "ii",     "ratsearch"};
     this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true,
                                                    "The method to be used for solving linear equation systems with the native engine.")
                         .setIsAdvanced()
@@ -107,6 +111,8 @@ storm::solver::NativeLinearEquationSolverMethod NativeEquationSolverSettings::ge
         return storm::solver::NativeLinearEquationSolverMethod::SoundValueIteration;
     } else if (linearEquationSystemTechniqueAsString == "optimistic-value-iteration" || linearEquationSystemTechniqueAsString == "ovi") {
         return storm::solver::NativeLinearEquationSolverMethod::OptimisticValueIteration;
+    } else if (linearEquationSystemTechniqueAsString == "guessing-value-iteration" || linearEquationSystemTechniqueAsString == "gvi") {
+        return storm::solver::NativeLinearEquationSolverMethod::GuessingValueIteration;
     } else if (linearEquationSystemTechniqueAsString == "interval-iteration" || linearEquationSystemTechniqueAsString == "ii") {
         return storm::solver::NativeLinearEquationSolverMethod::IntervalIteration;
     } else if (linearEquationSystemTechniqueAsString == "ratsearch") {

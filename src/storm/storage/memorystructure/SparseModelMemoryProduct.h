@@ -9,6 +9,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
 
 namespace storm {
 namespace storage {
@@ -46,11 +47,21 @@ class SparseModelMemoryProduct {
     // This method should only be called if the given state is reachable.
     uint64_t const& getResultState(uint64_t const& modelState, uint64_t const& memoryState);
 
-    // Invokes the building of the product under the specified scheduler (if given).
-    std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> build();
+    /*!
+     * Invokes the building of the product under the specified scheduler (if given).
+     * @param preserveModelType if set, the resulting model has the same type as the original model.
+     * Otherwise, the model type might differ, e.g., MDPs are changed to DTMCs in case a complete scheduler is given.
+     */
+    std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> build(bool preserveModelType = false);
 
     storm::models::sparse::Model<ValueType, RewardModelType> const& getOriginalModel() const;
     storm::storage::MemoryStructure const& getMemory() const;
+
+    /*!
+     * Extracts the reverse data that can be used to apply results for the product model back to the original input model.
+     * @note This method should only be called after the product has been built.
+     */
+    SparseModelMemoryProductReverseData computeReverseData() const;
 
    private:
     // Initializes auxiliary data for building the product
@@ -78,7 +89,8 @@ class SparseModelMemoryProduct {
     // Builds the resulting model
     std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> buildResult(storm::storage::SparseMatrix<ValueType>&& matrix,
                                                                                           storm::models::sparse::StateLabeling&& labeling,
-                                                                                          std::unordered_map<std::string, RewardModelType>&& rewardModels);
+                                                                                          std::unordered_map<std::string, RewardModelType>&& rewardModels,
+                                                                                          bool preserveModelType);
 
     // Stores whether this builder has already been initialized.
     bool isInitialized;

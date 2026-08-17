@@ -1,14 +1,11 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "test/storm_gtest.h"
-
 #include "storm-conv/api/storm-conv.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
-
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
@@ -24,6 +21,7 @@
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/storage/jani/Property.h"
 
 namespace {
@@ -65,6 +63,13 @@ class JaniHybridDoubleValueIterationEnvironment {
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::symbolic::MarkovAutomaton<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_SYLVAN
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration, true);
@@ -128,6 +133,9 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
 #ifndef STORM_HAVE_Z3
         GTEST_SKIP() << "Z3 not available.";
 #endif
+        if constexpr (TestType::engine == MaEngine::JaniHybrid) {
+            TestType::checkLibraryAvailable();
+        }
     }
 
     storm::Environment const& env() const {
@@ -152,7 +160,7 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
     buildModelFormulas(std::string const& pathToPrismFile, std::string const& formulasAsString, std::string const& constantDefinitionString = "") const {
         std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
         storm::prism::Program program = storm::api::parseProgram(pathToPrismFile);
-        program = storm::utility::prism::preprocess(program, constantDefinitionString);
+        program = program.preprocess(constantDefinitionString);
         if (TestType::engine == MaEngine::PrismSparse) {
             result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
@@ -170,10 +178,10 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
     buildModelFormulas(std::string const& pathToPrismFile, std::string const& formulasAsString, std::string const& constantDefinitionString = "") const {
         std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
         storm::prism::Program program = storm::api::parseProgram(pathToPrismFile);
-        program = storm::utility::prism::preprocess(program, constantDefinitionString);
+        program = program.preprocess(constantDefinitionString);
         auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
         result.second = storm::api::extractFormulasFromProperties(janiData.second);
-        result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(janiData.first, result.second)->template as<MT>();
+        result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(this->env(), janiData.first, result.second)->template as<MT>();
         return result;
     }
 
@@ -206,6 +214,18 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
         return nullptr;
     }
 
+    template<typename MT = typename TestType::ModelType>
+    typename std::enable_if<std::is_same<MT, SparseModelType>::value, void>::type execute(std::shared_ptr<MT> const& model,
+                                                                                          std::function<void()> const& f) const {
+        f();
+    }
+
+    template<typename MT = typename TestType::ModelType>
+    typename std::enable_if<std::is_same<MT, SymbolicModelType>::value, void>::type execute(std::shared_ptr<MT> const& model,
+                                                                                            std::function<void()> const& f) const {
+        model->getManager().execute(f);
+    }
+
     bool getQualitativeResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
                                             std::unique_ptr<storm::modelchecker::CheckResult>& result) {
         auto filter = getInitialStateFilter(model);
@@ -225,7 +245,7 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
 
     std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(std::shared_ptr<storm::models::Model<ValueType>> const& model) const {
         if (isSparseModel()) {
-            return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(model->template as<SparseModelType>()->getInitialStates());
+            return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>>(model->template as<SparseModelType>()->getInitialStates());
         } else {
             return std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<TestType::ddType>>(
                 model->template as<SymbolicModelType>()->getReachableStates(), model->template as<SymbolicModelType>()->getInitialStates());
@@ -247,22 +267,24 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, server) {
     auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ma/server.ma", formulasString);
     auto model = std::move(modelFormulas.first);
     auto tasks = this->getTasks(modelFormulas.second);
-    EXPECT_EQ(6ul, model->getNumberOfStates());
-    EXPECT_EQ(10ul, model->getNumberOfTransitions());
-    ASSERT_EQ(model->getType(), storm::models::ModelType::MarkovAutomaton);
-    auto checker = this->createModelChecker(model);
-    std::unique_ptr<storm::modelchecker::CheckResult> result;
+    this->execute(model, [&]() {
+        EXPECT_EQ(6ul, model->getNumberOfStates());
+        EXPECT_EQ(10ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::MarkovAutomaton);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-    result = checker->check(this->env(), tasks[0]);
-    EXPECT_NEAR(this->parseNumber("11/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("11/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
-    result = checker->check(this->env(), tasks[1]);
-    EXPECT_NEAR(this->parseNumber("2/3"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[1]);
+        EXPECT_NEAR(this->parseNumber("2/3"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
-    if (!storm::utility::isZero(this->precision())) {
-        result = checker->check(this->env(), tasks[2]);
-        EXPECT_NEAR(this->parseNumber("0.455504"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
-    }
+        if (!storm::utility::isZero(this->precision())) {
+            result = checker->check(this->env(), tasks[2]);
+            EXPECT_NEAR(this->parseNumber("0.455504"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+    });
 }
 
 TYPED_TEST(MarkovAutomatonCslModelCheckerTest, simple) {
@@ -272,19 +294,21 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, simple) {
     auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ma/simple.ma", formulasString);
     auto model = std::move(modelFormulas.first);
     auto tasks = this->getTasks(modelFormulas.second);
-    EXPECT_EQ(5ul, model->getNumberOfStates());
-    EXPECT_EQ(8ul, model->getNumberOfTransitions());
-    ASSERT_EQ(model->getType(), storm::models::ModelType::MarkovAutomaton);
-    auto checker = this->createModelChecker(model);
-    std::unique_ptr<storm::modelchecker::CheckResult> result;
+    this->execute(model, [&]() {
+        EXPECT_EQ(5ul, model->getNumberOfStates());
+        EXPECT_EQ(8ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::MarkovAutomaton);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-    if (!storm::utility::isZero(this->precision())) {
-        result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("0.6321205588"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        if (!storm::utility::isZero(this->precision())) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("0.6321205588"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
-        result = checker->check(this->env(), tasks[1]);
-        EXPECT_NEAR(this->parseNumber("0.727468207"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
-    }
+            result = checker->check(this->env(), tasks[1]);
+            EXPECT_NEAR(this->parseNumber("0.727468207"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+    });
 }
 
 TYPED_TEST(MarkovAutomatonCslModelCheckerTest, simple2) {
@@ -333,22 +357,42 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, simple2) {
         EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
     }
 
-#ifndef STORM_HAVE_Z3_OPTIMIZE
-    if (!storm::utility::isZero(this->precision())) {
-#endif
-        // Checking LRA properties exactly requires an exact LP solver.
-        result = checker->check(this->env(), tasks[7]);
-        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    // Checking LRA properties exactly requires an exact LP solver.
+    result = checker->check(this->env(), tasks[7]);
+    EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
-        result = checker->check(this->env(), tasks[8]);
-        EXPECT_NEAR(this->parseNumber("407"), this->getQuantitativeResultAtInitialState(model, result),
-                    this->precision() * this->parseNumber("407"));  // use relative precision!
+    result = checker->check(this->env(), tasks[8]);
+    EXPECT_NEAR(this->parseNumber("407"), this->getQuantitativeResultAtInitialState(model, result),
+                this->precision() * this->parseNumber("407"));  // use relative precision!
 
-        result = checker->check(this->env(), tasks[9]);
-        EXPECT_NEAR(this->parseNumber("27"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
-#ifndef STORM_HAVE_Z3_OPTIMIZE
-    }
-#endif
+    result = checker->check(this->env(), tasks[9]);
+    EXPECT_NEAR(this->parseNumber("27"), this->getQuantitativeResultAtInitialState(model, result),
+                this->precision() * this->parseNumber("27"));  // use relative precision!
+}
+
+TYPED_TEST(MarkovAutomatonCslModelCheckerTest, erlang) {
+    std::string formulasString = "Pmin=?[F<=1 \"done\"]";
+    formulasString += "; Pmax=?[F<=1 \"done\"]";
+
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ma/erlang.ma", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    this->execute(model, [&]() {
+        EXPECT_EQ(9ul, model->getNumberOfStates());
+        EXPECT_EQ(11ul, model->getNumberOfTransitions());
+        EXPECT_EQ(10ul, model->getNumberOfChoices());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::MarkovAutomaton);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        if (!storm::utility::isZero(this->precision())) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("0.13212055882856"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[1]);
+            EXPECT_NEAR(this->parseNumber("0.50066835807513"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+    });
 }
 
 TYPED_TEST(MarkovAutomatonCslModelCheckerTest, LtlSimple) {

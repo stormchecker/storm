@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_HYBRID_CTMC_CSL_MODELCHECKER_HELPER_H_
-#define STORM_MODELCHECKER_HYBRID_CTMC_CSL_MODELCHECKER_HELPER_H_
+#pragma once
 
 #include <memory>
 
@@ -15,50 +14,32 @@ namespace storm {
 
 class Environment;
 
-namespace modelchecker {
-namespace helper {
+namespace modelchecker::helper {
 
 class HybridCtmcCslHelper {
    public:
-    template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
+    template<storm::dd::DdType DdType, typename ValueType>
+        requires storm::NumberTraits<ValueType>::SupportsExponential
     static std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model,
                                                                          bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix,
                                                                          storm::dd::Add<DdType, ValueType> const& exitRateVector,
                                                                          storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates,
-                                                                         bool qualitative, double lowerBound, double upperBound);
+                                                                         bool qualitative, ValueType lowerBound, ValueType upperBound);
 
-    template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
-    static std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model,
-                                                                         bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix,
-                                                                         storm::dd::Add<DdType, ValueType> const& exitRateVector,
-                                                                         storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates,
-                                                                         bool qualitative, double lowerBound, double upperBound);
-
-    template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
+    template<storm::dd::DdType DdType, typename ValueType>
+        requires storm::NumberTraits<ValueType>::SupportsExponential
     static std::unique_ptr<CheckResult> computeInstantaneousRewards(
         Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant,
         storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector,
-        typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, double timeBound);
+        typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, ValueType timeBound);
 
-    template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
-    static std::unique_ptr<CheckResult> computeInstantaneousRewards(
-        Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant,
-        storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector,
-        typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, double timeBound);
-
-    template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
+    template<storm::dd::DdType DdType, typename ValueType>
+        requires storm::NumberTraits<ValueType>::SupportsExponential
     static std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model,
                                                                  bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix,
                                                                  storm::dd::Add<DdType, ValueType> const& exitRateVector,
                                                                  typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel,
-                                                                 double timeBound);
-
-    template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
-    static std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model,
-                                                                 bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix,
-                                                                 storm::dd::Add<DdType, ValueType> const& exitRateVector,
-                                                                 typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel,
-                                                                 double timeBound);
+                                                                 ValueType timeBound);
 
     template<storm::dd::DdType DdType, typename ValueType>
     static std::unique_ptr<CheckResult> computeUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model,
@@ -107,8 +88,5 @@ class HybridCtmcCslHelper {
                                                                       storm::dd::Bdd<DdType> const& maybeStates, ValueType uniformizationRate);
 };
 
-}  // namespace helper
-}  // namespace modelchecker
+}  // namespace modelchecker::helper
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_HYBRID_CTMC_CSL_MODELCHECKER_HELPER_H_ */

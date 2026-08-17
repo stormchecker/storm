@@ -1,6 +1,6 @@
-#ifndef STORM_PARSER_SPARSECHOICELABELINGPARSER_H_
-#define STORM_PARSER_SPARSECHOICELABELINGPARSER_H_
+#pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -26,5 +26,3 @@ class SparseChoiceLabelingParser {
 };
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_SPARSECHOICELABELINGPARSER_H_ */

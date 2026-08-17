@@ -5,6 +5,7 @@
 #include "storm/logic/Formula.h"
 #include "storm/logic/MultiObjectiveFormula.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
 
 namespace storm {
 namespace transformer {
@@ -26,6 +27,13 @@ class MemoryIncorporation {
      */
     static std::shared_ptr<SparseModelType> incorporateGoalMemory(SparseModelType const& model,
                                                                   std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
+
+    /*!
+     * Like incorporateGoalMemory, but also returns data necessary to translate results (in particular schedulers) for the product model back to the original
+     * model.
+     */
+    static std::pair<std::shared_ptr<SparseModelType>, storm::storage::SparseModelMemoryProductReverseData> incorporateGoalMemoryWithReverseData(
+        SparseModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
 
     /*!
      * Incorporates a memory structure where the nondeterminism of the model decides which successor state to choose.

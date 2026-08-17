@@ -1,6 +1,9 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include <optional>
+
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
@@ -10,6 +13,7 @@
 #include "storm/storage/expressions/Variable.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
+
 namespace {
 
 class DefaultEnvironment {
@@ -20,9 +24,14 @@ class DefaultEnvironment {
     static const bool IntegerSupport = true;
     static const bool IncrementalSupport = true;
     static const bool strictRelationSupport = true;
+    static const bool IndicatorSupport = false;
 
     static bool skip() {
+#ifdef STORM_HAVE_LP_SOLVER
         return false;
+#else
+        return true;
+#endif
     }
 };
 
@@ -34,6 +43,7 @@ class GlpkEnvironment {
     static const bool IntegerSupport = true;
     static const bool IncrementalSupport = true;
     static const bool strictRelationSupport = true;
+    static const bool IndicatorSupport = false;
 
     static bool skip() {
         return false;
@@ -49,6 +59,7 @@ class GurobiEnvironment {
     static const bool IntegerSupport = true;
     static const bool IncrementalSupport = true;
     static const bool strictRelationSupport = true;
+    static const bool IndicatorSupport = true;
 
     static bool skip() {
         return storm::test::noGurobi;
@@ -64,6 +75,7 @@ class Z3Environment {
     static const bool IntegerSupport = true;
     static const bool IncrementalSupport = true;
     static const bool strictRelationSupport = true;
+    static const bool IndicatorSupport = true;
 
     static bool skip() {
         return false;
@@ -79,6 +91,7 @@ class SoplexEnvironment {
     static const bool IntegerSupport = false;
     static const bool IncrementalSupport = false;
     static const bool strictRelationSupport = false;
+    static const bool IndicatorSupport = false;
 
     static bool skip() {
         return false;
@@ -93,6 +106,24 @@ class SoplexExactEnvironment {
     static const bool IntegerSupport = false;
     static const bool IncrementalSupport = false;
     static const bool strictRelationSupport = false;
+    static const bool IndicatorSupport = false;
+
+    static bool skip() {
+        return false;
+    }
+};
+#endif
+
+#ifdef STORM_HAVE_HIGHS
+class HighsEnvironment {
+   public:
+    typedef double ValueType;
+    static const bool isExact = false;
+    static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Highs;
+    static const bool IntegerSupport = true;
+    static const bool IncrementalSupport = false;
+    static const bool strictRelationSupport = false;
+    static const bool IndicatorSupport = true;
 
     static bool skip() {
         return false;
@@ -115,8 +146,12 @@ class LpSolverTest : public ::testing::Test {
         return TestType::solverSelection;
     }
 
+    storm::Environment env() const {
+        return storm::Environment();
+    }
+
     std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> factory() const {
-        return storm::utility::solver::getLpSolverFactory<ValueType>(solverSelection());
+        return storm::utility::solver::getLpSolverFactory<ValueType>(env(), solverSelection());
     }
 
     ValueType parseNumber(std::string const& input) const {
@@ -139,6 +174,39 @@ class LpSolverTest : public ::testing::Test {
         return TestType::strictRelationSupport;
     }
 
+    bool supportsIndicator() const {
+        return TestType::IndicatorSupport;
+    }
+
+    // Builds a solver with a bounded continuous variable x in [0, 5] (with objective coefficient 1) and a binary variable b.
+    // If fixedB has a value, b is fixed to that value via a regular constraint.
+    // Adds the indicator constraint (b == indicatorValue) => (x rel rhs), optimizes in the given direction and returns the solver.
+    std::unique_ptr<storm::solver::LpSolver<ValueType>> solveIndicatorScenario(storm::OptimizationDirection dir, bool indicatorValue,
+                                                                               std::optional<bool> fixedB, storm::expressions::RelationType rel,
+                                                                               std::string const& rhs, storm::expressions::Variable& x,
+                                                                               storm::expressions::Variable& b) {
+        auto solver = this->factory()->create(this->env(), "");
+        solver->setOptimizationDirection(dir);
+        x = solver->addBoundedContinuousVariable("x", 0, this->parseNumber("5"), 1);
+        b = solver->addBinaryVariable("b");
+        if (fixedB.has_value()) {
+            solver->addConstraint("", b == solver->getConstant(*fixedB ? 1 : 0));
+        }
+        storm::expressions::Expression rhsExpression = solver->getConstant(this->parseNumber(rhs));
+        storm::expressions::Expression constraint;
+        if (rel == storm::expressions::RelationType::LessOrEqual) {
+            constraint = x <= rhsExpression;
+        } else if (rel == storm::expressions::RelationType::GreaterOrEqual) {
+            constraint = x >= rhsExpression;
+        } else {
+            constraint = x == rhsExpression;
+        }
+        solver->addIndicatorConstraint("", b, indicatorValue, constraint);
+        solver->update();
+        solver->optimize();
+        return solver;
+    }
+
     bool skipped() const {
         return TestType::skip();
     }
@@ -153,13 +221,17 @@ typedef ::testing::Types<DefaultEnvironment
                          ,
                          GurobiEnvironment
 #endif
-#ifdef STORM_HAVE_Z3_OPTIMIZE
+#ifdef STORM_HAVE_HIGHS
                          ,
-                         Z3Environment
+                         HighsEnvironment
 #endif
 #ifdef STORM_HAVE_SOPLEX
                          ,
                          SoplexEnvironment, SoplexExactEnvironment
+#endif
+#ifdef STORM_HAVE_Z3
+                         ,
+                         Z3Environment
 #endif
                          >
     TestingTypes;
@@ -167,8 +239,7 @@ typedef ::testing::Types<DefaultEnvironment
 TYPED_TEST_SUITE(LpSolverTest, TestingTypes, );
 
 TYPED_TEST(LpSolverTest, LPOptimizeMax) {
-    typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -195,7 +266,7 @@ TYPED_TEST(LpSolverTest, LPOptimizeMax) {
 
 TYPED_TEST(LpSolverTest, LPOptimizeMaxRaw) {
     typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->createRaw("");
+    auto solver = this->factory()->createRaw(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     ASSERT_EQ(0u, solver->addBoundedContinuousVariable("x", 0, 1, -1));
     ASSERT_EQ(1u, solver->addLowerBoundedContinuousVariable("y", 0, 2));
@@ -232,8 +303,7 @@ TYPED_TEST(LpSolverTest, LPOptimizeMaxRaw) {
 }
 
 TYPED_TEST(LpSolverTest, LPOptimizeMin) {
-    typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -261,7 +331,7 @@ TYPED_TEST(LpSolverTest, LPOptimizeMin) {
 
 TYPED_TEST(LpSolverTest, LPOptimizeMinRaw) {
     typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->createRaw("");
+    auto solver = this->factory()->createRaw(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Minimize);
 
     ASSERT_EQ(0u, solver->addBoundedContinuousVariable("x", 0, 1, -1));
@@ -303,8 +373,7 @@ TYPED_TEST(LpSolverTest, MILPOptimizeMax) {
     if (!this->supportsInteger()) {
         GTEST_SKIP();
     }
-    typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -334,7 +403,7 @@ TYPED_TEST(LpSolverTest, MILPOptimizeMaxRaw) {
         GTEST_SKIP();
     }
     typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->createRaw("");
+    auto solver = this->factory()->createRaw(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -377,8 +446,7 @@ TYPED_TEST(LpSolverTest, MILPOptimizeMin) {
     if (!this->supportsInteger()) {
         GTEST_SKIP();
     }
-    typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -393,9 +461,10 @@ TYPED_TEST(LpSolverTest, MILPOptimizeMin) {
     ASSERT_NO_THROW(solver->addConstraint("", y - x <= solver->getConstant(this->parseNumber("11/2"))));
     ASSERT_NO_THROW(solver->update());
 
-#ifdef STORM_HAVE_Z3_OPTIMIZE
-    if (this->solverSelection() == storm::solver::LpSolverTypeSelection::Z3 && storm::test::z3AtLeastVersion(4, 8, 8)) {
-        // TODO: z3 v4.8.8 is known to be broken here. Check if this is fixed in future versions >4.8.8
+#ifdef STORM_HAVE_Z3
+    if (this->solverSelection() == storm::solver::LpSolverTypeSelection::Z3 && storm::test::z3AtLeastVersion(4, 8, 8) &&
+        !storm::test::z3AtLeastVersion(4, 13, 3)) {
+        // z3 v4.8.8 is known to be broken here. It is working for v4.13.3.
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
 #endif
@@ -412,8 +481,7 @@ TYPED_TEST(LpSolverTest, MILPOptimizeMin) {
 }
 
 TYPED_TEST(LpSolverTest, LPInfeasible) {
-    typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -447,8 +515,7 @@ TYPED_TEST(LpSolverTest, MILPInfeasible) {
     if (!this->supportsInteger()) {
         GTEST_SKIP();
     }
-    typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -479,8 +546,7 @@ TYPED_TEST(LpSolverTest, MILPInfeasible) {
 }
 
 TYPED_TEST(LpSolverTest, LPUnbounded) {
-    typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -508,8 +574,7 @@ TYPED_TEST(LpSolverTest, MILPUnbounded) {
     if (!this->supportsInteger()) {
         GTEST_SKIP();
     }
-    typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
@@ -537,8 +602,7 @@ TYPED_TEST(LpSolverTest, Incremental) {
     if (!this->supportsIncremental()) {
         GTEST_SKIP();
     }
-    typedef typename TestFixture::ValueType ValueType;
-    auto solver = this->factory()->create("");
+    auto solver = this->factory()->create(this->env(), "");
     solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x, y, z;
     ASSERT_NO_THROW(x = solver->addUnboundedContinuousVariable("x", 1));
@@ -564,12 +628,6 @@ TYPED_TEST(LpSolverTest, Incremental) {
     // max x s.t. x<=12
     ASSERT_TRUE(solver->isOptimal());
     EXPECT_NEAR(this->parseNumber("12"), solver->getContinuousValue(x), this->precision());
-
-#ifdef STORM_HAVE_Z3_OPTIMIZE
-    if (this->solverSelection() == storm::solver::LpSolverTypeSelection::Z3 && !storm::test::z3AtLeastVersion(4, 8, 5)) {
-        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
-    }
-#endif
 
     solver->push();
     ASSERT_NO_THROW(y = solver->addUnboundedContinuousVariable("y", 10));
@@ -609,6 +667,104 @@ TYPED_TEST(LpSolverTest, Incremental) {
     ASSERT_FALSE(solver->isOptimal());
     ASSERT_TRUE(solver->isUnbounded());
     ASSERT_FALSE(solver->isInfeasible());
+}
+
+TYPED_TEST(LpSolverTest, IndicatorConstraintLeq) {
+    if (!this->supportsIndicator()) {
+        GTEST_SKIP();
+    }
+    storm::expressions::Variable x;
+    storm::expressions::Variable b;
+
+    // (b == 1) => x <= 2, with b fixed to 1: the constraint must be enforced.
+    auto enforced = this->solveIndicatorScenario(storm::OptimizationDirection::Maximize, true, std::optional<bool>(true),
+                                                 storm::expressions::RelationType::LessOrEqual, "2", x, b);
+    ASSERT_TRUE(enforced->isOptimal());
+    EXPECT_TRUE(enforced->getBinaryValue(b));
+    EXPECT_NEAR(this->parseNumber("2"), enforced->getContinuousValue(x), this->precision());
+
+    // (b == 1) => x <= 2, with b fixed to 0: the constraint must be inactive.
+    auto relaxed = this->solveIndicatorScenario(storm::OptimizationDirection::Maximize, true, std::optional<bool>(false),
+                                                storm::expressions::RelationType::LessOrEqual, "2", x, b);
+    ASSERT_TRUE(relaxed->isOptimal());
+    EXPECT_FALSE(relaxed->getBinaryValue(b));
+    EXPECT_NEAR(this->parseNumber("5"), relaxed->getContinuousValue(x), this->precision());
+}
+
+TYPED_TEST(LpSolverTest, IndicatorConstraintLeqInactive) {
+    if (!this->supportsIndicator()) {
+        GTEST_SKIP();
+    }
+    storm::expressions::Variable x;
+    storm::expressions::Variable b;
+
+    // (b == 0) => x <= 2, with b fixed to 1: the constraint must be inactive.
+    auto relaxed = this->solveIndicatorScenario(storm::OptimizationDirection::Maximize, false, std::optional<bool>(true),
+                                                storm::expressions::RelationType::LessOrEqual, "2", x, b);
+    ASSERT_TRUE(relaxed->isOptimal());
+    EXPECT_TRUE(relaxed->getBinaryValue(b));
+    EXPECT_NEAR(this->parseNumber("5"), relaxed->getContinuousValue(x), this->precision());
+
+    // (b == 0) => x <= 2, with b fixed to 0: the constraint must be enforced.
+    auto enforced = this->solveIndicatorScenario(storm::OptimizationDirection::Maximize, false, std::optional<bool>(false),
+                                                 storm::expressions::RelationType::LessOrEqual, "2", x, b);
+    ASSERT_TRUE(enforced->isOptimal());
+    EXPECT_FALSE(enforced->getBinaryValue(b));
+    EXPECT_NEAR(this->parseNumber("2"), enforced->getContinuousValue(x), this->precision());
+}
+
+TYPED_TEST(LpSolverTest, IndicatorConstraintGeq) {
+    if (!this->supportsIndicator()) {
+        GTEST_SKIP();
+    }
+    storm::expressions::Variable x;
+    storm::expressions::Variable b;
+
+    // (b == 1) => x >= 3, with b fixed to 1: the constraint must be enforced.
+    auto enforced = this->solveIndicatorScenario(storm::OptimizationDirection::Minimize, true, std::optional<bool>(true),
+                                                 storm::expressions::RelationType::GreaterOrEqual, "3", x, b);
+    ASSERT_TRUE(enforced->isOptimal());
+    EXPECT_TRUE(enforced->getBinaryValue(b));
+    EXPECT_NEAR(this->parseNumber("3"), enforced->getContinuousValue(x), this->precision());
+
+    // (b == 1) => x >= 3, with b fixed to 0: the constraint must be inactive.
+    auto relaxed = this->solveIndicatorScenario(storm::OptimizationDirection::Minimize, true, std::optional<bool>(false),
+                                                storm::expressions::RelationType::GreaterOrEqual, "3", x, b);
+    ASSERT_TRUE(relaxed->isOptimal());
+    EXPECT_FALSE(relaxed->getBinaryValue(b));
+    EXPECT_NEAR(this->parseNumber("0"), relaxed->getContinuousValue(x), this->precision());
+}
+
+TYPED_TEST(LpSolverTest, IndicatorConstraintEq) {
+    if (!this->supportsIndicator()) {
+        GTEST_SKIP();
+    }
+    storm::expressions::Variable x;
+    storm::expressions::Variable b;
+
+    // (b == 1) => x == 3, with b fixed to 1: the constraint must be enforced.
+    auto enforcedMin = this->solveIndicatorScenario(storm::OptimizationDirection::Minimize, true, std::optional<bool>(true),
+                                                    storm::expressions::RelationType::Equal, "3", x, b);
+    ASSERT_TRUE(enforcedMin->isOptimal());
+    EXPECT_TRUE(enforcedMin->getBinaryValue(b));
+    EXPECT_NEAR(this->parseNumber("3"), enforcedMin->getContinuousValue(x), this->precision());
+    auto enforcedMax = this->solveIndicatorScenario(storm::OptimizationDirection::Maximize, true, std::optional<bool>(true),
+                                                    storm::expressions::RelationType::Equal, "3", x, b);
+    ASSERT_TRUE(enforcedMax->isOptimal());
+    EXPECT_TRUE(enforcedMax->getBinaryValue(b));
+    EXPECT_NEAR(this->parseNumber("3"), enforcedMax->getContinuousValue(x), this->precision());
+
+    // (b == 1) => x == 3, with b fixed to 0: the constraint must be inactive.
+    auto relaxedMin = this->solveIndicatorScenario(storm::OptimizationDirection::Minimize, true, std::optional<bool>(false),
+                                                   storm::expressions::RelationType::Equal, "3", x, b);
+    ASSERT_TRUE(relaxedMin->isOptimal());
+    EXPECT_FALSE(relaxedMin->getBinaryValue(b));
+    EXPECT_NEAR(this->parseNumber("0"), relaxedMin->getContinuousValue(x), this->precision());
+    auto relaxedMax = this->solveIndicatorScenario(storm::OptimizationDirection::Maximize, true, std::optional<bool>(false),
+                                                   storm::expressions::RelationType::Equal, "3", x, b);
+    ASSERT_TRUE(relaxedMax->isOptimal());
+    EXPECT_FALSE(relaxedMax->getBinaryValue(b));
+    EXPECT_NEAR(this->parseNumber("5"), relaxedMax->getContinuousValue(x), this->precision());
 }
 
 }  // namespace

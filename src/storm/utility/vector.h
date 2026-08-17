@@ -1,21 +1,16 @@
-#ifndef STORM_UTILITY_VECTOR_H_
-#define STORM_UTILITY_VECTOR_H_
+#pragma once
 
 #include <algorithm>
+#include <boost/optional.hpp>
 #include <functional>
 #include <iosfwd>
 #include <numeric>
-#include "storm/adapters/IntelTbbAdapter.h"
+
 #include "storm/adapters/RationalNumberAdapter.h"
-
-#include <boost/optional.hpp>
-
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
 namespace utility {
@@ -81,7 +76,7 @@ void setAllValues(std::vector<T>& vec, storm::storage::BitVector const& position
  */
 template<class T>
 void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<T> const& values) {
-    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized");
+    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized.");
     STORM_LOG_ASSERT(positions.getNumberOfSetBits() <= values.size(), "The number of selected positions (" << positions.getNumberOfSetBits()
                                                                                                            << ") exceeds the size of the input vector ("
                                                                                                            << values.size() << ").");
@@ -101,7 +96,7 @@ void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& po
  */
 template<class T>
 void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, T value) {
-    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized");
+    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized.");
     for (auto position : positions) {
         vector[position] = value;
     }
@@ -109,7 +104,7 @@ void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& po
 
 template<typename T>
 void setNonzeroIndices(std::vector<T> const& vec, storm::storage::BitVector& bv) {
-    STORM_LOG_ASSERT(bv.size() == vec.size(), "Bitvector size should match vector size");
+    STORM_LOG_ASSERT(bv.size() == vec.size(), "Bitvector size should match vector size.");
     for (uint64_t i = 0; i < vec.size(); ++i) {
         if (!storm::utility::isZero(vec[i])) {
             bv.set(i, true);
@@ -175,7 +170,7 @@ bool isUnique(std::vector<T> const& v) {
 
 template<typename T, typename Comparator>
 bool compareElementWise(std::vector<T> const& left, std::vector<T> const& right, Comparator comp = std::less<T>()) {
-    STORM_LOG_ASSERT(left.size() == right.size(), "Expected that vectors for comparison have equal size");
+    STORM_LOG_ASSERT(left.size() == right.size(), "Expected that vectors for comparison have equal size.");
     return std::equal(left.begin(), left.end(), right.begin(), comp);
 }
 
@@ -367,25 +362,6 @@ void applyPointwiseTernary(std::vector<InValueType1> const& firstOperand, std::v
     }
 }
 
-#ifdef STORM_HAVE_INTELTBB
-template<class InValueType1, class InValueType2, class OutValueType, class Operation>
-void applyPointwiseTernaryParallel(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand,
-                                   std::vector<OutValueType>& target, Operation f = Operation()) {
-    tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()), [&](tbb::blocked_range<uint_fast64_t> const& range) {
-        auto firstIt = firstOperand.begin() + range.begin();
-        auto firstIte = firstOperand.begin() + range.end();
-        auto secondIt = secondOperand.begin() + range.begin();
-        auto targetIt = target.begin() + range.begin();
-        while (firstIt != firstIte) {
-            *targetIt = f(*firstIt, *secondIt, *targetIt);
-            ++targetIt;
-            ++firstIt;
-            ++secondIt;
-        }
-    });
-}
-#endif
-
 /*!
  * Applies the given operation pointwise on the two given vectors and writes the result to the third vector.
  * To obtain an in-place operation, the third vector may be equal to any of the other two vectors.
@@ -400,17 +376,6 @@ void applyPointwise(std::vector<InValueType1> const& firstOperand, std::vector<I
     std::transform(firstOperand.begin(), firstOperand.end(), secondOperand.begin(), target.begin(), f);
 }
 
-#ifdef STORM_HAVE_INTELTBB
-template<class InValueType1, class InValueType2, class OutValueType, class Operation>
-void applyPointwiseParallel(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target,
-                            Operation f = Operation()) {
-    tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()), [&](tbb::blocked_range<uint_fast64_t> const& range) {
-        std::transform(firstOperand.begin() + range.begin(), firstOperand.begin() + range.end(), secondOperand.begin() + range.begin(),
-                       target.begin() + range.begin(), f);
-    });
-}
-#endif
-
 /*!
  * Applies the given function pointwise on the given vector.
  *
@@ -422,15 +387,6 @@ template<class InValueType, class OutValueType, class Operation>
 void applyPointwise(std::vector<InValueType> const& operand, std::vector<OutValueType>& target, Operation f = Operation()) {
     std::transform(operand.begin(), operand.end(), target.begin(), f);
 }
-
-#ifdef STORM_HAVE_INTELTBB
-template<class InValueType, class OutValueType, class Operation>
-void applyPointwiseParallel(std::vector<InValueType> const& operand, std::vector<OutValueType>& target, Operation f = Operation()) {
-    tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()), [&](tbb::blocked_range<uint_fast64_t> const& range) {
-        std::transform(operand.begin() + range.begin(), operand.begin() + range.end(), target.begin() + range.begin(), f);
-    });
-}
-#endif
 
 /*!
  * Adds the two given vectors and writes the result to the target vector.
@@ -648,79 +604,6 @@ VT min_if(std::vector<VT> const& values, storm::storage::BitVector const& filter
     return current;
 }
 
-#ifdef STORM_HAVE_INTELTBB
-template<class T, class Filter>
-class TbbReduceVectorFunctor {
-   public:
-    TbbReduceVectorFunctor(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping,
-                           std::vector<uint_fast64_t>* choices, Filter const& f)
-        : source(source), target(target), rowGrouping(rowGrouping), choices(choices), f(f) {
-        // Intentionally left empty.
-    }
-
-    void operator()(tbb::blocked_range<uint64_t> const& range) const {
-        uint_fast64_t startRow = range.begin();
-        uint_fast64_t endRow = range.end();
-
-        typename std::vector<T>::iterator targetIt = target.begin() + startRow;
-        typename std::vector<T>::iterator targetIte = target.begin() + endRow;
-        typename std::vector<uint_fast64_t>::const_iterator rowGroupingIt = rowGrouping.begin() + startRow;
-        typename std::vector<T>::const_iterator sourceIt = source.begin() + *rowGroupingIt;
-        typename std::vector<T>::const_iterator sourceIte;
-        typename std::vector<uint_fast64_t>::iterator choiceIt;
-        if (choices) {
-            choiceIt = choices->begin() + startRow;
-        }
-
-        // Variables for correctly tracking choices (only update if new choice is strictly better).
-        T oldSelectedChoiceValue;
-        uint64_t selectedChoice;
-
-        uint64_t currentRow = 0;
-        for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt, ++choiceIt) {
-            // Only traverse elements if the row group is non-empty.
-            if (*rowGroupingIt != *(rowGroupingIt + 1)) {
-                *targetIt = *sourceIt;
-
-                if (choices) {
-                    selectedChoice = 0;
-                    if (*choiceIt == 0) {
-                        oldSelectedChoiceValue = *targetIt;
-                    }
-                }
-
-                ++sourceIt;
-                ++currentRow;
-
-                for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++currentRow) {
-                    if (choices && *choiceIt + *rowGroupingIt == currentRow) {
-                        oldSelectedChoiceValue = *sourceIt;
-                    }
-
-                    if (f(*sourceIt, *targetIt)) {
-                        *targetIt = *sourceIt;
-                        if (choices) {
-                            selectedChoice = std::distance(source.begin(), sourceIt) - *rowGroupingIt;
-                        }
-                    }
-                }
-
-                if (choices && f(*targetIt, oldSelectedChoiceValue)) {
-                    *choiceIt = selectedChoice;
-                }
-            }
-        }
-    }
-
-   private:
-    std::vector<T> const& source;
-    std::vector<T>& target;
-    std::vector<uint_fast64_t> const& rowGrouping;
-    std::vector<uint_fast64_t>* choices;
-    Filter const& f;
-};
-#endif
-
 /*!
  * Reduces the given source vector by selecting an element according to the given filter out of each row group.
  *
@@ -787,14 +670,6 @@ void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vec
     }
 }
 
-#ifdef STORM_HAVE_INTELTBB
-template<class T, class Filter>
-void reduceVectorParallel(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping,
-                          std::vector<uint_fast64_t>* choices) {
-    tbb::parallel_for(tbb::blocked_range<uint64_t>(0, target.size()), TbbReduceVectorFunctor<T, Filter>(source, target, rowGrouping, choices, Filter()));
-}
-#endif
-
 /*!
  * Reduces the given source vector by selecting the smallest element out of each row group.
  *
@@ -809,14 +684,6 @@ void reduceVectorMin(std::vector<T> const& source, std::vector<T>& target, std::
     reduceVector<T, storm::utility::ElementLess<T>>(source, target, rowGrouping, choices);
 }
 
-#ifdef STORM_HAVE_INTELTBB
-template<class T>
-void reduceVectorMinParallel(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping,
-                             std::vector<uint_fast64_t>* choices = nullptr) {
-    reduceVector<T, storm::utility::ElementLess<T>>(source, target, rowGrouping, choices);
-}
-#endif
-
 /*!
  * Reduces the given source vector by selecting the largest element out of each row group.
  *
@@ -830,14 +697,6 @@ void reduceVectorMax(std::vector<T> const& source, std::vector<T>& target, std::
                      std::vector<uint_fast64_t>* choices = nullptr) {
     reduceVector<T, storm::utility::ElementGreater<T>>(source, target, rowGrouping, choices);
 }
-
-#ifdef STORM_HAVE_INTELTBB
-template<class T>
-void reduceVectorMaxParallel(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping,
-                             std::vector<uint_fast64_t>* choices = nullptr) {
-    reduceVector<T, storm::utility::ElementGreater<T>>(source, target, rowGrouping, choices);
-}
-#endif
 
 /*!
  * Reduces the given source vector by selecting either the smallest or the largest out of each row group.
@@ -857,18 +716,6 @@ void reduceVectorMinOrMax(storm::solver::OptimizationDirection dir, std::vector<
         reduceVectorMax(source, target, rowGrouping, choices);
     }
 }
-
-#ifdef STORM_HAVE_INTELTBB
-template<class T>
-void reduceVectorMinOrMaxParallel(storm::solver::OptimizationDirection dir, std::vector<T> const& source, std::vector<T>& target,
-                                  std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-    if (dir == storm::solver::OptimizationDirection::Minimize) {
-        reduceVectorMinParallel(source, target, rowGrouping, choices);
-    } else {
-        reduceVectorMaxParallel(source, target, rowGrouping, choices);
-    }
-}
-#endif
 
 /*!
  * Compares the given elements and determines whether they are equal modulo the given precision. The provided flag
@@ -1136,7 +983,7 @@ std::vector<TargetType> convertNumericVector(std::vector<SourceType> const& oldV
  */
 template<typename TargetType, typename SourceType>
 void convertNumericVector(std::vector<SourceType> const& inputVector, std::vector<TargetType>& targetVector) {
-    assert(inputVector.size() == targetVector.size());
+    STORM_LOG_ASSERT(inputVector.size() == targetVector.size(), "Vector size mismatch.");
     applyPointwise(inputVector, targetVector, [](SourceType const& v) { return storm::utility::convertNumber<TargetType>(v); });
 }
 
@@ -1222,7 +1069,7 @@ std::vector<Type> filterVector(std::vector<Type> const& in, storm::storage::BitV
 
 template<typename Type>
 void filterVectorInPlace(std::vector<Type>& v, storm::storage::BitVector const& filter) {
-    STORM_LOG_ASSERT(v.size() == filter.size(), "The filter size does not match the size of the input vector");
+    STORM_LOG_ASSERT(v.size() == filter.size(), "The filter size does not match the size of the input vector.");
     uint_fast64_t size = v.size();
     // we can start our work at the first index where the filter has value zero
     uint_fast64_t firstUnsetIndex = filter.getNextUnsetIndex(0);
@@ -1236,6 +1083,40 @@ void filterVectorInPlace(std::vector<Type>& v, storm::storage::BitVector const& 
         v.shrink_to_fit();
     }
     STORM_LOG_ASSERT(v.size() == filter.getNumberOfSetBits(), "Result does not match.");
+}
+
+/*!
+ * Gets as input a vector with size n and a BitVector with size m>=n and exactly n set bits.
+ * The function modifies the input vector in place such that the resulting vector has size m and contains the original values at the positions where the
+ * BitVector has a set bit. The remaining positions are filled with the default value.
+ * @tparam T
+ * @param vector input and output vector
+ * @param positions the positions at which the output vector will have the values from the input vector
+ * @param defaultValue the value to set for all other values
+ *
+ * @note This is the inverse operation to filterVectorInPlace: blowUpVectorInPlace(v, bv); filterVectorInPlace(v, bv); results in the original vector v
+ *
+ */
+template<class T>
+void blowUpVectorInPlace(std::vector<T>& vector, storm::storage::BitVector const& positions, T const& defaultValue = storm::utility::zero<T>()) {
+    STORM_LOG_ASSERT(vector.size() == positions.getNumberOfSetBits(), "The number of selected positions (" << positions.getNumberOfSetBits()
+                                                                                                           << ") must match the size of the input vector ("
+                                                                                                           << vector.size() << ").");
+    auto readPos = vector.size();
+    vector.resize(positions.size(), defaultValue);
+    auto writePos = positions.getStartOfZeroSequenceBefore(positions.size());
+    while (writePos > 0) {
+        --writePos;
+        if (positions.get(writePos)) {
+            --readPos;
+            if (readPos != writePos) {
+                STORM_LOG_ASSERT(readPos < writePos, "We shall not write to positions that we later still have to read from.");
+                vector[writePos] = vector[readPos];
+            }
+        } else {
+            vector[writePos] = defaultValue;
+        }
+    }
 }
 
 template<typename T>
@@ -1284,7 +1165,7 @@ std::vector<T> applyInversePermutationToGroupedVector(std::vector<uint64_t> cons
             result.push_back(source[sourceIndex]);
         }
     }
-    STORM_LOG_ASSERT(result.size() == source.size(), "result has unexpected length.");
+    STORM_LOG_ASSERT(result.size() == source.size(), "Result has unexpected length.");
     return result;
 }
 
@@ -1308,22 +1189,6 @@ std::string toString(std::vector<ValueType> const& vector) {
     return stream.str();
 }
 
-template<typename PT1, typename PT2>
-std::string toString(std::vector<std::pair<PT1, PT2>> const& vector) {
-    std::stringstream stream;
-    stream << "vector (" << vector.size() << ") [ ";
-    if (!vector.empty()) {
-        for (uint_fast64_t i = 0; i < vector.size() - 1; ++i) {
-            stream << "{" << vector[i].first << "," << vector[i].second << "}, ";
-        }
-        stream << "{" << vector.back().first << "," << vector.back().second << "}";
-    }
-    stream << " ]";
-    return stream.str();
-}
-
 }  // namespace vector
 }  // namespace utility
 }  // namespace storm
-
-#endif /* STORM_UTILITY_VECTOR_H_ */

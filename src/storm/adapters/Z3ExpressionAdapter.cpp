@@ -15,13 +15,8 @@ namespace adapters {
 
 #ifdef STORM_HAVE_Z3
 
-#ifdef STORM_Z3_API_USES_STANDARD_INTEGERS
 typedef int64_t Z3_SIGNED_INTEGER;
 typedef uint64_t Z3_UNSIGNED_INTEGER;
-#else
-typedef long long Z3_SIGNED_INTEGER;
-typedef unsigned long long Z3_UNSIGNED_INTEGER;
-#endif
 
 Z3ExpressionAdapter::Z3ExpressionAdapter(storm::expressions::ExpressionManager& manager, z3::context& context)
     : manager(manager), context(context), additionalAssertions(), variableToExpressionMapping() {
@@ -156,7 +151,7 @@ storm::expressions::Expression Z3ExpressionAdapter::translateExpression(z3::expr
                                         "Failed to convert Z3 expression. Expression is constant integer and value does not fit into 64-bit integer.");
                     }
                 } else {
-                    STORM_LOG_ASSERT(expr.is_real() && expr.is_const(), "Cannot handle numerical expression");
+                    STORM_LOG_ASSERT(expr.is_real() && expr.is_const(), "Cannot handle numerical expression.");
                     Z3_SIGNED_INTEGER num;
                     Z3_SIGNED_INTEGER den;
                     if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {
@@ -166,6 +161,11 @@ storm::expressions::Expression Z3ExpressionAdapter::translateExpression(z3::expr
                         return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(std::string(Z3_get_numeral_string(expr.ctx(), expr))));
                     }
                 }
+            case Z3_OP_AGNUM:
+                STORM_LOG_WARN("Interpreting algebraic numbers as rational numbers. This is not an exact computation.");
+                // Get the value of an algebraic number, converted to a rational, with precision 1/10^16.
+                return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(
+                    std::string(Z3_get_numeral_string(expr.ctx(), Z3_get_algebraic_number_lower(expr.ctx(), expr, 16)))));
             case Z3_OP_UNINTERPRETED:
                 // Currently, we only support uninterpreted constant functions.
                 STORM_LOG_THROW(expr.is_const(), storm::exceptions::ExpressionEvaluationException,

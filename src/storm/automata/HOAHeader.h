@@ -1,8 +1,12 @@
 #pragma once
 
 #include <boost/optional.hpp>
+#include <string>
+#include <vector>
 #include "cpphoafparser/consumer/hoa_consumer.hh"
+
 #include "storm/automata/APSet.h"
+#include "storm/automata/AcceptanceCondition.h"
 
 namespace storm {
 namespace automata {

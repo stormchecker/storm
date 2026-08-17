@@ -1,8 +1,6 @@
-#include "ModelCheckerHelper.h"
+#include "storm/modelchecker/helper/ModelCheckerHelper.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

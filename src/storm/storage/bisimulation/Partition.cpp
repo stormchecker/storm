@@ -2,9 +2,8 @@
 
 #include <iostream>
 
-#include "storm/storage/bisimulation/DeterministicBlockData.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/bisimulation/DeterministicBlockData.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -24,7 +23,7 @@ Partition<DataType>::Partition(std::size_t numberOfStates) : stateToBlockMapping
 
 template<typename DataType>
 Partition<DataType>::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States,
-                               boost::optional<storm::storage::sparse::state_type> representativeProb1State)
+                               std::optional<storm::storage::sparse::state_type> representativeProb1State)
     : stateToBlockMapping(numberOfStates), states(numberOfStates), positions(numberOfStates) {
     storm::storage::sparse::state_type position = 0;
     Block<DataType>* firstBlock = nullptr;
@@ -54,7 +53,7 @@ Partition<DataType>::Partition(std::size_t numberOfStates, storm::storage::BitVe
             ++position;
         }
         secondBlock->data().setAbsorbing(true);
-        secondBlock->data().setRepresentativeState(representativeProb1State.get());
+        secondBlock->data().setRepresentativeState(representativeProb1State.value());
     }
 
     storm::storage::BitVector otherStates = ~(prob0States | prob1States);
@@ -180,10 +179,7 @@ template<typename DataType>
 void Partition<DataType>::sortRange(storm::storage::sparse::state_type beginIndex, storm::storage::sparse::state_type endIndex,
                                     std::function<bool(storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less,
                                     bool updatePositions) {
-    // FIXME, TODO: Wrapping less argument in a lambda here, as clang and the GCC stdlib do not play nicely
-    // Pass 'less' directly to std::sort when this has been resolved (problem with clang 3.7, gcc 5.1)
-    std::sort(this->states.begin() + beginIndex, this->states.begin() + endIndex,
-              [&](const storm::storage::sparse::state_type& a, storm::storage::sparse::state_type& b) { return less(a, b); });
+    std::sort(this->states.begin() + beginIndex, this->states.begin() + endIndex, less);
 
     if (updatePositions) {
         mapStatesToPositions(this->states.begin() + beginIndex, this->states.begin() + endIndex);

@@ -1,5 +1,4 @@
-#ifndef STORM_UTILITY_INITIALIZE_H
-#define STORM_UTILITY_INITIALIZE_H
+#pragma once
 
 #include "storm/utility/logging.h"
 
@@ -37,11 +36,19 @@ l3pp::LogLevel getLogLevel();
 void setLogLevel(l3pp::LogLevel level);
 
 /*!
+ * Set the log level for the statistics channel, independently of the global log level.
+ */
+void setStatisticsLogLevel(l3pp::LogLevel level);
+
+/*!
+ * Set the log level for the progress channel, independently of the global log level.
+ */
+void setProgressLogLevel(l3pp::LogLevel level);
+
+/*!
  * Sets up the logging to file.
  */
 void initializeFileLogging(std::string const& logfileName);
 
 }  // namespace utility
 }  // namespace storm
-
-#endif /* STORM_UTILITY_INITIALIZE_H */

@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_FORMULAVISITOR_H_
-#define STORM_LOGIC_FORMULAVISITOR_H_
+#pragma once
 
 #include "storm/logic/FormulasForwardDeclarations.h"
 namespace boost {
@@ -38,9 +37,9 @@ class FormulaVisitor {
     virtual boost::any visit(UnaryBooleanPathFormula const& f, boost::any const& data) const = 0;
     virtual boost::any visit(UntilFormula const& f, boost::any const& data) const = 0;
     virtual boost::any visit(HOAPathFormula const& f, boost::any const& data) const = 0;
+    virtual boost::any visit(DiscountedCumulativeRewardFormula const& f, boost::any const& data) const = 0;
+    virtual boost::any visit(DiscountedTotalRewardFormula const& f, boost::any const& data) const = 0;
 };
 
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_FORMULAVISITOR_H_ */

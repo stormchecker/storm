@@ -1,8 +1,10 @@
-#include "storm/automata/DeterministicAutomaton.h"
+#include "storm-config.h"
 #include "test/storm_gtest.h"
 
 #include <sstream>
 #include <string>
+
+#include "storm/automata/DeterministicAutomaton.h"
 
 TEST(DeterministicAutomaton, ParseAutomaton) {
     std::string aUb =

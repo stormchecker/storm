@@ -36,7 +36,7 @@ std::shared_ptr<storm::counterexamples::Counterexample> computeKShortestPathCoun
                     "Path formula is required to be of the form 'F psi' for counterexample generation.");
     bool strictBound = (probabilityOperator.getComparisonType() == storm::logic::ComparisonType::Less);
     STORM_LOG_THROW(model->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
-                    "k-shortest paths is only supported for models with a unique initial state.");
+                    "K-shortest paths is only supported for models with a unique initial state.");
     size_t initialState = *(model->getInitialStates().begin());
 
     // Perform model checking to get target states
@@ -45,7 +45,7 @@ std::shared_ptr<storm::counterexamples::Counterexample> computeKShortestPathCoun
 
     storm::logic::EventuallyFormula const& eventuallyFormula = subformula.asEventuallyFormula();
     std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(env, eventuallyFormula.getSubformula());
-    storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult->asExplicitQualitativeCheckResult();
+    storm::modelchecker::ExplicitQualitativeCheckResult<double> const& subQualitativeResult = subResult->template asExplicitQualitativeCheckResult<double>();
 
     // Check if counterexample is even possible
     storm::storage::BitVector phiStates(model->getNumberOfStates(), true);

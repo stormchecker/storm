@@ -144,7 +144,7 @@ uint64_t CostLimitClosure::dimension() const {
 }
 
 bool CostLimitClosure::unionFull(CostLimitClosure const& first, CostLimitClosure const& second) {
-    assert(first.dimension() == second.dimension());
+    STORM_LOG_ASSERT(first.dimension() == second.dimension(), "Dimension mismatch.");
     uint64_t dimension = first.dimension();
     auto manager = std::make_shared<storm::expressions::ExpressionManager>();
     auto solver = storm::utility::solver::getSmtSolver(*manager);
@@ -160,7 +160,7 @@ bool CostLimitClosure::unionFull(CostLimitClosure const& first, CostLimitClosure
             storm::expressions::Expression pointNotDominated;
             for (uint64_t i = 0; i < point.size(); ++i) {
                 if (!cl.downwardDimensions.get(i) || !q[i].isInfinity()) {
-                    assert(!q[i].isInfinity());
+                    STORM_LOG_ASSERT(!q[i].isInfinity(), "Unexpected infinity.");
                     storm::expressions::Expression qi = manager->integer(q[i].get());
                     storm::expressions::Expression piNotDominated = cl.downwardDimensions.get(i) ? point[i] > qi : point[i] < qi;
                     if (piNotDominated.isInitialized()) {
@@ -178,7 +178,6 @@ bool CostLimitClosure::unionFull(CostLimitClosure const& first, CostLimitClosure
         }
     }
     return solver->check() == storm::solver::SmtSolver::CheckResult::Unsat;
-    ;
 }
 }  // namespace rewardbounded
 }  // namespace helper

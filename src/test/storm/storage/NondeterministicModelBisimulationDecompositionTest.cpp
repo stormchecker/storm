@@ -3,12 +3,14 @@
 
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm-parsers/parser/PrismParser.h"
-
 #include "storm/builder/ExplicitModelBuilder.h"
-
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
+
+namespace {
+static constexpr double DefaultTestTolerance = 1e-6;
+}
 
 TEST(NondeterministicModelBisimulationDecomposition, TwoDice) {
 #ifndef STORM_HAVE_Z3
@@ -23,7 +25,10 @@ TEST(NondeterministicModelBisimulationDecomposition, TwoDice) {
     ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = model->as<storm::models::sparse::Mdp<double>>();
 
-    storm::storage::NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>> bisim(*mdp);
+    using OptionsType = typename storm::storage::NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>>::Options;
+
+    storm::storage::NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>> bisim(
+        *mdp, OptionsType::preservingAllLabels(DefaultTestTolerance));
     ASSERT_NO_THROW(bisim.computeBisimulationDecomposition());
     std::shared_ptr<storm::models::sparse::Model<double>> result;
     ASSERT_NO_THROW(result = bisim.getQuotient());
@@ -33,7 +38,7 @@ TEST(NondeterministicModelBisimulationDecomposition, TwoDice) {
     EXPECT_EQ(183ul, result->getNumberOfTransitions());
     EXPECT_EQ(97ul, result->as<storm::models::sparse::Mdp<double>>()->getNumberOfChoices());
 
-    typename storm::storage::NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>>::Options options;
+    OptionsType options = OptionsType::preservingAllLabels(DefaultTestTolerance);
     options.respectedAtomicPropositions = std::set<std::string>({"two"});
 
     storm::storage::NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>> bisim2(*mdp, options);
@@ -49,7 +54,7 @@ TEST(NondeterministicModelBisimulationDecomposition, TwoDice) {
     storm::parser::FormulaParser formulaParser;
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
 
-    typename storm::storage::NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>>::Options options2(*mdp, *formula);
+    OptionsType options2(*mdp, *formula, DefaultTestTolerance);
 
     storm::storage::NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>> bisim3(*mdp, options2);
     ASSERT_NO_THROW(bisim3.computeBisimulationDecomposition());

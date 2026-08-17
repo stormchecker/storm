@@ -1,23 +1,17 @@
 #include "storm-gamebased-ar/abstraction/prism/CommandAbstractor.h"
 
-#include <chrono>
-
 #include <boost/iterator/transform_iterator.hpp>
+#include <chrono>
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm-gamebased-ar/abstraction/BottomStateResult.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/DdManager.h"
-
 #include "storm/storage/prism/Command.h"
 #include "storm/storage/prism/Update.h"
-
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::gbar {
 namespace abstraction {
@@ -786,9 +780,7 @@ void CommandAbstractor<DdType, ValueType>::notifyGuardIsPredicate() {
 
 template class CommandAbstractor<storm::dd::DdType::CUDD, double>;
 template class CommandAbstractor<storm::dd::DdType::Sylvan, double>;
-#ifdef STORM_HAVE_CARL
 template class CommandAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-#endif
 }  // namespace prism
 }  // namespace abstraction
 }  // namespace storm::gbar

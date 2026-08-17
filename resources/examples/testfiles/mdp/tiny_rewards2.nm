@@ -1,0 +1,24 @@
+// Adapted from https://github.com/stormchecker/storm/issues/297
+mdp
+
+module main
+    s : [0..3];
+
+[a0] s=0 -> 0.1: (s'=0) + 0.9: (s'=2);
+[a1] s=0 -> 0.1: (s'=1) + 0.9: (s'=2);
+
+[a0] s=1 -> 0.1: (s'=0) + 0.9: (s'=2);
+[a1] s=1 -> (s'=2);
+
+[a0] s=2 -> 0.1: (s'=2) + 0.9: (s'=3);
+[a1] s=2 -> 0.1: (s'=0) + 0.9: (s'=2);
+
+[a0] s=3 -> (s'=3);
+
+endmodule
+
+label "goal" = s=3;
+
+rewards "rew"
+    s<3 : 1;
+endrewards

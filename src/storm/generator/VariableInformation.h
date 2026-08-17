@@ -1,8 +1,5 @@
-#ifndef STORM_GENERATOR_VARIABLEINFORMATION_H_
-#define STORM_GENERATOR_VARIABLEINFORMATION_H_
+#pragma once
 
-#include <boost/container/flat_map.hpp>
-#include <boost/optional/optional.hpp>
 #include <unordered_map>
 #include <vector>
 
@@ -97,8 +94,14 @@ struct LocationVariableInformation {
 };
 
 struct ObservationLabelInformation {
-    ObservationLabelInformation(std::string const& name);
-    std::string name;
+    ObservationLabelInformation(storm::expressions::Variable const& variable);
+
+    std::string const& getName() const {
+        return variable.getName();
+    }
+
+    storm::expressions::Variable variable;
+
     bool deterministic = true;
 };
 
@@ -139,9 +142,9 @@ struct VariableInformation {
 
     uint64_t getOutOfBoundsBit() const;
 
-   private:
-    boost::optional<uint64_t> outOfBoundsBit;
+    std::optional<BooleanVariableInformation> outOfBoundsBit;
 
+   private:
     /*!
      * Sorts the variables to establish a known ordering.
      */
@@ -160,5 +163,3 @@ struct VariableInformation {
 
 }  // namespace generator
 }  // namespace storm
-
-#endif /* STORM_GENERATOR_VARIABLEINFORMATION_H_ */

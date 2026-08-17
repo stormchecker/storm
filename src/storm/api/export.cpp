@@ -6,9 +6,9 @@ namespace api {
 
 void exportJaniModelAsDot(storm::jani::Model const& model, std::string const& filename) {
     std::ofstream out;
-    storm::utility::openFile(filename, out);
+    storm::io::openFile(filename, out);
     model.writeDotToStream(out);
-    storm::utility::closeFile(out);
+    storm::io::closeFile(out);
 }
 
 }  // namespace api

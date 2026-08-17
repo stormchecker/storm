@@ -121,6 +121,11 @@ class BuilderOptions {
     uint64_t getReservedBitsForUnboundedVariables() const;
     bool isAddOverlappingGuardLabelSet() const;
     uint64_t getShowProgressDelay() const;
+    /**
+     * Some distributions may not sum to one. This tolerance allows handling this case.
+     * @return The tolerance
+     */
+    double getStochasticTolerance() const;
 
     /**
      * Should all reward models be built? If not set, only required reward models are build.
@@ -184,8 +189,6 @@ class BuilderOptions {
      */
     BuilderOptions& setExplorationChecks(bool newValue = true);
 
-    BuilderOptions& setInferObservationsFromActions(bool newValue = true);
-
     /**
      * Should extra checks be performed during exploration
      * @param newValue The new value (default true)
@@ -210,6 +213,27 @@ class BuilderOptions {
      * Sets the number of bits that will be reserved for unbounded integer variables.
      */
     BuilderOptions& setReservedBitsForUnboundedVariables(uint64_t value);
+
+    /**
+     * Sets the tolerance used for checking whether a distribution sums to one.
+     * @param newValue The new tolerance
+     * @return this
+     */
+    BuilderOptions& setStochasticTolerance(double newValue);
+
+    /**
+     * Sets whether the progress of state space exploration should be printed.
+     * @param newValue The new value (default true)
+     * @return this
+     */
+    BuilderOptions& setShowProgress(bool newValue = true);
+
+    /**
+     * Sets the delay (in seconds) between progress reports during state space exploration.
+     * @param newValue The new delay
+     * @return this
+     */
+    BuilderOptions& setShowProgressDelay(uint64_t newValue);
 
     /**
      * Substitutes all expressions occurring in these options.
@@ -276,6 +300,9 @@ class BuilderOptions {
 
     /// The delay for printing progress information.
     uint64_t showProgressDelay;
+
+    /// The tolerance that is used for checking whether something is a distribution.
+    double stochasticTolerance;
 };
 
 }  // namespace builder

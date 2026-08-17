@@ -1,5 +1,6 @@
 #include "BEExponential.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
 
 namespace storm::dft {

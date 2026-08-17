@@ -1,10 +1,11 @@
+#include "storm/storage/Scheduler.h"
 
 #include <boost/algorithm/string/join.hpp>
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
@@ -35,8 +36,8 @@ Scheduler<ValueType>::Scheduler(uint_fast64_t numberOfModelStates, boost::option
 
 template<typename ValueType>
 void Scheduler<ValueType>::setChoice(SchedulerChoice<ValueType> const& choice, uint_fast64_t modelState, uint_fast64_t memoryState) {
-    STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index");
-    STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
+    STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index.");
+    STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index.");
 
     auto& schedulerChoice = schedulerChoices[memoryState][modelState];
 
@@ -46,13 +47,13 @@ void Scheduler<ValueType>::setChoice(SchedulerChoice<ValueType> const& choice, u
         }
     } else {
         if (choice.isDefined()) {
-            assert(numOfUndefinedChoices > 0);
+            STORM_LOG_ASSERT(numOfUndefinedChoices > 0, "No undefined choices left.");
             --numOfUndefinedChoices;
         }
     }
     if (schedulerChoice.isDeterministic()) {
         if (!choice.isDeterministic()) {
-            assert(numOfDeterministicChoices > 0);
+            STORM_LOG_ASSERT(numOfDeterministicChoices > 0, "No deterministic choices left.");
             --numOfDeterministicChoices;
         }
     } else {
@@ -76,23 +77,30 @@ bool Scheduler<ValueType>::isChoiceSelected(BitVector const& selectedStates, uin
 }
 
 template<typename ValueType>
+bool Scheduler<ValueType>::isChoiceSelected(uint64_t modelState, uint64_t memoryState) const {
+    STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index.");
+    STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index.");
+    return schedulerChoices[memoryState][modelState].isDefined();
+}
+
+template<typename ValueType>
 void Scheduler<ValueType>::clearChoice(uint_fast64_t modelState, uint_fast64_t memoryState) {
-    STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index");
-    STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
+    STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index.");
+    STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index.");
     setChoice(SchedulerChoice<ValueType>(), modelState, memoryState);
 }
 
 template<typename ValueType>
 SchedulerChoice<ValueType> const& Scheduler<ValueType>::getChoice(uint_fast64_t modelState, uint_fast64_t memoryState) const {
-    STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index");
-    STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
+    STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index.");
+    STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index.");
     return schedulerChoices[memoryState][modelState];
 }
 
 template<typename ValueType>
 void Scheduler<ValueType>::setDontCare(uint_fast64_t modelState, uint_fast64_t memoryState, bool setArbitraryChoice) {
-    STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index");
-    STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
+    STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index.");
+    STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index.");
 
     if (!dontCareStates[memoryState].get(modelState)) {
         auto& schedulerChoice = schedulerChoices[memoryState][modelState];
@@ -107,8 +115,8 @@ void Scheduler<ValueType>::setDontCare(uint_fast64_t modelState, uint_fast64_t m
 
 template<typename ValueType>
 void Scheduler<ValueType>::unSetDontCare(uint_fast64_t modelState, uint_fast64_t memoryState) {
-    STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index");
-    STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
+    STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index.");
+    STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index.");
 
     if (dontCareStates[memoryState].get(modelState)) {
         dontCareStates[memoryState].set(modelState, false);
@@ -127,7 +135,7 @@ storm::storage::BitVector Scheduler<ValueType>::computeActionSupport(std::vector
     storm::storage::BitVector result(nrActions);
 
     for (auto const& choicesPerMemoryNode : schedulerChoices) {
-        STORM_LOG_ASSERT(nondeterministicChoiceIndices.size() - 2 < choicesPerMemoryNode.size(), "Illegal model state index");
+        STORM_LOG_ASSERT(nondeterministicChoiceIndices.size() - 2 < choicesPerMemoryNode.size(), "Illegal model state index.");
         for (uint64_t stateId = 0; stateId < nondeterministicChoiceIndices.size() - 1; ++stateId) {
             for (auto const& schedChoice : choicesPerMemoryNode[stateId].getChoiceAsDistribution()) {
                 STORM_LOG_ASSERT(schedChoice.first < nondeterministicChoiceIndices[stateId + 1] - nondeterministicChoiceIndices[stateId],
@@ -162,8 +170,26 @@ uint_fast64_t Scheduler<ValueType>::getNumberOfMemoryStates() const {
 }
 
 template<typename ValueType>
+uint_fast64_t Scheduler<ValueType>::getNumberOfModelStates() const {
+    return schedulerChoices.empty() ? 0 : schedulerChoices.front().size();
+}
+
+template<typename ValueType>
 boost::optional<storm::storage::MemoryStructure> const& Scheduler<ValueType>::getMemoryStructure() const {
     return memoryStructure;
+}
+
+template<typename ValueType>
+Scheduler<ValueType> Scheduler<ValueType>::getMemorylessSchedulerForMemoryState(uint64_t memoryState) const {
+    STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index.");
+
+    Scheduler<ValueType> memorylessScheduler(getNumberOfModelStates());
+    for (uint64_t modelState = 0; modelState < getNumberOfModelStates(); ++modelState) {
+        if (schedulerChoices[memoryState][modelState].isDefined()) {
+            memorylessScheduler.setChoice(schedulerChoices[memoryState][modelState], modelState);
+        }
+    }
+    return memorylessScheduler;
 }
 
 template<typename ValueType>
@@ -177,7 +203,7 @@ void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<stor
     bool const choiceOriginsGiven = model != nullptr && model->hasChoiceOrigins();
     uint_fast64_t widthOfStates = std::to_string(schedulerChoices.front().size()).length();
     if (stateValuationsGiven) {
-        widthOfStates += model->getStateValuations().getStateInfo(schedulerChoices.front().size() - 1).length() + 5;
+        widthOfStates += model->getStateValuations().toString(schedulerChoices.front().size() - 1).length() + 5;
     }
     widthOfStates = std::max(widthOfStates, (uint_fast64_t)12);
     uint_fast64_t numOfSkippedStatesWithUniqueChoice = 0;
@@ -202,7 +228,7 @@ void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<stor
 
         // Print the state info
         if (stateValuationsGiven) {
-            out << std::setw(widthOfStates) << (std::to_string(state) + ": " + model->getStateValuations().getStateInfo(state));
+            out << std::setw(widthOfStates) << (std::to_string(state) + ": " + model->getStateValuations().toString(state));
         } else {
             out << std::setw(widthOfStates) << state;
         }
@@ -385,6 +411,7 @@ template class Scheduler<double>;
 template class Scheduler<storm::RationalNumber>;
 template class Scheduler<storm::RationalFunction>;
 template class Scheduler<storm::Interval>;
+template class Scheduler<storm::RationalInterval>;
 
 }  // namespace storage
 }  // namespace storm

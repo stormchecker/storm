@@ -1,16 +1,15 @@
-#ifndef STORM_SOLVER_Z3LPSOLVER
-#define STORM_SOLVER_Z3LPSOLVER
+#pragma once
 
 #include <map>
-#include "storm/solver/LpSolver.h"
-// To detect whether the usage of Z3 is possible, this include is neccessary.
-#include "storm-config.h"
+
+#include "storm-config.h"  // To detect whether the usage of Z3 is possible, this include is neccessary.
 #include "storm/adapters/Z3ExpressionAdapter.h"
+#include "storm/solver/LpSolver.h"
 #include "storm/storage/expressions/Expressions.h"
 
-#ifdef STORM_HAVE_Z3_OPTIMIZE
-#include "z3++.h"
-#include "z3.h"
+#ifdef STORM_HAVE_Z3
+#include <z3++.h>
+#include <z3.h>
 #endif
 
 namespace storm {
@@ -98,7 +97,7 @@ class Z3LpSolver : public LpSolver<ValueType, RawMode> {
    private:
     virtual storm::expressions::Expression getValue(Variable const& variable) const;
 
-#ifdef STORM_HAVE_Z3_OPTIMIZE
+#ifdef STORM_HAVE_Z3
 
     // The context used by the solver.
     std::unique_ptr<z3::context> context;
@@ -132,5 +131,3 @@ class Z3LpSolver : public LpSolver<ValueType, RawMode> {
 
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_Z3LPSOLVER */

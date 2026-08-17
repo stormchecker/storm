@@ -1,8 +1,9 @@
-#include "BucketPriorityQueue.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/utility/macros.h"
+#include "storm-dft/storage/BucketPriorityQueue.h"
 
 #include <cmath>
+
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/utility/macros.h"
 
 namespace storm::dft {
 namespace storage {
@@ -41,7 +42,7 @@ typename BucketPriorityQueue<PriorityType>::PriorityTypePointer const& BucketPri
     if (!immediateBucket.empty()) {
         return immediateBucket.back();
     }
-    STORM_LOG_ASSERT(!empty(), "BucketPriorityQueue is empty");
+    STORM_LOG_ASSERT(!empty(), "BucketPriorityQueue is empty.");
     return buckets[currentBucket].front();
 }
 
@@ -69,7 +70,7 @@ void BucketPriorityQueue<PriorityType>::push(PriorityTypePointer const& item) {
 
 template<typename PriorityType>
 void BucketPriorityQueue<PriorityType>::update(PriorityTypePointer const& item, double oldPriority) {
-    STORM_LOG_ASSERT(!item->isExpand(), "Item is marked for expansion");
+    STORM_LOG_ASSERT(!item->isExpand(), "Item is marked for expansion.");
     size_t newBucket = getBucket(item->getPriority());
     size_t oldBucket = getBucket(oldPriority);
 
@@ -125,7 +126,7 @@ typename BucketPriorityQueue<PriorityType>::PriorityTypePointer BucketPriorityQu
         immediateBucket.pop_back();
         return item;
     }
-    STORM_LOG_ASSERT(!empty(), "BucketPriorityQueue is empty");
+    STORM_LOG_ASSERT(!empty(), "BucketPriorityQueue is empty.");
     std::pop_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
     PriorityTypePointer item = buckets[currentBucket].back();
     buckets[currentBucket].pop_back();

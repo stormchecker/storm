@@ -1,11 +1,9 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <unordered_map>
 
-#include <boost/optional.hpp>
-
 #include "storm/adapters/RationalNumberAdapter.h"
-
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionEvaluatorBase.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"

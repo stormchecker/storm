@@ -2,6 +2,7 @@
 
 #include "storm/environment/Environment.h"
 
+#include "storm/environment/dd/AllDdEnvironments.h"
 #include "storm/environment/modelchecker/AllModelCheckerEnvironments.h"
 #include "storm/environment/solver/AllSolverEnvironments.h"
 
@@ -48,19 +49,28 @@ void SubEnvironment<EnvironmentType>::assertInitialized() const {
 
 template class SubEnvironment<InternalEnvironment>;
 
+template class SubEnvironment<DdEnvironment>;
+template class SubEnvironment<SylvanDdManagerEnvironment>;
+template class SubEnvironment<CuddDdManagerEnvironment>;
+
+template class SubEnvironment<ConditionalModelCheckerEnvironment>;
 template class SubEnvironment<MultiObjectiveModelCheckerEnvironment>;
 template class SubEnvironment<ModelCheckerEnvironment>;
 
 template class SubEnvironment<SolverEnvironment>;
+template class SubEnvironment<EliminationSolverEnvironment>;
 template class SubEnvironment<EigenSolverEnvironment>;
 template class SubEnvironment<GmmxxSolverEnvironment>;
 template class SubEnvironment<NativeSolverEnvironment>;
 template class SubEnvironment<LongRunAverageSolverEnvironment>;
 template class SubEnvironment<TimeBoundedSolverEnvironment>;
 template class SubEnvironment<MinMaxSolverEnvironment>;
+template class SubEnvironment<MinMaxLpSolverEnvironment>;
 template class SubEnvironment<MultiplierEnvironment>;
 template class SubEnvironment<OviSolverEnvironment>;
 template class SubEnvironment<GameSolverEnvironment>;
 template class SubEnvironment<TopologicalSolverEnvironment>;
+template class SubEnvironment<GurobiSolverEnvironment>;
+template class SubEnvironment<GlpkSolverEnvironment>;
 
 }  // namespace storm

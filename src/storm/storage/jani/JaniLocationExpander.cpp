@@ -15,9 +15,9 @@ JaniLocationExpander::JaniLocationExpander(Model const &origModel) : original(or
 
 JaniLocationExpander::ReturnType JaniLocationExpander::transform(std::string const &automatonName, std::string const &variableName) {
     STORM_LOG_THROW(original.hasAutomaton(automatonName), storm::exceptions::IllegalArgumentException,
-                    "Model has no automaton with name " << automatonName << ". ");
+                    "Model has no automaton with name " << automatonName << ".");
     STORM_LOG_THROW(original.getAutomaton(automatonName).hasVariable(variableName) || original.hasGlobalVariable(variableName),
-                    storm::exceptions::IllegalArgumentException, "Automaton " << automatonName << " has no variable with name " << variableName << ". ");
+                    storm::exceptions::IllegalArgumentException, "Automaton " << automatonName << " has no variable with name " << variableName << ".");
     newModel = original;
     AutomatonAndIndices newAutomaton = transformAutomaton(original.getAutomaton(automatonName), variableName, true);
     newModel.replaceAutomaton(newModel.getAutomatonIndex(automatonName), newAutomaton.newAutomaton);
@@ -49,7 +49,7 @@ JaniLocationExpander::AutomatonAndIndices JaniLocationExpander::transformAutomat
     STORM_LOG_THROW(isBoundedInteger || isBool, storm::exceptions::InvalidOperationException,
                     "Variable to be eliminated has to be an bounded integer or boolean variable.");
     STORM_LOG_THROW(var.hasInitExpression(), storm::exceptions::InvalidOperationException, "Variable to be eliminated has to have an initexpression.");
-    STORM_LOG_THROW(!var.isTransient(), storm::exceptions::InvalidOperationException, "Cannot eliminate transient variable");
+    STORM_LOG_THROW(!var.isTransient(), storm::exceptions::InvalidOperationException, "Cannot eliminate transient variable.");
 
     storm::expressions::Variable eliminatedExpressionVariable = var.getExpressionVariable();
 
@@ -101,9 +101,9 @@ JaniLocationExpander::AutomatonAndIndices JaniLocationExpander::transformAutomat
 
         if (excludedLocations.count(origIndex) > 0) {
             STORM_LOG_THROW(loc.getAssignments().empty(), storm::exceptions::IllegalArgumentException,
-                            "Locations with assignments cannot be excluded during expansion");
+                            "Locations with assignments cannot be excluded during expansion.");
             STORM_LOG_THROW(automaton.getEdgesFromLocation(origIndex).empty(), storm::exceptions::IllegalArgumentException,
-                            "Locations with outgoing edges cannot be excluded during expansion");
+                            "Locations with outgoing edges cannot be excluded during expansion.");
 
             Location newLoc(loc.getName(), OrderedAssignments());
             uint64_t newLocationIndex = newAutomaton.addLocation(newLoc);
@@ -149,7 +149,7 @@ JaniLocationExpander::AutomatonAndIndices JaniLocationExpander::transformAutomat
                                          // added to the list of edges
             std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(newGuard);
 
-            STORM_LOG_THROW(edge.getAssignments().empty(), storm::exceptions::NotImplementedException, "Support for edge-assignments is not implemented");
+            STORM_LOG_THROW(edge.getAssignments().empty(), storm::exceptions::NotImplementedException, "Support for edge-assignments is not implemented.");
 
             std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
             for (auto const &destination : edge.getDestinations()) {
@@ -184,7 +184,7 @@ JaniLocationExpander::AutomatonAndIndices JaniLocationExpander::transformAutomat
                 }
 
                 if (!useTransientVariables)
-                    STORM_LOG_THROW(true, storm::exceptions::NotImplementedException, "Unfolding without transient variables is not implemented");
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Unfolding without transient variables is not implemented.");
                 // oa.add(Assignment(*uncastVar, original.getExpressionManager().integer(value)));
 
                 TemplateEdgeDestination ted(oa);

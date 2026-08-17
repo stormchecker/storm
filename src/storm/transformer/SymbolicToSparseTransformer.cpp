@@ -1,17 +1,15 @@
 #include "SymbolicToSparseTransformer.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/AtomicExpressionFormula.h"
 #include "storm/logic/AtomicLabelFormula.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/utility/macros.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace transformer {

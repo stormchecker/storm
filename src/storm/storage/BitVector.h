@@ -1,15 +1,14 @@
-#ifndef STORM_STORAGE_BITVECTOR_H_
-#define STORM_STORAGE_BITVECTOR_H_
+#pragma once
 
 #include <cmath>
 #include <cstdint>
 #include <functional>
 #include <iterator>
 #include <ostream>
+#include <ranges>
 #include <vector>
 
-namespace storm {
-namespace storage {
+namespace storm::storage {
 
 /*!
  * A bit vector that is internally represented as a vector of 64-bit values.
@@ -27,11 +26,13 @@ class BitVector {
 
        public:
         // Define iterator
-        using iterator_category = std::input_iterator_tag;
-        using value_type = uint_fast64_t;
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = uint64_t;
         using difference_type = std::ptrdiff_t;
-        using pointer = uint_fast64_t*;
-        using reference = uint_fast64_t&;
+        using pointer = uint64_t*;
+        using reference = uint64_t&;
+
+        const_iterator();
 
         /*!
          * Constructs an iterator over the indices of the set bits in the given bit vector, starting and
@@ -43,7 +44,7 @@ class BitVector {
          * first bit upon construction.
          * @param endIndex The index at which to abort the iteration process.
          */
-        const_iterator(uint64_t const* dataPtr, uint_fast64_t startIndex, uint_fast64_t endIndex, bool setOnFirstBit = true);
+        const_iterator(uint64_t const* dataPtr, uint64_t startIndex, uint64_t endIndex, bool setOnFirstBit = true);
 
         /*!
          * Constructs an iterator by copying the given iterator.
@@ -68,6 +69,14 @@ class BitVector {
         const_iterator& operator++();
 
         /*!
+         * Increases the position of the iterator to the position of the next bit that is set to true in the
+         * underlying bit vector.
+         *
+         * @return A copy of the iterator before incrementing
+         */
+        const_iterator operator++(int);
+
+        /*!
          * Increases the position of the iterator to the position of the n'th next bit that is set to true in the
          * underlying bit vector.
          */
@@ -78,7 +87,7 @@ class BitVector {
          *
          * @return The index of the current bit to which this iterator points.
          */
-        uint_fast64_t operator*() const;
+        uint64_t operator*() const;
 
         /*!
          * Compares the iterator with another iterator for inequality.
@@ -101,10 +110,10 @@ class BitVector {
         uint64_t const* dataPtr;
 
         // The index of the bit this iterator currently points to.
-        uint_fast64_t currentIndex;
+        uint64_t currentIndex;
 
         // The index of the bit that is past the end of the range of this iterator.
-        uint_fast64_t endIndex;
+        uint64_t endIndex;
     };
     /*!
      * A class that enables iterating over the indices of the bit vector whose corresponding bits are set to
@@ -117,11 +126,11 @@ class BitVector {
 
        public:
         // Define iterator
-        using iterator_category = std::input_iterator_tag;
-        using value_type = uint_fast64_t;
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = uint64_t;
         using difference_type = std::ptrdiff_t;
-        using pointer = uint_fast64_t*;
-        using reference = uint_fast64_t&;
+        using pointer = uint64_t*;
+        using reference = uint64_t&;
 
         /*!
          * Constructs a reverse iterator over the indices of the set bits in the given bit vector, starting and
@@ -133,6 +142,7 @@ class BitVector {
          * first bit upon construction.
          * @param lowerBound The index at which to abort the iteration process.
          */
+        const_reverse_iterator();
         const_reverse_iterator(uint64_t const* dataPtr, uint64_t upperBound, uint64_t lowerBound = 0ull, bool setOnFirstBit = true);
         const_reverse_iterator(const_reverse_iterator const& other);
         const_reverse_iterator& operator=(const_reverse_iterator const& other);
@@ -144,6 +154,12 @@ class BitVector {
         const_reverse_iterator& operator++();
 
         /*!
+         * Lets the iterator point to the previous bit with value 1
+         * @return A copy of the iterator before incrementing.
+         */
+        const_reverse_iterator operator++(int);
+
+        /*!
          * Lets the iterator point to the n'th previous bit with value 1
          */
         const_reverse_iterator& operator+=(size_t n);
@@ -153,7 +169,7 @@ class BitVector {
          *
          * @return The index of the current bit to which this iterator points.
          */
-        uint_fast64_t operator*() const;
+        uint64_t operator*() const;
 
         /*!
          * Compares the iterator with another iterator for inequality.
@@ -199,7 +215,7 @@ class BitVector {
      * @param length The number of bits the bit vector should be able to hold.
      * @param init The initial value of the first |length| bits.
      */
-    explicit BitVector(uint_fast64_t length, bool init = false);
+    explicit BitVector(uint64_t length, bool init = false);
 
     /*!
      * Creates a bit vector that has exactly the bits set that are given by the provided input iterator range
@@ -210,12 +226,12 @@ class BitVector {
      * @param last The end of the iterator range.
      */
     template<typename InputIterator>
-    BitVector(uint_fast64_t length, InputIterator first, InputIterator last);
+    BitVector(uint64_t length, InputIterator first, InputIterator last);
 
     /*!
      * Creates a bit vector that has exactly the bits set that are given by the vector
      */
-    BitVector(uint_fast64_t length, std::vector<uint_fast64_t> setEntries);
+    BitVector(uint64_t length, std::vector<uint64_t> setEntries);
 
     /*!
      * Performs a deep copy of the given bit vector.
@@ -279,7 +295,7 @@ class BitVector {
      * @param index The index where to set the truth value.
      * @param value The truth value to set.
      */
-    void set(uint_fast64_t index, bool value = true);
+    void set(uint64_t index, bool value = true);
 
     /*!
      * Sets all bits in the given iterator range [first, last).
@@ -297,7 +313,7 @@ class BitVector {
      * @param index The index of the bit to access.
      * @return True iff the bit at the given index is set.
      */
-    bool operator[](uint_fast64_t index) const;
+    bool operator[](uint64_t index) const;
 
     /*!
      * Retrieves the truth value of the bit at the given index and performs a bound check. If the access is
@@ -306,7 +322,7 @@ class BitVector {
      * @param index The index of the bit to access.
      * @return True iff the bit at the given index is set.
      */
-    bool get(uint_fast64_t index) const;
+    bool get(uint64_t index) const;
 
     /*!
      * Resizes the bit vector to hold the given new number of bits. If the bit vector becomes smaller this way,
@@ -315,7 +331,7 @@ class BitVector {
      * @param newLength The new number of bits the bit vector can hold.
      * @param init The truth value to which to initialize newly created bits.
      */
-    void resize(uint_fast64_t newLength, bool init = false);
+    void resize(uint64_t newLength, bool init = false);
 
     /*!
      * Concatenate this bitvector with another bitvector. The result is stored in this bitvector.
@@ -339,7 +355,7 @@ class BitVector {
      * @param minimumLength The minimum number of bits that the bit vector should hold.
      * @param init The truth value to which to initialize newly created bits.
      */
-    void grow(uint_fast64_t minimumLength, bool init = false);
+    void grow(uint64_t minimumLength, bool init = false);
 
     /*!
      * Performs a logical "and" with the given bit vector. In case the sizes of the bit vectors do not match,
@@ -460,7 +476,7 @@ class BitVector {
      * @param other The bit vector with which to compare.
      * @return bool True iff the bits match exactly.
      */
-    bool matches(uint_fast64_t bitIndex, BitVector const& other) const;
+    bool matches(uint64_t bitIndex, BitVector const& other) const;
 
     /*!
      * Sets the exact bit pattern of the given bit vector starting at the given bit index. Note: the given bit
@@ -470,7 +486,7 @@ class BitVector {
      * 64.
      * @param other The bit vector whose pattern to set.
      */
-    void set(uint_fast64_t bitIndex, BitVector const& other);
+    void set(uint64_t bitIndex, BitVector const& other);
 
     /*!
      * Sets multiple bits to the given value.
@@ -501,7 +517,7 @@ class BitVector {
      * @param numberOfBits The number of bits to get. This value must be a multiple of 64.
      * @return A new bit vector holding the selected bits.
      */
-    storm::storage::BitVector get(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const;
+    storm::storage::BitVector get(uint64_t bitIndex, uint64_t numberOfBits) const;
 
     /*!
      * Retrieves the content of the current bit vector at the given index for the given number of bits as an
@@ -510,14 +526,14 @@ class BitVector {
      * @param bitIndex The index of the first bit to get.
      * @param numberOfBits The number of bits to get. This value must be less or equal than 64.
      */
-    uint_fast64_t getAsInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const;
+    uint64_t getAsInt(uint64_t bitIndex, uint64_t numberOfBits) const;
 
     /*!
      *
      * @param bitIndex The index of the first of the two bits to get
      * @return A value between 0 and 3, encoded as a byte.
      */
-    uint_fast64_t getTwoBitsAligned(uint_fast64_t bitIndex) const;
+    uint64_t getTwoBitsAligned(uint64_t bitIndex) const;
 
     /*!
      * Sets the selected number of lowermost bits of the provided value at the given bit index.
@@ -526,7 +542,7 @@ class BitVector {
      * @param numberOfBits The number of bits to set.
      * @param value The integer whose lowermost bits to set.
      */
-    void setFromInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits, uint64_t value);
+    void setFromInt(uint64_t bitIndex, uint64_t numberOfBits, uint64_t value);
 
     /*!
      * Retrieves whether no bits are set to true in this bit vector.
@@ -558,7 +574,7 @@ class BitVector {
      *
      * @return The number of bits that are set to true in this bit vector.
      */
-    uint_fast64_t getNumberOfSetBits() const;
+    uint64_t getNumberOfSetBits() const;
 
     /*!
      * Retrieves the number of bits set in this bit vector with an index strictly smaller than the given one.
@@ -566,14 +582,19 @@ class BitVector {
      * @param index The index for which to retrieve the number of set bits with a smaller index.
      * @return The number of bits set in this bit vector with an index strictly smaller than the given one.
      */
-    uint_fast64_t getNumberOfSetBitsBeforeIndex(uint_fast64_t index) const;
+    uint64_t getNumberOfSetBitsBeforeIndex(uint64_t index) const;
 
     /*!
      * Retrieves a vector that holds at position i the number of bits set before index i.
      *
      * @return The resulting vector of 'offsets'.
      */
-    std::vector<uint_fast64_t> getNumberOfSetBitsBeforeIndices() const;
+    std::vector<uint64_t> getNumberOfSetBitsBeforeIndices() const;
+
+    /*
+     * @return True, if the number of set bits is 1, false otherwise.
+     */
+    bool hasUniqueSetBit() const;
 
     /*!
      * Retrieves the number of bits this bit vector can store.
@@ -588,6 +609,37 @@ class BitVector {
      * @return The size of the bit vector measured in bytes.
      */
     std::size_t getSizeInBytes() const;
+
+    /*!
+     * Retrieves the number of buckets of the underlying storage.
+     *
+     * @return The number of buckets of the underlying storage.
+     */
+    size_t bucketCount() const;
+
+    /*!
+     * Sets the bits in the given bucket to the given value.
+     * @param bucketIndex The bucket. Bucket index i refers to the 64 bits with index i*64 to i*64+63.
+     * @param value The bit values to set for the bucket. The most significant bit is interpreted as the bit with the smallest index, e.g.,
+     *              value=2^63 sets the bit with index bucketIndex*64 to 1 and all other bits in the bucket to 0.
+     *              value=1 sets the bit with index bucketIndex*64+63 to 1 and all other bits in the bucket to 0.
+     * @note: bucketIndex must be below bucketCount().
+     * @note: If the size of this BitVector is not a multiple of 64, the last bucket with index bucketCount() - 1 contains (64 - size() % 64) many unused bits.
+     *        These bits are the least significant bits in the bucket and the value given to these bits is ignored.
+     */
+    void setBucket(uint64_t bucketIndex, uint64_t value);
+
+    /*!
+     * Gets the bits in the given bucket
+     * @param bucketIndex The bucket. Bucket index i refers to the 64 bits with index i*64 to i*64+63.
+     * @return The values of the bits in the given bucket. The most significant bit is interpreted as the bit with the smallest index, e.g.,
+     *         2^63 means the bit with index bucketIndex*64 is 1 and all other bits in the bucket are 0.
+     *         1 means the bit with index bucketIndex*64+63 is 1 and all other bits in the bucket are 0.
+     * @note: bucketIndex must be below bucketCount().
+     * @note If the size of this BitVector is not a multiple of 64, the last bucket with index bucketCount() - 1 contains (64 - size() % 64) many unused bits.
+     *       These bits are the least significant bits in the bucket and guaranteed to be 0 (false)
+     */
+    uint64_t getBucket(uint64_t bucketIndex) const;
 
     /*!
      * Returns an iterator to the indices of the set bits in the bit vector.
@@ -632,7 +684,7 @@ class BitVector {
      * bit at this index itself is included in the search range.
      * @return The index of the next bit that is set after the given index.
      */
-    uint_fast64_t getNextSetIndex(uint_fast64_t startingIndex) const;
+    uint64_t getNextSetIndex(uint64_t startingIndex) const;
 
     /*!
      * Retrieves the index of the bit that is the next bit set to false in the bit vector. If there is none,
@@ -643,7 +695,7 @@ class BitVector {
      * bit at this index itself is included in the search range.
      * @return The index of the next bit that is set after the given index.
      */
-    uint_fast64_t getNextUnsetIndex(uint_fast64_t startingIndex) const;
+    uint64_t getNextUnsetIndex(uint64_t startingIndex) const;
 
     /*!
      * Retrieves the smallest index i such that all bits in the range [i,endIndex) are 0.
@@ -676,7 +728,7 @@ class BitVector {
      * @param length Length of both intervals.
      * @return True, if the intervals were swapped, false if nothing changed.
      */
-    bool compareAndSwap(uint_fast64_t start1, uint_fast64_t start2, uint_fast64_t length);
+    bool compareAndSwap(uint64_t start1, uint64_t start2, uint64_t length);
 
     friend std::ostream& operator<<(std::ostream& out, BitVector const& bitVector);
 
@@ -696,7 +748,7 @@ class BitVector {
      * @param bucketCount The number of buckets to create.
      * @param bitCount This must be the number of buckets times 64.
      */
-    BitVector(uint_fast64_t bucketCount, uint_fast64_t bitCount);
+    BitVector(uint64_t bucketCount, uint64_t bitCount);
 
     /*!
      * Retrieves the index of the next bit that is set to the given value.
@@ -712,7 +764,7 @@ class BitVector {
      *         If startIndex >= endIndex, this returns (Backward ? startIndex : endIndex)
      */
     template<bool Value, bool Backward = false>
-    static uint_fast64_t getNextIndexWithValue(uint64_t const* dataPtr, uint_fast64_t startingIndex, uint_fast64_t endIndex);
+    static uint64_t getNextIndexWithValue(uint64_t const* dataPtr, uint64_t startingIndex, uint64_t endIndex);
 
     /*!
      * Truncate the last bucket so that no bits are set starting from bitCount.
@@ -726,7 +778,7 @@ class BitVector {
      * @param length The number of bits to get.
      * @return A new bit vector holding the selected bits.
      */
-    BitVector getAsBitVector(uint_fast64_t start, uint_fast64_t length) const;
+    BitVector getAsBitVector(uint64_t start, uint64_t length) const;
 
     /*!
      * Sets the exact bit pattern of the given bit vector starting at the given bit index. Note: the given bit
@@ -735,7 +787,7 @@ class BitVector {
      * @param start The index of the first bit that is supposed to be set.
      * @param other The bit vector whose pattern to set.
      */
-    void setFromBitVector(uint_fast64_t start, BitVector const& other);
+    void setFromBitVector(uint64_t start, BitVector const& other);
 
     /*!
      * Print bit vector and display all bits.
@@ -744,22 +796,17 @@ class BitVector {
      */
     void printBits(std::ostream& out) const;
 
-    /*!
-     * Retrieves the number of buckets of the underlying storage.
-     *
-     * @return The number of buckets of the underlying storage.
-     */
-    size_t bucketCount() const;
-
     // The number of bits that this bit vector can hold.
-    uint_fast64_t bitCount;
+    uint64_t bitCount;
 
     // The underlying storage of 64-bit buckets for all bits of this bit vector.
     uint64_t* buckets;
 
     // A bit mask that can be used to reduce a modulo 64 operation to a logical "and".
-    static const uint_fast64_t mod64mask = (1 << 6) - 1;
+    static const uint64_t mod64mask = (1 << 6) - 1;
 };
+
+static_assert(std::ranges::forward_range<BitVector>);
 
 struct FNV1aBitVectorHash {
     std::size_t operator()(storm::storage::BitVector const& bv) const;
@@ -770,8 +817,7 @@ struct Murmur3BitVectorHash {
     StateType operator()(storm::storage::BitVector const& bv) const;
 };
 
-}  // namespace storage
-}  // namespace storm
+}  // namespace storm::storage
 
 namespace std {
 template<>
@@ -779,5 +825,3 @@ struct hash<storm::storage::BitVector> {
     std::size_t operator()(storm::storage::BitVector const& bv) const;
 };
 }  // namespace std
-
-#endif  // STORM_STORAGE_BITVECTOR_H_

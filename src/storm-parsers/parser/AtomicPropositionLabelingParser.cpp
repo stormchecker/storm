@@ -1,21 +1,14 @@
-/*!
- * LabParser.cpp
- *
- *  Created on: 21.11.2012
- *      Author: Gereon Kremer
- */
-
 #include "storm-parsers/parser/AtomicPropositionLabelingParser.h"
 
 #include <cstring>
 #include <iostream>
 #include <string>
-#include "storm/utility/macros.h"
 
 #include "storm-parsers/parser/MappedFile.h"
 #include "storm-parsers/util/cstring.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace parser {
@@ -55,15 +48,10 @@ storm::models::sparse::StateLabeling AtomicPropositionLabelingParser::parseAtomi
     }
 
     // If #DECLARATION or #END have not been found, the file format is wrong.
-    if (!(foundDecl && foundEnd)) {
-        STORM_LOG_ERROR("Error while parsing " << filename << ": File header is corrupted (#DECLARATION or #END missing - case sensitive).");
-        if (!foundDecl)
-            STORM_LOG_ERROR("\tDid not find #DECLARATION token.");
-        if (!foundEnd)
-            STORM_LOG_ERROR("\tDid not find #END token.");
-        throw storm::exceptions::WrongFormatException()
-            << "Error while parsing " << filename << ": File header is corrupted (#DECLARATION or #END missing - case sensitive).";
-    }
+    STORM_LOG_THROW(foundDecl, storm::exceptions::WrongFormatException,
+                    "Error while parsing " << filename << ": File header is corrupted (#DECLARATION missing - case sensitive).");
+    STORM_LOG_THROW(foundEnd, storm::exceptions::WrongFormatException,
+                    "Error while parsing " << filename << ": File header is corrupted (#END missing - case sensitive).");
 
     // Create labeling object with given node and proposition count.
     storm::models::sparse::StateLabeling labeling(stateCount);
@@ -88,9 +76,8 @@ storm::models::sparse::StateLabeling AtomicPropositionLabelingParser::parseAtomi
 
         if (cnt >= sizeof(proposition)) {
             // if token is longer than our buffer, the following strncpy code might get risky...
-            STORM_LOG_ERROR("Error while parsing " << filename << ": Atomic proposition with length > " << (sizeof(proposition) - 1) << " was found.");
-            throw storm::exceptions::WrongFormatException()
-                << "Error while parsing " << filename << ": Atomic proposition with length > " << (sizeof(proposition) - 1) << " was found.";
+            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                            "Error while parsing " << filename << ": Atomic proposition with length > " << (sizeof(proposition) - 1) << " was found.");
 
         } else if (cnt > 0) {
             // If the next token is #DECLARATION: Just skip it.
@@ -127,11 +114,8 @@ storm::models::sparse::StateLabeling AtomicPropositionLabelingParser::parseAtomi
         state = checked_strtol(buf, &buf);
 
         // If the state has already been read or skipped once there might be a problem with the file (doubled lines, or blocks).
-        if (state <= lastState && lastState != startIndexComparison) {
-            STORM_LOG_ERROR("Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
-            throw storm::exceptions::WrongFormatException()
-                << "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.";
-        }
+        STORM_LOG_THROW(state > lastState || lastState == startIndexComparison, storm::exceptions::WrongFormatException,
+                        "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
 
         while ((buf[0] != '\r') && (buf[0] != '\n') && (buf[0] != '\0')) {
             cnt = skipWord(buf) - buf;
@@ -148,11 +132,8 @@ storm::models::sparse::StateLabeling AtomicPropositionLabelingParser::parseAtomi
                 proposition[cnt] = '\0';
 
                 // Has the label been declared in the header?
-                if (!labeling.containsLabel(proposition)) {
-                    STORM_LOG_ERROR("Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.");
-                    throw storm::exceptions::WrongFormatException()
-                        << "Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.";
-                }
+                STORM_LOG_THROW(labeling.containsLabel(proposition), storm::exceptions::WrongFormatException,
+                                "Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.");
                 labeling.addLabelToState(proposition, state);
                 buf += cnt;
             }

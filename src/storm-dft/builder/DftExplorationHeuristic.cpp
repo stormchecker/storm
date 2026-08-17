@@ -1,4 +1,4 @@
-#include "DftExplorationHeuristic.h"
+#include "storm-dft/builder/DftExplorationHeuristic.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"

@@ -6,7 +6,7 @@
 #include "storm/utility/macros.h"
 
 namespace storm {
-namespace utility {
+namespace io {
 
 /*!
  * Open the given file for writing.
@@ -24,7 +24,7 @@ inline void openFile(std::string const& filepath, std::ofstream& filestream, boo
     STORM_LOG_THROW(filestream, storm::exceptions::FileIoException, "Could not open file " << filepath << ".");
     filestream.precision(std::cout.precision());
     if (!silent) {
-        STORM_PRINT_AND_LOG("Write to file " << filepath << ".\n");
+        STORM_LOG_INFO("Write to file " << filepath << ".\n");
     }
 }
 
@@ -92,5 +92,5 @@ inline std::basic_istream<CharT, Traits>& getline(std::basic_istream<CharT, Trai
     return res;
 }
 
-}  // namespace utility
+}  // namespace io
 }  // namespace storm

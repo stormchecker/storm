@@ -1,20 +1,35 @@
 #pragma once
 
-#include "storm-config.h"
+#include "storm/adapters/RationalNumberForward.h"
 
 #if defined(STORM_HAVE_CLN)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmismatched-tags"
 #include <cln/cln.h>
-#pragma clang diagnostic pop
 #endif
 
 #if defined(STORM_HAVE_GMP)
-#include <gmpxx.h>
+// Disable potential warning on newer AppleClang versions
+#if __GNUC__ && defined(__has_warning)
+#if __has_warning("-Wdeprecated-literal-operator")
+#define SUPPRESSING
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-literal-operator"
+#endif
 #endif
 
-#include <carl/interval/Interval.h>
+#include <gmpxx.h>
+
+#ifdef SUPPRESSING
+#undef SUPPRESSING
+#pragma GCC diagnostic pop
+#endif
+
+#endif
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundefined-reinterpret-cast"
+#pragma clang diagnostic ignored "-Wunused-template"
 #include <carl/numbers/numbers.h>
+#pragma clang diagnostic pop
 
 #if defined(STORM_HAVE_CLN)
 namespace cln {
@@ -31,22 +46,3 @@ inline size_t hash_value(mpq_class const& q) {
     return h(q);
 }
 #endif
-
-namespace storm {
-#if defined(STORM_HAVE_CLN)
-typedef cln::cl_RA ClnRationalNumber;
-#endif
-#if defined(STORM_HAVE_GMP)
-typedef mpq_class GmpRationalNumber;
-#endif
-
-#if defined(STORM_HAVE_CLN) && defined(STORM_USE_CLN_EA)
-typedef ClnRationalNumber RationalNumber;
-#elif defined(STORM_HAVE_GMP) && !defined(STORM_USE_CLN_EA)
-typedef GmpRationalNumber RationalNumber;
-#elif defined(STORM_USE_CLN_EA)
-#error CLN is to be used, but is not available.
-#else
-#error GMP is to be used, but is not available.
-#endif
-}  // namespace storm

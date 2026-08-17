@@ -1,18 +1,12 @@
-#include "storm/utility/initialize.h"
+#include <typeinfo>
 
+#include "storm-cli-utilities/cli.h"
+#include "storm-cli-utilities/model-handling.h"
+#include "storm-pomdp-cli/settings/PomdpSettings.h"
 #include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 #include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
 #include "storm-pomdp-cli/settings/modules/ToParametricSettings.h"
-#include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
-
-#include "storm-pomdp-cli/settings/PomdpSettings.h"
-#include "storm/analysis/GraphConditions.h"
-
-#include "storm-cli-utilities/cli.h"
-#include "storm-cli-utilities/model-handling.h"
-
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/analysis/IterativePolicySearch.h"
 #include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
@@ -25,25 +19,27 @@
 #include "storm-pomdp/transformer/GlobalPOMDPSelfLoopEliminator.h"
 #include "storm-pomdp/transformer/GlobalPomdpMecChoiceEliminator.h"
 #include "storm-pomdp/transformer/KnownProbabilityTransformer.h"
-#include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
+#include "storm/analysis/GraphConditions.h"
 #include "storm/api/storm.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/settings/modules/DebugSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/transformer/MakePOMDPCanonic.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
-
-#include <typeinfo>
 
 namespace storm {
 namespace pomdp {
 namespace cli {
 
 /// Perform preprocessings based on the graph structure (if requested or necessary). Return true, if some preprocessing has been done
-template<typename ValueType, storm::dd::DdType DdType>
+template<typename ValueType>
 bool performPreprocessing(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomdp, storm::pomdp::analysis::FormulaInformation& formulaInfo,
                           storm::logic::Formula const& formula) {
     auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
@@ -240,13 +236,15 @@ void performQualitativeAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<Val
         storm::pomdp::qualitative::JaniBeliefSupportMdpGenerator<ValueType> janicreator(pomdp);
         janicreator.generate(targetStates, surelyNotAlmostSurelyReachTarget);
         bool initialOnly = !qualSettings.isWinningRegionSet();
-        janicreator.verifySymbolic(initialOnly);
+        storm::Environment env;
+        STORM_LOG_WARN("Using a default environment (and therefore default settings) for the symbolic analysis.");
+        janicreator.verifySymbolic(env, initialOnly);
         STORM_PRINT_AND_LOG("Initial state is safe: " << janicreator.isInitialWinning() << "\n");
     }
     STORM_LOG_THROW(computedSomething, storm::exceptions::InvalidSettingsException, "Nothing to be done, did you forget to set a method?");
 }
 
-template<typename ValueType, storm::dd::DdType DdType, typename BeliefType>
+template<typename ValueType, typename BeliefType = ValueType>
 bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo,
                      storm::logic::Formula const& formula) {
     auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
@@ -279,7 +277,7 @@ bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> co
                                                                        storm::api::createTask<ValueType>(formula.asSharedPointer(), true));
         if (resultPtr) {
             auto result = resultPtr->template asExplicitQuantitativeCheckResult<ValueType>();
-            result.filter(storm::modelchecker::ExplicitQualitativeCheckResult(pomdp->getInitialStates()));
+            result.filter(storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>(pomdp->getInitialStates()));
             if (storm::utility::resources::isTerminate()) {
                 STORM_PRINT_AND_LOG("\nResult till abort: ");
             } else {
@@ -295,7 +293,7 @@ bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> co
     return analysisPerformed;
 }
 
-template<typename ValueType, storm::dd::DdType DdType>
+template<typename ValueType>
 bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomdp, storm::logic::Formula const& formula) {
     auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
@@ -375,27 +373,9 @@ bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueTyp
     return transformationPerformed;
 }
 
-template<typename ValueType, storm::dd::DdType DdType>
-void processOptionsWithValueTypeAndDdLib(storm::cli::SymbolicInput const& symbolicInput, storm::cli::ModelProcessingInformation const& mpi) {
+template<typename ValueType>
+void processPomdp(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomdp) {
     auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
-
-    auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<DdType, ValueType>(symbolicInput, mpi);
-    if (!model) {
-        STORM_PRINT_AND_LOG("No input model given.\n");
-        return;
-    }
-    STORM_LOG_THROW(model->getType() == storm::models::ModelType::Pomdp && model->isSparseModel(), storm::exceptions::WrongFormatException,
-                    "Expected a POMDP in sparse representation.");
-
-    std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp = model->template as<storm::models::sparse::Pomdp<ValueType>>();
-
-    std::shared_ptr<storm::logic::Formula const> formula;
-    if (!symbolicInput.properties.empty()) {
-        formula = symbolicInput.properties.front().getRawFormula();
-        STORM_PRINT_AND_LOG("Analyzing property '" << *formula << "'\n");
-        STORM_LOG_WARN_COND(symbolicInput.properties.size() == 1,
-                            "There is currently no support for multiple properties. All other properties will be ignored.");
-    }
 
     if (!pomdpSettings.isNoCanonicSet()) {
         storm::transformer::MakePOMDPCanonic<ValueType> makeCanonic(*pomdp);
@@ -407,51 +387,44 @@ void processOptionsWithValueTypeAndDdLib(storm::cli::SymbolicInput const& symbol
         storm::analysis::UniqueObservationStates<ValueType> uniqueAnalysis(*pomdp);
         std::cout << uniqueAnalysis.analyse() << '\n';
     }
+}
 
-    if (formula) {
-        auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(*pomdp, *formula);
-        STORM_LOG_THROW(!formulaInfo.isUnsupported(), storm::exceptions::InvalidPropertyException,
-                        "The formula '" << *formula << "' is not supported by storm-pomdp.");
+template<typename ValueType>
+void processFormula(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>&& pomdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(*pomdp, *formula);
+    STORM_LOG_THROW(!formulaInfo.isUnsupported(), storm::exceptions::InvalidPropertyException,
+                    "The formula '" << *formula << "' is not supported by storm-pomdp.");
 
-        storm::utility::Stopwatch sw(true);
-        // Note that formulaInfo contains state-based information which potentially needs to be updated during preprocessing
-        if (performPreprocessing<ValueType, DdType>(pomdp, formulaInfo, *formula)) {
-            sw.stop();
-            STORM_PRINT_AND_LOG("Time for graph-based POMDP (pre-)processing: " << sw << ".\n");
-            pomdp->printModelInformationToStream(std::cout);
-        }
+    storm::utility::Stopwatch sw(true);
+    // Note that formulaInfo contains state-based information which potentially needs to be updated during preprocessing
+    if (performPreprocessing(pomdp, formulaInfo, *formula)) {
+        sw.stop();
+        STORM_PRINT_AND_LOG("Time for graph-based POMDP (pre-)processing: " << sw << ".\n");
+        pomdp->printModelInformationToStream(std::cout);
+    }
 
-        sw.restart();
-        if (performTransformation<ValueType, DdType>(pomdp, *formula)) {
-            sw.stop();
-            STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << ".\n");
-        }
+    sw.restart();
+    if (performTransformation(pomdp, *formula)) {
+        sw.stop();
+        STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << ".\n");
+    }
 
-        sw.restart();
-        if (performAnalysis<ValueType, DdType, ValueType>(pomdp, formulaInfo, *formula)) {
-            sw.stop();
-            STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << ".\n");
-        }
-    } else {
-        STORM_LOG_WARN("Nothing to be done. Did you forget to specify a formula?");
+    sw.restart();
+    if (performAnalysis(pomdp, formulaInfo, *formula)) {
+        sw.stop();
+        STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << ".\n");
     }
 }
 
-template<storm::dd::DdType DdType>
-void processOptionsWithDdLib(storm::cli::SymbolicInput const& symbolicInput, storm::cli::ModelProcessingInformation const& mpi) {
-    STORM_LOG_ERROR_COND(mpi.buildValueType == mpi.verificationValueType,
-                         "Build value type differs from verification value type. Will ignore Verification value type.");
-    switch (mpi.buildValueType) {
-        case storm::cli::ModelProcessingInformation::ValueType::FinitePrecision:
-            processOptionsWithValueTypeAndDdLib<double, DdType>(symbolicInput, mpi);
-            break;
-        case storm::cli::ModelProcessingInformation::ValueType::Exact:
-            STORM_LOG_THROW(DdType == storm::dd::DdType::Sylvan, storm::exceptions::UnexpectedException,
-                            "Exact arithmetic is only supported with Dd library Sylvan.");
-            processOptionsWithValueTypeAndDdLib<storm::RationalNumber, storm::dd::DdType::Sylvan>(symbolicInput, mpi);
-            break;
-        default:
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected ValueType for model building.");
+template<typename ValueType>
+void processPomdpFormula(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>&& pomdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    STORM_LOG_ASSERT(pomdp, "No POMDP given or input POMDP is of unexpected type.");
+    processPomdp(pomdp);
+
+    if (formula) {
+        processFormula(std::move(pomdp), formula);
+    } else {
+        STORM_LOG_WARN("Nothing to be done. Did you forget to specify a formula?");
     }
 }
 
@@ -459,17 +432,33 @@ void processOptions() {
     auto symbolicInput = storm::cli::parseSymbolicInput();
     storm::cli::ModelProcessingInformation mpi;
     std::tie(symbolicInput, mpi) = storm::cli::preprocessSymbolicInput(symbolicInput);
-    switch (mpi.ddType) {
-        case storm::dd::DdType::CUDD:
-            processOptionsWithDdLib<storm::dd::DdType::CUDD>(symbolicInput, mpi);
-            break;
-        case storm::dd::DdType::Sylvan:
-            processOptionsWithDdLib<storm::dd::DdType::Sylvan>(symbolicInput, mpi);
-            break;
-        default:
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected Dd Type.");
+    STORM_LOG_THROW(mpi.buildValueType == storm::cli::ModelProcessingInformation::ValueType::FinitePrecision ||
+                        mpi.buildValueType == storm::cli::ModelProcessingInformation::ValueType::Exact,
+                    storm::exceptions::UnexpectedException, "Unexpected ValueType for model building.");
+
+    auto model = storm::cli::buildPreprocessExportModel(symbolicInput, mpi);
+    if (!model) {
+        STORM_PRINT_AND_LOG("No input model given.\n");
+        return;
+    }
+    STORM_LOG_THROW(model->getType() == storm::models::ModelType::Pomdp && model->isSparseModel(), storm::exceptions::WrongFormatException,
+                    "Expected a POMDP in sparse representation.");
+
+    std::shared_ptr<storm::logic::Formula const> formula;
+    if (!symbolicInput.properties.empty()) {
+        formula = symbolicInput.properties.front().getRawFormula();
+        STORM_PRINT_AND_LOG("Analyzing property '" << *formula << "'\n");
+        STORM_LOG_WARN_COND(symbolicInput.properties.size() == 1,
+                            "There is currently no support for multiple properties. All other properties will be ignored.");
+    }
+
+    if (model->isExact()) {
+        processPomdpFormula(model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>(), formula);
+    } else {
+        processPomdpFormula(model->template as<storm::models::sparse::Pomdp<double>>(), formula);
     }
 }
+
 }  // namespace cli
 }  // namespace pomdp
 }  // namespace storm
@@ -482,13 +471,13 @@ void processOptions() {
  * @return Return code, 0 if successfull, not 0 otherwise.
  */
 int main(const int argc, const char** argv) {
-    // try {
-    return storm::cli::process("Storm-POMDP", "storm-pomdp", storm::settings::initializePomdpSettings, storm::pomdp::cli::processOptions, argc, argv);
-    // } catch (storm::exceptions::BaseException const &exception) {
-    //    STORM_LOG_ERROR("An exception caused Storm-pomdp to terminate. The message of the exception is: " << exception.what());
-    //    return 1;
-    //} catch (std::exception const &exception) {
-    //    STORM_LOG_ERROR("An unexpected exception occurred and caused Storm-pomdp to terminate. The message of this exception is: " << exception.what());
-    //    return 2;
-    //}
+    try {
+        return storm::cli::process("Storm-POMDP", "storm-pomdp", storm::settings::initializePomdpSettings, storm::pomdp::cli::processOptions, argc, argv);
+    } catch (storm::exceptions::BaseException const& exception) {
+        STORM_LOG_ERROR("An exception caused Storm-pomdp to terminate. The message of the exception is: " << exception.what());
+        return 1;
+    } catch (std::exception const& exception) {
+        STORM_LOG_ERROR("An unexpected exception occurred and caused Storm-pomdp to terminate. The message of this exception is: " << exception.what());
+        return 2;
+    }
 }

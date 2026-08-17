@@ -1,5 +1,10 @@
 #pragma once
 
+#include <bit>
+#include <cmath>
+
+#include "storm/utility/macros.h"
+
 namespace storm::dft {
 namespace storage {
 
@@ -22,7 +27,7 @@ class DFTStateGenerationInfo {
         : mUsageInfoBits(getUsageInfoBits(maxSpareChildCount)),
           stateIndexSize(getStateVectorSize(nrElements, nrOfSpares, nrRepresentatives, maxSpareChildCount)),
           mIdToStateIndex(nrElements) {
-        STORM_LOG_ASSERT(maxSpareChildCount < pow(2, mUsageInfoBits), "Bit length incorrect.");
+        STORM_LOG_ASSERT(maxSpareChildCount < std::pow(2, mUsageInfoBits), "Bit length incorrect.");
     }
 
     /*!
@@ -31,7 +36,7 @@ class DFTStateGenerationInfo {
      * @return Number of bits required to store claiming information.
      */
     static size_t getUsageInfoBits(size_t maxSpareChildCount) {
-        return storm::utility::math::uint64_log2(maxSpareChildCount) + 1;
+        return std::bit_width(maxSpareChildCount);
     }
 
     /*!
@@ -52,7 +57,7 @@ class DFTStateGenerationInfo {
 
     void addStateIndex(size_t id, size_t index) {
         STORM_LOG_ASSERT(id < mIdToStateIndex.size(), "Id invalid.");
-        STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid");
+        STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid.");
         mIdToStateIndex[id] = index;
     }
 
@@ -92,12 +97,12 @@ class DFTStateGenerationInfo {
     }
 
     void addSpareActivationIndex(size_t id, size_t index) {
-        STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid");
+        STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid.");
         mSpareActivationIndex[id] = index;
     }
 
     void addSpareUsageIndex(size_t id, size_t index) {
-        STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid");
+        STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid.");
         mSpareUsageIndex[id] = index;
     }
 
@@ -162,7 +167,7 @@ class DFTStateGenerationInfo {
         for (auto pair : mSymmetries) {
             STORM_LOG_ASSERT(pair.first > 0, "Empty symmetry.");
             STORM_LOG_ASSERT(pair.first < stateIndexSize, "Symmetry too long.");
-            for (size_t index : pair.second) {
+            for ([[maybe_unused]] size_t index : pair.second) {
                 STORM_LOG_ASSERT(index < stateIndexSize, "Symmetry starting point " << index << " invalid.");
                 STORM_LOG_ASSERT(index + pair.first < stateIndexSize, "Symmetry ending point " << index << " invalid.");
             }

@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_
-#define STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_
+#pragma once
 
 #include <boost/optional.hpp>
 #include <chrono>
@@ -57,6 +56,11 @@ class AbstractEquationSolver {
      * Sets the relevant values.
      */
     void setRelevantValues(storm::storage::BitVector&& valuesOfInterest);
+
+    /*!
+     * Sets the relevant values.
+     */
+    void setRelevantValues(storm::storage::BitVector const& valuesOfInterest);
 
     /*!
      * Removes the values of interest (if there were any).
@@ -257,5 +261,3 @@ class AbstractEquationSolver {
 
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_ */

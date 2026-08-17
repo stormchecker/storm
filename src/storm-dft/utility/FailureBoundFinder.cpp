@@ -22,7 +22,8 @@ uint64_t FailureBoundFinder::correctLowerBound(std::shared_ptr<storm::dft::model
     }
 
     // Only need to check as long as bound candidate + nr of non-Markovians to check is smaller than number of dependent events
-    while (nrNonMarkovian <= nrDepEvents && boundCandidate >= 0) {
+    // Check boundCandidate == 0 is later performed in the switch case
+    while (nrNonMarkovian <= nrDepEvents) {
         if (nrNonMarkovian == 0 and boundCandidate == 0) {
             nrNonMarkovian = 1;
         }
@@ -64,21 +65,11 @@ uint64_t FailureBoundFinder::correctLowerBound(std::shared_ptr<storm::dft::model
 uint64_t FailureBoundFinder::correctUpperBound(std::shared_ptr<storm::dft::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout) {
     STORM_LOG_DEBUG("Upper bound correction - try to correct bound " << std::to_string(bound));
     uint64_t boundCandidate = bound;
-    uint64_t nrDepEvents = 0;
     uint64_t nrNonMarkovian = 0;
     uint64_t currentTimepoint = 0;
     auto dft = smtchecker->getDFT();
-    // Count dependent events
-    for (size_t i = 0; i < dft.nrElements(); ++i) {
-        std::shared_ptr<storm::dft::storage::elements::DFTElement<double> const> element = dft.getElement(i);
-        if (element->isBasicElement()) {
-            auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<double> const>(element);
-            if (be->hasIngoingDependencies()) {
-                ++nrDepEvents;
-            }
-        }
-    }
-    while (boundCandidate >= 0) {
+
+    while (boundCandidate > 0) {
         currentTimepoint = bound + 1;
         while (currentTimepoint - boundCandidate > 0) {
             --currentTimepoint;
@@ -165,7 +156,7 @@ uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::dft::storage::DFT<doubl
             return dft.nrBasicElements() + 1;
         }
         uint64_t bound = dft.nrBasicElements();
-        while (bound >= 0) {
+        while (bound > 0) {
             smtchecker.setSolverTimeout(timeout * 1000);
             storm::solver::SmtSolver::CheckResult tmp_res = smtchecker.checkTleFailsWithEq(bound);
             smtchecker.unsetSolverTimeout();

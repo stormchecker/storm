@@ -715,6 +715,8 @@ struct hash<storm::dft::storage::BEColourClass<ValueType>> {
             case storm::dft::storage::elements::BEType::SAMPLES:
                 // Samples have no dedicated hashing
                 break;
+            default:
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << bcc.type << "' is not known.");
         }
         groupHash |= static_cast<uint_fast64_t>(bcc.nrParents) & eightbitmask;
         return groupHash;

@@ -2,7 +2,9 @@
 
 #include <boost/core/typeinfo.hpp>
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/exceptions/InternalTypeErrorException.h"
@@ -12,7 +14,6 @@
 #include "storm/logic/FormulaInformation.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
-#include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "storm/models/ModelRepresentation.h"
 #include "storm/models/sparse/Ctmc.h"
@@ -26,11 +27,8 @@
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/Mdp.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
 #include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -150,7 +148,7 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeStateFormul
     std::unique_ptr<CheckResult> resultPointer = this->check(env, checkTask.getFormula());
     if (resultPointer->isExplicitQualitativeCheckResult()) {
         STORM_LOG_ASSERT(ModelType::Representation == storm::models::ModelRepresentation::Sparse, "Unexpected model type.");
-        return std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(resultPointer->asExplicitQualitativeCheckResult());
+        return std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(resultPointer->template asExplicitQualitativeCheckResult<SolutionType>());
     } else {
         STORM_LOG_ASSERT(resultPointer->isSymbolicQualitativeCheckResult(), "Unexpected result type.");
         STORM_LOG_ASSERT(ModelType::Representation != storm::models::ModelRepresentation::Sparse, "Unexpected model type.");
@@ -165,12 +163,16 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeRewards(Env
     storm::logic::Formula const& rewardFormula = checkTask.getFormula();
     if (rewardFormula.isCumulativeRewardFormula()) {
         return this->computeCumulativeRewards(env, checkTask.substituteFormula(rewardFormula.asCumulativeRewardFormula()));
+    } else if (rewardFormula.isDiscountedCumulativeRewardFormula()) {
+        return this->computeDiscountedCumulativeRewards(env, checkTask.substituteFormula(rewardFormula.asDiscountedCumulativeRewardFormula()));
     } else if (rewardFormula.isInstantaneousRewardFormula()) {
         return this->computeInstantaneousRewards(env, checkTask.substituteFormula(rewardFormula.asInstantaneousRewardFormula()));
     } else if (rewardFormula.isReachabilityRewardFormula()) {
         return this->computeReachabilityRewards(env, checkTask.substituteFormula(rewardFormula.asReachabilityRewardFormula()));
     } else if (rewardFormula.isTotalRewardFormula()) {
         return this->computeTotalRewards(env, checkTask.substituteFormula(rewardFormula.asTotalRewardFormula()));
+    } else if (rewardFormula.isDiscountedTotalRewardFormula()) {
+        return this->computeDiscountedTotalRewards(env, checkTask.substituteFormula(rewardFormula.asDiscountedTotalRewardFormula()));
     } else if (rewardFormula.isLongRunAverageRewardFormula()) {
         return this->computeLongRunAverageRewards(env, checkTask.substituteFormula(rewardFormula.asLongRunAverageRewardFormula()));
     } else if (rewardFormula.isConditionalRewardFormula()) {
@@ -229,6 +231,20 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeLongRunAver
 }
 
 template<typename ModelType>
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeDiscountedCumulativeRewards(
+    Environment const&, CheckTask<storm::logic::DiscountedCumulativeRewardFormula, SolutionType> const& checkTask) {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
+                    "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
+}
+
+template<typename ModelType>
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeDiscountedTotalRewards(
+    Environment const&, CheckTask<storm::logic::DiscountedTotalRewardFormula, SolutionType> const& checkTask) {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
+                    "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
+}
+
+template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeTimes(Environment const& env,
                                                                            CheckTask<storm::logic::Formula, SolutionType> const& checkTask) {
     storm::logic::Formula const& timeFormula = checkTask.getFormula();
@@ -268,15 +284,15 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkStateFormula(
         return this->checkAtomicExpressionFormula(env, checkTask.substituteFormula(stateFormula.asAtomicExpressionFormula()));
     } else if (stateFormula.isAtomicLabelFormula()) {
         return this->checkAtomicLabelFormula(env, checkTask.substituteFormula(stateFormula.asAtomicLabelFormula()));
-    } else if (stateFormula.isBooleanLiteralFormula()) {
-        return this->checkBooleanLiteralFormula(env, checkTask.substituteFormula(stateFormula.asBooleanLiteralFormula()));
     } else if (stateFormula.isGameFormula()) {
         return this->checkGameFormula(env, checkTask.substituteFormula(stateFormula.asGameFormula()));
     } else if (stateFormula.isMultiObjectiveFormula()) {
-        if (env.modelchecker().multi().isLexicographicModelCheckingSet()) {
-            return this->checkLexObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+        auto const& mof = stateFormula.asMultiObjectiveFormula();
+        if (mof.isLexicographic()) {
+            return this->checkLexObjectiveFormula(env, checkTask.substituteFormula(mof));
         } else {
-            return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+            STORM_LOG_ASSERT(mof.isTradeoff(), "Unexpected multi-objective formula type.");
+            return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(mof));
         }
     } else if (stateFormula.isQuantileFormula()) {
         return this->checkQuantileFormula(env, checkTask.substituteFormula(stateFormula.asQuantileFormula()));
@@ -455,6 +471,9 @@ template class AbstractModelChecker<storm::models::sparse::Smg<double>>;
 template class AbstractModelChecker<storm::models::sparse::Mdp<double, storm::models::sparse::StandardRewardModel<storm::Interval>>>;
 template class AbstractModelChecker<storm::models::sparse::Smg<double, storm::models::sparse::StandardRewardModel<storm::Interval>>>;
 
+template class AbstractModelChecker<storm::models::sparse::Mdp<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>>;
+template class AbstractModelChecker<storm::models::sparse::Smg<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>>;
+
 template class AbstractModelChecker<storm::models::sparse::Model<storm::RationalNumber>>;
 template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>>;
 template class AbstractModelChecker<storm::models::sparse::Ctmc<storm::RationalNumber>>;
@@ -471,6 +490,10 @@ template class AbstractModelChecker<storm::models::sparse::MarkovAutomaton<storm
 template class AbstractModelChecker<storm::models::sparse::Smg<storm::RationalFunction>>;
 
 template class AbstractModelChecker<storm::models::sparse::Mdp<storm::Interval>>;
+template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::Interval>>;
+
+template class AbstractModelChecker<storm::models::sparse::Mdp<storm::RationalInterval>>;
+template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::RationalInterval>>;
 
 // DD
 template class AbstractModelChecker<storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>>;

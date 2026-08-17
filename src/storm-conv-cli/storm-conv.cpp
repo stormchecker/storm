@@ -300,7 +300,7 @@ void processOptions() {
 
     // Branch on the type of input
     auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
-    STORM_LOG_THROW(!(input.isPrismInputSet() && input.isJaniInputSet()), storm::exceptions::InvalidSettingsException, "Multiple input options were set.");
+    STORM_LOG_THROW(!input.isPrismInputSet() || !input.isJaniInputSet(), storm::exceptions::InvalidSettingsException, "Multiple input options were set.");
     if (input.isPrismInputSet()) {
         processPrismInput();
     } else if (input.isJaniInputSet()) {
@@ -313,7 +313,7 @@ void processOptions() {
 bool parseOptions(const int argc, const char* argv[]) {
     try {
         storm::settings::mutableManager().setFromCommandLine(argc, argv);
-    } catch (storm::exceptions::OptionParserException& e) {
+    } catch (storm::exceptions::OptionParserException&) {
         STORM_LOG_ERROR("Unable to parse command line options. Type '" + std::string(argv[0]) + " --help' or '" + std::string(argv[0]) +
                         " --help all' for help.");
         return false;
@@ -326,18 +326,22 @@ bool parseOptions(const int argc, const char* argv[]) {
         storm::settings::mutableManager().setFromConfigurationFile(general.getConfigFilename());
     }
 
-    bool result = true;
+    bool terminate = false;
     if (general.isHelpSet()) {
         storm::settings::manager().printHelp(general.getHelpFilterExpression());
-        result = false;
+        terminate = true;
     }
 
     if (general.isVersionSet()) {
         storm::cli::printVersion();
-        result = false;
+        terminate = true;
+    }
+    if (terminate) {
+        exit(0);  // Terminate after help and version output with success.
+        // TODO: Issue 674 discusses that this may not be ideal.
     }
 
-    return result;
+    return true;
 }
 
 /*!

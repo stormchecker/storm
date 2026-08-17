@@ -1,12 +1,10 @@
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
 namespace models {
@@ -222,8 +220,8 @@ StandardRewardModel<Type, NewValueType> StandardRewardModel<Type, ValueType>::to
 }
 
 template class StandardRewardModel<storm::dd::DdType::CUDD, double>;
-template class StandardRewardModel<storm::dd::DdType::Sylvan, double>;
 
+template class StandardRewardModel<storm::dd::DdType::Sylvan, double>;
 template class StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template StandardRewardModel<storm::dd::DdType::Sylvan, double> StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType() const;
 template class StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalFunction>;

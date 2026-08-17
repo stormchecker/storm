@@ -1,20 +1,16 @@
-#include <queue>
-
 #include "storm/models/sparse/MarkovAutomaton.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/solver/stateelimination/StateEliminator.h"
-#include "storm/storage/FlexibleSparseMatrix.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/transformer/SubsystemBuilder.h"
-#include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
 namespace models {
@@ -152,7 +148,6 @@ void MarkovAutomaton<ValueType, RewardModelType>::turnRatesToProbabilities() {
         this->exitRates.reserve(this->getNumberOfStates());
     }
 
-    storm::utility::ConstantsComparator<ValueType> comparator;
     for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
         uint_fast64_t row = this->getTransitionMatrix().getRowGroupIndices()[state];
         if (this->markovianStates.get(state)) {
@@ -169,16 +164,11 @@ void MarkovAutomaton<ValueType, RewardModelType>::turnRatesToProbabilities() {
             ++row;
         } else {
             if (assertRates) {
-                STORM_LOG_THROW(comparator.isZero(this->exitRates[state]), storm::exceptions::InvalidArgumentException,
+                STORM_LOG_THROW(storm::utility::isZero(this->exitRates[state]), storm::exceptions::InvalidArgumentException,
                                 "The specified exit rate for (non-Markovian) choice should be 0.");
             } else {
                 this->exitRates.push_back(storm::utility::zero<ValueType>());
             }
-        }
-        for (; row < this->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++row) {
-            STORM_LOG_THROW(comparator.isOne(this->getTransitionMatrix().getRowSum(row)), storm::exceptions::InvalidArgumentException,
-                            "Entries of transition matrix do not sum up to one for (non-Markovian) choice "
-                                << row << " of state " << state << " (sum is " << this->getTransitionMatrix().getRowSum(row) << ").");
         }
     }
 }
@@ -258,15 +248,12 @@ void MarkovAutomaton<ValueType, RewardModelType>::printModelInformationToStream(
 }
 
 template class MarkovAutomaton<double>;
-#ifdef STORM_HAVE_CARL
-
-template class MarkovAutomaton<storm::RationalNumber>;
-
 template class MarkovAutomaton<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-
-template class MarkovAutomaton<storm::RationalFunction>;
+template class MarkovAutomaton<storm::RationalNumber>;
+template class MarkovAutomaton<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
 template class MarkovAutomaton<storm::Interval>;
-#endif
+template class MarkovAutomaton<storm::RationalInterval>;
+template class MarkovAutomaton<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm

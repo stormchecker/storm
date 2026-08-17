@@ -1,29 +1,24 @@
-#include "print.h"
-
-#include "storm-version-info/storm-version.h"
-#include "storm/utility/cli.h"
-#include "storm/utility/macros.h"
+#include "storm-cli-utilities/print.h"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <ctime>
+#include <filesystem>
 
-// Includes for the linked libraries and versions header.
-#include "storm/adapters/IntelTbbAdapter.h"
+#include "storm-cli-utilities/resources.h"  // This header knows what to include for memory consumption
+#include "storm-version-info/storm-version.h"
+#include "storm/utility/macros.h"
 
 #ifdef STORM_HAVE_GLPK
-#include "glpk.h"
+#include <glpk.h>
 #endif
 #ifdef STORM_HAVE_GUROBI
-#include "gurobi_c.h"
+#include <gurobi_c.h>
 #endif
-#ifdef STORM_HAVE_MSAT
-#include "mathsat.h"
+#ifdef STORM_HAVE_MATHSAT
+#include <mathsat.h>
 #endif
 #ifdef STORM_HAVE_SOPLEX
-#include "soplex.h"
-#endif
-#ifdef STORM_HAVE_SMTRAT
-#include "lib/smtrat.h"
+#include <soplex.h>
 #endif
 #ifdef STORM_HAVE_SPOT
 #include <spot/misc/version.hh>
@@ -32,7 +27,7 @@
 #include <xercesc/util/XercesVersion.hpp>
 #endif
 #ifdef STORM_HAVE_Z3
-#include "z3.h"
+#include <z3.h>
 #endif
 
 namespace storm {
@@ -77,7 +72,7 @@ void printHeader(std::string const& name, const int argc, const char** argv) {
         std::time_t result = std::time(nullptr);
         STORM_PRINT("Date: " << std::ctime(&result));
         STORM_PRINT("Command line arguments:" << commandStream.str() << '\n');
-        STORM_PRINT("Current working directory: " << storm::utility::cli::getCurrentWorkingDirectory() << "\n\n");
+        STORM_PRINT("Current working directory: " << std::filesystem::current_path().string() << "\n\n");
     }
 }
 
@@ -98,46 +93,62 @@ void printVersion() {
 #endif
 
     // Print linked dependencies
-#ifdef STORM_HAVE_CARL
     STORM_PRINT("Linked with CArL v" << STORM_CARL_VERSION << ".\n");
+#ifdef STORM_HAVE_CUDD
+    STORM_PRINT("Linked with CUDD.\n");
+#else
+    STORM_PRINT("Not linked with CUDD.\n");
 #endif
 #ifdef STORM_HAVE_GLPK
-    STORM_PRINT("Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << ".\n");
+    STORM_PRINT("Linked with GLPK v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << ".\n");
+#else
+    STORM_PRINT("Not linked with GLPK.\n");
+#endif
+#ifdef STORM_HAVE_GMM
+    STORM_PRINT("Linked with GMM.\n");
+#else
+    STORM_PRINT("Not linked with GMM.\n");
 #endif
 #ifdef STORM_HAVE_GUROBI
     STORM_PRINT("Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << ".\n");
+#else
+    STORM_PRINT("Not linked with Gurobi.\n");
 #endif
-#ifdef STORM_HAVE_INTELTBB
-    STORM_PRINT("Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version "
-                                                                << TBB_INTERFACE_VERSION << ").\n");
-#endif
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     char* msatVersion = msat_get_version();
     STORM_PRINT("Linked with " << msatVersion << ".\n");
     msat_free(msatVersion);
+#else
+    STORM_PRINT("Not linked with MathSat.\n");
 #endif
 #ifdef STORM_HAVE_SOPLEX
     STORM_PRINT("Linked with Soplex v" << SOPLEX_VERSION << ".\n");
-#endif
-#ifdef STORM_HAVE_SMTRAT
-    STORM_PRINT("Linked with SMT-RAT v" << SMTRAT_VERSION << ".\n");
+#else
+    STORM_PRINT("Not linked with Soplex.\n");
 #endif
 #ifdef STORM_HAVE_SPOT
     STORM_PRINT("Linked with Spot v" << spot::version() << ".\n");
+#else
+    STORM_PRINT("Not linked with Spot.\n");
+#endif
+#ifdef STORM_HAVE_SYLVAN
+    STORM_PRINT("Linked with Sylvan.\n");
+#else
+    STORM_PRINT("Not linked with Sylvan.\n");
 #endif
 #ifdef STORM_HAVE_XERCES
     STORM_PRINT("Linked with Xerces-C v" << gXercesMajVersion << "." << gXercesMinVersion << "." << gXercesRevision << ".\n");
+#else
+    STORM_PRINT("Not linked with Xerces-C.\n");
 #endif
 #ifdef STORM_HAVE_Z3
     unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
     Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
-#ifdef STORM_HAVE_Z3_OPTIMIZE
-    STORM_PRINT("Linked with Z3 Theorem Prover v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber
-                                                  << " (with optimization features).\n");
-#else
     STORM_PRINT("Linked with Z3 Theorem Prover v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << ".\n");
+#else
+    STORM_PRINT("Not linked with Z3 Theorem Prover\n");
 #endif
-#endif
+    STORM_PRINT("\n");
 }
 
 void printTimeAndMemoryStatistics(uint64_t wallclockMilliseconds) {

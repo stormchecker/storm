@@ -4,8 +4,6 @@
 #include <memory>
 #include <set>
 
-#include "storm/utility/OsDetection.h"
-
 #include "storm/storage/dd/DdType.h"
 
 #include "storm/solver/SmtSolver.h"
@@ -40,10 +38,8 @@ class StateSetAbstractor {
     StateSetAbstractor(StateSetAbstractor const& other) = default;
     StateSetAbstractor& operator=(StateSetAbstractor const& other) = default;
 
-#ifndef WINDOWS
     StateSetAbstractor(StateSetAbstractor&& other) = default;
     StateSetAbstractor& operator=(StateSetAbstractor&& other) = default;
-#endif
 
     /*!
      * Creates a state set abstractor.

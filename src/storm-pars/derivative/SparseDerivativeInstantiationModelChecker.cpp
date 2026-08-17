@@ -17,7 +17,6 @@
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/helper/SoundValueIterationHelper.h"
-#include "storm/solver/multiplier/GmmxxMultiplier.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
@@ -63,10 +62,10 @@ std::unique_ptr<modelchecker::ExplicitQuantitativeCheckResult<ConstantType>> Spa
 
     // Write results into the placeholders
     for (auto& functionResult : this->functionsUnderived) {
-        functionResult.second = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(functionResult.first, valuation));
+        functionResult.second = storm::utility::parametric::evaluate<ConstantType>(functionResult.first, valuation);
     }
     for (auto& functionResult : this->functionsDerived.at(parameter)) {
-        functionResult.second = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(functionResult.first, valuation));
+        functionResult.second = storm::utility::parametric::evaluate<ConstantType>(functionResult.first, valuation);
     }
 
     auto deltaConstrainedMatrixInstantiated = deltaConstrainedMatricesInstantiated->at(parameter);
@@ -81,7 +80,7 @@ std::unique_ptr<modelchecker::ExplicitQuantitativeCheckResult<ConstantType>> Spa
 
     std::vector<ConstantType> instantiatedDerivedOutputVec(derivedOutputVecs->at(parameter).size());
     for (uint_fast64_t i = 0; i < derivedOutputVecs->at(parameter).size(); i++) {
-        instantiatedDerivedOutputVec[i] = utility::convertNumber<ConstantType>(derivedOutputVecs->at(parameter)[i].evaluate(valuation));
+        instantiatedDerivedOutputVec[i] = storm::utility::parametric::evaluate<ConstantType>(derivedOutputVecs->at(parameter)[i], valuation);
     }
 
     instantiationWatch.stop();
@@ -144,20 +143,20 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::spec
     if (this->currentFormula->isRewardOperatorFormula()) {
         auto subformula = modelchecker::CheckTask<storm::logic::Formula, FunctionType>(
             this->currentFormula->asRewardOperatorFormula().getSubformula().asEventuallyFormula().getSubformula());
-        target = propositionalChecker.check(subformula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+        target = propositionalChecker.check(subformula)->template asExplicitQualitativeCheckResult<FunctionType>().getTruthValuesVector();
     } else {
         if (this->currentFormula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
             auto rightSubformula = modelchecker::CheckTask<storm::logic::Formula, FunctionType>(
                 this->currentFormula->asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula());
             auto leftSubformula = modelchecker::CheckTask<storm::logic::Formula, FunctionType>(
                 this->currentFormula->asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula());
-            target = propositionalChecker.check(rightSubformula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
-            avoid = propositionalChecker.check(leftSubformula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+            target = propositionalChecker.check(rightSubformula)->template asExplicitQualitativeCheckResult<FunctionType>().getTruthValuesVector();
+            avoid = propositionalChecker.check(leftSubformula)->template asExplicitQualitativeCheckResult<FunctionType>().getTruthValuesVector();
             avoid.complement();
         } else {
             auto subformula = modelchecker::CheckTask<storm::logic::Formula, FunctionType>(
                 this->currentFormula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula());
-            target = propositionalChecker.check(subformula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+            target = propositionalChecker.check(subformula)->template asExplicitQualitativeCheckResult<FunctionType>().getTruthValuesVector();
         }
     }
     initialStateModel = model.getStates("init").getNextSetIndex(0);
@@ -307,7 +306,7 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::init
     auto parametricEntryIt = matrix.begin();
     while (parametricEntryIt != matrix.end()) {
         STORM_LOG_ASSERT(parametricEntryIt->getColumn() == constantEntryIt->getColumn(),
-                         "Entries of parametric and constant matrix are not at the same position");
+                         "Entries of parametric and constant matrix are not at the same position.");
         if (storm::utility::isConstant(parametricEntryIt->getValue())) {
             // Constant entries can be inserted directly
             constantEntryIt->setValue(storm::utility::convertNumber<ConstantType>(parametricEntryIt->getValue()));
@@ -322,7 +321,7 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::init
         ++constantEntryIt;
         ++parametricEntryIt;
     }
-    STORM_LOG_ASSERT(constantEntryIt == matrixInstantiated.end(), "Parametric matrix seems to have more or less entries then the constant matrix");
+    STORM_LOG_ASSERT(constantEntryIt == matrixInstantiated.end(), "Parametric matrix seems to have more or less entries then the constant matrix.");
 }
 
 template class SparseDerivativeInstantiationModelChecker<RationalFunction, RationalNumber>;

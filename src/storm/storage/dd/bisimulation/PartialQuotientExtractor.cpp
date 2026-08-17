@@ -1,18 +1,12 @@
 #include "storm/storage/dd/bisimulation/PartialQuotientExtractor.h"
 
-#include "storm/storage/dd/DdManager.h"
-
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BisimulationSettings.h"
-
-#include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/macros.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace dd {
@@ -164,11 +158,9 @@ std::shared_ptr<storm::models::symbolic::Model<DdType, ExportValueType>> Partial
 template class PartialQuotientExtractor<storm::dd::DdType::CUDD, double>;
 template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, double>;
 
-#ifdef STORM_HAVE_CARL
 template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalNumber, double>;
 template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
-#endif
 
 }  // namespace bisimulation
 }  // namespace dd

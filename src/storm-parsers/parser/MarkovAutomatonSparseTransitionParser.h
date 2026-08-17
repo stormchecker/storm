@@ -1,6 +1,6 @@
-#ifndef STORM_PARSER_MARKOVAUTOMATONSPARSETRANSITIONPARSER_H_
-#define STORM_PARSER_MARKOVAUTOMATONSPARSETRANSITIONPARSER_H_
+#pragma once
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 
@@ -78,7 +78,7 @@ class MarkovAutomatonSparseTransitionParser {
      * @param filename The name of the file to parse.
      * @return A structure representing the result of the parser.
      */
-    static Result parseMarkovAutomatonTransitions(std::string const& filename);
+    static Result parseMarkovAutomatonTransitions(std::string const& filename, ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 
    private:
     /*!
@@ -87,7 +87,7 @@ class MarkovAutomatonSparseTransitionParser {
      * @param buffer The buffer that cointains the input.
      * @return A structure representing the result of the first pass.
      */
-    static FirstPassResult firstPass(char const* buffer);
+    static FirstPassResult firstPass(char const* buffer, ExplicitModelParserOptions const& options);
 
     /*!
      * Performs the second pass on the input pointed to by the given buffer with the information of the first pass.
@@ -96,10 +96,8 @@ class MarkovAutomatonSparseTransitionParser {
      * @param firstPassResult The result of the first pass performed on the same input.
      * @return A structure representing the result of the second pass.
      */
-    static Result secondPass(char const* buffer, FirstPassResult const& firstPassResult);
+    static Result secondPass(char const* buffer, FirstPassResult const& firstPassResult, ExplicitModelParserOptions const& options);
 };
 
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_MARKOVAUTOMATONSPARSETRANSITIONPARSER_H_ */

@@ -1,5 +1,4 @@
-#ifndef STORM_MODELS_MODELTYPE_H_
-#define STORM_MODELS_MODELTYPE_H_
+#pragma once
 
 #include <iosfwd>
 
@@ -13,5 +12,3 @@ ModelType getModelType(std::string const& type);
 std::ostream& operator<<(std::ostream& os, ModelType const& type);
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_MODELTYPE_H_ */

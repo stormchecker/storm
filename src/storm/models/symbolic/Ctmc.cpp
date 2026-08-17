@@ -1,12 +1,10 @@
 #include "storm/models/symbolic/Ctmc.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace models {
@@ -110,8 +108,8 @@ std::shared_ptr<Ctmc<Type, NewValueType>> Ctmc<Type, ValueType>::toValueType() c
 
 // Explicitly instantiate the template class.
 template class Ctmc<storm::dd::DdType::CUDD, double>;
-template class Ctmc<storm::dd::DdType::Sylvan, double>;
 
+template class Ctmc<storm::dd::DdType::Sylvan, double>;
 template class Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template std::shared_ptr<Ctmc<storm::dd::DdType::Sylvan, double>> Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType() const;
 template class Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction>;

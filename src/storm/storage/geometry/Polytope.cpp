@@ -1,13 +1,10 @@
 #include "storm/storage/geometry/Polytope.h"
 
-#include <iostream>
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/storage/geometry/NativePolytope.h"
-#include "storm/utility/macros.h"
-
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/storage/geometry/NativePolytope.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace storage {
@@ -60,7 +57,7 @@ std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::createSelectiveDownwar
     if (selectedDimensions.empty()) {
         return create(points);
     }
-    assert(points.front().size() == selectedDimensions.size());
+    STORM_LOG_ASSERT(points.front().size() == selectedDimensions.size(), "Point dimensions do not match selected dimensions.");
 
     std::vector<Halfspace<ValueType>> halfspaces;
     // We build the convex hull of the given points.
@@ -98,7 +95,6 @@ Polytope<ValueType>::~Polytope() {
     // Intentionally left empty
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 std::vector<typename Polytope<storm::RationalNumber>::Point> Polytope<storm::RationalNumber>::getVerticesInClockwiseOrder() const {
     std::vector<Point> vertices = getVertices();
@@ -135,7 +131,7 @@ std::vector<typename Polytope<storm::RationalNumber>::Point> Polytope<storm::Rat
         }
     }
     STORM_LOG_ASSERT(neighborsOfVertices[currentVertex].getNumberOfSetBits() == 2,
-                     "For 2D Polytopes with at least 3 vertices, each vertex should have exactly 2 neighbors");
+                     "For 2D Polytopes with at least 3 vertices, each vertex should have exactly 2 neighbors.");
     uint_fast64_t firstNeighbor = neighborsOfVertices[currentVertex].getNextSetIndex(0);
     uint_fast64_t secondNeighbor = neighborsOfVertices[currentVertex].getNextSetIndex(firstNeighbor + 1);
     uint_fast64_t previousVertex = vertices[firstNeighbor].back() <= vertices[secondNeighbor].back() ? firstNeighbor : secondNeighbor;
@@ -144,7 +140,7 @@ std::vector<typename Polytope<storm::RationalNumber>::Point> Polytope<storm::Rat
         result.push_back(std::move(vertices[currentVertex]));
 
         STORM_LOG_ASSERT(neighborsOfVertices[currentVertex].getNumberOfSetBits() == 2,
-                         "For 2D Polytopes with at least 3 vertices, each vertex should have exactly 2 neighbors");
+                         "For 2D Polytopes with at least 3 vertices, each vertex should have exactly 2 neighbors.");
         firstNeighbor = neighborsOfVertices[currentVertex].getNextSetIndex(0);
         secondNeighbor = neighborsOfVertices[currentVertex].getNextSetIndex(firstNeighbor + 1);
         uint_fast64_t nextVertex = firstNeighbor != previousVertex ? firstNeighbor : secondNeighbor;
@@ -154,7 +150,6 @@ std::vector<typename Polytope<storm::RationalNumber>::Point> Polytope<storm::Rat
 
     return result;
 }
-#endif
 
 template<typename ValueType>
 std::vector<typename Polytope<ValueType>::Point> Polytope<ValueType>::getVerticesInClockwiseOrder() const {
@@ -249,19 +244,17 @@ bool Polytope<ValueType>::isNativePolytope() const {
 
 template<typename ValueType>
 std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::clean() {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not implemented for this polytope type.");
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented for this polytope type.");
     return nullptr;
 }
 
 template class Polytope<double>;
 template std::shared_ptr<Polytope<double>> Polytope<double>::convertNumberRepresentation() const;
 
-#ifdef STORM_HAVE_CARL
 template class Polytope<storm::RationalNumber>;
 template std::shared_ptr<Polytope<double>> Polytope<storm::RationalNumber>::convertNumberRepresentation() const;
 template std::shared_ptr<Polytope<storm::RationalNumber>> Polytope<double>::convertNumberRepresentation() const;
 template std::shared_ptr<Polytope<storm::RationalNumber>> Polytope<storm::RationalNumber>::convertNumberRepresentation() const;
-#endif
 }  // namespace geometry
 }  // namespace storage
 }  // namespace storm

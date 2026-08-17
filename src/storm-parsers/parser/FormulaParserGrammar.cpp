@@ -59,7 +59,8 @@ void FormulaParserGrammar::initialize() {
     operatorSubFormula =
         (((qi::eps(qi::_r1 == storm::logic::FormulaContext::Probability) > formula(FormulaKind::Path, qi::_r1)) |
           (qi::eps(qi::_r1 == storm::logic::FormulaContext::Reward) >
-           (longRunAverageRewardFormula | eventuallyFormula(qi::_r1) | cumulativeRewardFormula | instantaneousRewardFormula | totalRewardFormula)) |
+           (longRunAverageRewardFormula | eventuallyFormula(qi::_r1) | discountedCumulativeRewardFormula | discountedTotalRewardFormula |
+            cumulativeRewardFormula | instantaneousRewardFormula | totalRewardFormula)) |
           (qi::eps(qi::_r1 == storm::logic::FormulaContext::Time) > eventuallyFormula(qi::_r1)) |
           (qi::eps(qi::_r1 == storm::logic::FormulaContext::LongRunAverage) > formula(FormulaKind::State, storm::logic::FormulaContext::LongRunAverage))) >>
          -(qi::lit("||") >
@@ -87,7 +88,8 @@ void FormulaParserGrammar::initialize() {
            (formula(qi::_r1, qi::_r2) > qi::lit(")")))  // If we're starting with '(' but this is not an expression, we must have a formula inside the brackets
         | labelFormula | negationPropositionalFormula(qi::_r1, qi::_r2) | operatorFormula |
         (isPathFormula(qi::_r1) >> prefixOperatorPathFormula(qi::_r2))  // Needed for e.g. F "a" & X "a" = F ("a" & (X "a"))
-        | multiOperatorFormula  // Has to come after prefixOperatorPathFormula to avoid confusion with multiBoundedPathFormula
+        | multiLexOperatorFormula  // Has to come after prefixOperatorPathFormula to avoid confusion with multiBoundedPathFormula
+        | multiOperatorFormula     // Has to come after multilex to avoid failing to parse multilex
         | quantileFormula | gameFormula;
 
     // Propositional Logic operators
@@ -174,6 +176,14 @@ void FormulaParserGrammar::initialize() {
     pathFormula.name("path formula");
 
     // Quantitative path formulae (reward)
+    discountedTotalRewardFormula =
+        (qi::lit("Cdiscount=") >>
+         expressionParser)[qi::_val = phoenix::bind(&FormulaParserGrammar::createDiscountedTotalRewardFormula, phoenix::ref(*this), qi::_1)];
+    discountedTotalRewardFormula.name("discounted total reward formula");
+    discountedCumulativeRewardFormula =
+        (qi::lit("C") >> timeBounds >> qi::lit("discount=") >>
+         expressionParser)[qi::_val = phoenix::bind(&FormulaParserGrammar::createDiscountedCumulativeRewardFormula, phoenix::ref(*this), qi::_2, qi::_1)];
+    discountedCumulativeRewardFormula.name("discounted cumulative reward formula");
     longRunAverageRewardFormula = (qi::lit("LRA") | qi::lit("S") |
                                    qi::lit("MP"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageRewardFormula, phoenix::ref(*this))];
     longRunAverageRewardFormula.name("long run average reward formula");
@@ -196,8 +206,13 @@ void FormulaParserGrammar::initialize() {
 
     // Multi-objective, quantiles
     multiOperatorFormula = (qi::lit("multi") > qi::lit("(") > (operatorFormula % qi::lit(",")) >
-                            qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiOperatorFormula, phoenix::ref(*this), qi::_1)];
+                            qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiOperatorFormula, phoenix::ref(*this), qi::_1,
+                                                                   storm::logic::MultiObjectiveFormula::Type::Tradeoff)];
     multiOperatorFormula.name("multi-objective operator formula");
+    multiLexOperatorFormula = (qi::lit("multilex") > qi::lit("(") > (operatorFormula % qi::lit(",")) >
+                               qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiOperatorFormula, phoenix::ref(*this), qi::_1,
+                                                                      storm::logic::MultiObjectiveFormula::Type::Lexicographic)];
+    multiLexOperatorFormula.name("multi-objective lexicographic operator formula");
     quantileBoundVariable = (-optimalityOperator_ >> identifier >>
                              qi::lit(","))[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileBoundVariables, phoenix::ref(*this), qi::_1, qi::_2)];
     quantileBoundVariable.name("quantile bound variable");
@@ -270,6 +285,7 @@ void FormulaParserGrammar::initialize() {
     //            debug(playerCoalition)
     //            debug(gameFormula)
     //            debug(multiOperatorFormula)
+    //            debug(multiLexOperatorFormula)
     //            debug(quantileBoundVariable)
     //            debug(quantileFormula)
     //            debug(formula)
@@ -278,6 +294,8 @@ void FormulaParserGrammar::initialize() {
     //            debug(filterProperty)
     //            debug(constantDefinition )
     //            debug(start)
+    //            debug(discountedCumulativeRewardFormula)
+    //            debug(discountedTotalRewardFormula)
 
     // Enable error reporting.
     qi::on_error<qi::fail>(rewardModelName, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -305,9 +323,12 @@ void FormulaParserGrammar::initialize() {
     qi::on_error<qi::fail>(instantaneousRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(cumulativeRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(totalRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+    qi::on_error<qi::fail>(discountedCumulativeRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+    qi::on_error<qi::fail>(discountedTotalRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(playerCoalition, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(gameFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(multiOperatorFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+    qi::on_error<qi::fail>(multiLexOperatorFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(quantileBoundVariable, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(quantileFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(formula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -402,8 +423,28 @@ std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createCumulat
     return std::shared_ptr<storm::logic::Formula const>(new storm::logic::CumulativeRewardFormula(bounds, timeBoundReferences));
 }
 
+std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createDiscountedCumulativeRewardFormula(
+    storm::expressions::Expression const& discountFactor,
+    std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>,
+                           std::shared_ptr<storm::logic::TimeBoundReference>>> const& timeBounds) const {
+    std::vector<storm::logic::TimeBound> bounds;
+    std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
+    for (auto const& timeBound : timeBounds) {
+        STORM_LOG_THROW(!std::get<0>(timeBound), storm::exceptions::WrongFormatException, "Cumulative reward formulas with lower time bound are not allowed.");
+        STORM_LOG_THROW(std::get<1>(timeBound), storm::exceptions::WrongFormatException, "Cumulative reward formulas require an upper bound.");
+        bounds.push_back(std::get<1>(timeBound).get());
+        timeBoundReferences.emplace_back(*std::get<2>(timeBound));
+    }
+    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::DiscountedCumulativeRewardFormula(discountFactor, bounds, timeBoundReferences));
+}
+
 std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createTotalRewardFormula() const {
     return std::shared_ptr<storm::logic::Formula const>(new storm::logic::TotalRewardFormula());
+}
+
+std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createDiscountedTotalRewardFormula(
+    storm::expressions::Expression const& discountFactor) const {
+    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::DiscountedTotalRewardFormula(discountFactor));
 }
 
 std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createLongRunAverageRewardFormula() const {
@@ -514,15 +555,15 @@ std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createOperato
                                                                                          std::shared_ptr<storm::logic::Formula const> const& subformula) {
     switch (context) {
         case storm::logic::FormulaContext::Probability:
-            STORM_LOG_ASSERT(!rewardModelName, "Probability operator with reward information parsed");
+            STORM_LOG_ASSERT(!rewardModelName, "Probability operator with reward information parsed.");
             return createProbabilityOperatorFormula(operatorInformation, subformula);
         case storm::logic::FormulaContext::Reward:
             return createRewardOperatorFormula(rewardModelName, operatorInformation, subformula);
         case storm::logic::FormulaContext::LongRunAverage:
-            STORM_LOG_ASSERT(!rewardModelName, "LRA operator with reward information parsed");
+            STORM_LOG_ASSERT(!rewardModelName, "LRA operator with reward information parsed.");
             return createLongRunAverageOperatorFormula(operatorInformation, subformula);
         case storm::logic::FormulaContext::Time:
-            STORM_LOG_ASSERT(!rewardModelName, "Time operator with reward model name parsed");
+            STORM_LOG_ASSERT(!rewardModelName, "Time operator with reward model name parsed.");
             return createTimeOperatorFormula(operatorInformation, subformula);
         default:
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Unexpected formula context.");
@@ -619,7 +660,7 @@ std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiBo
     std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
     for (auto const& subformula : subformulas) {
         STORM_LOG_THROW(subformula->isBoundedUntilFormula(), storm::exceptions::WrongFormatException,
-                        "multi-path formulas require bounded until (or eventually) subformulae. Got '" << *subformula << "' instead.");
+                        "Multi-path formulas require bounded until (or eventually) subformulae. Got '" << *subformula << "' instead.");
         auto const& f = subformula->asBoundedUntilFormula();
         STORM_LOG_THROW(!f.isMultiDimensional(), storm::exceptions::WrongFormatException,
                         "Composition of multidimensional bounded until formula must consist of single dimension subformulas. Got '" << f << "' instead.");
@@ -642,8 +683,8 @@ std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiBo
 }
 
 std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiOperatorFormula(
-    std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas) {
-    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas));
+    std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas, storm::logic::MultiObjectiveFormula::Type type) {
+    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas, type));
 }
 
 storm::expressions::Variable FormulaParserGrammar::createQuantileBoundVariables(boost::optional<storm::solver::OptimizationDirection> const& dir,

@@ -4,6 +4,9 @@
 #include "storm/solver/SolverSelectionOptions.h"
 
 namespace storm {
+
+class Environment;
+
 namespace solver {
 
 template<typename ValueType, bool RawMode>
@@ -31,58 +34,67 @@ class LpSolverFactory {
      * @param name The name of the LP solver.
      * @return A pointer to the newly created solver.
      */
-    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(std::string const& name) const = 0;
-    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(std::string const& name) const = 0;
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const = 0;
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(storm::Environment const& env, std::string const& name) const = 0;
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const = 0;
 };
 
 template<typename ValueType>
 class GlpkLpSolverFactory : public LpSolverFactory<ValueType> {
    public:
-    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(std::string const& name) const override;
-    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(std::string const& name) const override;
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const override;
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
 };
 
 template<typename ValueType>
 class SoplexLpSolverFactory : public LpSolverFactory<ValueType> {
    public:
-    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(std::string const& name) const override;
-    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(std::string const& name) const override;
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const override;
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(storm::Environment const& env, std::string const& name) const override;
+    virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
+};
+
+template<typename ValueType>
+class HighsLpSolverFactory : public LpSolverFactory<ValueType> {
+   public:
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const override;
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
 };
 
 template<typename ValueType>
 class GurobiLpSolverFactory : public LpSolverFactory<ValueType> {
    public:
-    GurobiLpSolverFactory();
-    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(std::string const& name) const override;
-    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(std::string const& name) const override;
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const override;
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
 
    private:
-    std::shared_ptr<storm::solver::GurobiEnvironment> environment;
+    std::shared_ptr<storm::solver::GurobiEnvironment> const& getOrCreateGurobiEnvironment(storm::Environment const& env) const;
+
+    mutable std::shared_ptr<storm::solver::GurobiEnvironment> environment;
 };
 
 template<typename ValueType>
 class Z3LpSolverFactory : public LpSolverFactory<ValueType> {
    public:
-    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(std::string const& name) const override;
-    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(std::string const& name) const override;
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const override;
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
 };
 
 template<typename ValueType>
 std::unique_ptr<LpSolverFactory<ValueType>> getLpSolverFactory(
-    storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS);
+    storm::Environment const& env, storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS);
 
 template<typename ValueType>
 std::unique_ptr<storm::solver::LpSolver<ValueType, false>> getLpSolver(
-    std::string const& name, storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS);
+    storm::Environment const& env, std::string const& name, storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS);
 
 template<typename ValueType>
 std::unique_ptr<storm::solver::LpSolver<ValueType, true>> getRawLpSolver(
-    std::string const& name, storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS);
+    storm::Environment const& env, std::string const& name, storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS);
 
 class SmtSolverFactory {
    public:

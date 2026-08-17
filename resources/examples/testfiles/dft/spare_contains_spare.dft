@@ -1,0 +1,13 @@
+// Spare module of D contains its parent gate.
+// SPARE is not properly activated
+toplevel "T";
+"T" or "dummy" "A";
+"dummy" prob=0 dorm=1.0;
+"A" lambda=1 dorm=0.0;
+"F1" fdep "G" "dummy";
+"G" or "PAND" "SPARE";
+"PAND" pand "C" "D";
+"SPARE" wsp "D" "E";
+"C" lambda=1 dorm=0.0;
+"D" lambda=2 dorm=0.0;
+"E" lambda=5 dorm=0.0;

@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_STATEELIMINATION_PRIORITIZEDSTATEELIMINATOR_H_
-#define STORM_SOLVER_STATEELIMINATION_PRIORITIZEDSTATEELIMINATOR_H_
+#pragma once
 
 #include "storm/solver/stateelimination/StateEliminator.h"
 
@@ -38,5 +37,3 @@ class PrioritizedStateEliminator : public StateEliminator<ValueType> {
 }  // namespace stateelimination
 }  // namespace solver
 }  // namespace storm
-
-#endif  // STORM_SOLVER_STATEELIMINATION_PRIORITIZEDSTATEELIMINATOR_H_

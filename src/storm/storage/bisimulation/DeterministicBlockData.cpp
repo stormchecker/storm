@@ -89,8 +89,8 @@ bool DeterministicBlockData::hasRepresentativeState() const {
 }
 
 storm::storage::sparse::state_type DeterministicBlockData::representativeState() const {
-    STORM_LOG_THROW(valRepresentativeState, storm::exceptions::InvalidOperationException, "Unable to retrieve representative state for block.");
-    return valRepresentativeState.get();
+    STORM_LOG_THROW(hasRepresentativeState(), storm::exceptions::InvalidOperationException, "Unable to retrieve representative state for block.");
+    return valRepresentativeState.value();
 }
 
 bool DeterministicBlockData::needsRefinement() const {

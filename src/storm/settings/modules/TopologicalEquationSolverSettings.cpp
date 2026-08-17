@@ -6,7 +6,6 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/solver/SolverSelectionOptions.h"
 
@@ -23,6 +22,13 @@ namespace modules {
 const std::string TopologicalEquationSolverSettings::moduleName = "topological";
 const std::string TopologicalEquationSolverSettings::underlyingEquationSolverOptionName = "eqsolver";
 const std::string TopologicalEquationSolverSettings::underlyingMinMaxMethodOptionName = "minmax";
+const std::string TopologicalEquationSolverSettings::extendRelevantValuesOptionName = "relevant-values";
+
+#ifdef STORM_HAVE_GMM
+const std::string defaultEqSolverString = "gmm++";
+#else
+const std::string defaultEqSolverString = "eigen";
+#endif
 
 TopologicalEquationSolverSettings::TopologicalEquationSolverSettings() : ModuleSettings(moduleName) {
     std::vector<std::string> linearEquationSolver = {"gmm++", "native", "eigen", "elimination"};
@@ -31,12 +37,18 @@ TopologicalEquationSolverSettings::TopologicalEquationSolverSettings() : ModuleS
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the used solver.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(linearEquationSolver))
-                                         .setDefaultValueString("gmm++")
+                                         .setDefaultValueString(defaultEqSolverString)
                                          .build())
                         .build());
-    std::vector<std::string> minMaxSolvingTechniques = {
-        "vi", "value-iteration",    "pi",  "policy-iteration",      "lp",  "linear-programming",         "rs",      "ratsearch",
-        "ii", "interval-iteration", "svi", "sound-value-iteration", "ovi", "optimistic-value-iteration", "vi-to-pi"};
+    std::vector<std::string> minMaxSolvingTechniques = {"vi",       "value-iteration",
+                                                        "pi",       "policy-iteration",
+                                                        "lp",       "linear-programming",
+                                                        "rs",       "ratsearch",
+                                                        "ii",       "interval-iteration",
+                                                        "svi",      "sound-value-iteration",
+                                                        "ovi",      "optimistic-value-iteration",
+                                                        "gvi",      "guessing-value-iteration",
+                                                        "vi-to-pi", "vi-to-lp"};
     this->addOption(storm::settings::OptionBuilder(moduleName, underlyingMinMaxMethodOptionName, true,
                                                    "Sets which minmax method is considered for solving the underlying minmax equation systems.")
                         .setIsAdvanced()
@@ -45,6 +57,11 @@ TopologicalEquationSolverSettings::TopologicalEquationSolverSettings() : ModuleS
                                          .setDefaultValueString("value-iteration")
                                          .build())
                         .build());
+
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, extendRelevantValuesOptionName, true, "Sets whether relevant values are set to the underlying solver.")
+            .setIsAdvanced()
+            .build());
 }
 
 bool TopologicalEquationSolverSettings::isUnderlyingEquationSolverTypeSet() const {
@@ -95,11 +112,19 @@ storm::solver::MinMaxMethod TopologicalEquationSolverSettings::getUnderlyingMinM
         return storm::solver::MinMaxMethod::SoundValueIteration;
     } else if (minMaxEquationSolvingTechnique == "optimistic-value-iteration" || minMaxEquationSolvingTechnique == "ovi") {
         return storm::solver::MinMaxMethod::OptimisticValueIteration;
+    } else if (minMaxEquationSolvingTechnique == "guessing-value-iteration" || minMaxEquationSolvingTechnique == "gvi") {
+        return storm::solver::MinMaxMethod::GuessingValueIteration;
     } else if (minMaxEquationSolvingTechnique == "vi-to-pi") {
         return storm::solver::MinMaxMethod::ViToPi;
+    } else if (minMaxEquationSolvingTechnique == "vi-to-lp") {
+        return storm::solver::MinMaxMethod::ViToLp;
     }
 
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown underlying equation solver '" << minMaxEquationSolvingTechnique << "'.");
+}
+
+bool TopologicalEquationSolverSettings::isExtendRelevantValues() const {
+    return this->getOption(extendRelevantValuesOptionName).getHasOptionBeenSet();
 }
 
 bool TopologicalEquationSolverSettings::check() const {

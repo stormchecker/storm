@@ -1,13 +1,10 @@
-#ifndef STORM_STORAGE_BISIMULATION_PARTITION_H_
-#define STORM_STORAGE_BISIMULATION_PARTITION_H_
+#pragma once
 
 #include <cstddef>
-#include <list>
 #include <memory>
 
-#include "storm/storage/bisimulation/Block.h"
-
 #include "storm/storage/BitVector.h"
+#include "storm/storage/bisimulation/Block.h"
 
 namespace storm {
 namespace storage {
@@ -36,7 +33,7 @@ class Partition {
      * model will receive exactly the atomic propositions of the representative state.
      */
     Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States,
-              boost::optional<storm::storage::sparse::state_type> representativeProb1State);
+              std::optional<storm::storage::sparse::state_type> representativeProb1State);
 
     Partition() = default;
     Partition(Partition const& other) = default;
@@ -55,7 +52,7 @@ class Partition {
     std::pair<typename std::vector<std::unique_ptr<Block<DataType>>>::iterator, bool> splitBlock(Block<DataType>& block,
                                                                                                  storm::storage::sparse::state_type position);
 
-    // Sorts the given range of the partitition according to the given order.
+    // Sorts the given range of the partition according to the given order.
     void sortRange(storm::storage::sparse::state_type beginIndex, storm::storage::sparse::state_type endIndex,
                    std::function<bool(storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, bool updatePositions = true);
 
@@ -178,5 +175,3 @@ class Partition {
 }  // namespace bisimulation
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_BISIMULATION_PARTITION_H_ */

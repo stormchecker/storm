@@ -1,8 +1,11 @@
 #pragma once
 
-#include "storm/adapters/sylvan.h"
+#include "storm-config.h"
 
+#ifdef STORM_HAVE_SYLVAN
 #include <boost/functional/hash.hpp>
+
+#include "storm/adapters/sylvan.h"
 
 namespace storm {
 namespace dd {
@@ -29,3 +32,4 @@ struct SylvanMTBDDPairLess {
 
 }  // namespace dd
 }  // namespace storm
+#endif

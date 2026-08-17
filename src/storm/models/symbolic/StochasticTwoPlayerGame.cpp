@@ -1,13 +1,10 @@
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace models {
@@ -106,13 +103,12 @@ uint64_t StochasticTwoPlayerGame<Type, ValueType>::getNumberOfPlayer2States() co
 
 // Explicitly instantiate the template class.
 template class StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double>;
+
 template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, double>;
-#ifdef STORM_HAVE_CARL
 template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template std::shared_ptr<StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, double>>
 StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType<double>() const;
 template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalFunction>;
-#endif
 
 }  // namespace symbolic
 }  // namespace models

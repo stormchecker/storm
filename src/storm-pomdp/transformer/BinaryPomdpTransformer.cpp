@@ -1,4 +1,5 @@
 #include "storm-pomdp/transformer/BinaryPomdpTransformer.h"
+
 #include <queue>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -26,7 +27,7 @@ PomdpTransformationResult<ValueType> BinaryPomdpTransformer<ValueType>::transfor
     components.transitionMatrix = std::move(data.simpleMatrix);
     components.observabilityClasses = std::move(data.simpleObservations);
     if (keepStateValuations && pomdp.hasStateValuations()) {
-        components.stateValuations = pomdp.getStateValuations().blowup(data.simpleStateToOriginalState);
+        components.stateValuations = pomdp.getStateValuations().selectEntities(data.simpleStateToOriginalState);
     }
     PomdpTransformationResult<ValueType> result;
     result.transformedPomdp = std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components), true);
@@ -51,7 +52,7 @@ struct BinaryPomdpTransformerRowGroup {
     }
 
     std::vector<BinaryPomdpTransformerRowGroup> split() const {
-        assert(size() > 1);
+        STORM_LOG_ASSERT(size() > 1, "Expected at least 2 rows to split.");
         uint64_t midRow = firstRow + size() / 2;
         std::vector<BinaryPomdpTransformerRowGroup> res;
         res.emplace_back(origState, firstRow, midRow, origStateObservation);

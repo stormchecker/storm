@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -8,6 +9,7 @@
 #include "storm/solver/MultiplicationStyle.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolverStatus.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
 
 namespace storm::solver::helper {
@@ -24,17 +26,18 @@ class ValueIterationHelper {
 
     template<storm::OptimizationDirection Dir, bool Relative>
     SolverStatus VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, SolutionType const& precision,
-                    std::function<SolverStatus(SolverStatus const&)> const& iterationCallback = {}, MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
-                    bool robust = true) const;
+                    const std::function<SolverStatus(const SolverStatus&)>& iterationCallback = {}, MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
+                    UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset) const;
 
     SolverStatus VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative,
                     SolutionType const& precision, std::optional<storm::OptimizationDirection> const& dir = {},
                     std::function<SolverStatus(SolverStatus const&)> const& iterationCallback = {}, MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
-                    bool robust = true) const;
+                    UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset) const;
 
     SolverStatus VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, bool relative, SolutionType const& precision,
                     std::optional<storm::OptimizationDirection> const& dir = {}, std::function<SolverStatus(SolverStatus const&)> const& iterationCallback = {},
-                    MultiplicationStyle mult = MultiplicationStyle::GaussSeidel, bool robust = true) const;
+                    MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
+                    UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset) const;
 
    private:
     std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator;

@@ -26,10 +26,10 @@ void PathCounterexample<ValueType>::writeToStream(std::ostream& out) const {
         for (auto it = shortestPaths[i].rbegin(); it != shortestPaths[i].rend(); ++it) {
             out << "\tstate " << *it;
             if (model->hasStateValuations()) {
-                out << ": " << model->getStateValuations().getStateInfo(*it);
+                out << ": " << model->getStateValuations().toString(*it);
             }
             out << ": {";
-            storm::utility::outputFixedWidth(out, model->getLabelsOfState(*it), 0);
+            storm::io::outputFixedWidth(out, model->getLabelsOfState(*it), 0);
             out << "}\n";
         }
     }

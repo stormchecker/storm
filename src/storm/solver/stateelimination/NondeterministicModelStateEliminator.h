@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_STATEELIMINATION_NONDETERMINISTICMODELSTATEELIMINATOR_H_
-#define STORM_SOLVER_STATEELIMINATION_NONDETERMINISTICMODELSTATEELIMINATOR_H_
+#pragma once
 
 #include "storm/solver/stateelimination/StateEliminator.h"
 
@@ -25,5 +24,3 @@ class NondeterministicModelStateEliminator : public StateEliminator<ValueType> {
 }  // namespace stateelimination
 }  // namespace solver
 }  // namespace storm
-
-#endif  // STORM_SOLVER_STATEELIMINATION_NONDETERMINISTICMODELSTATEELIMINATOR_H_

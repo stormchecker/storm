@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm/storage/prism/HidingComposition.h"
 #include "storm/storage/prism/InterleavingParallelComposition.h"
 #include "storm/storage/prism/ModuleComposition.h"

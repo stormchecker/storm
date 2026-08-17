@@ -1,8 +1,6 @@
-#ifndef STORM_MODELS_SYMBOLIC_DETERMINISTICMODEL_H_
-#define STORM_MODELS_SYMBOLIC_DETERMINISTICMODEL_H_
+#pragma once
 
 #include "storm/models/symbolic/Model.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {
@@ -18,11 +16,8 @@ class DeterministicModel : public Model<Type, ValueType> {
 
     DeterministicModel(DeterministicModel<Type, ValueType> const& other) = default;
     DeterministicModel& operator=(DeterministicModel<Type, ValueType> const& other) = default;
-
-#ifndef WINDOWS
     DeterministicModel(DeterministicModel<Type, ValueType>&& other) = default;
     DeterministicModel& operator=(DeterministicModel<Type, ValueType>&& other) = default;
-#endif
 
     /*!
      * Constructs a model from the given data.
@@ -76,5 +71,3 @@ class DeterministicModel : public Model<Type, ValueType> {
 }  // namespace symbolic
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SYMBOLIC_DETERMINISTICMODEL_H_ */

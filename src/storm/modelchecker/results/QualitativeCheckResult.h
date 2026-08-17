@@ -1,5 +1,6 @@
-#ifndef STORM_MODELCHECKER_QUALITATIVECHECKRESULT_H_
-#define STORM_MODELCHECKER_QUALITATIVECHECKRESULT_H_
+#pragma once
+
+#include <cstdint>
 
 #include "storm/modelchecker/results/CheckResult.h"
 
@@ -21,5 +22,3 @@ class QualitativeCheckResult : public CheckResult {
 };
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_QUALITATIVECHECKRESULT_H_ */

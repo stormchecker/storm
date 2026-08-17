@@ -3,20 +3,23 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/split.hpp>
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/io/export.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/SparseMatrixOperations.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/rationalfunction.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
 namespace models {
@@ -50,17 +53,20 @@ template<typename ValueType, typename RewardModelType>
 void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) const {
     // More costly checks are only asserted to avoid doing them in release mode.
+    [[maybe_unused]] ValueType const stochasticTolerance =
+        isExact() ? storm::utility::zero<ValueType>()
+                  : storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
-    uint_fast64_t stateCount = this->getNumberOfStates();
-    uint_fast64_t choiceCount = this->getTransitionMatrix().getRowCount();
+    uint64_t stateCount = this->getNumberOfStates();
+    uint64_t choiceCount = this->getTransitionMatrix().getRowCount();
 
     // general components for all model types.
     STORM_LOG_THROW(this->getTransitionMatrix().getColumnCount() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid column count of transition matrix.");
-    STORM_LOG_ASSERT(components.rateTransitions || this->hasParameters() || this->hasUncertainty() || this->getTransitionMatrix().isProbabilistic(),
-                     "The matrix is not probabilistic.");
-    if (this->hasUncertainty()) {
-        STORM_LOG_ASSERT(this->getTransitionMatrix().hasOnlyPositiveEntries(), "Not all entries are (strictly) positive.");
+    {
+        [[maybe_unused]] std::string reasonNotProbabilistic;
+        STORM_LOG_ASSERT(components.rateTransitions || this->getTransitionMatrix().isProbabilistic(stochasticTolerance, reasonNotProbabilistic),
+                         "The matrix is not probabilistic. " << reasonNotProbabilistic);
     }
     STORM_LOG_THROW(this->getStateLabeling().getNumberOfItems() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid item count (" << this->getStateLabeling().getNumberOfItems() << ") of state labeling (states: " << stateCount << ").");
@@ -80,8 +86,8 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
         !this->hasChoiceLabeling() || this->getChoiceLabeling().getNumberOfItems() == choiceCount, storm::exceptions::IllegalArgumentException,
         "Invalid choice count of choice labeling (choices: " << choiceCount << " vs. labeling:" << this->getChoiceLabeling().getNumberOfItems() << ").");
     STORM_LOG_THROW(
-        !this->hasStateValuations() || this->getStateValuations().getNumberOfStates() == stateCount, storm::exceptions::IllegalArgumentException,
-        "Invalid state count for state valuations (states: " << stateCount << " vs. valuations:" << this->getStateValuations().getNumberOfStates() << ").");
+        !this->hasStateValuations() || this->getStateValuations().getNumberOfEntities() == stateCount, storm::exceptions::IllegalArgumentException,
+        "Invalid state count for state valuations (states: " << stateCount << " vs. valuations:" << this->getStateValuations().getNumberOfEntities() << ").");
     STORM_LOG_THROW(
         !this->hasChoiceOrigins() || this->getChoiceOrigins()->getNumberOfChoices() == choiceCount, storm::exceptions::IllegalArgumentException,
         "Invalid choice count for choice origins. (choices: " << choiceCount << " vs. origins:" << this->getChoiceOrigins()->getNumberOfChoices() << ").");
@@ -106,7 +112,7 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     } else if (this->isOfType(ModelType::S2pg)) {
         STORM_LOG_THROW(components.player1Matrix.is_initialized(), storm::exceptions::IllegalArgumentException,
                         "No player 1 matrix given for stochastic game.");
-        STORM_LOG_ASSERT(components.player1Matrix->isProbabilistic(),
+        STORM_LOG_ASSERT(components.player1Matrix->isProbabilistic(0),
                          "Can not create stochastic game: There is a row in the p1 matrix with not exactly one entry.");
         STORM_LOG_THROW(stateCount == components.player1Matrix->getRowGroupCount(), storm::exceptions::IllegalArgumentException,
                         "Can not create stochastic game: Number of row groups of p1 matrix does not match state count.");
@@ -151,11 +157,6 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
 template<typename ValueType, typename RewardModelType>
 storm::storage::SparseMatrix<ValueType> Model<ValueType, RewardModelType>::getBackwardTransitions() const {
     return this->getTransitionMatrix().transpose(true);
-}
-
-template<typename ValueType, typename RewardModelType>
-typename storm::storage::SparseMatrix<ValueType>::const_rows Model<ValueType, RewardModelType>::getRows(storm::storage::sparse::state_type state) const {
-    return this->getTransitionMatrix().getRowGroup(state);
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -253,7 +254,7 @@ RewardModelType& Model<ValueType, RewardModelType>::getRewardModel(std::string c
 template<typename ValueType, typename RewardModelType>
 void Model<ValueType, RewardModelType>::addRewardModel(std::string const& rewardModelName, RewardModelType const& newRewardModel) {
     if (this->hasRewardModel(rewardModelName)) {
-        STORM_LOG_THROW(!(this->hasRewardModel(rewardModelName)), storm::exceptions::IllegalArgumentException,
+        STORM_LOG_THROW(!this->hasRewardModel(rewardModelName), storm::exceptions::IllegalArgumentException,
                         "A reward model with the given name '" << rewardModelName << "' already exists.");
     }
     STORM_LOG_ASSERT(newRewardModel.isCompatible(this->getNumberOfStates(), this->getTransitionMatrix().getRowCount()), "New reward model is not compatible.");
@@ -351,17 +352,17 @@ bool Model<ValueType, RewardModelType>::hasStateValuations() const {
 }
 
 template<typename ValueType, typename RewardModelType>
-storm::storage::sparse::StateValuations const& Model<ValueType, RewardModelType>::getStateValuations() const {
+storm::storage::sparse::Valuations const& Model<ValueType, RewardModelType>::getStateValuations() const {
     return stateValuations.value();
 }
 
 template<typename ValueType, typename RewardModelType>
-std::optional<storm::storage::sparse::StateValuations> const& Model<ValueType, RewardModelType>::getOptionalStateValuations() const {
+std::optional<storm::storage::sparse::Valuations> const& Model<ValueType, RewardModelType>::getOptionalStateValuations() const {
     return stateValuations;
 }
 
 template<typename ValueType, typename RewardModelType>
-std::optional<storm::storage::sparse::StateValuations>& Model<ValueType, RewardModelType>::getOptionalStateValuations() {
+std::optional<storm::storage::sparse::Valuations>& Model<ValueType, RewardModelType>::getOptionalStateValuations() {
     return stateValuations;
 }
 
@@ -414,7 +415,7 @@ std::size_t Model<ValueType, RewardModelType>::hash() const {
 template<typename ValueType, typename RewardModelType>
 void Model<ValueType, RewardModelType>::printModelInformationHeaderToStream(std::ostream& out) const {
     out << "-------------------------------------------------------------- \n";
-    out << "Model type: \t" << this->getType() << " (sparse)\n";
+    out << "Model type: \t" << (storm::IsIntervalType<ValueType> ? "I" : "") << this->getType() << " (sparse)\n";
     out << "States: \t" << this->getNumberOfStates() << '\n';
     out << "Transitions: \t" << this->getNumberOfTransitions() << '\n';
 }
@@ -469,17 +470,17 @@ void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream
                 if (includeLabeling || firstValue != nullptr || secondValue != nullptr || hasStateValuations()) {
                     outStream << "label = \"" << state;
                     if (hasStateValuations()) {
-                        std::string stateInfo = getStateValuations().getStateInfo(state);
+                        std::string stateInfo = getStateValuations().toString(state);
                         std::vector<std::string> results;
                         boost::split(results, stateInfo, [](char c) { return c == ','; });
-                        storm::utility::outputFixedWidth(outStream, results, maxWidthLabel);
+                        storm::io::outputFixedWidth(outStream, results, maxWidthLabel);
                     }
                     outStream << ": ";
 
                     // Now print the state labeling to the stream if requested.
                     if (includeLabeling) {
                         outStream << "{";
-                        storm::utility::outputFixedWidth(outStream, this->getLabelsOfState(state), maxWidthLabel);
+                        storm::io::outputFixedWidth(outStream, this->getLabelsOfState(state), maxWidthLabel);
                         outStream << "}";
                     }
 
@@ -618,16 +619,6 @@ std::set<std::string> Model<ValueType, RewardModelType>::getLabelsOfState(storm:
 }
 
 template<typename ValueType, typename RewardModelType>
-void Model<ValueType, RewardModelType>::setTransitionMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix) {
-    this->transitionMatrix = transitionMatrix;
-}
-
-template<typename ValueType, typename RewardModelType>
-void Model<ValueType, RewardModelType>::setTransitionMatrix(storm::storage::SparseMatrix<ValueType>&& transitionMatrix) {
-    this->transitionMatrix = std::move(transitionMatrix);
-}
-
-template<typename ValueType, typename RewardModelType>
 bool Model<ValueType, RewardModelType>::isSinkState(uint64_t state) const {
     for (auto const& entry : this->getTransitionMatrix().getRowGroup(state)) {
         if (entry.getColumn() != state) {
@@ -652,7 +643,7 @@ bool Model<ValueType, RewardModelType>::supportsParameters() const {
 
 template<typename ValueType, typename RewardModelType>
 bool Model<ValueType, RewardModelType>::supportsUncertainty() const {
-    return std::is_same<ValueType, storm::Interval>::value;
+    return storm::IsIntervalType<ValueType>;
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -729,16 +720,17 @@ std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::Rational
     std::set<storm::RationalFunctionVariable> parameters = getProbabilityParameters(model);
     std::set<storm::RationalFunctionVariable> rewardParameters = getRewardParameters(model);
     parameters.insert(rewardParameters.begin(), rewardParameters.end());
-    std::set<storm::RationalFunctionVariable> rateParameters = getRewardParameters(model);
+    std::set<storm::RationalFunctionVariable> rateParameters = getRateParameters(model);
     parameters.insert(rateParameters.begin(), rateParameters.end());
     return parameters;
 }
 
 template class Model<double>;
-template class Model<storm::Interval>;
-
-template class Model<storm::RationalNumber>;
 template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+template class Model<storm::RationalNumber>;
+template class Model<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
+template class Model<storm::Interval>;
+template class Model<storm::RationalInterval>;
 template class Model<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models

@@ -2,17 +2,18 @@
 
 #include <boost/functional/hash.hpp>
 
-#include "storm/storage/dd/Odd.h"
-#include "storm/storage/dd/cudd/InternalCuddDdManager.h"
-
+#include "storm/exceptions/MissingLibraryException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/PairHash.h"
-
-#include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/dd/Odd.h"
+#include "storm/storage/dd/cudd/InternalCuddDdManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 namespace dd {
+
+#ifdef STORM_HAVE_CUDD
 InternalBdd<DdType::CUDD>::InternalBdd(InternalDdManager<DdType::CUDD> const* ddManager, cudd::BDD cuddBdd) : ddManager(ddManager), cuddBdd(cuddBdd) {
     // Intentionally left empty.
 }
@@ -227,7 +228,7 @@ void InternalBdd<DdType::CUDD>::exportToDot(std::string const& filename, std::ve
 }
 
 void InternalBdd<DdType::CUDD>::exportToText(std::string const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
 cudd::BDD InternalBdd<DdType::CUDD>::getCuddBdd() const {
@@ -610,13 +611,277 @@ storm::expressions::Variable InternalBdd<DdType::CUDD>::toExpressionRec(
     // Return the variable for this node.
     return newNodeVariable;
 }
+#else
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::fromVector(InternalDdManager<DdType::CUDD> const* ddManager, Odd const& odd,
+                                                                std::vector<uint_fast64_t> const& sortedDdVariableIndices,
+                                                                std::function<bool(uint64_t)> const& filter) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+bool InternalBdd<DdType::CUDD>::operator==(InternalBdd<DdType::CUDD> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+bool InternalBdd<DdType::CUDD>::operator!=(InternalBdd<DdType::CUDD> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::relationalProduct(InternalBdd<DdType::CUDD> const& relation,
+                                                                       std::vector<InternalBdd<DdType::CUDD>> const& rowVariables,
+                                                                       std::vector<InternalBdd<DdType::CUDD>> const& columnVariables) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::inverseRelationalProduct(InternalBdd<DdType::CUDD> const& relation,
+                                                                              std::vector<InternalBdd<DdType::CUDD>> const& rowVariables,
+                                                                              std::vector<InternalBdd<DdType::CUDD>> const& columnVariables) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::inverseRelationalProductWithExtendedRelation(
+    InternalBdd<DdType::CUDD> const& relation, std::vector<InternalBdd<DdType::CUDD>> const& rowVariables,
+    std::vector<InternalBdd<DdType::CUDD>> const& columnVariables) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::ite(InternalBdd<DdType::CUDD> const& thenDd, InternalBdd<DdType::CUDD> const& elseDd) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::CUDD, ValueType> InternalBdd<DdType::CUDD>::ite(InternalAdd<DdType::CUDD, ValueType> const& thenAdd,
+                                                                    InternalAdd<DdType::CUDD, ValueType> const& elseAdd) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::operator||(InternalBdd<DdType::CUDD> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD>& InternalBdd<DdType::CUDD>::operator|=(InternalBdd<DdType::CUDD> const& other) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::operator&&(InternalBdd<DdType::CUDD> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD>& InternalBdd<DdType::CUDD>::operator&=(InternalBdd<DdType::CUDD> const& other) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::iff(InternalBdd<DdType::CUDD> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::exclusiveOr(InternalBdd<DdType::CUDD> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::implies(InternalBdd<DdType::CUDD> const& other) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::operator!() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD>& InternalBdd<DdType::CUDD>::complement() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::existsAbstract(InternalBdd<DdType::CUDD> const& cube) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::existsAbstractRepresentative(InternalBdd<DdType::CUDD> const& cube) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::universalAbstract(InternalBdd<DdType::CUDD> const& cube) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::andExists(InternalBdd<DdType::CUDD> const& other, InternalBdd<DdType::CUDD> const& cube) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::constrain(InternalBdd<DdType::CUDD> const& constraint) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::restrict(InternalBdd<DdType::CUDD> const& constraint) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::swapVariables(std::vector<InternalBdd<DdType::CUDD>> const& from,
+                                                                   std::vector<InternalBdd<DdType::CUDD>> const& to) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::getSupport() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+uint_fast64_t InternalBdd<DdType::CUDD>::getNonZeroCount(uint_fast64_t numberOfDdVariables) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+uint_fast64_t InternalBdd<DdType::CUDD>::getLeafCount() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+uint_fast64_t InternalBdd<DdType::CUDD>::getNodeCount() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+bool InternalBdd<DdType::CUDD>::isOne() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+bool InternalBdd<DdType::CUDD>::isZero() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+uint_fast64_t InternalBdd<DdType::CUDD>::getIndex() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+uint_fast64_t InternalBdd<DdType::CUDD>::getLevel() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+void InternalBdd<DdType::CUDD>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings,
+                                            bool showVariablesIfPossible) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+void InternalBdd<DdType::CUDD>::exportToText(std::string const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::CUDD, ValueType> InternalBdd<DdType::CUDD>::toAdd() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+storm::storage::BitVector InternalBdd<DdType::CUDD>::toVector(storm::dd::Odd const& rowOdd, std::vector<uint_fast64_t> const& ddVariableIndices) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+Odd InternalBdd<DdType::CUDD>::createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+void InternalBdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices,
+                                                     std::vector<ValueType> const& sourceValues, std::vector<ValueType>& targetValues) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+std::vector<InternalBdd<DdType::CUDD>> InternalBdd<DdType::CUDD>::splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+void InternalBdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices,
+                                                     storm::storage::BitVector const& sourceValues, storm::storage::BitVector& targetValues) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> InternalBdd<DdType::CUDD>::toExpression(
+    storm::expressions::ExpressionManager& manager) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+#endif
 
 template InternalAdd<DdType::CUDD, double> InternalBdd<DdType::CUDD>::toAdd() const;
 template InternalAdd<DdType::CUDD, uint_fast64_t> InternalBdd<DdType::CUDD>::toAdd() const;
-#ifdef STORM_HAVE_CARL
 template InternalAdd<DdType::CUDD, storm::RationalNumber> InternalBdd<DdType::CUDD>::toAdd() const;
-#endif
 
+#ifdef STORM_HAVE_CUDD
 template void InternalBdd<DdType::CUDD>::filterExplicitVectorRec<double>(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel,
                                                                          bool complement, uint_fast64_t maxLevel,
                                                                          std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset,
@@ -628,6 +893,7 @@ template void InternalBdd<DdType::CUDD>::filterExplicitVectorRec<uint_fast64_t>(
                                                                                 uint_fast64_t currentOffset, storm::dd::Odd const& odd,
                                                                                 std::vector<uint_fast64_t>& result, uint_fast64_t& currentIndex,
                                                                                 std::vector<uint_fast64_t> const& values);
+#endif
 
 template void InternalBdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices,
                                                               std::vector<double> const& sourceValues, std::vector<double>& targetValues) const;

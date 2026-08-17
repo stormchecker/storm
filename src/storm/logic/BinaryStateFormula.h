@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_BINARYSTATEFORMULA_H_
-#define STORM_LOGIC_BINARYSTATEFORMULA_H_
+#pragma once
 
 #include "storm/logic/StateFormula.h"
 
@@ -29,5 +28,3 @@ class BinaryStateFormula : public StateFormula {
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_BINARYSTATEFORMULA_H_ */

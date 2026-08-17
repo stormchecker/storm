@@ -1,8 +1,5 @@
 #include "storm/models/sparse/ChoiceLabeling.h"
 
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/OutOfRangeException.h"
-
 namespace storm {
 namespace models {
 namespace sparse {
@@ -41,7 +38,7 @@ bool ChoiceLabeling::operator==(ChoiceLabeling const& other) const {
 }
 
 ChoiceLabeling ChoiceLabeling::getSubLabeling(storm::storage::BitVector const& choices) const {
-    return ChoiceLabeling(ItemLabeling::getSubLabeling(choices));
+    return ChoiceLabeling(ItemLabeling::getSubItemLabeling(choices));
 }
 
 std::set<std::string> ChoiceLabeling::getLabelsOfChoice(uint64_t choice) const {

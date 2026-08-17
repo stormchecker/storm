@@ -1,10 +1,9 @@
 #include "storm/storage/FlexibleSparseMatrix.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -178,6 +177,21 @@ void FlexibleSparseMatrix<ValueType>::filterEntries(storm::storage::BitVector co
 }
 
 template<typename ValueType>
+typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueType>::insertNewRowsAtEnd(
+    typename FlexibleSparseMatrix<ValueType>::index_type numRows) {
+    STORM_LOG_ERROR_COND(this->columnCount == this->getRowCount(), "insertNewRowsAtEnd only works when the FlexibleMatrix is square but column count is "
+                                                                       << columnCount << " and row count is " << this->getRowCount());
+    // ... because otherwise assumptions break when creating the SparseMatrix and we get weird entries for some reason
+    index_type newRowsIndex = data.size();
+    for (index_type i = 0; i < numRows; i++) {
+        row_type newRow;
+        this->data.push_back(newRow);
+    }
+    this->columnCount = getRowCount();
+    return newRowsIndex;
+}
+
+template<typename ValueType>
 storm::storage::SparseMatrix<ValueType> FlexibleSparseMatrix<ValueType>::createSparseMatrix() {
     uint_fast64_t numEntries = 0;
     for (auto const& row : this->data) {
@@ -343,13 +357,11 @@ std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<ValueType> cons
 template class FlexibleSparseMatrix<double>;
 template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<double> const& matrix);
 
-#ifdef STORM_HAVE_CARL
 template class FlexibleSparseMatrix<storm::RationalNumber>;
 template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<storm::RationalNumber> const& matrix);
 
 template class FlexibleSparseMatrix<storm::RationalFunction>;
 template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<storm::RationalFunction> const& matrix);
-#endif
 
 }  // namespace storage
 }  // namespace storm

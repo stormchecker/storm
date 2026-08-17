@@ -1,7 +1,8 @@
-#ifndef STORM_LOGIC_FORMULA_H_
-#define STORM_LOGIC_FORMULA_H_
+#pragma once
 
+#include <functional>
 #include <iosfwd>
+#include <map>
 #include <memory>
 #include <set>
 #include <vector>
@@ -32,7 +33,7 @@ class Formula : public std::enable_shared_from_this<Formula> {
     // Make the destructor virtual to allow deletion of objects of subclasses via a pointer to this class.
     virtual ~Formula() {
         // Intentionally left empty.
-    };
+    }
 
     friend std::ostream& operator<<(std::ostream& out, Formula const& formula);
 
@@ -80,10 +81,12 @@ class Formula : public std::enable_shared_from_this<Formula> {
 
     // Reward formulas.
     virtual bool isCumulativeRewardFormula() const;
+    virtual bool isDiscountedCumulativeRewardFormula() const;
     virtual bool isInstantaneousRewardFormula() const;
     virtual bool isReachabilityRewardFormula() const;
     virtual bool isLongRunAverageRewardFormula() const;
     virtual bool isTotalRewardFormula() const;
+    virtual bool isDiscountedTotalRewardFormula() const;
 
     // Expected time formulas.
     virtual bool isReachabilityTimeFormula() const;
@@ -196,6 +199,12 @@ class Formula : public std::enable_shared_from_this<Formula> {
     TotalRewardFormula& asTotalRewardFormula();
     TotalRewardFormula const& asTotalRewardFormula() const;
 
+    DiscountedCumulativeRewardFormula& asDiscountedCumulativeRewardFormula();
+    DiscountedCumulativeRewardFormula const& asDiscountedCumulativeRewardFormula() const;
+
+    DiscountedTotalRewardFormula& asDiscountedTotalRewardFormula();
+    DiscountedTotalRewardFormula const& asDiscountedTotalRewardFormula() const;
+
     InstantaneousRewardFormula& asInstantaneousRewardFormula();
     InstantaneousRewardFormula const& asInstantaneousRewardFormula() const;
 
@@ -265,5 +274,3 @@ class Formula : public std::enable_shared_from_this<Formula> {
 std::ostream& operator<<(std::ostream& out, Formula const& formula);
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_FORMULA_H_ */

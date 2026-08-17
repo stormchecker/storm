@@ -1,11 +1,14 @@
-#include <storm-parsers/parser/FormulaParser.h>
-#include <storm-parsers/parser/JaniParser.h>
-#include <storm/api/storm.h>
-#include <storm/builder/ExplicitModelBuilder.h>
-#include <storm/modelchecker/results/ExplicitQuantitativeCheckResult.h>
-#include <storm/settings/modules/GeneralSettings.h>
+#include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/api/model_descriptions.h"
+#include "storm-parsers/parser/FormulaParser.h"
+#include "storm-parsers/parser/JaniParser.h"
+#include "storm/api/storm.h"
+#include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/environment/Environment.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/jani/Model.h"
@@ -15,7 +18,6 @@
 #include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
 #include "storm/storage/jani/localeliminator/RebuildWithoutUnreachableAction.h"
 #include "storm/storage/jani/localeliminator/UnfoldAction.h"
-#include "test/storm_gtest.h"
 
 typedef storm::models::sparse::Dtmc<double> Dtmc;
 typedef storm::models::sparse::Mdp<double> Mdp;

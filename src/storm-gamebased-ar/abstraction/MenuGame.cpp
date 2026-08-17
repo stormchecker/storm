@@ -1,16 +1,12 @@
 #include "storm-gamebased-ar/abstraction/MenuGame.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
-
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::gbar {
 namespace abstraction {
@@ -87,8 +83,6 @@ bool MenuGame<Type, ValueType>::hasLabel(std::string const&) const {
 template class MenuGame<storm::dd::DdType::CUDD, double>;
 template class MenuGame<storm::dd::DdType::Sylvan, double>;
 
-#ifdef STORM_HAVE_CARL
 template class MenuGame<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-#endif
 }  // namespace abstraction
 }  // namespace storm::gbar

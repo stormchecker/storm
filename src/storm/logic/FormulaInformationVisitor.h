@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_FORMULAINFORMATIONVISITOR_H_
-#define STORM_LOGIC_FORMULAINFORMATIONVISITOR_H_
+#pragma once
 
 #include "storm/logic/FormulaInformation.h"
 #include "storm/logic/FormulaVisitor.h"
@@ -42,6 +41,8 @@ class FormulaInformationVisitor : public FormulaVisitor {
     virtual boost::any visit(UnaryBooleanPathFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(UntilFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(HOAPathFormula const& f, boost::any const& data) const override;
+    virtual boost::any visit(DiscountedCumulativeRewardFormula const& f, boost::any const& data) const override;
+    virtual boost::any visit(DiscountedTotalRewardFormula const& f, boost::any const& data) const override;
 
    private:
     bool recurseIntoOperators;
@@ -49,5 +50,3 @@ class FormulaInformationVisitor : public FormulaVisitor {
 
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_FORMULAINFORMATIONVISITOR_H_ */

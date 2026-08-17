@@ -1,4 +1,5 @@
 #include "storm/solver/stateelimination/ConditionalStateEliminator.h"
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -71,10 +72,8 @@ void ConditionalStateEliminator<ValueType>::unsetFilter() {
 
 template class ConditionalStateEliminator<double>;
 
-#ifdef STORM_HAVE_CARL
 template class ConditionalStateEliminator<storm::RationalNumber>;
 template class ConditionalStateEliminator<storm::RationalFunction>;
-#endif
 }  // namespace stateelimination
 }  // namespace solver
 }  // namespace storm

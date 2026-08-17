@@ -1,11 +1,9 @@
 #include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
 
-#include "storm/settings/ArgumentBuilder.h"
-#include "storm/settings/OptionBuilder.h"
-#include "storm/settings/SettingMemento.h"
-
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/settings/ArgumentBuilder.h"
+#include "storm/settings/OptionBuilder.h"
 #include "storm/utility/NumberTraits.h"
 
 namespace storm {

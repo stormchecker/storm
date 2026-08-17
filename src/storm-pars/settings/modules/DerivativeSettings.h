@@ -2,9 +2,9 @@
 
 #include <boost/none.hpp>
 #include <boost/optional.hpp>
+
 #include "storm-pars/derivative/GradientDescentConstraintMethod.h"
 #include "storm-pars/derivative/GradientDescentMethod.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {

@@ -1,10 +1,9 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include <carl/core/VariablePool.h>
-#include <carl/numbers/numbers.h>
 #include "storm-dft/api/storm-dft.h"
 #include "storm-dft/transformations/DftInstantiator.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace {
 

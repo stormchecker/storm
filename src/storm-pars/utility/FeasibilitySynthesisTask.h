@@ -1,8 +1,8 @@
 #pragma once
 
 #include <optional>
+
 #include "storm-pars/storage/ParameterRegion.h"
-#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/Bound.h"
 #include "storm/logic/Formula.h"
 #include "storm/solver/OptimizationDirection.h"
@@ -74,8 +74,8 @@ class FeasibilitySynthesisTask {
     }
 
     storm::solver::OptimizationDirection getOptimizationDirection() const {
-        STORM_LOG_ASSERT(isBoundSet() || optimizationDirection != std::nullopt, "Bound or direction should be set");
-        STORM_LOG_ASSERT(!isBoundSet() || optimizationDirection == std::nullopt, "Bound or direction should not be both  set");
+        STORM_LOG_ASSERT(isBoundSet() || optimizationDirection != std::nullopt, "Bound or direction should be set.");
+        STORM_LOG_ASSERT(!isBoundSet() || optimizationDirection == std::nullopt, "Bound or direction should not be both  set.");
 
         if (optimizationDirection) {
             return optimizationDirection.value();

@@ -1,32 +1,18 @@
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 
-#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
-#include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
-
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/multiplier/Multiplier.h"
-
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/TimeBoundedSolverEnvironment.h"
-#include "storm/environment/solver/TopologicalSolverEnvironment.h"
-
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/multiplier/Multiplier.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/numerical.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/FormatUnsupportedBySolverException.h"
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -66,11 +52,12 @@ bool SparseCtmcCslHelper::checkAndUpdateTransientProbabilityEpsilon(storm::Envir
     }
 }
 
-template<typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+template<typename ValueType>
+    requires storm::NumberTraits<ValueType>::SupportsExponential
 std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
     Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& rateMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
-    std::vector<ValueType> const& exitRates, bool qualitative, double lowerBound, double upperBound) {
+    std::vector<ValueType> const& exitRates, bool qualitative, ValueType lowerBound, ValueType upperBound) {
     STORM_LOG_THROW(!env.solver().isForceExact(), storm::exceptions::InvalidOperationException,
                     "Exact computations not possible for bounded until probabilities.");
 
@@ -265,15 +252,6 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
     return result;
 }
 
-template<typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(Environment const&, storm::solver::SolveGoal<ValueType>&&,
-                                                                             storm::storage::SparseMatrix<ValueType> const&,
-                                                                             storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&,
-                                                                             storm::storage::BitVector const&, std::vector<ValueType> const&, bool, double,
-                                                                             double) {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded until probabilities is unsupported for this value type.");
-}
-
 template<typename ValueType>
 std::vector<ValueType> SparseCtmcCslHelper::computeUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
                                                                       storm::storage::SparseMatrix<ValueType> const& rateMatrix,
@@ -302,11 +280,12 @@ std::vector<ValueType> SparseCtmcCslHelper::computeNextProbabilities(Environment
     return SparseDtmcPrctlHelper<ValueType>::computeNextProbabilities(env, computeProbabilityMatrix(rateMatrix, exitRateVector), nextStates);
 }
 
-template<typename ValueType, typename RewardModelType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+template<typename ValueType, typename RewardModelType>
+    requires storm::NumberTraits<ValueType>::SupportsExponential
 std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
                                                                         storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                                         std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel,
-                                                                        double timeBound) {
+                                                                        ValueType timeBound) {
     // Only compute the result if the model has a state-based reward model.
     STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException,
                     "Computing instantaneous rewards for a reward model that does not define any state-rewards. The result is trivially 0.");
@@ -362,18 +341,12 @@ std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environm
     return result;
 }
 
-template<typename ValueType, typename RewardModelType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environment const&, storm::solver::SolveGoal<ValueType>&&,
-                                                                        storm::storage::SparseMatrix<ValueType> const&, std::vector<ValueType> const&,
-                                                                        RewardModelType const&, double) {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing instantaneous rewards is unsupported for this value type.");
-}
-
-template<typename ValueType, typename RewardModelType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+template<typename ValueType, typename RewardModelType>
+    requires storm::NumberTraits<ValueType>::SupportsExponential
 std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
                                                                      storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                                      std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel,
-                                                                     double timeBound) {
+                                                                     ValueType timeBound) {
     STORM_LOG_THROW(!env.solver().isForceExact(), storm::exceptions::InvalidOperationException,
                     "Exact computations not possible for cumulative expected rewards.");
 
@@ -433,13 +406,6 @@ std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment
     } while (checkAndUpdateTransientProbabilityEpsilon(env, epsilon, result, relevantValues));
 
     return result;
-}
-
-template<typename ValueType, typename RewardModelType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment const&, storm::solver::SolveGoal<ValueType>&&,
-                                                                     storm::storage::SparseMatrix<ValueType> const&, std::vector<ValueType> const&,
-                                                                     RewardModelType const&, double) {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing cumulative rewards is unsupported for this value type.");
 }
 
 template<typename ValueType>
@@ -542,12 +508,13 @@ std::vector<ValueType> SparseCtmcCslHelper::computeTotalRewards(Environment cons
                                                                                               dtmcRewardModel, qualitative);
 }
 
-template<typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+template<typename ValueType>
+    requires storm::NumberTraits<ValueType>::SupportsExponential
 std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                                              storm::storage::BitVector const& initialStates,
                                                                              storm::storage::BitVector const& phiStates,
                                                                              storm::storage::BitVector const& psiStates,
-                                                                             std::vector<ValueType> const& exitRates, double timeBound) {
+                                                                             std::vector<ValueType> const& exitRates, ValueType timeBound) {
     // Compute transient probabilities going from initial state
     // Instead of y=Px we now compute y=xP <=> y^T=P^Tx^T via transposition
     uint_fast64_t numberOfStates = rateMatrix.getRowCount();
@@ -614,14 +581,8 @@ std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Env
     return result;
 }
 
-template<typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Environment const&, storm::storage::SparseMatrix<ValueType> const&,
-                                                                             storm::storage::BitVector const&, storm::storage::BitVector const&,
-                                                                             storm::storage::BitVector const&, std::vector<ValueType> const&, double) {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded until probabilities is unsupported for this value type.");
-}
-
-template<typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+template<typename ValueType>
+    requires storm::NumberTraits<ValueType>::SupportsExponential
 storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper::computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                                                       storm::storage::BitVector const& maybeStates,
                                                                                       ValueType uniformizationRate, std::vector<ValueType> const& exitRates) {
@@ -650,7 +611,8 @@ storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper::computeUniformizedM
     return uniformizedMatrix;
 }
 
-template<typename ValueType, bool useMixedPoissonProbabilities, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+template<typename ValueType, bool useMixedPoissonProbabilities>
+    requires storm::NumberTraits<ValueType>::SupportsExponential
 std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Environment const& env,
                                                                           storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix,
                                                                           std::vector<ValueType> const* addVector, ValueType timeBound,
@@ -673,21 +635,25 @@ std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Enviro
     if (useMixedPoissonProbabilities) {
         // The following computes a vector v such that
         // v[i] = foxGlynnResult.totalWeight - sum_{j=0}^{i} foxGlynnResult.weights[j]
-        //      = sum_{j=i+1}^{n} foxGlynnResult.weights[j]  for i=0,...,n-1
-        // and then sets foxGlynnResult.totalWeight = v / uniformizationRate.
+        //      = sum_{j=i+1}^{n-1} foxGlynnResult.weights[j]  for i=0,...,n-1
+        // and then sets foxGlynnResult.weights = v / uniformizationRate.
         // We do this in place and with numerical stability in mind. Note that the weights commonly range to values from 1e-200 to 1e+200
-        uint64_t l{0ull}, r{foxGlynnResult.weights.size()};
+        uint64_t l{0ull}, r{foxGlynnResult.weights.size() - 1};
         ValueType sumLeft{storm::utility::zero<ValueType>()}, sumRight{storm::utility::zero<ValueType>()};
-        while (l < r) {
+        while (l <= r) {
             if (foxGlynnResult.weights[l] < foxGlynnResult.weights[r]) {
                 sumLeft += foxGlynnResult.weights[l];
                 foxGlynnResult.weights[l] = (foxGlynnResult.totalWeight - sumLeft) / uniformizationRate;
                 ++l;
             } else {
-                --r;
                 auto const tmp = foxGlynnResult.weights[r];
                 foxGlynnResult.weights[r] = sumRight / uniformizationRate;
                 sumRight += tmp;
+                if (r == 0) {
+                    // Avoid underflow for unsigned int
+                    break;
+                }
+                --r;
             }
         }
         auto const relDiff = storm::utility::abs<ValueType>(foxGlynnResult.totalWeight - (sumLeft + sumRight)) / foxGlynnResult.totalWeight;
@@ -851,16 +817,6 @@ template std::vector<double> SparseCtmcCslHelper::computeTransientProbabilities(
                                                                                 std::vector<double> const* addVector, double timeBound,
                                                                                 double uniformizationRate, std::vector<double> values, double epsilon);
 
-#ifdef STORM_HAVE_CARL
-template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
-    Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix,
-    storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates,
-    storm::storage::BitVector const& psiStates, std::vector<storm::RationalNumber> const& exitRates, bool qualitative, double lowerBound, double upperBound);
-template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
-    Environment const& env, storm::solver::SolveGoal<storm::RationalFunction>&& goal, storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix,
-    storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, storm::storage::BitVector const& phiStates,
-    storm::storage::BitVector const& psiStates, std::vector<storm::RationalFunction> const& exitRates, bool qualitative, double lowerBound, double upperBound);
-
 template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeUntilProbabilities(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector,
@@ -886,15 +842,6 @@ template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeNextProb
 template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeNextProbabilities(
     Environment const& env, storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, std::vector<storm::RationalFunction> const& exitRateVector,
     storm::storage::BitVector const& nextStates);
-
-template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeInstantaneousRewards(
-    Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix,
-    std::vector<storm::RationalNumber> const& exitRateVector, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel,
-    double timeBound);
-template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeInstantaneousRewards(
-    Environment const& env, storm::solver::SolveGoal<storm::RationalFunction>&& goal, storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix,
-    std::vector<storm::RationalFunction> const& exitRateVector, storm::models::sparse::StandardRewardModel<storm::RationalFunction> const& rewardModel,
-    double timeBound);
 
 template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeReachabilityTimes(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix,
@@ -923,24 +870,6 @@ template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeTotalR
     storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction> const& exitRateVector,
     storm::models::sparse::StandardRewardModel<storm::RationalFunction> const& rewardModel, bool qualitative);
 
-template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeCumulativeRewards(
-    Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix,
-    std::vector<storm::RationalNumber> const& exitRateVector, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel,
-    double timeBound);
-template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeCumulativeRewards(
-    Environment const& env, storm::solver::SolveGoal<storm::RationalFunction>&& goal, storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix,
-    std::vector<storm::RationalFunction> const& exitRateVector, storm::models::sparse::StandardRewardModel<storm::RationalFunction> const& rewardModel,
-    double timeBound);
-
-template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeAllTransientProbabilities(
-    Environment const& env, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix, storm::storage::BitVector const& initialStates,
-    storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<storm::RationalNumber> const& exitRates,
-    double timeBound);
-template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeAllTransientProbabilities(
-    Environment const& env, storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, storm::storage::BitVector const& initialStates,
-    storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<storm::RationalFunction> const& exitRates,
-    double timeBound);
-
 template storm::storage::SparseMatrix<double> SparseCtmcCslHelper::computeProbabilityMatrix(storm::storage::SparseMatrix<double> const& rateMatrix,
                                                                                             std::vector<double> const& exitRates);
 template storm::storage::SparseMatrix<storm::RationalNumber> SparseCtmcCslHelper::computeProbabilityMatrix(
@@ -948,7 +877,6 @@ template storm::storage::SparseMatrix<storm::RationalNumber> SparseCtmcCslHelper
 template storm::storage::SparseMatrix<storm::RationalFunction> SparseCtmcCslHelper::computeProbabilityMatrix(
     storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, std::vector<storm::RationalFunction> const& exitRates);
 
-#endif
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

@@ -1,11 +1,11 @@
 #include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
+
 #include "storm-parsers/api/properties.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/builder.h"
 #include "storm/api/verification.h"
-#include "storm/io/file.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Model.h"
@@ -186,13 +186,12 @@ void JaniBeliefSupportMdpGenerator<ValueType>::generate(storm::storage::BitVecto
 }
 
 template<typename ValueType>
-void JaniBeliefSupportMdpGenerator<ValueType>::verifySymbolic(bool onlyInitial) {
+void JaniBeliefSupportMdpGenerator<ValueType>::verifySymbolic(storm::Environment const& env, bool onlyInitial) {
     storage::SymbolicModelDescription symdesc(model);
     // This trick only works because we do not explictly check that the model is stochastic!
     symdesc = symdesc.preprocess("posProb=0.1");
     auto property = storm::api::parsePropertiesForJaniModel("Pmax>=1 [!\"bad\" U \"target\"]", model)[0];
-    auto mdp = storm::api::buildSymbolicModel<storm::dd::DdType::Sylvan, ValueType>(symdesc, {property.getRawFormula()});
-    storm::Environment env;
+    auto mdp = storm::api::buildSymbolicModel<storm::dd::DdType::Sylvan, ValueType>(env, symdesc, {property.getRawFormula()});
     std::unique_ptr<modelchecker::CheckResult> result =
         storm::api::verifyWithDdEngine(env, mdp, storm::api::createTask<ValueType>(property.getRawFormula(), onlyInitial));
     std::unique_ptr<storm::modelchecker::CheckResult> filter;

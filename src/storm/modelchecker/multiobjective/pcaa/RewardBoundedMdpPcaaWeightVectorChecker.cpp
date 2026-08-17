@@ -2,20 +2,13 @@
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
-#include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
-#include "storm/exceptions/UnexpectedException.h"
 #include "storm/io/export.h"
-#include "storm/logic/Formulas.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
@@ -42,8 +35,13 @@ RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::RewardBoundedMdpPca
 
     // Update the objective bounds with what the reward unfolding can compute
     for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-        this->objectives[objIndex].lowerResultBound = rewardUnfolding.getLowerObjectiveBound(objIndex);
-        this->objectives[objIndex].upperResultBound = rewardUnfolding.getUpperObjectiveBound(objIndex);
+        auto& obj = this->objectives[objIndex];
+        obj.lowerResultBound = rewardUnfolding.getLowerObjectiveBound(objIndex);
+        obj.upperResultBound = rewardUnfolding.getUpperObjectiveBound(objIndex);
+        if (!obj.upperResultBound) {
+            preprocessing::SparseMultiObjectiveRewardAnalysis<SparseMdpModelType>::computeUpperResultBound(
+                *preprocessorResult.preprocessedModel, obj, preprocessorResult.preprocessedModel->getBackwardTransitions());
+        }
     }
 
     numCheckedEpochs = 0;
@@ -53,24 +51,29 @@ RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::RewardBoundedMdpPca
 template<class SparseMdpModelType>
 RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::~RewardBoundedMdpPcaaWeightVectorChecker() {
     swAll.stop();
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("--------------------------------------------------\n");
-        STORM_PRINT_AND_LOG("Statistics:\n");
-        STORM_PRINT_AND_LOG("--------------------------------------------------\n");
-        STORM_PRINT_AND_LOG("           #checked weight vectors: " << numChecks << ".\n");
-        STORM_PRINT_AND_LOG("           #checked epochs overall: " << numCheckedEpochs << ".\n");
-        STORM_PRINT_AND_LOG("# checked epochs per weight vector: " << numCheckedEpochs / numChecks << ".\n");
-        STORM_PRINT_AND_LOG("                      overall Time: " << swAll << ".\n");
-        STORM_PRINT_AND_LOG("         Epoch Model building time: " << swEpochModelBuild << ".\n");
-        STORM_PRINT_AND_LOG("         Epoch Model checking time: " << swEpochModelAnalysis << ".\n");
-        STORM_PRINT_AND_LOG("--------------------------------------------------\n");
-    }
+    STORM_LOG_STATISTICS("--------------------------------------------------\n");
+    STORM_LOG_STATISTICS("Statistics:\n");
+    STORM_LOG_STATISTICS("--------------------------------------------------\n");
+    STORM_LOG_STATISTICS("           #checked weight vectors: " << numChecks << ".\n");
+    STORM_LOG_STATISTICS("           #checked epochs overall: " << numCheckedEpochs << ".\n");
+    STORM_LOG_STATISTICS("# checked epochs per weight vector: " << numCheckedEpochs / numChecks << ".\n");
+    STORM_LOG_STATISTICS("                      overall Time: " << swAll << ".\n");
+    STORM_LOG_STATISTICS("         Epoch Model building time: " << swEpochModelBuild << ".\n");
+    STORM_LOG_STATISTICS("         Epoch Model checking time: " << swEpochModelAnalysis << ".\n");
+    STORM_LOG_STATISTICS("--------------------------------------------------\n");
 }
 
 template<class SparseMdpModelType>
-void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environment const& env, std::vector<ValueType> const& weightVector) {
+void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environment const& env, std::vector<ValueType> weightVector) {
+    STORM_LOG_THROW(std::any_of(weightVector.begin(), weightVector.end(), [](auto const& w_i) { return !storm::utility::isZero(w_i); }),
+                    storm::exceptions::InvalidOperationException, "Weight vector must not be the zero vector.");
     ++numChecks;
     STORM_LOG_INFO("Analyzing weight vector #" << numChecks << ": " << storm::utility::vector::toString(weightVector));
+
+    // Normalize weights so the vector has length 1.
+    // This is necessary for ensuring the required accuracy, i.e. distance between halfspace induced by weightedSum and weightvector and achievable point.
+    ValueType const inputWeightVectorLength = storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
+    storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(weightVector, storm::utility::one<ValueType>() / (inputWeightVectorLength));
 
     // In case we want to export the cdf, we will collect the corresponding data
     std::vector<std::vector<ValueType>> cdfData;
@@ -78,11 +81,13 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
     auto initEpoch = rewardUnfolding.getStartEpoch();
     auto epochOrder = rewardUnfolding.getEpochComputationOrder(initEpoch);
     EpochCheckingData cachedData;
-    ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(
-        initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
+    ValueType const globalPrecision = this->getWeightedPrecision() / storm::utility::convertNumber<ValueType>(4.0);  // 4=2*2:
+    // We divide the precision by 2 to distribute the approximation error over weighted (minmax) optimization and linear equation solving
+    // We again divide by 2 to account for the fact that we only compute a mid-point p such that the real value is in [p - precision, p + precision].
+    ValueType const epochPrecision = rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, globalPrecision);
     Environment newEnv = env;
-    newEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
-    newEnv.solver().setLinearEquationSolverPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
+    newEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(epochPrecision));
+    newEnv.solver().setLinearEquationSolverPrecision(storm::utility::convertNumber<storm::RationalNumber>(epochPrecision));
     storm::utility::ProgressMeasurement progress("epochs");
     progress.setMaxCount(epochOrder.size());
     progress.startNewMeasurement(0);
@@ -119,15 +124,23 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
         for (uint64_t i = 0; i < this->objectives.size(); ++i) {
             headers.push_back("obj" + std::to_string(i));
         }
-        storm::utility::exportDataToCSVFile<ValueType, ValueType, std::string>(
+        storm::io::exportDataToCSVFile<ValueType, ValueType, std::string>(
             storm::settings::getModule<storm::settings::modules::IOSettings>().getExportCdfDirectory() + "cdf" + std::to_string(numChecks) + ".csv", cdfData,
             weightVector, headers);
     }
     auto solution = rewardUnfolding.getInitialStateResult(initEpoch);
-    auto solutionIt = solution.begin();
-    ++solutionIt;
-    underApproxResult = std::vector<ValueType>(solutionIt, solution.end());
-    overApproxResult = underApproxResult;
+    ValueType const precisionOffset = env.solver().isForceExact() ? storm::utility::zero<ValueType>() : globalPrecision;
+    // compute a point p that is known to be achievable and a value v with sup_{r is achievable} w*r <= v (when assuming only maximizing objectives)
+    // We can use the facts that the computed solutions for the individual objectives are within precisionOffset of the actual values
+    weightedSum = solution[0] + precisionOffset;  // upper bound on sup_{r is achievable} w*r
+    // reverse the normalization of the weight vector for the returned optimal weighted sum.
+    weightedSum.value() *= inputWeightVectorLength;
+    achievablePoint.emplace(this->objectives.size());
+    for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+        auto& p_i = achievablePoint.value()[objIndex];
+        bool const isMax = storm::solver::maximize(this->objectives[objIndex].formula->getOptimalityType());
+        p_i = solution[objIndex + 1] + (isMax ? -precisionOffset : precisionOffset);
+    }
 }
 
 template<class SparseMdpModelType>
@@ -218,8 +231,8 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSo
         updateCachedData(env, epochModel, cachedData, weightVector);
 
         // Formulate a min-max equation system max(A*x+b)=x for the weighted sum of the objectives
-        assert(cachedData.bMinMax.capacity() >= epochModel.epochMatrix.getRowCount());
-        assert(cachedData.xMinMax.size() == epochModel.epochMatrix.getRowGroupCount());
+        STORM_LOG_ASSERT(cachedData.bMinMax.capacity() >= epochModel.epochMatrix.getRowCount(), "BMinMax capacity insufficient.");
+        STORM_LOG_ASSERT(cachedData.xMinMax.size() == epochModel.epochMatrix.getRowGroupCount(), "XMinMax size mismatch.");
         cachedData.bMinMax.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
         for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
             ValueType weight =
@@ -262,7 +275,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSo
         }
 
         // Formulate for each objective the linear equation system induced by the performed choices
-        assert(cachedData.bLinEq.size() == choices.size());
+        STORM_LOG_ASSERT(cachedData.bLinEq.size() == choices.size(), "BLinEq size mismatch.");
         for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
             auto const& obj = this->objectives[objIndex];
             std::vector<ValueType> const& objectiveReward = epochModel.objectiveRewards[objIndex];
@@ -297,7 +310,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSo
                 ++rowGroupIndexIt;
                 ++choiceIt;
             }
-            assert(x.size() == choices.size());
+            STORM_LOG_ASSERT(x.size() == choices.size(), "X size mismatch.");
             auto req = cachedData.linEqSolver->getRequirements(env);
             cachedData.linEqSolver->clearBounds();
             if (obj.lowerResultBound) {
@@ -367,22 +380,20 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedDa
 
 template<class SparseMdpModelType>
 std::vector<typename RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::ValueType>
-RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::getUnderApproximationOfInitialStateResults() const {
-    STORM_LOG_THROW(underApproxResult, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
-    return underApproxResult.get();
+RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::getAchievablePoint() const {
+    STORM_LOG_THROW(achievablePoint, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
+    return achievablePoint.value();
 }
 
 template<class SparseMdpModelType>
-std::vector<typename RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::ValueType>
-RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::getOverApproximationOfInitialStateResults() const {
-    STORM_LOG_THROW(overApproxResult, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
-    return overApproxResult.get();
+typename RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::ValueType
+RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::getOptimalWeightedSum() const {
+    STORM_LOG_THROW(weightedSum, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
+    return weightedSum.value();
 }
 
 template class RewardBoundedMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
-#ifdef STORM_HAVE_CARL
 template class RewardBoundedMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
-#endif
 
 }  // namespace multiobjective
 }  // namespace modelchecker

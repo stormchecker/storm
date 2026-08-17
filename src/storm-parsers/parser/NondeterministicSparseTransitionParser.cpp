@@ -3,27 +3,23 @@
 #include <string>
 
 #include "storm-parsers/parser/MappedFile.h"
-#include "storm/exceptions/FileIoException.h"
-#include "storm/exceptions/OutOfRangeException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/WrongFormatException.h"
-
 #include "storm-parsers/util/cstring.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/OutOfRangeException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
+
 namespace storm {
 namespace parser {
 
 using namespace storm::utility::cstring;
 
 template<typename ValueType>
-storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<ValueType>::parseNondeterministicTransitions(std::string const& filename) {
+storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<ValueType>::parseNondeterministicTransitions(
+    std::string const& filename, ExplicitModelParserOptions const& options) {
     storm::storage::SparseMatrix<ValueType> emptyMatrix;
-    return NondeterministicSparseTransitionParser::parse(filename, false, emptyMatrix);
+    return NondeterministicSparseTransitionParser::parse(filename, false, emptyMatrix, options);
 }
 
 template<typename ValueType>
@@ -36,7 +32,8 @@ storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<V
 template<typename ValueType>
 template<typename MatrixValueType>
 storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<ValueType>::parse(
-    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<MatrixValueType> const& modelInformation) {
+    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<MatrixValueType> const& modelInformation,
+    ExplicitModelParserOptions const& options) {
     // Enforce locale where decimal point is '.'.
     setlocale(LC_NUMERIC, "C");
 
@@ -49,10 +46,8 @@ storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<V
         NondeterministicSparseTransitionParser::firstPass(file.getData(), isRewardFile, modelInformation);
 
     // If first pass returned zero, the file format was wrong.
-    if (firstPass.numberOfNonzeroEntries == 0) {
-        STORM_LOG_ERROR("Error while parsing " << filename << ": erroneous file format.");
-        throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": erroneous file format.";
-    }
+    STORM_LOG_THROW(firstPass.numberOfNonzeroEntries != 0, storm::exceptions::WrongFormatException,
+                    "Error while parsing " << filename << ": erroneous file format.");
 
     // Perform second pass.
 
@@ -66,14 +61,12 @@ storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<V
     if (isRewardFile) {
         // The reward matrix should match the size of the transition matrix.
         if (firstPass.choices > modelInformation.getRowCount() || (uint_fast64_t)(firstPass.highestStateIndex + 1) > modelInformation.getColumnCount()) {
-            STORM_LOG_ERROR("Reward matrix size exceeds transition matrix size.");
-            throw storm::exceptions::OutOfRangeException() << "Reward matrix size exceeds transition matrix size.";
+            STORM_LOG_THROW(false, storm::exceptions::OutOfRangeException, "Reward matrix size exceeds transition matrix size.");
         } else if (firstPass.choices != modelInformation.getRowCount()) {
-            STORM_LOG_ERROR("Reward matrix row count does not match transition matrix row count.");
-            throw storm::exceptions::OutOfRangeException() << "Reward matrix row count does not match transition matrix row count.";
+            STORM_LOG_THROW(false, storm::exceptions::OutOfRangeException, "Reward matrix row count does not match transition matrix row count.");
         } else if (firstPass.numberOfNonzeroEntries > modelInformation.getEntryCount()) {
             STORM_LOG_ERROR("The reward matrix has more entries than the transition matrix. There must be a reward for a non existent transition");
-            throw storm::exceptions::OutOfRangeException() << "The reward matrix has more entries than the transition matrix.";
+            STORM_LOG_THROW(false, storm::exceptions::OutOfRangeException, "The reward matrix has more entries than the transition matrix.");
         } else {
             firstPass.highestStateIndex = modelInformation.getColumnCount() - 1;
         }
@@ -96,7 +89,7 @@ storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<V
     // Initialize variables for the parsing run.
     uint_fast64_t source = 0, target = 0, lastSource = 0, choice = 0, lastChoice = 0, curRow = 0;
     double val = 0.0;
-    bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet();
+    bool fixDeadlocks = options.fixDeadlocks;
     bool hadDeadlocks = false;
 
     // The first state already starts a new row group of the matrix.
@@ -146,7 +139,7 @@ storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<V
             // Also begin a new rowGroup for the skipped state.
             for (uint_fast64_t node = lastSource + 1; node < source; node++) {
                 hadDeadlocks = true;
-                if (!dontFixDeadlocks) {
+                if (fixDeadlocks) {
                     matrixBuilder.newRowGroup(curRow);
                     matrixBuilder.addNextValue(curRow, node, 1);
                     ++curRow;
@@ -175,8 +168,8 @@ storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<V
         buf = trimWhitespaces(buf);
     }
 
-    if (dontFixDeadlocks && hadDeadlocks && !isRewardFile)
-        throw storm::exceptions::WrongFormatException() << "Some of the states do not have outgoing transitions.";
+    STORM_LOG_THROW(fixDeadlocks || !hadDeadlocks || isRewardFile, storm::exceptions::WrongFormatException,
+                    "Some of the states do not have outgoing transitions.");
 
     // Since we assume the transition rewards are for the transitions of the model, we copy the rowGroupIndices.
     if (isRewardFile) {
@@ -190,10 +183,8 @@ storm::storage::SparseMatrix<ValueType> NondeterministicSparseTransitionParser<V
 
     // Since we cannot check if each transition for which there is a reward in the reward file also exists in the transition matrix during parsing, we have to
     // do it afterwards.
-    if (isRewardFile && !resultMatrix.isSubmatrixOf(modelInformation)) {
-        STORM_LOG_ERROR("There are rewards for non existent transitions given in the reward file.");
-        throw storm::exceptions::WrongFormatException() << "There are rewards for non existent transitions given in the reward file.";
-    }
+    STORM_LOG_THROW(!isRewardFile || resultMatrix.isSubmatrixOf(modelInformation), storm::exceptions::WrongFormatException,
+                    "There are rewards for non existent transitions given in the reward file.");
 
     return resultMatrix;
 }
@@ -226,11 +217,8 @@ typename NondeterministicSparseTransitionParser<ValueType>::FirstPassResult Nond
         // Read the name of the nondeterministic choice.
         choice = checked_strtol(buf, &buf);
 
-        if (source < lastSource) {
-            STORM_LOG_ERROR("The current source state " << source << " is smaller than the last one " << lastSource << ".");
-            throw storm::exceptions::InvalidArgumentException()
-                << "The current source state " << source << " is smaller than the last one " << lastSource << ".";
-        }
+        STORM_LOG_THROW(source >= lastSource, storm::exceptions::InvalidArgumentException,
+                        "The current source state " << source << " is smaller than the last one " << lastSource << ".");
 
         // Check if we encountered a state index that is bigger than all previously seen.
         if (source > result.highestStateIndex) {
@@ -239,13 +227,9 @@ typename NondeterministicSparseTransitionParser<ValueType>::FirstPassResult Nond
 
         if (isRewardFile) {
             // Make sure that the highest state index of the reward file is not higher than the highest state index of the corresponding model.
-            if (result.highestStateIndex > modelInformation.getColumnCount() - 1) {
-                STORM_LOG_ERROR("State index " << result.highestStateIndex << " found. This exceeds the highest state index of the model, which is "
-                                               << modelInformation.getColumnCount() - 1 << " .");
-                throw storm::exceptions::OutOfRangeException()
-                    << "State index " << result.highestStateIndex << " found. This exceeds the highest state index of the model, which is "
-                    << modelInformation.getColumnCount() - 1 << " .";
-            }
+            STORM_LOG_THROW(result.highestStateIndex <= modelInformation.getColumnCount() - 1, storm::exceptions::OutOfRangeException,
+                            "State index " << result.highestStateIndex << " found. This exceeds the highest state index of the model, which is "
+                                           << modelInformation.getColumnCount() - 1 << " .");
 
             // If we have switched the source state, we possibly need to insert rows for skipped choices of the last
             // source state.
@@ -291,10 +275,8 @@ typename NondeterministicSparseTransitionParser<ValueType>::FirstPassResult Nond
         }
 
         // Also, have we already seen this transition?
-        if (target == lastTarget && choice == lastChoice && source == lastSource) {
-            STORM_LOG_ERROR("The same transition (" << source << ", " << choice << ", " << target << ") is given twice.");
-            throw storm::exceptions::InvalidArgumentException() << "The same transition (" << source << ", " << choice << ", " << target << ") is given twice.";
-        }
+        STORM_LOG_THROW(target != lastTarget || choice != lastChoice || source != lastSource, storm::exceptions::InvalidArgumentException,
+                        "The same transition (" << source << ", " << choice << ", " << target << ") is given twice.");
 
         // Read value and check whether it's positive.
         val = checked_strtod(buf, &buf);
@@ -340,16 +322,14 @@ template class NondeterministicSparseTransitionParser<double>;
 template storm::storage::SparseMatrix<double> NondeterministicSparseTransitionParser<double>::parseNondeterministicTransitionRewards(
     std::string const& filename, storm::storage::SparseMatrix<double> const& modelInformation);
 template storm::storage::SparseMatrix<double> NondeterministicSparseTransitionParser<double>::parse(
-    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& modelInformation);
+    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& modelInformation, ExplicitModelParserOptions const& options);
 
-#ifdef STORM_HAVE_CARL
 template class NondeterministicSparseTransitionParser<storm::Interval>;
 
 template storm::storage::SparseMatrix<storm::Interval> NondeterministicSparseTransitionParser<storm::Interval>::parseNondeterministicTransitionRewards<double>(
     std::string const& filename, storm::storage::SparseMatrix<double> const& modelInformation);
 template storm::storage::SparseMatrix<storm::Interval> NondeterministicSparseTransitionParser<storm::Interval>::parse<double>(
-    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& modelInformation);
-#endif
+    std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& modelInformation, ExplicitModelParserOptions const& options);
 
 }  // namespace parser
 }  // namespace storm

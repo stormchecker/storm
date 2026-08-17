@@ -1,0 +1,24 @@
+@type: DTMC
+@value_type: double-interval
+@parameters
+
+@reward_models
+cost
+@nr_states
+4
+@nr_choices
+4
+@model
+state 0 init [0]
+	action 0
+		1 : [0.3, 0.7]
+		2 : [0.3, 0.7]
+state 1 [5]
+	action 0
+		3 : [1, 1]
+state 2 [10]
+	action 0
+		3 : [1, 1]
+state 3 target [0]
+    action 0
+        3 : [1, 1]

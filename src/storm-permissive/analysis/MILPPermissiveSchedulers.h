@@ -6,6 +6,7 @@
 
 #include "storm-permissive/analysis/PermissiveSchedulerComputation.h"
 #include "storm-permissive/analysis/PermissiveSchedulers.h"
+#include "storm/io/file.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/storage/BitVector.h"
@@ -59,8 +60,8 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
     }
 
     void dumpLpSolutionToFile(std::string const& filename) {
-        std::fstream filestream;
-        filestream.open(filename, std::fstream::out);
+        std::ofstream filestream;
+        storm::io::openFile(filename, filestream);
         for (auto const& pVar : mProbVariables) {
             filestream << pVar.second.getName() << "->" << solver.getContinuousValue(pVar.second) << '\n';
         }
@@ -76,7 +77,7 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
         for (auto const& gammaVar : mGammaVariables) {
             filestream << gammaVar.second.getName() << "->" << solver.getContinuousValue(gammaVar.second) << '\n';
         }
-        filestream.close();
+        storm::io::closeFile(filestream);
     }
 
     void dumpLpToFile(std::string const& filename) {

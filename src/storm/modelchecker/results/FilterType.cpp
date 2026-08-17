@@ -29,7 +29,7 @@ std::string toString(FilterType ft) {
         case FilterType::VALUES:
             return "the values";
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown FilterType");
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown FilterType.");
 }
 
 std::string toPrismSyntax(FilterType ft) {
@@ -55,7 +55,7 @@ std::string toPrismSyntax(FilterType ft) {
         case FilterType::VALUES:
             return "printall";
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown FilterType");
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown FilterType.");
 }
 }  // namespace modelchecker
 }  // namespace storm

@@ -5,16 +5,25 @@
 #include <unordered_map>
 #include <vector>
 
-#include "storm-pars/analysis/Order.h"
-#include "storm-pars/storage/ParameterRegion.h"
+#include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm-pars/utility/parametric.h"
+#include "storm/adapters/RationalFunctionAdapter.h"  // TODO: use forward header
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 
-#include "storm-pars/analysis/MonotonicityChecker.h"
-
 namespace storm {
+
+namespace analysis {
+class Order;
+}  // namespace analysis
+
+namespace storage {
+template<typename ParametricType>
+class ParameterRegion;
+}  // namespace storage
+
 namespace transformer {
 
 /*!
@@ -47,26 +56,6 @@ class ParameterLifter {
 
     void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
 
-    /*!
-     * Specifies the region for the parameterlifter, the Bitvector works as a fixed (partial) scheduler, this might not give sound results!
-     * @param region the region
-     * @param dirForParameters the optimization direction
-     * @param selectedRows a Bitvector that specifies which rows of the matrix and the vector are considered.
-     */
-    void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters,
-                       storm::storage::BitVector const& selectedRows);
-
-    /*!
-     * Specifies the region for the parameterlifter, the reachability order is used to see if there is local monotonicity, such that a fixed (partial) scheduler
-     * can be used
-     * @param region the region
-     * @param dirForParameters the optimization direction
-     * @param reachabilityOrder a (possibly insufficient) reachability order, used for local monotonicity
-     */
-    void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters,
-                       std::shared_ptr<storm::analysis::Order> reachabilityOrder,
-                       std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
-
     // Returns the resulting matrix. Should only be called AFTER specifying a region
     storm::storage::SparseMatrix<ConstantType> const& getMatrix() const;
 
@@ -75,7 +64,7 @@ class ParameterLifter {
 
     std::vector<std::set<VariableType>> const& getOccurringVariablesAtState() const;
 
-    std::map<VariableType, std::set<uint_fast64_t>> getOccuringStatesAtVariable() const;
+    std::map<VariableType, std::set<uint_fast64_t>> const& getOccuringStatesAtVariable() const;
 
     uint_fast64_t getRowGroupIndex(uint_fast64_t originalState) const;
     uint_fast64_t getOriginalStateNumber(uint_fast64_t newState) const;

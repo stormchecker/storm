@@ -1,0 +1,89 @@
+name: Release new version
+# Triggered by new a release on GitHub
+# - deploys Docker containers
+# - updates stable branch
+# - updates Storm version in stormpy via PR
+# - sets Storm development version in Storm via PR
+
+# Needs personal access token CI_token with permissions 'pull-requests' and 'workflows'
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy_docker:
+    # Create Docker images for tag
+    uses: ./.github/workflows/release_docker.yml
+    with:
+      # Use the tag from the release
+      tag: ${{ github.event.release.tag_name }}
+    secrets: inherit
+
+  update_stable:
+    # Update stable branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+      - name: Rebase
+        run: |
+          git config user.name 'Stormchecker bot'
+          git config user.email 'dev@stormchecker.org'
+          git fetch origin stable
+          git checkout stable
+          git rebase ${{ github.event.release.tag_name }}
+          git push origin stable
+
+  deploy_docker_stable:
+    # Create Docker images for stable branch
+    needs: update_stable
+    uses: ./.github/workflows/release_docker.yml
+    with:
+      tag: stable
+    secrets: inherit
+
+  update_stormpy:
+    # Trigger generation of PR in stormpy which updates the Storm version
+    needs: [deploy_docker, deploy_docker_stable]
+    uses: stormchecker/stormpy/.github/workflows/update_storm.yml@master
+    with:
+      storm_version: ${{ github.event.release.tag_name }}
+    secrets:
+      personal_access_token: ${{ secrets.CI_token }}
+
+  set_storm_dev:
+    # Update Storm version again to reflect future development version
+    needs: [deploy_docker, deploy_docker_stable]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v7
+        with:
+          repository: stormchecker/storm
+          ref: master
+      - name: Set Storm dev version
+        run: |
+          # Add .1 suffix  to Storm version
+          sed -i -E 's/(\s+)VERSION ([0-9]+\.[0-9]+\.[0-9]+)/\1VERSION \2.1/' CMakeLists.txt
+      - name: Commit update
+        run: |
+          git diff
+          git config user.name 'Stormchecker bot'
+          git config user.email 'dev@stormchecker.org'
+          git commit -am "Set development version of Storm"
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: ci/storm-dev-version
+          delete-branch: true
+          title: 'Set development version of Storm'
+          body: |
+            Auto-generated pull request triggered by a new Storm version.
+            - Manually close and reopen this PR to trigger the CI.

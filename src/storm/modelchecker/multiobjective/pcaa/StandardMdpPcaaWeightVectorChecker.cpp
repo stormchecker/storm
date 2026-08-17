@@ -1,17 +1,12 @@
 #include "storm/modelchecker/multiobjective/pcaa/StandardMdpPcaaWeightVectorChecker.h"
 
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/IllegalArgumentException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -31,14 +26,14 @@ void StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::initializeModelType
     for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
         auto const& formula = *this->objectives[objIndex].formula;
         STORM_LOG_THROW(formula.isRewardOperatorFormula() && formula.asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::UnexpectedException,
-                        "Unexpected type of operator formula: " << formula);
+                        "Unexpected type of operator formula: " << formula << ".");
         if (formula.getSubformula().isCumulativeRewardFormula()) {
             auto const& cumulativeRewardFormula = formula.getSubformula().asCumulativeRewardFormula();
             STORM_LOG_THROW(!cumulativeRewardFormula.isMultiDimensional() && !cumulativeRewardFormula.getTimeBoundReference().isRewardBound(),
-                            storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
+                            storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula() << ".");
         } else {
             STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula() || formula.getSubformula().isLongRunAverageRewardFormula(),
-                            storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
+                            storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula() << ".");
         }
         typename SparseMdpModelType::RewardModelType const& rewModel = model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
         STORM_LOG_THROW(!rewModel.hasTransitionRewards(), storm::exceptions::NotSupportedException,
@@ -81,8 +76,7 @@ void StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase(Enviro
             stepBoundIt->second.set(objIndex);
 
             // There is no error for the values of these objectives.
-            this->offsetsToUnderApproximation[objIndex] = storm::utility::zero<ValueType>();
-            this->offsetsToOverApproximation[objIndex] = storm::utility::zero<ValueType>();
+            this->offsetsToAchievablePoint[objIndex] = storm::utility::zero<ValueType>();
         }
     }
 
@@ -130,10 +124,18 @@ void StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase(Enviro
     }
 }
 
+template<class SparseMdpModelType>
+typename SparseMdpModelType::ValueType StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::getWeightedPrecisionUnboundedPhase() const {
+    return this->getWeightedPrecision();  // No approx. error in bounded phase.
+}
+
+template<class SparseMdpModelType>
+typename SparseMdpModelType::ValueType StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::getWeightedPrecisionBoundedPhase() const {
+    return storm::utility::zero<ValueType>();  // No approx. error in bounded phase.
+}
+
 template class StandardMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
-#ifdef STORM_HAVE_CARL
 template class StandardMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
-#endif
 
 }  // namespace multiobjective
 }  // namespace modelchecker
