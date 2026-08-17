@@ -79,6 +79,7 @@ Use `STORM_LOG_THROW` rather than throwing exceptions directly:
 ```cpp
 STORM_LOG_THROW(condition, storm::exceptions::InvalidArgumentException, "Descriptive message.");
 ```
+This throws an `InvalidArgumentException` if `condition` is violated.
 Exception types live in `src/storm/exceptions/`.
 
 ### Optional dependencies
