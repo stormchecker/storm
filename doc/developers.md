@@ -34,7 +34,7 @@ Each library's public API lives in its `api/` subdirectory (e.g., `src/storm/api
 
 ## Building
 
-Storm uses CMake out-of-source builds. All dependencies must be pre-installed (see `Dockerfile` for the exact set). The CI uses the pre-built Docker image `stormchecker/storm-dependencies:latest`.
+Storm uses CMake out-of-source builds. All dependencies must be pre-installed (see [the website](https://www.stormchecker.org/documentation/obtain-storm/dependencies.html) for the exact set). The CI uses the pre-built Docker image `stormchecker/storm-dependencies:latest` which comes with most dependencies already installed.
 
 ```bash
 mkdir build && cd build
