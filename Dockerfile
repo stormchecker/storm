@@ -22,12 +22,13 @@ ARG no_threads=4
 ARG build_type=Release
 # Carl repo and tag to use
 ARG carl_repo="https://github.com/stormchecker/carl-storm.git"
-ARG carl_tag="14.35"
+ARG carl_tag="14.36"
 # Specify Storm configuration (ON/OFF)
 ARG disable_cudd="OFF"
 ARG disable_glpk="OFF"
 ARG disable_gmm="OFF"
 ARG disable_gurobi="OFF"
+ARG disable_highs="OFF"
 ARG disable_libarchive="OFF"
 ARG disable_mathsat="OFF"
 ARG disable_soplex="OFF"
@@ -65,6 +66,7 @@ RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
           -DSTORM_DISABLE_GLPK=$disable_glpk \
           -DSTORM_DISABLE_GMM=$disable_gmm \
           -DSTORM_DISABLE_GUROBI=$disable_gurobi \
+          -DSTORM_DISABLE_HIGHS=$disable_highs \
           -DSTORM_DISABLE_LIBARCHIVE=$disable_libarchive \
           -DSTORM_DISABLE_MATHSAT=$disable_mathsat \
           -DSTORM_DISABLE_SOPLEX=$disable_soplex \

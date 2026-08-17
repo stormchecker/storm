@@ -18,7 +18,7 @@ std::ostream& operator<<(std::ostream& os, RegionSplittingStrategy::Heuristic co
             break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                            "Could not get a string from the region check engine. The case has not been implemented");
+                            "Could not get a string from the region check engine. The case has not been implemented.");
     }
     return os;
 }

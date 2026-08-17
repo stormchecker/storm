@@ -184,7 +184,7 @@ BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPTyp
                     pomdp().getTransitionMatrix(), formulaInfo.getSinkStates().states, formulaInfo.getSinkStates().states, ~formulaInfo.getSinkStates().states);
                 reachableFromSinkStates &= ~formulaInfo.getSinkStates().states;
                 STORM_LOG_THROW(reachableFromSinkStates.empty(), storm::exceptions::NotSupportedException,
-                                "There are sink states that can reach non-sink states. This is currently not supported");
+                                "There are sink states that can reach non-sink states. This is currently not supported.");
             }
         } else {
             // Expected reward formula!
@@ -747,16 +747,21 @@ BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPTyp
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
 int64_t BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getStatus() {
-    if (unfoldingStatus == Status::Uninitialized)
+    if (unfoldingStatus == Status::Uninitialized) {
         return 0;
-    if (unfoldingStatus == Status::Exploring)
+    }
+    if (unfoldingStatus == Status::Exploring) {
         return 1;
-    if (unfoldingStatus == Status::ModelExplorationFinished)
+    }
+    if (unfoldingStatus == Status::ModelExplorationFinished) {
         return 2;
-    if (unfoldingStatus == Status::ResultAvailable)
+    }
+    if (unfoldingStatus == Status::ResultAvailable) {
         return 3;
-    if (unfoldingStatus == Status::Terminated)
+    }
+    if (unfoldingStatus == Status::Terminated) {
         return 4;
+    }
 
     return -1;
 }
@@ -929,13 +934,13 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
             for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                 bool expandCurrentAction = exploreAllActions || truncateAllActions;
                 if (checkRewireForAllActions) {
-                    assert(refine);
+                    STORM_LOG_ASSERT(refine, "Expected refine to be true.");
                     // In this case, we still need to check whether this action needs to be expanded
-                    assert(!expandCurrentAction);
+                    STORM_LOG_ASSERT(!expandCurrentAction, "Action should not be expanded.");
                     // Check the action dependent conditions for rewiring
                     // First, check whether this action has been rewired since the last refinement of one of the successor observations (i.e. whether rewiring
                     // would actually change the successor states)
-                    assert(overApproximation->currentStateHasOldBehavior());
+                    STORM_LOG_ASSERT(overApproximation->currentStateHasOldBehavior(), "Expected old behavior.");
                     if (overApproximation->getCurrentStateActionExplorationWasDelayed(action) ||
                         overApproximation->currentStateHasSuccessorObservationInObservationSet(action, refinedObservations)) {
                         // Then, check whether the other criteria for rewiring are satisfied
@@ -1094,8 +1099,8 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
         }
         if (printUpdateStopwatch.getTimeInSeconds() >= 60) {
             printUpdateStopwatch.restart();
-            STORM_LOG_INFO("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP" << " ##### "
-                                  << underApproximation->getUnexploredStates().size() << " beliefs queued\n");
+            STORM_LOG_INFO("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP"
+                                  << " ##### " << underApproximation->getUnexploredStates().size() << " beliefs queued\n");
             if (underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useClipping) {
                 STORM_LOG_INFO("##### Clipping Attempts: " << statistics.nrClippingAttempts.value() << " ##### "
                                                            << "Clipped States: " << statistics.nrClippedStates.value() << "\n");

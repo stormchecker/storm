@@ -19,7 +19,7 @@ template<typename ValueType, typename RewardValueType>
 std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>>
 AutoParser<ValueType, RewardValueType>::parseModel(std::string const& transitionsFilename, std::string const& labelingFilename,
                                                    std::string const& stateRewardFilename, std::string const& transitionRewardFilename,
-                                                   std::string const& choiceLabelingFilename) {
+                                                   std::string const& choiceLabelingFilename, ExplicitModelParserOptions const& options) {
     // Find and parse the model type hint.
     storm::models::ModelType type = AutoParser::analyzeHint(transitionsFilename);
 
@@ -30,28 +30,28 @@ AutoParser<ValueType, RewardValueType>::parseModel(std::string const& transition
             model = std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>>(
                 new storm::models::sparse::Dtmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(
                     std::move(DeterministicModelParser<ValueType, RewardValueType>::parseDtmc(transitionsFilename, labelingFilename, stateRewardFilename,
-                                                                                              transitionRewardFilename, choiceLabelingFilename))));
+                                                                                              transitionRewardFilename, choiceLabelingFilename, options))));
             break;
         }
         case storm::models::ModelType::Ctmc: {
             model = std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>>(
                 new storm::models::sparse::Ctmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(
                     std::move(DeterministicModelParser<ValueType, RewardValueType>::parseCtmc(transitionsFilename, labelingFilename, stateRewardFilename,
-                                                                                              transitionRewardFilename, choiceLabelingFilename))));
+                                                                                              transitionRewardFilename, choiceLabelingFilename, options))));
             break;
         }
         case storm::models::ModelType::Mdp: {
             model = std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>>(
                 new storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(
                     std::move(NondeterministicModelParser<ValueType, RewardValueType>::parseMdp(transitionsFilename, labelingFilename, stateRewardFilename,
-                                                                                                transitionRewardFilename, choiceLabelingFilename))));
+                                                                                                transitionRewardFilename, choiceLabelingFilename, options))));
             break;
         }
         case storm::models::ModelType::MarkovAutomaton: {
             model = std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>>(
                 new storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(
                     std::move(storm::parser::MarkovAutomatonParser<ValueType, RewardValueType>::parseMarkovAutomaton(
-                        transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename, choiceLabelingFilename))));
+                        transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename, choiceLabelingFilename, options))));
             break;
         }
         default:
@@ -86,16 +86,17 @@ storm::models::ModelType AutoParser<ValueType, RewardValueType>::analyzeHint(std
     }
 
     // Check if the hint value is known and store the appropriate enum value.
-    if (strcmp(hint, "DTMC") == 0)
+    if (strcmp(hint, "DTMC") == 0) {
         hintType = storm::models::ModelType::Dtmc;
-    else if (strcmp(hint, "CTMC") == 0)
+    } else if (strcmp(hint, "CTMC") == 0) {
         hintType = storm::models::ModelType::Ctmc;
-    else if (strcmp(hint, "MDP") == 0)
+    } else if (strcmp(hint, "MDP") == 0) {
         hintType = storm::models::ModelType::Mdp;
-    else if (strcmp(hint, "MA") == 0)
+    } else if (strcmp(hint, "MA") == 0) {
         hintType = storm::models::ModelType::MarkovAutomaton;
-    else
+    } else {
         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Unable to find model hint in explicit input.");
+    }
 
     return hintType;
 }

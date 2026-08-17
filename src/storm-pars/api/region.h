@@ -10,15 +10,13 @@
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
+#include "storm-pars/modelchecker/region/RegionModelChecker.h"
 #include "storm-pars/modelchecker/region/RegionOptions.h"
 #include "storm-pars/modelchecker/region/RegionRefinementChecker.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
 #include "storm-pars/modelchecker/region/RegionSplitEstimateKind.h"
 #include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
-#include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
-#include "storm-pars/modelchecker/region/SparseMdpParameterLiftingModelChecker.h"
-#include "storm-pars/modelchecker/region/ValidatingSparseParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 #include "storm-pars/modelchecker/region/monotonicity/OrderBasedMonotonicityBackend.h"
 #include "storm-pars/modelchecker/results/RegionCheckResult.h"
@@ -30,7 +28,6 @@
 
 #include "storm/environment/Environment.h"
 
-#include "storm/api/properties.h"
 #include "storm/api/transformation.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -191,42 +188,11 @@ std::shared_ptr<storm::models::sparse::Model<ParametricType>> preprocessSparseMo
 
 template<typename ParametricType, typename ImpreciseType = double, typename PreciseType = storm::RationalNumber>
 std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> createRegionModelChecker(storm::modelchecker::RegionCheckEngine engine,
-                                                                                                  storm::models::ModelType modelType) {
-    STORM_LOG_THROW(modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Mdp, storm::exceptions::NotSupportedException,
-                    "Unable to create a region checker for the provided model type.");
+                                                                                                  storm::models::ModelType modelType);
 
-    switch (engine) {
-        case storm::modelchecker::RegionCheckEngine::ParameterLifting:
-            if (modelType == storm::models::ModelType::Dtmc) {
-                return std::make_unique<
-                    storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ImpreciseType>>();
-            } else {
-                return std::make_unique<
-                    storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ImpreciseType>>();
-            }
-        case storm::modelchecker::RegionCheckEngine::ExactParameterLifting:
-            if (modelType == storm::models::ModelType::Dtmc) {
-                return std::make_unique<
-                    storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, PreciseType>>();
-            } else {
-                return std::make_unique<storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, PreciseType>>();
-            }
-        case storm::modelchecker::RegionCheckEngine::RobustParameterLifting:
-            return std::make_unique<
-                storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ImpreciseType, true>>();
-        case storm::modelchecker::RegionCheckEngine::ValidatingParameterLifting:
-            if (modelType == storm::models::ModelType::Dtmc) {
-                return std::make_unique<storm::modelchecker::ValidatingSparseParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>,
-                                                                                                          ImpreciseType, PreciseType>>();
-            } else {
-                return std::make_unique<storm::modelchecker::ValidatingSparseParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>,
-                                                                                                          ImpreciseType, PreciseType>>();
-            }
-        default:
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected region model checker type.");
-    }
-    return nullptr;
-}
+extern template std::unique_ptr<storm::modelchecker::RegionModelChecker<storm::RationalFunction>>
+createRegionModelChecker<storm::RationalFunction, double, storm::RationalNumber>(storm::modelchecker::RegionCheckEngine engine,
+                                                                                 storm::models::ModelType modelType);
 
 template<typename ParametricType, typename ImpreciseType = double, typename PreciseType = storm::RationalNumber>
 std::unique_ptr<storm::modelchecker::MonotonicityBackend<ParametricType>> initializeMonotonicityBackend(
@@ -383,7 +349,7 @@ template<typename ValueType>
 bool verifyRegion(RefinementOptions<ValueType> settings, storm::storage::ParameterRegion<ValueType> const& region) {
     Environment env;
     STORM_LOG_THROW(settings.task.getFormula().isProbabilityOperatorFormula() || settings.task.getFormula().isRewardOperatorFormula(),
-                    storm::exceptions::NotSupportedException, "Only probability and reward operators supported");
+                    storm::exceptions::NotSupportedException, "Only probability and reward operators supported.");
     STORM_LOG_THROW(settings.task.getFormula().asOperatorFormula().hasBound(), storm::exceptions::NotSupportedException,
                     "Verification requires a bounded operator formula.");
 

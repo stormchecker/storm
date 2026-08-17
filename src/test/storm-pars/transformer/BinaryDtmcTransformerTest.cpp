@@ -12,6 +12,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/bisimulation.h"
 #include "storm/api/builder.h"
+#include "storm/api/properties.h"
 #include "storm/environment/Environment.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"

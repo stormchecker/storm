@@ -30,7 +30,7 @@ std::unique_ptr<storm::modelchecker::RegionCheckResult<ParametricType>> RegionMo
     Environment const& env, std::vector<storm::storage::ParameterRegion<ParametricType>> const& regions, std::vector<RegionResultHypothesis> const& hypotheses,
     bool sampleVerticesOfRegion) {
     STORM_LOG_THROW(regions.size() == hypotheses.size(), storm::exceptions::InvalidArgumentException,
-                    "The number of regions and the number of hypotheses do not match");
+                    "The number of regions and the number of hypotheses do not match.");
     std::vector<std::pair<storm::storage::ParameterRegion<ParametricType>, storm::modelchecker::RegionResult>> result;
     auto hypothesisIt = hypotheses.begin();
     for (auto const& region : regions) {
@@ -61,7 +61,7 @@ template<typename ParametricType>
 std::vector<typename RegionModelChecker<ParametricType>::CoefficientType> RegionModelChecker<ParametricType>::obtainRegionSplitEstimates(
     std::set<VariableType> const& relevantParameters) const {
     STORM_LOG_ASSERT(specifiedRegionSplitEstimateKind.has_value(), "Unable to obtain region split estimates because they wre not requested.");
-    STORM_LOG_ASSERT(specifiedRegionSplitEstimateKind.value() == RegionSplitEstimateKind::Distance, "requested region split estimate kind not supported");
+    STORM_LOG_ASSERT(specifiedRegionSplitEstimateKind.value() == RegionSplitEstimateKind::Distance, "Requested region split estimate kind not supported.");
     STORM_LOG_ASSERT(lastCheckedRegion.has_value(), "Unable to obtain region split estimates because no region was checked.");
     std::vector<CoefficientType> result;
     result.reserve(relevantParameters.size());

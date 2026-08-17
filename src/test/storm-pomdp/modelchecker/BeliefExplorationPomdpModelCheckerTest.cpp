@@ -277,10 +277,11 @@ class BeliefExplorationPomdpModelCheckerTest : public ::testing::Test {
         return TestType::precision();
     }
     ValueType modelcheckingPrecision() const {
-        if (TestType::isExactModelChecking)
+        if (TestType::isExactModelChecking) {
             return storm::utility::zero<ValueType>();
-        else
+        } else {
             return storm::utility::convertNumber<ValueType>(1e-6);
+        }
     }
     bool isExact() const {
         return TestType::isExactModelChecking;

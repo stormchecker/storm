@@ -2,81 +2,77 @@
 
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CuddSettings.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 namespace dd {
 
 #ifdef STORM_HAVE_CUDD
-InternalDdManager<DdType::CUDD>::InternalDdManager() : cuddManager(), reorderingTechnique(CUDD_REORDER_NONE), numberOfDdVariables(0) {
-    this->cuddManager.SetMaxMemory(
-        static_cast<unsigned long>(storm::settings::getModule<storm::settings::modules::CuddSettings>().getMaximalMemory() * 1024ul * 1024ul));
-
-    auto const& settings = storm::settings::getModule<storm::settings::modules::CuddSettings>();
-    this->cuddManager.SetEpsilon(settings.getConstantPrecision());
+InternalDdManager<DdType::CUDD>::InternalDdManager(storm::CuddDdManagerEnvironment const& environment)
+    : cuddManager(), reorderingTechnique(CUDD_REORDER_NONE), numberOfDdVariables(0) {
+    this->cuddManager.SetMaxMemory(static_cast<unsigned long>(environment.getMaximalMemory() * 1024ul * 1024ul));
+    this->cuddManager.SetEpsilon(environment.getConstantPrecision());
 
     // Now set the selected reordering technique.
-    storm::settings::modules::CuddSettings::ReorderingTechnique reorderingTechniqueAsSetting = settings.getReorderingTechnique();
+    storm::dd::CuddReorderingTechnique reorderingTechniqueAsSetting = environment.getReorderingTechnique();
     switch (reorderingTechniqueAsSetting) {
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::None:
+        case storm::dd::CuddReorderingTechnique::None:
             this->reorderingTechnique = CUDD_REORDER_NONE;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::Random:
+        case storm::dd::CuddReorderingTechnique::Random:
             this->reorderingTechnique = CUDD_REORDER_RANDOM;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::RandomPivot:
+        case storm::dd::CuddReorderingTechnique::RandomPivot:
             this->reorderingTechnique = CUDD_REORDER_RANDOM_PIVOT;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::Sift:
+        case storm::dd::CuddReorderingTechnique::Sift:
             this->reorderingTechnique = CUDD_REORDER_SIFT;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::SiftConv:
+        case storm::dd::CuddReorderingTechnique::SiftConv:
             this->reorderingTechnique = CUDD_REORDER_SIFT_CONVERGE;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::SymmetricSift:
+        case storm::dd::CuddReorderingTechnique::SymmetricSift:
             this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::SymmetricSiftConv:
+        case storm::dd::CuddReorderingTechnique::SymmetricSiftConv:
             this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT_CONV;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::GroupSift:
+        case storm::dd::CuddReorderingTechnique::GroupSift:
             this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::GroupSiftConv:
+        case storm::dd::CuddReorderingTechnique::GroupSiftConv:
             this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT_CONV;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::Win2:
+        case storm::dd::CuddReorderingTechnique::Win2:
             this->reorderingTechnique = CUDD_REORDER_WINDOW2;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::Win2Conv:
+        case storm::dd::CuddReorderingTechnique::Win2Conv:
             this->reorderingTechnique = CUDD_REORDER_WINDOW2_CONV;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::Win3:
+        case storm::dd::CuddReorderingTechnique::Win3:
             this->reorderingTechnique = CUDD_REORDER_WINDOW3;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::Win3Conv:
+        case storm::dd::CuddReorderingTechnique::Win3Conv:
             this->reorderingTechnique = CUDD_REORDER_WINDOW3_CONV;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::Win4:
+        case storm::dd::CuddReorderingTechnique::Win4:
             this->reorderingTechnique = CUDD_REORDER_WINDOW4;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::Win4Conv:
+        case storm::dd::CuddReorderingTechnique::Win4Conv:
             this->reorderingTechnique = CUDD_REORDER_WINDOW4_CONV;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::Annealing:
+        case storm::dd::CuddReorderingTechnique::Annealing:
             this->reorderingTechnique = CUDD_REORDER_ANNEALING;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::Genetic:
+        case storm::dd::CuddReorderingTechnique::Genetic:
             this->reorderingTechnique = CUDD_REORDER_GENETIC;
             break;
-        case storm::settings::modules::CuddSettings::ReorderingTechnique::Exact:
+        case storm::dd::CuddReorderingTechnique::Exact:
             this->reorderingTechnique = CUDD_REORDER_EXACT;
             break;
     }
 
-    this->allowDynamicReordering(settings.isReorderingEnabled());
+    this->allowDynamicReordering(environment.isReorderingEnabled());
 }
 
 InternalDdManager<DdType::CUDD>::~InternalDdManager() {
@@ -221,7 +217,7 @@ uint_fast64_t InternalDdManager<DdType::CUDD>::getNumberOfDdVariables() const {
 
 #else
 
-InternalDdManager<DdType::CUDD>::InternalDdManager() {
+InternalDdManager<DdType::CUDD>::InternalDdManager(storm::CuddDdManagerEnvironment const&) {
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
                     "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
                     "of Storm with CUDD support.");

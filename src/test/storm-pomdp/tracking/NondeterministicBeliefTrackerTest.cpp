@@ -167,8 +167,9 @@ TEST(SparseBeliefTracker, MixedRiskMaxMin) {
     // that has risk 1.0. We iterate until we either find one or exhaust observations.
     bool movedToHighRisk = false;
     for (uint32_t obs = 0; obs < static_cast<uint32_t>(pomdp->getNrObservations()); ++obs) {
-        if (obs == initObs)
+        if (obs == initObs) {
             continue;
+        }
         storm::generator::NondeterministicBeliefTracker<double, storm::generator::SparseBeliefState<double>> t2(*pomdp);
         t2.setRisk(mixedRisk);
         t2.reset(initObs);

@@ -240,6 +240,56 @@ TEST(PrismParser, POMDPInputTest) {
     )";
 
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput2, "testfile"));
+
+    std::string testInput3 =
+        R"(pomdp
+
+    formula f = 1;
+
+    observables
+            i
+    endobservables
+
+    module example
+    s : [0..4] init 0;
+    i : bool init true;
+    [] s=0 -> 0.5: (s'=1) & (i'=false) + 0.5: (s'=2) & (i'=false);
+    [] s=1 | s=2 -> 1: (s'=3) & (i'=true);
+    [r] s=1 -> 1: (s'=4) & (i'=true);
+    [r] s=2 -> 1: (s'=3) & (i'=true);
+    endmodule
+
+    )";
+
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput3, "testfile"));
+    ASSERT_TRUE(result.getModule(0).getBooleanVariables().size() == 1);
+    EXPECT_TRUE(result.getModule(0).getBooleanVariables().front().isObservable());
+
+    std::string testInput4 =
+        R"(pomdp
+
+    observables
+            i
+    endobservables
+
+    formula f = 1;
+
+    observables
+            s
+    endobservables
+
+    module example
+    s : [0..4] init 0;
+    i : bool init true;
+    [] s=0 -> 0.5: (s'=1) & (i'=false) + 0.5: (s'=2) & (i'=false);
+    [] s=1 | s=2 -> 1: (s'=3) & (i'=true);
+    [r] s=1 -> 1: (s'=4) & (i'=true);
+    [r] s=2 -> 1: (s'=3) & (i'=true);
+    endmodule
+
+    )";
+
+    EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput4, "testfile"), storm::exceptions::WrongFormatException);
 }
 
 TEST(PrismParser, NAryPredicates) {

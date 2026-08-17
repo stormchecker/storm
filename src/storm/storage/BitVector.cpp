@@ -228,8 +228,9 @@ BitVector& BitVector::operator=(BitVector&& other) {
 
 bool BitVector::operator==(BitVector const& other) const {
     // If the lengths of the vectors do not match, they are considered unequal.
-    if (this->bitCount != other.bitCount)
+    if (this->bitCount != other.bitCount) {
         return false;
+    }
 
     // If the lengths match, we compare the buckets one by one.
     return std::equal(this->buckets, this->buckets + this->bucketCount(), other.buckets);
@@ -331,7 +332,7 @@ void BitVector::expandSize(bool init) {
     // size_t oldBitCount = bitCount;
     bitCount = bucketCount() * 64;
     if (init) {
-        STORM_LOG_ASSERT(false, "Not implemented as we do not foresee any need");
+        STORM_LOG_ASSERT(false, "Not implemented as we do not foresee any need.");
     }
 }
 
@@ -1105,7 +1106,7 @@ bool BitVector::compareAndSwap(uint64_t start1, uint64_t start2, uint64_t length
             check.set(i + start1, check.get(i + start2));
             check.set(i + start2, tmp);
         }
-        STORM_LOG_ASSERT(*this == check, "Swapping not correct");
+        STORM_LOG_ASSERT(*this == check, "Swapping not correct.");
 
         // Check that sorted
         for (uint64_t i = 0; i < length; ++i) {
@@ -1385,12 +1386,13 @@ BitVector BitVector::load(std::string const& description) {
     std::string field;
     char ws_delim;
     while (true) {
-        if (ss >> field)
+        if (ss >> field) {
             splitted.push_back(field);
-        else if (ss.eof())
+        } else if (ss.eof()) {
             break;
-        else
+        } else {
             splitted.push_back(std::string());
+        }
         ss.clear();
         ss >> ws_delim;
     }

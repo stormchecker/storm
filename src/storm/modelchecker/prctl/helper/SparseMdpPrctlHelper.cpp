@@ -17,7 +17,6 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
@@ -113,16 +112,14 @@ std::map<storm::storage::sparse::state_type, SolutionType> SparseMdpPrctlHelper<
                 storm::settings::getModule<storm::settings::modules::IOSettings>().getExportCdfDirectory() + "cdf.csv", cdfData, headers);
         }
 
-        if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-            STORM_PRINT_AND_LOG("---------------------------------\n");
-            STORM_PRINT_AND_LOG("Statistics:\n");
-            STORM_PRINT_AND_LOG("---------------------------------\n");
-            STORM_PRINT_AND_LOG("          #checked epochs: " << epochOrder.size() << ".\n");
-            STORM_PRINT_AND_LOG("             overall Time: " << swAll << ".\n");
-            STORM_PRINT_AND_LOG("Epoch Model building Time: " << swBuild << ".\n");
-            STORM_PRINT_AND_LOG("Epoch Model checking Time: " << swCheck << ".\n");
-            STORM_PRINT_AND_LOG("---------------------------------\n");
-        }
+        STORM_LOG_STATISTICS("---------------------------------\n");
+        STORM_LOG_STATISTICS("Statistics:\n");
+        STORM_LOG_STATISTICS("---------------------------------\n");
+        STORM_LOG_STATISTICS("          #checked epochs: " << epochOrder.size() << ".\n");
+        STORM_LOG_STATISTICS("             overall Time: " << swAll << ".\n");
+        STORM_LOG_STATISTICS("Epoch Model building Time: " << swBuild << ".\n");
+        STORM_LOG_STATISTICS("Epoch Model checking Time: " << swCheck << ".\n");
+        STORM_LOG_STATISTICS("---------------------------------\n");
 
         return result;
     }
@@ -439,12 +436,14 @@ MaybeStateResult<SolutionType> computeValuesForMaybeStates(Environment const& en
                             : std::vector<SolutionType>(submatrix.getRowGroupCount(),
                                                         hint.hasLowerResultBound() ? hint.getLowerResultBound() : storm::utility::zero<SolutionType>());
 
+    // Capture the uncertainty resolution mode before the goal is consumed by the solver configuration.
+    auto const uncertaintyResolutionMode = goal.getUncertaintyResolutionMode();
     // Set up the solver.
     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType> minMaxLinearEquationSolverFactory;
     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver =
         storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
     solver->setRequirementsChecked();
-    solver->setUncertaintyResolutionMode(goal.getUncertaintyResolutionMode());
+    solver->setUncertaintyResolutionMode(uncertaintyResolutionMode);
     solver->setHasUniqueSolution(hint.hasUniqueSolution());
     solver->setHasNoEndComponents(hint.hasNoEndComponents());
     if (hint.hasLowerResultBound()) {
@@ -515,7 +514,7 @@ QualitativeStateSetsUntilProbabilities getQualitativeStateSetsUntilProbabilities
             result.statesWithProbability1.set(state, true);
         } else {
             STORM_LOG_THROW(storm::utility::isZero(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException,
-                            "Expected that the result hint specifies probabilities in {0,1} for non-maybe states");
+                            "Expected that the result hint specifies probabilities in {0,1} for non-maybe states.");
             result.statesWithProbability0.set(state, true);
         }
     }
@@ -569,7 +568,7 @@ void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler,
             scheduler.setChoice(*subChoiceIt, maybeState);
             ++subChoiceIt;
         }
-        assert(subChoiceIt == subChoices.end());
+        STORM_LOG_ASSERT(subChoiceIt == subChoices.end(), "Subchoice iterator not at end.");
     } else {
         // See computeFixedPointSystemUntilProbabilities, where we create a different equation system.
         // Consequentially, we run a slightly different code here for interval-based models.
@@ -581,14 +580,13 @@ void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler,
 }
 
 template<typename ValueType, typename SolutionType>
-void extendScheduler(storm::storage::Scheduler<SolutionType>& scheduler, storm::solver::SolveGoal<ValueType, SolutionType> const& goal,
-                     QualitativeStateSetsUntilProbabilities const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates,
-                     storm::storage::BitVector const& psiStates) {
+void extendScheduler(storm::storage::Scheduler<SolutionType>& scheduler, bool minimize, QualitativeStateSetsUntilProbabilities const& qualitativeStateSets,
+                     storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                     storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
     // Finally, if we need to produce a scheduler, we also need to figure out the parts of the scheduler for
     // the states with probability 1 or 0 (depending on whether we maximize or minimize).
     // We also need to define some arbitrary choice for the remaining states to obtain a fully defined scheduler.
-    if (goal.minimize()) {
+    if (minimize) {
         storm::utility::graph::computeSchedulerProb0E(qualitativeStateSets.statesWithProbability0, transitionMatrix, scheduler);
         for (uint64_t prob1State : qualitativeStateSets.statesWithProbability1) {
             scheduler.setChoice(0, prob1State);
@@ -707,6 +705,8 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     // Check if the values of the maybe states are relevant for the SolveGoal
     bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(qualitativeStateSets.maybeStates);
 
+    // Capture the goal direction before the goal is consumed by the solver configuration.
+    bool const minimize = goal.minimize();
     // If requested, we will produce a scheduler.
     std::unique_ptr<storm::storage::Scheduler<SolutionType>> scheduler;
     if (produceScheduler) {
@@ -768,7 +768,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                     storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                 } else {
                     // For interval models, the result for maybe states indeed also holds values for all qualitative states.
-                    STORM_LOG_ASSERT(resultForMaybeStates.getValues().size() == transitionMatrix.getColumnCount(), "Dimensions do not match");
+                    STORM_LOG_ASSERT(resultForMaybeStates.getValues().size() == transitionMatrix.getColumnCount(), "Dimensions do not match.");
                     result = resultForMaybeStates.getValues();
                 }
                 if (produceScheduler) {
@@ -781,14 +781,14 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
     // Extend scheduler with choices for the states in the qualitative state sets.
     if (produceScheduler) {
-        extendScheduler(*scheduler, goal, qualitativeStateSets, transitionMatrix, backwardTransitions, phiStates, psiStates);
+        extendScheduler(*scheduler, minimize, qualitativeStateSets, transitionMatrix, backwardTransitions, phiStates, psiStates);
     }
 
     // Sanity check for created scheduler.
     STORM_LOG_ASSERT(!produceScheduler || scheduler, "Expected that a scheduler was obtained.");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
 
     // Return result.
     return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(result), std::move(scheduler));
@@ -1013,9 +1013,9 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
         scheduler = std::make_unique<storm::storage::Scheduler<ValueType>>(discountingHelper.computeScheduler());
     }
     STORM_LOG_ASSERT(!produceScheduler || scheduler, "Expected that a scheduler was obtained.");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
     return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(x), std::move(scheduler));
 }
 
@@ -1110,7 +1110,7 @@ QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewar
             result.rewardZeroStates.set(state, true);
         } else {
             STORM_LOG_THROW(storm::utility::isInfinity(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException,
-                            "Expected that the result hint specifies probabilities in {0,infinity} for non-maybe states");
+                            "Expected that the result hint specifies probabilities in {0,infinity} for non-maybe states.");
             result.infinityStates.set(state, true);
         }
     }
@@ -1164,13 +1164,12 @@ QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewar
 }
 
 template<typename ValueType, typename SolutionType>
-void extendScheduler(storm::storage::Scheduler<SolutionType>& scheduler, storm::solver::SolveGoal<ValueType, SolutionType> const& goal,
-                     QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates,
-                     std::function<storm::storage::BitVector()> const& zeroRewardChoicesGetter) {
+void extendScheduler(storm::storage::Scheduler<SolutionType>& scheduler, bool minimize, QualitativeStateSetsReachabilityRewards const& qualitativeStateSets,
+                     storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                     storm::storage::BitVector const& targetStates, std::function<storm::storage::BitVector()> const& zeroRewardChoicesGetter) {
     // Finally, if we need to produce a scheduler, we also need to figure out the parts of the scheduler for
     // the states with reward zero/infinity.
-    if (goal.minimize()) {
+    if (minimize) {
         storm::utility::graph::computeSchedulerProb1E(qualitativeStateSets.rewardZeroStates, transitionMatrix, backwardTransitions,
                                                       qualitativeStateSets.rewardZeroStates, targetStates, scheduler, zeroRewardChoicesGetter());
         for (uint64_t state : qualitativeStateSets.infinityStates) {
@@ -1206,7 +1205,7 @@ void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler,
             ++subChoiceIt;
         }
     }
-    assert(subChoiceIt == subChoices.end());
+    STORM_LOG_ASSERT(subChoiceIt == subChoices.end(), "Subchoice iterator not at end.");
 }
 
 template<typename ValueType, typename SolutionType>
@@ -1377,6 +1376,8 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     // Check if the values of the maybe states are relevant for the SolveGoal
     bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(qualitativeStateSets.maybeStates);
 
+    // Capture the goal direction before the goal is consumed by the solver configuration.
+    bool const minimize = goal.minimize();
     // Check whether we need to compute exact rewards for some states.
     if (qualitative || maybeStatesNotRelevant) {
         STORM_LOG_INFO("The rewards for the initial states were determined in a preprocessing step. No exact rewards were computed.");
@@ -1459,14 +1460,14 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
     // Extend scheduler with choices for the states in the qualitative state sets.
     if (produceScheduler) {
-        extendScheduler(*scheduler, goal, qualitativeStateSets, transitionMatrix, backwardTransitions, targetStates, zeroRewardChoicesGetter);
+        extendScheduler(*scheduler, minimize, qualitativeStateSets, transitionMatrix, backwardTransitions, targetStates, zeroRewardChoicesGetter);
     }
 
     // Sanity check for created scheduler.
     STORM_LOG_ASSERT(!produceScheduler || scheduler, "Expected that a scheduler was obtained.");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler");
-    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler.");
+    STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
 
     if constexpr (storm::IsIntervalType<ValueType>) {
         return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(result));

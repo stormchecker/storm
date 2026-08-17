@@ -4,7 +4,7 @@
 
 #include "storm/adapters/SpotAdapter.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
-#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/utility/macros.h"
@@ -20,7 +20,7 @@ struct product_state_hash {
     }
 #else
     size_t operator()(product_state) const {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Spot support.");
     }
 #endif
 };
@@ -39,7 +39,7 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
     // iterate over all subformulae
     for (const std::shared_ptr<const storm::logic::Formula>& subFormula : formula.getSubformulas()) {
         // get the formula in the right format
-        STORM_LOG_ASSERT(subFormula->isProbabilityOperatorFormula(), "subformula " << *subFormula << " has unexpected type.");
+        STORM_LOG_ASSERT(subFormula->isProbabilityOperatorFormula(), "Subformula " << *subFormula << " has unexpected type.");
         auto const& pathFormula = subFormula->asProbabilityOperatorFormula().getSubformula().asPathFormula();
 
         // get map of state-expressions to propositions
@@ -51,7 +51,8 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
         if (!spotPrefixLtl.errors.empty()) {
             std::ostringstream errorMsg;
             spotPrefixLtl.format_errors(errorMsg);
-            STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Spot could not parse formula: " << prefixLtl << ": " << errorMsg.str());
+            STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException,
+                            "Spot could not parse formula: " << prefixLtl << ": " << errorMsg.str() << ".");
         }
         spot::formula spotFormula = spotPrefixLtl.f;
 
@@ -101,7 +102,7 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
                 {
                     p.first->second = res->new_state();
                     todo.emplace_back(x, p.first->second);
-                    assert(p.first->second == v->size());
+                    STORM_LOG_ASSERT(p.first->second == v->size(), "State size mismatch.");
                     v->emplace_back(x);
                 }
                 return p.first->second;
@@ -111,19 +112,21 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
             while (!todo.empty()) {
                 auto top = todo.front();
                 todo.pop_front();
-                for (auto& l : left->out(top.first.first))
+                for (auto& l : left->out(top.first.first)) {
                     for (auto& r : right->out(top.first.second)) {
                         auto cond = l.cond & r.cond;
-                        if (cond == bddfalse)
+                        if (cond == bddfalse) {
                             continue;
+                        }
                         auto dst = new_state(l.dst, r.dst);
                         res->new_edge(top.second, dst, cond, merge_acc(l.acc, r.acc));
                         // If right is deterministic, we can abort immediately!
                     }
+                }
             }
 
             if (res->acc().is_f()) {
-                assert(res->num_edges() == 0);
+                STORM_LOG_ASSERT(res->num_edges() == 0, "Expected no edges.");
                 res->prop_universal(true);
                 res->prop_complete(false);
                 res->prop_stutter_invariant(true);
@@ -132,18 +135,24 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
             } else {
                 // The product of two non-deterministic automata could be
                 // deterministic.  Likewise for non-complete automata.
-                if (left->prop_universal() && right->prop_universal())
+                if (left->prop_universal() && right->prop_universal()) {
                     res->prop_universal(true);
-                if (left->prop_complete() && right->prop_complete())
+                }
+                if (left->prop_complete() && right->prop_complete()) {
                     res->prop_complete(true);
-                if (left->prop_stutter_invariant() && right->prop_stutter_invariant())
+                }
+                if (left->prop_stutter_invariant() && right->prop_stutter_invariant()) {
                     res->prop_stutter_invariant(true);
-                if (left->prop_inherently_weak() && right->prop_inherently_weak())
+                }
+                if (left->prop_inherently_weak() && right->prop_inherently_weak()) {
                     res->prop_inherently_weak(true);
-                if (left->prop_weak() && right->prop_weak())
+                }
+                if (left->prop_weak() && right->prop_weak()) {
                     res->prop_weak(true);
-                if (left->prop_terminal() && right->prop_terminal())
+                }
+                if (left->prop_terminal() && right->prop_terminal()) {
                     res->prop_terminal(true);
+                }
                 res->prop_state_acc(left->prop_state_acc() && right->prop_state_acc());
             }
             productAutomaton = res;
@@ -164,7 +173,7 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
 
     return da;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Spot support.");
     (void)formula;
     (void)extracted;
     (void)acceptanceConditions;

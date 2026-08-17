@@ -51,6 +51,7 @@ MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::spa
 template<typename ValueType, typename RewardModelType>
 MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components)
     : NondeterministicModel<ValueType, RewardModelType>(ModelType::MarkovAutomaton, std::move(components)),
+      // NOLINTBEGIN(bugprone-use-after-move) The base constructor only consumes the base-relevant fields of components.
       markovianStates(std::move(components.markovianStates.get())) {
     if (components.exitRates) {
         exitRates = std::move(components.exitRates.get());
@@ -59,6 +60,7 @@ MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::spa
     if (components.rateTransitions) {
         this->turnRatesToProbabilities();
     }
+    // NOLINTEND(bugprone-use-after-move)
     closed = this->checkIsClosed();
 }
 

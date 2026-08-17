@@ -13,7 +13,8 @@ namespace storm {
 namespace parser {
 
 template<typename ValueType>
-std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ImcaMarkovAutomatonParser<ValueType>::parseImcaFile(std::string const& filename) {
+std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ImcaMarkovAutomatonParser<ValueType>::parseImcaFile(
+    std::string const& filename, ExplicitModelParserOptions const& options) {
     // Open file and initialize result.
     std::ifstream inputFileStream;
     storm::io::openFile(filename, inputFileStream);
@@ -28,7 +29,7 @@ std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ImcaMarkovAut
 
     try {
         // Start parsing.
-        ImcaParserGrammar<ValueType> grammar;
+        ImcaParserGrammar<ValueType> grammar(options);
         bool succeeded = qi::phrase_parse(
             iter, last, grammar, storm::spirit_encoding::space_type() | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), components);
         STORM_LOG_THROW(succeeded, storm::exceptions::WrongFormatException, "Could not parse imca file.");

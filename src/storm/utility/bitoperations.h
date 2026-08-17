@@ -58,8 +58,9 @@ inline T reverseBits(T const t) {
  */
 inline uint64_t smallestIntWithNBitsSet(uint64_t n) {
     STORM_LOG_ASSERT(n < 64, "Input is too large.");
-    if (n == 0)
+    if (n == 0) {
         return 0;
+    }
     return (1ul << n) - 1;
 }
 
@@ -72,8 +73,9 @@ inline uint64_t smallestIntWithNBitsSet(uint64_t n) {
  * From https://graphics.stanford.edu/~seander/bithacks.html#NextBitPermutation
  */
 inline uint64_t nextBitPermutation(uint64_t v) {
-    if (v == 0)
+    if (v == 0) {
         return 0;
+    }
     uint64_t t = (v | (v - 1)) + 1;
     return t | ((((t & -t) / (v & -v)) >> 1) - 1);
 }

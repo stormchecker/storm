@@ -27,7 +27,7 @@ std::pair<std::set<VariableType>, std::set<VariableType>> MonotonicityParser<Var
         std::vector<std::string> fileSplitted;
 
         boost::split(fileSplitted, fileContent, boost::is_any_of(";"));
-        STORM_LOG_THROW(fileSplitted.size() == 2, storm::exceptions::WrongFormatException, "Expecting content to contain \";\" between monotone variables");
+        STORM_LOG_THROW(fileSplitted.size() == 2, storm::exceptions::WrongFormatException, "Expecting content to contain \";\" between monotone variables.");
         std::vector<std::string> monotoneIncrVarsString;
         boost::split(monotoneIncrVarsString, fileSplitted[0], boost::is_any_of(" "));
         std::vector<std::string> monotoneDecrVarsString;

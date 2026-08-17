@@ -14,7 +14,6 @@
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
@@ -120,16 +119,14 @@ std::map<storm::storage::sparse::state_type, SolutionType> SparseDtmcPrctlHelper
                 storm::settings::getModule<storm::settings::modules::IOSettings>().getExportCdfDirectory() + "cdf.csv", cdfData, headers);
         }
 
-        if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-            STORM_PRINT_AND_LOG("---------------------------------\n");
-            STORM_PRINT_AND_LOG("Statistics:\n");
-            STORM_PRINT_AND_LOG("---------------------------------\n");
-            STORM_PRINT_AND_LOG("          #checked epochs: " << epochOrder.size() << ".\n");
-            STORM_PRINT_AND_LOG("             overall Time: " << swAll << ".\n");
-            STORM_PRINT_AND_LOG("Epoch Model building Time: " << swBuild << ".\n");
-            STORM_PRINT_AND_LOG("Epoch Model checking Time: " << swCheck << ".\n");
-            STORM_PRINT_AND_LOG("---------------------------------\n");
-        }
+        STORM_LOG_STATISTICS("---------------------------------\n");
+        STORM_LOG_STATISTICS("Statistics:\n");
+        STORM_LOG_STATISTICS("---------------------------------\n");
+        STORM_LOG_STATISTICS("          #checked epochs: " << epochOrder.size() << ".\n");
+        STORM_LOG_STATISTICS("             overall Time: " << swAll << ".\n");
+        STORM_LOG_STATISTICS("Epoch Model building Time: " << swBuild << ".\n");
+        STORM_LOG_STATISTICS("Epoch Model checking Time: " << swCheck << ".\n");
+        STORM_LOG_STATISTICS("---------------------------------\n");
 
         return result;
     }
@@ -144,10 +141,12 @@ std::vector<SolutionType> computeRobustValuesForMaybeStates(Environment const& e
 
     // Set up the solver.
     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType> minMaxLinearEquationSolverFactory;
+    // The goal is consumed by the solver configuration, so capture what is needed first.
+    auto const uncertaintyResolutionMode = goal.getUncertaintyResolutionMode();
     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver = storm::solver::configureMinMaxLinearEquationSolver(
         env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix),
         convert(OptimizationDirection::Maximize));  // default to maximize for IDTMCs; does not affect the result
-    solver->setUncertaintyResolutionMode(goal.getUncertaintyResolutionMode());
+    solver->setUncertaintyResolutionMode(uncertaintyResolutionMode);
     solver->setHasUniqueSolution(computeReward);  // As we check for graph-preservation, in case of rewards on IDTMCs, we have a unique solution
     solver->setHasNoEndComponents(false);
 
@@ -193,7 +192,7 @@ std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, Solu
                 result[state] = storm::utility::one<SolutionType>();
             } else {
                 STORM_LOG_THROW(storm::utility::isZero(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException,
-                                "Expected that the result hint specifies probabilities in {0,1} for non-maybe states");
+                                "Expected that the result hint specifies probabilities in {0,1} for non-maybe states.");
             }
         }
 
@@ -240,7 +239,7 @@ std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, Solu
                 std::vector<SolutionType> resultForMaybeStates = computeRobustValuesForMaybeStates(env, std::move(goal), std::move(submatrix), b, false);
 
                 // For interval models, the result for maybe states indeed also holds values for all qualitative states.
-                STORM_LOG_ASSERT(resultForMaybeStates.size() == transitionMatrix.getColumnCount(), "Dimensions do not match");
+                STORM_LOG_ASSERT(resultForMaybeStates.size() == transitionMatrix.getColumnCount(), "Dimensions do not match.");
                 result = std::move(resultForMaybeStates);
             } else {
                 // Check whether we need to convert the input to equation system format.

@@ -14,10 +14,10 @@ template<typename ValueType, typename RewardValueType>
 storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>
 MarkovAutomatonParser<ValueType, RewardValueType>::parseMarkovAutomaton(std::string const& transitionsFilename, std::string const& labelingFilename,
                                                                         std::string const& stateRewardFilename, std::string const& transitionRewardFilename,
-                                                                        std::string const& choiceLabelingFilename) {
+                                                                        std::string const& choiceLabelingFilename, ExplicitModelParserOptions const& options) {
     // Parse the transitions of the Markov Automaton.
     typename storm::parser::MarkovAutomatonSparseTransitionParser<ValueType>::Result transitionResult(
-        storm::parser::MarkovAutomatonSparseTransitionParser<ValueType>::parseMarkovAutomatonTransitions(transitionsFilename));
+        storm::parser::MarkovAutomatonSparseTransitionParser<ValueType>::parseMarkovAutomatonTransitions(transitionsFilename, options));
 
     // Build the actual transition matrix using the MatrixBuilder provided by the transitionResult.
     storm::storage::SparseMatrix<ValueType> transitionMatrix(transitionResult.transitionMatrixBuilder.build());

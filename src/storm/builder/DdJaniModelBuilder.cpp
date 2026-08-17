@@ -5,6 +5,7 @@
 
 #include "storm/adapters/AddExpressionAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -15,8 +16,6 @@
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -2018,7 +2017,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
                 ActionIdentification identificationWithoutSynchVector(actionIndex, markovian);
 
                 STORM_LOG_THROW(containedActions.find(identificationWithoutSynchVector) == containedActions.end(), storm::exceptions::WrongFormatException,
-                                "Duplicate action " << actionInformation.getActionName(actionIndex));
+                                "Duplicate action " << actionInformation.getActionName(actionIndex) << ".");
                 containedActions.insert(identificationWithoutSynchVector);
                 illegalFragment |= action.second.illegalFragment;
                 addMissingGlobalVariableIdentities(action.second);
@@ -2049,7 +2048,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
             std::unordered_set<uint64_t> actionIndices;
             for (auto& action : automaton.actions) {
                 STORM_LOG_THROW(actionIndices.find(action.first.actionIndex) == actionIndices.end(), storm::exceptions::WrongFormatException,
-                                "Duplication action " << actionInformation.getActionName(action.first.actionIndex));
+                                "Duplication action " << actionInformation.getActionName(action.first.actionIndex) << ".");
                 actionIndices.insert(action.first.actionIndex);
                 illegalFragment |= action.second.illegalFragment;
                 addMissingGlobalVariableIdentities(action.second);
@@ -2189,16 +2188,16 @@ storm::dd::Bdd<Type> computeInitialStates(storm::jani::Model const& model, Compo
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-storm::dd::Bdd<Type> fixDeadlocks(storm::jani::ModelType const& modelType, storm::dd::Add<Type, ValueType>& transitionMatrix,
-                                  storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& reachableStates,
-                                  CompositionVariables<Type, ValueType> const& variables) {
+storm::dd::Bdd<Type> doFixDeadlocks(storm::jani::ModelType const& modelType, storm::dd::Add<Type, ValueType>& transitionMatrix,
+                                    storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& reachableStates,
+                                    CompositionVariables<Type, ValueType> const& variables, bool fixDeadlocks) {
     // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
     storm::dd::Bdd<Type> statesWithTransition = transitionMatrixBdd.existsAbstract(variables.columnMetaVariables);
     storm::dd::Bdd<Type> deadlockStates = reachableStates && !statesWithTransition;
 
     if (!deadlockStates.isZero()) {
         // If we need to fix deadlocks, we do so now.
-        if (!storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet()) {
+        if (fixDeadlocks) {
             STORM_LOG_INFO("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. The first three of these states are: ");
 
             storm::dd::Add<Type, ValueType> deadlockStatesAdd = deadlockStates.template toAdd<ValueType>();
@@ -2382,8 +2381,8 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> buildInternal(s
     modelComponents.transitionMatrix = system.transitions * reachableStatesAdd;
 
     // Fix deadlocks if existing.
-    modelComponents.deadlockStates =
-        fixDeadlocks(model.getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd, modelComponents.reachableStates, variables);
+    modelComponents.deadlockStates = doFixDeadlocks(model.getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd,
+                                                    modelComponents.reachableStates, variables, options.fixDeadlocks);
 
     // Cut the deadlock states by removing all states that we 'converted' to deadlock states by making them terminal.
     modelComponents.deadlockStates = modelComponents.deadlockStates && !terminalStates;
@@ -2397,7 +2396,8 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> buildInternal(s
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build(storm::jani::Model const& model,
+std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build(storm::Environment const& env,
+                                                                                                            storm::jani::Model const& model,
                                                                                                             Options const& options) {
     // Prepare the model and do some sanity checks
     if (!std::is_same<ValueType, storm::RationalFunction>::value && model.hasUndefinedConstants()) {
@@ -2448,7 +2448,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
                     "The symbolic JANI model builder currently does not support transient edge destination assignments.");
 
     // Create the manager
-    auto manager = std::make_shared<storm::dd::DdManager<Type>>();
+    auto manager = std::make_shared<storm::dd::DdManager<Type>>(env);
 
     // Prepare a result
     std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;

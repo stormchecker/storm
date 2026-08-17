@@ -34,10 +34,10 @@ bool ArgumentBase::convertFromString<bool>(std::string const& s, bool& ok) {
 
     std::string lowerInput = boost::algorithm::to_lower_copy(s);
 
-    if (s.compare(lowerTrueString) == 0 || s.compare(lowerYesString) == 0) {
+    if (lowerInput.compare(lowerTrueString) == 0 || lowerInput.compare(lowerYesString) == 0) {
         ok = true;
         return true;
-    } else if (s.compare(lowerFalseString) == 0 || s.compare(lowerNoString) == 0) {
+    } else if (lowerInput.compare(lowerFalseString) == 0 || lowerInput.compare(lowerNoString) == 0) {
         ok = true;
         return false;
     }

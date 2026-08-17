@@ -142,7 +142,7 @@ class GradientDescentInstantiationSearcher {
         this->parameters = storm::models::sparse::getProbabilityParameters(model);
         this->synthesisTask = task;
         STORM_LOG_ASSERT(task->getFormula().isProbabilityOperatorFormula() || task->getFormula().isRewardOperatorFormula(),
-                         "Formula must be either a reward or a probability operator formula");
+                         "Formula must be either a reward or a probability operator formula.");
 
         std::shared_ptr<storm::logic::Formula> formulaWithoutBounds = task->getFormula().clone();
         formulaWithoutBounds->asOperatorFormula().removeBound();

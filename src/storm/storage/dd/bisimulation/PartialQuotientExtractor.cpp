@@ -5,8 +5,6 @@
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/utility/macros.h"
 

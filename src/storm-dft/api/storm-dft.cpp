@@ -16,6 +16,8 @@
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm-dft/utility/MTTFHelper.h"
 
+#include "storm/environment/Environment.h"
+
 namespace storm::dft {
 namespace api {
 
@@ -63,10 +65,10 @@ void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<double>> const& dft,
                         "Try modularisation.");
     }
 
-    auto sylvanBddManager{std::make_shared<storm::dft::storage::SylvanBddManager>()};
+    auto sylvanBddManager{storm::dft::storage::SylvanBddManager::createWithDefaultEnvironment()};
     sylvanBddManager->execute([&]() {
         storm::dft::utility::RelevantEvents relevantEvents{additionalRelevantEventNames.begin(), additionalRelevantEventNames.end()};
-        storm::dft::adapters::SFTBDDPropertyFormulaAdapter adapter{dft, properties, relevantEvents, sylvanBddManager};
+        storm::dft::adapters::SFTBDDPropertyFormulaAdapter adapter{dft, properties, sylvanBddManager, relevantEvents};
         auto checker{adapter.getSFTBDDChecker()};
 
         if (exportToDot) {

@@ -11,6 +11,11 @@ on:
         required: true
         type: string
         default: 'x.y.z'
+      build_type:
+        description: 'Build type (Release, Debug)'
+        required: false
+        type: string
+        default: 'Release'
   # needed to trigger the workflow manually
   workflow_dispatch:
     inputs:
@@ -19,6 +24,11 @@ on:
         required: true
         type: string
         default: 'x.y.z'
+      build_type:
+        description: 'Build type (Release, Debug)'
+        required: false
+        type: string
+        default: 'Release'
 
 env:
   # GitHub runners currently have 4 cores
@@ -32,15 +42,11 @@ jobs:
       fail-fast: false
       matrix:
         distro:
-          - {name: "debian:12",
-             tag: "debian-12",
-             build_type: "Release",
-             artifact: "debian12"
+          - {name: "debian12",
+             tag: "debian-12"
             }
-          - {name: "debian:13",
-             tag: "debian-13",
-             build_type: "Release",
-             artifact: "debian13"
+          - {name: "debian13",
+             tag: "debian-13"
             }
         platform:
           - { name: amd64, runner: "ubuntu-latest" }
@@ -55,9 +61,9 @@ jobs:
         run: |
           docker build -t movesrwth/storm:ci . \
             --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro.tag }} \
-            --build-arg build_type="${{ matrix.distro.build_type }}" \
+            --build-arg build_type="${{ inputs.build_type }}" \
             --build-arg carl_tag=master \
-            --build-arg cmake_args="-DSTORM_BUILD_TESTS=OFF -DCPACK_DEBIAN_PACKAGE_VERSION=${{ inputs.version }}-${{ matrix.distro.artifact }}" \
+            --build-arg cmake_args="-DSTORM_BUILD_TESTS=OFF -DCPACK_DEBIAN_PACKAGE_VERSION=${{ inputs.version }}-${{ matrix.distro.name }} -DCPACK_PACKAGE_FILE_NAME=storm-${{ inputs.version }}-${{ matrix.distro.name }}-${{ matrix.platform.name }}" \
             --build-arg no_threads=${NR_JOBS}
             # Sets the debian version for CPack. CMake version remains unchanged because it must be numeric.
             # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers
@@ -75,33 +81,33 @@ jobs:
       - name: Upload Debian package artifact
         uses: actions/upload-artifact@v7
         with:
-          name: storm-deb-${{ matrix.distro.artifact }}-${{ matrix.platform.name }}
+          name: storm-deb-${{ matrix.distro.name }}-${{ matrix.platform.name }}
           path: ./package/*.deb
 
 
   test_deb:
-    name: Test Debian package on ${{ matrix.distro.name }}-${{ matrix.platform.name }}
+    name: Test Debian package on ${{ matrix.distro.image }}-${{ matrix.platform.name }}
     needs: build_deb
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
       matrix:
         distro:
-          - {name: "debian:12",
-             artifact: "debian12",
-            }
-          - {name: "debian:13",
-             artifact: "debian13",
-            }
-          - {name: "ubuntu:24.04",
-             artifact: "debian12",
-            }
-          - {name: "ubuntu:26.04",
-             artifact: "debian13",
-            }
-          - {name: "ubuntu:rolling",
-             artifact: "debian13",
-            }
+           - {image: "debian:12",
+              build_artifact: "debian12"
+             }
+           - {image: "debian:13",
+              build_artifact: "debian13"
+             }
+           - {image: "ubuntu:24.04",
+              build_artifact: "debian12"
+             }
+           - {image: "ubuntu:26.04",
+              build_artifact: "debian13"
+             }
+           - {image: "ubuntu:rolling",
+              build_artifact: "debian13"
+             }
         platform:
           - { name: amd64, runner: "ubuntu-latest" }
           - { name: arm64, runner: "ubuntu-24.04-arm" }
@@ -110,11 +116,11 @@ jobs:
       - name: Download .deb artifact
         uses: actions/download-artifact@v8
         with:
-          name: storm-deb-${{matrix.distro.artifact }}-${{ matrix.platform.name }}
+          name: storm-deb-${{ matrix.distro.build_artifact }}-${{ matrix.platform.name }}
           path: package
       - name: Install package
         run: |
-          docker run -d -it --name ci-test ${{ matrix.distro.name }}
+          docker run -d -it --name ci-test ${{ matrix.distro.image }}
           docker cp package/*.deb ci-test:/opt/
           docker exec ci-test bash -c "
             set -e

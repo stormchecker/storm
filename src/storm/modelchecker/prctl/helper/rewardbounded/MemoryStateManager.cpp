@@ -34,7 +34,7 @@ MemoryStateManager::MemoryState const& MemoryStateManager::getUpperMemoryStateBo
 
 void MemoryStateManager::setDimensionWithoutMemory(uint64_t dimension) {
     STORM_LOG_ASSERT(dimensionCount > 0, "Invoked MemoryStateManager with zero dimension count.");
-    STORM_LOG_ASSERT(dimension < dimensionCount, "Tried to set a dimension that is larger then the number of considered dimensions");
+    STORM_LOG_ASSERT(dimension < dimensionCount, "Tried to set a dimension that is larger then the number of considered dimensions.");
     if (((dimensionBitMask << dimension) & dimensionsWithoutMemoryMask) == 0) {
         stateCount = (stateCount >> 1);
     }
@@ -54,7 +54,7 @@ bool MemoryStateManager::isRelevantDimension(MemoryState const& state, uint64_t 
 
 void MemoryStateManager::setRelevantDimension(MemoryState& state, uint64_t dimension, bool value) const {
     STORM_LOG_ASSERT(dimensionCount > 0, "Invoked MemoryStateManager with zero dimension count.");
-    STORM_LOG_ASSERT(dimension < dimensionCount, "Tried to set a dimension that is larger then the number of considered dimensions");
+    STORM_LOG_ASSERT(dimension < dimensionCount, "Tried to set a dimension that is larger then the number of considered dimensions.");
     STORM_LOG_ASSERT(((dimensionBitMask << dimension) & dimensionsWithoutMemoryMask) == 0,
                      "Tried to change a memory state for a dimension but the dimension is assumed to have no memory.");
     if (value) {

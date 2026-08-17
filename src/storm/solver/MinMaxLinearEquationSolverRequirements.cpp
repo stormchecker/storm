@@ -75,7 +75,7 @@ SolverRequirement const& MinMaxLinearEquationSolverRequirements::get(Element con
         case Element::UpperBounds:
             return upperBounds();
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ElementType");
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ElementType.");
 }
 
 void MinMaxLinearEquationSolverRequirements::clearAcyclic() {

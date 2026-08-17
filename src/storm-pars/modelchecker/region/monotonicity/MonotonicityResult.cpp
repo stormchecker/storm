@@ -18,16 +18,16 @@ MonotonicityResult<VariableType>::MonotonicityResult() {
 
 template<typename VariableType>
 void MonotonicityResult<VariableType>::addMonotonicityResult(VariableType var, MonotonicityResult<VariableType>::Monotonicity mon) {
-    monotonicityResult.insert(std::pair<VariableType, MonotonicityResult<VariableType>::Monotonicity>(std::move(var), std::move(mon)));
+    monotonicityResult.insert(std::pair<VariableType, MonotonicityResult<VariableType>::Monotonicity>(std::move(var), mon));
 }
 
 template<typename VariableType>
 void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var, MonotonicityResult<VariableType>::Monotonicity mon, bool force) {
-    assert(!isDoneForVar(var));
+    STORM_LOG_ASSERT(!isDoneForVar(var), "Already done for variable.");
     if (force) {
-        assert(mon == MonotonicityResult<VariableType>::Monotonicity::Not);
+        STORM_LOG_ASSERT(mon == MonotonicityResult<VariableType>::Monotonicity::Not, "Expected Not monotonicity for force.");
         if (monotonicityResult.find(var) == monotonicityResult.end()) {
-            addMonotonicityResult(std::move(var), std::move(mon));
+            addMonotonicityResult(std::move(var), mon);
         } else {
             monotonicityResult[var] = mon;
         }
@@ -36,8 +36,10 @@ void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var
             mon = MonotonicityResult<VariableType>::Monotonicity::Unknown;
         }
 
+        bool unknownMon = false;
         if (monotonicityResult.find(var) == monotonicityResult.end()) {
-            addMonotonicityResult(std::move(var), std::move(mon));
+            addMonotonicityResult(std::move(var), mon);
+            unknownMon = (mon == MonotonicityResult<VariableType>::Monotonicity::Unknown);
         } else {
             auto monRes = monotonicityResult[var];
             if (monRes == MonotonicityResult<VariableType>::Monotonicity::Unknown || monRes == mon ||
@@ -45,11 +47,13 @@ void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var
                 return;
             } else if (mon == MonotonicityResult<VariableType>::Monotonicity::Unknown || monRes == MonotonicityResult<VariableType>::Monotonicity::Constant) {
                 monotonicityResult[var] = mon;
+                unknownMon = (mon == MonotonicityResult<VariableType>::Monotonicity::Unknown);
             } else {
                 monotonicityResult[var] = MonotonicityResult<VariableType>::Monotonicity::Unknown;
+                unknownMon = true;
             }
         }
-        if (monotonicityResult[var] == MonotonicityResult<VariableType>::Monotonicity::Unknown) {
+        if (unknownMon) {
             setAllMonotonicity(false);
             setSomewhereMonotonicity(false);
         } else {

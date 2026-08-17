@@ -13,8 +13,6 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/bisimulation/DeterministicBlockData.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"
@@ -25,14 +23,16 @@ namespace storage {
 using namespace bisimulation;
 
 template<typename ModelType, typename BlockDataType>
-BisimulationDecomposition<ModelType, BlockDataType>::Options::Options(ModelType const& model, storm::logic::Formula const& formula) : Options() {
+BisimulationDecomposition<ModelType, BlockDataType>::Options::Options(ModelType const& model, storm::logic::Formula const& formula, ValueType const& tolerance)
+    : Options(tolerance) {
     this->preserveSingleFormula(model, formula);
 }
 
 template<typename ModelType, typename BlockDataType>
 BisimulationDecomposition<ModelType, BlockDataType>::Options::Options(ModelType const& model,
-                                                                      std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas)
-    : Options() {
+                                                                      std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
+                                                                      ValueType const& tolerance)
+    : Options(tolerance) {
     if (formulas.empty()) {
         this->respectedAtomicPropositions = model.getStateLabeling().getLabels();
         this->keepRewards = true;
@@ -47,16 +47,13 @@ BisimulationDecomposition<ModelType, BlockDataType>::Options::Options(ModelType 
 }
 
 template<typename ModelType, typename BlockDataType>
-BisimulationDecomposition<ModelType, BlockDataType>::Options::Options()
-    : measureDrivenInitialPartition(false),
-      phiStates(),
-      psiStates(),
-      respectedAtomicPropositions(),
-      buildQuotient(true),
-      keepRewards(false),
-      type(BisimulationType::Strong),
-      bounded(false),
-      discounted(false) {
+typename BisimulationDecomposition<ModelType, BlockDataType>::Options BisimulationDecomposition<ModelType, BlockDataType>::Options::preservingAllLabels(
+    ValueType const& tolerance) {
+    return Options(tolerance);
+}
+
+template<typename ModelType, typename BlockDataType>
+BisimulationDecomposition<ModelType, BlockDataType>::Options::Options(ValueType const& tolerance) : tolerance(tolerance) {
     // Intentionally left empty.
 }
 
@@ -242,19 +239,19 @@ void BisimulationDecomposition<ModelType, BlockDataType>::computeBisimulationDec
 
     std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
 
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+    {
         std::chrono::milliseconds initialPartitionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(initialPartitionTime);
         std::chrono::milliseconds refinementTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinementTime);
         std::chrono::milliseconds extractionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(extractionTime);
         std::chrono::milliseconds quotientBuildTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(quotientBuildTime);
         std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
-        std::cout << "\nTime breakdown:\n";
-        std::cout << "    * time for initial partition: " << initialPartitionTimeInMilliseconds.count() << "ms\n";
-        std::cout << "    * time for partitioning: " << refinementTimeInMilliseconds.count() << "ms\n";
-        std::cout << "    * time for extraction: " << extractionTimeInMilliseconds.count() << "ms\n";
-        std::cout << "    * time for building quotient: " << quotientBuildTimeInMilliseconds.count() << "ms\n";
-        std::cout << "------------------------------------------\n";
-        std::cout << "    * total time: " << totalTimeInMilliseconds.count() << "ms\n\n";
+        STORM_LOG_STATISTICS("\nTime breakdown:\n");
+        STORM_LOG_STATISTICS("    * time for initial partition: " << initialPartitionTimeInMilliseconds.count() << "ms\n");
+        STORM_LOG_STATISTICS("    * time for partitioning: " << refinementTimeInMilliseconds.count() << "ms\n");
+        STORM_LOG_STATISTICS("    * time for extraction: " << extractionTimeInMilliseconds.count() << "ms\n");
+        STORM_LOG_STATISTICS("    * time for building quotient: " << quotientBuildTimeInMilliseconds.count() << "ms\n");
+        STORM_LOG_STATISTICS("------------------------------------------\n");
+        STORM_LOG_STATISTICS("    * total time: " << totalTimeInMilliseconds.count() << "ms\n\n");
     }
 }
 
@@ -285,7 +282,7 @@ void BisimulationDecomposition<ModelType, BlockDataType>::performPartitionRefine
         refinePartitionBasedOnSplitter(*splitter, splitterQueue);
 
         if (storm::utility::resources::isTerminate()) {
-            std::cout << "Performed " << iterations << " iterations of partition refinement before abort.\n";
+            STORM_LOG_INFO("Performed " << iterations << " iterations of partition refinement before abort.\n");
             STORM_LOG_THROW(false, storm::exceptions::AbortException, "Aborted in bisimulation computation.");
             break;
         }

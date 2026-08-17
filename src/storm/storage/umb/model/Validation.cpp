@@ -573,11 +573,9 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
 
 void validateOrThrow(storm::umb::UmbModel const& umbModel) {
     std::stringstream errors;
-    if (!validate(umbModel, errors)) {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                        "UMB model " << umbModel.getShortModelInformation() << " is invalid:\n"
-                                     << errors.str());
-    }
+    STORM_LOG_THROW(validate(umbModel, errors), storm::exceptions::WrongFormatException,
+                    "UMB model " << umbModel.getShortModelInformation() << " is invalid:\n"
+                                 << errors.str() << ".");
 }
 
 }  // namespace storm::umb

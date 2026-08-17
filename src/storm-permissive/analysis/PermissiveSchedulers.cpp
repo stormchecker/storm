@@ -31,7 +31,7 @@ boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMILP
 
     auto solver = storm::utility::solver::getLpSolver<double>(env, "Gurobi", storm::solver::LpSolverTypeSelection::Gurobi);
     MilpPermissiveSchedulerComputation<storm::models::sparse::StandardRewardModel<double>> comp(*solver, mdp, goalstates, sinkstates);
-    STORM_LOG_THROW(!storm::logic::isStrict(safeProp.getComparisonType()), storm::exceptions::NotImplementedException, "Strict bounds are not supported");
+    STORM_LOG_THROW(!storm::logic::isStrict(safeProp.getComparisonType()), storm::exceptions::NotImplementedException, "Strict bounds are not supported.");
     comp.calculatePermissiveScheduler(storm::logic::isLowerBound(safeProp.getComparisonType()), safeProp.getThresholdAs<double>());
     // comp.dumpLpToFile("milpdump.lp");
     std::cout << "Found Solution: " << (comp.foundSolution() ? "yes" : "no") << '\n';
@@ -58,7 +58,7 @@ boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaSMT(
     std::shared_ptr<storm::expressions::ExpressionManager> expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
     auto solver = storm::utility::solver::getSmtSolver(*expressionManager);
     SmtPermissiveSchedulerComputation<storm::models::sparse::StandardRewardModel<double>> comp(*solver, mdp, goalstates, sinkstates);
-    STORM_LOG_THROW(!storm::logic::isStrict(safeProp.getComparisonType()), storm::exceptions::NotImplementedException, "Strict bounds are not supported");
+    STORM_LOG_THROW(!storm::logic::isStrict(safeProp.getComparisonType()), storm::exceptions::NotImplementedException, "Strict bounds are not supported.");
     comp.calculatePermissiveScheduler(storm::logic::isLowerBound(safeProp.getComparisonType()), safeProp.getThresholdAs<double>());
     if (comp.foundSolution()) {
         return boost::optional<SubMDPPermissiveScheduler<RM>>(comp.getScheduler());

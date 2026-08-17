@@ -1,6 +1,6 @@
 #include "initialize.h"
 
-#include <math.h>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 
@@ -63,6 +63,14 @@ void setLogLevel(l3pp::LogLevel level) {
         std::cout << "***** warning ***** requested loglevel is not compiled\n";
 #endif
     }
+}
+
+void setStatisticsLogLevel(l3pp::LogLevel level) {
+    l3pp::Logger::getLogger(storm::utility::STATISTICS_LOG_CHANNEL)->setLevel(level);
+}
+
+void setProgressLogLevel(l3pp::LogLevel level) {
+    l3pp::Logger::getLogger(storm::utility::PROGRESS_LOG_CHANNEL)->setLevel(level);
 }
 
 void initializeFileLogging(std::string const& logfileName) {

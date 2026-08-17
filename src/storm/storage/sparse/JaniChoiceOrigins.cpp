@@ -14,7 +14,7 @@ JaniChoiceOrigins::JaniChoiceOrigins(std::shared_ptr<storm::jani::Model const> c
                                      std::vector<EdgeIndexSet> const& identifierToEdgeIndexSetMapping)
     : ChoiceOrigins(indexToIdentifierMapping), model(janiModel), identifierToEdgeIndexSet(identifierToEdgeIndexSetMapping) {
     STORM_LOG_THROW(identifierToEdgeIndexSet[this->getIdentifierForChoicesWithNoOrigin()].empty(), storm::exceptions::InvalidArgumentException,
-                    "The given edge set for the choices without origin is non-empty");
+                    "The given edge set for the choices without origin is non-empty.");
 }
 
 bool JaniChoiceOrigins::isJaniChoiceOrigins() const {
@@ -47,7 +47,7 @@ void JaniChoiceOrigins::computeIdentifierInfos() const {
         std::stringstream ss;
 
         for (auto const& edgeIndex : edgeSet) {
-            auto autAndEdgeOffset = model->decodeAutomatonAndEdgeIndices(edgeIndex);
+            auto autAndEdgeOffset = storm::jani::Model::decodeAutomatonAndEdgeIndices(edgeIndex);
             ss << model->getAutomaton(autAndEdgeOffset.first).getEdge(autAndEdgeOffset.second).toString();
             ss << ",\n";
         }
@@ -67,7 +67,7 @@ void JaniChoiceOrigins::computeIdentifierJson() const {
             bool first = true;
             std::vector<Json> edgesJson;
             for (auto const& edgeIndex : set) {
-                auto autAndEdgeOffset = model->decodeAutomatonAndEdgeIndices(edgeIndex);
+                auto autAndEdgeOffset = storm::jani::Model::decodeAutomatonAndEdgeIndices(edgeIndex);
                 auto const& automaton = model->getAutomaton(autAndEdgeOffset.first);
                 auto const& edge = automaton.getEdge(autAndEdgeOffset.second);
                 if (first) {

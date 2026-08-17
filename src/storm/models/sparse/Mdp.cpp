@@ -30,14 +30,14 @@ Mdp<ValueType, RewardModelType>::Mdp(storm::storage::SparseMatrix<ValueType>&& t
 template<typename ValueType, typename RewardModelType>
 Mdp<ValueType, RewardModelType>::Mdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components, ModelType type)
     : NondeterministicModel<ValueType, RewardModelType>(type, components) {
-    assert(type == storm::models::ModelType::Mdp || type == storm::models::ModelType::Pomdp);
+    STORM_LOG_ASSERT(type == storm::models::ModelType::Mdp || type == storm::models::ModelType::Pomdp, "Expected Mdp or Pomdp model type.");
     // Intentionally left empty
 }
 
 template<typename ValueType, typename RewardModelType>
 Mdp<ValueType, RewardModelType>::Mdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components, ModelType type)
     : NondeterministicModel<ValueType, RewardModelType>(type, std::move(components)) {
-    assert(type == storm::models::ModelType::Mdp || type == storm::models::ModelType::Pomdp);
+    STORM_LOG_ASSERT(type == storm::models::ModelType::Mdp || type == storm::models::ModelType::Pomdp, "Expected Mdp or Pomdp model type.");
     // Intentionally left empty
 }
 

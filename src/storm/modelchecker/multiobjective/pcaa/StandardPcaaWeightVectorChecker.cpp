@@ -19,8 +19,6 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/transformer/GoalStateMerger.h"
 #include "storm/utility/graph.h"
@@ -124,21 +122,18 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
     offsetToWeightedSum = storm::utility::zero<ValueType>();
     optimalChoices.resize(transitionMatrix.getRowGroupCount(), 0);
 
-    // Print some statistics (if requested)
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Weight Vector Checker Statistics:\n");
-        STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowGroupCount() << " states.\n");
-        STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowCount() << " actions.\n");
-        if (lraMecDecomposition) {
-            STORM_PRINT_AND_LOG("Found " << lraMecDecomposition->mecs.size() << " end components that are relevant for LRA-analysis.\n");
-            uint64_t numLraMecStates = 0;
-            for (auto const& mec : this->lraMecDecomposition->mecs) {
-                numLraMecStates += mec.size();
-            }
-            STORM_PRINT_AND_LOG(numLraMecStates << " states lie on such an end component.\n");
+    STORM_LOG_STATISTICS("Weight Vector Checker Statistics:\n");
+    STORM_LOG_STATISTICS("Final preprocessed model has " << transitionMatrix.getRowGroupCount() << " states.\n");
+    STORM_LOG_STATISTICS("Final preprocessed model has " << transitionMatrix.getRowCount() << " actions.\n");
+    if (lraMecDecomposition) {
+        STORM_LOG_STATISTICS("Found " << lraMecDecomposition->mecs.size() << " end components that are relevant for LRA-analysis.\n");
+        uint64_t numLraMecStates = 0;
+        for (auto const& mec : this->lraMecDecomposition->mecs) {
+            numLraMecStates += mec.size();
         }
-        STORM_PRINT_AND_LOG('\n');
+        STORM_LOG_STATISTICS(numLraMecStates << " states lie on such an end component.\n");
     }
+    STORM_LOG_STATISTICS('\n');
 }
 
 template<class SparseModelType>
@@ -839,7 +834,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::transformEcqSolutionToOri
             if (!ecqStateToOptimalMecMap.empty()) {
                 // The current ecqState represents an elimnated EC and we need to stay in this EC and we need to make sure that optimal MEC decisions are
                 // performed within this EC.
-                STORM_LOG_ASSERT(ecqStateToOptimalMecMap.count(ecqState) > 0, "No Lra Mec associated to given eliminated EC");
+                STORM_LOG_ASSERT(ecqStateToOptimalMecMap.count(ecqState) > 0, "No Lra Mec associated to given eliminated EC.");
                 auto const& lraMec = lraMecDecomposition->mecs[ecqStateToOptimalMecMap.at(ecqState)];
                 if (lraMec.size() == origStates.size()) {
                     // LRA mec and eliminated EC coincide

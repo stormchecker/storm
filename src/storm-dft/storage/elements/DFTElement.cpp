@@ -25,7 +25,7 @@ bool DFTElement<ValueType>::checkDontCareAnymore(storm::dft::storage::DFTState<V
     // Check that no outgoing dependencies can be triggered anymore
     // Notice that n-ary dependencies are supported via rewriting them during build-time
     for (DFTDependencyPointer dependency : mOutgoingDependencies) {
-        assert(dependency->dependentEvents().size() == 1);
+        STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "Expected exactly one dependent event.");
         if (state.isOperational(dependency->dependentEvents()[0]->id()) && state.isOperational(dependency->triggerEvent()->id())) {
             return false;
         }
@@ -88,8 +88,9 @@ std::vector<size_t> DFTElement<ValueType>::independentSubDft(bool blockParents, 
 template<typename ValueType>
 void DFTElement<ValueType>::extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents,
                                          bool sparesAsLeaves) const {
-    if (elemsInSubtree.count(this->id()) > 0)
+    if (elemsInSubtree.count(this->id()) > 0) {
         return;
+    }
     if (std::find(parentsOfSubRoot.begin(), parentsOfSubRoot.end(), mId) != parentsOfSubRoot.end()) {
         // This is a parent of the suspected root, thus it is not a subdft.
         elemsInSubtree.clear();

@@ -8,6 +8,7 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/utility/solver.h"
 
 namespace storm {
 namespace api {
@@ -74,7 +75,7 @@ void handleGSPNExportSettings(storm::gspn::GSPN const& gspn,
             properties.insert(properties.end(), deadlockProperties.begin(), deadlockProperties.end());
         }
 
-        storm::api::transformJani(*model, properties, options);
+        storm::api::transformJani(*model, properties, options, std::make_shared<storm::utility::solver::SmtSolverFactory>());
 
         storm::api::exportJaniToFile(*model, properties, exportSettings.getWriteToJaniFilename(), jani.isCompactJsonSet());
         delete model;
@@ -99,7 +100,7 @@ std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const&
     while (storm::io::getline(stream, line)) {
         std::vector<std::string> strs;
         boost::split(strs, line, boost::is_any_of("\t "));
-        STORM_LOG_THROW(strs.size() == 2, storm::exceptions::WrongFormatException, "Expect key value pairs");
+        STORM_LOG_THROW(strs.size() == 2, storm::exceptions::WrongFormatException, "Expect key value pairs.");
         storm::expressions::Expression expr = expressionParser.parseFromString(strs[1]);
         if (!gspn.getConstantsSubstitution().empty()) {
             expr = expr.substitute(gspn.getConstantsSubstitution());

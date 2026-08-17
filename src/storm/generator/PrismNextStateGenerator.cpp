@@ -121,13 +121,13 @@ void PrismNextStateGenerator<ValueType, StateType>::checkValid() const {
             stream << constant.get().getName() << " (" << constant.get().getType() << ")";
         }
         stream << ".";
-        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
+        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str() + ".");
     } else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.undefinedConstantsAreGraphPreserving()) {
         auto undef = program.getUndefinedConstantsAsString();
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
                         "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, "
                         "which is not admitted. Undefined constants are: "
-                            << undef);
+                            << undef << ".");
     }
 }
 
@@ -203,7 +203,7 @@ std::vector<StateType> PrismNextStateGenerator<ValueType, StateType>::getInitial
                     initialState.setFromInt(intVar.bitOffset, intVar.bitWidth, value);
                 } else {
                     // Boolean variable
-                    STORM_LOG_ASSERT(index - intEndIndex < this->variableInformation.booleanVariables.size(), "Unexpected index");
+                    STORM_LOG_ASSERT(index - intEndIndex < this->variableInformation.booleanVariables.size(), "Unexpected index.");
                     auto const& boolVar = this->variableInformation.booleanVariables[index - intEndIndex];
                     STORM_LOG_ASSERT(value <= 1u, "Unexpected value for boolean variable.");
                     initialState.set(boolVar.bitOffset, static_cast<bool>(value));
@@ -612,8 +612,9 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
             storm::prism::Command const& command = module.getCommand(j);
 
             // Only consider commands that are not possibly synchronizing.
-            if (isCommandPotentiallySynchronizing(command))
+            if (isCommandPotentiallySynchronizing(command)) {
                 continue;
+            }
 
             if (commandFilter != CommandFilter::All) {
                 STORM_LOG_ASSERT(commandFilter == CommandFilter::Markovian || commandFilter == CommandFilter::Probabilistic, "Unexpected command filter.");
@@ -729,8 +730,9 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
             storm::prism::Command const& command = module.getCommand(j);
 
             // Only consider commands that are not possibly synchronizing.
-            if (isCommandPotentiallySynchronizing(command))
+            if (isCommandPotentiallySynchronizing(command)) {
                 continue;
+            }
 
             if (this->actionMask != nullptr) {
                 if (!this->actionMask->query(*this, command.getActionIndex())) {
@@ -1067,7 +1069,7 @@ std::shared_ptr<storm::storage::sparse::ChoiceOrigins> PrismNextStateGenerator<V
 
     std::map<CommandSet, uint_fast64_t> commandSetToIdentifierMap;
     // The empty commandset (i.e., the choices without origin) always has to get identifier getIdentifierForChoicesWithNoOrigin() -- which is assumed to be 0
-    STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero");
+    STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero.");
     commandSetToIdentifierMap.insert(std::make_pair(CommandSet(), 0));
     uint_fast64_t currentIdentifier = 1;
     for (boost::any& originData : dataForChoiceOrigins) {

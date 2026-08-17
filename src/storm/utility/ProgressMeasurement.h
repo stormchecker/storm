@@ -30,17 +30,15 @@ class ProgressMeasurement {
     void startNewMeasurement(uint64_t startCount);
 
     /*!
-     * Updates the progress to the current count and prints it if the delay passed.
-     * The progress is only updated and printed if the ShowProgress setting is enabled.
+     * Updates the progress to the current count and logs it (on the progress log channel) if the delay passed.
      *
      * @param count The currently achieved count.
-     * @return True iff the progress was printed (i.e., the delay passed and showProgress setting enabled).
+     * @return True iff the progress was logged (i.e., the delay passed).
      */
     bool updateProgress(uint64_t count);
 
     /*!
      * Updates the progress to the current count.
-     * The update and printing is done independently of the showProgress setting.
      *
      * @param count The currently achieved count.
      * @param outstream The stream to which the progress is printed (if the delay passed)
@@ -91,9 +89,6 @@ class ProgressMeasurement {
     void setItemName(std::string const& name);
 
    private:
-    // Whether progress should be printed to standard output.
-    bool showProgress;
-
     // The delay (in seconds) between progress emission.
     uint64_t delay;
     // A name for what this is measuring (iterations, states, ...)

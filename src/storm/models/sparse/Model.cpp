@@ -254,7 +254,7 @@ RewardModelType& Model<ValueType, RewardModelType>::getRewardModel(std::string c
 template<typename ValueType, typename RewardModelType>
 void Model<ValueType, RewardModelType>::addRewardModel(std::string const& rewardModelName, RewardModelType const& newRewardModel) {
     if (this->hasRewardModel(rewardModelName)) {
-        STORM_LOG_THROW(!(this->hasRewardModel(rewardModelName)), storm::exceptions::IllegalArgumentException,
+        STORM_LOG_THROW(!this->hasRewardModel(rewardModelName), storm::exceptions::IllegalArgumentException,
                         "A reward model with the given name '" << rewardModelName << "' already exists.");
     }
     STORM_LOG_ASSERT(newRewardModel.isCompatible(this->getNumberOfStates(), this->getTransitionMatrix().getRowCount()), "New reward model is not compatible.");
@@ -585,7 +585,7 @@ void Model<ValueType, RewardModelType>::writeJsonToStream(std::ostream& outStrea
                 }
             }
             if (!choiceRewardsJson.empty()) {
-                choiceRewardsJson["rew"] = std::move(choiceRewardsJson);
+                choiceJson["rew"] = std::move(choiceRewardsJson);
             }
             storm::json<JsonValueType> successors;
             for (auto const& entry : transitionMatrix.getRow(choiceIndex)) {

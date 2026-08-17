@@ -200,22 +200,28 @@ TEST(MonitorVerifier, WithRiskAlmostOneGoesToGoal) {
     bool foundStopOnly = false;  // risk=0 accepting state -> only to stop
 
     for (uint64_t state = 0; state < product.getNumberOfStates(); ++state) {
-        if (product.getObservation(state) != acceptingObs)
+        if (product.getObservation(state) != acceptingObs) {
             continue;
+        }
         for (uint64_t row = transMatrix.getRowGroupIndices()[state]; row < transMatrix.getRowGroupIndices()[state + 1]; ++row) {
-            if (product.getChoiceLabeling().getLabelsOfChoice(row).count("end") == 0)
+            if (product.getChoiceLabeling().getLabelsOfChoice(row).count("end") == 0) {
                 continue;
+            }
             bool toGoal = false, toStop = false;
             for (const auto& entry : transMatrix.getRow(row)) {
-                if (entry.getColumn() == goalState)
+                if (entry.getColumn() == goalState) {
                     toGoal = true;
-                if (entry.getColumn() == stopState)
+                }
+                if (entry.getColumn() == stopState) {
                     toStop = true;
+                }
             }
-            if (toGoal && !toStop)
+            if (toGoal && !toStop) {
                 foundGoalOnly = true;
-            if (!toGoal && toStop)
+            }
+            if (!toGoal && toStop) {
                 foundStopOnly = true;
+            }
         }
     }
 
@@ -248,17 +254,21 @@ TEST(MonitorVerifier, WithRiskIntermediateSplitsGoalStop) {
     bool foundSplit = false;
 
     for (uint64_t state = 0; state < product.getNumberOfStates(); ++state) {
-        if (product.getObservation(state) != acceptingObs)
+        if (product.getObservation(state) != acceptingObs) {
             continue;
+        }
         for (uint64_t row = transMatrix.getRowGroupIndices()[state]; row < transMatrix.getRowGroupIndices()[state + 1]; ++row) {
-            if (product.getChoiceLabeling().getLabelsOfChoice(row).count("end") == 0)
+            if (product.getChoiceLabeling().getLabelsOfChoice(row).count("end") == 0) {
                 continue;
+            }
             bool toGoal = false, toStop = false;
             for (const auto& entry : transMatrix.getRow(row)) {
-                if (entry.getColumn() == goalState)
+                if (entry.getColumn() == goalState) {
                     toGoal = true;
-                if (entry.getColumn() == stopState)
+                }
+                if (entry.getColumn() == stopState) {
                     toStop = true;
+                }
             }
             if (toGoal && toStop) {
                 foundSplit = true;

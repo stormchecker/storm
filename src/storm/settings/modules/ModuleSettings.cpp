@@ -1,9 +1,7 @@
 #include "storm/settings/modules/ModuleSettings.h"
 
 #include "storm/exceptions/IllegalFunctionCallException.h"
-#include "storm/exceptions/InvalidStateException.h"
 #include "storm/settings/Option.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -19,15 +17,6 @@ bool ModuleSettings::check() const {
 }
 
 void ModuleSettings::finalize() {}
-
-void ModuleSettings::set(std::string const& name) {
-    this->getOption(name).setHasOptionBeenSet();
-}
-
-void ModuleSettings::unset(std::string const& name) {
-    this->getOption(name).setHasOptionBeenSet(false);
-    this->getOption(name).setHasOptionBeenSetWithModulePrefix(false);
-}
 
 std::vector<std::shared_ptr<Option>> const& ModuleSettings::getOptions() const {
     return this->options;
@@ -49,16 +38,6 @@ Option& ModuleSettings::getOption(std::string const& longName) {
 
 std::string const& ModuleSettings::getModuleName() const {
     return this->moduleName;
-}
-
-std::unique_ptr<storm::settings::SettingMemento> ModuleSettings::overrideOption(std::string const& name, bool requiredStatus) {
-    bool currentStatus = this->isSet(name);
-    if (requiredStatus) {
-        this->set(name);
-    } else {
-        this->unset(name);
-    }
-    return std::unique_ptr<storm::settings::SettingMemento>(new storm::settings::SettingMemento(*this, name, currentStatus));
 }
 
 bool ModuleSettings::isSet(std::string const& optionName) const {

@@ -13,13 +13,13 @@ namespace bisimulation {
 
 template<storm::dd::DdType DdType, typename ValueType>
 PartitionRefiner<DdType, ValueType>::PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model,
-                                                      Partition<DdType, ValueType> const& initialStatePartition)
+                                                      Partition<DdType, ValueType> const& initialStatePartition, BisimulationOptions const& bisimulationOptions)
     : status(Status::Initialized),
       refinements(0),
       statePartition(initialStatePartition),
       signatureComputer(model),
       signatureRefiner(model.getManager(), statePartition.getBlockVariable(), model.getRowAndNondeterminismVariables(), model.getColumnVariables(),
-                       !model.isNondeterministicModel(), model.getNondeterminismVariables()),
+                       !model.isNondeterministicModel(), model.getNondeterminismVariables(), bisimulationOptions),
       totalSignatureTime(0),
       totalRefinementTime(0) {
     // Intentionally left empty.

@@ -177,7 +177,7 @@ bool MinMaxLinearEquationSolver<ValueType, SolutionType>::isRequirementsCheckedS
 
 template<typename ValueType, typename SolutionType>
 void MinMaxLinearEquationSolver<ValueType, SolutionType>::setSchedulerFixedForRowGroup(storm::storage::BitVector&& schedulerFixedForRowGroup) {
-    STORM_LOG_ASSERT(this->hasInitialScheduler(), "Expecting an initial scheduler to be set before setting the states for which the choices are fixed");
+    STORM_LOG_ASSERT(this->hasInitialScheduler(), "Expecting an initial scheduler to be set before setting the states for which the choices are fixed.");
     this->choiceFixedForRowGroup = std::move(schedulerFixedForRowGroup);
 }
 

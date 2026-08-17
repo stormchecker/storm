@@ -76,7 +76,7 @@ void setAllValues(std::vector<T>& vec, storm::storage::BitVector const& position
  */
 template<class T>
 void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<T> const& values) {
-    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized");
+    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized.");
     STORM_LOG_ASSERT(positions.getNumberOfSetBits() <= values.size(), "The number of selected positions (" << positions.getNumberOfSetBits()
                                                                                                            << ") exceeds the size of the input vector ("
                                                                                                            << values.size() << ").");
@@ -96,7 +96,7 @@ void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& po
  */
 template<class T>
 void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, T value) {
-    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized");
+    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized.");
     for (uint64_t position : positions) {
         vector[position] = value;
     }
@@ -104,7 +104,7 @@ void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& po
 
 template<typename T>
 void setNonzeroIndices(std::vector<T> const& vec, storm::storage::BitVector& bv) {
-    STORM_LOG_ASSERT(bv.size() == vec.size(), "Bitvector size should match vector size");
+    STORM_LOG_ASSERT(bv.size() == vec.size(), "Bitvector size should match vector size.");
     for (uint64_t i = 0; i < vec.size(); ++i) {
         if (!storm::utility::isZero(vec[i])) {
             bv.set(i, true);
@@ -170,7 +170,7 @@ bool isUnique(std::vector<T> const& v) {
 
 template<typename T, typename Comparator>
 bool compareElementWise(std::vector<T> const& left, std::vector<T> const& right, Comparator comp = std::less<T>()) {
-    STORM_LOG_ASSERT(left.size() == right.size(), "Expected that vectors for comparison have equal size");
+    STORM_LOG_ASSERT(left.size() == right.size(), "Expected that vectors for comparison have equal size.");
     return std::equal(left.begin(), left.end(), right.begin(), comp);
 }
 
@@ -983,7 +983,7 @@ std::vector<TargetType> convertNumericVector(std::vector<SourceType> const& oldV
  */
 template<typename TargetType, typename SourceType>
 void convertNumericVector(std::vector<SourceType> const& inputVector, std::vector<TargetType>& targetVector) {
-    assert(inputVector.size() == targetVector.size());
+    STORM_LOG_ASSERT(inputVector.size() == targetVector.size(), "Vector size mismatch.");
     applyPointwise(inputVector, targetVector, [](SourceType const& v) { return storm::utility::convertNumber<TargetType>(v); });
 }
 
@@ -1069,7 +1069,7 @@ std::vector<Type> filterVector(std::vector<Type> const& in, storm::storage::BitV
 
 template<typename Type>
 void filterVectorInPlace(std::vector<Type>& v, storm::storage::BitVector const& filter) {
-    STORM_LOG_ASSERT(v.size() == filter.size(), "The filter size does not match the size of the input vector");
+    STORM_LOG_ASSERT(v.size() == filter.size(), "The filter size does not match the size of the input vector.");
     uint_fast64_t size = v.size();
     // we can start our work at the first index where the filter has value zero
     uint_fast64_t firstUnsetIndex = filter.getNextUnsetIndex(0);
@@ -1165,7 +1165,7 @@ std::vector<T> applyInversePermutationToGroupedVector(std::vector<uint64_t> cons
             result.push_back(source[sourceIndex]);
         }
     }
-    STORM_LOG_ASSERT(result.size() == source.size(), "result has unexpected length.");
+    STORM_LOG_ASSERT(result.size() == source.size(), "Result has unexpected length.");
     return result;
 }
 

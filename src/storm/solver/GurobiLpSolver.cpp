@@ -7,6 +7,7 @@
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -28,7 +29,7 @@ GurobiEnvironment::~GurobiEnvironment() {
 
 #ifdef STORM_HAVE_GUROBI
 GRBenv* GurobiEnvironment::operator*() {
-    STORM_LOG_ASSERT(initialized, "Gurobi Environment has not been initialized");
+    STORM_LOG_ASSERT(initialized, "Gurobi Environment has not been initialized.");
     return env;
 }
 #endif
@@ -39,14 +40,10 @@ void GurobiEnvironment::initialize(storm::GurobiSolverEnvironment const& gurobiS
     // Create the environment.
     int error = GRBloadenv(&env, "");
     if (error || env == nullptr) {
-        if (error == 10009) {
-            STORM_LOG_ERROR("Gurobi License Issue. " << GRBgeterrormsg(env) << ", error code " << error << ").");
-            throw storm::exceptions::GurobiLicenseException()
-                << "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").";
-        }
-        STORM_LOG_ERROR("Could not initialize Gurobi (" << GRBgeterrormsg(env) << ", error code " << error << ").");
-        throw storm::exceptions::InvalidStateException()
-            << "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").";
+        STORM_LOG_THROW(error != 10009, storm::exceptions::GurobiLicenseException,
+                        "Gurobi License Issue. Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException,
+                        "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").");
     }
     setOutput(debug || gurobiSettings.isOutputSet());
 
@@ -98,11 +95,8 @@ GurobiLpSolver<ValueType, RawMode>::GurobiLpSolver(std::shared_ptr<GurobiEnviron
     // Create the model.
     int error = 0;
     error = GRBnewmodel(**environment, &model, name.c_str(), 0, nullptr, nullptr, nullptr, nullptr, nullptr);
-    if (error) {
-        STORM_LOG_ERROR("Could not initialize Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
-        throw storm::exceptions::InvalidStateException()
-            << "Could not initialize Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ").";
-    }
+    STORM_LOG_THROW(!error, storm::exceptions::InvalidStateException,
+                    "Could not initialize Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
 }
 
 template<typename ValueType, bool RawMode>
@@ -308,9 +302,8 @@ void GurobiLpSolver<ValueType, RawMode>::optimize() const {
 
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::isInfeasible() const {
-    if (!this->currentModelHasBeenOptimized) {
-        throw storm::exceptions::InvalidStateException() << "Illegal call to GurobiLpSolver<ValueType, RawMode>::isInfeasible: model has not been optimized.";
-    }
+    STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException,
+                    "Illegal call to GurobiLpSolver<ValueType, RawMode>::isInfeasible: model has not been optimized.");
 
     int optimalityStatus = 0;
 
@@ -341,9 +334,8 @@ bool GurobiLpSolver<ValueType, RawMode>::isInfeasible() const {
 
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::isUnbounded() const {
-    if (!this->currentModelHasBeenOptimized) {
-        throw storm::exceptions::InvalidStateException() << "Illegal call to GurobiLpSolver<ValueType, RawMode>::isUnbounded: model has not been optimized.";
-    }
+    STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException,
+                    "Illegal call to GurobiLpSolver<ValueType, RawMode>::isUnbounded: model has not been optimized.");
 
     int optimalityStatus = 0;
 
@@ -499,11 +491,8 @@ ValueType GurobiLpSolver<ValueType, RawMode>::getObjectiveValue() const {
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::writeModelToFile(std::string const& filename) const {
     int error = GRBwrite(model, filename.c_str());
-    if (error) {
-        STORM_LOG_ERROR("Unable to write Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ") to file.");
-        throw storm::exceptions::InvalidStateException()
-            << "Unable to write Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ") to file.";
-    }
+    STORM_LOG_THROW(!error, storm::exceptions::InvalidStateException,
+                    "Unable to write Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ") to file.");
 }
 
 template<typename ValueType, bool RawMode>
@@ -760,26 +749,30 @@ bool GurobiLpSolver<ValueType, RawMode>::hasTimedOut() {
 #else
 template<typename ValueType, bool RawMode>
 GurobiLpSolver<ValueType, RawMode>::GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const&, std::string const&, OptimizationDirection const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 GurobiLpSolver<ValueType, RawMode>::GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const&, std::string const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 GurobiLpSolver<ValueType, RawMode>::GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const&, OptimizationDirection const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 GurobiLpSolver<ValueType, RawMode>::GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
@@ -789,164 +782,191 @@ template<typename ValueType, bool RawMode>
 typename GurobiLpSolver<ValueType, RawMode>::Variable GurobiLpSolver<ValueType, RawMode>::addVariable(std::string const&, VariableType const&,
                                                                                                       std::optional<ValueType> const&,
                                                                                                       std::optional<ValueType> const&, ValueType) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::update() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::addConstraint(std::string const&, Constraint const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const&, Variable, bool, Constraint const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::optimize() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::isInfeasible() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::isUnbounded() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::isOptimal() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 ValueType GurobiLpSolver<ValueType, RawMode>::getContinuousValue(Variable const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 int_fast64_t GurobiLpSolver<ValueType, RawMode>::getIntegerValue(Variable const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::getBinaryValue(Variable const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 ValueType GurobiLpSolver<ValueType, RawMode>::getObjectiveValue() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::writeModelToFile(std::string const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::push() {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::pop() {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::setMaximalSolutionCount(uint64_t) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 uint64_t GurobiLpSolver<ValueType, RawMode>::getSolutionCount() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 ValueType GurobiLpSolver<ValueType, RawMode>::getContinuousValue(Variable const&, uint64_t const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 int_fast64_t GurobiLpSolver<ValueType, RawMode>::getIntegerValue(Variable const&, uint64_t const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::getBinaryValue(Variable const&, uint64_t const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 ValueType GurobiLpSolver<ValueType, RawMode>::getObjectiveValue(uint64_t) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::setMaximalMILPGap(ValueType const&, bool) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 ValueType GurobiLpSolver<ValueType, RawMode>::getMILPGap(bool) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::setTimeLimit(uint64_t) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 uint64_t GurobiLpSolver<ValueType, RawMode>::getTimeLimit() {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::hasTimeLimit() {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with Gurobi support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::hasTimedOut() {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with Gurobi support.");
 }
 
 #endif
@@ -968,7 +988,7 @@ std::string toString(GurobiSolverMethod const& method) {
         case GurobiSolverMethod::DETCONCURRENTSIMPLEX:
             return "deterministic-concurrent-simplex";
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unknown solver method");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unknown solver method.");
 }
 
 std::optional<GurobiSolverMethod> gurobiSolverMethodFromString(std::string const& method) {

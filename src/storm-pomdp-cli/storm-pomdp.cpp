@@ -22,8 +22,10 @@
 #include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
 #include "storm/analysis/GraphConditions.h"
 #include "storm/api/storm.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
@@ -234,7 +236,9 @@ void performQualitativeAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<Val
         storm::pomdp::qualitative::JaniBeliefSupportMdpGenerator<ValueType> janicreator(pomdp);
         janicreator.generate(targetStates, surelyNotAlmostSurelyReachTarget);
         bool initialOnly = !qualSettings.isWinningRegionSet();
-        janicreator.verifySymbolic(initialOnly);
+        storm::Environment env;
+        STORM_LOG_WARN("Using a default environment (and therefore default settings) for the symbolic analysis.");
+        janicreator.verifySymbolic(env, initialOnly);
         STORM_PRINT_AND_LOG("Initial state is safe: " << janicreator.isInitialWinning() << "\n");
     }
     STORM_LOG_THROW(computedSomething, storm::exceptions::InvalidSettingsException, "Nothing to be done, did you forget to set a method?");

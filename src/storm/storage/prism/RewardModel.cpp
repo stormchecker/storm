@@ -1,5 +1,7 @@
 #include "storm/storage/prism/RewardModel.h"
 
+#include "storm/utility/macros.h"
+
 namespace storm {
 namespace prism {
 RewardModel::RewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards,
@@ -121,7 +123,7 @@ RewardModel RewardModel::labelUnlabelledCommands(std::vector<std::pair<uint64_t,
         }
     }
 
-    assert(transitionRewards.empty());  // Not implemented.
+    STORM_LOG_ASSERT(transitionRewards.empty(), "Expected empty transition rewards.");  // Not implemented.
 
     return RewardModel(this->getName(), this->getStateRewards(), newStateActionRewards, newTransitionRewards, this->getFilename(), this->getLineNumber());
 }

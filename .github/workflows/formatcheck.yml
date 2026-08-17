@@ -11,8 +11,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
+    - name: Read pinned clang versions
+      id: clang-versions
+      run: |
+        echo "FORMAT_VERSION=$(grep '^CLANG_FORMAT_VERSION=' resources/scripts/clang-versions | cut -d= -f2)" >> "$GITHUB_OUTPUT"
     - uses: DoozyX/clang-format-lint-action@v0.20
       with:
         source: './src'
-        clangFormatVersion: 20
+        clangFormatVersion: ${{ steps.clang-versions.outputs.FORMAT_VERSION }}
         style: file

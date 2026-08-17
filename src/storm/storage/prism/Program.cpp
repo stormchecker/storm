@@ -33,9 +33,8 @@ class CompositionValidityChecker : public CompositionVisitor {
 
     void check(Composition const& composition) {
         composition.accept(*this, boost::any());
-        if (appearingModules.size() != program.getNumberOfModules()) {
-            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Not every module is used in the system composition.");
-        }
+        STORM_LOG_THROW(appearingModules.size() == program.getNumberOfModules(), storm::exceptions::WrongFormatException,
+                        "Not every module is used in the system composition.");
     }
 
     virtual boost::any visit(ModuleComposition const& composition, boost::any const&) override {
@@ -432,7 +431,7 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> Program::
     std::map<storm::expressions::Variable, storm::expressions::Expression> renamingAsSubstitution;
     for (auto const& renamingPair : renaming) {
         if (getManager().hasVariable(renamingPair.first)) {
-            assert(getManager().hasVariable(renamingPair.second));
+            STORM_LOG_ASSERT(getManager().hasVariable(renamingPair.second), "Variable not found in renaming.");
             renamingAsSubstitution.emplace(getManager().getVariable(renamingPair.first), getManager().getVariableExpression(renamingPair.second));
         }
     }
@@ -450,14 +449,14 @@ std::map<std::string, std::string> Program::getFinalRenamingOfModule(Module cons
         moduleStack.push_back(&getModule(moduleStack.back()->getBaseModule()));
     }
 
-    assert(!moduleStack.back()->isRenamedFromModule());
+    STORM_LOG_ASSERT(!moduleStack.back()->isRenamedFromModule(), "Last module should not be renamed.");
     moduleStack.pop_back();
-    assert(moduleStack.empty() || moduleStack.back()->isRenamedFromModule());
+    STORM_LOG_ASSERT(moduleStack.empty() || moduleStack.back()->isRenamedFromModule(), "Expected renamed module.");
     std::map<std::string, std::string> currentRenaming;
     while (!moduleStack.empty()) {
         Module const& currentModule = *moduleStack.back();
         moduleStack.pop_back();
-        assert(currentModule.isRenamedFromModule());
+        STORM_LOG_ASSERT(currentModule.isRenamedFromModule(), "Expected renamed module.");
         std::map<std::string, std::string> newRenaming = currentModule.getRenaming();
         for (auto const& renaimingPair : newRenaming) {
             auto findRes = currentRenaming.find(renaimingPair.second);
@@ -577,7 +576,7 @@ std::vector<storm::storage::PlayerIndex> Program::buildModuleIndexToPlayerIndexM
     for (storm::storage::PlayerIndex i = 0; i < this->getPlayers().size(); ++i) {
         for (auto const& module : this->getPlayers()[i].getModules()) {
             STORM_LOG_ASSERT(hasModule(module), "Module " << module << " not found.");
-            STORM_LOG_ASSERT(moduleToIndexMap.at(module) < this->getModules().size(), "module index " << moduleToIndexMap.at(module) << " out of range.");
+            STORM_LOG_ASSERT(moduleToIndexMap.at(module) < this->getModules().size(), "Module index " << moduleToIndexMap.at(module) << " out of range.");
             result[moduleToIndexMap.at(module)] = i;
         }
     }
@@ -842,6 +841,15 @@ bool Program::hasLabel(std::string const& labelName) const {
 
 std::vector<Label> const& Program::getLabels() const {
     return this->labels;
+}
+
+bool Program::hasFormula(std::string const& formulaName) const {
+    return this->formulaToIndexMap.find(formulaName) != this->formulaToIndexMap.end();
+}
+
+Formula const& Program::getFormula(std::string const& formulaName) const {
+    STORM_LOG_ASSERT(this->hasFormula(formulaName), "Formula with name '" << formulaName << "' does not exist.");
+    return formulas[this->formulaToIndexMap.at(formulaName)];
 }
 
 std::vector<storm::expressions::Expression> Program::getAllGuards(bool negated) const {
@@ -1223,7 +1231,7 @@ Program Program::replaceVariableInitializationByInitExpression() const {
 Program Program::replaceConstantByVariable(Constant const& c, expressions::Expression const& lowerBound, expressions::Expression const& upperBound,
                                            bool observable) const {
     STORM_LOG_THROW(this->getModelType() == ModelType::POMDP || observable, storm::exceptions::InvalidArgumentException,
-                    "Variables can only be unobservable in POMDPs");
+                    "Variables can only be unobservable in POMDPs.");
     std::vector<BooleanVariable> newBooleanVariables = globalBooleanVariables;
     std::vector<IntegerVariable> newIntegerVariables = globalIntegerVariables;
     std::vector<Constant> newConstants = constants;
@@ -1792,8 +1800,9 @@ void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
             std::set<std::pair<std::string, std::string>> globalBVarsWrittenToByCommandInThisModule;
             std::set<std::pair<std::string, std::string>> globalIVarsWrittenToByCommandInThisModule;
             for (auto const& command : module.getCommands()) {
-                if (!command.isLabeled())
+                if (!command.isLabeled()) {
                     continue;
+                }
                 for (auto const& update : command.getUpdates()) {
                     for (auto const& assignment : update.getAssignments()) {
                         if (this->globalBooleanVariableExists(assignment.getVariable().getName())) {
@@ -1805,20 +1814,16 @@ void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
                 }
             }
             for (auto const& entry : globalIVarsWrittenToByCommandInThisModule) {
-                if (globalIVarsWrittenToByCommand.find(entry) != globalIVarsWrittenToByCommand.end()) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                                    "Error in " << module.getFilename() << ", line " << module.getLineNumber()
-                                                << ": assignment of (possibly) synchronizing command with label '" << entry.second
-                                                << "' writes to global variable '" << entry.first << "'.");
-                }
+                STORM_LOG_THROW(globalIVarsWrittenToByCommand.find(entry) == globalIVarsWrittenToByCommand.end(), storm::exceptions::WrongFormatException,
+                                "Error in " << module.getFilename() << ", line " << module.getLineNumber()
+                                            << ": assignment of (possibly) synchronizing command with label '" << entry.second
+                                            << "' writes to global variable '" << entry.first << "'.");
             }
             for (auto const& entry : globalBVarsWrittenToByCommandInThisModule) {
-                if (globalBVarsWrittenToByCommand.find(entry) != globalBVarsWrittenToByCommand.end()) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                                    "Error in " << module.getFilename() << ", line " << module.getLineNumber()
-                                                << ": assignment of (possibly) synchronizing command with label '" << entry.second
-                                                << "' writes to global variable '" << entry.first << "'.");
-                }
+                STORM_LOG_THROW(globalBVarsWrittenToByCommand.find(entry) == globalBVarsWrittenToByCommand.end(), storm::exceptions::WrongFormatException,
+                                "Error in " << module.getFilename() << ", line " << module.getLineNumber()
+                                            << ": assignment of (possibly) synchronizing command with label '" << entry.second
+                                            << "' writes to global variable '" << entry.first << "'.");
             }
         }
     }

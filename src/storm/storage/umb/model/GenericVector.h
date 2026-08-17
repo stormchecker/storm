@@ -99,7 +99,7 @@ class GenericVector {
 
     template<typename ValueType>
     ValueType at(uint64_t index) const {
-        STORM_LOG_ASSERT(isType<double>() || isType<storm::RationalNumber>(), "unexpected type");
+        STORM_LOG_ASSERT(isType<double>() || isType<storm::RationalNumber>(), "Unexpected type.");
         if (isType<double>()) {
             return storm::utility::convertNumber<ValueType>(get<double>()[index]);
         } else {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
 #include "storm/models/sparse/Model.h"
 
 #include <string>
@@ -45,7 +46,8 @@ class AutoParser {
      */
     static std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>> parseModel(
         std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "",
-        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "");
+        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "",
+        ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 
    private:
     // Define the maximal length of a hint in the file.

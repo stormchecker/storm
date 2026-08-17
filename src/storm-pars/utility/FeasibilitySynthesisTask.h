@@ -74,8 +74,8 @@ class FeasibilitySynthesisTask {
     }
 
     storm::solver::OptimizationDirection getOptimizationDirection() const {
-        STORM_LOG_ASSERT(isBoundSet() || optimizationDirection != std::nullopt, "Bound or direction should be set");
-        STORM_LOG_ASSERT(!isBoundSet() || optimizationDirection == std::nullopt, "Bound or direction should not be both  set");
+        STORM_LOG_ASSERT(isBoundSet() || optimizationDirection != std::nullopt, "Bound or direction should be set.");
+        STORM_LOG_ASSERT(!isBoundSet() || optimizationDirection == std::nullopt, "Bound or direction should not be both  set.");
 
         if (optimizationDirection) {
             return optimizationDirection.value();

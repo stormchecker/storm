@@ -317,8 +317,9 @@ TEST(ValuationTest, ValuationsSingleClass) {
     valuations.resize(9);
     ASSERT_EQ(9u, valuations.size());
     for (uint64_t e = 0; e < 6; ++e) {
-        if (e == 3)
+        if (e == 3) {
             continue;  // entity 3 was overwritten above
+        }
         EXPECT_EQ(bVals[e], valuations.readValue<bool>(e, b)) << " at entity " << e;
         EXPECT_EQ(iVals[e], valuations.readValue<int64_t>(e, i)) << " at entity " << e;
         EXPECT_EQ(dVals[e], valuations.readValue<double>(e, d)) << " at entity " << e;

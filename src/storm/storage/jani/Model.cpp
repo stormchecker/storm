@@ -612,7 +612,7 @@ Model Model::flattenComposition(std::shared_ptr<storm::utility::solver::SmtSolve
 
 uint64_t Model::addAction(Action const& action) {
     auto it = actionToIndex.find(action.getName());
-    STORM_LOG_THROW(it == actionToIndex.end(), storm::exceptions::WrongFormatException, "Action with name '" << action.getName() << "' already exists");
+    STORM_LOG_THROW(it == actionToIndex.end(), storm::exceptions::WrongFormatException, "Action with name '" << action.getName() << "' already exists.");
     actionToIndex.emplace(action.getName(), actions.size());
     actions.push_back(action);
     if (action.getName() != SILENT_ACTION_NAME) {
@@ -1415,9 +1415,9 @@ void Model::finalize() {
 
 void Model::checkValid() const {
     // TODO switch to exception based return value.
-    STORM_LOG_ASSERT(getModelType() != storm::jani::ModelType::UNDEFINED, "Model type not set");
-    STORM_LOG_ASSERT(!automata.empty(), "No automata set");
-    STORM_LOG_ASSERT(composition != nullptr, "Composition is not set");
+    STORM_LOG_ASSERT(getModelType() != storm::jani::ModelType::UNDEFINED, "Model type not set.");
+    STORM_LOG_ASSERT(!automata.empty(), "No automata set.");
+    STORM_LOG_ASSERT(composition != nullptr, "Composition is not set.");
 }
 
 storm::expressions::Expression Model::getLabelExpression(Variable const& transientVariable) const {

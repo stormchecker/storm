@@ -30,8 +30,9 @@ void RebuildWithoutUnreachableAction::doAction(JaniLocalEliminator::Session &ses
         std::unordered_set<const Edge *> satisfiableEdges;
 
         for (auto &oldEdge : oldAutomaton.getEdges()) {
-            if (!oldEdge.getGuard().containsVariables() && !oldEdge.getGuard().evaluateAsBool())
+            if (!oldEdge.getGuard().containsVariables() && !oldEdge.getGuard().evaluateAsBool()) {
                 continue;
+            }
             satisfiableEdges.emplace(&oldEdge);
         }
         STORM_LOG_TRACE("\t" + std::to_string(satisfiableEdges.size()) + " of " + std::to_string(oldAutomaton.getEdges().size()) + " edges are satisfiable.");
@@ -78,8 +79,9 @@ void RebuildWithoutUnreachableAction::doAction(JaniLocalEliminator::Session &ses
 
         for (auto const &oldLoc : oldAutomaton.getLocations()) {
             uint64_t oldLocationIndex = oldAutomaton.getLocationIndex(oldLoc.getName());
-            if (reachableLocs.count(oldLocationIndex) == 0)
+            if (reachableLocs.count(oldLocationIndex) == 0) {
                 continue;
+            }
 
             Location newLoc(oldLoc.getName(), oldLoc.getAssignments());
             newAutomaton.addLocation(newLoc);
@@ -94,18 +96,21 @@ void RebuildWithoutUnreachableAction::doAction(JaniLocalEliminator::Session &ses
 
         for (auto &oldEdge : oldAutomaton.getEdges()) {
             uint64_t oldSource = oldEdge.getSourceLocationIndex();
-            if (reachableLocs.count(oldSource) == 0)
+            if (reachableLocs.count(oldSource) == 0) {
                 continue;
+            }
 
-            if (satisfiableEdges.count(&oldEdge) == 0)
+            if (satisfiableEdges.count(&oldEdge) == 0) {
                 continue;
+            }
 
             oldEdge.getDestination(0).getOrderedAssignments().clone();
 
             std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(oldEdge.getGuard());
             oldEdge.getDestination(0).getOrderedAssignments().clone();
 
-            STORM_LOG_THROW(oldEdge.getAssignments().empty(), storm::exceptions::NotImplementedException, "Support for oldEdge-assignments is not implemented");
+            STORM_LOG_THROW(oldEdge.getAssignments().empty(), storm::exceptions::NotImplementedException,
+                            "Support for oldEdge-assignments is not implemented.");
 
             std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
             for (auto const &destination : oldEdge.getDestinations()) {

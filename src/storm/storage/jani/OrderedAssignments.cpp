@@ -109,13 +109,13 @@ std::size_t OrderedAssignments::getNumberOfAssignments() const {
 
 int64_t OrderedAssignments::getLowestLevel(bool onlyTransient) const {
     auto const& as = onlyTransient ? transientAssignments : allAssignments;
-    assert(!as.empty());
+    STORM_LOG_ASSERT(!as.empty(), "Expected non-empty assignments.");
     return as.front()->getLevel();
 }
 
 int64_t OrderedAssignments::getHighestLevel(bool onlyTransient) const {
     auto const& as = onlyTransient ? transientAssignments : allAssignments;
-    assert(!as.empty());
+    STORM_LOG_ASSERT(!as.empty(), "Expected non-empty assignments.");
     return as.back()->getLevel();
 }
 

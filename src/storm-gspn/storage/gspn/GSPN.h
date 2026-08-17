@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <unordered_map>

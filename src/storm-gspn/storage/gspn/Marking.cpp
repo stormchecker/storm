@@ -1,6 +1,6 @@
 #include "Marking.h"
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace storm {
 namespace gspn {

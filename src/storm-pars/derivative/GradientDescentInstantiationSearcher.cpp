@@ -1,6 +1,7 @@
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
 
 #include <cmath>
+#include <iostream>
 #include <random>
 
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
@@ -239,7 +240,7 @@ ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::s
     for (uint_fast64_t stepNum = 0; true; ++stepNum) {
         if (printUpdateStopwatch.getTimeInSeconds() >= 15) {
             printUpdateStopwatch.restart();
-            STORM_PRINT_AND_LOG("Currently at " << currentValue << "\n");
+            STORM_LOG_PROGRESS("Currently at " << currentValue << "\n");
         }
 
         std::vector<VariableType<FunctionType>> miniBatch;
@@ -381,7 +382,7 @@ ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::s
 template<typename FunctionType, typename ConstantType>
 std::pair<std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>, ConstantType>
 GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescent() {
-    STORM_LOG_ASSERT(this->synthesisTask, "Call setup before calling gradientDescent");
+    STORM_LOG_ASSERT(this->synthesisTask, "Call setup before calling gradientDescent.");
 
     resetDynamicValues();
 
@@ -406,9 +407,9 @@ GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescen
     bool initialGuess = true;
     std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> point;
     while (true) {
-        STORM_PRINT_AND_LOG("Trying out a new starting point\n");
+        STORM_LOG_PROGRESS("Trying out a new starting point\n");
         if (initialGuess) {
-            STORM_PRINT_AND_LOG("Trying initial guess (p->0.5 for every parameter p or set start point)\n");
+            STORM_LOG_PROGRESS("Trying initial guess (p->0.5 for every parameter p or set start point)\n");
         }
         // Generate random starting point
         for (auto const& param : this->parameters) {
@@ -432,7 +433,7 @@ GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescen
         /* walk.clear(); */
 
         stochasticWatch.start();
-        STORM_PRINT_AND_LOG("Starting at " << point << "\n");
+        STORM_LOG_PROGRESS("Starting at " << point << "\n");
         ConstantType prob = stochasticGradientDescent(point);
         stochasticWatch.stop();
 
@@ -453,17 +454,17 @@ GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescen
         }
 
         if (synthesisTask->getBound().isSatisfied(bestValue)) {
-            STORM_PRINT_AND_LOG("Aborting because the bound is satisfied\n");
+            STORM_LOG_PROGRESS("Aborting because the bound is satisfied\n");
             break;
         } else if (storm::utility::resources::isTerminate()) {
             break;
         } else {
             if (constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC) {
                 logarithmicBarrierTerm = logarithmicBarrierTerm / 10;
-                STORM_PRINT_AND_LOG("Smaller term\n" << bestValue << "\n" << logarithmicBarrierTerm << "\n");
+                STORM_LOG_PROGRESS("Smaller term\n" << bestValue << "\n" << logarithmicBarrierTerm << "\n");
                 continue;
             }
-            STORM_PRINT_AND_LOG("Sorry, couldn't satisfy the bound (yet). Best found value so far: " << bestValue << "\n");
+            STORM_LOG_PROGRESS("Sorry, couldn't satisfy the bound (yet). Best found value so far: " << bestValue << "\n");
             continue;
         }
     }
@@ -510,22 +511,23 @@ void GradientDescentInstantiationSearcher<FunctionType, ConstantType>::resetDyna
 
 template<typename FunctionType, typename ConstantType>
 void GradientDescentInstantiationSearcher<FunctionType, ConstantType>::printRunAsJson() {
-    STORM_PRINT("[");
+    // This emits a JSON document to stdout for external data collection, not a log message.
+    std::cout << "[";
     for (auto s = walk.begin(); s != walk.end(); ++s) {
-        STORM_PRINT("{");
+        std::cout << "{";
         auto point = s->position;
         for (auto iter = point.begin(); iter != point.end(); ++iter) {
-            STORM_PRINT("\"" << iter->first.name() << "\"");
-            STORM_PRINT(":" << utility::convertNumber<double>(iter->second) << ",");
+            std::cout << "\"" << iter->first.name() << "\"";
+            std::cout << ":" << utility::convertNumber<double>(iter->second) << ",";
         }
-        STORM_PRINT("\"value\":" << s->value << "}");
+        std::cout << "\"value\":" << s->value << "}";
         if (std::next(s) != walk.end()) {
-            STORM_PRINT(",");
+            std::cout << ",";
         }
     }
-    STORM_PRINT("]\n");
+    std::cout << "]\n";
     // Print value at last step for data collection
-    STORM_PRINT(storm::utility::convertNumber<double>(walk.at(walk.size() - 1).value) << "\n");
+    std::cout << storm::utility::convertNumber<double>(walk.at(walk.size() - 1).value) << "\n";
 }
 
 template<typename FunctionType, typename ConstantType>

@@ -273,7 +273,7 @@ std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialS
                     STORM_LOG_THROW(variableValue >= integerVariable.lowerBound, storm::exceptions::WrongFormatException,
                                     "The initial value for variable " << integerVariable.variable.getName() << " is lower than the lower bound.");
                     STORM_LOG_THROW(variableValue <= integerVariable.upperBound, storm::exceptions::WrongFormatException,
-                                    "The initial value for variable " << integerVariable.variable.getName() << " is higher than the upper bound");
+                                    "The initial value for variable " << integerVariable.variable.getName() << " is higher than the upper bound.");
                 }
                 storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
                 blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
@@ -347,7 +347,7 @@ std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialS
                     initialState.setFromInt(intVar.bitOffset, intVar.bitWidth, value);
                 } else {
                     // Boolean variable
-                    STORM_LOG_ASSERT(index - intEndIndex < this->variableInformation.booleanVariables.size(), "Unexpected index");
+                    STORM_LOG_ASSERT(index - intEndIndex < this->variableInformation.booleanVariables.size(), "Unexpected index.");
                     auto const& boolVar = this->variableInformation.booleanVariables[index - intEndIndex];
                     STORM_LOG_ASSERT(value <= 1u, "Unexpected value for boolean variable.");
                     initialState.set(boolVar.bitOffset, static_cast<bool>(value));
@@ -727,7 +727,7 @@ Choice<ValueType> JaniNextStateGenerator<ValueType, StateType>::expandNonSynchro
         exitRate = this->evaluator->asRational(edge.getRate());
     }
 
-    Choice<ValueType> choice(edge.getActionIndex(), static_cast<bool>(exitRate));
+    Choice<ValueType> choice(outputActionIndex, static_cast<bool>(exitRate));
     std::vector<ValueType> stateActionRewards;
 
     // Perform the transient edge assignments and create the state action rewards
@@ -837,7 +837,7 @@ void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribut
     for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
         if (this->getOptions().isBuildChoiceOriginsSet()) {
             auto automatonIndex = model.getAutomatonIndex(parallelAutomata[edgeCombination[i].first].get().getName());
-            edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(automatonIndex, iteratorList[i]->first));
+            edgeIndices.insert(storm::jani::Model::encodeAutomatonAndEdgeIndices(automatonIndex, iteratorList[i]->first));
         }
         storm::jani::Edge const& edge = *iteratorList[i]->second;
         lowestDestinationAssignmentLevel = std::min(lowestDestinationAssignmentLevel, edge.getLowestAssignmentLevel());
@@ -1060,7 +1060,7 @@ std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::get
 
                     if (this->getOptions().isBuildChoiceOriginsSet()) {
                         auto modelAutomatonIndex = model.getAutomatonIndex(parallelAutomata[automatonIndex].get().getName());
-                        EdgeIndexSet edgeIndex{model.encodeAutomatonAndEdgeIndices(modelAutomatonIndex, indexAndEdge.first)};
+                        EdgeIndexSet edgeIndex{storm::jani::Model::encodeAutomatonAndEdgeIndices(modelAutomatonIndex, indexAndEdge.first)};
                         result.back().addOriginData(boost::any(std::move(edgeIndex)));
                     }
 
@@ -1236,7 +1236,7 @@ std::vector<ValueType> JaniNextStateGenerator<ValueType, StateType>::evaluateRew
 
 template<typename ValueType, typename StateType>
 void JaniNextStateGenerator<ValueType, StateType>::addEvaluatedRewardExpressions(std::vector<ValueType>& rewards, ValueType const& factor) const {
-    assert(rewards.size() == rewardExpressions.size());
+    STORM_LOG_ASSERT(rewards.size() == rewardExpressions.size(), "Reward count mismatch.");
     auto rewIt = rewards.begin();
     for (auto const& rewardExpression : rewardExpressions) {
         (*rewIt) += factor * this->evaluator->asRational(rewardExpression.second);
@@ -1361,7 +1361,7 @@ std::shared_ptr<storm::storage::sparse::ChoiceOrigins> JaniNextStateGenerator<Va
 
     std::map<EdgeIndexSet, uint_fast64_t> edgeIndexSetToIdentifierMap;
     // The empty edge set (i.e., the choices without origin) always has to get identifier getIdentifierForChoicesWithNoOrigin() -- which is assumed to be 0
-    STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero");
+    STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero.");
     edgeIndexSetToIdentifierMap.insert(std::make_pair(EdgeIndexSet(), 0));
     uint_fast64_t currentIdentifier = 1;
     for (boost::any& originData : dataForChoiceOrigins) {
@@ -1407,7 +1407,7 @@ void JaniNextStateGenerator<ValueType, StateType>::checkValid() const {
             stream << constant.get().getName() << " (" << constant.get().getType() << ")";
         }
         stream << ".";
-        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
+        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str() + ".");
     } else if (std::is_same<ValueType, storm::RationalFunction>::value && !model.undefinedConstantsAreGraphPreserving()) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
                         "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");

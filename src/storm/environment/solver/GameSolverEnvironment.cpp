@@ -22,7 +22,7 @@ GameSolverEnvironment::GameSolverEnvironment() {
         gameSettings.getConvergenceCriterion() == storm::settings::modules::GameSolverSettings::ConvergenceCriterion::Relative;
     STORM_LOG_ASSERT(considerRelativeTerminationCriterion ||
                          gameSettings.getConvergenceCriterion() == storm::settings::modules::GameSolverSettings::ConvergenceCriterion::Absolute,
-                     "Unknown convergence criterion");
+                     "Unknown convergence criterion.");
 }
 
 GameSolverEnvironment::~GameSolverEnvironment() {

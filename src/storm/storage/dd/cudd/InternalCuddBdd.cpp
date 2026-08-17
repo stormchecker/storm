@@ -228,7 +228,7 @@ void InternalBdd<DdType::CUDD>::exportToDot(std::string const& filename, std::ve
 }
 
 void InternalBdd<DdType::CUDD>::exportToText(std::string const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
 cudd::BDD InternalBdd<DdType::CUDD>::getCuddBdd() const {
@@ -536,8 +536,9 @@ std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_f
     bool negated = Cudd_Regular(this->getCuddDdNode()) != this->getCuddDdNode();
 
     // Translate from the top node downwards.
-    storm::expressions::Variable topVariable = this->toExpressionRec(Cudd_Regular(this->getCuddDdNode()), ddManager->getCuddManager(), manager, result.first,
-                                                                     result.second, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
+    storm::expressions::Variable topVariable = storm::dd::InternalBdd<storm::dd::DdType::CUDD>::toExpressionRec(
+        Cudd_Regular(this->getCuddDdNode()), ddManager->getCuddManager(), manager, result.first, result.second, countIndexToVariablePair, nodeToCounterMap,
+        nextCounterForIndex);
 
     // Create the final expression.
     if (negated) {

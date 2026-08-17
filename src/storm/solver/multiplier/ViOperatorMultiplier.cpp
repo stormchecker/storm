@@ -199,7 +199,7 @@ template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
 void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiplyGaussSeidel(Environment const& /*env*/, std::vector<SolutionType>& x,
                                                                                             std::vector<ValueType> const* b, bool backwards) const {
     STORM_LOG_THROW(TrivialRowGrouping, storm::exceptions::NotSupportedException,
-                    "This multiplier does not support multiplications without reduction when invoked with non-trivial row groups");
+                    "This multiplier does not support multiplications without reduction when invoked with non-trivial row groups.");
     detail::MultiplierBackend<SolutionType> backend;
     auto const& viOp = initialize(backwards);
     if (b) {
@@ -223,7 +223,7 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiply
         return;
     }
     STORM_LOG_THROW(&rowGroupIndices == &this->matrix.getRowGroupIndices(), storm::exceptions::NotSupportedException,
-                    "The row group indices must be the same as the ones stored in the matrix of this multiplier");
+                    "The row group indices must be the same as the ones stored in the matrix of this multiplier.");
     auto const& viOp = initialize();
 
     auto applyRobustDirection = [&]<storm::OptimizationDirection Dir, typename BT, typename OffsetType>(BT& backend, OffsetType const& offset) {
@@ -273,7 +273,7 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiply
     Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<SolutionType>& x,
     std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices, bool backwards) const {
     STORM_LOG_THROW(&rowGroupIndices == &this->matrix.getRowGroupIndices(), storm::exceptions::NotSupportedException,
-                    "The row group indices must be the same as the ones stored in the matrix of this multiplier");
+                    "The row group indices must be the same as the ones stored in the matrix of this multiplier.");
     auto const& viOp = initialize(backwards);
     auto apply = [&]<typename BT>(BT& backend) {
         if (b) {

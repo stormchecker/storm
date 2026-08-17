@@ -642,7 +642,7 @@ class ValuationsStorage {
                 // handled; or (b) the field's declared bit size exceeds 64, which violates the UMB spec for
                 // Double and should be impossible: ValuationDescriptionBuilder::addVariable rejects such
                 // descriptions at construction time (see validateTypeDeclaration).
-                STORM_LOG_ASSERT(varInfo.fits64Bit, "double variables with more than 64 bits are not compliant.");
+                STORM_LOG_ASSERT(varInfo.fits64Bit, "Double variables with more than 64 bits are not compliant.");
                 break;
             case Rational: {
                 STORM_LOG_ASSERT(bitSize % 2 == 0, "Rational number bit size must be even.");

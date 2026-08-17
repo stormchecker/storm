@@ -8,9 +8,8 @@
 #include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/storage/ParameterRegion.h"
 
-#include "storm/api/properties.h"
 #include "storm/modelchecker/CheckTask.h"
-#include "storm/models/sparse/Model.h"
+#include "storm/models/sparse/ModelForward.h"
 
 namespace storm {
 namespace pars {

@@ -29,7 +29,7 @@ uint_fast64_t SparseLTLSchedulerHelper<ValueType, Nondeterministic>::InfSetPool:
 
 template<typename ValueType, bool Nondeterministic>
 storm::storage::BitVector const& SparseLTLSchedulerHelper<ValueType, Nondeterministic>::InfSetPool::get(uint_fast64_t index) const {
-    STORM_LOG_ASSERT(index < size(), "inf set index " << index << " is invalid.");
+    STORM_LOG_ASSERT(index < size(), "Inf set index " << index << " is invalid.");
     return _storage[index];
 }
 
@@ -115,7 +115,7 @@ void SparseLTLSchedulerHelper<ValueType, Nondeterministic>::saveProductEcChoices
 
     //  Save the InfSets into the _accInfSets for states in this MEC
     for (uint64_t mecState : acceptingEcStates) {
-        STORM_LOG_ASSERT(!_accInfSets[mecState].is_initialized(), "accepting inf sets were already defined for a MEC state which is not expected.");
+        STORM_LOG_ASSERT(!_accInfSets[mecState].is_initialized(), "Accepting inf sets were already defined for a MEC state which is not expected.");
         _accInfSets[mecState].emplace(infSetIds);
     }
 
@@ -326,8 +326,8 @@ storm::storage::Scheduler<ValueType> SparseLTLSchedulerHelper<ValueType, Nondete
     }
 
     // Sanity check for created scheduler.
-    STORM_LOG_ASSERT(scheduler.isDeterministicScheduler(), "Expected a deterministic scheduler");
-    STORM_LOG_ASSERT(!scheduler.isPartialScheduler(), "Expected a fully defined scheduler");
+    STORM_LOG_ASSERT(scheduler.isDeterministicScheduler(), "Expected a deterministic scheduler.");
+    STORM_LOG_ASSERT(!scheduler.isPartialScheduler(), "Expected a fully defined scheduler.");
 
     return scheduler;
 }

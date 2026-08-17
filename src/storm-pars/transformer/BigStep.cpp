@@ -275,7 +275,8 @@ std::ostream& operator<<(std::ostream& os, const Annotation& annotation) {
                 } else {
                     alreadyPrintedFactor = true;
                 }
-                os << "(" << annotation.polynomialCache->at(annotation.parameter).second[i] << ")" << "^" << factors[i];
+                os << "(" << annotation.polynomialCache->at(annotation.parameter).second[i] << ")"
+                   << "^" << factors[i];
             }
         }
         if (factors.empty()) {
@@ -806,7 +807,7 @@ std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(const std::map
             if (!parametricTransitions.count(info)) {
                 parametricTransitions[info] = std::map<uint64_t, RationalFunctionCoefficient>();
             }
-            STORM_LOG_ASSERT(!parametricTransitions.at(info).count(state), "State already exists");
+            STORM_LOG_ASSERT(!parametricTransitions.at(info).count(state), "State already exists.");
             parametricTransitions.at(info)[state] = constant;
         }
     }

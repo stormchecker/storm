@@ -21,49 +21,57 @@ using namespace bisimulation;
 
 template<storm::dd::DdType DdType, typename ValueType>
 std::unique_ptr<PartitionRefiner<DdType, ValueType>> createRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model,
-                                                                   Partition<DdType, ValueType> const& initialPartition) {
+                                                                   Partition<DdType, ValueType> const& initialPartition,
+                                                                   BisimulationOptions const& bisimulationOptions) {
     if (model.isOfType(storm::models::ModelType::Mdp) || model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
         return std::make_unique<NondeterministicModelPartitionRefiner<DdType, ValueType>>(
-            *model.template as<storm::models::symbolic::NondeterministicModel<DdType, ValueType>>(), initialPartition);
+            *model.template as<storm::models::symbolic::NondeterministicModel<DdType, ValueType>>(), initialPartition, bisimulationOptions);
     } else {
-        return std::make_unique<PartitionRefiner<DdType, ValueType>>(model, initialPartition);
+        return std::make_unique<PartitionRefiner<DdType, ValueType>>(model, initialPartition, bisimulationOptions);
     }
 }
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model,
-                                                                                         storm::storage::BisimulationType const& bisimulationType)
+                                                                                         storm::storage::BisimulationType const& bisimulationType,
+                                                                                         bisimulation::BisimulationOptions const& bisimulationOptions)
     : model(model),
       preservationInformation(model),
-      refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
+      bisimulationOptions(bisimulationOptions),
+      refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation), bisimulationOptions)) {
     this->initialize();
 }
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(
     storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType,
-    bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation)
+    bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation, bisimulation::BisimulationOptions const& bisimulationOptions)
     : model(model),
       preservationInformation(preservationInformation),
-      refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
+      bisimulationOptions(bisimulationOptions),
+      refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation), bisimulationOptions)) {
     this->initialize();
 }
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(
     storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
-    storm::storage::BisimulationType const& bisimulationType)
+    storm::storage::BisimulationType const& bisimulationType, bisimulation::BisimulationOptions const& bisimulationOptions)
     : model(model),
       preservationInformation(model, formulas),
-      refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, formulas))) {
+      bisimulationOptions(bisimulationOptions),
+      refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, formulas, bisimulationOptions), bisimulationOptions)) {
     this->initialize();
 }
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(
     storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition,
-    bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation)
-    : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, initialPartition)) {
+    bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation, bisimulation::BisimulationOptions const& bisimulationOptions)
+    : model(model),
+      preservationInformation(preservationInformation),
+      bisimulationOptions(bisimulationOptions),
+      refiner(createRefiner(model, initialPartition, bisimulationOptions)) {
     this->initialize();
 }
 
@@ -155,7 +163,7 @@ std::shared_ptr<storm::models::Model<ExportValueType>> BisimulationDecomposition
     std::shared_ptr<storm::models::Model<ExportValueType>> quotient;
     if (this->refiner->getStatus() == Status::FixedPoint) {
         STORM_LOG_INFO("Starting full quotient extraction.");
-        QuotientExtractor<DdType, ValueType, ExportValueType> extractor(quotientFormat);
+        QuotientExtractor<DdType, ValueType, ExportValueType> extractor(quotientFormat, bisimulationOptions);
         quotient = extractor.extract(model, refiner->getStatePartition(), preservationInformation);
     } else {
         STORM_LOG_THROW(model.getType() == storm::models::ModelType::Dtmc || model.getType() == storm::models::ModelType::Mdp,

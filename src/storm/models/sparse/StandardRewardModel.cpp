@@ -485,12 +485,14 @@ bool StandardRewardModel<ValueType>::hasPositiveRewards() const {
 template<typename ValueType>
 bool StandardRewardModel<ValueType>::isCompatible(uint_fast64_t nrStates, uint_fast64_t nrChoices) const {
     if (hasStateRewards()) {
-        if (optionalStateRewardVector.value().size() != nrStates)
+        if (optionalStateRewardVector.value().size() != nrStates) {
             return false;
+        }
     }
     if (hasStateActionRewards()) {
-        if (optionalStateActionRewardVector.value().size() != nrChoices)
+        if (optionalStateActionRewardVector.value().size() != nrChoices) {
             return false;
+        }
     }
     return true;
 }

@@ -34,16 +34,16 @@ void printRelevantInfoFromModel(std::shared_ptr<storm::solver::SmtSolver::ModelR
 
 template<typename ValueType>
 void IterativePolicySearch<ValueType>::Statistics::print() const {
-    STORM_PRINT_AND_LOG("#STATS Total time: " << totalTimer << '\n');
-    STORM_PRINT_AND_LOG("#STATS SAT Calls: " << satCalls << '\n');
-    STORM_PRINT_AND_LOG("#STATS SAT Calls time: " << smtCheckTimer << '\n');
-    STORM_PRINT_AND_LOG("#STATS Outer iterations: " << outerIterations << '\n');
-    STORM_PRINT_AND_LOG("#STATS Solver initialization time: " << initializeSolverTimer << '\n');
-    STORM_PRINT_AND_LOG("#STATS Obtain partial scheduler time: " << evaluateExtensionSolverTime << '\n');
-    STORM_PRINT_AND_LOG("#STATS Update solver to extend partial scheduler time: " << encodeExtensionSolverTime << '\n');
-    STORM_PRINT_AND_LOG("#STATS Update solver with new scheduler time: " << updateNewStrategySolverTime << '\n');
-    STORM_PRINT_AND_LOG("#STATS Winning regions update time: " << winningRegionUpdatesTimer << '\n');
-    STORM_PRINT_AND_LOG("#STATS Graph search time: " << graphSearchTime << '\n');
+    STORM_LOG_STATISTICS("#STATS Total time: " << totalTimer << '\n');
+    STORM_LOG_STATISTICS("#STATS SAT Calls: " << satCalls << '\n');
+    STORM_LOG_STATISTICS("#STATS SAT Calls time: " << smtCheckTimer << '\n');
+    STORM_LOG_STATISTICS("#STATS Outer iterations: " << outerIterations << '\n');
+    STORM_LOG_STATISTICS("#STATS Solver initialization time: " << initializeSolverTimer << '\n');
+    STORM_LOG_STATISTICS("#STATS Obtain partial scheduler time: " << evaluateExtensionSolverTime << '\n');
+    STORM_LOG_STATISTICS("#STATS Update solver to extend partial scheduler time: " << encodeExtensionSolverTime << '\n');
+    STORM_LOG_STATISTICS("#STATS Update solver with new scheduler time: " << updateNewStrategySolverTime << '\n');
+    STORM_LOG_STATISTICS("#STATS Winning regions update time: " << winningRegionUpdatesTimer << '\n');
+    STORM_LOG_STATISTICS("#STATS Graph search time: " << graphSearchTime << '\n');
 }
 
 template<typename ValueType>
@@ -144,7 +144,7 @@ bool IterativePolicySearch<ValueType>::initialize(uint64_t k) {
                     pathVars[stateId].push_back(expressionManager->declareIntegerVariable("P-" + std::to_string(stateId)));
                     pathVarExpressions[stateId].push_back(pathVars[stateId].back().getExpression());
                 } else {
-                    assert(options.pathVariableType == MemlessSearchPathVariables::RealRanking);
+                    STORM_LOG_ASSERT(options.pathVariableType == MemlessSearchPathVariables::RealRanking, "Expected RealRanking path variable type.");
                     pathVars[stateId].push_back(expressionManager->declareRationalVariable("P-" + std::to_string(stateId)));
                     pathVarExpressions[stateId].push_back(pathVars[stateId].back().getExpression());
                 }
@@ -152,9 +152,9 @@ bool IterativePolicySearch<ValueType>::initialize(uint64_t k) {
         }
     }
 
-    assert(!lookaheadConstraintsRequired || pathVarExpressions.size() == pomdp.getNumberOfStates());
-    assert(reachVars.size() == pomdp.getNumberOfStates());
-    assert(reachVarExpressions.size() == pomdp.getNumberOfStates());
+    STORM_LOG_ASSERT(!lookaheadConstraintsRequired || pathVarExpressions.size() == pomdp.getNumberOfStates(), "Path var expressions size mismatch.");
+    STORM_LOG_ASSERT(reachVars.size() == pomdp.getNumberOfStates(), "Reach vars size mismatch.");
+    STORM_LOG_ASSERT(reachVarExpressions.size() == pomdp.getNumberOfStates(), "Reach var expressions size mismatch.");
 
     uint64_t obs = 0;
 
@@ -358,7 +358,7 @@ uint64_t IterativePolicySearch<ValueType>::getOffsetFromObservation(uint64_t sta
         }
         ++offset;
     }
-    assert(false);  // State should have occured.
+    STORM_LOG_ASSERT(false, "State should have occurred.");
     return 0;
 }
 
@@ -410,10 +410,10 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
                 update.set(i);
             }
         }
-        assert(!update.empty());
+        STORM_LOG_ASSERT(!update.empty(), "Update should not be empty.");
         STORM_LOG_TRACE("Extend winning region for observation " << observation << " with target states/offsets" << update);
         winningRegion.addTargetStates(observation, update);
-        assert(winningRegion.query(observation, update));  // "Cannot continue: No scheduler known for state " << i << " (observation " << obs << ").");
+        STORM_LOG_ASSERT(winningRegion.query(observation, update), "Winning region query failed.");
 
         updated.set(observation);
     }
@@ -433,7 +433,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
     }
     std::vector<storm::expressions::Expression> atLeastOneOfStates;
     for (uint64_t state : oneOfTheseStates) {
-        STORM_LOG_ASSERT(reachVarExpressions.size() > state, "state id " << state << " exceeds number of states (" << reachVarExpressions.size() << ")");
+        STORM_LOG_ASSERT(reachVarExpressions.size() > state, "State id " << state << " exceeds number of states (" << reachVarExpressions.size() << ")");
         atLeastOneOfStates.push_back(reachVarExpressions[state]);
     }
     if (!atLeastOneOfStates.empty()) {
@@ -444,7 +444,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
     std::vector<storm::expressions::Expression> updateForObservationExpressions;
 
     for (uint64_t state : allOfTheseStates) {
-        assert(reachVarExpressions.size() > state);
+        STORM_LOG_ASSERT(reachVarExpressions.size() > state, "Reach var expression index out of range.");
         allOfTheseAssumption.insert(reachVarExpressions[state]);
     }
 
@@ -459,8 +459,8 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
         for (auto const& statesForObservation : statesPerObservation) {
             schedulerForObs.push_back(0);
             for (auto const& winningSet : winningRegion.getWinningSetsPerObservation(obs)) {
-                assert(!winningSet.empty());
-                assert(obs < schedulerForObs.size());
+                STORM_LOG_ASSERT(!winningSet.empty(), "Winning set should not be empty.");
+                STORM_LOG_ASSERT(obs < schedulerForObs.size(), "Observation index out of range.");
                 ++(schedulerForObs[obs]);
                 auto constant = expressionManager->integer(schedulerForObs[obs]);
                 for (uint64_t stateOffset : ~winningSet) {
@@ -489,7 +489,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
         smtSolver->add(storm::expressions::iff(observationUpdatedExpressions[obs], updateForObservationExpressions[obs]));
     }
 
-    assert(pomdp.getNrObservations() == schedulerForObs.size());
+    STORM_LOG_ASSERT(pomdp.getNrObservations() == schedulerForObs.size(), "Observation / scheduler count mismatch.");
 
     InternalObservationScheduler scheduler;
     scheduler.switchObservations = storm::storage::BitVector(pomdp.getNrObservations());
@@ -561,7 +561,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
                 if (observationUpdated.get(pomdp.getObservation(i)) && model->getBooleanValue(rv)) {
                     STORM_LOG_TRACE("New state: " << i);
                     smtSolver->add(rvExpr);
-                    assert(!surelyReachSinkStates.get(i));
+                    STORM_LOG_ASSERT(!surelyReachSinkStates.get(i), "State should not be a sink state.");
                     newObservations.set(pomdp.getObservation(i));
                     coveredStates.set(i);
                     if (lookaheadConstraintsRequired) {
@@ -679,7 +679,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
             uint64_t i = 0;
             for (uint64_t state : statesPerObservation[observation]) {
                 if (coveredStates.get(state)) {
-                    assert(!surelyReachSinkStates.get(state));
+                    STORM_LOG_ASSERT(!surelyReachSinkStates.get(state), "State should not be a sink.");
                     update.set(i);
                 }
                 ++i;
@@ -693,7 +693,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
                         ++newTargetObservations;
                         for (uint64_t state : statesPerObservation[observation]) {
                             targetStates.set(state);
-                            assert(!surelyReachSinkStates.get(state));
+                            STORM_LOG_ASSERT(!surelyReachSinkStates.get(state), "State should not be a sink.");
                         }
                     }
                     updated.set(observation);
@@ -749,10 +749,10 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
                             update.set(i);
                         }
                     }
-                    assert(!update.empty());
+                    STORM_LOG_ASSERT(!update.empty(), "Update should not be empty.");
                     STORM_LOG_TRACE("Extend winning region for observation " << observation << " with target states/offsets" << update);
                     winningRegion.addTargetStates(observation, update);
-                    assert(winningRegion.query(observation, update));  //
+                    STORM_LOG_ASSERT(winningRegion.query(observation, update), "Winning region query failed.");
                     updated.set(observation);
                 }
                 stats.winningRegionUpdatesTimer.stop();
@@ -763,7 +763,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
                 }
             }
         }
-        STORM_LOG_ASSERT(!updated.empty(), "The strategy should be new in at least one place");
+        STORM_LOG_ASSERT(!updated.empty(), "The strategy should be new in at least one place.");
         if (options.computeDebugOutput()) {
             winningRegion.print();
         }
@@ -784,7 +784,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
         for (auto const& statesForObservation : statesPerObservation) {
             if (observations.get(obs) && updated.get(obs)) {
                 STORM_LOG_DEBUG("We have a new policy ( " << finalSchedulers.size() << " ) for states with observation " << obs << ".");
-                assert(schedulerForObs.size() > obs);
+                STORM_LOG_ASSERT(schedulerForObs.size() > obs, "Scheduler size / observation index mismatch.");
                 (schedulerForObs[obs])++;
                 STORM_LOG_DEBUG("We now have " << schedulerForObs[obs] << " policies for states with observation " << obs);
                 if (winningRegion.observationIsWinning(obs)) {

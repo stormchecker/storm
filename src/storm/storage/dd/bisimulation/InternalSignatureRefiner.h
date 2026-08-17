@@ -1,6 +1,7 @@
 #pragma once
 
 #include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/bisimulation/BisimulationOptions.h"
 
 namespace storm {
 namespace dd {
@@ -10,8 +11,7 @@ template<storm::dd::DdType DdType, typename ValueType>
 class InternalSignatureRefiner;
 
 struct InternalSignatureRefinerOptions {
-    InternalSignatureRefinerOptions();
-    InternalSignatureRefinerOptions(bool shiftStateVariables);
+    InternalSignatureRefinerOptions(bool shiftStateVariables, BisimulationOptions const& bisimulationOptions);
 
     bool shiftStateVariables;
     bool reuseBlockNumbers;

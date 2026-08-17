@@ -40,7 +40,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
         }
     }
     STORM_LOG_THROW(actualInitialStates.getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException,
-                    "Must have unique initial state matching the observation");
+                    "Must have unique initial state matching the observation.");
 
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
     std::cout << "build valution builder..\n";
@@ -104,7 +104,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
             std::cout << "\tconsider new state " << unfoldedToOldEntry.first << '\n';
 #endif
             STORM_LOG_ASSERT(step == 0 || newRowCount == transitionMatrixBuilder.getLastRow() + 1,
-                             "step " << step << " newRowCount " << newRowCount << " lastRow " << transitionMatrixBuilder.getLastRow());
+                             "Step " << step << " newRowCount " << newRowCount << " lastRow " << transitionMatrixBuilder.getLastRow());
             addStateValuation(unfoldedToOldEntry.second, step);
             uint64_t oldRowIndexStart = model.getNondeterministicChoiceIndices()[unfoldedToOldEntry.second];
             uint64_t oldRowIndexEnd = model.getNondeterministicChoiceIndices()[unfoldedToOldEntry.second + 1];
@@ -173,7 +173,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     for (auto const& unfoldedToOldEntry : unfoldedToOldNextStep) {
         addStateValuation(unfoldedToOldEntry.second, observations.size() - 1);
         transitionMatrixBuilder.newRowGroup(newRowGroupStart);
-        STORM_LOG_ASSERT(risk.size() > unfoldedToOldEntry.second, "Must be a state");
+        STORM_LOG_ASSERT(risk.size() > unfoldedToOldEntry.second, "Must be a state.");
         STORM_LOG_ASSERT(storm::utility::isBetween(storm::utility::zero<ValueType>(), risk[unfoldedToOldEntry.second], storm::utility::one<ValueType>()),
                          "Risk must be a probability");
         // std::cout << "risk is" <<  risk[unfoldedToOldEntry.second] << '\n';

@@ -19,7 +19,7 @@ GlobalPomdpMecChoiceEliminator<ValueType>::GlobalPomdpMecChoiceEliminator(storm:
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPomdpMecChoiceEliminator<ValueType>::transform(storm::logic::Formula const& formula) const {
     // check whether the property is minimizing or maximizing
-    STORM_LOG_THROW(formula.isOperatorFormula(), storm::exceptions::InvalidPropertyException, "Expected an operator formula");
+    STORM_LOG_THROW(formula.isOperatorFormula(), storm::exceptions::InvalidPropertyException, "Expected an operator formula.");
     STORM_LOG_THROW(formula.asOperatorFormula().hasOptimalityType() || formula.asOperatorFormula().hasBound(), storm::exceptions::InvalidPropertyException,
                     "The formula " << formula << " does not specify whether to minimize or maximize.");
     bool minimizes = (formula.asOperatorFormula().hasOptimalityType() && storm::solver::minimize(formula.asOperatorFormula().getOptimalityType())) ||
@@ -41,14 +41,14 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPomdpMecChoiceEli
             return transformMinReward(subformula->asEventuallyFormula());
         }
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Mec elimination is not supported for the property " << formula);
+    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Mec elimination is not supported for the property " << formula << ".");
     return nullptr;
 }
 
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPomdpMecChoiceEliminator<ValueType>::transformMinReward(
     storm::logic::EventuallyFormula const& formula) const {
-    assert(formula.isRewardPathFormula());
+    STORM_LOG_ASSERT(formula.isRewardPathFormula(), "Expected reward path formula.");
     auto backwardTransitions = pomdp.getBackwardTransitions();
     storm::storage::BitVector allStates(pomdp.getNumberOfStates(), true);
     auto prob1EStates = storm::utility::graph::performProb1E(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), backwardTransitions,
@@ -170,7 +170,7 @@ std::vector<storm::storage::BitVector> GlobalPomdpMecChoiceEliminator<ValueType>
                 storm::storage::BitVector localChoiceIndices(pomdp.getNumberOfChoices(stateActions.first), false);
                 uint64_t offset = pomdp.getTransitionMatrix().getRowGroupIndices()[stateActions.first];
                 for (auto const& choice : stateActions.second) {
-                    assert(choice >= offset);
+                    STORM_LOG_ASSERT(choice >= offset, "Choice index below offset.");
                     localChoiceIndices.set(choice - offset, true);
                 }
 
@@ -179,7 +179,7 @@ std::vector<storm::storage::BitVector> GlobalPomdpMecChoiceEliminator<ValueType>
                     mecChoices = localChoiceIndices;
                 } else {
                     STORM_LOG_ASSERT(mecChoices.size() == localChoiceIndices.size(),
-                                     "Observation action count does not match for two states with the same observation");
+                                     "Observation action count does not match for two states with the same observation.");
                     mecChoices &= localChoiceIndices;
                 }
             }
@@ -199,7 +199,7 @@ storm::storage::MaximalEndComponentDecomposition<ValueType> GlobalPomdpMecChoice
                                                                true, pomdp.getTransitionMatrix().getRowGroupCount());
         uint64_t row = 0;
         for (uint64_t rowGroup = 0; rowGroup < pomdp.getTransitionMatrix().getRowGroupCount(); ++rowGroup) {
-            assert(row == pomdp.getTransitionMatrix().getRowGroupIndices()[rowGroup]);
+            STORM_LOG_ASSERT(row == pomdp.getTransitionMatrix().getRowGroupIndices()[rowGroup], "Row group index mismatch.");
             builder.newRowGroup(row);
             for (; row < pomdp.getTransitionMatrix().getRowGroupIndices()[rowGroup + 1]; ++row) {
                 ValueType redirectedProbabilityMass = pomdp.getTransitionMatrix().getConstrainedRowSum(row, redirectingStates);
@@ -233,7 +233,7 @@ template<typename ValueType>
 storm::storage::BitVector GlobalPomdpMecChoiceEliminator<ValueType>::checkPropositionalFormula(storm::logic::Formula const& propositionalFormula) const {
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(pomdp);
     STORM_LOG_THROW(mc.canHandle(propositionalFormula), storm::exceptions::InvalidPropertyException,
-                    "Propositional model checker can not handle formula " << propositionalFormula);
+                    "Propositional model checker can not handle formula " << propositionalFormula << ".");
     return mc.check(propositionalFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
 }
 

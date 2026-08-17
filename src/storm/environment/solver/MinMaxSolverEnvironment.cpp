@@ -23,7 +23,7 @@ MinMaxSolverEnvironment::MinMaxSolverEnvironment() {
         minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
     STORM_LOG_ASSERT(considerRelativeTerminationCriterion ||
                          minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute,
-                     "Unknown convergence criterion");
+                     "Unknown convergence criterion.");
     multiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
     forceRequireUnique = minMaxSettings.isForceUniqueSolutionRequirementSet();
 }

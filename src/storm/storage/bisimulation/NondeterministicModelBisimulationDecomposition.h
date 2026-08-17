@@ -25,8 +25,7 @@ class NondeterministicModelBisimulationDecomposition : public BisimulationDecomp
      * @param options The options that customize the computed bisimulation.
      */
     NondeterministicModelBisimulationDecomposition(ModelType const& model,
-                                                   typename BisimulationDecomposition<ModelType, BlockDataType>::Options const& options =
-                                                       typename BisimulationDecomposition<ModelType, BlockDataType>::Options());
+                                                   typename BisimulationDecomposition<ModelType, BlockDataType>::Options const& options);
 
    protected:
     virtual std::pair<storm::storage::BitVector, storm::storage::BitVector> getStatesWithProbability01() override;

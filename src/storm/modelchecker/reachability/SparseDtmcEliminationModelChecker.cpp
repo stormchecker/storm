@@ -12,8 +12,6 @@
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/stateelimination/ConditionalStateEliminator.h"
 #include "storm/solver/stateelimination/DynamicStatePriorityQueue.h"
 #include "storm/solver/stateelimination/MultiValueStateEliminator.h"
@@ -245,9 +243,6 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(Env
     while (priorityQueue->hasNext()) {
         storm::storage::sparse::state_type state = priorityQueue->pop();
         stateEliminator.eliminateState(state, true);
-#ifdef STORM_DEV
-        STORM_LOG_ASSERT(checkConsistent(flexibleMatrix, flexibleBackwardTransitions), "The forward and backward transition matrices became inconsistent.");
-#endif
     }
 
     // Now, we set the values of all states in BSCCs to that of the representative value (and clear the
@@ -307,7 +302,7 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(Env
     std::chrono::high_resolution_clock::time_point modelCheckingEnd = std::chrono::high_resolution_clock::now();
     std::chrono::high_resolution_clock::time_point totalTimeEnd = std::chrono::high_resolution_clock::now();
 
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+    {
         std::chrono::high_resolution_clock::duration sccDecompositionTime = sccDecompositionEnd - sccDecompositionStart;
         std::chrono::milliseconds sccDecompositionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(sccDecompositionTime);
         std::chrono::high_resolution_clock::duration conversionTime = conversionEnd - conversionStart;
@@ -317,13 +312,13 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(Env
         std::chrono::high_resolution_clock::duration totalTime = totalTimeEnd - totalTimeStart;
         std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
 
-        STORM_PRINT_AND_LOG('\n');
-        STORM_PRINT_AND_LOG("Time breakdown:\n");
-        STORM_PRINT_AND_LOG("    * time for SCC decomposition: " << sccDecompositionTimeInMilliseconds.count() << "ms\n");
-        STORM_PRINT_AND_LOG("    * time for conversion: " << conversionTimeInMilliseconds.count() << "ms\n");
-        STORM_PRINT_AND_LOG("    * time for checking: " << modelCheckingTimeInMilliseconds.count() << "ms\n");
-        STORM_PRINT_AND_LOG("------------------------------------------\n");
-        STORM_PRINT_AND_LOG("    * total time: " << totalTimeInMilliseconds.count() << "ms\n");
+        STORM_LOG_STATISTICS('\n');
+        STORM_LOG_STATISTICS("Time breakdown:\n");
+        STORM_LOG_STATISTICS("    * time for SCC decomposition: " << sccDecompositionTimeInMilliseconds.count() << "ms\n");
+        STORM_LOG_STATISTICS("    * time for conversion: " << conversionTimeInMilliseconds.count() << "ms\n");
+        STORM_LOG_STATISTICS("    * time for checking: " << modelCheckingTimeInMilliseconds.count() << "ms\n");
+        STORM_LOG_STATISTICS("------------------------------------------\n");
+        STORM_LOG_STATISTICS("    * total time: " << totalTimeInMilliseconds.count() << "ms\n");
     }
 
     // Now, we return the value for the only initial state.
@@ -783,7 +778,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
                             }
                         }
                     }
-                    STORM_LOG_ASSERT(!flexibleMatrix.getRow(initialStateSuccessor).empty(), "(1) New transitions expected to be non-empty.");
+                    STORM_LOG_ASSERT(!flexibleMatrix.getRow(initialStateSuccessor).empty(), "Expected new transitions to be non-empty (1).");
                 }
             }
             stateEliminator.unsetFilter();
@@ -870,9 +865,6 @@ void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performPrioritizedS
         if (removeForwardTransitions) {
             values[state] = storm::utility::zero<ValueType>();
         }
-#ifdef STORM_DEV
-        STORM_LOG_ASSERT(checkConsistent(transitionMatrix, backwardTransitions), "The forward and backward transition matrices became inconsistent.");
-#endif
     }
 }
 
@@ -1042,30 +1034,6 @@ uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::treatScc(
     }
 
     return maximalDepth;
-}
-
-template<typename SparseDtmcModelType>
-bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::checkConsistent(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix,
-                                                                             storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions) {
-    for (uint_fast64_t forwardIndex = 0; forwardIndex < transitionMatrix.getRowCount(); ++forwardIndex) {
-        for (auto const& forwardEntry : transitionMatrix.getRow(forwardIndex)) {
-            if (forwardEntry.getColumn() == forwardIndex) {
-                continue;
-            }
-
-            bool foundCorrespondingElement = false;
-            for (auto const& backwardEntry : backwardTransitions.getRow(forwardEntry.getColumn())) {
-                if (backwardEntry.getColumn() == forwardIndex) {
-                    foundCorrespondingElement = true;
-                }
-            }
-
-            if (!foundCorrespondingElement) {
-                return false;
-            }
-        }
-    }
-    return true;
 }
 
 template class SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<double>>;

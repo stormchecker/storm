@@ -13,7 +13,8 @@ template<storm::dd::DdType DdType, typename ValueType>
 SignatureRefiner<DdType, ValueType>::SignatureRefiner(storm::dd::DdManager<DdType> const& manager, storm::expressions::Variable const& blockVariable,
                                                       std::set<storm::expressions::Variable> const& stateRowVariables,
                                                       std::set<storm::expressions::Variable> const& stateColumnVariables, bool shiftStateVariables,
-                                                      std::set<storm::expressions::Variable> const& nondeterminismVariables)
+                                                      std::set<storm::expressions::Variable> const& nondeterminismVariables,
+                                                      BisimulationOptions const& bisimulationOptions)
     : manager(&manager) {
     storm::dd::Bdd<DdType> nonBlockVariablesCube = manager.getBddOne();
     storm::dd::Bdd<DdType> nondeterminismVariablesCube = manager.getBddOne();
@@ -29,7 +30,7 @@ SignatureRefiner<DdType, ValueType>::SignatureRefiner(storm::dd::DdManager<DdTyp
 
     internalRefiner = std::make_unique<InternalSignatureRefiner<DdType, ValueType>>(
         manager, blockVariable, shiftStateVariables ? stateColumnVariables : stateRowVariables, nondeterminismVariablesCube, nonBlockVariablesCube,
-        InternalSignatureRefinerOptions(shiftStateVariables));
+        InternalSignatureRefinerOptions(shiftStateVariables, bisimulationOptions));
 }
 
 template<storm::dd::DdType DdType, typename ValueType>

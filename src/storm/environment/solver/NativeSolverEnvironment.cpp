@@ -22,7 +22,7 @@ NativeSolverEnvironment::NativeSolverEnvironment() {
         nativeSettings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
     STORM_LOG_ASSERT(considerRelativeTerminationCriterion ||
                          nativeSettings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Absolute,
-                     "Unknown convergence criterion");
+                     "Unknown convergence criterion.");
     powerMethodMultiplicationStyle = nativeSettings.getPowerMethodMultiplicationStyle();
     sorOmega = storm::utility::convertNumber<storm::RationalNumber>(nativeSettings.getOmega());
     symmetricUpdates = nativeSettings.isForceIntervalIterationSymmetricUpdatesSet();

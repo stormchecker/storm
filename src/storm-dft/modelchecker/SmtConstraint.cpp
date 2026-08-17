@@ -166,7 +166,7 @@ storm::expressions::Expression IsTrue::toExpression(std::vector<std::string> con
 
 std::string IsBoolValue::toSmtlib2(std::vector<std::string> const &varNames) const {
     std::stringstream sstr;
-    assert(varIndex < varNames.size());
+    STORM_LOG_ASSERT(varIndex < varNames.size(), "Variable index out of range.");
     if (value) {
         sstr << varNames.at(varIndex);
     } else {
@@ -186,7 +186,7 @@ storm::expressions::Expression IsBoolValue::toExpression(std::vector<std::string
 
 std::string IsConstantValue::toSmtlib2(std::vector<std::string> const &varNames) const {
     std::stringstream sstr;
-    assert(varIndex < varNames.size());
+    STORM_LOG_ASSERT(varIndex < varNames.size(), "Variable index out of range.");
     sstr << "(= " << varNames.at(varIndex) << " " << value << ")";
     return sstr.str();
 }
@@ -198,7 +198,7 @@ storm::expressions::Expression IsConstantValue::toExpression(std::vector<std::st
 
 std::string IsNotConstantValue::toSmtlib2(std::vector<std::string> const &varNames) const {
     std::stringstream sstr;
-    assert(varIndex < varNames.size());
+    STORM_LOG_ASSERT(varIndex < varNames.size(), "Variable index out of range.");
     sstr << "(distinct " << varNames.at(varIndex) << " " << value << ")";
     return sstr.str();
 }
@@ -210,7 +210,7 @@ storm::expressions::Expression IsNotConstantValue::toExpression(std::vector<std:
 
 std::string IsLessConstant::toSmtlib2(std::vector<std::string> const &varNames) const {
     std::stringstream sstr;
-    assert(varIndex < varNames.size());
+    STORM_LOG_ASSERT(varIndex < varNames.size(), "Variable index out of range.");
     sstr << "(< " << varNames.at(varIndex) << " " << value << ")";
     return sstr.str();
 }
@@ -222,7 +222,7 @@ storm::expressions::Expression IsLessConstant::toExpression(std::vector<std::str
 
 std::string IsLessEqualConstant::toSmtlib2(std::vector<std::string> const &varNames) const {
     std::stringstream sstr;
-    assert(varIndex < varNames.size());
+    STORM_LOG_ASSERT(varIndex < varNames.size(), "Variable index out of range.");
     sstr << "(<= " << varNames.at(varIndex) << " " << value << ")";
     return sstr.str();
 }

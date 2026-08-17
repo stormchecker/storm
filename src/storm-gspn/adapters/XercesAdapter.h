@@ -33,7 +33,7 @@ inline std::string getName(xercesc::DOMNode const* node) {
         case xercesc::DOMNode::NodeType::ATTRIBUTE_NODE:
             return XMLtoString(node->getNodeName());
         default:
-            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown DOMNode type");
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown DOMNode type.");
     }
 }
 }  // namespace adapters

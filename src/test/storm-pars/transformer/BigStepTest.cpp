@@ -5,6 +5,7 @@
 #include <string>
 
 #include "storm-pars/api/region.h"
+#include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm-pars/transformer/BigStep.h"
 #include "storm-parsers/api/model_descriptions.h"
@@ -12,6 +13,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/bisimulation.h"
 #include "storm/api/builder.h"
+#include "storm/api/properties.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/modelchecker/CheckTask.h"

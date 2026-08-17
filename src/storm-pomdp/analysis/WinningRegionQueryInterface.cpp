@@ -20,14 +20,14 @@ WinningRegionQueryInterface<ValueType>::WinningRegionQueryInterface(storm::model
 
 template<typename ValueType>
 bool WinningRegionQueryInterface<ValueType>::isInWinningRegion(storm::storage::BitVector const& beliefSupport) const {
-    STORM_LOG_ASSERT(beliefSupport.getNumberOfSetBits() > 0, "One cannot think one is literally nowhere");
+    STORM_LOG_ASSERT(beliefSupport.getNumberOfSetBits() > 0, "One cannot think one is literally nowhere.");
     uint64_t observation = pomdp.getObservation(beliefSupport.getNextSetIndex(0));
     // TODO consider optimizations after testing.
     storm::storage::BitVector queryVector(statesPerObservation[observation].size());
     auto stateWithObsIt = statesPerObservation[observation].begin();
     uint64_t offset = 0;
     for (uint64_t possibleState : beliefSupport) {
-        STORM_LOG_ASSERT(pomdp.getObservation(possibleState) == observation, "Support must be observation-consistent");
+        STORM_LOG_ASSERT(pomdp.getObservation(possibleState) == observation, "Support must be observation-consistent.");
         while (possibleState > *stateWithObsIt) {
             stateWithObsIt++;
             offset++;
@@ -41,13 +41,13 @@ bool WinningRegionQueryInterface<ValueType>::isInWinningRegion(storm::storage::B
 
 template<typename ValueType>
 bool WinningRegionQueryInterface<ValueType>::staysInWinningRegion(storm::storage::BitVector const& currentBeliefSupport, uint64_t actionIndex) const {
-    STORM_LOG_ASSERT(currentBeliefSupport.getNumberOfSetBits() > 0, "One cannot think one is literally nowhere");
+    STORM_LOG_ASSERT(currentBeliefSupport.getNumberOfSetBits() > 0, "One cannot think one is literally nowhere.");
     std::map<uint32_t, storm::storage::BitVector> successors;
     STORM_LOG_DEBUG("Stays in winning region? (" << currentBeliefSupport << ", " << actionIndex << ")");
     for (uint64_t oldState : currentBeliefSupport) {
         uint64_t row = pomdp.getTransitionMatrix().getRowGroupIndices()[oldState] + actionIndex;
         for (auto const& successor : pomdp.getTransitionMatrix().getRow(row)) {
-            assert(!storm::utility::isZero(successor.getValue()));
+            STORM_LOG_ASSERT(!storm::utility::isZero(successor.getValue()), "Unexpected zero successor probability.");
             uint32_t obs = pomdp.getObservation(successor.getColumn());
             if (successors.count(obs) == 0) {
                 successors[obs] = storm::storage::BitVector(pomdp.getNumberOfStates());
@@ -82,7 +82,7 @@ void WinningRegionQueryInterface<ValueType>::validate() const {
                     break;
                 }
             }
-            STORM_LOG_THROW(safeActionExists, storm::exceptions::UnexpectedException, "Observation " << obs << " , support " << states);
+            STORM_LOG_THROW(safeActionExists, storm::exceptions::UnexpectedException, "Observation " << obs << " , support " << states << ".");
         }
     }
 }
@@ -104,7 +104,7 @@ void WinningRegionQueryInterface<ValueType>::validateIsMaximal(storm::storage::B
                     states.set(statesPerObservation[obs][offset]);
                 }
                 states.set(statesPerObservation[obs][additional]);
-                assert(states.getNumberOfSetBits() == winningBelief.getNumberOfSetBits() + 1);
+                STORM_LOG_ASSERT(states.getNumberOfSetBits() == winningBelief.getNumberOfSetBits() + 1, "Set bit count mismatch.");
 
                 bool safeActionExists = false;
                 for (uint64_t actionIndex = 0; actionIndex < pomdp.getTransitionMatrix().getRowGroupSize(statesPerObservation[obs][0]); ++actionIndex) {
@@ -115,7 +115,7 @@ void WinningRegionQueryInterface<ValueType>::validateIsMaximal(storm::storage::B
                     }
                 }
 
-                STORM_LOG_THROW(!safeActionExists, storm::exceptions::UnexpectedException, "Observation " << obs << ", support " << states);
+                STORM_LOG_THROW(!safeActionExists, storm::exceptions::UnexpectedException, "Observation " << obs << ", support " << states << ".");
             }
         }
         STORM_LOG_DEBUG("All listed belief supports for observation " << obs << " are maximal. Continue with single states.");
@@ -138,7 +138,7 @@ void WinningRegionQueryInterface<ValueType>::validateIsMaximal(storm::storage::B
                 }
             }
 
-            STORM_LOG_THROW(!safeActionExists, storm::exceptions::UnexpectedException, "Observation " << obs << "  , support " << states);
+            STORM_LOG_THROW(!safeActionExists, storm::exceptions::UnexpectedException, "Observation " << obs << "  , support " << states << ".");
         }
     }
 }

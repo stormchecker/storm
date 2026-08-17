@@ -234,7 +234,7 @@ std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType
             ++openDim;
         }
     }
-    assert(permutation.size() == getOpenDimensions().getNumberOfSetBits());
+    STORM_LOG_ASSERT(permutation.size() == getOpenDimensions().getNumberOfSetBits(), "Permutation size mismatch.");
     for (auto const& costLimits : internalResult.first.getGenerator()) {
         std::vector<ValueType> resultPoint;
         for (auto const& dim : permutation) {

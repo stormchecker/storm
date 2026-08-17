@@ -69,7 +69,7 @@ bool AcyclicLinearEquationSolver<ValueType>::internalSolveEquations(Environment 
     std::vector<ValueType>* xPtr = &x;
     std::vector<ValueType> const* bPtr = &b;
     if (rowOrdering) {
-        STORM_LOG_ASSERT(rowOrdering->size() == b.size(), "b-vector has unexpected size.");
+        STORM_LOG_ASSERT(rowOrdering->size() == b.size(), "B-vector has unexpected size.");
         auxiliaryRowVector->resize(b.size());
         storm::utility::vector::selectVectorValues(*auxiliaryRowVector, *rowOrdering, b);
         for (auto const& bFactor : bFactors) {

@@ -66,8 +66,7 @@ void processOptions() {
         constantDefinitionString = gspnSettings.getConstantDefinitionString();
     }
 
-    auto parser = storm::parser::GspnParser();
-    auto gspn = parser.parse(gspnSettings.getGspnFilename(), constantDefinitionString);
+    auto gspn = storm::parser::GspnParser::parse(gspnSettings.getGspnFilename(), constantDefinitionString);
 
     std::string formulaString = "";
     if (storm::settings::getModule<storm::settings::modules::IOSettings>().isPropertySet()) {

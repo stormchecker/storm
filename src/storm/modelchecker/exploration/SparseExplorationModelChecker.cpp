@@ -1,5 +1,7 @@
 #include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
 
+#include <sstream>
+
 #include "storm/modelchecker/exploration/Bounds.h"
 #include "storm/modelchecker/exploration/ExplorationInformation.h"
 #include "storm/modelchecker/exploration/StateGeneration.h"
@@ -23,7 +25,6 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/ExplorationSettings.h"
 
 #include "storm/utility/constants.h"
@@ -131,10 +132,9 @@ std::tuple<StateType, typename ModelType::ValueType, typename ModelType::ValueTy
         }
     }
 
-    // Show statistics if required.
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        stats.printToStream(std::cout, explorationInformation);
-    }
+    std::stringstream statsStream;
+    stats.printToStream(statsStream, explorationInformation);
+    STORM_LOG_STATISTICS(statsStream.str());
 
     return std::make_tuple(initialStateIndex, bounds.getLowerBoundForState(initialStateIndex, explorationInformation),
                            bounds.getUpperBoundForState(initialStateIndex, explorationInformation));

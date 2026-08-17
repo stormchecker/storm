@@ -137,12 +137,13 @@ std::unique_ptr<Multiplier<ValueType, SolutionType>> MultiplierFactory<ValueType
     switch (type) {
         case MultiplierType::ViOperator:
             if constexpr (std::is_same_v<ValueType, storm::RationalFunction> || (storm::IsIntervalType<ValueType> && storm::IsIntervalType<SolutionType>)) {
-                throw storm::exceptions::NotImplementedException() << "VI Operator multiplier not supported with given value type.";
-            }
-            if (matrix.hasTrivialRowGrouping()) {
-                return std::make_unique<ViOperatorMultiplier<ValueType, true, SolutionType>>(matrix);
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "VI Operator multiplier not supported with given value type.");
             } else {
-                return std::make_unique<ViOperatorMultiplier<ValueType, false, SolutionType>>(matrix);
+                if (matrix.hasTrivialRowGrouping()) {
+                    return std::make_unique<ViOperatorMultiplier<ValueType, true, SolutionType>>(matrix);
+                } else {
+                    return std::make_unique<ViOperatorMultiplier<ValueType, false, SolutionType>>(matrix);
+                }
             }
         case MultiplierType::Native:
             if constexpr (std::is_same_v<ValueType, SolutionType>) {
@@ -151,7 +152,7 @@ std::unique_ptr<Multiplier<ValueType, SolutionType>> MultiplierFactory<ValueType
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Native multiplier not implemented for unequal ValueType and SolutionType.");
             }
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown MultiplierType");
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown MultiplierType.");
 }
 
 template class Multiplier<double>;

@@ -14,6 +14,7 @@
 #include "storm/storage/dd/DdType.h"
 
 namespace storm {
+class Environment;
 namespace dd {
 template<storm::dd::DdType T>
 class Bdd;
@@ -98,16 +99,23 @@ class DdPrismModelBuilder {
         // An optional set of expression or labels that characterizes (a subset of) the terminal states of the model.
         // If this is set, the outgoing transitions of these states are replaced with a self-loop.
         storm::builder::TerminalStates terminalStates;
+
+        // A flag that indicates whether deadlock states should be fixed by inserting a self-loop. If not set,
+        // an error is raised whenever a deadlock state is encountered.
+        bool fixDeadlocks = true;
     };
 
     /*!
      * Translates the given program into a symbolic model (i.e. one that stores the transition relation as a
      * decision diagram).
      *
+     * @param env The environment providing the settings for the DD library (e.g. Sylvan or CUDD).
      * @param program The program to translate.
+     * @param options The options to use when building the model.
      * @return A pointer to the resulting model.
      */
-    std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> build(storm::prism::Program const& program, Options const& options = Options());
+    std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> build(storm::Environment const& env, storm::prism::Program const& program,
+                                                                           Options const& options = Options());
 
    private:
     // This structure can store the decision diagrams representing a particular action.

@@ -122,7 +122,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSolve
             result = solveEquationsViToPi(env, dir, x, b);
             break;
         default:
-            STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "This solver does not implement the selected solution method");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "This solver does not implement the selected solution method.");
     }
 
     return result;
@@ -151,7 +151,7 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::setUpViOperat
     }
     if (this->choiceFixedForRowGroup) {
         // Ignore those rows that are not selected
-        assert(this->initialScheduler);
+        STORM_LOG_ASSERT(this->initialScheduler, "Expected initial scheduler.");
         auto callback = [&](uint64_t groupIndex, uint64_t localRowIndex) {
             return this->choiceFixedForRowGroup->get(groupIndex) && this->initialScheduler->at(groupIndex) != localRowIndex;
         };
@@ -228,7 +228,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveInducedE
         STORM_LOG_ASSERT(subB.size() == x.size(), "Sizes of subB and x do not coincide.");
         STORM_LOG_ASSERT(this->linearEquationSolverFactory != nullptr, "Wrong constructor was called.");
         STORM_LOG_THROW(this->linearEquationSolverFactory->getEquationProblemFormat(env) == LinearEquationSolverProblemFormat::FixedPointSystem,
-                        storm::exceptions::NotImplementedException, "Solving induced system of Interval Model not supported for the selected equation solver");
+                        storm::exceptions::NotImplementedException, "Solving induced system of Interval Model not supported for the selected equation solver.");
 
         storm::storage::SparseMatrixBuilder<SolutionType> newMatrixBuilder(this->A->getRowCount(), this->A->getColumnCount(), this->A->getEntryCount());
 
@@ -785,7 +785,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
                                                                                                    std::vector<SolutionType>& x,
                                                                                                    std::vector<ValueType> const& b) const {
     if constexpr (storm::IsIntervalType<ValueType>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement interval iteration for interval-based models");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement interval iteration for interval-based models.");
         return false;
     } else {
         setUpViOperator();
@@ -828,11 +828,11 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
                                                                                                      std::vector<SolutionType>& x,
                                                                                                      std::vector<ValueType> const& b) const {
     if constexpr (storm::IsIntervalType<ValueType>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SoundVI does not handle interval-based models");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SoundVI does not handle interval-based models.");
         return false;
     } else {
         // Prepare the solution vectors and the helper.
-        assert(x.size() == this->A->getRowGroupCount());
+        STORM_LOG_ASSERT(x.size() == this->A->getRowGroupCount(), "Solution vector size mismatch.");
 
         std::optional<ValueType> lowerBound, upperBound;
         if (this->hasLowerBound()) {
@@ -880,7 +880,7 @@ template<typename ValueType, typename SolutionType>
 bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquationsViToPi(Environment const& env, OptimizationDirection dir,
                                                                                         std::vector<SolutionType>& x, std::vector<ValueType> const& b) const {
     if constexpr (storm::IsIntervalType<ValueType>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "ViToPi does not handle interval-based models");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "ViToPi does not handle interval-based models.");
         return false;
     }
     // First create an (inprecise) vi solver to get a good initial strategy for the (potentially precise) policy iteration solver.
@@ -899,7 +899,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         }
         auto impreciseSolverReq = impreciseSolver->getRequirements(viEnv, dir);
         STORM_LOG_THROW(!impreciseSolverReq.hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException,
-                        "The value-iteration based solver has an unmet requirement: " << impreciseSolverReq.getEnabledRequirementsAsString());
+                        "The value-iteration based solver has an unmet requirement: " << impreciseSolverReq.getEnabledRequirementsAsString() << ".");
         impreciseSolver->setRequirementsChecked(true);
         auto xVi = storm::utility::vector::convertNumericVector<double>(x);
         auto bVi = storm::utility::vector::convertNumericVector<double>(b);
@@ -915,7 +915,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
                                                                                                 std::vector<SolutionType>& x,
                                                                                                 std::vector<ValueType> const& b) const {
     if constexpr (storm::IsIntervalType<ValueType>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Rational search does not handle interval-based models");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Rational search does not handle interval-based models.");
         return false;
     } else {
         // Set up two value iteration operators. One for exact and one for imprecise computations
@@ -925,7 +925,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         std::function<bool(uint64_t, uint64_t)> fixedChoicesCallback;
         if (this->choiceFixedForRowGroup) {
             // Ignore those rows that are not selected
-            assert(this->initialScheduler);
+            STORM_LOG_ASSERT(this->initialScheduler, "Expected initial scheduler.");
             fixedChoicesCallback = [&](uint64_t groupIndex, uint64_t localRowIndex) {
                 return this->choiceFixedForRowGroup->get(groupIndex) && this->initialScheduler->at(groupIndex) != localRowIndex;
             };

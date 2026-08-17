@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
 #include "storm/storage/SparseMatrix.h"
 
 #include <vector>
@@ -45,7 +46,8 @@ class NondeterministicSparseTransitionParser {
      *
      * @param filename The path and name of file to be parsed.
      */
-    static storm::storage::SparseMatrix<ValueType> parseNondeterministicTransitions(std::string const& filename);
+    static storm::storage::SparseMatrix<ValueType> parseNondeterministicTransitions(std::string const& filename,
+                                                                                    ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 
     /*!
      * Load a nondeterministic transition system from file and create a sparse adjacency matrix whose entries represent the weights of the edges
@@ -89,7 +91,8 @@ class NondeterministicSparseTransitionParser {
      */
     template<typename MatrixValueType>
     static storm::storage::SparseMatrix<ValueType> parse(std::string const& filename, bool isRewardFile,
-                                                         storm::storage::SparseMatrix<MatrixValueType> const& modelInformation);
+                                                         storm::storage::SparseMatrix<MatrixValueType> const& modelInformation,
+                                                         ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 };
 
 }  // namespace parser

@@ -9,8 +9,6 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 
 namespace storm {
 namespace modelchecker {
@@ -23,9 +21,7 @@ ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, Pre
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
 ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::~ValidatingSparseParameterLiftingModelChecker() {
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Validating Parameter Lifting Model Checker detected " << numOfWrongRegions << " regions where the imprecise method was wrong.\n");
-    }
+    STORM_LOG_STATISTICS("Validating Parameter Lifting Model Checker detected " << numOfWrongRegions << " regions where the imprecise method was wrong.\n");
 }
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
@@ -41,7 +37,7 @@ void ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType
     bool allowModelSimplifications, bool graphPreserving) {
     STORM_LOG_THROW(this->canHandle(parametricModel, checkTask), storm::exceptions::NotSupportedException,
                     "Combination of model " << parametricModel->getType() << " and formula '" << checkTask.getFormula() << "' is not supported.");
-    STORM_LOG_THROW(graphPreserving, storm::exceptions::NotImplementedException, "Non-graph-preserving regions not implemented for validating PLA");
+    STORM_LOG_THROW(graphPreserving, storm::exceptions::NotImplementedException, "Non-graph-preserving regions not implemented for validating PLA.");
     this->specifySplitEstimates(generateRegionSplitEstimates, checkTask);
     this->specifyMonotonicity(monotonicityBackend, checkTask);
 
@@ -56,16 +52,12 @@ void ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType
         auto dtmcOrMdp = parametricModel->template as<SparseModelType>();
         if constexpr (IsMDP) {
             auto simplifier = storm::transformer::SparseParametricMdpSimplifier<SparseModelType>(*dtmcOrMdp);
-            if (!simplifier.simplify(checkTask.getFormula())) {
-                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-            }
+            STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
             auto simplifiedTask = checkTask.substituteFormula(*simplifier.getSimplifiedFormula());
             specifyUnderlyingCheckers(simplifier.getSimplifiedModel(), simplifiedTask);
         } else {
             auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*dtmcOrMdp);
-            if (!simplifier.simplify(checkTask.getFormula())) {
-                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-            }
+            STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
             auto simplifiedTask = checkTask.substituteFormula(*simplifier.getSimplifiedFormula());
             specifyUnderlyingCheckers(simplifier.getSimplifiedModel(), simplifiedTask);
         }

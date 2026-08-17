@@ -22,7 +22,7 @@ ARG no_threads=4
 ARG build_type=Release
 # Carl repo and tag to use
 ARG carl_repo="https://github.com/stormchecker/carl-storm.git"
-ARG carl_tag="14.35"
+ARG carl_tag="14.36"
 # Specify Storm configuration (ON/OFF)
 ARG disable_cudd="OFF"
 ARG disable_glpk="OFF"

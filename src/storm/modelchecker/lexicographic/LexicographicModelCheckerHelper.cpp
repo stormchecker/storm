@@ -36,7 +36,7 @@ LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::g
     for (const std::string& ap : apSet.getAPs()) {
         auto it = apSatSets.find(ap);
         STORM_LOG_THROW(it != apSatSets.end(), storm::exceptions::InvalidOperationException,
-                        "Deterministic automaton has AP " << ap << ", does not appear in formula");
+                        "Deterministic automaton has AP " << ap << ", does not appear in formula.");
 
         statesForAP.push_back(std::move(it->second));
     }
@@ -177,7 +177,7 @@ LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::g
         accConds.reserve(accConds.size() + distance(rightAccConds.begin(), rightAccConds.end()));
         accConds.insert(accConds.end(), rightAccConds.begin(), rightAccConds.end());
     } else {
-        STORM_LOG_THROW(true, storm::exceptions::NotImplementedException, "Finding StreettPairs - unknown type " + current->toString());
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Finding StreettPairs - unknown type " + current->toString() + ".");
     }
     return accConds;
 }

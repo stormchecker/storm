@@ -1,11 +1,13 @@
 #include "storm/solver/Z3LpSolver.h"
 
+#include <memory>
 #include <numeric>
 
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/io/file.h"
 #include "storm/storage/expressions/Expression.h"
@@ -25,9 +27,9 @@ Z3LpSolver<ValueType, RawMode>::Z3LpSolver(std::string const& name, Optimization
     : LpSolver<ValueType, RawMode>(optDir), isIncremental(false) {
     z3::config config;
     config.set("model", true);
-    context = std::unique_ptr<z3::context>(new z3::context(config));
-    solver = std::unique_ptr<z3::optimize>(new z3::optimize(*context));
-    expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(*this->manager, *context));
+    context = std::make_unique<z3::context>(config);
+    solver = std::make_unique<z3::optimize>(*context);
+    expressionAdapter = std::make_unique<storm::adapters::Z3ExpressionAdapter>(*this->manager, *context);
 }
 
 template<typename ValueType, bool RawMode>
@@ -91,7 +93,7 @@ template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Constraint const& constraint) {
     if constexpr (RawMode) {
         // Generate expression from raw constraint
-        STORM_LOG_ASSERT(constraint.lhsVariableIndices.size() == constraint.lhsCoefficients.size(), "number of variables and coefficients do not match.");
+        STORM_LOG_ASSERT(constraint.lhsVariableIndices.size() == constraint.lhsCoefficients.size(), "Number of variables and coefficients do not match.");
         std::vector<storm::expressions::Expression> lhsSummands;
         lhsSummands.reserve(constraint.lhsVariableIndices.size());
         auto varIt = constraint.lhsVariableIndices.cbegin();
@@ -118,7 +120,7 @@ template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const& name, Variable indicatorVariable, bool indicatorValue,
                                                             Constraint const& constraint) {
     if constexpr (RawMode) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Indicator constraints not implemented in RawMode");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Indicator constraints not implemented in RawMode.");
     } else {
         // binary variables are encoded as integer variables with domain {0,1}.
         STORM_LOG_THROW(indicatorVariable.hasIntegerType(), storm::exceptions::InvalidArgumentException,
@@ -311,26 +313,30 @@ ValueType Z3LpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
 #else
 template<typename ValueType, bool RawMode>
 Z3LpSolver<ValueType, RawMode>::Z3LpSolver(std::string const&, OptimizationDirection const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 Z3LpSolver<ValueType, RawMode>::Z3LpSolver(std::string const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 Z3LpSolver<ValueType, RawMode>::Z3LpSolver(OptimizationDirection const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 Z3LpSolver<ValueType, RawMode>::Z3LpSolver() {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
@@ -340,110 +346,128 @@ template<typename ValueType, bool RawMode>
 typename Z3LpSolver<ValueType, RawMode>::Variable Z3LpSolver<ValueType, RawMode>::addVariable(std::string const&, VariableType const&,
                                                                                               std::optional<ValueType> const&, std::optional<ValueType> const&,
                                                                                               ValueType) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::update() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::addConstraint(std::string const&, Constraint const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const&, Variable, bool, Constraint const&) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::optimize() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool Z3LpSolver<ValueType, RawMode>::isInfeasible() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool Z3LpSolver<ValueType, RawMode>::isUnbounded() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool Z3LpSolver<ValueType, RawMode>::isOptimal() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 storm::expressions::Expression Z3LpSolver<ValueType, RawMode>::getValue(Variable const& variable) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 ValueType Z3LpSolver<ValueType, RawMode>::getContinuousValue(Variable const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 int_fast64_t Z3LpSolver<ValueType, RawMode>::getIntegerValue(Variable const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 bool Z3LpSolver<ValueType, RawMode>::getBinaryValue(Variable const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 ValueType Z3LpSolver<ValueType, RawMode>::getObjectiveValue() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::writeModelToFile(std::string const& filename) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::push() {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::pop() {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::setMaximalMILPGap(ValueType const&, bool) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 
 template<typename ValueType, bool RawMode>
 ValueType Z3LpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
 }
 #endif
 

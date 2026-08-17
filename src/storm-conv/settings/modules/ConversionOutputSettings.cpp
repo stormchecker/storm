@@ -67,10 +67,10 @@ void ConversionOutputSettings::finalize() {
 
 bool ConversionOutputSettings::check() const {
     STORM_LOG_THROW(!isJaniOutputFilenameSet() || ArgumentValidatorFactory::createWritableFileValidator()->isValid(getJaniOutputFilename()),
-                    storm::exceptions::InvalidSettingsException, "Unable to write at file " + getJaniOutputFilename());
+                    storm::exceptions::InvalidSettingsException, "Unable to write at file " + getJaniOutputFilename() + ".");
     STORM_LOG_THROW(!isPrismOutputFilenameSet() || ArgumentValidatorFactory::createWritableFileValidator()->isValid(getPrismOutputFilename()),
-                    storm::exceptions::InvalidSettingsException, "Unable to write at file " + getPrismOutputFilename());
-    STORM_LOG_THROW(!(isJaniOutputSet() && isPrismOutputSet()), storm::exceptions::InvalidSettingsException, "Can not export to both, prism and jani");
+                    storm::exceptions::InvalidSettingsException, "Unable to write at file " + getPrismOutputFilename() + ".");
+    STORM_LOG_THROW(!isJaniOutputSet() || !isPrismOutputSet(), storm::exceptions::InvalidSettingsException, "Can not export to both, prism and jani.");
     return true;
 }
 

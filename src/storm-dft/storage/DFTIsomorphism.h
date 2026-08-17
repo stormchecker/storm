@@ -155,8 +155,9 @@ struct BijectionCandidates {
     bool hasGate(size_t index) const {
         for (auto const& x : gateCandidates) {
             for (auto const& ind : x.second) {
-                if (index == ind)
+                if (index == ind) {
                     return true;
+                }
             }
         }
         return false;
@@ -165,8 +166,9 @@ struct BijectionCandidates {
     bool hasBE(size_t index) const {
         for (auto const& x : beCandidates) {
             for (auto const& ind : x.second) {
-                if (index == ind)
+                if (index == ind) {
                     return true;
+                }
             }
         }
         return false;
@@ -175,8 +177,9 @@ struct BijectionCandidates {
     bool hasDep(size_t index) const {
         for (auto const& x : pdepCandidates) {
             for (auto const& ind : x.second) {
-                if (index == ind)
+                if (index == ind) {
                     return true;
+                }
             }
         }
         return false;
@@ -185,8 +188,9 @@ struct BijectionCandidates {
     bool hasRestriction(size_t index) const {
         for (auto const& x : restrictionCandidates) {
             for (auto const& ind : x.second) {
-                if (index == ind)
+                if (index == ind) {
                     return true;
+                }
             }
         }
         return false;
@@ -199,8 +203,9 @@ struct BijectionCandidates {
     size_t trivialGateGroups() const {
         size_t res = 0;
         for (auto const& x : gateCandidates) {
-            if (x.second.size() == 1)
+            if (x.second.size() == 1) {
                 ++res;
+            }
         }
         return res;
     }
@@ -208,8 +213,9 @@ struct BijectionCandidates {
     size_t trivialBEGroups() const {
         size_t res = 0;
         for (auto const& x : beCandidates) {
-            if (x.second.size() == 1)
+            if (x.second.size() == 1) {
                 ++res;
+            }
         }
         return res;
     }

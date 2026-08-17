@@ -72,7 +72,7 @@ storm::storage::SparseMatrix<ValueType> createBranchMatrix(storm::umb::UmbModel 
 
 storm::storage::BitVector createBitVector(storm::umb::VectorType<bool> const& umbBitVector, uint64_t size) {
     STORM_LOG_THROW(umbBitVector.size() >= size, storm::exceptions::WrongFormatException,
-                    "Bit vector has unexpected size: " << umbBitVector.size() << " < " << size);
+                    "Bit vector has unexpected size: " << umbBitVector.size() << " < " << size << ".");
     storm::storage::BitVector result(umbBitVector);
     result.resize(size);
     return result;
@@ -103,7 +103,7 @@ storm::models::sparse::StateLabeling constructStateLabeling(storm::umb::UmbModel
                             "Atomic proposition '" << apName << "' must apply only to states.");
             auto const& ap = umbModel.aps()->at(apName);
             auto labelName = apIndex.alias.value_or(apName);  // prefer alias as label name if it exists
-            STORM_LOG_THROW(ap.states.has_value(), storm::exceptions::WrongFormatException, "Atomic proposition '" << apName << "' has no states values");
+            STORM_LOG_THROW(ap.states.has_value(), storm::exceptions::WrongFormatException, "Atomic proposition '" << apName << "' has no states values.");
             STORM_LOG_THROW(!stateLabelling.containsLabel(labelName), storm::exceptions::WrongFormatException,
                             "Label '" << labelName << "' already exists in state labeling.");
             stateLabelling.addLabel(labelName, createBitVector(ap.states->values.template get<bool>(), numStates));
@@ -330,7 +330,8 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> constructSparseModel(st
             }
         }
     } else {
-        STORM_LOG_THROW(modelType == Dtmc || modelType == Mdp, storm::exceptions::NotSupportedException, "Unexpected model type for UMB import: " << modelType);
+        STORM_LOG_THROW(modelType == Dtmc || modelType == Mdp, storm::exceptions::NotSupportedException,
+                        "Unexpected model type for UMB import: " << modelType << ".");
     }
     return storm::utility::builder::buildModelFromComponents(deriveModelType(umbModel.index), std::move(components));
 }

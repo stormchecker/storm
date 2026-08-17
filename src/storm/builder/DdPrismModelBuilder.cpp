@@ -4,6 +4,7 @@
 
 #include "storm/adapters/AddExpressionAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -11,8 +12,6 @@
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
@@ -636,7 +635,7 @@ void DdPrismModelBuilder<Type, ValueType>::Options::preserveFormula(storm::logic
         if (!labelsToBuild) {
             labelsToBuild = std::set<std::string>();
         }
-        labelsToBuild.get().insert(formula.get()->getLabel());
+        labelsToBuild.get().insert(formula->getLabel());
     }
 }
 
@@ -1463,7 +1462,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBui
     // If there are deadlocks, either fix them or raise an error.
     if (!deadlockStates.isZero()) {
         // If we need to fix deadlocks, we do so now.
-        if (!storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet()) {
+        if (options.fixDeadlocks) {
             STORM_LOG_INFO("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. The first three of these states are: ");
 
             storm::dd::Add<Type, ValueType> deadlockStatesAdd = deadlockStates.template toAdd<ValueType>();
@@ -1563,7 +1562,8 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBui
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::build(storm::prism::Program const& program,
+std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::build(storm::Environment const& env,
+                                                                                                             storm::prism::Program const& program,
                                                                                                              Options const& options) {
     if (!std::is_same<ValueType, storm::RationalFunction>::value && program.hasUndefinedConstants()) {
         std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = program.getUndefinedConstants();
@@ -1578,7 +1578,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBui
             stream << constant.get().getName() << " (" << constant.get().getType() << ")";
         }
         stream << ".";
-        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
+        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str() + ".");
     }
     STORM_LOG_THROW(!program.hasUnboundedVariables(), storm::exceptions::InvalidArgumentException,
                     "Program contains unbounded variables which is not supported by the DD engine.");
@@ -1587,7 +1587,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBui
 
     STORM_LOG_TRACE("Building representation of program:\n" << program << '\n');
 
-    auto manager = std::make_shared<storm::dd::DdManager<Type>>();
+    auto manager = std::make_shared<storm::dd::DdManager<Type>>(env);
     std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;
     manager->execute([&program, &options, &manager, &result, this]() { result = this->buildInternal(program, options, manager); });
     return result;

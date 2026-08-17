@@ -51,10 +51,16 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
         columnValue = storm::utility::one<ValueType>() / columnValue;
     } else if (Mode == ScalingMode::DivideOneMinus) {
         if (hasEntryInColumn) {
-            STORM_LOG_ASSERT(columnValue != storm::utility::one<ValueType>(),
-                             "The scaling mode 'divide-one-minus' requires a non-one value in the given column.");
-            columnValue = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - columnValue);
-            columnValue = storm::utility::simplify(columnValue);
+            if (storm::utility::isOne(columnValue)) {
+                // The state is absorbing, i.e., it has a self-loop with probability one. In this case, the
+                // solution for this state is zero (least fixed point), and it does not contribute anything to
+                // its predecessors. Record this by setting the scaling factor to zero.
+                STORM_LOG_TRACE("State is absorbing, its value will be zero.");
+                columnValue = storm::utility::zero<ValueType>();
+            } else {
+                columnValue = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - columnValue);
+                columnValue = storm::utility::simplify(columnValue);
+            }
         }
     }
 
@@ -90,7 +96,7 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
 
         // Skip the row itself.
         if (predecessor == row) {
-            assert(hasEntryInColumn);
+            STORM_LOG_ASSERT(hasEntryInColumn, "Expected entry in column.");
             continue;
         }
 
@@ -280,10 +286,15 @@ void EliminatorBase<ValueType, Mode>::eliminateLoop(uint64_t state) {
         columnValue = storm::utility::one<ValueType>() / columnValue;
     } else if (Mode == ScalingMode::DivideOneMinus) {
         if (hasEntryInColumn) {
-            STORM_LOG_ASSERT(columnValue != storm::utility::one<ValueType>(),
-                             "The scaling mode 'divide-one-minus' requires a non-one value in the given column.");
-            columnValue = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - columnValue);
-            columnValue = storm::utility::simplify(columnValue);
+            if (storm::utility::isOne(columnValue)) {
+                // The state is absorbing, i.e., it has a self-loop with probability one. Its value is zero
+                // (least fixed point) and it does not contribute anything to its predecessors.
+                STORM_LOG_TRACE("State is absorbing, its value will be zero.");
+                columnValue = storm::utility::zero<ValueType>();
+            } else {
+                columnValue = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - columnValue);
+                columnValue = storm::utility::simplify(columnValue);
+            }
         }
     }
 

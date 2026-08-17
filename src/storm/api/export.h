@@ -134,7 +134,7 @@ inline void exportCheckResultToJson(std::shared_ptr<storm::models::sparse::Model
         stream << storm::dumpJson(j);
     } else {
         STORM_LOG_THROW(checkResult->isExplicitQuantitativeCheckResult(), storm::exceptions::NotSupportedException,
-                        "Export of check results is only supported for explicit check results (e.g. in the sparse engine)");
+                        "Export of check results is only supported for explicit check results (e.g. in the sparse engine).");
         auto j = checkResult->template asExplicitQuantitativeCheckResult<ValueType>().toJson(model->getOptionalStateValuations(), model->getStateLabeling());
         stream << storm::dumpJson(j);
     }
@@ -144,7 +144,7 @@ inline void exportCheckResultToJson(std::shared_ptr<storm::models::sparse::Model
 template<>
 inline void exportCheckResultToJson<storm::RationalFunction>(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const&,
                                                              std::unique_ptr<storm::modelchecker::CheckResult> const&, std::string const&) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export of check results is not supported for rational functions. ");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export of check results is not supported for rational functions.");
 }
 
 }  // namespace api

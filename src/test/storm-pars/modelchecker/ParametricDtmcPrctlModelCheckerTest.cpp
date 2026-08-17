@@ -45,18 +45,16 @@ class ParametricDtmcPrctlModelCheckerTest : public ::testing::Test {
     storm::Environment const& env() const {
         return _environment;
     }
-    storm::RationalFunctionCoefficient parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<storm::RationalFunctionCoefficient>(input);
-    }
 
    private:
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<EigenEnvironment, EliminationEnvironment> TestingTypes;
+storm::RationalFunctionCoefficient parseNumber(std::string const& input) {
+    return storm::utility::convertNumber<storm::RationalFunctionCoefficient>(input);
+}
 
-TYPED_TEST_SUITE(ParametricDtmcPrctlModelCheckerTest, TestingTypes, );
-TYPED_TEST(ParametricDtmcPrctlModelCheckerTest, Die) {
+void checkDie(storm::Environment const& env) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die.pm");
     storm::generator::NextStateGeneratorOptions options;
     options.setBuildAllLabels().setBuildAllRewardModels();
@@ -78,40 +76,47 @@ TYPED_TEST(ParametricDtmcPrctlModelCheckerTest, Die) {
     std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> instantiation;
     std::set<storm::RationalFunctionVariable> variables = storm::models::sparse::getProbabilityParameters(*dtmc);
     ASSERT_EQ(variables.size(), 1ull);
-    instantiation.emplace(*variables.begin(), this->parseNumber("1/2"));
+    instantiation.emplace(*variables.begin(), parseNumber("1/2"));
 
     storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> checker(*dtmc);
 
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(this->env(), *formula);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(env, *formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult1 =
         result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
 
-    EXPECT_EQ(this->parseNumber("1/6"), quantitativeResult1[0].evaluate(instantiation));
+    EXPECT_EQ(parseNumber("1/6"), quantitativeResult1[0].evaluate(instantiation));
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"two\"]");
 
-    result = checker.check(this->env(), *formula);
+    result = checker.check(env, *formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult2 =
         result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
 
-    EXPECT_EQ(this->parseNumber("1/6"), quantitativeResult2[0].evaluate(instantiation));
+    EXPECT_EQ(parseNumber("1/6"), quantitativeResult2[0].evaluate(instantiation));
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"three\"]");
 
-    result = checker.check(this->env(), *formula);
+    result = checker.check(env, *formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult3 =
         result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
 
-    EXPECT_EQ(this->parseNumber("1/6"), quantitativeResult3[0].evaluate(instantiation));
+    EXPECT_EQ(parseNumber("1/6"), quantitativeResult3[0].evaluate(instantiation));
 
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"done\"]");
 
-    result = checker.check(this->env(), *formula);
+    result = checker.check(env, *formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult4 =
         result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
 
-    EXPECT_EQ(this->parseNumber("11/3"), quantitativeResult4[0].evaluate(instantiation));
+    EXPECT_EQ(parseNumber("11/3"), quantitativeResult4[0].evaluate(instantiation));
+}
+
+typedef ::testing::Types<EigenEnvironment, EliminationEnvironment> TestingTypes;
+
+TYPED_TEST_SUITE(ParametricDtmcPrctlModelCheckerTest, TestingTypes, );
+TYPED_TEST(ParametricDtmcPrctlModelCheckerTest, Die) {
+    checkDie(this->env());
 }
 }  // namespace

@@ -4,6 +4,7 @@
 
 #include "storm/storage/dd/DdType.h"
 
+#include "storm/storage/dd/bisimulation/BisimulationOptions.h"
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/Signature.h"
 
@@ -19,8 +20,8 @@ class SignatureRefiner {
    public:
     SignatureRefiner(storm::dd::DdManager<DdType> const& manager, storm::expressions::Variable const& blockVariable,
                      std::set<storm::expressions::Variable> const& stateRowVariables, std::set<storm::expressions::Variable> const& stateColumnVariables,
-                     bool shiftStateVariables,
-                     std::set<storm::expressions::Variable> const& nondeterminismVariables = std::set<storm::expressions::Variable>());
+                     bool shiftStateVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables,
+                     BisimulationOptions const& bisimulationOptions);
 
     Partition<DdType, ValueType> refine(Partition<DdType, ValueType> const& oldPartition, Signature<DdType, ValueType> const& signature);
 

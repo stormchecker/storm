@@ -259,7 +259,7 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveFullyC
                                                                                                        OptimizationDirection dir, std::vector<SolutionType>& x,
                                                                                                        std::vector<ValueType> const& b) const {
     STORM_LOG_ASSERT(!this->choiceFixedForRowGroup || this->choiceFixedForRowGroup.get().empty(),
-                     "Expecting no fixed choices for states when solving the fully connected equation system");
+                     "Expecting no fixed choices for states when solving the fully connected equation system.");
     if (!this->sccSolver) {
         this->sccSolver = GeneralMinMaxLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
         this->sccSolver->setCachingEnabled(true);

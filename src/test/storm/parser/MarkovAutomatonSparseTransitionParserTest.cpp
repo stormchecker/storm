@@ -3,14 +3,12 @@
 
 #include <vector>
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
 #include "storm-parsers/parser/MarkovAutomatonParser.h"
 #include "storm-parsers/parser/MarkovAutomatonSparseTransitionParser.h"
 #include "storm-parsers/util/cstring.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/settings/SettingMemento.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
 
 TEST(MarkovAutomatonSparseTransitionParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
@@ -178,12 +176,12 @@ TEST(MarkovAutomatonSparseTransitionParserTest, Whitespaces) {
 }
 
 TEST(MarkovAutomatonSparseTransitionParserTest, FixDeadlocks) {
-    // Set the fixDeadlocks flag temporarily. It is set to its old value once the deadlockOption object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> fixDeadlocks = storm::settings::mutableBuildSettings().overrideDontFixDeadlocksSet(false);
+    storm::parser::ExplicitModelParserOptions options;
+    options.fixDeadlocks = true;
 
-    // Parse a Markov Automaton transition file with the fixDeadlocks Flag set and test if it works.
+    // Parse a Markov Automaton transition file with the fixDeadlocks flag set and test if it works.
     typename storm::parser::MarkovAutomatonSparseTransitionParser<>::Result result =
-        storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/tra/ma_deadlock.tra");
+        storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/tra/ma_deadlock.tra", options);
 
     // Test if the result is consistent with the parsed Markov Automaton.
     storm::storage::SparseMatrix<double> resultMatrix(result.transitionMatrixBuilder.build());
@@ -198,10 +196,11 @@ TEST(MarkovAutomatonSparseTransitionParserTest, FixDeadlocks) {
 }
 
 TEST(MarkovAutomatonSparseTransitionParserTest, DontFixDeadlocks) {
-    // Try to parse a Markov Automaton transition file containing a deadlock state with the fixDeadlocksFlag unset. This should throw an exception.
-    std::unique_ptr<storm::settings::SettingMemento> dontFixDeadlocks = storm::settings::mutableBuildSettings().overrideDontFixDeadlocksSet(true);
+    // Try to parse a Markov Automaton transition file containing a deadlock state with the fixDeadlocks flag unset. This should throw an exception.
+    storm::parser::ExplicitModelParserOptions options;
+    options.fixDeadlocks = false;
 
     STORM_SILENT_ASSERT_THROW(
-        storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/tra/ma_deadlock.tra"),
+        storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/tra/ma_deadlock.tra", options),
         storm::exceptions::WrongFormatException);
 }

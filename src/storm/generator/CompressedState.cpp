@@ -55,7 +55,7 @@ storm::expressions::SimpleValuation unpackStateIntoValuation(CompressedState con
 
 CompressedState packStateFromValuation(expressions::SimpleValuation const& valuation, VariableInformation const& variableInformation, bool checkOutOfBounds) {
     CompressedState result(variableInformation.getTotalBitOffset(true));
-    STORM_LOG_THROW(variableInformation.locationVariables.size() == 0, storm::exceptions::NotImplementedException, "Support for JANI is not implemented");
+    STORM_LOG_THROW(variableInformation.locationVariables.size() == 0, storm::exceptions::NotImplementedException, "Support for JANI is not implemented.");
     for (auto const& booleanVariable : variableInformation.booleanVariables) {
         result.set(booleanVariable.bitOffset, valuation.getBooleanValue(booleanVariable.variable));
     }
@@ -227,7 +227,7 @@ storm::json<ValueType> unpackStateIntoJson(CompressedState const& state, Variabl
         if (onlyObservable && !integerVariable.observable) {
             continue;
         }
-        STORM_LOG_ASSERT(integerVariable.bitWidth <= 63, "Only integer variables with at most 63 bits are supported");
+        STORM_LOG_ASSERT(integerVariable.bitWidth <= 63, "Only integer variables with at most 63 bits are supported.");
         result[integerVariable.getName()] =
             static_cast<int64_t>(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth)) + integerVariable.lowerBound;
     }
@@ -236,7 +236,7 @@ storm::json<ValueType> unpackStateIntoJson(CompressedState const& state, Variabl
 
 CompressedState createOutOfBoundsState(VariableInformation const& varInfo, bool roundTo64Bit) {
     CompressedState result(varInfo.getTotalBitOffset(roundTo64Bit));
-    assert(varInfo.hasOutOfBoundsBit());
+    STORM_LOG_ASSERT(varInfo.hasOutOfBoundsBit(), "Variable info has no out-of-bounds bit.");
     result.set(varInfo.getOutOfBoundsBit());
     return result;
 }
@@ -271,7 +271,7 @@ CompressedState createCompressedState(VariableInformation const& varInfo,
                                                                           << assignedValue << ").");
     }
 
-    STORM_LOG_THROW(varInfo.locationVariables.size() == 0, storm::exceptions::NotImplementedException, "Support for JANI is not implemented");
+    STORM_LOG_THROW(varInfo.locationVariables.size() == 0, storm::exceptions::NotImplementedException, "Support for JANI is not implemented.");
     return result;
 }
 

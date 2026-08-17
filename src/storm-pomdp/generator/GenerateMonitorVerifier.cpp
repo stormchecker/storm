@@ -58,7 +58,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
     typedef storm::storage::sparse::state_type state_type;
     typedef std::pair<state_type, state_type> product_state_type;
 
-    STORM_LOG_THROW(monitor.hasChoiceLabeling(), storm::exceptions::InvalidArgumentException, "The monitor should contain choice labeling");
+    STORM_LOG_THROW(monitor.hasChoiceLabeling(), storm::exceptions::InvalidArgumentException, "The monitor should contain choice labeling.");
 
     const std::set<std::string>& actions = monitor.getChoiceLabeling().getLabels();
 
@@ -66,7 +66,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
     std::vector<std::string> monitorChoiceLabels;
     for (typename storm::storage::SparseMatrix<ValueType>::index_type i = 0; i < monitor.getTransitionMatrix().getRowCount(); i++) {
         auto const& monitorLabels = monitor.getChoiceLabeling().getLabelsOfChoice(i);
-        STORM_LOG_THROW(monitorLabels.size() == 1, storm::exceptions::InvalidArgumentException, "Monitor choice has not exactly one choice label");
+        STORM_LOG_THROW(monitorLabels.size() == 1, storm::exceptions::InvalidArgumentException, "Monitor choice has not exactly one choice label.");
         monitorChoiceLabels.push_back(*monitorLabels.begin());
     }
 
@@ -122,8 +122,9 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
             state_type index = nextStateId++;
             prodToIndexMap[prod_s] = index;
             initialStates.push_back(index);
-            if (options.useRestartSemantics)
+            if (options.useRestartSemantics) {
                 rejectToStates.push_back(index);
+            }
             todo.push_back(prod_s);
         }
     }
@@ -170,7 +171,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
                 actionsNotTaken.erase(action);
 
                 const auto& monitorRow = monitor.getTransitionMatrix().getRow(mon_from, i);
-                STORM_LOG_ASSERT(monitorRow.getNumberOfEntries() == 1, "Monitor is not fully deterministic");
+                STORM_LOG_ASSERT(monitorRow.getNumberOfEntries() == 1, "Monitor is not fully deterministic.");
                 const auto& monitorEntry = monitorRow.begin();
 
                 const auto& mcRow = mc.getTransitionMatrix().getRow(mc_from);
@@ -189,10 +190,11 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
                 // Direct probability not used towards the initial states
                 if (totalProbability < storm::utility::one<ValueType>()) {
                     for (state_type initState : rejectToStates) {
-                        if (newRow.contains(initState))
+                        if (newRow.contains(initState)) {
                             newRow[initState] = newRow[initState] + (1 - totalProbability) / rejectToStates.size();
-                        else
+                        } else {
                             newRow[initState] = (1 - totalProbability) / rejectToStates.size();
+                        }
                     }
                 }
 
@@ -209,10 +211,11 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
                                 todo.push_back(to_pair);
                                 prodToIndexMap[to_pair] = indexTo;
                             }
-                            if (newRow.contains(indexTo))
+                            if (newRow.contains(indexTo)) {
                                 newRow[indexTo] = newRow[indexTo] + mcEntry.getValue();
-                            else
+                            } else {
                                 newRow[indexTo] = mcEntry.getValue();
+                            }
                         }
                     }
 
@@ -243,7 +246,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
 
         if (monitor.getStateLabeling().getStateHasLabel(options.acceptingLabel, mon_from)) {
             STORM_LOG_THROW(risk[mc_from] >= -utility::convertNumber<ValueType>(1e-12) && risk[mc_from] <= utility::convertNumber<ValueType>(1.0 + 1e-12),
-                            exceptions::IllegalArgumentException, "Risk for state " + std::to_string(mc_from) + " is not in [0, 1]");
+                            exceptions::IllegalArgumentException, "Risk for state " + std::to_string(mc_from) + " is not in [0, 1].");
             if (utility::isAlmostZero(risk[mc_from])) {
                 builder.addNextValue(currentRow, stopIndex, utility::one<ValueType>());
             } else if (utility::isAlmostOne(risk[mc_from])) {
@@ -318,8 +321,9 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
         // Rebuild bitvec with restricted rows
         storm::storage::BitVector newBitVec(numberOfRows);
         for (uint64_t setbit : bitvec) {
-            if (rowsToKeep[setbit])
+            if (rowsToKeep[setbit]) {
                 newBitVec.set(rowMapping[setbit]);
+            }
         }
         // auto newBitVec = bitvec;
 
@@ -348,8 +352,9 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
         for (uint64_t i = 0; i < mc.getNumberOfStates(); i++) {
             for (uint64_t j = 0; j < monitor.getNumberOfStates(); j++) {
                 product_state_type const s(i, j);
-                if (!prodToIndexMap.contains(s))
+                if (!prodToIndexMap.contains(s)) {
                     continue;
+                }
                 auto const productStateIndex = prodToIndexMap[s];
                 // Set the variable values for the product state.
                 // We copy the valuations from the original model and set the monvar and mcvar to the corresponding state indices.

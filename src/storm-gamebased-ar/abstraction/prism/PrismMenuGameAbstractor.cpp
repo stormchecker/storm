@@ -24,12 +24,12 @@ namespace prism {
 using storm::settings::modules::AbstractionSettings;
 
 template<storm::dd::DdType DdType, typename ValueType>
-PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::prism::Program const& program,
+PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::Environment const& env, storm::prism::Program const& program,
                                                                     std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
                                                                     MenuGameAbstractorOptions const& options)
     : program(program),
       smtSolverFactory(smtSolverFactory),
-      abstractionInformation(program.getManager(), program.getAllExpressionVariables(), smtSolverFactory->create(program.getManager()),
+      abstractionInformation(env, program.getManager(), program.getAllExpressionVariables(), smtSolverFactory->create(program.getManager()),
                              AbstractionInformationOptions(options.constraints)),
       modules(),
       initialStateAbstractor(abstractionInformation, {program.getInitialStatesExpression()}, this->smtSolverFactory),

@@ -10,8 +10,6 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"
@@ -39,7 +37,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initializeModelTypeSp
     for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
         auto const& formula = *this->objectives[objIndex].formula;
         STORM_LOG_THROW(formula.isRewardOperatorFormula() && formula.asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::UnexpectedException,
-                        "Unexpected type of operator formula: " << formula);
+                        "Unexpected type of operator formula: " << formula << ".");
         typename SparseMaModelType::RewardModelType const& rewModel = model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
         STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
         this->actionRewards[objIndex] = rewModel.hasStateActionRewards()
@@ -61,7 +59,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initializeModelTypeSp
         } else {
             STORM_LOG_THROW(formula.getSubformula().isCumulativeRewardFormula() &&
                                 formula.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isTimeBound(),
-                            storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
+                            storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula() << ".");
             STORM_LOG_THROW(!rewModel.hasStateRewards(), storm::exceptions::InvalidPropertyException,
                             "Found state rewards for time bounded objective " << this->objectives[objIndex].originalFormula << ". This is not supported.");
             STORM_LOG_WARN_COND(
@@ -71,10 +69,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initializeModelTypeSp
                              << " was simplified to a cumulative reward formula. Correctness of the algorithm is unknown for this type of property.");
         }
     }
-    // Print some statistics (if requested)
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Final preprocessed model has " << markovianStates.getNumberOfSetBits() << " Markovian states.\n");
-    }
+    STORM_LOG_STATISTICS("Final preprocessed model has " << markovianStates.getNumberOfSetBits() << " Markovian states.\n");
 }
 
 template<class SparseMdpModelType>
@@ -184,17 +179,17 @@ typename StandardMaPcaaWeightVectorChecker<SparseMaModelType>::SubModel Standard
     result.states = createMS ? markovianStates : probabilisticStates;
     result.choices = this->transitionMatrix.getRowFilter(result.states);
     STORM_LOG_ASSERT(!createMS || result.states.getNumberOfSetBits() == result.choices.getNumberOfSetBits(),
-                     "row groups for Markovian states should consist of exactly one row");
+                     "Row groups for Markovian states should consist of exactly one row.");
 
     // We need to add diagonal entries for selfloops on Markovian states.
     result.toMS = this->transitionMatrix.getSubmatrix(true, result.states, markovianStates, createMS);
     result.toPS = this->transitionMatrix.getSubmatrix(true, result.states, probabilisticStates, false);
     STORM_LOG_ASSERT(result.getNumberOfStates() == result.states.getNumberOfSetBits() && result.getNumberOfStates() == result.toMS.getRowGroupCount() &&
                          result.getNumberOfStates() == result.toPS.getRowGroupCount(),
-                     "Invalid state count for subsystem");
+                     "Invalid state count for subsystem.");
     STORM_LOG_ASSERT(result.getNumberOfChoices() == result.choices.getNumberOfSetBits() && result.getNumberOfChoices() == result.toMS.getRowCount() &&
                          result.getNumberOfChoices() == result.toPS.getRowCount(),
-                     "Invalid choice count for subsystem");
+                     "Invalid choice count for subsystem.");
 
     result.weightedRewardVector.resize(result.getNumberOfChoices());
     storm::utility::vector::selectVectorValues(result.weightedRewardVector, result.choices, weightedRewardVector);
@@ -289,7 +284,7 @@ VT StandardMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant
             break;
         }
         ++smallestStepBound;
-        STORM_LOG_ASSERT(delta > smallestNonZeroBound / smallestStepBound, "Digitization constant is expected to become smaller in every iteration");
+        STORM_LOG_ASSERT(delta > smallestNonZeroBound / smallestStepBound, "Digitization constant is expected to become smaller in every iteration.");
         delta = smallestNonZeroBound / smallestStepBound;
     }
     STORM_LOG_DEBUG("Found digitization constant: " << delta << ". At least " << smallestStepBound << " digitization steps will be necessarry");

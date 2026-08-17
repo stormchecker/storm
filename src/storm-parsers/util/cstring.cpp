@@ -20,11 +20,8 @@ namespace cstring {
  */
 uint_fast64_t checked_strtol(char const* str, char const** end) {
     uint_fast64_t res = strtol(str, const_cast<char**>(end), 10);
-    if (str == *end) {
-        STORM_LOG_ERROR("Error while parsing integer. Next input token is not a number.");
-        STORM_LOG_ERROR("\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
-        throw storm::exceptions::WrongFormatException("Error while parsing integer. Next input token is not a number.");
-    }
+    STORM_LOG_THROW(str != *end, storm::exceptions::WrongFormatException,
+                    "Error while parsing integer. Next input token is not a number.\n\tUpcoming input is: \"" << std::string(str, 0, 16) << "\".");
     return res;
 }
 
@@ -38,11 +35,8 @@ uint_fast64_t checked_strtol(char const* str, char const** end) {
  */
 double checked_strtod(char const* str, char const** end) {
     double res = strtod(str, const_cast<char**>(end));
-    if (str == *end) {
-        STORM_LOG_ERROR("Error while parsing floating point. Next input token is not a number.");
-        STORM_LOG_ERROR("\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
-        throw storm::exceptions::WrongFormatException("Error while parsing floating point. Next input token is not a number.");
-    }
+    STORM_LOG_THROW(str != *end, storm::exceptions::WrongFormatException,
+                    "Error while parsing floating point. Next input token is not a number.\n\tUpcoming input is: \"" << std::string(str, 0, 16) << "\".");
     return res;
 }
 
@@ -53,7 +47,9 @@ double checked_strtod(char const* str, char const** end) {
  * @return A pointer to the first whitespace character.
  */
 char const* skipWord(char const* buf) {
-    while (!isspace(*buf) && *buf != '\0') buf++;
+    while (!isspace(*buf) && *buf != '\0') {
+        buf++;
+    }
     return buf;
 }
 
@@ -64,7 +60,9 @@ char const* skipWord(char const* buf) {
  *	@return	A pointer to the first non-whitespace character.
  */
 char const* trimWhitespaces(char const* buf) {
-    while (isspace(*buf)) buf++;
+    while (isspace(*buf)) {
+        buf++;
+    }
     return buf;
 }
 
@@ -80,7 +78,9 @@ char const* forwardToLineEnd(char const* buffer) {
  */
 char const* forwardToNextLine(char const* buffer) {
     char const* lineEnd = forwardToLineEnd(buffer);
-    while ((*lineEnd == '\n') || (*lineEnd == '\r')) lineEnd++;
+    while ((*lineEnd == '\n') || (*lineEnd == '\r')) {
+        lineEnd++;
+    }
     return lineEnd;
 }
 

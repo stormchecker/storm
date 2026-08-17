@@ -175,7 +175,7 @@ ValueType simplify(ValueType value) {
 
 template<typename ValueType>
 std::pair<ValueType, ValueType> minmax(std::vector<ValueType> const& values) {
-    assert(!values.empty());
+    STORM_LOG_ASSERT(!values.empty(), "Expected non-empty values.");
     ValueType min = values.front();
     ValueType max = values.front();
     for (auto const& vt : values) {
@@ -191,7 +191,7 @@ std::pair<ValueType, ValueType> minmax(std::vector<ValueType> const& values) {
 
 template<typename ValueType>
 ValueType minimum(std::vector<ValueType> const& values) {
-    assert(!values.empty());
+    STORM_LOG_ASSERT(!values.empty(), "Expected non-empty values.");
     ValueType min = values.front();
     for (auto const& vt : values) {
         if (vt < min) {
@@ -203,7 +203,7 @@ ValueType minimum(std::vector<ValueType> const& values) {
 
 template<typename ValueType>
 ValueType maximum(std::vector<ValueType> const& values) {
-    assert(!values.empty());
+    STORM_LOG_ASSERT(!values.empty(), "Expected non-empty values.");
     ValueType max = values.front();
     for (auto const& vt : values) {
         if (vt > max) {
@@ -215,7 +215,7 @@ ValueType maximum(std::vector<ValueType> const& values) {
 
 template<typename K, typename ValueType>
 std::pair<ValueType, ValueType> minmax(std::map<K, ValueType> const& values) {
-    assert(!values.empty());
+    STORM_LOG_ASSERT(!values.empty(), "Expected non-empty values.");
     ValueType min = values.begin()->second;
     ValueType max = values.begin()->second;
     for (auto const& vt : values) {
@@ -374,7 +374,7 @@ bool isInteger(storm::ClnRationalNumber const& number) {
 
 template<>
 std::pair<storm::ClnRationalNumber, storm::ClnRationalNumber> minmax(std::vector<storm::ClnRationalNumber> const& values) {
-    assert(!values.empty());
+    STORM_LOG_ASSERT(!values.empty(), "Expected non-empty values.");
     storm::ClnRationalNumber min = values.front();
     storm::ClnRationalNumber max = values.front();
     for (auto const& vt : values) {
@@ -584,7 +584,7 @@ bool isInteger(storm::GmpRationalNumber const& number) {
 
 template<>
 std::pair<storm::GmpRationalNumber, storm::GmpRationalNumber> minmax(std::vector<storm::GmpRationalNumber> const& values) {
-    assert(!values.empty());
+    STORM_LOG_ASSERT(!values.empty(), "Expected non-empty values.");
     storm::GmpRationalNumber min = values.front();
     storm::GmpRationalNumber max = values.front();
     for (auto const& vt : values) {
@@ -604,7 +604,7 @@ std::pair<storm::GmpRationalNumber, storm::GmpRationalNumber> minmax(std::vector
 
 template<>
 std::pair<storm::GmpRationalNumber, storm::GmpRationalNumber> minmax(std::map<uint64_t, storm::GmpRationalNumber> const& values) {
-    assert(!values.empty());
+    STORM_LOG_ASSERT(!values.empty(), "Expected non-empty values.");
     storm::GmpRationalNumber min = values.begin()->second;
     storm::GmpRationalNumber max = values.begin()->second;
     for (auto const& vt : values) {
@@ -837,7 +837,7 @@ bool isConstant(storm::Polynomial const& a) {
 
 template<>
 bool isApproxEqual(storm::RationalFunction const& a, storm::RationalFunction const& b, storm::RationalFunction const& precision, bool relative) {
-    STORM_LOG_ASSERT(isZero(precision), "Approx equal on rational functions is only defined for precision zero");
+    STORM_LOG_ASSERT(isZero(precision), "Approx equal on rational functions is only defined for precision zero.");
     return a == b;
 }
 
@@ -974,8 +974,8 @@ bool isPositive(storm::RationalFunction const& a) {
 
 template<>
 bool isBetween(storm::RationalFunction const& a, storm::RationalFunction const& b, storm::RationalFunction const& c, bool strict) {
-    STORM_LOG_ASSERT(a.isConstant(), "lower bound must be a constant");
-    STORM_LOG_ASSERT(c.isConstant(), "upper bound must be a constant");
+    STORM_LOG_ASSERT(a.isConstant(), "Lower bound must be a constant.");
+    STORM_LOG_ASSERT(c.isConstant(), "Upper bound must be a constant.");
     return b.isConstant() && isBetween(convertNumber<RationalFunctionCoefficient>(a), convertNumber<RationalFunctionCoefficient>(b),
                                        convertNumber<RationalFunctionCoefficient>(c), strict);
 }
@@ -1007,7 +1007,7 @@ storm::RationalFunction minimum(std::map<uint64_t, storm::RationalFunction> cons
 
 template<>
 storm::RationalFunction maximum(std::map<uint64_t, storm::RationalFunction> const&) {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Maximum for rational functions is not defined");
+    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Maximum for rational functions is not defined.");
 }
 
 template<>
@@ -1069,7 +1069,7 @@ storm::Interval convertNumber(storm::GmpRationalNumber const& n) {
 
 template<>
 storm::GmpRationalNumber convertNumber(storm::Interval const& number) {
-    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert");
+    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert.");
     return convertNumber<storm::GmpRationalNumber>(number.lower());
 }
 
@@ -1080,7 +1080,7 @@ storm::RationalInterval convertNumber(storm::GmpRationalNumber const& n) {
 
 template<>
 storm::GmpRationalNumber convertNumber(storm::RationalInterval const& number) {
-    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert");
+    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert.");
     return convertNumber<storm::GmpRationalNumber>(number.lower());
 }
 #endif
@@ -1093,7 +1093,7 @@ storm::Interval convertNumber(storm::ClnRationalNumber const& n) {
 
 template<>
 storm::ClnRationalNumber convertNumber(storm::Interval const& number) {
-    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert");
+    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert.");
     return convertNumber<storm::ClnRationalNumber>(number.lower());
 }
 
@@ -1104,20 +1104,20 @@ storm::RationalInterval convertNumber(storm::ClnRationalNumber const& n) {
 
 template<>
 storm::ClnRationalNumber convertNumber(storm::RationalInterval const& number) {
-    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert");
+    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert.");
     return convertNumber<storm::ClnRationalNumber>(number.lower());
 }
 #endif
 
 template<>
 double convertNumber(storm::Interval const& number) {
-    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert");
+    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert.");
     return number.lower();
 }
 
 template<>
 double convertNumber(storm::RationalInterval const& number) {
-    STORM_LOG_ASSERT(number.isPointInterval(), "Rational interval must be a point interval to convert");
+    STORM_LOG_ASSERT(number.isPointInterval(), "Rational interval must be a point interval to convert.");
     return convertNumber<double>(number.lower());
 }
 
@@ -1140,14 +1140,14 @@ storm::Interval abs(storm::Interval const& interval) {
 
 template<>
 bool isApproxEqual(storm::Interval const& a, storm::Interval const& b, storm::Interval const& precision, bool relative) {
-    STORM_LOG_ASSERT(precision.isPointInterval(), "Precision must be a point interval");
+    STORM_LOG_ASSERT(precision.isPointInterval(), "Precision must be a point interval.");
     return isApproxEqual<double>(a.lower(), b.lower(), precision.center(), relative) &&
            isApproxEqual<double>(a.upper(), b.upper(), precision.center(), relative);
 }
 
 template<>
 bool isApproxEqual(storm::RationalInterval const& a, storm::RationalInterval const& b, storm::RationalInterval const& precision, bool relative) {
-    STORM_LOG_ASSERT(precision.isPointInterval(), "Precision must be a point interval");
+    STORM_LOG_ASSERT(precision.isPointInterval(), "Precision must be a point interval.");
     return isApproxEqual<storm::RationalNumber>(a.lower(), b.lower(), precision.center(), relative) &&
            isApproxEqual<storm::RationalNumber>(a.upper(), b.upper(), precision.center(), relative);
 }

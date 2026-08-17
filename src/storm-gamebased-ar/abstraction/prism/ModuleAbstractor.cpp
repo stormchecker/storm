@@ -13,8 +13,6 @@ namespace storm::gbar {
 namespace abstraction {
 namespace prism {
 
-using storm::settings::modules::AbstractionSettings;
-
 template<storm::dd::DdType DdType, typename ValueType>
 ModuleAbstractor<DdType, ValueType>::ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation,
                                                       std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition,

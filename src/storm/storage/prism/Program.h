@@ -290,6 +290,16 @@ class Program : public LocatedInformation {
     std::vector<Formula> const& getFormulas() const;
 
     /*!
+     * @return true iff a formula with the given name is known
+     */
+    bool hasFormula(std::string const& formulaName) const;
+
+    /*!
+     * @return The formula with the given name. Assumes that such a formula is known.
+     */
+    Formula const& getFormula(std::string const& formulaName) const;
+
+    /*!
      * Retrieves the number of formulas in the program.
      *
      * @return The number of formulas in the program.

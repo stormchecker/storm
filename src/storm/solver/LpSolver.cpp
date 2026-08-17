@@ -141,7 +141,7 @@ storm::expressions::Variable LpSolver<ValueType, RawMode>::declareOrGetExpressio
         case VariableType::Binary:
             return this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
     }
-    STORM_LOG_ASSERT(false, "Unable to declare or get expression variable: Unknown type");
+    STORM_LOG_ASSERT(false, "Unable to declare or get expression variable: Unknown type.");
     return {};
 }
 

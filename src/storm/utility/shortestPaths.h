@@ -11,8 +11,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "constants.h"
 #include "storm/storage/BitVector.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace storage {
@@ -229,7 +230,7 @@ class ShortestPathsGenerator {
      * probability of state `i`, returns an equivalent map of only the non-zero entries.
      */
     inline std::unordered_map<state_t, T> vectorToMap(std::vector<T> probVector) const {
-        // assert(probVector.size() == numStates); // numStates may not yet be initialized! // still true?
+        // STORM_LOG_ASSERT(probVector.size() == numStates, "ProbVector has wrong size."); // numStates may not yet be initialized! // still true?
 
         std::unordered_map<state_t, T> stateProbMap;
 
@@ -238,8 +239,8 @@ class ShortestPathsGenerator {
 
             // only non-zero entries (i.e. true transitions) are added to the map
             if (probEntry != 0) {
-                assert(0 < probEntry);
-                assert(probEntry <= 1);
+                STORM_LOG_ASSERT(0 < probEntry, "Probability entry should be positive.");
+                STORM_LOG_ASSERT(probEntry <= 1, "Probability entry should be at most 1.");
                 stateProbMap.emplace(i, probEntry);
             }
         }

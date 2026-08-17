@@ -187,8 +187,9 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::spec
     std::map<uint_fast64_t, uint_fast64_t> stateNumToEquationSystemRow;
     uint_fast64_t newRow = 0;
     for (uint_fast64_t row = 0; row < transitionMatrix.getRowCount(); ++row) {
-        if (!next.get(row))
+        if (!next.get(row)) {
             continue;
+        }
         stateNumToEquationSystemRow[row] = newRow;
         newRow++;
     }
@@ -256,8 +257,9 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::spec
     // }
 
     for (uint_fast64_t state = 0; state < transitionMatrix.getRowCount(); ++state) {
-        if (!stateNumToEquationSystemRow.count(state))
+        if (!stateNumToEquationSystemRow.count(state)) {
             continue;
+        }
         uint_fast64_t row = stateNumToEquationSystemRow[state];
         // PROBABILITY -> For every state, the one-step probability to reach the target goes into the output vector
         // REWARD -> For every state, the reward goes into the output vector
@@ -306,7 +308,7 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::init
     auto parametricEntryIt = matrix.begin();
     while (parametricEntryIt != matrix.end()) {
         STORM_LOG_ASSERT(parametricEntryIt->getColumn() == constantEntryIt->getColumn(),
-                         "Entries of parametric and constant matrix are not at the same position");
+                         "Entries of parametric and constant matrix are not at the same position.");
         if (storm::utility::isConstant(parametricEntryIt->getValue())) {
             // Constant entries can be inserted directly
             constantEntryIt->setValue(storm::utility::convertNumber<ConstantType>(parametricEntryIt->getValue()));
@@ -321,7 +323,7 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::init
         ++constantEntryIt;
         ++parametricEntryIt;
     }
-    STORM_LOG_ASSERT(constantEntryIt == matrixInstantiated.end(), "Parametric matrix seems to have more or less entries then the constant matrix");
+    STORM_LOG_ASSERT(constantEntryIt == matrixInstantiated.end(), "Parametric matrix seems to have more or less entries then the constant matrix.");
 }
 
 template class SparseDerivativeInstantiationModelChecker<RationalFunction, RationalNumber>;

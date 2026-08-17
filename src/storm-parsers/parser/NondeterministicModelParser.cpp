@@ -17,10 +17,11 @@ storm::storage::sparse::ModelComponents<ValueType, storm::models::sparse::Standa
 NondeterministicModelParser<ValueType, RewardValueType>::parseNondeterministicModel(std::string const& transitionsFilename, std::string const& labelingFilename,
                                                                                     std::string const& stateRewardFilename,
                                                                                     std::string const& transitionRewardFilename,
-                                                                                    std::string const& choiceLabelingFilename) {
+                                                                                    std::string const& choiceLabelingFilename,
+                                                                                    ExplicitModelParserOptions const& options) {
     // Parse the transitions.
     storm::storage::SparseMatrix<ValueType> transitions(
-        storm::parser::NondeterministicSparseTransitionParser<ValueType>::parseNondeterministicTransitions(transitionsFilename));
+        storm::parser::NondeterministicSparseTransitionParser<ValueType>::parseNondeterministicTransitions(transitionsFilename, options));
 
     uint_fast64_t stateCount = transitions.getColumnCount();
 
@@ -63,9 +64,9 @@ template<typename ValueType, typename RewardValueType>
 storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>
 NondeterministicModelParser<ValueType, RewardValueType>::parseMdp(std::string const& transitionsFilename, std::string const& labelingFilename,
                                                                   std::string const& stateRewardFilename, std::string const& transitionRewardFilename,
-                                                                  std::string const& choiceLabelingFilename) {
+                                                                  std::string const& choiceLabelingFilename, ExplicitModelParserOptions const& options) {
     auto parserResult =
-        parseNondeterministicModel(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename, choiceLabelingFilename);
+        parseNondeterministicModel(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename, choiceLabelingFilename, options);
 
     return storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(parserResult));
 }

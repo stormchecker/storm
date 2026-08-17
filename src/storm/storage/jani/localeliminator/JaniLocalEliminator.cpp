@@ -23,7 +23,7 @@ JaniLocalEliminator::JaniLocalEliminator(const Model &original, std::vector<stor
     if (properties.size() > 1) {
         STORM_LOG_WARN("Only the first property will be used for local elimination.");
     }
-    STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidArgumentException, "Local elimination requires at least one property");
+    STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidArgumentException, "Local elimination requires at least one property.");
 
     setProperty(properties[0]);
 
@@ -82,8 +82,9 @@ bool JaniLocalEliminator::Session::hasLoops(const std::string &automatonName, st
     uint64_t locationIndex = automaton.getLocationIndex(locationName);
     for (Edge edge : automaton.getEdgesFromLocation(locationIndex)) {
         for (const EdgeDestination &dest : edge.getDestinations()) {
-            if (dest.getLocationIndex() == locationIndex)
+            if (dest.getLocationIndex() == locationIndex) {
                 return true;
+            }
         }
     }
     return false;
@@ -103,17 +104,20 @@ bool JaniLocalEliminator::Session::isPossiblyInitial(const std::string &automato
     Automaton &automaton = model.getAutomaton(automatonName);
     auto location = automaton.getLocation(automaton.getLocationIndex(locationName));
     for (const auto &asg : location.getAssignments()) {
-        if (!asg.isTransient())
+        if (!asg.isTransient()) {
             continue;
+        }
         if (asg.getAssignedExpression().containsVariables() ||
-            (asg.getVariable().hasInitExpression() && asg.getVariable().getInitExpression().containsVariables()))
+            (asg.getVariable().hasInitExpression() && asg.getVariable().getInitExpression().containsVariables())) {
             continue;
+        }
         if (asg.getVariable().getType().isBoundedType() && asg.getVariable().getType().asBoundedType().isIntegerType()) {
             if (asg.getVariable().hasInitExpression()) {
                 int initValue = asg.getVariable().getInitExpression().evaluateAsInt();
                 int currentValue = asg.getAssignedExpression().evaluateAsInt();
-                if (initValue != currentValue)
+                if (initValue != currentValue) {
                     return false;
+                }
             } else {
                 STORM_LOG_WARN("Variable " + asg.getVariable().getName() + " has no init expression. The result may not be correct.");
             }
@@ -121,8 +125,9 @@ bool JaniLocalEliminator::Session::isPossiblyInitial(const std::string &automato
             if (asg.getVariable().hasInitExpression()) {
                 bool initValue = asg.getVariable().getInitExpression().evaluateAsBool();
                 bool currentValue = asg.getAssignedExpression().evaluateAsBool();
-                if (initValue != currentValue)
+                if (initValue != currentValue) {
                     return false;
+                }
             } else {
                 STORM_LOG_WARN("Variable " + asg.getVariable().getName() + " has no init expression. The result may not be correct.");
             }
@@ -153,8 +158,9 @@ bool JaniLocalEliminator::Session::computeIsPartOfProp(const std::string &automa
     auto location = automaton.getLocation(locationIndex);
     std::map<expressions::Variable, expressions::Expression> substitutionMap;
     for (auto &asg : location.getAssignments()) {
-        if (!asg.isTransient())
+        if (!asg.isTransient()) {
             continue;
+        }
         substitutionMap.insert(std::pair<expressions::Variable, expressions::Expression>(asg.getExpressionVariable(), asg.getAssignedExpression()));
     }
     return computeIsPartOfProp(substitutionMap);
@@ -173,10 +179,10 @@ bool JaniLocalEliminator::Session::computeIsPartOfProp(const std::map<expression
             if (untilFormula.getLeftSubformula().isTrueFormula() && untilFormula.getRightSubformula().isAtomicExpressionFormula()) {
                 expression = untilFormula.getRightSubformula().toExpression(model.getExpressionManager());
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Until formulas are only supported if the left subformula is \"true\"");
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Until formulas are only supported if the left subformula is \"true\".");
             }
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This type of formula is not supported");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This type of formula is not supported.");
         }
     }
     auto simplified = expression.simplify();
@@ -239,7 +245,7 @@ void JaniLocalEliminator::setProperty(storm::jani::Property &newProperty) {
         }
     }
 
-    STORM_LOG_THROW(supported, storm::exceptions::NotSupportedException, "This type of property is not supported for location elimination");
+    STORM_LOG_THROW(supported, storm::exceptions::NotSupportedException, "This type of property is not supported for location elimination.");
 
     this->property = newProperty;
 }
@@ -272,7 +278,7 @@ JaniLocalEliminator::Session::Session(Model model, Property property, bool flatt
     } else if (property.getRawFormula()->isProbabilityOperatorFormula()) {
         isRewardFormula = false;
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This type of property is currently not supported");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This type of property is currently not supported.");
     }
 
     for (auto &var : property.getUsedVariablesAndConstants()) {
@@ -312,7 +318,7 @@ expressions::Expression JaniLocalEliminator::Session::getProbability(const EdgeD
 OrderedAssignments JaniLocalEliminator::Session::executeInSequence(const EdgeDestination &first, const EdgeDestination &then,
                                                                    std::set<std::string> &rewardVariables) {
     STORM_LOG_THROW(!first.usesAssignmentLevels() && !then.usesAssignmentLevels(), storm::exceptions::NotImplementedException,
-                    "Assignment levels are currently not supported");
+                    "Assignment levels are currently not supported.");
 
     OrderedAssignments newOa;
 
@@ -378,8 +384,9 @@ void JaniLocalEliminator::Session::addMissingGuards(const std::string &automaton
     automataInfo[automatonName].sinkIndex = sinkIndex;
 
     for (uint64_t i = 0; i < automaton.getNumberOfLocations(); i++) {
-        if (i == sinkIndex)
+        if (i == sinkIndex) {
             continue;
+        }
         auto outgoingEdges = automaton.getEdgesFromLocation(i);
         expressions::Expression allGuards;
         allGuards = model.getExpressionManager().boolean(false);

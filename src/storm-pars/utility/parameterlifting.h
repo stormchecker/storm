@@ -1,11 +1,14 @@
 #pragma once
 
+#include <cstdint>
+#include <set>
 #include <vector>
 
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/logic/Formula.h"
 #include "storm/logic/FragmentSpecification.h"
+#include "storm/logic/RewardOperatorFormula.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"

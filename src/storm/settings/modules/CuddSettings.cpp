@@ -82,44 +82,44 @@ bool CuddSettings::isReorderingEnabled() const {
     return this->getOption(reorderOptionName).getHasOptionBeenSet();
 }
 
-CuddSettings::ReorderingTechnique CuddSettings::getReorderingTechnique() const {
+storm::dd::CuddReorderingTechnique CuddSettings::getReorderingTechnique() const {
     std::string reorderingTechniqueAsString = this->getOption(reorderTechniqueOptionName).getArgumentByName("method").getValueAsString();
     if (reorderingTechniqueAsString == "none") {
-        return CuddSettings::ReorderingTechnique::None;
+        return storm::dd::CuddReorderingTechnique::None;
     } else if (reorderingTechniqueAsString == "random") {
-        return CuddSettings::ReorderingTechnique::Random;
+        return storm::dd::CuddReorderingTechnique::Random;
     } else if (reorderingTechniqueAsString == "randompivot") {
-        return CuddSettings::ReorderingTechnique::RandomPivot;
+        return storm::dd::CuddReorderingTechnique::RandomPivot;
     } else if (reorderingTechniqueAsString == "sift") {
-        return CuddSettings::ReorderingTechnique::Sift;
+        return storm::dd::CuddReorderingTechnique::Sift;
     } else if (reorderingTechniqueAsString == "siftconv") {
-        return CuddSettings::ReorderingTechnique::SiftConv;
+        return storm::dd::CuddReorderingTechnique::SiftConv;
     } else if (reorderingTechniqueAsString == "ssift") {
-        return CuddSettings::ReorderingTechnique::SymmetricSift;
+        return storm::dd::CuddReorderingTechnique::SymmetricSift;
     } else if (reorderingTechniqueAsString == "ssiftconv") {
-        return CuddSettings::ReorderingTechnique::SymmetricSiftConv;
+        return storm::dd::CuddReorderingTechnique::SymmetricSiftConv;
     } else if (reorderingTechniqueAsString == "gsift") {
-        return CuddSettings::ReorderingTechnique::GroupSift;
+        return storm::dd::CuddReorderingTechnique::GroupSift;
     } else if (reorderingTechniqueAsString == "gsiftconv") {
-        return CuddSettings::ReorderingTechnique::GroupSiftConv;
+        return storm::dd::CuddReorderingTechnique::GroupSiftConv;
     } else if (reorderingTechniqueAsString == "win2") {
-        return CuddSettings::ReorderingTechnique::Win2;
+        return storm::dd::CuddReorderingTechnique::Win2;
     } else if (reorderingTechniqueAsString == "win2conv") {
-        return CuddSettings::ReorderingTechnique::Win2Conv;
+        return storm::dd::CuddReorderingTechnique::Win2Conv;
     } else if (reorderingTechniqueAsString == "win3") {
-        return CuddSettings::ReorderingTechnique::Win3;
+        return storm::dd::CuddReorderingTechnique::Win3;
     } else if (reorderingTechniqueAsString == "win3conv") {
-        return CuddSettings::ReorderingTechnique::Win3Conv;
+        return storm::dd::CuddReorderingTechnique::Win3Conv;
     } else if (reorderingTechniqueAsString == "win4") {
-        return CuddSettings::ReorderingTechnique::Win4;
+        return storm::dd::CuddReorderingTechnique::Win4;
     } else if (reorderingTechniqueAsString == "win4conv") {
-        return CuddSettings::ReorderingTechnique::Win4Conv;
+        return storm::dd::CuddReorderingTechnique::Win4Conv;
     } else if (reorderingTechniqueAsString == "annealing") {
-        return CuddSettings::ReorderingTechnique::Annealing;
+        return storm::dd::CuddReorderingTechnique::Annealing;
     } else if (reorderingTechniqueAsString == "genetic") {
-        return CuddSettings::ReorderingTechnique::Genetic;
+        return storm::dd::CuddReorderingTechnique::Genetic;
     } else if (reorderingTechniqueAsString == "exact") {
-        return CuddSettings::ReorderingTechnique::Exact;
+        return storm::dd::CuddReorderingTechnique::Exact;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
                     "Illegal value '" << reorderingTechniqueAsString << "' set as reordering technique of Cudd.");

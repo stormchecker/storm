@@ -41,17 +41,12 @@ std::vector<storm::storage::FlatSet<uint_fast64_t>> SparseChoiceLabelingParser::
         // If the state has already been read or skipped once there might be a problem with the file (doubled lines, or blocks).
         // Note: The value -1 shows that lastState has not yet been set, i.e. this is the first run of the loop (state index (2^64)-1 is a really bad starting
         // index).
-        if (state < lastState && lastState != startIndexComparison) {
-            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                            "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
-        }
-        if (state == lastState && choice < lastChoice && lastChoice != startChoiceIndexComparison) {
-            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                            "Error while parsing " << filename << ": Choice " << choice << " was found but has already been read or skipped previously.");
-        }
-        if (state >= nondeterministicChoiceIndices.size()) {
-            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while parsing " << filename << ": Illegal state " << state << ".");
-        }
+        STORM_LOG_THROW(state >= lastState || lastState == startIndexComparison, storm::exceptions::WrongFormatException,
+                        "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
+        STORM_LOG_THROW(state != lastState || choice >= lastChoice || lastChoice == startChoiceIndexComparison, storm::exceptions::WrongFormatException,
+                        "Error while parsing " << filename << ": Choice " << choice << " was found but has already been read or skipped previously.");
+        STORM_LOG_THROW(state < nondeterministicChoiceIndices.size(), storm::exceptions::WrongFormatException,
+                        "Error while parsing " << filename << ": Illegal state " << state << ".");
         uint_fast64_t numberOfChoicesForState = nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state];
         if (choice >= numberOfChoicesForState) {
             STORM_LOG_THROW(
