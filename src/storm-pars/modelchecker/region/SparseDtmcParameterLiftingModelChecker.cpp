@@ -9,7 +9,7 @@
 #include "storm-pars/modelchecker/region/monotonicity/OrderBasedMonotonicityBackend.h"
 #include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/transformer/IntervalEndComponentPreserver.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/environment/Environment.h"
@@ -93,7 +93,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
     reset();
 
     if (allowModelSimplifications && graphPreserving) {
-        auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*dtmc);
+        auto simplifier = storm::transformer::SparseParametricModelSimplifier<SparseModelType>(*dtmc);
         simplifier.setPreserveParametricTransitions(true);
         STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         this->parametricModel = simplifier.getSimplifiedModel();

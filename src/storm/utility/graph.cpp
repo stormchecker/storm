@@ -1975,6 +1975,10 @@ template storm::storage::BitVector performProb1A(
     storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model,
     storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
 template storm::storage::BitVector performProb1A(
+    storm::models::sparse::NondeterministicModel<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalNumber>> const& model,
+    storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates,
+    storm::storage::BitVector const& psiStates);
+template storm::storage::BitVector performProb1A(
     storm::models::sparse::NondeterministicModel<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>> const& model,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates,
     storm::storage::BitVector const& psiStates);

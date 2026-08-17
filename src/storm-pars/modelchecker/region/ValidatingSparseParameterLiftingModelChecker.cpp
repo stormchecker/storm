@@ -2,8 +2,7 @@
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -50,17 +49,10 @@ void ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType
 
     if (allowModelSimplifications) {
         auto dtmcOrMdp = parametricModel->template as<SparseModelType>();
-        if constexpr (IsMDP) {
-            auto simplifier = storm::transformer::SparseParametricMdpSimplifier<SparseModelType>(*dtmcOrMdp);
-            STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-            auto simplifiedTask = checkTask.substituteFormula(*simplifier.getSimplifiedFormula());
-            specifyUnderlyingCheckers(simplifier.getSimplifiedModel(), simplifiedTask);
-        } else {
-            auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*dtmcOrMdp);
-            STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-            auto simplifiedTask = checkTask.substituteFormula(*simplifier.getSimplifiedFormula());
-            specifyUnderlyingCheckers(simplifier.getSimplifiedModel(), simplifiedTask);
-        }
+        auto simplifier = storm::transformer::SparseParametricModelSimplifier<SparseModelType>(*dtmcOrMdp);
+        STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
+        auto simplifiedTask = checkTask.substituteFormula(*simplifier.getSimplifiedFormula());
+        specifyUnderlyingCheckers(simplifier.getSimplifiedModel(), simplifiedTask);
     } else {
         specifyUnderlyingCheckers(parametricModel, checkTask);
     }

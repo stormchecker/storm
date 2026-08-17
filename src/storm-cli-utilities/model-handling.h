@@ -735,6 +735,21 @@ std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessModel(std::
         STORM_PRINT_AND_LOG("Transition matrix hash after permuting: " << result.first->getTransitionMatrix().hash() << ".\n");
     }
 
+    // Merging of states should be done before applying bisimulation as this order leads to the smallest quotient
+    if (transformationSettings.isMergeEquivalentStatesSet()) {
+        auto formulas = createFormulasToRespect(input.properties);
+        if (formulas.size() != 1) {
+            STORM_LOG_WARN("Skipping merging of equivalent states as it requires exactly one input property. " << formulas.size()
+                                                                                                               << " properties given instead.");
+        } else if (auto mergedModel = storm::api::mergeEquivalentStatesForFormula<ValueType>(result.first, *formulas.front())) {
+            STORM_LOG_INFO("Merged target/sink states relevant for the considered property '" << *formulas.front() << "'.");
+            result.first = mergedModel;
+            result.second = true;
+        } else {
+            STORM_LOG_INFO("Merging equivalent states is not applicable for the considered property '" << *formulas.front() << "'.");
+        }
+    }
+
     if (result.first->isOfType(storm::models::ModelType::MarkovAutomaton)) {
         result.first = preprocessSparseMarkovAutomaton(result.first->template as<storm::models::sparse::MarkovAutomaton<ValueType>>());
         result.second = true;

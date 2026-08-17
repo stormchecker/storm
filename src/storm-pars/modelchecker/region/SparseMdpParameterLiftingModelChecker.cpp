@@ -2,7 +2,7 @@
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
-#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -68,7 +68,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     reset();
 
     if (allowModelSimplifications) {
-        auto simplifier = storm::transformer::SparseParametricMdpSimplifier<SparseModelType>(*mdp);
+        auto simplifier = storm::transformer::SparseParametricModelSimplifier<SparseModelType>(*mdp);
         STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         this->parametricModel = simplifier.getSimplifiedModel();
         this->specifyFormula(env, checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));

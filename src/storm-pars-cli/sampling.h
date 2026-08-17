@@ -24,8 +24,6 @@
 #include "storm-pars/settings/modules/RegionSettings.h"
 
 #include "storm-pars/derivative/GradientDescentMethod.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
 
 #include "storm-pars/utility/parametric.h"
 

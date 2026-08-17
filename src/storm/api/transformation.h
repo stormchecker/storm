@@ -1,6 +1,8 @@
 #pragma once
 
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/transformer/ContinuousToDiscreteTimeModelTransformer.h"
+#include "storm/transformer/GoalStateMerger.h"
 #include "storm/transformer/NonMarkovianChainTransformer.h"
 #include "storm/transformer/StatePermuter.h"
 #include "storm/transformer/SymbolicToSparseTransformer.h"
@@ -144,6 +146,28 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> transformToNondetermini
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException,
                         "Cannot transform model of type " << model.getType() << " to a nondeterministic model.");
     }
+}
+
+/*!
+ * Identifies states of the given model and formula that are equivalent and merges them into a single state, yielding a (potentially smaller) model on which the
+ * given formula can still be checked.
+ * @note depending on the formula, this merges, e.g., states with probability 0/1 or reward 0/infty based on graph-based analysis.
+ * @return the resulting model, or nullptr if merging is not applicable (e.g. because the model type or the formula is not supported).
+ */
+template<typename ValueType>
+std::shared_ptr<storm::models::sparse::Model<ValueType>> mergeEquivalentStatesForFormula(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                                                                         storm::logic::Formula const& formula) {
+    // storm::transformer::GoalStateMerger is only instantiated for double, rational number, and rational function value types.
+    if constexpr (std::is_same_v<ValueType, double> || std::is_same_v<ValueType, storm::RationalNumber> || std::is_same_v<ValueType, storm::RationalFunction>) {
+        if (model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc) ||
+            model->isOfType(storm::models::ModelType::Mdp) || model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+            storm::transformer::GoalStateMerger<ValueType> merger(*model);
+            if (auto result = merger.mergeForFormula(formula, false)) {
+                return result->model;
+            }
+        }
+    }
+    return nullptr;
 }
 
 /*!
