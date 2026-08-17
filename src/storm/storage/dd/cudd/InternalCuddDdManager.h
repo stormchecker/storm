@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "storm-config.h"
+#include "storm/environment/dd/CuddDdManagerEnvironment.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalDdManager.h"
 #include "storm/storage/dd/cudd/InternalCuddAdd.h"
@@ -31,8 +32,10 @@ class InternalDdManager<DdType::CUDD> {
 
     /*!
      * Creates a new internal manager for CUDD DDs.
+     *
+     * @param environment The environment providing the settings for the CUDD manager.
      */
-    InternalDdManager();
+    explicit InternalDdManager(storm::CuddDdManagerEnvironment const& environment);
 
     /*!
      * Destroys the CUDD manager.

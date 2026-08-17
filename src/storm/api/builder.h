@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm/environment/Environment.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/ModelFeatures.h"
 
@@ -34,8 +35,9 @@ inline storm::jani::ModelFeatures getSupportedJaniFeatures(storm::builder::Build
 
 template<storm::dd::DdType LibraryType, typename ValueType>
 std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(
-    storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
-    bool buildFullModel = false, bool applyMaximumProgress = true, bool fixDeadlocks = true) {
+    storm::Environment const& env, storm::storage::SymbolicModelDescription const& model,
+    std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel = false, bool applyMaximumProgress = true,
+    bool fixDeadlocks = true) {
     if (model.isPrismProgram()) {
         typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
         options = typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options(formulas);
@@ -47,7 +49,7 @@ std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSym
         }
 
         storm::builder::DdPrismModelBuilder<LibraryType, ValueType> builder;
-        return builder.build(model.asPrismProgram(), options);
+        return builder.build(env, model.asPrismProgram(), options);
     } else {
         STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Building symbolic model from this model description is unsupported.");
         typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options options(formulas);
@@ -63,19 +65,21 @@ std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSym
         }
 
         storm::builder::DdJaniModelBuilder<LibraryType, ValueType> builder;
-        return builder.build(model.asJaniModel(), options);
+        return builder.build(env, model.asJaniModel(), options);
     }
 }
 
 template<>
 inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalNumber>> buildSymbolicModel(
-    storm::storage::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool, bool) {
+    storm::Environment const&, storm::storage::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool,
+    bool) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational numbers.");
 }
 
 template<>
 inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalFunction>> buildSymbolicModel(
-    storm::storage::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool, bool) {
+    storm::Environment const&, storm::storage::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool,
+    bool) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational functions.");
 }
 

@@ -4,6 +4,7 @@
 
 #include "storm-config.h"
 #include "storm/adapters/RationalFunctionForward.h"
+#include "storm/environment/dd/SylvanDdManagerEnvironment.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalDdManager.h"
 #include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
@@ -27,8 +28,10 @@ class InternalDdManager<DdType::Sylvan> {
 
     /*!
      * Creates a new internal manager for Sylvan DDs.
+     *
+     * @param environment The environment providing the settings for the Sylvan manager.
      */
-    InternalDdManager();
+    explicit InternalDdManager(storm::SylvanDdManagerEnvironment const& environment);
 
     /*!
      * Destroys the internal manager.

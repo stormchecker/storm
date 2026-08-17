@@ -23,7 +23,8 @@ Selection:
                    <ref>...HEAD plus untracked files.
   <file>...        Only check the given files. Arguments are treated as
                    literal paths (matched as a substring of the recorded
-                   absolute path), relative to the repository root or absolute.
+                   absolute path), relative to the current directory or
+                   absolute.
   (neither)        Check the whole code base (the default).
 
 Options:
@@ -81,22 +82,49 @@ is_source_file() {
     is_cpp_file "$1" || is_header_file "$1"
 }
 
-# Reads newline-separated repository-relative paths from stdin and fills the
-# globals $files (displayable) and $regex (escaped absolute paths, '|'-joined).
+# Collapse redundant '.' and '..' path segments lexically, without resolving
+# symlinks, so that paths such as "$root/../src/foo.h" produce the same
+# absolute path as recorded in the compilation database.
+normalize_path() {
+    local path=$1 out="/" seg
+    local -a parts
+    IFS='/' read -r -a parts <<< "$path"
+    for seg in "${parts[@]}"; do
+        case "$seg" in
+            ''|'.') : ;;
+            '..') out=${out%/*} ;;
+            *) out="${out%/}/$seg" ;;
+        esac
+    done
+    printf '%s' "${out:-/}"
+}
+
+# Reads newline-separated paths from stdin and fills the globals $files
+# (displayable) and $regex (escaped absolute paths, '|'-joined).
+# Relative paths are resolved against the current directory ($1 = "cwd", for
+# explicit file arguments) or against the repository root ($1 = "repo", for
+# the repo-relative paths produced by git).
 files=()
 regex=""
 has_cpp=0
 has_header=0
 build_file_lists() {
-    local root file escaped
+    local mode=$1 root file abs escaped
     root=$(git_ rev-parse --show-toplevel) || die "not inside a git repository"
     while IFS= read -r file; do
         [ -z "$file" ] && continue
         is_source_file "$file" || continue
         case "$file" in
-            /*) escaped=$(escape_regex "$file") ;;
-            *) escaped=$(escape_regex "$root/$file") ;;
+            /*) abs=$file ;;
+            *)
+                if [ "$mode" = "cwd" ]; then
+                    abs="$PWD/$file"
+                else
+                    abs="$root/$file"
+                fi
+                ;;
         esac
+        escaped=$(escape_regex "$(normalize_path "$abs")")
         regex="${regex:+$regex|}${escaped}"
         files+=("$file")
         is_cpp_file "$file" && has_cpp=1
@@ -208,7 +236,7 @@ fi
 echo "Using run-clang-tidy executable: $run_clang_tidy_bin"
 
 if [ "$git_ref_mode" -eq 1 ]; then
-    build_file_lists < <(changed_files "$git_ref")
+    build_file_lists repo < <(changed_files "$git_ref")
     if [ "${#files[@]}" -eq 0 ]; then
         echo "No source files changed relative to $git_ref; nothing to check."
         exit 0
@@ -216,7 +244,7 @@ if [ "$git_ref_mode" -eq 1 ]; then
     echo "Checking ${#files[@]} file(s) changed relative to $git_ref:"
     printf '  %s\n' "${files[@]}"
 elif [ "$#" -gt 0 ]; then
-    build_file_lists < <(printf '%s\n' "$@")
+    build_file_lists cwd < <(printf '%s\n' "$@")
     if [ "${#files[@]}" -eq 0 ]; then
         echo "No source files selected; nothing to check."
         exit 0
@@ -239,7 +267,9 @@ args=()
 
 if [ "$dry_run" -eq 1 ]; then
     printf 'PYTHONUNBUFFERED=1 %s' "$run_clang_tidy_bin"
-    printf ' %q' "${args[@]}"
+    for a in "${args[@]}"; do
+        printf ' %q' "$a"
+    done
     if [ "${#files[@]}" -gt 0 ]; then
         printf ' %q' "$regex"
     fi

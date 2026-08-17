@@ -31,6 +31,7 @@ The following contains some general guidelines for developers.
    * @return ... 
    */
   ```
+- Default values for environments are defined in the constructor of the environment (in the corresponding cpp file).
 
 ### Includes
 - Header files should start with

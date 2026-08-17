@@ -1,4 +1,5 @@
 #include "storm-config.h"
+#include "storm/environment/Environment.h"
 #include "test/storm_gtest.h"
 
 #include "storm-parsers/parser/FormulaParser.h"
@@ -46,6 +47,8 @@ class SymbolicModelBisimulationDecomposition : public ::testing::Test {
         TestType::checkLibraryAvailable();
     }
 
+    storm::Environment env;
+
     static const storm::dd::DdType DdType = TestType::DdType;
 };
 
@@ -56,7 +59,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, Die) {
     const storm::dd::DdType DdType = TestFixture::DdType;
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
 
-    std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model = storm::builder::DdPrismModelBuilder<DdType, double>().build(program);
+    std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model = storm::builder::DdPrismModelBuilder<DdType, double>().build(this->env, program);
     model->getManager().execute([&]() {
         storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::storage::BisimulationType::Strong);
         decomposition.compute();
@@ -88,7 +91,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient) {
     const storm::dd::DdType DdType = TestFixture::DdType;
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
 
-    std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model = storm::builder::DdPrismModelBuilder<DdType, double>().build(program);
+    std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model = storm::builder::DdPrismModelBuilder<DdType, double>().build(this->env, program);
 
     model->getManager().execute([&]() {
         storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::storage::BisimulationType::Strong);
@@ -184,7 +187,8 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, Crowds) {
     // Preprocess model to substitute all constants.
     smd = smd.preprocess();
 
-    std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model = storm::builder::DdPrismModelBuilder<DdType, double>().build(smd.asPrismProgram());
+    std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model =
+        storm::builder::DdPrismModelBuilder<DdType, double>().build(this->env, smd.asPrismProgram());
 
     model->getManager().execute([&]() {
         storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::storage::BisimulationType::Strong);
@@ -217,7 +221,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, TwoDice) {
     const storm::dd::DdType DdType = TestFixture::DdType;
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
 
-    std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model = storm::builder::DdPrismModelBuilder<DdType, double>().build(program);
+    std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model = storm::builder::DdPrismModelBuilder<DdType, double>().build(this->env, program);
 
     model->getManager().execute([&]() {
         storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::storage::BisimulationType::Strong);
@@ -258,8 +262,8 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader) {
     storm::parser::FormulaParser formulaParser;
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"elected\"]");
 
-    std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model =
-        storm::builder::DdPrismModelBuilder<DdType, double>().build(smd.asPrismProgram(), *formula);
+    std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model = storm::builder::DdPrismModelBuilder<DdType, double>().build(
+        this->env, smd.asPrismProgram(), typename storm::builder::DdPrismModelBuilder<DdType, double>::Options(*formula));
 
     model->getManager().execute([&]() {
         storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::storage::BisimulationType::Strong);

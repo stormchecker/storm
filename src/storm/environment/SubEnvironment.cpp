@@ -2,6 +2,7 @@
 
 #include "storm/environment/Environment.h"
 
+#include "storm/environment/dd/AllDdEnvironments.h"
 #include "storm/environment/modelchecker/AllModelCheckerEnvironments.h"
 #include "storm/environment/solver/AllSolverEnvironments.h"
 
@@ -47,6 +48,10 @@ void SubEnvironment<EnvironmentType>::assertInitialized() const {
 }
 
 template class SubEnvironment<InternalEnvironment>;
+
+template class SubEnvironment<DdEnvironment>;
+template class SubEnvironment<SylvanDdManagerEnvironment>;
+template class SubEnvironment<CuddDdManagerEnvironment>;
 
 template class SubEnvironment<ConditionalModelCheckerEnvironment>;
 template class SubEnvironment<MultiObjectiveModelCheckerEnvironment>;

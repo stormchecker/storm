@@ -5,6 +5,7 @@
 
 #include "storm/adapters/AddExpressionAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -2395,7 +2396,8 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> buildInternal(s
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build(storm::jani::Model const& model,
+std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build(storm::Environment const& env,
+                                                                                                            storm::jani::Model const& model,
                                                                                                             Options const& options) {
     // Prepare the model and do some sanity checks
     if (!std::is_same<ValueType, storm::RationalFunction>::value && model.hasUndefinedConstants()) {
@@ -2446,7 +2448,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
                     "The symbolic JANI model builder currently does not support transient edge destination assignments.");
 
     // Create the manager
-    auto manager = std::make_shared<storm::dd::DdManager<Type>>();
+    auto manager = std::make_shared<storm::dd::DdManager<Type>>(env);
 
     // Prepare a result
     std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;

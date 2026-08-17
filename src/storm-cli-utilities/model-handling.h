@@ -10,6 +10,8 @@
 #include "storm/api/storm.h"
 #include "storm/builder/BuilderType.h"
 #include "storm/environment/Environment.h"
+#include "storm/environment/dd/DdEnvironment.h"
+#include "storm/environment/dd/SylvanDdManagerEnvironment.h"
 #include "storm/exceptions/OptionParserException.h"
 #include "storm/io/file.h"
 #include "storm/models/ModelBase.h"
@@ -496,14 +498,15 @@ inline std::vector<std::shared_ptr<storm::logic::Formula const>> createFormulasT
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& input) {
+std::shared_ptr<storm::models::ModelBase> buildModelDd(storm::Environment const& env, SymbolicInput const& input) {
     if (DdType == storm::dd::DdType::Sylvan) {
-        auto numThreads = storm::settings::getModule<storm::settings::modules::SylvanSettings>().getNumberOfThreads();
+        auto numThreads = env.dd().sylvan().getNumberOfThreads();
         STORM_PRINT_AND_LOG("Using Sylvan with " << numThreads << " parallel threads.\n");
     }
     auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
-    return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), createFormulasToRespect(input.properties), buildSettings.isBuildFullModelSet(),
-                                                             !buildSettings.isApplyNoMaximumProgressAssumptionSet(), !buildSettings.isDontFixDeadlocksSet());
+    return storm::api::buildSymbolicModel<DdType, ValueType>(env, input.model.get(), createFormulasToRespect(input.properties),
+                                                             buildSettings.isBuildFullModelSet(), !buildSettings.isApplyNoMaximumProgressAssumptionSet(),
+                                                             !buildSettings.isDontFixDeadlocksSet());
 }
 
 inline storm::builder::BuilderOptions createBuildOptionsSparseFromSettings(SymbolicInput const& input) {
@@ -644,7 +647,8 @@ inline std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const&
     if (input.model) {
         auto builderType = storm::utility::getBuilderType(mpi.engine);
         if (builderType == storm::builder::BuilderType::Dd) {
-            result = applyDdLibValueType(mpi.ddType, mpi.buildValueType, [&input]<storm::dd::DdType DD, typename VT>() { return buildModelDd<DD, VT>(input); });
+            result = applyDdLibValueType(mpi.ddType, mpi.buildValueType,
+                                         [&input, &mpi]<storm::dd::DdType DD, typename VT>() { return buildModelDd<DD, VT>(mpi.env, input); });
         } else if (builderType == storm::builder::BuilderType::Explicit) {
             result = applyValueType(mpi.buildValueType, [&input]<typename VT>() {
                 auto options = createBuildOptionsSparseFromSettings(input);

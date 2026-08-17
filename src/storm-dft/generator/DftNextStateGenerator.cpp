@@ -130,6 +130,8 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
                                  "Self loop was added for " << unsuccessfulStateId << " and unsuccessful trigger of " << dependency->name());
             }
             result.addChoice(std::move(choice));
+            // Start a fresh choice for the next conflicting dependency.
+            choice = storm::generator::Choice<ValueType, StateType>(0, !exploreDependencies);
 
             // Handle premature stop for dependencies
             if (!iterFailable.isConflictingDependency()) {

@@ -1,4 +1,5 @@
 #pragma once
+#include "storm/environment/Environment.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/jani/Model.h"
 
@@ -12,7 +13,7 @@ class JaniBeliefSupportMdpGenerator {
    public:
     JaniBeliefSupportMdpGenerator(storm::models::sparse::Pomdp<ValueType> const& pomdp);
     void generate(storm::storage::BitVector const& targetStates, storm::storage::BitVector const& badStates);
-    void verifySymbolic(bool onlyInitial = true);
+    void verifySymbolic(storm::Environment const& env, bool onlyInitial = true);
     bool isInitialWinning() const;
 
    private:

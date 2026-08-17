@@ -4,8 +4,6 @@
 #include "storm/adapters/sylvan.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/SylvanSettings.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -58,16 +56,15 @@ uint_fast64_t findLargestPowerOfTwoFitting(uint_fast64_t number) {
     return 0;
 }
 
-InternalDdManager<DdType::Sylvan>::InternalDdManager() {
+InternalDdManager<DdType::Sylvan>::InternalDdManager(storm::SylvanDdManagerEnvironment const& environment) {
     if (numberOfInstances == 0) {
-        storm::settings::modules::SylvanSettings const& settings = storm::settings::getModule<storm::settings::modules::SylvanSettings>();
         size_t const task_deque_size = 1024 * 1024;
 
         lace_set_stacksize(1024 * 1024 * 16);  // 16 MiB
 
-        lace_start(settings.getNumberOfThreads(), task_deque_size);
+        lace_start(environment.getNumberOfThreads(), task_deque_size);
 
-        sylvan_set_limits(storm::settings::getModule<storm::settings::modules::SylvanSettings>().getMaximalMemory() * 1024 * 1024, 0, 0);
+        sylvan_set_limits(environment.getMaximalMemory() * 1024 * 1024, 0, 0);
         sylvan_init_package();
 
         sylvan::Sylvan::initBdd();
@@ -262,7 +259,7 @@ uint_fast64_t InternalDdManager<DdType::Sylvan>::getNumberOfDdVariables() const 
     return nextFreeVariableIndex;
 }
 #else
-InternalDdManager<DdType::Sylvan>::InternalDdManager() {
+InternalDdManager<DdType::Sylvan>::InternalDdManager(storm::SylvanDdManagerEnvironment const&) {
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
                     "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
                     "version of Storm with Sylvan support.");

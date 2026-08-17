@@ -1068,11 +1068,11 @@ ExportJsonType buildLValue(storm::jani::LValue const& lValue, std::vector<storm:
         STORM_LOG_ASSERT(lValue.isArrayAccess(), "Unhandled LValue " << lValue << ".");
         ExportJsonType result = lValue.getVariable().getName();
         for (auto const& indexExpr : lValue.getArrayIndexVector()) {
-            ExportJsonType subLValue = std::move(result);
-            result.clear();
-            result["op"] = "aa";
-            result["exp"] = std::move(subLValue);
-            result["index"] = buildExpression(indexExpr, constants, globalVariables, localVariables);
+            ExportJsonType newResult;
+            newResult["op"] = "aa";
+            newResult["exp"] = std::move(result);
+            newResult["index"] = buildExpression(indexExpr, constants, globalVariables, localVariables);
+            result = std::move(newResult);
         }
         return result;
     }

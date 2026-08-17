@@ -77,6 +77,91 @@ struct SampleInformation {
 };
 
 template<template<typename, typename> class ModelCheckerType, typename ModelType, typename ValueType, typename SolveValueType = double>
+void verifyPropertiesAtSamplePointsDerivative(ModelType const& model, cli::SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
+    // When samples are provided, we create an instantiation model checker.
+    ModelCheckerType<ValueType, SolveValueType> derivativeModelchecker(model);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<ModelType, SolveValueType> originalModelchecker(model);
+
+    for (auto const& property : input.properties) {
+        storm::cli::printModelCheckingProperty(property);
+
+        auto checkTask = storm::api::createTask<ValueType>(property.getRawFormula(), true);
+        derivativeModelchecker.specifyFormula(Environment(), checkTask);
+        originalModelchecker.specifyFormula(checkTask);
+
+        storm::utility::parametric::Valuation<ValueType> valuation;
+
+        std::vector<typename storm::utility::parametric::VariableType<ValueType>::type> parameters;
+        std::vector<typename std::vector<typename storm::utility::parametric::CoefficientType<ValueType>::type>::const_iterator> iterators;
+        std::vector<typename std::vector<typename storm::utility::parametric::CoefficientType<ValueType>::type>::const_iterator> iteratorEnds;
+
+        storm::utility::Stopwatch watch(true);
+        for (auto const& product : samples.cartesianProducts) {
+            parameters.clear();
+            iterators.clear();
+            iteratorEnds.clear();
+
+            for (auto const& entry : product) {
+                parameters.push_back(entry.first);
+                iterators.push_back(entry.second.cbegin());
+                iteratorEnds.push_back(entry.second.cend());
+            }
+
+            bool done = false;
+            while (!done) {
+                // Read off valuation.
+                for (uint64_t i = 0; i < parameters.size(); ++i) {
+                    valuation[parameters[i]] = *iterators[i];
+                }
+
+                storm::utility::Stopwatch valuationWatch(true);
+                std::unique_ptr<storm::modelchecker::CheckResult> originalResult = originalModelchecker.check(Environment(), valuation);
+                valuationWatch.stop();
+
+                boost::optional<std::vector<SolveValueType>> valueVector = boost::none;
+                if (originalResult) {
+                    valueVector = originalResult->template asExplicitQuantitativeCheckResult<SolveValueType>().getValueVector();
+                    originalResult->filter(storm::modelchecker::ExplicitQualitativeCheckResult<SolveValueType>(model.getInitialStates()));
+                }
+                STORM_PRINT_AND_LOG("Model checking result:\n");
+                printInitialStatesResult<ValueType>(originalResult, &valuationWatch, &valuation);
+
+                for (auto const& parameter : parameters) {
+                    valuationWatch.restart();
+                    std::unique_ptr<storm::modelchecker::CheckResult> result = derivativeModelchecker.check(Environment(), valuation, parameter, valueVector);
+                    valuationWatch.stop();
+
+                    if (result) {
+                        result->filter(storm::modelchecker::ExplicitQualitativeCheckResult<SolveValueType>(model.getInitialStates()));
+                    }
+                    STORM_PRINT_AND_LOG("Derivative w.r.t. " << parameter << ":\n");
+                    printInitialStatesResult<ValueType>(result, &valuationWatch, &valuation);
+                }
+
+                for (uint64_t i = 0; i < parameters.size(); ++i) {
+                    ++iterators[i];
+                    if (iterators[i] == iteratorEnds[i]) {
+                        // Reset iterator and proceed to move next iterator.
+                        iterators[i] = product.at(parameters[i]).cbegin();
+
+                        // If the last iterator was removed, we are done.
+                        if (i == parameters.size() - 1) {
+                            done = true;
+                        }
+                    } else {
+                        // If an iterator was moved but not reset, we have another valuation to check.
+                        break;
+                    }
+                }
+            }
+        }
+
+        watch.stop();
+        STORM_PRINT_AND_LOG("Overall time for sampling all instances: " << watch << "\n\n");
+    }
+}
+
+template<template<typename, typename> class ModelCheckerType, typename ModelType, typename ValueType, typename SolveValueType = double, bool Derivative = false>
 void verifyPropertiesAtSamplePoints(ModelType const& model, cli::SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
     // When samples are provided, we create an instantiation model checker.
     ModelCheckerType<ModelType, SolveValueType> modelchecker(model);
@@ -141,6 +226,17 @@ void verifyPropertiesAtSamplePoints(ModelType const& model, cli::SymbolicInput c
 
         watch.stop();
         STORM_PRINT_AND_LOG("Overall time for sampling all instances: " << watch << "\n\n");
+    }
+}
+
+template<typename ValueType, typename SolveValueType = double>
+void verifyPropertiesAtSamplePointsWithSparseEngineDerivatives(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                                               cli::SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
+    if (model->isOfType(storm::models::ModelType::Dtmc)) {
+        verifyPropertiesAtSamplePointsDerivative<storm::derivative::SparseDerivativeInstantiationModelChecker, storm::models::sparse::Dtmc<ValueType>,
+                                                 ValueType, SolveValueType>(*model->template as<storm::models::sparse::Dtmc<ValueType>>(), input, samples);
+    } else {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sampling the derivative is currently only supported for DTMCs.");
     }
 }
 

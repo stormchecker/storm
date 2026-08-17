@@ -96,7 +96,7 @@ void symbolicbelsup_test(std::string const& path, std::string const& constants, 
     storm::pomdp::qualitative::JaniBeliefSupportMdpGenerator<double> janicreator(*pomdp);
     janicreator.generate(targetStates, surelyNotAlmostSurelyReachTarget);
     bool initialOnly = !wr;
-    janicreator.verifySymbolic(initialOnly);
+    janicreator.verifySymbolic(storm::Environment(), initialOnly);
 }
 
 class QualitativeAnalysis : public ::testing::Test {

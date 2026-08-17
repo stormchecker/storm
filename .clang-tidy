@@ -2,6 +2,13 @@
 # Disable everything first, then enable individual checks.
 Checks: >-
   -*,
+  bugprone-dangling-handle,
+  bugprone-infinite-loop,
+  bugprone-misplaced-widening-cast,
+  bugprone-signed-char-misuse,
+  bugprone-unused-return-value,
+  bugprone-use-after-move,
+  bugprone-virtual-near-miss,
   misc-unused-using-decls,
   modernize-deprecated-headers,
   modernize-make-unique,
@@ -12,14 +19,7 @@ Checks: >-
 # Candidate checks that are not (yet) enabled:
 # bugprone-branch-clone,
 # bugprone-copy-constructor-init,
-# bugprone-dangling-handle,
-# bugprone-infinite-loop,
-# bugprone-misplaced-widening-cast,
 # bugprone-redundant-expression,
-# bugprone-signed-char-misuse,
-# bugprone-unused-return-value,
-# bugprone-use-after-move,
-# bugprone-virtual-near-miss,
 # clang-analyzer-core.*,
 # clang-analyzer-cplusplus.*,
 # clang-analyzer-deadcode.*,

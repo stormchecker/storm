@@ -1,6 +1,7 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/storage/SparseMatrix.h"
@@ -41,6 +42,8 @@ class Dd : public ::testing::Test {
         TestType::checkLibraryAvailable();
     }
 
+    storm::Environment env;
+
     static const storm::dd::DdType DdType = TestType::DdType;
 };
 
@@ -49,7 +52,7 @@ TYPED_TEST_SUITE(Dd, TestingTypes, );
 
 TYPED_TEST(Dd, AddConstants) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         storm::dd::Add<DdType, double> zero;
         ASSERT_NO_THROW(zero = manager->template getAddZero<double>());
@@ -82,7 +85,7 @@ TYPED_TEST(Dd, AddConstants) {
 
 TYPED_TEST(Dd, BddConstants) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         storm::dd::Bdd<DdType> zero;
         ASSERT_NO_THROW(zero = manager->getBddZero());
@@ -102,7 +105,7 @@ TYPED_TEST(Dd, BddConstants) {
 
 TYPED_TEST(Dd, BddExistAbstractRepresentative) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
 
     manager->execute([&]() {
         storm::dd::Bdd<DdType> zero;
@@ -206,7 +209,7 @@ TYPED_TEST(Dd, BddExistAbstractRepresentative) {
 
 TYPED_TEST(Dd, AddMinExistAbstractRepresentative) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
 
     manager->execute([&]() {
         storm::dd::Bdd<DdType> bddZero;
@@ -301,7 +304,7 @@ TYPED_TEST(Dd, AddMinExistAbstractRepresentative) {
 
 TYPED_TEST(Dd, AddMaxExistAbstractRepresentative) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
 
     manager->execute([&]() {
         storm::dd::Bdd<DdType> bddZero;
@@ -396,7 +399,7 @@ TYPED_TEST(Dd, AddMaxExistAbstractRepresentative) {
 
 TYPED_TEST(Dd, AddGetMetaVariableTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
 
     manager->execute([&]() {
         ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
@@ -417,7 +420,7 @@ TYPED_TEST(Dd, AddGetMetaVariableTest) {
 
 TYPED_TEST(Dd, EncodingTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
 
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
@@ -444,7 +447,7 @@ TYPED_TEST(Dd, EncodingTest) {
 
 TYPED_TEST(Dd, RangeTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x;
         ASSERT_NO_THROW(x = manager->addMetaVariable("x", 1, 9));
@@ -460,7 +463,7 @@ TYPED_TEST(Dd, RangeTest) {
 
 TYPED_TEST(Dd, DoubleIdentityTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
 
@@ -475,7 +478,7 @@ TYPED_TEST(Dd, DoubleIdentityTest) {
 
 TYPED_TEST(Dd, UintIdentityTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
 
@@ -490,7 +493,7 @@ TYPED_TEST(Dd, UintIdentityTest) {
 
 TYPED_TEST(Dd, OperatorTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
         EXPECT_TRUE(manager->template getAddZero<double>() == manager->template getAddZero<double>());
@@ -576,7 +579,7 @@ TYPED_TEST(Dd, OperatorTest) {
 
 TYPED_TEST(Dd, AbstractionTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
         storm::dd::Add<DdType, double> dd1;
@@ -625,7 +628,7 @@ TYPED_TEST(Dd, AbstractionTest) {
 
 TYPED_TEST(Dd, SwapTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
 
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
@@ -642,7 +645,7 @@ TYPED_TEST(Dd, SwapTest) {
 
 TYPED_TEST(Dd, MultiplyMatrixTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
 
@@ -660,7 +663,7 @@ TYPED_TEST(Dd, MultiplyMatrixTest) {
 
 TYPED_TEST(Dd, MultiplyMatrixTest2) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 0, 2);
         std::pair<storm::expressions::Variable, storm::expressions::Variable> b = manager->addMetaVariable("b", 0, 2);
@@ -691,7 +694,7 @@ TYPED_TEST(Dd, MultiplyMatrixTest2) {
 
 TYPED_TEST(Dd, GetSetValueTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
 
@@ -711,7 +714,7 @@ TYPED_TEST(Dd, GetSetValueTest) {
 
 TYPED_TEST(Dd, AddIteratorTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
         std::pair<storm::expressions::Variable, storm::expressions::Variable> y = manager->addMetaVariable("y", 0, 3);
@@ -757,7 +760,7 @@ TYPED_TEST(Dd, AddIteratorTest) {
 
 TYPED_TEST(Dd, AddOddTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> a = manager->addMetaVariable("a");
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
@@ -807,7 +810,7 @@ TYPED_TEST(Dd, AddOddTest) {
 
 TYPED_TEST(Dd, BddOddTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> a = manager->addMetaVariable("a");
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
@@ -860,7 +863,7 @@ TYPED_TEST(Dd, BddOddTest) {
 
 TYPED_TEST(Dd, BddToExpressionTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(std::make_shared<storm::dd::DdManager<DdType>>(this->env));
     manager->execute([&]() {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> a = manager->addMetaVariable("a");
         std::pair<storm::expressions::Variable, storm::expressions::Variable> b = manager->addMetaVariable("b");

@@ -11,6 +11,7 @@
 #include "storm/logic/Formula.h"
 
 namespace storm {
+class Environment;
 namespace models {
 namespace symbolic {
 template<storm::dd::DdType Type, typename ValueType>
@@ -128,10 +129,13 @@ class DdJaniModelBuilder {
      * Translates the given program into a symbolic model (i.e. one that stores the transition relation as a
      * decision diagram).
      *
+     * @param env The environment providing the settings for the DD library (e.g. Sylvan or CUDD).
      * @param model The model to translate.
+     * @param options The options to use when building the model.
      * @return A pointer to the resulting model.
      */
-    std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> build(storm::jani::Model const& model, Options const& options = Options());
+    std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> build(storm::Environment const& env, storm::jani::Model const& model,
+                                                                           Options const& options = Options());
 };
 
 }  // namespace builder

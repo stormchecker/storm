@@ -436,12 +436,14 @@ MaybeStateResult<SolutionType> computeValuesForMaybeStates(Environment const& en
                             : std::vector<SolutionType>(submatrix.getRowGroupCount(),
                                                         hint.hasLowerResultBound() ? hint.getLowerResultBound() : storm::utility::zero<SolutionType>());
 
+    // Capture the uncertainty resolution mode before the goal is consumed by the solver configuration.
+    auto const uncertaintyResolutionMode = goal.getUncertaintyResolutionMode();
     // Set up the solver.
     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType> minMaxLinearEquationSolverFactory;
     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver =
         storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
     solver->setRequirementsChecked();
-    solver->setUncertaintyResolutionMode(goal.getUncertaintyResolutionMode());
+    solver->setUncertaintyResolutionMode(uncertaintyResolutionMode);
     solver->setHasUniqueSolution(hint.hasUniqueSolution());
     solver->setHasNoEndComponents(hint.hasNoEndComponents());
     if (hint.hasLowerResultBound()) {
@@ -578,14 +580,13 @@ void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler,
 }
 
 template<typename ValueType, typename SolutionType>
-void extendScheduler(storm::storage::Scheduler<SolutionType>& scheduler, storm::solver::SolveGoal<ValueType, SolutionType> const& goal,
-                     QualitativeStateSetsUntilProbabilities const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates,
-                     storm::storage::BitVector const& psiStates) {
+void extendScheduler(storm::storage::Scheduler<SolutionType>& scheduler, bool minimize, QualitativeStateSetsUntilProbabilities const& qualitativeStateSets,
+                     storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                     storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
     // Finally, if we need to produce a scheduler, we also need to figure out the parts of the scheduler for
     // the states with probability 1 or 0 (depending on whether we maximize or minimize).
     // We also need to define some arbitrary choice for the remaining states to obtain a fully defined scheduler.
-    if (goal.minimize()) {
+    if (minimize) {
         storm::utility::graph::computeSchedulerProb0E(qualitativeStateSets.statesWithProbability0, transitionMatrix, scheduler);
         for (auto prob1State : qualitativeStateSets.statesWithProbability1) {
             scheduler.setChoice(0, prob1State);
@@ -704,6 +705,8 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     // Check if the values of the maybe states are relevant for the SolveGoal
     bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(qualitativeStateSets.maybeStates);
 
+    // Capture the goal direction before the goal is consumed by the solver configuration.
+    bool const minimize = goal.minimize();
     // If requested, we will produce a scheduler.
     std::unique_ptr<storm::storage::Scheduler<SolutionType>> scheduler;
     if (produceScheduler) {
@@ -778,7 +781,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
     // Extend scheduler with choices for the states in the qualitative state sets.
     if (produceScheduler) {
-        extendScheduler(*scheduler, goal, qualitativeStateSets, transitionMatrix, backwardTransitions, phiStates, psiStates);
+        extendScheduler(*scheduler, minimize, qualitativeStateSets, transitionMatrix, backwardTransitions, phiStates, psiStates);
     }
 
     // Sanity check for created scheduler.
@@ -1161,13 +1164,12 @@ QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewar
 }
 
 template<typename ValueType, typename SolutionType>
-void extendScheduler(storm::storage::Scheduler<SolutionType>& scheduler, storm::solver::SolveGoal<ValueType, SolutionType> const& goal,
-                     QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates,
-                     std::function<storm::storage::BitVector()> const& zeroRewardChoicesGetter) {
+void extendScheduler(storm::storage::Scheduler<SolutionType>& scheduler, bool minimize, QualitativeStateSetsReachabilityRewards const& qualitativeStateSets,
+                     storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                     storm::storage::BitVector const& targetStates, std::function<storm::storage::BitVector()> const& zeroRewardChoicesGetter) {
     // Finally, if we need to produce a scheduler, we also need to figure out the parts of the scheduler for
     // the states with reward zero/infinity.
-    if (goal.minimize()) {
+    if (minimize) {
         storm::utility::graph::computeSchedulerProb1E(qualitativeStateSets.rewardZeroStates, transitionMatrix, backwardTransitions,
                                                       qualitativeStateSets.rewardZeroStates, targetStates, scheduler, zeroRewardChoicesGetter());
         for (auto state : qualitativeStateSets.infinityStates) {
@@ -1374,6 +1376,8 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     // Check if the values of the maybe states are relevant for the SolveGoal
     bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(qualitativeStateSets.maybeStates);
 
+    // Capture the goal direction before the goal is consumed by the solver configuration.
+    bool const minimize = goal.minimize();
     // Check whether we need to compute exact rewards for some states.
     if (qualitative || maybeStatesNotRelevant) {
         STORM_LOG_INFO("The rewards for the initial states were determined in a preprocessing step. No exact rewards were computed.");
@@ -1456,7 +1460,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
     // Extend scheduler with choices for the states in the qualitative state sets.
     if (produceScheduler) {
-        extendScheduler(*scheduler, goal, qualitativeStateSets, transitionMatrix, backwardTransitions, targetStates, zeroRewardChoicesGetter);
+        extendScheduler(*scheduler, minimize, qualitativeStateSets, transitionMatrix, backwardTransitions, targetStates, zeroRewardChoicesGetter);
     }
 
     // Sanity check for created scheduler.
