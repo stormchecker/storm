@@ -28,8 +28,8 @@ Z3LpSolver<ValueType, RawMode>::Z3LpSolver(std::string const& name, Optimization
     z3::config config;
     config.set("model", true);
     context = std::make_unique<z3::context>(config);
-    solver = std::unique_ptr<z3::optimize>(new z3::optimize(*context));
-    expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(*this->manager, *context));
+    solver = std::make_unique<z3::optimize>(*context);
+    expressionAdapter = std::make_unique<storm::adapters::Z3ExpressionAdapter>(*this->manager, *context);
 }
 
 template<typename ValueType, bool RawMode>
