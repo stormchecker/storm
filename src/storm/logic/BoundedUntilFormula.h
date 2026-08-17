@@ -59,6 +59,9 @@ class BoundedUntilFormula : public PathFormula {
     storm::expressions::Expression const& getLowerBound(unsigned i = 0) const;
     storm::expressions::Expression const& getUpperBound(unsigned i = 0) const;
 
+    std::optional<TimeBound> getLowerBoundAsOptionalTimeBound(unsigned i = 0) const;
+    std::optional<TimeBound> getUpperBoundAsOptionalTimeBound(unsigned i = 0) const;
+
     template<typename ValueType>
     ValueType getLowerBound(unsigned i = 0) const;
 
