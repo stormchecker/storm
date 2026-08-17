@@ -79,12 +79,15 @@ struct SampleInformation {
 template<template<typename, typename> class ModelCheckerType, typename ModelType, typename ValueType, typename SolveValueType = double>
 void verifyPropertiesAtSamplePointsDerivative(ModelType const& model, cli::SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
     // When samples are provided, we create an instantiation model checker.
-    ModelCheckerType<ValueType, SolveValueType> modelchecker(model);
+    ModelCheckerType<ValueType, SolveValueType> derivativeModelchecker(model);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<ModelType, SolveValueType> originalModelchecker(model);
 
     for (auto const& property : input.properties) {
         storm::cli::printModelCheckingProperty(property);
 
-        modelchecker.specifyFormula(Environment(), storm::api::createTask<ValueType>(property.getRawFormula(), true));
+        auto checkTask = storm::api::createTask<ValueType>(property.getRawFormula(), true);
+        derivativeModelchecker.specifyFormula(Environment(), checkTask);
+        originalModelchecker.specifyFormula(checkTask);
 
         storm::utility::parametric::Valuation<ValueType> valuation;
 
@@ -111,13 +114,25 @@ void verifyPropertiesAtSamplePointsDerivative(ModelType const& model, cli::Symbo
                     valuation[parameters[i]] = *iterators[i];
                 }
 
+                storm::utility::Stopwatch valuationWatch(true);
+                std::unique_ptr<storm::modelchecker::CheckResult> originalResult = originalModelchecker.check(Environment(), valuation);
+                valuationWatch.stop();
+
+                boost::optional<std::vector<SolveValueType>> valueVector = boost::none;
+                if (originalResult) {
+                    valueVector = originalResult->template asExplicitQuantitativeCheckResult<SolveValueType>().getValueVector();
+                    originalResult->filter(storm::modelchecker::ExplicitQualitativeCheckResult<SolveValueType>(model.getInitialStates()));
+                }
+                STORM_PRINT_AND_LOG("Model checking result:\n");
+                printInitialStatesResult<ValueType>(originalResult, &valuationWatch, &valuation);
+
                 for (auto const& parameter : parameters) {
-                    storm::utility::Stopwatch valuationWatch(true);
-                    std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(Environment(), valuation, parameter);
+                    valuationWatch.restart();
+                    std::unique_ptr<storm::modelchecker::CheckResult> result = derivativeModelchecker.check(Environment(), valuation, parameter, valueVector);
                     valuationWatch.stop();
 
                     if (result) {
-                        result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model.getInitialStates()));
+                        result->filter(storm::modelchecker::ExplicitQualitativeCheckResult<SolveValueType>(model.getInitialStates()));
                     }
                     STORM_PRINT_AND_LOG("Derivative w.r.t. " << parameter << ":\n");
                     printInitialStatesResult<ValueType>(result, &valuationWatch, &valuation);
