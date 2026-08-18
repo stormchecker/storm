@@ -5,6 +5,49 @@ This changelog lists only the most important changes. Smaller (bug)fixes as well
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
 
+Version 1.14.x
+--------------
+
+### Version 1.14.0 (2026/08)
+- Moved from settings to environments in several places:
+    * LP solvers
+    * Model building
+    * Bisimulation
+    * Parsing
+    * Symbolic models
+- Revised state and observation valuations.
+- Added support for HiGHS MILP solver.
+- Renamed `--additional-checks` to `--check-zeno`.
+- Removed deprecated `--lex` argument. Lexicographic model checking can be invoked using the `multilex(..)` syntax.
+- Reintroduced `sample-derivative` for storm-pars.
+- Bug fixes:
+    * Parsing of Prism files such as observables and reserved keywords.
+    * Parsing of constant strings and negative number in commandline options.
+    * Parsing of DRN files with rational intervals.
+    * Multi-objective model checking for negative rewards.
+    * WeightVectorChecker for negative weights.
+    * In Valuations.
+    * Setting relative precision in LRA.
+    * Scheduler extraction for topological solver.
+    * State elimination for absorbing states.
+    * Synchronization vector for non-synchronizing JANI choices.
+    * MDP model checking of globally properties via hybrid engine.
+    * Memory products and initial states.
+- Requires CMake >= 3.25.
+- Updated gmm version to 5.5.
+- Moved from parallel-hashmap to gtl.
+- Developer: Sped up compilation of `storm-parsers` and `storm-pars`.
+- Developer: Sped up tests by skipping a few costly tests.
+- Developer: Fixed a number of compiler warnings.
+- Developer: Cleaned up parts of code base such as state elimination and cli-utilities.
+- Developer: Added support for clang-tidy.
+- Developer: Improved code quality via reports from clang-tidy.
+- Developer: Consistent handling of includes, asserts and throwing of exceptions.
+- Developer: Introduced `STORM_LOG_STATS`.
+- Developer: Added CMake option `STORM_COMPILE_WITH_PCH`.
+- Developer: Added Copilot instructions.
+
+
 Version 1.13.x
 --------------
 
@@ -20,13 +63,13 @@ Version 1.13.x
 - Updated dependencies: carl-storm, ExprTk, Spot.
 - Renamed directories: storm-cudd and cpphoafparser.
 - Bug fixes:
-    * in Unif+ for Markov automata with non-Markovian initial states
-    * dangling reference to tmp object
-    * assert in observation trace unfolder
-    * warning in `ConditionalHelper`
-    * error for IDTMC checking from CLI
-    * in includes
-    * compiler warnings
+    * In Unif+ for Markov automata with non-Markovian initial states.
+    * Dangling reference to tmp object.
+    * Assert in observation trace unfolder.
+    * Warning in `ConditionalHelper`.
+    * Error for IDTMC checking from CLI.
+    * In includes.
+    * Compiler warnings.
 - Developer: Added support for intervals in multipliers.
 - Developer: Extended differentation of `ValueType` and `SolutionType` in more places.
 - Developer: Added support for creating Debian packages in CMake and via CI workflow.
