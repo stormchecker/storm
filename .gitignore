@@ -3,6 +3,10 @@ resources/3rdparty/storm-cudd/config.h.in
 resources/3rdparty/storm-cudd/configure
 resources/3rdparty/storm-cudd/aclocal.m4
 resources/3rdparty/storm-cudd/Makefile.in
+resources/3rdparty/cudd-3.0.0/config.h.in
+resources/3rdparty/cudd-3.0.0/configure
+resources/3rdparty/cudd-3.0.0/aclocal.m4
+resources/3rdparty/cudd-3.0.0/Makefile.in
 #Visual Studio files
 *.[Oo]bj
 *.user
