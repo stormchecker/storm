@@ -9,7 +9,7 @@ Version 1.14.x
 --------------
 
 ### Version 1.14.0 (2026/08)
-- Moved from settings to environments in several places:
+- Moved from settings to environments or options in several places:
     * LP solvers
     * Model building
     * Bisimulation
