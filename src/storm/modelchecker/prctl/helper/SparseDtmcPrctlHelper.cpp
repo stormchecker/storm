@@ -858,10 +858,14 @@ std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, Solu
     if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support computing conditional probabilities with interval models.");
     } else {
+        // The conditional value is only defined for states that reach the condition with positive probability.
+        storm::storage::BitVector const conditionProbGreater0States =
+            storm::utility::graph::performProbGreater0(backwardTransitions, storm::storage::BitVector(conditionStates.size(), true), conditionStates);
+        STORM_LOG_THROW(goal.hasRelevantValues() ? goal.relevantValues().isSubsetOf(conditionProbGreater0States) : !conditionProbGreater0States.empty(),
+                        storm::exceptions::InvalidPropertyException, "Trying to compute an undefined conditional value: the condition is not reachable.");
+
         // Prepare result vector.
         std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::infinity<ValueType>());
-        STORM_LOG_THROW(!conditionStates.empty(), storm::exceptions::InvalidPropertyException,
-                        "The condition set has probability 0, so the conditional probability is not defined.");
 
         BaierTransformedModel transformedModel =
             computeBaierTransformation(env, transitionMatrix, backwardTransitions, targetStates, conditionStates, boost::none);
@@ -901,8 +905,11 @@ std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, Solu
     if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support computing conditional rewards with interval models.");
     } else {
-        STORM_LOG_THROW(!conditionStates.empty(), storm::exceptions::InvalidPropertyException,
-                        "The condition set has probability 0, so the conditional probability is not defined.");
+        // The conditional value is only defined for states that reach the condition with positive probability.
+        storm::storage::BitVector const conditionProbGreater0States =
+            storm::utility::graph::performProbGreater0(backwardTransitions, storm::storage::BitVector(conditionStates.size(), true), conditionStates);
+        STORM_LOG_THROW(goal.hasRelevantValues() ? goal.relevantValues().isSubsetOf(conditionProbGreater0States) : !conditionProbGreater0States.empty(),
+                        storm::exceptions::InvalidPropertyException, "Trying to compute an undefined conditional value: the condition is not reachable.");
 
         // Prepare result vector.
         std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::infinity<ValueType>());
