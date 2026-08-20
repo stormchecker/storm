@@ -47,7 +47,7 @@ bool validateTypeDeclaration(storm::umb::SizedType const& type, bool requireStan
     }
     uint64_t const defaultSize = defaultBitSize(type.type);
     bool sizeError = false;
-    switch (storm::umb::Type(type.type)) {
+    switch ((storm::umb::Type)type.type) {
         case Double:
         case DoubleInterval:
         case String:
@@ -86,7 +86,7 @@ bool vectorMatchesType(storm::umb::GenericVector const& vector, storm::umb::Size
     }
 
     using enum storm::umb::Type;
-    switch (storm::umb::Type(type.type)) {
+    switch ((storm::umb::Type)type.type) {
         case Bool:
             return vector.isType<bool>();
         case Int:

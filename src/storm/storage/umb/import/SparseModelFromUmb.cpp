@@ -343,7 +343,7 @@ storm::models::ModelType deriveModelType(storm::umb::ModelIndex const& index) {
     auto const& ts = index.transitionSystem;
 
     STORM_LOG_THROW(ts.branchProbabilityType.has_value(), storm::exceptions::NotSupportedException, "Models without branch values are not supported.");
-    switch (storm::umb::ModelIndex::TransitionSystem::Time(ts.time)) {
+    switch ((storm::umb::ModelIndex::TransitionSystem::Time)ts.time) {
         using enum storm::umb::ModelIndex::TransitionSystem::Time;
         case Discrete:
             switch (ts.numPlayers) {
