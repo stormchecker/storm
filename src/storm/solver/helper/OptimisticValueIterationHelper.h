@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/SolutionBounds.h"
 #include "storm/solver/SolverStatus.h"
 
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
@@ -36,12 +37,14 @@ class OptimisticValueIterationHelper {
     SolverStatus OVI(std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative, ValueType const& precision,
                      std::optional<storm::OptimizationDirection> const& dir = {}, std::optional<ValueType> const& guessValue = {},
                      std::optional<ValueType> const& lowerBound = {}, std::optional<ValueType> const& upperBound = {},
-                     std::function<SolverStatus(SolverStatus const&, std::vector<ValueType> const&)> const& iterationCallback = {}) const;
+                     std::function<SolverStatus(SolverStatus const&, std::vector<ValueType> const&)> const& iterationCallback = {},
+                     SolutionBounds<ValueType>* solutionBounds = nullptr) const;
 
     SolverStatus OVI(std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, bool relative, ValueType const& precision,
                      std::optional<storm::OptimizationDirection> const& dir = {}, std::optional<ValueType> const& guessValue = {},
                      std::optional<ValueType> const& lowerBound = {}, std::optional<ValueType> const& upperBound = {},
-                     std::function<SolverStatus(SolverStatus const&, std::vector<ValueType> const&)> const& iterationCallback = {}) const;
+                     std::function<SolverStatus(SolverStatus const&, std::vector<ValueType> const&)> const& iterationCallback = {},
+                     SolutionBounds<ValueType>* solutionBounds = nullptr) const;
 
    private:
     template<storm::OptimizationDirection Dir, bool Relative>

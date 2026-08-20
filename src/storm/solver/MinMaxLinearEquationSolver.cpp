@@ -40,6 +40,8 @@ bool MinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquations(Environ
     STORM_LOG_WARN_COND_DEBUG(this->isRequirementsCheckedSet(),
                               "The requirements of the solver have not been marked as checked. Please provide the appropriate check or mark the requirements "
                               "as checked (if applicable).");
+    // A reused solver must not report bounds that a previous call computed.
+    this->clearSolutionBounds();
     return internalSolveEquations(env, d, x, b);
 }
 

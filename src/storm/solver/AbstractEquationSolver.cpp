@@ -238,6 +238,34 @@ void AbstractEquationSolver<ValueType>::setBoundsFromOtherSolver(AbstractEquatio
 }
 
 template<typename ValueType>
+bool AbstractEquationSolver<ValueType>::hasSolutionBounds() const {
+    return solutionBounds.has_value();
+}
+
+template<typename ValueType>
+std::vector<ValueType> const& AbstractEquationSolver<ValueType>::getSolutionLowerBounds() const {
+    STORM_LOG_ASSERT(this->hasSolutionBounds(), "No bounds on the solution were computed.");
+    return solutionBounds->first;
+}
+
+template<typename ValueType>
+std::vector<ValueType> const& AbstractEquationSolver<ValueType>::getSolutionUpperBounds() const {
+    STORM_LOG_ASSERT(this->hasSolutionBounds(), "No bounds on the solution were computed.");
+    return solutionBounds->second;
+}
+
+template<typename ValueType>
+void AbstractEquationSolver<ValueType>::setSolutionBounds(std::vector<ValueType> lower, std::vector<ValueType> upper) const {
+    STORM_LOG_ASSERT(lower.size() == upper.size(), "Bounds on the solution must have the same size.");
+    solutionBounds = std::make_pair(std::move(lower), std::move(upper));
+}
+
+template<typename ValueType>
+void AbstractEquationSolver<ValueType>::clearSolutionBounds() const {
+    solutionBounds = std::nullopt;
+}
+
+template<typename ValueType>
 void AbstractEquationSolver<ValueType>::clearBounds() {
     lowerBound = boost::none;
     upperBound = boost::none;

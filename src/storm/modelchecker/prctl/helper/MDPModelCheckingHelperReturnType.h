@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include "storm/solver/SolutionBounds.h"
 #include "storm/storage/Scheduler.h"
 
 namespace storm {
@@ -30,6 +31,9 @@ struct MDPSparseModelCheckingHelperReturnType {
 
     // A scheduler, if it was computed.
     std::unique_ptr<storm::storage::Scheduler<ValueType>> scheduler;
+
+    // Sound bounds on the values, if the algorithm that computed them provided any.
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
 };
 }  // namespace helper
 
