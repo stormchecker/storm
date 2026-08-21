@@ -32,11 +32,16 @@ class SparseDtmcPrctlHelper {
     static std::vector<SolutionType> computeNextProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                               storm::storage::BitVector const& nextStates);
 
+    /*!
+     * @param solutionBounds If given, receives sound bounds on the computed probabilities, provided that the
+     * equation solver produced any.
+     */
     static std::vector<SolutionType> computeUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
-                                                               bool qualitative, ModelCheckerHint const& hint = ModelCheckerHint());
+                                                               bool qualitative, ModelCheckerHint const& hint = ModelCheckerHint(),
+                                                               storm::solver::SolutionBounds<SolutionType>* solutionBounds = nullptr);
 
     static std::vector<SolutionType> computeAllUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                   storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
@@ -46,7 +51,8 @@ class SparseDtmcPrctlHelper {
     static std::vector<SolutionType> computeGloballyProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                   storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                   storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                  storm::storage::BitVector const& psiStates, bool qualitative);
+                                                                  storm::storage::BitVector const& psiStates, bool qualitative,
+                                                                  storm::solver::SolutionBounds<SolutionType>* solutionBounds = nullptr);
 
     static std::vector<SolutionType> computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                               storm::storage::SparseMatrix<ValueType> const& transitionMatrix,

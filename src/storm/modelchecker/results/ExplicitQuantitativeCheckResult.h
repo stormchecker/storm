@@ -60,6 +60,36 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
     vector_type& getValueVector();
     map_type const& getValueMap() const;
 
+    /*!
+     * Retrieves whether sound lower resp. upper bounds on the actual values are known.
+     * A bound that is not known is not stored at all, so that "no information" cannot be confused with an
+     * infinite bound: an individual entry of a known bound may well be (minus) infinity.
+     */
+    bool hasLowerBounds() const;
+    bool hasUpperBounds() const;
+
+    /*!
+     * Retrieves the sound lower resp. upper bounds on the actual values.
+     * @pre The respective bounds are known.
+     */
+    vector_type const& getLowerBoundVector() const;
+    vector_type const& getUpperBoundVector() const;
+    map_type const& getLowerBoundMap() const;
+    map_type const& getUpperBoundMap() const;
+
+    /*!
+     * Sets sound bounds on the actual values. The bounds must have the same shape as the values, i.e. a vector
+     * of the same size resp. a map with the same keys.
+     */
+    void setLowerBounds(boost::variant<vector_type, map_type> lowerBounds);
+    void setUpperBounds(boost::variant<vector_type, map_type> upperBounds);
+    void setBounds(boost::variant<vector_type, map_type> lowerBounds, boost::variant<vector_type, map_type> upperBounds);
+
+    /*!
+     * Drops all bounds, e.g. after an operation that cannot maintain them.
+     */
+    void clearBounds();
+
     virtual std::ostream& writeToStream(std::ostream& out) const override;
 
     virtual void filter(QualitativeCheckResult const& filter) override;
@@ -85,8 +115,25 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
         return t == typeid(ValueType);
     }
 
-    // The values of the quantitative check result.
+    /*!
+     * Asserts that the given bounds have the same shape as the values.
+     */
+    void assertBoundsShape(boost::variant<vector_type, map_type> const& bounds) const;
+
+    /*!
+     * Writes the value of the given state, followed by its bounds if any are known.
+     */
+    void printValue(std::ostream& out, storm::storage::sparse::state_type state) const;
+
+    // The values of the quantitative check result. These are estimates of the actual values, which lie within
+    // the bounds below but carry no further guarantee.
     boost::variant<vector_type, map_type> values;
+
+    // Sound lower bounds on the actual values, if an algorithm provided them.
+    std::optional<boost::variant<vector_type, map_type>> lowerBounds;
+
+    // Sound upper bounds on the actual values, if an algorithm provided them.
+    std::optional<boost::variant<vector_type, map_type>> upperBounds;
 
     // An optional scheduler that accompanies the values.
     std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler;

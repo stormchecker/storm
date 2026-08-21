@@ -424,6 +424,9 @@ struct MaybeStateResult {
 
     std::vector<ValueType> values;
     boost::optional<std::vector<uint64_t>> scheduler;
+
+    // Sound bounds on the values, if the solver provided any.
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
 };
 
 template<typename ValueType, typename SolutionType>
@@ -485,6 +488,9 @@ MaybeStateResult<SolutionType> computeValuesForMaybeStates(Environment const& en
 
     // Create result.
     MaybeStateResult<SolutionType> result(std::move(x));
+    if (solver->hasSolutionBounds()) {
+        result.solutionBounds = std::make_pair(solver->getSolutionLowerBounds(), solver->getSolutionUpperBounds());
+    }
 
     // If requested, return the requested scheduler.
     if (produceScheduler) {
@@ -690,6 +696,9 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     // Prepare resulting vector.
     std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
 
+    // Sound bounds on the result, if the solver provides any.
+    storm::solver::SolutionBounds<SolutionType> resultBounds;
+
     // We need to identify the maybe states (states which have a probability for satisfying the until formula
     // that is strictly between 0 and 1) and the states that satisfy the formula with probablity 1 and 0, respectively.
     QualitativeStateSetsUntilProbabilities qualitativeStateSets =
@@ -765,6 +774,16 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                 // Set values of resulting vector according to result.
                 if constexpr (!storm::IsIntervalType<ValueType>) {
                     // For non-interval models, we only operated on the maybe states, and we must recover the qualitative values for the other state.
+                    if (resultForMaybeStates.solutionBounds) {
+                        // Outside of the maybe states the probability is exactly zero or one, so the entries
+                        // that result already holds bound those states from both sides.
+                        std::vector<SolutionType> lower(result), upper(result);
+                        storm::utility::vector::setVectorValues<SolutionType>(lower, qualitativeStateSets.maybeStates,
+                                                                              resultForMaybeStates.solutionBounds->first);
+                        storm::utility::vector::setVectorValues<SolutionType>(upper, qualitativeStateSets.maybeStates,
+                                                                              resultForMaybeStates.solutionBounds->second);
+                        resultBounds = std::make_pair(std::move(lower), std::move(upper));
+                    }
                     storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                 } else {
                     // For interval models, the result for maybe states indeed also holds values for all qualitative states.
@@ -791,7 +810,9 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
 
     // Return result.
-    return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(result), std::move(scheduler));
+    MDPSparseModelCheckingHelperReturnType<SolutionType> returnValue(std::move(result), std::move(scheduler));
+    returnValue.solutionBounds = std::move(resultBounds);
+    return returnValue;
 }
 
 template<typename ValueType, typename SolutionType>
