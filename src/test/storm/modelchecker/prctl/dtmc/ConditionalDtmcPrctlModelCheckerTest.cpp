@@ -7,6 +7,7 @@
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -165,6 +166,10 @@ TYPED_TEST(ConditionalDtmcPrctlModelCheckerTest, Conditional) {
     storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<ValueType>();
     EXPECT_NEAR(storm::utility::one<ValueType>(), quantitativeResult2[0], this->precision());
 
+    formula = formulaParser.parseSingleFormulaFromString("P=? [F \"target\" || F \"unreachable\"]");
+
+    STORM_SILENT_EXPECT_THROW(checker.check(this->env(), *formula), storm::exceptions::InvalidPropertyException);
+
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"target\"]");
 
     result = checker.check(this->env(), *formula);
@@ -176,5 +181,54 @@ TYPED_TEST(ConditionalDtmcPrctlModelCheckerTest, Conditional) {
     result = checker.check(this->env(), *formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<ValueType>();
     EXPECT_NEAR(storm::utility::one<ValueType>(), quantitativeResult4[0], this->precision());
+
+    formula = formulaParser.parseSingleFormulaFromString("R=? [F \"target\" || F \"unreachable\"]");
+
+    STORM_SILENT_EXPECT_THROW(checker.check(this->env(), *formula), storm::exceptions::InvalidPropertyException);
+}
+
+TYPED_TEST(ConditionalDtmcPrctlModelCheckerTest, ConditionalUnreachableFromInitialState) {
+    typedef typename TestFixture::ValueType ValueType;
+
+    // In this model, the condition is reachable from one of the two initial states only.
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/test_conditional_multiple_initial.pm");
+
+    storm::generator::NextStateGeneratorOptions options;
+    options.setBuildAllLabels().setBuildAllRewardModels();
+    std::shared_ptr<storm::models::sparse::Model<ValueType>> model = storm::builder::ExplicitModelBuilder<ValueType>(program, options).build();
+    ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
+    ASSERT_EQ(4ul, model->getNumberOfStates());
+
+    std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
+    ASSERT_EQ(2ul, dtmc->getInitialStates().getNumberOfSetBits());
+    storm::storage::BitVector initialStatesWithoutCondition = dtmc->getInitialStates() & ~dtmc->getStates("start");
+    ASSERT_EQ(1ul, initialStatesWithoutCondition.getNumberOfSetBits());
+
+    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> checker(*dtmc);
+
+    auto expManager = std::make_shared<storm::expressions::ExpressionManager>();
+    storm::parser::FormulaParser formulaParser(expManager);
+
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"target\" || F \"condition\"]");
+
+    // If we are only interested in the initial states, the value is undefined for the initial state that cannot reach the condition.
+    STORM_SILENT_EXPECT_THROW(checker.check(this->env(), storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formula, true)),
+                              storm::exceptions::InvalidPropertyException);
+
+    // If all states are relevant, the undefined values are reported as infinity.
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(this->env(), *formula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<ValueType>();
+    EXPECT_NEAR(storm::utility::one<ValueType>(), quantitativeResult1[*dtmc->getStates("start").begin()], this->precision());
+    EXPECT_EQ(storm::utility::infinity<ValueType>(), quantitativeResult1[*initialStatesWithoutCondition.begin()]);
+
+    formula = formulaParser.parseSingleFormulaFromString("R=? [F \"target\" || F \"condition\"]");
+
+    STORM_SILENT_EXPECT_THROW(checker.check(this->env(), storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formula, true)),
+                              storm::exceptions::InvalidPropertyException);
+
+    result = checker.check(this->env(), *formula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<ValueType>();
+    EXPECT_NEAR(storm::utility::one<ValueType>(), quantitativeResult2[*dtmc->getStates("start").begin()], this->precision());
+    EXPECT_EQ(storm::utility::infinity<ValueType>(), quantitativeResult2[*initialStatesWithoutCondition.begin()]);
 }
 }  // namespace
