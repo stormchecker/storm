@@ -46,7 +46,7 @@ void Multiplier<ValueType, SolutionType>::multiplyAndReduceGaussSeidel(Environme
 template<typename ValueType, typename SolutionType>
 void Multiplier<ValueType, SolutionType>::repeatedMultiply(Environment const& env, std::vector<SolutionType>& x, std::vector<ValueType> const* b,
                                                            uint64_t n) const {
-    storm::utility::ProgressMeasurement progress("multiplications");
+    storm::utility::ProgressMeasurement progress("multiplications", env.solver().getShowProgressDelay());
     progress.setMaxCount(n);
     progress.startNewMeasurement(0);
     for (uint64_t i = 0; i < n; ++i) {
@@ -63,7 +63,7 @@ template<typename ValueType, typename SolutionType>
 void Multiplier<ValueType, SolutionType>::repeatedMultiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<SolutionType>& x,
                                                                     std::vector<ValueType> const* b, uint64_t n,
                                                                     UncertaintyResolutionMode const& uncertaintyResolutionMode) const {
-    storm::utility::ProgressMeasurement progress("multiplications");
+    storm::utility::ProgressMeasurement progress("multiplications", env.solver().getShowProgressDelay());
     progress.setMaxCount(n);
     progress.startNewMeasurement(0);
     for (uint64_t i = 0; i < n; ++i) {
@@ -81,7 +81,7 @@ void Multiplier<ValueType, SolutionType>::repeatedMultiplyAndReduceWithFactor(En
                                                                               std::vector<SolutionType>& x, std::vector<ValueType> const* b, uint64_t n,
                                                                               SolutionType factor,
                                                                               UncertaintyResolutionMode const& uncertaintyResolutionMode) const {
-    storm::utility::ProgressMeasurement progress("multiplications");
+    storm::utility::ProgressMeasurement progress("multiplications", env.solver().getShowProgressDelay());
     progress.setMaxCount(n);
     progress.startNewMeasurement(0);
     for (uint64_t i = 0; i < n; ++i) {
@@ -98,7 +98,7 @@ void Multiplier<ValueType, SolutionType>::repeatedMultiplyAndReduceWithFactor(En
 template<typename ValueType, typename SolutionType>
 void Multiplier<ValueType, SolutionType>::repeatedMultiplyWithFactor(Environment const& env, std::vector<SolutionType>& x, std::vector<ValueType> const* b,
                                                                      uint64_t n, SolutionType factor) const {
-    storm::utility::ProgressMeasurement progress("multiplications");
+    storm::utility::ProgressMeasurement progress("multiplications", env.solver().getShowProgressDelay());
     progress.setMaxCount(n);
     progress.startNewMeasurement(0);
     for (uint64_t i = 0; i < n; ++i) {

@@ -113,7 +113,7 @@ void SparseDeterministicVisitingTimesHelper<ValueType>::computeExpectedVisitingT
         auto sccEnv = getEnvironmentForSolver(env, true);
 
         // We solve each SCC individually in *forward* topological order
-        storm::utility::ProgressMeasurement progress("sccs");
+        storm::utility::ProgressMeasurement progress("sccs", env.solver().getShowProgressDelay());
         progress.setMaxCount(sccDecomposition->size());
         progress.startNewMeasurement(0);
         uint64_t sccIndex = 0;

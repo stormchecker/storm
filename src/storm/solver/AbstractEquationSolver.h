@@ -18,6 +18,14 @@ class AbstractEquationSolver {
     AbstractEquationSolver();
 
     /*!
+     * Configures whether this solver should show progress during iterative solving.
+     *
+     * @param verbose If true, progress will be shown.
+     * @param delay The delay (in seconds) between progress emissions.
+     */
+    void setShowProgress(bool verbose, uint64_t delay = 5);
+
+    /*!
      * Sets a custom termination condition that is used together with the regular termination condition of the
      * solver.
      *

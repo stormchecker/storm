@@ -3,8 +3,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidStateException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -14,8 +12,13 @@ namespace solver {
 
 template<typename ValueType>
 AbstractEquationSolver<ValueType>::AbstractEquationSolver() {
-    if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVerboseSet()) {
-        this->progressMeasurement = storm::utility::ProgressMeasurement("iterations");
+    // Intentionally left empty. Call setShowProgress() after construction to enable progress.
+}
+
+template<typename ValueType>
+void AbstractEquationSolver<ValueType>::setShowProgress(bool verbose, uint64_t delay) {
+    if (verbose) {
+        this->progressMeasurement = storm::utility::ProgressMeasurement("iterations", delay);
     }
 }
 

@@ -23,6 +23,8 @@ SolverEnvironment::SolverEnvironment() {
     lpSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver();
     lpSolverTypeSetFromDefault = storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue();
     debug = storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet();
+    verbose = generalSettings.isVerboseSet();
+    showProgressDelay = generalSettings.getShowProgressDelay();
 }
 
 SolverEnvironment::~SolverEnvironment() {
@@ -155,6 +157,22 @@ bool SolverEnvironment::isDebugSet() const {
 
 void SolverEnvironment::setDebug(bool value) {
     SolverEnvironment::debug = value;
+}
+
+bool SolverEnvironment::isVerboseSet() const {
+    return verbose;
+}
+
+void SolverEnvironment::setVerbose(bool value) {
+    SolverEnvironment::verbose = value;
+}
+
+uint64_t SolverEnvironment::getShowProgressDelay() const {
+    return showProgressDelay;
+}
+
+void SolverEnvironment::setShowProgressDelay(uint64_t delay) {
+    SolverEnvironment::showProgressDelay = delay;
 }
 
 storm::solver::EquationSolverType const& SolverEnvironment::getLinearEquationSolverType() const {

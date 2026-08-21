@@ -182,7 +182,9 @@ uint64_t GmmxxLinearEquationSolver<ValueType>::getMatrixColumnCount() const {
 
 template<typename ValueType>
 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
-    return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>();
+    auto solver = std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>();
+    solver->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
+    return solver;
 }
 
 template<typename ValueType>

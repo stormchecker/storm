@@ -3,17 +3,13 @@
 #include <limits>
 #include <sstream>
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 namespace utility {
 
-ProgressMeasurement::ProgressMeasurement(std::string const& itemName) : itemName(itemName), maxCount(std::numeric_limits<uint64_t>::max()) {
-    auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-    delay = generalSettings.getShowProgressDelay();
-}
+ProgressMeasurement::ProgressMeasurement(std::string const& itemName, uint64_t delay)
+    : delay(delay), itemName(itemName), maxCount(std::numeric_limits<uint64_t>::max()) {}
 
 void ProgressMeasurement::startNewMeasurement(uint64_t startCount) {
     lastDisplayedCount = startCount;

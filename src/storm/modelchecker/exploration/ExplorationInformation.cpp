@@ -1,7 +1,6 @@
 #include "storm/modelchecker/exploration/ExplorationInformation.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/ExplorationSettings.h"
+#include "storm/environment/exploration/ExplorationEnvironment.h"
 
 #include "storm/utility/macros.h"
 
@@ -10,21 +9,20 @@ namespace modelchecker {
 namespace exploration_detail {
 
 template<typename StateType, typename ValueType>
-ExplorationInformation<StateType, ValueType>::ExplorationInformation(storm::OptimizationDirection const& direction, ActionType const& unexploredMarker)
+ExplorationInformation<StateType, ValueType>::ExplorationInformation(ExplorationEnvironment const& env, storm::OptimizationDirection const& direction,
+                                                                     ActionType const& unexploredMarker)
     : unexploredMarker(unexploredMarker),
       optimizationDirection(direction),
       localPrecomputation(false),
       numberOfExplorationStepsUntilPrecomputation(100000),
       numberOfSampledPathsUntilPrecomputation(),
-      nextStateHeuristic(storm::settings::modules::ExplorationSettings::NextStateHeuristic::DifferenceProbabilitySum) {
-    storm::settings::modules::ExplorationSettings const& settings = storm::settings::getModule<storm::settings::modules::ExplorationSettings>();
-    localPrecomputation = settings.isLocalPrecomputationSet();
-    numberOfExplorationStepsUntilPrecomputation = settings.getNumberOfExplorationStepsUntilPrecomputation();
-    if (settings.isNumberOfSampledPathsUntilPrecomputationSet()) {
-        numberOfSampledPathsUntilPrecomputation = settings.getNumberOfSampledPathsUntilPrecomputation();
+      nextStateHeuristic(storm::modelchecker::exploration_detail::NextStateHeuristic::DifferenceProbabilitySum) {
+    localPrecomputation = env.getPrecomputationType() == storm::modelchecker::exploration_detail::PrecomputationType::Local;
+    numberOfExplorationStepsUntilPrecomputation = env.getStepsUntilPrecomputation();
+    if (env.getSampledPathsUntilPrecomputation()) {
+        numberOfSampledPathsUntilPrecomputation = env.getSampledPathsUntilPrecomputation().get();
     }
-
-    nextStateHeuristic = settings.getNextStateHeuristic();
+    nextStateHeuristic = env.getNextStateHeuristic();
 }
 
 template<typename StateType, typename ValueType>
@@ -201,23 +199,23 @@ bool ExplorationInformation<StateType, ValueType>::useGlobalPrecomputation() con
 }
 
 template<typename StateType, typename ValueType>
-storm::settings::modules::ExplorationSettings::NextStateHeuristic const& ExplorationInformation<StateType, ValueType>::getNextStateHeuristic() const {
+storm::modelchecker::exploration_detail::NextStateHeuristic const& ExplorationInformation<StateType, ValueType>::getNextStateHeuristic() const {
     return nextStateHeuristic;
 }
 
 template<typename StateType, typename ValueType>
 bool ExplorationInformation<StateType, ValueType>::useDifferenceProbabilitySumHeuristic() const {
-    return nextStateHeuristic == storm::settings::modules::ExplorationSettings::NextStateHeuristic::DifferenceProbabilitySum;
+    return nextStateHeuristic == storm::modelchecker::exploration_detail::NextStateHeuristic::DifferenceProbabilitySum;
 }
 
 template<typename StateType, typename ValueType>
 bool ExplorationInformation<StateType, ValueType>::useProbabilityHeuristic() const {
-    return nextStateHeuristic == storm::settings::modules::ExplorationSettings::NextStateHeuristic::Probability;
+    return nextStateHeuristic == storm::modelchecker::exploration_detail::NextStateHeuristic::Probability;
 }
 
 template<typename StateType, typename ValueType>
 bool ExplorationInformation<StateType, ValueType>::useUniformHeuristic() const {
-    return nextStateHeuristic == storm::settings::modules::ExplorationSettings::NextStateHeuristic::Uniform;
+    return nextStateHeuristic == storm::modelchecker::exploration_detail::NextStateHeuristic::Uniform;
 }
 
 template<typename StateType, typename ValueType>

@@ -1,6 +1,7 @@
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
 #include "storm/adapters/IntervalAdapter.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -18,8 +19,6 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/multiplier/Multiplier.h"
@@ -66,7 +65,7 @@ std::map<storm::storage::sparse::state_type, SolutionType> SparseMdpPrctlHelper<
         // In case of cdf export we store the necessary data.
         std::vector<std::vector<ValueType>> cdfData;
 
-        storm::utility::ProgressMeasurement progress("epochs");
+        storm::utility::ProgressMeasurement progress("epochs", env.solver().getShowProgressDelay());
         progress.setMaxCount(epochOrder.size());
         progress.startNewMeasurement(0);
         uint64_t numCheckedEpochs = 0;
@@ -77,8 +76,7 @@ std::map<storm::storage::sparse::state_type, SolutionType> SparseMdpPrctlHelper<
             swCheck.start();
             rewardUnfolding.setSolutionForCurrentEpoch(epochModel.analyzeSingleObjective(preciseEnv, dir, x, b, minMaxSolver, lowerBound, upperBound));
             swCheck.stop();
-            if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet() &&
-                !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
+            if (env.modelchecker().isExportCdfSet() && !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
                 std::vector<ValueType> cdfEntry;
                 for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
                     uint64_t offset = rewardUnfolding.getDimension(i).boundType == helper::rewardbounded::DimensionBoundType::LowerBound ? 1 : 0;
@@ -102,14 +100,13 @@ std::map<storm::storage::sparse::state_type, SolutionType> SparseMdpPrctlHelper<
 
         swAll.stop();
 
-        if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet()) {
+        if (env.modelchecker().isExportCdfSet()) {
             std::vector<std::string> headers;
             for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
                 headers.push_back(rewardUnfolding.getDimension(i).formula->toString());
             }
             headers.push_back("Result");
-            storm::io::exportDataToCSVFile<ValueType, std::string, std::string>(
-                storm::settings::getModule<storm::settings::modules::IOSettings>().getExportCdfDirectory() + "cdf.csv", cdfData, headers);
+            storm::io::exportDataToCSVFile<ValueType, std::string, std::string>(env.modelchecker().getExportCdfDirectory() + "cdf.csv", cdfData, headers);
         }
 
         STORM_LOG_STATISTICS("---------------------------------\n");
@@ -1119,9 +1116,10 @@ QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewar
 
 template<typename ValueType, typename SolutionType>
 QualitativeStateSetsReachabilityRewards computeQualitativeStateSetsReachabilityRewards(
-    storm::solver::SolveGoal<ValueType, SolutionType> const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-    storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates,
-    std::function<storm::storage::BitVector()> const& zeroRewardStatesGetter, std::function<storm::storage::BitVector()> const& zeroRewardChoicesGetter) {
+    ModelCheckerEnvironment const& mcEnv, storm::solver::SolveGoal<ValueType, SolutionType> const& goal,
+    storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+    storm::storage::BitVector const& targetStates, std::function<storm::storage::BitVector()> const& zeroRewardStatesGetter,
+    std::function<storm::storage::BitVector()> const& zeroRewardChoicesGetter) {
     QualitativeStateSetsReachabilityRewards result;
     storm::storage::BitVector trueStates(transitionMatrix.getRowGroupCount(), true);
     if (goal.minimize()) {
@@ -1133,7 +1131,7 @@ QualitativeStateSetsReachabilityRewards computeQualitativeStateSetsReachabilityR
     }
     result.infinityStates.complement();
 
-    if (storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>().isFilterRewZeroSet()) {
+    if (mcEnv.isFilterRewZeroSet()) {
         if (goal.minimize()) {
             result.rewardZeroStates = storm::utility::graph::performProb1E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions,
                                                                            trueStates, targetStates, zeroRewardChoicesGetter());
@@ -1149,7 +1147,8 @@ QualitativeStateSetsReachabilityRewards computeQualitativeStateSetsReachabilityR
 }
 
 template<typename ValueType, typename SolutionType>
-QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewards(storm::solver::SolveGoal<ValueType, SolutionType> const& goal,
+QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewards(ModelCheckerEnvironment const& mcEnv,
+                                                                                   storm::solver::SolveGoal<ValueType, SolutionType> const& goal,
                                                                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                                    storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                                    storm::storage::BitVector const& targetStates, ModelCheckerHint const& hint,
@@ -1158,7 +1157,7 @@ QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewar
     if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
         return getQualitativeStateSetsReachabilityRewardsFromHint<ValueType>(hint, targetStates);
     } else {
-        return computeQualitativeStateSetsReachabilityRewards(goal, transitionMatrix, backwardTransitions, targetStates, zeroRewardStatesGetter,
+        return computeQualitativeStateSetsReachabilityRewards(mcEnv, goal, transitionMatrix, backwardTransitions, targetStates, zeroRewardStatesGetter,
                                                               zeroRewardChoicesGetter);
     }
 }
@@ -1355,7 +1354,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
     // Determine which states have a reward that is infinity or less than infinity.
     QualitativeStateSetsReachabilityRewards qualitativeStateSets = getQualitativeStateSetsReachabilityRewards(
-        goal, transitionMatrix, backwardTransitions, targetStates, hint, zeroRewardStatesGetter, zeroRewardChoicesGetter);
+        env.modelchecker(), goal, transitionMatrix, backwardTransitions, targetStates, hint, zeroRewardStatesGetter, zeroRewardChoicesGetter);
 
     STORM_LOG_INFO("Preprocessing: " << qualitativeStateSets.infinityStates.getNumberOfSetBits() << " states with reward infinity, "
                                      << qualitativeStateSets.rewardZeroStates.getNumberOfSetBits() << " states with reward zero ("

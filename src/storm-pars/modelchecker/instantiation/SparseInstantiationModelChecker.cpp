@@ -9,8 +9,8 @@ namespace storm {
 namespace modelchecker {
 
 template<typename SparseModelType, typename ConstantType>
-SparseInstantiationModelChecker<SparseModelType, ConstantType>::SparseInstantiationModelChecker(SparseModelType const& parametricModel)
-    : parametricModel(parametricModel), instantiationsAreGraphPreserving(false) {
+SparseInstantiationModelChecker<SparseModelType, ConstantType>::SparseInstantiationModelChecker(Environment const& env, SparseModelType const& parametricModel)
+    : env(env), parametricModel(parametricModel), instantiationsAreGraphPreserving(false) {
     // Intentionally left empty
 }
 

@@ -5,8 +5,6 @@
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/Model.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/dd/bisimulation/NondeterministicModelPartitionRefiner.h"
 #include "storm/storage/dd/bisimulation/PartialQuotientExtractor.h"
 #include "storm/storage/dd/bisimulation/Partition.h"
@@ -80,9 +78,8 @@ BisimulationDecomposition<DdType, ValueType, ExportValueType>::~BisimulationDeco
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 void BisimulationDecomposition<DdType, ValueType, ExportValueType>::initialize() {
-    auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-    verboseProgress = generalSettings.isVerboseSet();
-    showProgressDelay = generalSettings.getShowProgressDelay();
+    verboseProgress = bisimulationOptions.verbose;
+    showProgressDelay = bisimulationOptions.showProgressDelay;
 
     auto start = std::chrono::high_resolution_clock::now();
     this->refineWrtRewardModels();

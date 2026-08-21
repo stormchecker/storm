@@ -9,6 +9,7 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/transformer/NonMarkovianChainTransformer.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
@@ -366,7 +367,8 @@ template<typename ValueType, typename StateType>
 void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double approximationThreshold) {
     size_t nrExpandedStates = 0;
     size_t nrSkippedStates = 0;
-    storm::utility::ProgressMeasurement progress("explored states");
+    storm::utility::ProgressMeasurement progress("explored states",
+                                                 storm::settings::getModule<storm::settings::modules::GeneralSettings>().getShowProgressDelay());
     progress.startNewMeasurement(0);
     // TODO: do not empty queue every time but break before
     while (!explorationQueue.empty()) {

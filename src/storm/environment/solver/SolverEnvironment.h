@@ -63,6 +63,10 @@ class SolverEnvironment {
     void setForceExact(bool value);
     bool isDebugSet() const;
     void setDebug(bool value);
+    bool isVerboseSet() const;
+    void setVerbose(bool value);
+    uint64_t getShowProgressDelay() const;
+    void setShowProgressDelay(uint64_t delay);
 
     storm::solver::EquationSolverType const& getLinearEquationSolverType() const;
     void setLinearEquationSolverType(storm::solver::EquationSolverType const& value, bool isSetFromDefault = false);
@@ -99,5 +103,7 @@ class SolverEnvironment {
     bool forceSoundness;
     bool forceExact;
     bool debug;
+    bool verbose;
+    uint64_t showProgressDelay;
 };
 }  // namespace storm

@@ -9,6 +9,8 @@
 #include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -66,13 +68,13 @@ void RegionRefinementChecker<ParametricType>::specify(Environment const& env, st
 template<typename T>
 class PartitioningProgress {
    public:
-    PartitioningProgress(T const totalArea, T const coverageThreshold = storm::utility::zero<T>())
+    PartitioningProgress(T const totalArea, uint64_t delay, T const coverageThreshold = storm::utility::zero<T>())
         : totalArea(totalArea),
           coverageThreshold(coverageThreshold),
           fractionOfUndiscoveredArea(storm::utility::one<T>()),
           fractionOfAllSatArea(storm::utility::zero<T>()),
           fractionOfAllViolatedArea(storm::utility::zero<T>()),
-          progress("% covered area") {
+          progress("% covered area", delay) {
         progress.setMaxCount(100 - asPercentage(coverageThreshold));
         progress.startNewMeasurement(0u);
     }
@@ -125,7 +127,8 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
     STORM_LOG_INFO("Applying Region Partitioning on region: " << region.toString(true) << " .");
 
     auto progress = PartitioningProgress<CoefficientType>(
-        region.area(), storm::utility::convertNumber<CoefficientType>(coverageThreshold.value_or(storm::utility::zero<ParametricType>())));
+        region.area(), env.solver().getShowProgressDelay(),
+        storm::utility::convertNumber<CoefficientType>(coverageThreshold.value_or(storm::utility::zero<ParametricType>())));
 
     // Holds the initial region as well as all considered (sub)-regions and their annotations as a tree
     AnnotatedRegion<ParametricType> rootRegion(region);
@@ -212,7 +215,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
                                                                     storm::solver::OptimizationDirection const& dir,
                                                                     std::function<bool(CoefficientType, CoefficientType)> acceptGlobalBound,
                                                                     std::function<bool(CoefficientType)> rejectInstance) {
-    auto progress = PartitioningProgress<CoefficientType>(region.area());
+    auto progress = PartitioningProgress<CoefficientType>(region.area(), env.solver().getShowProgressDelay());
 
     // Holds the initial region as well as all considered (sub)-regions and their annotations as a tree
     AnnotatedRegion<ParametricType> rootRegion(region);

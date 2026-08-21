@@ -4,12 +4,9 @@
 #include <iostream>
 #include <random>
 
-#include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 
@@ -25,10 +22,8 @@ template<typename FunctionType, typename ConstantType>
 ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::doStep(
     VariableType<FunctionType> steppingParameter, std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>& position,
     const std::map<VariableType<FunctionType>, ConstantType>& gradient, uint64_t stepNum) {
-    const ConstantType precisionAsConstant =
-        utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-    const CoefficientType<FunctionType> precision =
-        storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    const ConstantType precisionAsConstant = utility::convertNumber<ConstantType>(this->env.modelTolerance());
+    const CoefficientType<FunctionType> precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(this->env.modelTolerance());
     CoefficientType<FunctionType> const oldPos = position[steppingParameter];
     ConstantType const oldPosAsConstant = utility::convertNumber<ConstantType>(position[steppingParameter]);
 
@@ -249,8 +244,7 @@ ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::s
         }
 
         ConstantType oldValue = currentValue;
-        CoefficientType<FunctionType> const precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(
-            storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+        CoefficientType<FunctionType> const precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(this->env.modelTolerance());
 
         // If nesterov is enabled, we need to compute the gradient on the predicted position
         std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> nesterovPredictedPosition(position);

@@ -273,6 +273,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinM
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
     }
     result->setRequirementsChecked(this->isRequirementsCheckedSet());
+    result->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
     return result;
 }
 
@@ -296,6 +297,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMax
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
     }
     result->setRequirementsChecked(this->isRequirementsCheckedSet());
+    result->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
     return result;
 }
 

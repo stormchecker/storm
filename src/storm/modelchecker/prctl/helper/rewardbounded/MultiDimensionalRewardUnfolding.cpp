@@ -12,8 +12,6 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/expressions/Expressions.h"
 
 #include "storm/transformer/EndComponentEliminator.h"
@@ -410,10 +408,8 @@ EpochModel<ValueType, SingleObjectiveMode>& MultiDimensionalRewardUnfolding<Valu
     if (!currentEpoch || !epochManager.compareEpochClass(epoch, currentEpoch.get())) {
         setCurrentEpochClass(epoch);
         epochModel.epochMatrixChanged = true;
-        if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-            if (storm::utility::graph::hasCycle(epochModel.epochMatrix)) {
-                std::cout << "Epoch model for epoch " << epochManager.toString(epoch) << " is cyclic.\n";
-            }
+        if (storm::utility::graph::hasCycle(epochModel.epochMatrix)) {
+            STORM_LOG_STATISTICS("Epoch model for epoch " << epochManager.toString(epoch) << " is cyclic.");
         }
     } else {
         epochModel.epochMatrixChanged = false;

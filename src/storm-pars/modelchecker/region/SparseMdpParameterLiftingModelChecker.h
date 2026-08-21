@@ -52,7 +52,8 @@ class SparseMdpParameterLiftingModelChecker : public SparseParameterLiftingModel
     virtual void specifyReachabilityRewardFormula(Environment const& env, CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) override;
     virtual void specifyCumulativeRewardFormula(const CheckTask<storm::logic::CumulativeRewardFormula, ConstantType>& checkTask) override;
 
-    virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationChecker(bool quantitative) override;
+    virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationChecker(Environment const& env,
+                                                                                                                         bool quantitative) override;
 
     virtual std::vector<ConstantType> computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                                 storm::solver::OptimizationDirection const& dirForParameters) override;

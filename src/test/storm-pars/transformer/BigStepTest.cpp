@@ -41,10 +41,11 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     storm::transformer::BigStep BigStep;
     auto timeTravelledDtmc = BigStep.bigStep(*dtmc, checkTask).first;
 
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> modelChecker(*dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> modelChecker(
+        storm::Environment(), *dtmc);
     modelChecker.specifyFormula(checkTask);
     storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> modelCheckerTT(
-        timeTravelledDtmc);
+        storm::Environment(), timeTravelledDtmc);
     modelCheckerTT.specifyFormula(checkTask);
 
     auto parameters = storm::models::sparse::getAllParameters(*dtmc);

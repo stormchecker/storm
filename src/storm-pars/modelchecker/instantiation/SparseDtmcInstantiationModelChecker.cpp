@@ -1,22 +1,22 @@
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
 namespace modelchecker {
 
 template<typename SparseModelType, typename ConstantType>
-SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>::SparseDtmcInstantiationModelChecker(SparseModelType const& parametricModel)
-    : SparseInstantiationModelChecker<SparseModelType, ConstantType>(parametricModel), modelInstantiator(parametricModel) {
+SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>::SparseDtmcInstantiationModelChecker(Environment const& env,
+                                                                                                        SparseModelType const& parametricModel)
+    : SparseInstantiationModelChecker<SparseModelType, ConstantType>(env, parametricModel), modelInstantiator(parametricModel) {
     // Intentionally left empty
 }
 
@@ -29,8 +29,7 @@ std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType
         STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::zero<ConstantType>()),
                         storm::exceptions::InvalidArgumentException, "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
     } else {
-        auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(generalSettings.getPrecision())),
+        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(env.modelTolerance())),
                         storm::exceptions::InvalidArgumentException, "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
     }
 
@@ -208,8 +207,7 @@ bool SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>::isWellD
     if (instantiatedModel.isExact()) {
         return instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::zero<ConstantType>());
     } else {
-        auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-        return instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(generalSettings.getPrecision()));
+        return instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(this->env.modelTolerance()));
     }
 }
 

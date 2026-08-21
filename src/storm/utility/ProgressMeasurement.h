@@ -20,8 +20,9 @@ class ProgressMeasurement {
     /*!
      * Initializes progress measurement.
      * @param itemName the name of what we are counting (iterations, states, ...).
+     * @param delay the minimal delay (in seconds) between two progress messages.
      */
-    ProgressMeasurement(std::string const& itemName = "items");
+    ProgressMeasurement(std::string const& itemName, uint64_t delay);
 
     /*!
      * Starts a new measurement, dropping all progress information collected so far.

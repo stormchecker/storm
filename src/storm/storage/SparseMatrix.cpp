@@ -13,6 +13,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/ConstantsComparator.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/permutation.h"
@@ -2263,6 +2264,9 @@ template<typename ValueType>
 bool SparseMatrix<ValueType>::isProbabilistic(ValueType const& tolerance, storm::OptionalRef<std::string> reason) const {
     using BaseType =
         std::conditional_t<std::is_same_v<ValueType, storm::RationalFunction>, storm::RationalFunctionCoefficient, storm::IntervalBaseType<ValueType>>;
+    if constexpr (storm::NumberTraits<ValueType>::IsExact) {
+        STORM_LOG_ASSERT(tolerance == storm::utility::zero<ValueType>(), "Exact value type requires zero tolerance for isProbabilistic.");
+    }
     auto toBaseType = [](ValueType const& value) {
         if constexpr (std::is_same_v<ValueType, BaseType>) {
             return value;

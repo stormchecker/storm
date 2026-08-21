@@ -18,7 +18,7 @@ namespace modelchecker {
 template<typename SparseModelType, typename ConstantType>
 class SparseMdpInstantiationModelChecker : public SparseInstantiationModelChecker<SparseModelType, ConstantType> {
    public:
-    SparseMdpInstantiationModelChecker(SparseModelType const& parametricModel, bool produceScheduler = true);
+    SparseMdpInstantiationModelChecker(Environment const& env, SparseModelType const& parametricModel, bool produceScheduler = true);
 
     virtual std::unique_ptr<CheckResult> check(Environment const& env,
                                                storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;

@@ -362,10 +362,10 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
 template<typename SparseModelType, typename ConstantType, bool Robust>
 storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>&
-SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::getInstantiationCheckerSAT(bool quantitative) {
+SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::getInstantiationCheckerSAT(Environment const& env, bool quantitative) {
     if (!instantiationCheckerSAT) {
         instantiationCheckerSAT =
-            std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
+            std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(env, *this->parametricModel);
         instantiationCheckerSAT->specifyFormula(quantitative ? *this->currentCheckTaskNoBound
                                                              : this->currentCheckTask->template convertValueType<ParametricType>());
         instantiationCheckerSAT->setInstantiationsAreGraphPreserving(true);
@@ -375,10 +375,10 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::g
 
 template<typename SparseModelType, typename ConstantType, bool Robust>
 storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>&
-SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::getInstantiationCheckerVIO(bool quantitative) {
+SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::getInstantiationCheckerVIO(Environment const& env, bool quantitative) {
     if (!instantiationCheckerVIO) {
         instantiationCheckerVIO =
-            std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
+            std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(env, *this->parametricModel);
         instantiationCheckerVIO->specifyFormula(quantitative ? *this->currentCheckTaskNoBound
                                                              : this->currentCheckTask->template convertValueType<ParametricType>());
         instantiationCheckerVIO->setInstantiationsAreGraphPreserving(true);
@@ -388,10 +388,10 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::g
 
 template<typename SparseModelType, typename ConstantType, bool Robust>
 storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>&
-SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::getInstantiationChecker(bool quantitative) {
+SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::getInstantiationChecker(Environment const& env, bool quantitative) {
     if (!instantiationChecker) {
         instantiationChecker =
-            std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
+            std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(env, *this->parametricModel);
         instantiationChecker->specifyFormula(quantitative ? *this->currentCheckTaskNoBound
                                                           : this->currentCheckTask->template convertValueType<ParametricType>());
         instantiationChecker->setInstantiationsAreGraphPreserving(true);
@@ -765,7 +765,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
         }
         case RegionSplitEstimateKind::Derivative: {
             storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<ParametricType>, ConstantType> instantiationModelChecker(
-                *this->parametricModel);
+                env, *this->parametricModel);
             instantiationModelChecker.specifyFormula(*this->currentCheckTaskNoBound);
 
             auto const center = region.getCenterPoint();

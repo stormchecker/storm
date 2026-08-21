@@ -18,7 +18,7 @@ namespace modelchecker {
 template<typename SparseModelType, typename ConstantType>
 class SparseInstantiationModelChecker {
    public:
-    SparseInstantiationModelChecker(SparseModelType const& parametricModel);
+    SparseInstantiationModelChecker(Environment const& env, SparseModelType const& parametricModel);
     virtual ~SparseInstantiationModelChecker() = default;
 
     void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);
@@ -45,6 +45,7 @@ class SparseInstantiationModelChecker {
     SparseModelType const& getOriginalModel() const;
 
    protected:
+    Environment const& env;
     SparseModelType const& parametricModel;
     std::unique_ptr<CheckTask<storm::logic::Formula, ConstantType>> currentCheckTask;
 

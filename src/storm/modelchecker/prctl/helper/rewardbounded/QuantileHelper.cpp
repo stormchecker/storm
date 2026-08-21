@@ -11,8 +11,6 @@
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -245,12 +243,10 @@ std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType
         }
         result.push_back(resultPoint);
     }
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        std::cout << "Number of checked epochs: " << numCheckedEpochs << '\n';
-        std::cout << "Number of required precision refinements: " << numPrecisionRefinements << '\n';
-        std::cout << "Time for epoch exploration: " << swExploration << " seconds.\n";
-        std::cout << "\tTime for epoch model analysis: " << swEpochAnalysis << " seconds.\n";
-    }
+    STORM_LOG_STATISTICS("Number of checked epochs: " << numCheckedEpochs);
+    STORM_LOG_STATISTICS("Number of required precision refinements: " << numPrecisionRefinements);
+    STORM_LOG_STATISTICS("Time for epoch exploration: " << swExploration << " seconds.");
+    STORM_LOG_STATISTICS("\tTime for epoch model analysis: " << swEpochAnalysis << " seconds.");
     return result;
 }
 

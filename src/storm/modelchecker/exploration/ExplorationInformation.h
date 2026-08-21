@@ -13,9 +13,12 @@
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/SparseMatrix.h"
 
-#include "storm/settings/modules/ExplorationSettings.h"
+#include "storm/modelchecker/exploration/ExplorationTypes.h"
 
 namespace storm {
+
+class ExplorationEnvironment;
+
 namespace modelchecker {
 namespace exploration_detail {
 template<typename StateType, typename ValueType>
@@ -27,7 +30,8 @@ class ExplorationInformation {
     typedef typename IdToStateMap::const_iterator const_iterator;
     typedef std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> MatrixType;
 
-    ExplorationInformation(storm::OptimizationDirection const& direction, ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max());
+    ExplorationInformation(ExplorationEnvironment const& env, storm::OptimizationDirection const& direction,
+                           ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max());
 
     const_iterator findUnexploredState(StateType const& state) const;
 
@@ -91,7 +95,7 @@ class ExplorationInformation {
 
     bool useGlobalPrecomputation() const;
 
-    storm::settings::modules::ExplorationSettings::NextStateHeuristic const& getNextStateHeuristic() const;
+    storm::modelchecker::exploration_detail::NextStateHeuristic const& getNextStateHeuristic() const;
 
     bool useDifferenceProbabilitySumHeuristic() const;
 
@@ -118,7 +122,7 @@ class ExplorationInformation {
     std::size_t numberOfExplorationStepsUntilPrecomputation;
     boost::optional<std::size_t> numberOfSampledPathsUntilPrecomputation;
 
-    storm::settings::modules::ExplorationSettings::NextStateHeuristic nextStateHeuristic;
+    storm::modelchecker::exploration_detail::NextStateHeuristic nextStateHeuristic;
 };
 }  // namespace exploration_detail
 }  // namespace modelchecker

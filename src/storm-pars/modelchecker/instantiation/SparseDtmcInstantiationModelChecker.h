@@ -17,7 +17,7 @@ namespace modelchecker {
 template<typename SparseModelType, typename ConstantType>
 class SparseDtmcInstantiationModelChecker : public SparseInstantiationModelChecker<SparseModelType, ConstantType> {
    public:
-    SparseDtmcInstantiationModelChecker(SparseModelType const& parametricModel);
+    SparseDtmcInstantiationModelChecker(Environment const& env, SparseModelType const& parametricModel);
 
     virtual std::unique_ptr<CheckResult> check(Environment const& env,
                                                storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;

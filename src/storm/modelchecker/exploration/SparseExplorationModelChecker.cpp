@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+#include "storm/environment/Environment.h"
+#include "storm/environment/exploration/ExplorationEnvironment.h"
 #include "storm/modelchecker/exploration/Bounds.h"
 #include "storm/modelchecker/exploration/ExplorationInformation.h"
 #include "storm/modelchecker/exploration/StateGeneration.h"
@@ -24,9 +26,6 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/ExplorationSettings.h"
-
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -39,10 +38,10 @@ namespace storm {
 namespace modelchecker {
 
 template<typename ModelType, typename StateType>
-SparseExplorationModelChecker<ModelType, StateType>::SparseExplorationModelChecker(storm::prism::Program const& program)
+SparseExplorationModelChecker<ModelType, StateType>::SparseExplorationModelChecker(storm::Environment const& env, storm::prism::Program const& program)
     : program(program.substituteConstantsFormulas()),
       randomGenerator(std::chrono::system_clock::now().time_since_epoch().count()),
-      comparator(storm::settings::getModule<storm::settings::modules::ExplorationSettings>().getPrecision()) {
+      comparator(env.exploration().getPrecision()) {
     // Intentionally left empty.
 }
 
@@ -67,8 +66,8 @@ std::unique_ptr<CheckResult> SparseExplorationModelChecker<ModelType, StateType>
     STORM_LOG_THROW(program.isDeterministicModel() || checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "For nondeterministic systems, an optimization direction (min/max) must be given in the property.");
 
-    ExplorationInformation<StateType, ValueType> explorationInformation(checkTask.isOptimizationDirectionSet() ? checkTask.getOptimizationDirection()
-                                                                                                               : storm::OptimizationDirection::Maximize);
+    ExplorationInformation<StateType, ValueType> explorationInformation(
+        env.exploration(), checkTask.isOptimizationDirectionSet() ? checkTask.getOptimizationDirection() : storm::OptimizationDirection::Maximize);
 
     // The first row group starts at action 0.
     explorationInformation.newRowGroup(0);

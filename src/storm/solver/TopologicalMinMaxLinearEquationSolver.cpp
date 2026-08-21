@@ -117,7 +117,7 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
         storm::storage::BitVector sccRowGroupsAsBitVector(x.size(), false);
         storm::storage::BitVector sccRowsAsBitVector(b.size(), false);
         uint64_t sccIndex = 0;
-        storm::utility::ProgressMeasurement progress("states");
+        storm::utility::ProgressMeasurement progress("states", env.solver().getShowProgressDelay());
         progress.setMaxCount(x.size());
         progress.startNewMeasurement(0);
         for (auto const& scc : *this->sortedSccDecomposition) {

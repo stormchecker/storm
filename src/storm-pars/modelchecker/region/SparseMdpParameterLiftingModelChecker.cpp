@@ -295,9 +295,10 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
 
 template<typename SparseModelType, typename ConstantType>
 storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>&
-SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationChecker(bool quantitative) {
+SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationChecker(Environment const& env, bool quantitative) {
     if (!instantiationChecker) {
-        instantiationChecker = std::make_unique<storm::modelchecker::SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
+        instantiationChecker =
+            std::make_unique<storm::modelchecker::SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>>(env, *this->parametricModel);
         instantiationChecker->specifyFormula(quantitative ? *this->currentCheckTaskNoBound
                                                           : this->currentCheckTask->template convertValueType<ParametricType>());
         instantiationChecker->setInstantiationsAreGraphPreserving(true);

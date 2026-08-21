@@ -1,5 +1,6 @@
 #include "storm/modelchecker/multiobjective/pcaa/RewardBoundedMdpPcaaWeightVectorChecker.h"
 
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -9,7 +10,6 @@
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/utility/ProgressMeasurement.h"
@@ -88,14 +88,13 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
     Environment newEnv = env;
     newEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(epochPrecision));
     newEnv.solver().setLinearEquationSolverPrecision(storm::utility::convertNumber<storm::RationalNumber>(epochPrecision));
-    storm::utility::ProgressMeasurement progress("epochs");
+    storm::utility::ProgressMeasurement progress("epochs", env.solver().getShowProgressDelay());
     progress.setMaxCount(epochOrder.size());
     progress.startNewMeasurement(0);
     uint64_t numCheckedEpochs = 0;
     for (auto const& epoch : epochOrder) {
         computeEpochSolution(newEnv, epoch, weightVector, cachedData);
-        if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet() &&
-            !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
+        if (env.modelchecker().isExportCdfSet() && !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
             std::vector<ValueType> cdfEntry;
             for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
                 uint64_t offset = rewardUnfolding.getDimension(i).boundType == helper::rewardbounded::DimensionBoundType::LowerBound ? 1 : 0;
@@ -115,7 +114,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
         }
     }
 
-    if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet()) {
+    if (env.modelchecker().isExportCdfSet()) {
         std::vector<std::string> headers;
         for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
             headers.push_back("obj" + std::to_string(rewardUnfolding.getDimension(i).objectiveIndex) + ":" +
@@ -125,8 +124,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
             headers.push_back("obj" + std::to_string(i));
         }
         storm::io::exportDataToCSVFile<ValueType, ValueType, std::string>(
-            storm::settings::getModule<storm::settings::modules::IOSettings>().getExportCdfDirectory() + "cdf" + std::to_string(numChecks) + ".csv", cdfData,
-            weightVector, headers);
+            env.modelchecker().getExportCdfDirectory() + "cdf" + std::to_string(numChecks) + ".csv", cdfData, weightVector, headers);
     }
     auto solution = rewardUnfolding.getInitialStateResult(initEpoch);
     ValueType const precisionOffset = env.solver().isForceExact() ? storm::utility::zero<ValueType>() : globalPrecision;

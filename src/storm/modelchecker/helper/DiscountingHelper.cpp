@@ -12,7 +12,6 @@ namespace helper {
 template<typename ValueType, bool TrivialRowGrouping>
 DiscountingHelper<ValueType, TrivialRowGrouping>::DiscountingHelper(storm::storage::SparseMatrix<ValueType> const& A, ValueType discountFactor)
     : localA(nullptr), A(&A), discountFactor(discountFactor) {
-    progressMeasurement = storm::utility::ProgressMeasurement("iterations");
     storm::storage::SparseMatrix<ValueType> discountedMatrix(A);
     discountedMatrix.scaleRowsInPlace(std::vector<ValueType>(discountedMatrix.getRowCount(), discountFactor));
     discountedA = discountedMatrix;
@@ -22,7 +21,6 @@ template<typename ValueType, bool TrivialRowGrouping>
 DiscountingHelper<ValueType, TrivialRowGrouping>::DiscountingHelper(storm::storage::SparseMatrix<ValueType> const& A, ValueType discountFactor,
                                                                     bool trackScheduler)
     : localA(nullptr), A(&A), discountFactor(discountFactor), trackScheduler(trackScheduler) {
-    progressMeasurement = storm::utility::ProgressMeasurement("iterations");
     storm::storage::SparseMatrix<ValueType> discountedMatrix(A);
     discountedMatrix.scaleRowsInPlace(std::vector<ValueType>(discountedMatrix.getRowCount(), discountFactor));
     discountedA = discountedMatrix;
@@ -56,6 +54,7 @@ bool DiscountingHelper<ValueType, TrivialRowGrouping>::solveWithDiscountedValueI
             maximalAbsoluteReward = storm::utility::abs(entry);
         }
     }
+    progressMeasurement = storm::utility::ProgressMeasurement("iterations", env.solver().getShowProgressDelay());
     progressMeasurement->startNewMeasurement(0);
     auto status = viHelper.DiscountedVI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                         storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), discountFactor, maximalAbsoluteReward,

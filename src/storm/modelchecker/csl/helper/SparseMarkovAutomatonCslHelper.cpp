@@ -155,7 +155,7 @@ class UnifPlusHelper {
         std::vector<ValueType> eqSysRhs(probabilisticToProbabilisticTransitions.getRowCount());
 
         // Start the outer iterations which increase the uniformization rate until lower and upper bound on the result vector is sufficiently small
-        storm::utility::ProgressMeasurement progressIterations("iterations");
+        storm::utility::ProgressMeasurement progressIterations("iterations", env.solver().getShowProgressDelay());
         uint64_t iteration = 0;
         progressIterations.startNewMeasurement(iteration);
         bool converged = false;
@@ -178,8 +178,9 @@ class UnifPlusHelper {
             for (bool computeLowerBound : {false, true}) {
                 auto& maybeStatesValues = computeLowerBound ? maybeStatesValuesLower : maybeStatesValuesWeightedUpper;
                 ValueType targetValue = computeLowerBound ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>();
-                storm::utility::ProgressMeasurement progressSteps("steps in iteration " + std::to_string(iteration) + " for " +
-                                                                  std::string(computeLowerBound ? "lower" : "upper") + " bounds.");
+                storm::utility::ProgressMeasurement progressSteps(
+                    "steps in iteration " + std::to_string(iteration) + " for " + std::string(computeLowerBound ? "lower" : "upper") + " bounds.",
+                    env.solver().getShowProgressDelay());
                 progressSteps.setMaxCount(N);
                 progressSteps.startNewMeasurement(0);
                 bool firstIteration = true;  // The first iterations can be irrelevant, because they will only produce zeroes anyway.

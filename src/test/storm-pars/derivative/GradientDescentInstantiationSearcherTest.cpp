@@ -122,7 +122,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Simple) {
 
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
 
-    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> checker(*dtmc);
+    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> checker(this->env(), *dtmc);
     std::shared_ptr<storm::logic::Formula> formulaWithoutBounds = formulas[0]->clone();
     std::shared_ptr<storm::logic::Formula const> formulaNoBound = formulaWithoutBounds->asSharedPointer();
     std::shared_ptr<FeasibilitySynthesisTask> t = std::make_shared<FeasibilitySynthesisTask>(formulaNoBound);
@@ -164,7 +164,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     // First, test an ADAM instance. We will check that we have implemented ADAM correctly by comparing our results to results gathered by an ADAM
     // implementation in tensorflow :)
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> adamChecker(
-        *dtmc, storm::derivative::GradientDescentMethod::ADAM, 0.01, 0.9, 0.999, 2, 1e-6, std::nullopt,
+        this->env(), *dtmc, storm::derivative::GradientDescentMethod::ADAM, 0.01, 0.9, 0.999, 2, 1e-6, std::nullopt,
         storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, std::nullopt, true);
     adamChecker.setup(this->env(), feasibilityTask);
     auto doubleInstantiation = adamChecker.gradientDescent();
@@ -275,7 +275,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
 
     // Same thing with RAdam
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> radamChecker(
-        *dtmc, storm::derivative::GradientDescentMethod::RADAM, 0.01, 0.9, 0.999, 2, 1e-6, std::nullopt,
+        this->env(), *dtmc, storm::derivative::GradientDescentMethod::RADAM, 0.01, 0.9, 0.999, 2, 1e-6, std::nullopt,
         storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, std::nullopt, true);
     radamChecker.setup(this->env(), feasibilityTask);
     auto radamInstantiation = radamChecker.gradientDescent();
@@ -372,7 +372,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
 
     // Same thing with momentum
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> momentumChecker(
-        *dtmc, storm::derivative::GradientDescentMethod::MOMENTUM, 0.001, 0.9, 0.999, 2, 1e-6, std::nullopt,
+        this->env(), *dtmc, storm::derivative::GradientDescentMethod::MOMENTUM, 0.001, 0.9, 0.999, 2, 1e-6, std::nullopt,
         storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, std::nullopt, true);
     momentumChecker.setup(this->env(), feasibilityTask);
     auto momentumInstantiation = momentumChecker.gradientDescent();
@@ -400,7 +400,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
 
     // Same thing with nesterov
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> nesterovChecker(
-        *dtmc, storm::derivative::GradientDescentMethod::NESTEROV, 0.001, 0.9, 0.999, 2, 1e-6, std::nullopt,
+        this->env(), *dtmc, storm::derivative::GradientDescentMethod::NESTEROV, 0.001, 0.9, 0.999, 2, 1e-6, std::nullopt,
         storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, std::nullopt, true);
     nesterovChecker.setup(this->env(), feasibilityTask);
     auto nesterovInstantiation = nesterovChecker.gradientDescent();

@@ -94,21 +94,29 @@ std::unique_ptr<LinearEquationSolver<storm::RationalNumber>> GeneralLinearEquati
         type = EquationSolverType::Eigen;
     }
 
+    std::unique_ptr<LinearEquationSolver<storm::RationalNumber>> result;
     switch (type) {
         case EquationSolverType::Native:
-            return std::make_unique<NativeLinearEquationSolver<storm::RationalNumber>>();
+            result = std::make_unique<NativeLinearEquationSolver<storm::RationalNumber>>();
+            break;
         case EquationSolverType::Eigen:
-            return std::make_unique<EigenLinearEquationSolver<storm::RationalNumber>>();
+            result = std::make_unique<EigenLinearEquationSolver<storm::RationalNumber>>();
+            break;
         case EquationSolverType::Elimination:
-            return std::make_unique<EliminationLinearEquationSolver<storm::RationalNumber>>();
+            result = std::make_unique<EliminationLinearEquationSolver<storm::RationalNumber>>();
+            break;
         case EquationSolverType::Topological:
-            return std::make_unique<TopologicalLinearEquationSolver<storm::RationalNumber>>();
+            result = std::make_unique<TopologicalLinearEquationSolver<storm::RationalNumber>>();
+            break;
         case EquationSolverType::Acyclic:
-            return std::make_unique<AcyclicLinearEquationSolver<storm::RationalNumber>>();
+            result = std::make_unique<AcyclicLinearEquationSolver<storm::RationalNumber>>();
+            break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unknown solver type.");
             return nullptr;
     }
+    result->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
+    return result;
 }
 
 template<>
@@ -129,19 +137,26 @@ std::unique_ptr<LinearEquationSolver<storm::RationalFunction>> GeneralLinearEqua
         type = EquationSolverType::Eigen;
     }
 
+    std::unique_ptr<LinearEquationSolver<storm::RationalFunction>> result;
     switch (type) {
         case EquationSolverType::Eigen:
-            return std::make_unique<EigenLinearEquationSolver<storm::RationalFunction>>();
+            result = std::make_unique<EigenLinearEquationSolver<storm::RationalFunction>>();
+            break;
         case EquationSolverType::Elimination:
-            return std::make_unique<EliminationLinearEquationSolver<storm::RationalFunction>>();
+            result = std::make_unique<EliminationLinearEquationSolver<storm::RationalFunction>>();
+            break;
         case EquationSolverType::Topological:
-            return std::make_unique<TopologicalLinearEquationSolver<storm::RationalFunction>>();
+            result = std::make_unique<TopologicalLinearEquationSolver<storm::RationalFunction>>();
+            break;
         case EquationSolverType::Acyclic:
-            return std::make_unique<AcyclicLinearEquationSolver<storm::RationalFunction>>();
+            result = std::make_unique<AcyclicLinearEquationSolver<storm::RationalFunction>>();
+            break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unknown solver type.");
             return nullptr;
     }
+    result->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
+    return result;
 }
 
 template<typename ValueType>
@@ -175,23 +190,32 @@ std::unique_ptr<LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFact
         }
     }
 
+    std::unique_ptr<LinearEquationSolver<ValueType>> result;
     switch (type) {
         case EquationSolverType::Gmmxx:
-            return std::make_unique<GmmxxLinearEquationSolver<ValueType>>();
+            result = std::make_unique<GmmxxLinearEquationSolver<ValueType>>();
+            break;
         case EquationSolverType::Native:
-            return std::make_unique<NativeLinearEquationSolver<ValueType>>();
+            result = std::make_unique<NativeLinearEquationSolver<ValueType>>();
+            break;
         case EquationSolverType::Eigen:
-            return std::make_unique<EigenLinearEquationSolver<ValueType>>();
+            result = std::make_unique<EigenLinearEquationSolver<ValueType>>();
+            break;
         case EquationSolverType::Elimination:
-            return std::make_unique<EliminationLinearEquationSolver<ValueType>>();
+            result = std::make_unique<EliminationLinearEquationSolver<ValueType>>();
+            break;
         case EquationSolverType::Topological:
-            return std::make_unique<TopologicalLinearEquationSolver<ValueType>>();
+            result = std::make_unique<TopologicalLinearEquationSolver<ValueType>>();
+            break;
         case EquationSolverType::Acyclic:
-            return std::make_unique<AcyclicLinearEquationSolver<ValueType>>();
+            result = std::make_unique<AcyclicLinearEquationSolver<ValueType>>();
+            break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unknown solver type.");
             return nullptr;
     }
+    result->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
+    return result;
 }
 
 template<typename ValueType>

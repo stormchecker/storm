@@ -20,11 +20,22 @@ ModelCheckerEnvironment::ModelCheckerEnvironment() {
     }
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     steadyStateDistributionAlgorithm = ioSettings.getSteadyStateDistributionAlgorithm();
+
+    filterRewZero = mcSettings.isFilterRewZeroSet();
+
+    exportCdfEnabled = ioSettings.isExportCdfSet();
+    if (exportCdfEnabled) {
+        exportCdfDirectory = ioSettings.getExportCdfDirectory();
+    }
 }
 
 ModelCheckerEnvironment::~ModelCheckerEnvironment() {
     // Intentionally left empty
 }
+
+ModelCheckerEnvironment::ModelCheckerEnvironment(ModelCheckerEnvironment const& other) = default;
+
+ModelCheckerEnvironment& ModelCheckerEnvironment::operator=(ModelCheckerEnvironment const& other) = default;
 
 ConditionalModelCheckerEnvironment& ModelCheckerEnvironment::conditional() {
     return conditionalModelCheckerEnvironment.get();
@@ -64,6 +75,30 @@ void ModelCheckerEnvironment::setLtl2daTool(std::string const& value) {
 
 void ModelCheckerEnvironment::unsetLtl2daTool() {
     ltl2daTool = boost::none;
+}
+
+bool ModelCheckerEnvironment::isFilterRewZeroSet() const {
+    return filterRewZero;
+}
+
+void ModelCheckerEnvironment::setFilterRewZero(bool value) {
+    filterRewZero = value;
+}
+
+bool ModelCheckerEnvironment::isExportCdfSet() const {
+    return exportCdfEnabled;
+}
+
+void ModelCheckerEnvironment::setExportCdf(bool value) {
+    exportCdfEnabled = value;
+}
+
+std::string const& ModelCheckerEnvironment::getExportCdfDirectory() const {
+    return exportCdfDirectory;
+}
+
+void ModelCheckerEnvironment::setExportCdfDirectory(std::string const& value) {
+    exportCdfDirectory = value;
 }
 
 }  // namespace storm

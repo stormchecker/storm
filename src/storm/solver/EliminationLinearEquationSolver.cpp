@@ -111,7 +111,9 @@ uint64_t EliminationLinearEquationSolver<ValueType>::getMatrixColumnCount() cons
 
 template<typename ValueType>
 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EliminationLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
-    return std::make_unique<storm::solver::EliminationLinearEquationSolver<ValueType>>();
+    auto solver = std::make_unique<storm::solver::EliminationLinearEquationSolver<ValueType>>();
+    solver->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
+    return solver;
 }
 
 template<typename ValueType>

@@ -37,7 +37,7 @@ std::unique_ptr<modelchecker::ExplicitQuantitativeCheckResult<ConstantType>> Spa
     boost::optional<std::vector<ConstantType>> const& valueVector) {
     std::vector<ConstantType> reachabilityProbabilities;
     if (!valueVector.is_initialized()) {
-        storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<FunctionType>, ConstantType> instantiationModelChecker(model);
+        storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<FunctionType>, ConstantType> instantiationModelChecker(env, model);
         instantiationModelChecker.specifyFormula(*currentCheckTask);
         std::unique_ptr<storm::modelchecker::CheckResult> result = instantiationModelChecker.check(env, valuation);
         reachabilityProbabilities = result->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();

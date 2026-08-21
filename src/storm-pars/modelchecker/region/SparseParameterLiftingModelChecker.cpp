@@ -100,17 +100,18 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
     if (hypothesis == RegionResultHypothesis::Unknown &&
         (result == RegionResult::Unknown || result == RegionResult::ExistsIllDefined || result == RegionResult::CenterIllDefined)) {
         auto const center = region.region.getCenterPoint();
-        if (getInstantiationChecker(false).isWellDefined(center)) {
-            result = getInstantiationChecker(false).check(env, center)->template asExplicitQualitativeCheckResult<ConstantType>()[getUniqueInitialState()]
+        if (getInstantiationChecker(env, false).isWellDefined(center)) {
+            result = getInstantiationChecker(env, false).check(env, center)->template asExplicitQualitativeCheckResult<ConstantType>()[getUniqueInitialState()]
                          ? RegionResult::CenterSat
                          : RegionResult::CenterViolated;
         } else {
             auto const lowerCorner = region.region.getLowerBoundaries();
-            if (getInstantiationChecker(false).isWellDefined(lowerCorner)) {
-                result =
-                    getInstantiationChecker(false).check(env, lowerCorner)->template asExplicitQualitativeCheckResult<ConstantType>()[getUniqueInitialState()]
-                        ? RegionResult::ExistsSat
-                        : RegionResult::ExistsViolated;
+            if (getInstantiationChecker(env, false).isWellDefined(lowerCorner)) {
+                result = getInstantiationChecker(env, false)
+                                 .check(env, lowerCorner)
+                                 ->template asExplicitQualitativeCheckResult<ConstantType>()[getUniqueInitialState()]
+                             ? RegionResult::ExistsSat
+                             : RegionResult::ExistsViolated;
             } else {
                 result = RegionResult::CenterIllDefined;
             }
@@ -143,7 +144,7 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
             globalMonotonicity.has_value() && globalMonotonicity->isDone() && globalMonotonicity->isAllMonotonicity()) {
             auto const valuation = getOptimalValuationForMonotonicity(region.region, globalMonotonicity->getMonotonicityResult(), dirToCheck);
             STORM_LOG_ASSERT(valuation.size() == region.region.getVariables().size(), "Not all parameters seem to be monotonic.");
-            auto& checker = existsSat ? getInstantiationCheckerSAT(false) : getInstantiationCheckerVIO(false);
+            auto& checker = existsSat ? getInstantiationCheckerSAT(env, false) : getInstantiationCheckerVIO(env, false);
             bool const monCheckResult = checker.check(env, valuation)->template asExplicitQualitativeCheckResult<ConstantType>()[getUniqueInitialState()];
             if (existsSat == monCheckResult) {
                 result = existsSat ? RegionResult::AllSat : RegionResult::AllViolated;
@@ -197,7 +198,7 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
     auto vertices = region.getVerticesOfRegion(region.getVariables());
     auto vertexIt = vertices.begin();
     while (vertexIt != vertices.end() && !(hasSatPoint && hasViolatedPoint)) {
-        if (getInstantiationChecker(false).check(env, *vertexIt)->template asExplicitQualitativeCheckResult<ConstantType>()[getUniqueInitialState()]) {
+        if (getInstantiationChecker(env, false).check(env, *vertexIt)->template asExplicitQualitativeCheckResult<ConstantType>()[getUniqueInitialState()]) {
             hasSatPoint = true;
         } else {
             hasViolatedPoint = true;
@@ -253,14 +254,14 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getBoundAtIni
 
 template<typename SparseModelType, typename ConstantType>
 storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>&
-SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationCheckerSAT(bool quantitative) {
-    return getInstantiationChecker(quantitative);
+SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationCheckerSAT(Environment const& env, bool quantitative) {
+    return getInstantiationChecker(env, quantitative);
 }
 
 template<typename SparseModelType, typename ConstantType>
 storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>&
-SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationCheckerVIO(bool quantitative) {
-    return getInstantiationChecker(quantitative);
+SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationCheckerVIO(Environment const& env, bool quantitative) {
+    return getInstantiationChecker(env, quantitative);
 }
 
 template<typename SparseModelType, typename ConstantType>
@@ -317,7 +318,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getAndEvaluat
     for (auto const& var : region.region.getVariables()) {
         point.emplace(var, region.region.getCenter(var));  // does not overwrite existing values
     }
-    auto value = getInstantiationChecker(true).check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[getUniqueInitialState()];
+    auto value = getInstantiationChecker(env, true).check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[getUniqueInitialState()];
 
     return std::make_pair(storm::utility::convertNumber<CoefficientType>(value), std::move(point));
 }
