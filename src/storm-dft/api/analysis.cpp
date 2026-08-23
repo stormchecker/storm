@@ -1,25 +1,45 @@
-#include "storm-dft/api/storm-dft.h"
+#include "analysis.h"
 
 #include <memory>
 #include <vector>
 
-#include "storm-conv/api/storm-conv.h"
-#include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/modelchecker/DftModularizationChecker.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
-#include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm-dft/storage/DFT.h"
-#include "storm-dft/storage/DftJsonExporter.h"
 #include "storm-dft/storage/SylvanBddManager.h"
-#include "storm-dft/transformations/SftToBddTransformator.h"
+#include "storm-dft/utility/FDEPConflictFinder.h"
+#include "storm-dft/utility/FailureBoundFinder.h"
 #include "storm-dft/utility/MTTFHelper.h"
-
-#include "storm/environment/Environment.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::dft {
 namespace api {
+
+storm::dft::utility::RelevantEvents computeRelevantEvents(std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
+                                                          std::vector<std::string> const& additionalRelevantEventNames) {
+    storm::dft::utility::RelevantEvents events(additionalRelevantEventNames.begin(), additionalRelevantEventNames.end());
+    events.insertNamesFromProperties(properties.begin(), properties.end());
+    return events;
+}
+
+template<typename ValueType>
+typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFT(
+    storm::dft::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred,
+    bool allowModularisation, storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError,
+    storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior,
+    bool printOutput) {
+    storm::dft::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
+    typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results results =
+        modelChecker.check(dft, properties, symred, allowModularisation, relevantEvents, allowDCForRelevant, approximationError, approximationHeuristic,
+                           eliminateChains, labelBehavior);
+    if (printOutput) {
+        modelChecker.printTimings();
+        modelChecker.printResults(results);
+    }
+    return results;
+}
 
 template<>
 void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<double>> const& dft, bool const exportToDot, std::string const& filename, bool const calculateMttf,
@@ -178,30 +198,6 @@ void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunct
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BDD analysis is not supported for this data type.");
 }
 
-template<typename ValueType>
-void exportDFTToJsonFile(storm::dft::storage::DFT<ValueType> const& dft, std::string const& file) {
-    storm::dft::storage::DftJsonExporter<ValueType>::toFile(dft, file);
-}
-
-template<typename ValueType>
-std::string exportDFTToJsonString(storm::dft::storage::DFT<ValueType> const& dft) {
-    std::stringstream stream;
-    storm::dft::storage::DftJsonExporter<ValueType>::toStream(dft, stream);
-    return stream.str();
-}
-
-template<>
-void exportDFTToSMT(storm::dft::storage::DFT<double> const& dft, std::string const& file) {
-    storm::dft::modelchecker::DFTASFChecker asfChecker(dft);
-    asfChecker.convert();
-    asfChecker.toFile(file);
-}
-
-template<>
-void exportDFTToSMT(storm::dft::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to SMT does not support this data type.");
-}
-
 template<>
 void analyzeDFTSMT(storm::dft::storage::DFT<double> const& dft, bool printOutput) {
     uint64_t solverTimeout = 10;
@@ -219,71 +215,51 @@ void analyzeDFTSMT(storm::dft::storage::DFT<storm::RationalFunction> const& dft,
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Analysis by SMT not supported for this data type.");
 }
 
-template<>
-std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::dft::storage::DFT<double> const& dft) {
-    storm::dft::settings::modules::FaultTreeSettings const& ftSettings = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>();
-    storm::dft::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::dft::settings::modules::DftGspnSettings>();
+template<typename ValueType>
+std::pair<uint64_t, uint64_t> computeBEFailureBounds(storm::dft::storage::DFT<ValueType> const& dft, bool useSMT, double solverTimeout) {
+    uint64_t lowerBEBound = storm::dft::utility::FailureBoundFinder::getLeastFailureBound(dft, useSMT, solverTimeout);
+    uint64_t upperBEBound = storm::dft::utility::FailureBoundFinder::getAlwaysFailedBound(dft, useSMT, solverTimeout);
+    return std::make_pair(lowerBEBound, upperBEBound);
+}
 
-    // Set Don't Care elements
-    std::set<uint64_t> dontCareElements;
-    if (!ftSettings.isDisableDC()) {
-        // Insert all elements as Don't Care elements
-        for (std::size_t i = 0; i < dft.nrElements(); i++) {
-            dontCareElements.insert(dft.getElement(i)->id());
+template<typename ValueType>
+bool computeDependencyConflicts(storm::dft::storage::DFT<ValueType>& dft, bool useSMT, double solverTimeout) {
+    std::vector<std::pair<uint64_t, uint64_t>> fdepConflicts =
+        storm::dft::utility::FDEPConflictFinder<ValueType>::getDependencyConflicts(dft, useSMT, solverTimeout);
+
+    for (auto const& pair : fdepConflicts) {
+        STORM_LOG_DEBUG("Conflict between " << dft.getElement(pair.first)->name() << " and " << dft.getElement(pair.second)->name());
+    }
+
+    // Set the conflict map of the dft
+    std::set<size_t> conflict_set;
+    for (auto const& conflict : fdepConflicts) {
+        conflict_set.insert(size_t(conflict.first));
+        conflict_set.insert(size_t(conflict.second));
+    }
+    for (size_t depId : dft.getDependencies()) {
+        if (!conflict_set.count(depId)) {
+            dft.setDependencyNotInConflict(depId);
         }
     }
-
-    // Transform to GSPN
-    storm::dft::transformations::DftToGspnTransformator<double> gspnTransformator(dft);
-    auto priorities = gspnTransformator.computePriorities(dftGspnSettings.isExtendPriorities());
-    gspnTransformator.transform(priorities, dontCareElements, !dftGspnSettings.isDisableSmartTransformation(), dftGspnSettings.isMergeDCFailed(),
-                                dftGspnSettings.isExtendPriorities());
-    std::shared_ptr<storm::gspn::GSPN> gspn(gspnTransformator.obtainGSPN());
-    return std::make_pair(gspn, gspnTransformator.toplevelFailedPlaceId());
-}
-
-template<>
-std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::dft::storage::DFT<storm::RationalFunction> const& dft) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation to GSPN not supported for this data type.");
-}
-
-std::shared_ptr<storm::jani::Model> transformToJani(storm::gspn::GSPN const& gspn, uint64_t toplevelFailedPlace) {
-    // Build Jani model
-    storm::builder::JaniGSPNBuilder builder(gspn);
-    std::shared_ptr<storm::jani::Model> model(builder.build("dft_gspn"));
-
-    // Build properties
-    std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = gspn.getExpressionManager();
-    storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
-    storm::expressions::Expression targetExpression = exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression();
-    // Add variable for easier access to 'failed' state
-    builder.addTransientVariable(model.get(), "failed", targetExpression);
-    auto failedFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(targetExpression);
-    auto properties = builder.getStandardProperties(model.get(), failedFormula, "Failed", "a failed state", true);
-
-    // Export Jani to file
-    storm::dft::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::dft::settings::modules::DftGspnSettings>();
-    if (dftGspnSettings.isWriteToJaniSet()) {
-        auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
-        storm::api::exportJaniToFile(*model, properties, dftGspnSettings.getWriteToJaniFilename(), jani.isCompactJsonSet());
-    }
-
-    return model;
-}
-
-storm::dft::utility::RelevantEvents computeRelevantEvents(std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
-                                                          std::vector<std::string> const& additionalRelevantEventNames) {
-    storm::dft::utility::RelevantEvents events(additionalRelevantEventNames.begin(), additionalRelevantEventNames.end());
-    events.insertNamesFromProperties(properties.begin(), properties.end());
-    return events;
+    return !fdepConflicts.empty();
 }
 
 // Explicitly instantiate methods
-template void exportDFTToJsonFile(storm::dft::storage::DFT<double> const&, std::string const&);
-template std::string exportDFTToJsonString(storm::dft::storage::DFT<double> const&);
+template typename storm::dft::modelchecker::DFTModelChecker<double>::dft_results analyzeDFT(storm::dft::storage::DFT<double> const&,
+                                                                                            std::vector<std::shared_ptr<storm::logic::Formula const>> const&,
+                                                                                            bool, bool, storm::dft::utility::RelevantEvents const&, bool,
+                                                                                            double, storm::dft::builder::ApproximationHeuristic, bool,
+                                                                                            storm::transformer::EliminationLabelBehavior, bool);
+template std::pair<uint64_t, uint64_t> computeBEFailureBounds(storm::dft::storage::DFT<double> const&, bool, double);
+template bool computeDependencyConflicts(storm::dft::storage::DFT<double>&, bool, double);
 
-template void exportDFTToJsonFile(storm::dft::storage::DFT<storm::RationalFunction> const&, std::string const&);
-template std::string exportDFTToJsonString(storm::dft::storage::DFT<storm::RationalFunction> const&);
+template typename storm::dft::modelchecker::DFTModelChecker<storm::RationalFunction>::dft_results analyzeDFT(
+    storm::dft::storage::DFT<storm::RationalFunction> const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool,
+    storm::dft::utility::RelevantEvents const&, bool, double, storm::dft::builder::ApproximationHeuristic, bool, storm::transformer::EliminationLabelBehavior,
+    bool);
+template std::pair<uint64_t, uint64_t> computeBEFailureBounds(storm::dft::storage::DFT<storm::RationalFunction> const&, bool, double);
+template bool computeDependencyConflicts(storm::dft::storage::DFT<storm::RationalFunction>&, bool, double);
 
 }  // namespace api
 }  // namespace storm::dft

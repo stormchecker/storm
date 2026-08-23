@@ -1,6 +1,6 @@
 #include "storm-dft/modelchecker/DFTModelChecker.h"
 
-#include "storm-dft/api/storm-dft.h"
+#include "storm-dft/api/transformation.h"
 #include "storm-dft/builder/ExplicitDFTModelBuilder.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/utility/SymmetryFinder.h"

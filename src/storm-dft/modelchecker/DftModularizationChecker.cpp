@@ -3,7 +3,7 @@
 #include <sstream>
 
 #include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
-#include "storm-dft/api/storm-dft.h"
+
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/modelchecker/DFTModelChecker.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
