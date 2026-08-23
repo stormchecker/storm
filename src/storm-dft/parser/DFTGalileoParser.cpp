@@ -4,6 +4,9 @@
 #include <optional>
 #include <regex>
 
+#include "storm-dft/builder/DFTBuilder.h"
+#include "storm-dft/storage/DFT.h"
+#include "storm-parsers/parser/ValueParser.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"

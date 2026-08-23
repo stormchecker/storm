@@ -1,19 +1,13 @@
 #pragma once
 
-#include <iostream>
 #include <map>
 #include <unordered_map>
 
 #include "storm-dft/storage/DFTLayoutInfo.h"
 #include "storm-dft/storage/elements/DFTElements.h"
-#include "storm-dft/storage/elements/DFTRestriction.h"
 
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/utility/ConstantsComparator.h"
-#include "storm/utility/macros.h"
-
-namespace storm::storage {
 // Forward declaration
+namespace storm::storage {
 template<typename ValueType>
 class DFT;
 }  // namespace storm::storage

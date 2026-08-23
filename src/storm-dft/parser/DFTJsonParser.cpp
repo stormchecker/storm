@@ -3,7 +3,9 @@
 #include <boost/algorithm/string.hpp>
 
 #include "storm-dft/builder/DFTBuilder.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm-dft/utility/RelevantEvents.h"
+#include "storm-parsers/parser/ValueParser.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/FileIoException.h"
