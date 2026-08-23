@@ -7,7 +7,6 @@
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/DftModule.h"
 #include "storm-dft/storage/SylvanBddManager.h"
-#include "storm/logic/Formula.h"
 
 namespace storm::dft {
 namespace modelchecker {

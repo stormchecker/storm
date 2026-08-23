@@ -3,7 +3,13 @@
 
 #include <boost/math/distributions/weibull.hpp>
 
-#include "storm-dft/storage/elements/DFTElements.h"
+#include "storm-dft/storage/elements/BEConst.h"
+#include "storm-dft/storage/elements/BEErlang.h"
+#include "storm-dft/storage/elements/BEExponential.h"
+#include "storm-dft/storage/elements/BELogNormal.h"
+#include "storm-dft/storage/elements/BEProbability.h"
+#include "storm-dft/storage/elements/BESamples.h"
+#include "storm-dft/storage/elements/BEWeibull.h"
 
 namespace {
 

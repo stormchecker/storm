@@ -10,6 +10,7 @@
 #include "storm-gspn/api/storm-gspn.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/api/properties.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"

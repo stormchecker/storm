@@ -1,7 +1,8 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm-dft/api/storm-dft.h"
+#include "storm-dft/api/io.h"
+#include "storm-dft/api/transformation.h"
 #include "storm-dft/modelchecker/DFTASFChecker.h"
 #include "storm-dft/utility/FDEPConflictFinder.h"
 #include "storm-dft/utility/FailureBoundFinder.h"

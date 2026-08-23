@@ -1,9 +1,13 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm-dft/api/storm-dft.h"
+#include "storm-dft/api/io.h"
+#include "storm-dft/api/transformation.h"
 #include "storm-dft/builder/ExplicitDFTModelBuilder.h"
-#include "storm-parsers/api/storm-parsers.h"
+#include "storm-dft/utility/RelevantEvents.h"
+#include "storm-parsers/api/properties.h"
+#include "storm/api/properties.h"
+#include "storm/storage/jani/Property.h"
 
 namespace {
 

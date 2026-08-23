@@ -1,10 +1,10 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm-dft/api/storm-dft.h"
-#include "storm-dft/generator/DftNextStateGenerator.h"
+#include "storm-dft/api/analysis.h"
+#include "storm-dft/api/io.h"
+#include "storm-dft/api/transformation.h"
 #include "storm-dft/simulator/DFTTraceSimulator.h"
-#include "storm-dft/storage/DftSymmetries.h"
 
 namespace {
 

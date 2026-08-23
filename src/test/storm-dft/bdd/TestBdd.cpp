@@ -2,12 +2,12 @@
 #include "test/storm_gtest.h"
 
 #include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
-#include "storm-dft/api/storm-dft.h"
+#include "storm-dft/api/io.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
-#include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm-dft/utility/MTTFHelper.h"
 #include "storm-parsers/api/properties.h"
-#include "storm/environment/Environment.h"
+#include "storm/api/properties.h"
+#include "storm/storage/jani/Property.h"
 
 namespace {
 

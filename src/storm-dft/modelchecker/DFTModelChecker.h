@@ -4,9 +4,8 @@
 
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/utility/RelevantEvents.h"
-#include "storm/api/storm.h"
 #include "storm/logic/Formula.h"
-#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/transformer/NonMarkovianChainTransformer.h"
 #include "storm/utility/Stopwatch.h"
 
 namespace storm::dft {

@@ -3,16 +3,13 @@
 #include <sstream>
 
 #include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
-
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/modelchecker/DFTModelChecker.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
 #include "storm-dft/utility/DftModularizer.h"
-#include "storm/environment/Environment.h"
-
 #include "storm-parsers/api/properties.h"
 #include "storm/api/properties.h"
-#include "storm/exceptions/InvalidModelException.h"
+#include "storm/storage/jani/Property.h"
 
 namespace storm::dft {
 namespace modelchecker {
