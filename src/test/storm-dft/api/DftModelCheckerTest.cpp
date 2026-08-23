@@ -92,7 +92,7 @@ class DftModelCheckerTest : public ::testing::Test {
         return config;
     }
 
-    double analyze(std::string const& file, std::string const& property) {
+    double analyze(std::string const& file, std::string const& property) const {
         // Load, build and prepare DFT
         std::shared_ptr<storm::dft::storage::DFT<double>> dft =
             storm::dft::api::prepareForMarkovAnalysis<double>(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
@@ -114,26 +114,26 @@ class DftModelCheckerTest : public ::testing::Test {
         return boost::get<double>(results[0]);
     }
 
-    double analyzeMTTF(std::string const& file) {
+    double analyzeMTTF(std::string const& file) const {
         std::string property = "Tmin=? [F \"failed\"]";
         return analyze(file, property);
     }
 
-    double analyzeReliability(std::string const& file, double bound) {
+    double analyzeReliability(std::string const& file, double bound) const {
         std::string property = "Pmin=? [F<=" + std::to_string(bound) + " \"failed\"]";
         return analyze(file, property);
     }
 
-    double analyzeReachability(std::string const& file) {
+    double analyzeReachability(std::string const& file) const {
         std::string property = "Pmin=? [F \"failed\"]";
         return analyze(file, property);
     }
 
-    double precision() {
+    double precision() const {
         return 1e-12;
     }
 
-    double precisionReliability() {
+    double precisionReliability() const {
         return 1e-10;
     }
 
@@ -192,7 +192,7 @@ TYPED_TEST(DftModelCheckerTest, FdepMTTF) {
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft"), storm::exceptions::NotSupportedException);
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep6.dft"), storm::exceptions::NotSupportedException);
     } else {
-        double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft");
+        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft");
         EXPECT_NEAR(result, 2 / 3.0, this->precision());
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep4.dft");
         EXPECT_NEAR(result, 1, this->precision());

@@ -55,12 +55,12 @@ typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results analy
  * @param dft DFT
  * @param exportToDot If true exports the bdd representing the top level event of the dft in the dot format
  * @param filename The name of the file for exporting to dot
- * @param calculateMTTF If true calculates the mean time to failure
+ * @param calculateMttf If true calculates the mean time to failure
  * @param mttfPrecision A constant that is used to determine if the mttf calculation converged
  * @param mttfStepsize A constant that is used in the mttf calculation
  * @param mttfAlgorithmName The name of the mttf algorithm to use
  * @param calculateMCS If true calculates the minimal cut sets
- * @param calculateProbability If true calculates the system failure propbability
+ * @param calculateProbability If true calculates the system failure probability
  * @param useModularisation If true tries modularisation
  * @param importanceMeasureName The name of the importance measure to calculate
  * @param timepoints The timebounds for probability calculations

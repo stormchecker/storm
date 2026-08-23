@@ -96,7 +96,7 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftModularizationChecker<Va
         if (it != samplePoints.end()) {
             // Replace element by BE
             builder.addBasicElementSamples(element->name(), it->second);
-        } else if (dynamicElements.find(id) == dynamicElements.end()) {
+        } else if (!dynamicElements.contains(id)) {
             // Element is not part of a dynamic module -> keep
             builder.cloneElement(element);
             // Remember dependency conflict
@@ -111,7 +111,7 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftModularizationChecker<Va
     // Update dependency conflicts
     for (size_t id : newDft->getDependencies()) {
         // Set dependencies not in conflict
-        if (depInConflict.find(newDft->getElement(id)->name()) == depInConflict.end()) {
+        if (!depInConflict.contains(newDft->getElement(id)->name())) {
             newDft->setDependencyNotInConflict(id);
         }
     }

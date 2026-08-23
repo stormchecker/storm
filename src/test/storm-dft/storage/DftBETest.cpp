@@ -113,7 +113,7 @@ TEST(DftBETest, FailureWeibullExponential) {
         EXPECT_NEAR(boost::math::cdf(dist2, t), be2.getUnreliability(t), 1e-10);
     }
 
-    // Decreasing faiure rate
+    // Decreasing failure rate
     storm::dft::storage::elements::BEWeibull<double> be3(0, "TestBE", 0.4, 2);
 
     EXPECT_TRUE(be3.canFail());

@@ -232,13 +232,13 @@ bool computeDependencyConflicts(storm::dft::storage::DFT<ValueType>& dft, bool u
     }
 
     // Set the conflict map of the dft
-    std::set<size_t> conflict_set;
+    std::set<uint64_t> conflict_set;
     for (auto const& conflict : fdepConflicts) {
-        conflict_set.insert(size_t(conflict.first));
-        conflict_set.insert(size_t(conflict.second));
+        conflict_set.insert(conflict.first);
+        conflict_set.insert(conflict.second);
     }
     for (size_t depId : dft.getDependencies()) {
-        if (!conflict_set.count(depId)) {
+        if (!conflict_set.contains(depId)) {
             dft.setDependencyNotInConflict(depId);
         }
     }
