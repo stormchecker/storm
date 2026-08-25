@@ -41,4 +41,14 @@ class Environment {
     SubEnvironment<InternalEnvironment> internalEnv;
     double modelToleranceValue;
 };
+
+// Explicitly instantiated once in CoreEnvironments.cpp
+// Avoids redundant re-instantiation elsewhere
+extern template class SubEnvironment<Environment>;  // Not needed in core but needed for other libraries
+extern template class SubEnvironment<InternalEnvironment>;
+extern template class SubEnvironment<DdEnvironment>;
+extern template class SubEnvironment<ExplorationEnvironment>;
+extern template class SubEnvironment<ModelCheckerEnvironment>;
+extern template class SubEnvironment<SolverEnvironment>;
+
 }  // namespace storm

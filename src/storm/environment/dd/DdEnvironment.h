@@ -11,6 +11,11 @@ namespace storm {
 class CuddDdManagerEnvironment;
 class SylvanDdManagerEnvironment;
 
+// Explicitly instantiated once in CoreEnvironments.cpp
+// Avoids redundant re-instantiation elsewhere
+extern template class SubEnvironment<CuddDdManagerEnvironment>;
+extern template class SubEnvironment<SylvanDdManagerEnvironment>;
+
 // Select the sub-environment that belongs to the given DD type.
 template<storm::dd::DdType Type>
 struct DdEnvironmentSelector {

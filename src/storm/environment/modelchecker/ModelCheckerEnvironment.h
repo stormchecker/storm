@@ -13,6 +13,11 @@ namespace storm {
 class ConditionalModelCheckerEnvironment;
 class MultiObjectiveModelCheckerEnvironment;
 
+// Explicitly instantiated once in CoreEnvironments.cpp
+// Avoids redundant re-instantiation elsewhere
+extern template class SubEnvironment<ConditionalModelCheckerEnvironment>;
+extern template class SubEnvironment<MultiObjectiveModelCheckerEnvironment>;
+
 class ModelCheckerEnvironment {
    public:
     ModelCheckerEnvironment();

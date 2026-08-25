@@ -25,7 +25,7 @@ class OviSolverEnvironment;
 class TimeBoundedSolverEnvironment;
 class TopologicalSolverEnvironment;
 
-// Explicitly instantiated once in SubEnvironment.cpp
+// Explicitly instantiated once in CoreEnvironments.cpp
 // Avoids redundant re-instantiation elsewhere
 extern template class SubEnvironment<EigenSolverEnvironment>;
 extern template class SubEnvironment<EliminationSolverEnvironment>;

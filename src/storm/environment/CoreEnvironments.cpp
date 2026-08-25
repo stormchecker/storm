@@ -1,7 +1,7 @@
-#include <memory>
+// Explicit instantiations of core environments
 
 #include "storm/environment/Environment.h"
-
+#include "storm/environment/SubEnvironment.h"
 #include "storm/environment/dd/AllDdEnvironments.h"
 #include "storm/environment/exploration/ExplorationEnvironment.h"
 #include "storm/environment/modelchecker/AllModelCheckerEnvironments.h"
@@ -9,44 +9,8 @@
 
 namespace storm {
 
-template<typename EnvironmentType>
-SubEnvironment<EnvironmentType>::SubEnvironment() : subEnv(nullptr) {
-    // Intentionally left empty
-}
-
-template<typename EnvironmentType>
-SubEnvironment<EnvironmentType>::SubEnvironment(SubEnvironment const& other) : subEnv(other.subEnv ? new EnvironmentType(*other.subEnv) : nullptr) {
-    // Intentionally left empty
-}
-
-template<typename EnvironmentType>
-SubEnvironment<EnvironmentType>& SubEnvironment<EnvironmentType>::operator=(SubEnvironment const& other) {
-    if (other.subEnv) {
-        subEnv = std::make_unique<EnvironmentType>(*other.subEnv);
-    } else {
-        subEnv.reset();
-    }
-    return *this;
-}
-
-template<typename EnvironmentType>
-EnvironmentType const& SubEnvironment<EnvironmentType>::get() const {
-    assertInitialized();
-    return *subEnv;
-}
-
-template<typename EnvironmentType>
-EnvironmentType& SubEnvironment<EnvironmentType>::get() {
-    assertInitialized();
-    return *subEnv;
-}
-
-template<typename EnvironmentType>
-void SubEnvironment<EnvironmentType>::assertInitialized() const {
-    if (!subEnv) {
-        subEnv = std::make_unique<EnvironmentType>();
-    }
-}
+// Not used within the core, but needed by other libraries
+template class SubEnvironment<Environment>;
 
 template class SubEnvironment<InternalEnvironment>;
 

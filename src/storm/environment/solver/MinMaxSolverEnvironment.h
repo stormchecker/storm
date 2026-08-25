@@ -11,6 +11,9 @@ namespace storm {
 
 class MinMaxLpSolverEnvironment;
 
+// Explicitly instantiated once in CoreEnvironments.cpp; this avoids redundant re-instantiation elsewhere.
+extern template class SubEnvironment<MinMaxLpSolverEnvironment>;
+
 class MinMaxSolverEnvironment {
    public:
     MinMaxSolverEnvironment();
