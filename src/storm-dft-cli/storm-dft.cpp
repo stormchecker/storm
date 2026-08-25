@@ -1,5 +1,6 @@
 #include "storm-cli-utilities/cli.h"
 #include "storm-dft/api/analysis.h"
+#include "storm-dft/api/gspn_transformation.h"
 #include "storm-dft/api/io.h"
 #include "storm-dft/api/transformation.h"
 #include "storm-dft/parser/BEOrderParser.h"
