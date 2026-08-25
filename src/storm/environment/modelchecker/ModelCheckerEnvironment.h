@@ -43,10 +43,12 @@ class ModelCheckerEnvironment {
    private:
     SubEnvironment<ConditionalModelCheckerEnvironment> conditionalModelCheckerEnvironment;
     SubEnvironment<MultiObjectiveModelCheckerEnvironment> multiObjectiveModelCheckerEnvironment;
+
     boost::optional<std::string> ltl2daTool;
     SteadyStateDistributionAlgorithm steadyStateDistributionAlgorithm;
     bool filterRewZero;
     bool exportCdfEnabled;
     std::string exportCdfDirectory;
 };
+
 }  // namespace storm

@@ -32,6 +32,14 @@ MinMaxSolverEnvironment::~MinMaxSolverEnvironment() {
     // Intentionally left empty
 }
 
+MinMaxLpSolverEnvironment& MinMaxSolverEnvironment::lp() {
+    return lpEnvironment.get();
+}
+
+MinMaxLpSolverEnvironment const& MinMaxSolverEnvironment::lp() const {
+    return lpEnvironment.get();
+}
+
 storm::solver::MinMaxMethod const& MinMaxSolverEnvironment::getMethod() const {
     return minMaxMethod;
 }
@@ -75,13 +83,6 @@ storm::solver::MultiplicationStyle const& MinMaxSolverEnvironment::getMultiplica
 
 void MinMaxSolverEnvironment::setMultiplicationStyle(storm::solver::MultiplicationStyle value) {
     multiplicationStyle = value;
-}
-
-MinMaxLpSolverEnvironment const& MinMaxSolverEnvironment::lp() const {
-    return lpEnvironment.get();
-}
-MinMaxLpSolverEnvironment& MinMaxSolverEnvironment::lp() {
-    return lpEnvironment.get();
 }
 
 bool MinMaxSolverEnvironment::isForceRequireUnique() const {

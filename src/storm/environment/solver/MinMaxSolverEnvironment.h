@@ -16,6 +16,9 @@ class MinMaxSolverEnvironment {
     MinMaxSolverEnvironment();
     ~MinMaxSolverEnvironment();
 
+    MinMaxLpSolverEnvironment& lp();
+    MinMaxLpSolverEnvironment const& lp() const;
+
     storm::solver::MinMaxMethod const& getMethod() const;
     bool const& isMethodSetFromDefault() const;
     void setMethod(storm::solver::MinMaxMethod value, bool isSetFromDefault = false);
@@ -29,10 +32,10 @@ class MinMaxSolverEnvironment {
     void setMultiplicationStyle(storm::solver::MultiplicationStyle value);
     bool isForceRequireUnique() const;
     void setForceRequireUnique(bool value);
-    MinMaxLpSolverEnvironment const& lp() const;
-    MinMaxLpSolverEnvironment& lp();
 
    private:
+    SubEnvironment<MinMaxLpSolverEnvironment> lpEnvironment;
+
     storm::solver::MinMaxMethod minMaxMethod;
     bool methodSetFromDefault;
     uint64_t maxIterationCount;
@@ -40,6 +43,5 @@ class MinMaxSolverEnvironment {
     bool considerRelativeTerminationCriterion;
     storm::solver::MultiplicationStyle multiplicationStyle;
     bool forceRequireUnique;
-    SubEnvironment<MinMaxLpSolverEnvironment> lpEnvironment;
 };
 }  // namespace storm

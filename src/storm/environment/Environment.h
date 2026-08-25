@@ -5,17 +5,17 @@
 namespace storm {
 
 // Forward declare sub-environments
-class SolverEnvironment;
-class ModelCheckerEnvironment;
-class ExplorationEnvironment;
 class DdEnvironment;
+class ExplorationEnvironment;
+class ModelCheckerEnvironment;
+class SolverEnvironment;
 
 // Avoid implementing ugly copy constructors for environment by using an internal environment.
 struct InternalEnvironment {
-    SubEnvironment<SolverEnvironment> solverEnvironment;
-    SubEnvironment<ModelCheckerEnvironment> modelcheckerEnvironment;
-    SubEnvironment<ExplorationEnvironment> explorationEnvironment;
     SubEnvironment<DdEnvironment> ddEnvironment;
+    SubEnvironment<ExplorationEnvironment> explorationEnvironment;
+    SubEnvironment<ModelCheckerEnvironment> modelcheckerEnvironment;
+    SubEnvironment<SolverEnvironment> solverEnvironment;
 };
 
 class Environment {
@@ -25,14 +25,14 @@ class Environment {
     Environment(Environment const& other);
     Environment& operator=(Environment const& other);
 
-    SolverEnvironment& solver();
-    SolverEnvironment const& solver() const;
-    ModelCheckerEnvironment& modelchecker();
-    ModelCheckerEnvironment const& modelchecker() const;
-    ExplorationEnvironment& exploration();
-    ExplorationEnvironment const& exploration() const;
     DdEnvironment& dd();
     DdEnvironment const& dd() const;
+    ExplorationEnvironment& exploration();
+    ExplorationEnvironment const& exploration() const;
+    ModelCheckerEnvironment& modelchecker();
+    ModelCheckerEnvironment const& modelchecker() const;
+    SolverEnvironment& solver();
+    SolverEnvironment const& solver() const;
 
     double modelTolerance() const;
     void setModelTolerance(double value);
