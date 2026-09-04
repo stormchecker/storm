@@ -3,11 +3,11 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/SymbolicLinearEquationSolver.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdType.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 
 namespace storm {
@@ -34,7 +34,7 @@ storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::co
     if (qualitative) {
         // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
         return statesWithProbability01.second.template toAdd<ValueType>() +
-               maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::utility::convertNumber<ValueType>(0.5));
+               maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::numbers::convert<ValueType>(0.5));
     } else {
         // If there are maybe states, we need to solve an equation system.
         if (!maybeStates.isZero()) {
@@ -77,7 +77,7 @@ storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::co
     // Solve the equation system.
     std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(
         env, submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-    solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+    solver->setBounds(storm::numbers::zero<ValueType>(), storm::numbers::one<ValueType>());
     storm::dd::Add<DdType, ValueType> result = solver->solveEquations(env, model.getManager().template getAddZero<ValueType>(), subvector);
 
     return statesWithProbability1.template toAdd<ValueType>() + result;
@@ -192,8 +192,8 @@ storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::co
     if (qualitative) {
         // Set the values for all maybe-states to 1 to indicate that their reward values
         // are neither 0 nor infinity.
-        return infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()) +
-               maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::utility::one<ValueType>());
+        return infinityStates.ite(model.getManager().getConstant(storm::numbers::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()) +
+               maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::numbers::one<ValueType>());
     } else {
         // If there are maybe states, we need to solve an equation system.
         if (!maybeStates.isZero()) {
@@ -201,8 +201,8 @@ storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::co
                                               startValues ? maybeStates.ite(startValues.get(), model.getManager().template getAddZero<ValueType>())
                                                           : model.getManager().template getAddZero<ValueType>());
         } else {
-            return infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()),
-                                      model.getManager().getConstant(storm::utility::zero<ValueType>()));
+            return infinityStates.ite(model.getManager().getConstant(storm::numbers::infinity<ValueType>()),
+                                      model.getManager().getConstant(storm::numbers::zero<ValueType>()));
         }
     }
 }
@@ -233,18 +233,18 @@ storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::co
     // Solve the equation system.
     std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(
         env, submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-    solver->setLowerBound(storm::utility::zero<ValueType>());
+    solver->setLowerBound(storm::numbers::zero<ValueType>());
     storm::dd::Add<DdType, ValueType> result =
         solver->solveEquations(env, startValues ? startValues.get() : maybeStatesAdd.getDdManager().template getAddZero<ValueType>(), subvector);
 
-    return infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), result);
+    return infinityStates.ite(model.getManager().getConstant(storm::numbers::infinity<ValueType>()), result);
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
 storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::computeReachabilityTimes(
     Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix,
     storm::dd::Bdd<DdType> const& targetStates, bool qualitative, boost::optional<storm::dd::Add<DdType, ValueType>> const& startValues) {
-    RewardModelType rewardModel(model.getManager().getConstant(storm::utility::one<ValueType>()), boost::none, boost::none);
+    RewardModelType rewardModel(model.getManager().getConstant(storm::numbers::one<ValueType>()), boost::none, boost::none);
     return computeReachabilityRewards(env, model, transitionMatrix, rewardModel, targetStates, qualitative, startValues);
 }
 

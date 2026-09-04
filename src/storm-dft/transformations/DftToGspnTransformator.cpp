@@ -945,7 +945,7 @@ void DftToGspnTransformator<ValueType>::translatePDEP(std::shared_ptr<storm::dft
         builder.addOutputArc(tWinFlip, forwardPlace);
 
         uint64_t tLooseFlip = builder.addImmediateTransition(
-            getFailPriority(dftDependency) + 1, storm::utility::one<ValueType>() - dftDependency->probability(), dftDependency->name() + "_lose_flip");
+            getFailPriority(dftDependency) + 1, storm::numbers::one<ValueType>() - dftDependency->probability(), dftDependency->name() + "_lose_flip");
         builder.addInputArc(flipPlace, tLooseFlip);
     } else {
         // FDEP

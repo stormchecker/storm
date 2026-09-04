@@ -1,12 +1,12 @@
 #pragma once
 
+#include <cstdint>
+
 #include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/adapters/RationalNumberForward.h"
 
-#include <cstdint>
-
-namespace storm {
+namespace storm::numbers {
 template<typename ValueType>
 struct NumberTraits {
     static const bool SupportsExponential = false;
@@ -58,4 +58,4 @@ struct NumberTraits<storm::RationalFunction> {
     static const bool SupportsExponential = false;
     static const bool IsExact = true;
 };
-}  // namespace storm
+}  // namespace storm::numbers

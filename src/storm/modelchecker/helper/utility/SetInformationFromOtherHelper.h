@@ -20,7 +20,7 @@ void setInformationFromOtherHelperNondeterministic(
     // Value threshold to which the result will be compared
     if (sourceHelperType.isValueThresholdSet()) {
         targetHelper.setValueThreshold(sourceHelperType.getValueThresholdComparisonType(),
-                                       storm::utility::convertNumber<typename TargetHelperType::ValueType>(sourceHelperType.getValueThresholdValue()));
+                                       storm::numbers::convert<typename TargetHelperType::ValueType>(sourceHelperType.getValueThresholdValue()));
     }
     // Optimization direction
     if (sourceHelperType.isOptimizationDirectionSet()) {
@@ -44,7 +44,7 @@ void setInformationFromOtherHelperDeterministic(
     // Value threshold to which the result will be compared
     if (sourceHelperType.isValueThresholdSet()) {
         targetHelper.setValueThreshold(sourceHelperType.getValueThresholdComparisonType(),
-                                       storm::utility::convertNumber<typename TargetHelperType::ValueType>(sourceHelperType.getValueThresholdValue()));
+                                       storm::numbers::convert<typename TargetHelperType::ValueType>(sourceHelperType.getValueThresholdValue()));
     }
 }
 }  // namespace helper

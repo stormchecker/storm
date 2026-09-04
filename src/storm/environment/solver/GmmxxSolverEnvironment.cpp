@@ -1,8 +1,8 @@
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -18,7 +18,7 @@ GmmxxSolverEnvironment::GmmxxSolverEnvironment() {
     } else {
         maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
     }
-    precision = storm::utility::convertNumber<storm::RationalNumber>(gmmxxSettings.getPrecision());
+    precision = storm::numbers::convert<storm::RationalNumber>(gmmxxSettings.getPrecision());
 }
 
 GmmxxSolverEnvironment::~GmmxxSolverEnvironment() {

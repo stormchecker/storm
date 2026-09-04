@@ -10,11 +10,11 @@
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/io/file.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/LinearCoefficientVisitor.h"
 #include "storm/storage/expressions/OperatorType.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -77,7 +77,7 @@ typename Z3LpSolver<ValueType, RawMode>::Variable Z3LpSolver<ValueType, RawMode>
     if (upperBound) {
         solver->add(expressionAdapter->translateExpression(newVariable.getExpression() <= this->manager->rational(*upperBound)));
     }
-    if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
+    if (!storm::numbers::isZero(objectiveFunctionCoefficient)) {
         optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
     }
 
@@ -103,7 +103,7 @@ void Z3LpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Cons
             lhsSummands.push_back(rawIndexToVariableMap[*varIt] * this->manager->rational(*coefIt));
         }
         if (lhsSummands.empty()) {
-            lhsSummands.push_back(this->manager->rational(storm::utility::zero<ValueType>()));
+            lhsSummands.push_back(this->manager->rational(storm::numbers::zero<ValueType>()));
         }
         storm::expressions::Expression constraintExpr = storm::expressions::makeBinaryRelationExpression(
             storm::expressions::sum(lhsSummands), this->manager->rational(constraint.rhs), constraint.relationType);
@@ -130,7 +130,7 @@ void Z3LpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const& n
                         "Illegal constraint uses inequality operator.");
 
         storm::expressions::Expression invertedIndicatorVal =
-            this->getConstant(indicatorValue ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>());
+            this->getConstant(indicatorValue ? storm::numbers::zero<ValueType>() : storm::numbers::one<ValueType>());
         auto indicatorConstraint = (indicatorVariable.getExpression() == invertedIndicatorVal) || constraint;
         solver->add(expressionAdapter->translateExpression(indicatorConstraint));
     }
@@ -228,11 +228,11 @@ template<typename ValueType, bool RawMode>
 ValueType Z3LpSolver<ValueType, RawMode>::getContinuousValue(Variable const& variable) const {
     storm::expressions::Expression value = getValue(variable);
     if (value.getBaseExpression().isIntegerLiteralExpression()) {
-        return storm::utility::convertNumber<ValueType>(value.getBaseExpression().asIntegerLiteralExpression().getValue());
+        return storm::numbers::convert<ValueType>(value.getBaseExpression().asIntegerLiteralExpression().getValue());
     }
     STORM_LOG_THROW(value.getBaseExpression().isRationalLiteralExpression(), storm::exceptions::ExpressionEvaluationException,
                     "Expected a rational literal while obtaining the value of a continuous variable. Got " << value << "instead.");
-    return storm::utility::convertNumber<ValueType>(value.getBaseExpression().asRationalLiteralExpression().getValue());
+    return storm::numbers::convert<ValueType>(value.getBaseExpression().asRationalLiteralExpression().getValue());
 }
 
 template<typename ValueType, bool RawMode>
@@ -266,11 +266,11 @@ ValueType Z3LpSolver<ValueType, RawMode>::getObjectiveValue() const {
 
     storm::expressions::Expression result = this->expressionAdapter->translateExpression(*lastCheckObjectiveValue);
     if (result.getBaseExpression().isIntegerLiteralExpression()) {
-        return storm::utility::convertNumber<ValueType>(result.getBaseExpression().asIntegerLiteralExpression().getValue());
+        return storm::numbers::convert<ValueType>(result.getBaseExpression().asIntegerLiteralExpression().getValue());
     }
     STORM_LOG_THROW(result.getBaseExpression().isRationalLiteralExpression(), storm::exceptions::ExpressionEvaluationException,
                     "Expected a rational literal while obtaining the objective result. Got " << result << "instead.");
-    return storm::utility::convertNumber<ValueType>(result.getBaseExpression().asRationalLiteralExpression().getValue());
+    return storm::numbers::convert<ValueType>(result.getBaseExpression().asRationalLiteralExpression().getValue());
 }
 
 template<typename ValueType, bool RawMode>
@@ -308,7 +308,7 @@ void Z3LpSolver<ValueType, RawMode>::setMaximalMILPGap(ValueType const&, bool) {
 template<typename ValueType, bool RawMode>
 ValueType Z3LpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
     // Since the solver is precise, the milp gap is always zero.
-    return storm::utility::zero<ValueType>();
+    return storm::numbers::zero<ValueType>();
 }
 #else
 template<typename ValueType, bool RawMode>

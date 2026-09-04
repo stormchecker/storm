@@ -2,10 +2,10 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -49,7 +49,7 @@ storm::Environment TopologicalLinearEquationSolver<ValueType>::getEnvironmentFor
         STORM_LOG_ASSERT(this->longestSccChainSize, "Did not compute the longest SCC chain size although it is needed.");
         auto subEnvPrec = subEnv.solver().getPrecisionOfLinearEquationSolver(subEnv.solver().getLinearEquationSolverType());
         subEnv.solver().setLinearEquationSolverPrecision(
-            static_cast<storm::RationalNumber>(subEnvPrec.first.get() / storm::utility::convertNumber<storm::RationalNumber>(this->longestSccChainSize.get())));
+            static_cast<storm::RationalNumber>(subEnvPrec.first.get() / storm::numbers::convert<storm::RationalNumber>(this->longestSccChainSize.get())));
     }
     return subEnv;
 }
@@ -158,9 +158,9 @@ bool TopologicalLinearEquationSolver<ValueType>::solveTrivialScc(uint64_t const&
     ValueType denominator;
     for (auto const& entry : this->A->getRow(sccState)) {
         if (entry.getColumn() == sccState) {
-            STORM_LOG_ASSERT(!storm::utility::isOne(entry.getValue()), "Diagonal entry of fix point system has value 1.");
+            STORM_LOG_ASSERT(!storm::numbers::isOne(entry.getValue()), "Diagonal entry of fix point system has value 1.");
             hasDiagonalEntry = true;
-            denominator = storm::utility::one<ValueType>() - entry.getValue();
+            denominator = storm::numbers::one<ValueType>() - entry.getValue();
         } else {
             xi += entry.getValue() * globalX[entry.getColumn()];
         }
@@ -168,10 +168,10 @@ bool TopologicalLinearEquationSolver<ValueType>::solveTrivialScc(uint64_t const&
 
     if (hasDiagonalEntry) {
         STORM_LOG_WARN_COND_DEBUG(
-            storm::NumberTraits<ValueType>::IsExact || !storm::utility::isAlmostZero(denominator) || storm::utility::isZero(denominator),
+            storm::numbers::NumberTraits<ValueType>::IsExact || !storm::numbers::isAlmostZero(denominator) || storm::numbers::isZero(denominator),
             "State " << sccState << " has a selfloop with probability '1-(" << denominator << ")'. This could be an indication for numerical issues.");
-        if (storm::utility::isZero(denominator)) {
-            STORM_LOG_THROW(storm::utility::isZero(xi), storm::exceptions::InvalidOperationException, "The equation system has no solution.");
+        if (storm::numbers::isZero(denominator)) {
+            STORM_LOG_THROW(storm::numbers::isZero(xi), storm::exceptions::InvalidOperationException, "The equation system has no solution.");
         } else {
             xi /= denominator;
         }

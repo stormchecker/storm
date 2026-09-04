@@ -150,7 +150,7 @@ std::shared_ptr<storm::logic::ProbabilityOperatorFormula> transformBoundedUntilO
 /// Increases the precision of solver results
 void increasePrecision(storm::Environment& env) {
     STORM_LOG_DEBUG("Increasing precision of underlying solver.");
-    auto factor = storm::utility::convertNumber<storm::RationalNumber, std::string>("0.1");
+    auto factor = storm::numbers::convert<storm::RationalNumber, std::string>("0.1");
     env.solver().setLinearEquationSolverPrecision(
         static_cast<storm::RationalNumber>(env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType()).first.get() * factor));
     env.solver().minMax().setPrecision(env.solver().minMax().getPrecision() * factor);
@@ -165,16 +165,15 @@ std::pair<ValueType, ValueType> getLowerUpperBound(storm::Environment const& env
     ValueType prec;
     bool relative;
     if (minMax) {
-        prec = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
+        prec = storm::numbers::convert<ValueType>(env.solver().minMax().getPrecision());
         relative = env.solver().minMax().getRelativeTerminationCriterion();
     } else {
-        prec =
-            storm::utility::convertNumber<ValueType>(env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType()).first.get());
+        prec = storm::numbers::convert<ValueType>(env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType()).first.get());
         relative = env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType()).second.get();
     }
     prec *= factor;
     if (relative) {
-        ValueType one = storm::utility::one<ValueType>();
+        ValueType one = storm::numbers::one<ValueType>();
         ValueType lower = value * (one / (prec + one));
         ValueType upper = value * (one + prec / (prec + one));
         return std::make_pair(lower, upper);
@@ -240,8 +239,8 @@ std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType
         std::vector<ValueType> resultPoint;
         for (auto const& dim : permutation) {
             CostLimit const& cl = costLimits[dim];
-            resultPoint.push_back(cl.isInfinity() ? storm::utility::infinity<ValueType>()
-                                                  : storm::utility::convertNumber<ValueType>(cl.get()) * internalResult.second[dim]);
+            resultPoint.push_back(cl.isInfinity() ? storm::numbers::infinity<ValueType>()
+                                                  : storm::numbers::convert<ValueType>(cl.get()) * internalResult.second[dim]);
         }
         result.push_back(resultPoint);
     }
@@ -452,7 +451,7 @@ bool QuantileHelper<ModelType>::computeQuantile(Environment& env, storm::storage
                         bool propertySatisfied;
                         if (env.solver().isForceSoundness()) {
                             ValueType sumOfEpochDimensions =
-                                storm::utility::convertNumber<ValueType>(rewardUnfolding.getEpochManager().getSumOfDimensions(epoch) + 1);
+                                storm::numbers::convert<ValueType>(rewardUnfolding.getEpochManager().getSumOfDimensions(epoch) + 1);
                             auto lowerUpperValue = getLowerUpperBound(env, sumOfEpochDimensions, currValue);
                             propertySatisfied = boundedUntilOperator.getBound().isSatisfied(lowerUpperValue.first);
                             if (propertySatisfied != boundedUntilOperator.getBound().isSatisfied(lowerUpperValue.second)) {

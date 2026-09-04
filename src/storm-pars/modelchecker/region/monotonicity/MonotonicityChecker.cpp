@@ -137,8 +137,8 @@ std::pair<bool, bool> MonotonicityChecker<ValueType>::checkDerivative(ValueType 
     expressions::Expression exprBounds = manager->boolean(true);
     for (auto const& variable : variables) {
         auto managerVariable = manager->declareRationalVariable(variable.name());
-        auto lb = utility::convertNumber<RationalNumber>(reg.getLowerBoundary(variable));
-        auto ub = utility::convertNumber<RationalNumber>(reg.getUpperBoundary(variable));
+        auto lb = storm::numbers::convert<RationalNumber>(reg.getLowerBoundary(variable));
+        auto ub = storm::numbers::convert<RationalNumber>(reg.getUpperBoundary(variable));
         exprBounds = exprBounds && manager->rational(lb) <= managerVariable && managerVariable <= manager->rational(ub);
     }
 

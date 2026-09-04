@@ -5,8 +5,8 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/BoostTypes.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -14,7 +14,7 @@ namespace generator {
 
 template<typename ValueType, typename StateType>
 Choice<ValueType, StateType>::Choice(uint_fast64_t actionIndex, bool markovian)
-    : markovian(markovian), actionIndex(actionIndex), distribution(), totalMass(storm::utility::zero<ValueType>()), rewards(), labels() {
+    : markovian(markovian), actionIndex(actionIndex), distribution(), totalMass(storm::numbers::zero<ValueType>()), rewards(), labels() {
     // Intentionally left empty.
 }
 

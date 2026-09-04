@@ -67,10 +67,10 @@ class BeliefMdpExplorer {
 
     void addChoiceLabelToCurrentState(uint64_t const &localActionIndex, std::string const &label);
 
-    void addTransitionsToExtraStates(uint64_t const &localActionIndex, ValueType const &targetStateValue = storm::utility::zero<ValueType>(),
-                                     ValueType const &bottomStateValue = storm::utility::zero<ValueType>());
+    void addTransitionsToExtraStates(uint64_t const &localActionIndex, ValueType const &targetStateValue = storm::numbers::zero<ValueType>(),
+                                     ValueType const &bottomStateValue = storm::numbers::zero<ValueType>());
 
-    void addSelfloopTransition(uint64_t const &localActionIndex = 0, ValueType const &value = storm::utility::one<ValueType>());
+    void addSelfloopTransition(uint64_t const &localActionIndex = 0, ValueType const &value = storm::numbers::one<ValueType>());
 
     /*!
      * Adds the next transition to the given successor belief
@@ -82,7 +82,7 @@ class BeliefMdpExplorer {
      */
     bool addTransitionToBelief(uint64_t const &localActionIndex, BeliefId const &transitionTarget, ValueType const &value, bool ignoreNewBeliefs);
 
-    void computeRewardAtCurrentState(uint64_t const &localActionIndex, ValueType extraReward = storm::utility::zero<ValueType>());
+    void computeRewardAtCurrentState(uint64_t const &localActionIndex, ValueType extraReward = storm::numbers::zero<ValueType>());
 
     /*!
      * Adds the provided reward value to the given action of the current state
@@ -272,7 +272,7 @@ class BeliefMdpExplorer {
 
     void insertValueHints(ValueType const &lowerBound, ValueType const &upperBound);
 
-    MdpStateType getOrAddMdpState(BeliefId const &beliefId, ValueType const &transitionValue = storm::utility::zero<ValueType>());
+    MdpStateType getOrAddMdpState(BeliefId const &beliefId, ValueType const &transitionValue = storm::numbers::zero<ValueType>());
 
     // Belief state related information
     std::shared_ptr<BeliefManagerType> beliefManager;

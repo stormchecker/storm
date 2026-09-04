@@ -2,11 +2,11 @@
 
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/IntervalAdapter.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/RobustMaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
 
 namespace storm {
@@ -50,14 +50,14 @@ std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::el
             uint64_t smallestInGroup = *group.begin();
             if (row != smallestInGroup) {
                 // Add a one transition that points to the smallest state in the group
-                builder.addNextValue(row, smallestInGroup, utility::one<Interval>());
+                builder.addNextValue(row, smallestInGroup, storm::numbers::one<Interval>());
                 continue;
             }
             // Collect all states outside of the group that states inside of the group go to
             boost::container::flat_set<uint64_t> groupSet;
             for (auto const& state : group) {
                 for (auto const& entry : originalMatrix.getRow(state)) {
-                    if (group.getStates().contains(entry.getColumn()) || utility::isZero(entry.getValue())) {
+                    if (group.getStates().contains(entry.getColumn()) || storm::numbers::isZero(entry.getValue())) {
                         continue;
                     }
                     // We want to route this transition to the state representing the group

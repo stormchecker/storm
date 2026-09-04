@@ -11,7 +11,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StochasticTwoPlayerGame.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 namespace storm {
 namespace utility {
@@ -77,7 +77,7 @@ class ModelInstantiator {
             buildDummyMatrix(parametricModel.getTransitionMatrix()));
         components.stateLabeling = parametricModel.getStateLabeling();
         components.rewardModels = buildDummyRewardModels(parametricModel.getRewardModels());
-        components.exitRates = std::vector<ConstantType>(parametricModel.getExitRateVector().size(), storm::utility::one<ConstantType>());
+        components.exitRates = std::vector<ConstantType>(parametricModel.getExitRateVector().size(), storm::numbers::one<ConstantType>());
         components.rateTransitions = true;
         components.choiceLabeling = parametricModel.getOptionalChoiceLabeling();
         this->instantiatedModel = std::make_shared<ConstantSparseModelType>(std::move(components));
@@ -92,7 +92,7 @@ class ModelInstantiator {
             buildDummyMatrix(parametricModel.getTransitionMatrix()));
         components.stateLabeling = parametricModel.getStateLabeling();
         components.rewardModels = buildDummyRewardModels(parametricModel.getRewardModels());
-        components.exitRates = std::vector<ConstantType>(parametricModel.getExitRates().size(), storm::utility::one<ConstantType>());
+        components.exitRates = std::vector<ConstantType>(parametricModel.getExitRates().size(), storm::numbers::one<ConstantType>());
         components.markovianStates = parametricModel.getMarkovianStates();
         components.choiceLabeling = parametricModel.getOptionalChoiceLabeling();
         this->instantiatedModel = std::make_shared<ConstantSparseModelType>(std::move(components));
@@ -128,7 +128,7 @@ class ModelInstantiator {
             if (!transformer::BigStep::lastSavedAnnotations.empty() && functionResult.first.gatherVariables().size() == 1 &&
                 transformer::BigStep::lastSavedAnnotations.count(functionResult.first)) {
                 auto const& annotation = transformer::BigStep::lastSavedAnnotations.at(functionResult.first);
-                functionResult.second = annotation.evaluate(storm::utility::convertNumber<ConstantType>(valuation.at(annotation.getParameter())));
+                functionResult.second = annotation.evaluate(storm::numbers::convert<ConstantType>(valuation.at(annotation.getParameter())));
             } else {
                 functionResult.second = storm::utility::parametric::evaluate<ConstantType>(functionResult.first, valuation);
             }

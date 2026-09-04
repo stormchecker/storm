@@ -5,7 +5,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -169,7 +169,7 @@ typename ParameterRegion<ParametricType>::Valuation ParameterRegion<ParametricTy
 
 template<typename ParametricType>
 typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<ParametricType>::area() const {
-    CoefficientType result = storm::utility::one<CoefficientType>();
+    CoefficientType result = storm::numbers::one<CoefficientType>();
     for (auto const& variable : this->variables) {
         if (this->getUpperBoundary(variable) != this->getLowerBoundary(variable)) {
             result *= (this->getUpperBoundary(variable) - this->getLowerBoundary(variable));
@@ -177,7 +177,7 @@ typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<Parame
             // HACK to get regions with zero area to work correctly
             // (It's a hack but it's a harmless one for now, as regions with zero area do not exist without discrete parameters)
             // This area represents half of the area of the region
-            result /= utility::convertNumber<CoefficientType>(2);
+            result /= storm::numbers::convert<CoefficientType>(2);
         }
     }
     return result;
@@ -208,7 +208,7 @@ void ParameterRegion<ParametricType>::split(Valuation const& splittingPoint, std
     // Remove the discrete variables that are already unit from the considered
     // variables set, so we don't split them again
     for (auto const& var : discreteVariables) {
-        if (this->getDifference(var) == storm::utility::zero<CoefficientType>()) {
+        if (this->getDifference(var) == storm::numbers::zero<CoefficientType>()) {
             vertexVariables.erase(var);
         }
     }
@@ -241,7 +241,7 @@ void ParameterRegion<ParametricType>::split(Valuation const& splittingPoint, std
 
         ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
 
-        if (!storm::utility::isZero(subRegion.area())) {
+        if (!storm::numbers::isZero(subRegion.area())) {
             regionVector.push_back(std::move(subRegion));
         }
     }
@@ -252,11 +252,11 @@ std::string ParameterRegion<ParametricType>::toString(bool boundariesAsDouble) c
     std::stringstream regionstringstream;
     if (boundariesAsDouble) {
         for (auto var : this->getVariables()) {
-            regionstringstream << storm::utility::convertNumber<double>(this->getLowerBoundary(var));
+            regionstringstream << storm::numbers::convert<double>(this->getLowerBoundary(var));
             regionstringstream << "<=";
             regionstringstream << var;
             regionstringstream << "<=";
-            regionstringstream << storm::utility::convertNumber<double>(this->getUpperBoundary(var));
+            regionstringstream << storm::numbers::convert<double>(this->getUpperBoundary(var));
             regionstringstream << ",";
         }
     } else {

@@ -49,15 +49,15 @@ TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
         storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
 
-    storm::RationalNumber p1 = storm::utility::convertNumber<storm::RationalNumber>(11.0);
-    p1 /= storm::utility::convertNumber<storm::RationalNumber>(6.0);
-    storm::RationalNumber p2 = storm::utility::convertNumber<storm::RationalNumber>(1.0);
-    p2 /= storm::utility::convertNumber<storm::RationalNumber>(2.0);
+    storm::RationalNumber p1 = storm::numbers::convert<storm::RationalNumber>(11.0);
+    p1 /= storm::numbers::convert<storm::RationalNumber>(6.0);
+    storm::RationalNumber p2 = storm::numbers::convert<storm::RationalNumber>(1.0);
+    p2 /= storm::numbers::convert<storm::RationalNumber>(2.0);
     std::vector<storm::RationalNumber> p = {p1, p2};
-    storm::RationalNumber q1 = storm::utility::convertNumber<storm::RationalNumber>(29.0);
-    q1 /= storm::utility::convertNumber<storm::RationalNumber>(18.0);
-    storm::RationalNumber q2 = storm::utility::convertNumber<storm::RationalNumber>(2.0);
-    q2 /= storm::utility::convertNumber<storm::RationalNumber>(3.0);
+    storm::RationalNumber q1 = storm::numbers::convert<storm::RationalNumber>(29.0);
+    q1 /= storm::numbers::convert<storm::RationalNumber>(18.0);
+    storm::RationalNumber q2 = storm::numbers::convert<storm::RationalNumber>(2.0);
+    q2 /= storm::numbers::convert<storm::RationalNumber>(3.0);
     std::vector<storm::RationalNumber> q = {q1, q2};
     auto expectedAchievableValues =
         storm::storage::geometry::Polytope<storm::RationalNumber>::createDownwardClosure(std::vector<std::vector<storm::RationalNumber>>({p, q}));
@@ -91,7 +91,7 @@ TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
             {storm::utility::vector::convertNumericVector<storm::RationalNumber>(p), storm::utility::vector::convertNumericVector<storm::RationalNumber>(q)}));
     // due to precision issues, we enlarge one of the polytopes before checking containment
     storm::RationalNumber eps =
-        storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+        storm::numbers::convert<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     eps += eps;
     std::vector<storm::RationalNumber> lb(2, -eps), ub(2, eps);
     auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb, ub).asPolytope();
@@ -144,7 +144,7 @@ TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_3Obj) {
          storm::utility::vector::convertNumericVector<storm::RationalNumber>(j23)}));
     // due to precision issues, we enlarge one of the polytopes before checking containement
     storm::RationalNumber eps =
-        storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+        storm::numbers::convert<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     std::vector<storm::RationalNumber> lb(3, -eps), ub(3, eps);
     auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb, ub).asPolytope();
 
@@ -242,7 +242,7 @@ TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_2Obj) {
          storm::utility::vector::convertNumericVector<storm::RationalNumber>(j23)}));
     // due to precision issues, we enlarge one of the polytopes before checking containement
     storm::RationalNumber eps =
-        storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+        storm::numbers::convert<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     std::vector<storm::RationalNumber> lb(2, -eps), ub(2, eps);
     auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb, ub).asPolytope();
 
@@ -259,7 +259,7 @@ bool expectPointContained(std::vector<std::vector<ValueType>> const& pointset, s
         EXPECT_EQ(p.size(), point.size()) << "Missmatch in point dimension.";
         bool found = true;
         for (uint64_t i = 0; i < p.size(); ++i) {
-            if (storm::utility::abs<ValueType>(p[i] - point[i]) > precision) {
+            if (storm::numbers::abs<ValueType>(p[i] - point[i]) > precision) {
                 found = false;
                 break;
             }
@@ -321,7 +321,7 @@ std::vector<std::vector<ValueType>> convertPointset(std::vector<std::vector<std:
     for (auto const& point_str : in) {
         out.emplace_back();
         for (auto const& pi_str : point_str) {
-            out.back().push_back(storm::utility::convertNumber<ValueType>(pi_str));
+            out.back().push_back(storm::numbers::convert<ValueType>(pi_str));
         }
     }
     return out;

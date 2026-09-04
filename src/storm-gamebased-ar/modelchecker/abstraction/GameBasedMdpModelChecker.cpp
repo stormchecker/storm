@@ -54,7 +54,7 @@ GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::stora
                                                                     std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory)
     : options(options),
       smtSolverFactory(smtSolverFactory),
-      comparator(storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision()),
+      comparator(storm::numbers::convert<ValueType>(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision()),
                  storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getRelativeTerminationCriterion()),
       reuseQualitativeResults(false),
       reuseQuantitativeResults(false),
@@ -179,34 +179,34 @@ std::unique_ptr<storm::modelchecker::CheckResult> checkForResultAfterQualitative
             if (storm::logic::isLowerBound(checkTask.getBoundComparisonType())) {
                 if ((prob1 && initialStates) == initialStates) {
                     result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                               storm::utility::one<ValueType>());
+                                                                                                               storm::numbers::one<ValueType>());
                 }
             } else {
                 if (!(prob1 && initialStates).isZero()) {
                     result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                               storm::utility::one<ValueType>());
+                                                                                                               storm::numbers::one<ValueType>());
                 }
             }
         } else if (player2Direction == storm::OptimizationDirection::Maximize) {
             if (!storm::logic::isLowerBound(checkTask.getBoundComparisonType())) {
                 if ((prob0 && initialStates) == initialStates) {
                     result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                               storm::utility::zero<ValueType>());
+                                                                                                               storm::numbers::zero<ValueType>());
                 }
             } else {
                 if (!(prob0 && initialStates).isZero()) {
                     result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                               storm::utility::zero<ValueType>());
+                                                                                                               storm::numbers::zero<ValueType>());
                 }
             }
         }
     } else {
         if (player2Direction == storm::OptimizationDirection::Minimize && (prob1 && initialStates) == initialStates) {
             result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                       storm::utility::one<ValueType>());
+                                                                                                       storm::numbers::one<ValueType>());
         } else if (player2Direction == storm::OptimizationDirection::Maximize && (prob0 && initialStates) == initialStates) {
             result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                       storm::utility::zero<ValueType>());
+                                                                                                       storm::numbers::zero<ValueType>());
         }
     }
 
@@ -245,34 +245,34 @@ std::unique_ptr<storm::modelchecker::CheckResult> checkForResultAfterQualitative
             if (storm::logic::isLowerBound(checkTask.getBoundComparisonType())) {
                 if (initialStates.isSubsetOf(prob1)) {
                     result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                               storm::utility::one<ValueType>());
+                                                                                                               storm::numbers::one<ValueType>());
                 }
             } else {
                 if (!initialStates.isDisjointFrom(prob1)) {
                     result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                               storm::utility::one<ValueType>());
+                                                                                                               storm::numbers::one<ValueType>());
                 }
             }
         } else if (player2Direction == storm::OptimizationDirection::Maximize) {
             if (!storm::logic::isLowerBound(checkTask.getBoundComparisonType())) {
                 if (initialStates.isSubsetOf(prob0)) {
                     result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                               storm::utility::zero<ValueType>());
+                                                                                                               storm::numbers::zero<ValueType>());
                 }
             } else {
                 if (!initialStates.isDisjointFrom(prob0)) {
                     result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                               storm::utility::zero<ValueType>());
+                                                                                                               storm::numbers::zero<ValueType>());
                 }
             }
         }
     } else {
         if (player2Direction == storm::OptimizationDirection::Minimize && initialStates.isSubsetOf(prob1)) {
             result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                       storm::utility::one<ValueType>());
+                                                                                                       storm::numbers::one<ValueType>());
         } else if (player2Direction == storm::OptimizationDirection::Maximize && initialStates.isSubsetOf(prob0)) {
             result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                       storm::utility::zero<ValueType>());
+                                                                                                       storm::numbers::zero<ValueType>());
         }
     }
 
@@ -345,7 +345,7 @@ std::unique_ptr<storm::modelchecker::CheckResult> checkForResultAfterQuantitativ
 
 template<typename ValueType>
 std::unique_ptr<storm::modelchecker::CheckResult> checkForResultAfterQuantitativeCheck(ValueType const& minValue, ValueType const& maxValue,
-                                                                                       storm::utility::ConstantsComparator<ValueType> const& comparator) {
+                                                                                       storm::numbers::ConstantsComparator<ValueType> const& comparator) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     // If the lower and upper bounds are close enough, we can return the result.
@@ -391,7 +391,7 @@ SymbolicQuantitativeGameResult<Type, ValueType> solveMaybeStates(
     auto values = solver->solveGame(env, player1Direction, player2Direction, startVector, subvector,
                                     startInfo ? boost::make_optional(startInfo.get().getPlayer1Strategy()) : boost::none,
                                     startInfo ? boost::make_optional(startInfo.get().getPlayer2Strategy()) : boost::none);
-    return SymbolicQuantitativeGameResult<Type, ValueType>(std::make_pair(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>()), values,
+    return SymbolicQuantitativeGameResult<Type, ValueType>(std::make_pair(storm::numbers::zero<ValueType>(), storm::numbers::one<ValueType>()), values,
                                                            solver->getPlayer1Strategy(), solver->getPlayer2Strategy());
 }
 
@@ -482,7 +482,7 @@ ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(
                                                 : qualitativeResult.getProb1Max().asExplicitQualitativeGameResult().getPlayer2States();
 
     ExplicitQuantitativeResult<ValueType> result(maybeStates.size());
-    storm::utility::vector::setVectorValues(result.getValues(), player1Prob1States, storm::utility::one<ValueType>());
+    storm::utility::vector::setVectorValues(result.getValues(), player1Prob1States, storm::numbers::one<ValueType>());
 
     // If there are no maybe states, there is nothing we need to solve.
     if (maybeStates.empty()) {
@@ -828,8 +828,8 @@ std::unique_ptr<storm::modelchecker::CheckResult> GameBasedMdpModelChecker<Type,
                                                             << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration
                                                             << ").");
         } else {
-            STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::utility::convertNumber<double>(minVal)
-                                                            << ", " << storm::utility::convertNumber<double>(maxVal) << "], difference " << difference
+            STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::numbers::convert<double>(minVal) << ", "
+                                                            << storm::numbers::convert<double>(maxVal) << "], difference " << difference
                                                             << ") on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds()
                                                             << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration
                                                             << ").");
@@ -1023,7 +1023,7 @@ class ExplicitGameExporter {
         out << "\t\t{\n";
         out << "\t\t\t\"data\": {\n";
         out << "\t\t\t\t\"id\": \"" << data.id << "\",\n";
-        if (data.probability != storm::utility::zero<ValueType>()) {
+        if (data.probability != storm::numbers::zero<ValueType>()) {
             out << "\t\t\t\t\"name\": \"" << data.probability << "\",\n";
         } else {
             out << "\t\t\t\t\"name\": \"" << data.label << "\",\n";
@@ -1119,7 +1119,7 @@ class ExplicitGameExporter {
 
                 if (emit) {
                     nodes.emplace_back(player2State, 2, false, false);
-                    edges.emplace_back(edgeId++, currentState, player2State, storm::utility::zero<ValueType>(), player2State - player1Groups[currentState], min,
+                    edges.emplace_back(edgeId++, currentState, player2State, storm::numbers::zero<ValueType>(), player2State - player1Groups[currentState], min,
                                        max);
 
                     for (uint64_t playerPState = player2Groups[player2State]; playerPState < player2Groups[player2State + 1]; ++playerPState) {
@@ -1140,7 +1140,7 @@ class ExplicitGameExporter {
 
                         if (emit) {
                             nodes.emplace_back(playerPState, 0, false, false);
-                            edges.emplace_back(edgeId++, player2State, playerPState, storm::utility::zero<ValueType>(),
+                            edges.emplace_back(edgeId++, player2State, playerPState, storm::numbers::zero<ValueType>(),
                                                playerPState - player2Groups[player2State], min, max);
 
                             for (auto const& entry : transitionMatrix.getRow(playerPState)) {
@@ -1196,10 +1196,10 @@ void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection cons
 
             bool hasMinPlayer1Choice = false;
             uint64_t lowerPlayer1Choice = 0;
-            ValueType lowerValueUnderMinChoicePlayer1 = storm::utility::zero<ValueType>();
+            ValueType lowerValueUnderMinChoicePlayer1 = storm::numbers::zero<ValueType>();
             bool hasMaxPlayer1Choice = false;
             uint64_t upperPlayer1Choice = 0;
-            ValueType lowerValueUnderMaxChoicePlayer1 = storm::utility::zero<ValueType>();
+            ValueType lowerValueUnderMaxChoicePlayer1 = storm::numbers::zero<ValueType>();
 
             if (minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state)) {
                 hasMinPlayer1Choice = true;
@@ -1266,14 +1266,14 @@ void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection cons
     }
 
     if (sanityCheck) {
-        storm::utility::ConstantsComparator<ValueType> sanityComparator(storm::utility::convertNumber<ValueType>(1e-6), true);
+        storm::numbers::ConstantsComparator<ValueType> sanityComparator(storm::numbers::convert<ValueType>(1e-6), true);
 
         ///////// SANITY CHECK: apply lower strategy, obtain DTMC matrix and model check it. the values should
         ///////// still be the lower ones.
         storm::storage::SparseMatrixBuilder<ValueType> dtmcMatrixBuilder(player1Groups.size() - 1, player1Groups.size() - 1);
         for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
             if (targetStates.get(state)) {
-                dtmcMatrixBuilder.addNextValue(state, state, storm::utility::one<ValueType>());
+                dtmcMatrixBuilder.addNextValue(state, state, storm::numbers::one<ValueType>());
             } else {
                 STORM_LOG_ASSERT(minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state), "Expected min player 1 choice in state " << state << ".");
                 STORM_LOG_ASSERT(minStrategyPair.getPlayer2Strategy().hasDefinedChoice(minStrategyPair.getPlayer1Strategy().getChoice(state)),
@@ -1289,10 +1289,10 @@ void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection cons
         std::vector<ValueType> sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(
             Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
 
-        ValueType maxDiff = storm::utility::zero<ValueType>();
+        ValueType maxDiff = storm::numbers::zero<ValueType>();
         uint64_t maxState = 0;
         for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
-            ValueType diff = storm::utility::abs(ValueType(sanityValues[state] - quantitativeResult.getMin().getValues()[state]));
+            ValueType diff = storm::numbers::abs(ValueType(sanityValues[state] - quantitativeResult.getMin().getValues()[state]));
             if (diff > maxDiff) {
                 maxState = state;
                 maxDiff = diff;
@@ -1310,7 +1310,7 @@ void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection cons
         dtmcMatrixBuilder = storm::storage::SparseMatrixBuilder<ValueType>(player1Groups.size() - 1, player1Groups.size() - 1);
         for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
             if (targetStates.get(state)) {
-                dtmcMatrixBuilder.addNextValue(state, state, storm::utility::one<ValueType>());
+                dtmcMatrixBuilder.addNextValue(state, state, storm::numbers::one<ValueType>());
             } else {
                 STORM_LOG_ASSERT(maxStrategyPair.getPlayer1Strategy().hasDefinedChoice(state), "Expected max player 1 choice in state " << state << ".");
                 STORM_LOG_ASSERT(maxStrategyPair.getPlayer2Strategy().hasDefinedChoice(maxStrategyPair.getPlayer1Strategy().getChoice(state)),
@@ -1327,10 +1327,10 @@ void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection cons
         sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(
             Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
 
-        maxDiff = storm::utility::zero<ValueType>();
+        maxDiff = storm::numbers::zero<ValueType>();
         maxState = 0;
         for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
-            ValueType diff = storm::utility::abs(ValueType(sanityValues[state] - quantitativeResult.getMax().getValues()[state]));
+            ValueType diff = storm::numbers::abs(ValueType(sanityValues[state] - quantitativeResult.getMax().getValues()[state]));
             if (diff > maxDiff) {
                 maxState = state;
                 maxDiff = diff;
@@ -1511,8 +1511,8 @@ std::unique_ptr<storm::modelchecker::CheckResult> GameBasedMdpModelChecker<Type,
                                                             << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration
                                                             << ").");
         } else {
-            STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::utility::convertNumber<double>(minVal)
-                                                            << ", " << storm::utility::convertNumber<double>(maxVal) << "], difference " << difference
+            STORM_LOG_INFO("Obtained quantitative bounds [" << minVal << ", " << maxVal << "] (approx. [" << storm::numbers::convert<double>(minVal) << ", "
+                                                            << storm::numbers::convert<double>(maxVal) << "], difference " << difference
                                                             << ") on the actual value for the initial states in " << quantitativeWatch.getTimeInMilliseconds()
                                                             << "ms (after " << totalWatch.getTimeInMilliseconds() << "ms in iteration " << this->iteration
                                                             << ").");

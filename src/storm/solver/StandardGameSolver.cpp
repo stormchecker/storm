@@ -9,9 +9,9 @@
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/numbers/ConstantsComparator.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -170,7 +170,7 @@ bool StandardGameSolver<ValueType>::solveGamePolicyIteration(Environment const& 
     // The linear equation solver should be at least as precise as this solver.
     std::unique_ptr<storm::Environment> environmentOfSolverStorage;
     auto precOfSolver = env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType());
-    if (!storm::NumberTraits<ValueType>::IsExact) {
+    if (!storm::numbers::NumberTraits<ValueType>::IsExact) {
         bool changePrecision = precOfSolver.first && precOfSolver.first.get() > env.solver().game().getPrecision();
         bool changeRelative = precOfSolver.second && !precOfSolver.second.get() && env.solver().game().getRelativeTerminationCriterion();
         if (changePrecision || changeRelative) {
@@ -208,12 +208,12 @@ bool StandardGameSolver<ValueType>::solveGamePolicyIteration(Environment const& 
         for (uint64_t state : zeroStates) {
             for (auto& element : submatrix.getRow(state)) {
                 if (element.getColumn() == state) {
-                    element.setValue(asEquationSystem ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());
+                    element.setValue(asEquationSystem ? storm::numbers::one<ValueType>() : storm::numbers::zero<ValueType>());
                 } else {
-                    element.setValue(storm::utility::zero<ValueType>());
+                    element.setValue(storm::numbers::zero<ValueType>());
                 }
             }
-            subB[state] = storm::utility::zero<ValueType>();
+            subB[state] = storm::numbers::zero<ValueType>();
         }
     }
     auto submatrixSolver = linearEquationSolverFactory->create(environmentOfSolver, std::move(submatrix));
@@ -254,12 +254,12 @@ bool StandardGameSolver<ValueType>::solveGamePolicyIteration(Environment const& 
                 for (uint64_t state : zeroStates) {
                     for (auto& element : submatrix.getRow(state)) {
                         if (element.getColumn() == state) {
-                            element.setValue(asEquationSystem ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());
+                            element.setValue(asEquationSystem ? storm::numbers::one<ValueType>() : storm::numbers::zero<ValueType>());
                         } else {
-                            element.setValue(storm::utility::zero<ValueType>());
+                            element.setValue(storm::numbers::zero<ValueType>());
                         }
                     }
-                    subB[state] = storm::utility::zero<ValueType>();
+                    subB[state] = storm::numbers::zero<ValueType>();
                 }
             }
 
@@ -287,7 +287,7 @@ bool StandardGameSolver<ValueType>::solveGamePolicyIteration(Environment const& 
 }
 
 template<typename ValueType>
-bool StandardGameSolver<ValueType>::valueImproved(OptimizationDirection dir, storm::utility::ConstantsComparator<ValueType> const& comparator,
+bool StandardGameSolver<ValueType>::valueImproved(OptimizationDirection dir, storm::numbers::ConstantsComparator<ValueType> const& comparator,
                                                   ValueType const& value1, ValueType const& value2) const {
     if (dir == OptimizationDirection::Minimize) {
         return comparator.isLess(value2, value1);
@@ -312,7 +312,7 @@ bool StandardGameSolver<ValueType>::solveGameValueIteration(Environment const& e
         auxiliaryP1RowGroupVector = std::make_unique<std::vector<ValueType>>(this->getNumberOfPlayer1States());
     }
 
-    ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().game().getPrecision());
+    ValueType precision = storm::numbers::convert<ValueType>(env.solver().game().getPrecision());
     bool relative = env.solver().game().getRelativeTerminationCriterion();
     uint64_t maxIter = env.solver().game().getMaximalNumberOfIterations();
 
@@ -466,10 +466,10 @@ bool StandardGameSolver<ValueType>::extractChoices(Environment const& env, Optim
                                                    std::vector<ValueType> const& x, std::vector<ValueType> const& b,
                                                    std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices,
                                                    std::vector<uint_fast64_t>& player2Choices) const {
-    storm::utility::ConstantsComparator<ValueType> comparator(
+    storm::numbers::ConstantsComparator<ValueType> comparator(
         linearEquationSolverIsExact
-            ? storm::utility::zero<ValueType>()
-            : storm::utility::convertNumber<ValueType>(env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType()).first.get()),
+            ? storm::numbers::zero<ValueType>()
+            : storm::numbers::convert<ValueType>(env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType()).first.get()),
         false);
 
     // get the choices of player 2 and the corresponding values.
@@ -481,7 +481,7 @@ bool StandardGameSolver<ValueType>::extractChoices(Environment const& env, Optim
 
         // We need to check whether the scheduler improved. Therefore, we first have to evaluate the current choice.
         uint_fast64_t currentP2Choice = player2Choices[p2Group];
-        *currentValueIt = storm::utility::zero<ValueType>();
+        *currentValueIt = storm::numbers::zero<ValueType>();
         for (auto const& entry : this->player2Matrix.getRow(firstRowInGroup + currentP2Choice)) {
             *currentValueIt += entry.getValue() * x[entry.getColumn()];
         }
@@ -492,7 +492,7 @@ bool StandardGameSolver<ValueType>::extractChoices(Environment const& env, Optim
             if (p2Choice == currentP2Choice) {
                 continue;
             }
-            ValueType choiceValue = storm::utility::zero<ValueType>();
+            ValueType choiceValue = storm::numbers::zero<ValueType>();
             for (auto const& entry : this->player2Matrix.getRow(firstRowInGroup + p2Choice)) {
                 choiceValue += entry.getValue() * x[entry.getColumn()];
             }

@@ -497,9 +497,9 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
             result = helper.computeLongRunAverageStateDistribution(env, *initialStates.begin());
         } else {
             STORM_LOG_WARN("Multiple initial states found. A uniform distribution over initial states is assumed.");
-            ValueType initProb = storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(numInitStates);
+            ValueType initProb = storm::numbers::one<ValueType>() / storm::numbers::convert<ValueType, uint64_t>(numInitStates);
             result = helper.computeLongRunAverageStateDistribution(env, [&initialStates, &initProb](uint64_t const& stateIndex) {
-                return initialStates.get(stateIndex) ? initProb : storm::utility::zero<ValueType>();
+                return initialStates.get(stateIndex) ? initProb : storm::numbers::zero<ValueType>();
             });
         }
 

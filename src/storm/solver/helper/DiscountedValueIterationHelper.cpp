@@ -14,9 +14,9 @@ class DiscountedVIOperatorBackend {
           discountFactor{discountFactor},
           // We initialize the bound with a value guarantees preciseness when the difference between two iterations is less than it
           // See Russell, Norvig: Artificial Intelligence: A Modern Approach, 4th ed., p.583
-          bound{(((storm::utility::one<ValueType>() - discountFactor) * precision) / (discountFactor))} {
-        auto upper = storm::utility::log<ValueType>((2 * maximalAbsoluteReward) / (precision * (1 - discountFactor)));
-        maxIterations = storm::utility::convertNumber<uint64_t>(storm::utility::ceil<ValueType>(upper / -storm::utility::log(discountFactor)));
+          bound{(((storm::numbers::one<ValueType>() - discountFactor) * precision) / (discountFactor))} {
+        auto upper = storm::numbers::log<ValueType>((2 * maximalAbsoluteReward) / (precision * (1 - discountFactor)));
+        maxIterations = storm::numbers::convert<uint64_t>(storm::numbers::ceil<ValueType>(upper / -storm::numbers::log(discountFactor)));
         STORM_LOG_DEBUG("Maximum number of iterations: " << maxIterations);
     }
 
@@ -35,9 +35,9 @@ class DiscountedVIOperatorBackend {
     void applyUpdate(ValueType& currValue, [[maybe_unused]] uint64_t rowGroup) {
         if (isConverged) {
             if constexpr (Relative) {
-                isConverged = storm::utility::abs<ValueType>(currValue - *best) <= storm::utility::abs<ValueType>(bound * currValue);
+                isConverged = storm::numbers::abs<ValueType>(currValue - *best) <= storm::numbers::abs<ValueType>(bound * currValue);
             } else {
-                isConverged = storm::utility::abs<ValueType>(currValue - *best) <= bound;
+                isConverged = storm::numbers::abs<ValueType>(currValue - *best) <= bound;
             }
             // If we want to use the maximum number of iterations as the convergence criterion, we can use the following line
             // isConverged = currentIteration >= maxIterations;

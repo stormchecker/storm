@@ -7,8 +7,8 @@
 #include <nlohmann/detail/abi_macros.hpp>
 
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/utility/NumberTraits.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/NumberTraits.h"
+#include "storm/numbers/constants.h"
 
 NLOHMANN_JSON_NAMESPACE_BEGIN
 
@@ -22,7 +22,7 @@ template<typename T>
 constexpr bool supports_nan = std::numeric_limits<T>::is_iec559;
 
 template<typename T>
-constexpr bool is_exact = ::storm::NumberTraits<T>::IsExact;
+constexpr bool is_exact = ::storm::numbers::NumberTraits<T>::IsExact;
 
 template<typename T>
 constexpr bool is_floating_point = std::is_floating_point_v<T> || std::is_same_v<T, ::storm::RationalNumber>;
@@ -78,7 +78,7 @@ constexpr std::add_pointer_t<T> to_pointer(T t)
 template<typename T>
 T from_string(std::string const& str)
 {
-    return ::storm::utility::convertNumber<T>(str);
+    return ::storm::numbers::convert<T>(str);
 }
 
 template<typename T>
@@ -110,11 +110,11 @@ constexpr ToType convert(FromType const& v)
 	else if constexpr (std::is_same_v<ToType, int>)
 	{
 		// Conversion to int is e.g. necessary for scoped enums with default underlying type (enum class Name {...};)
-		return static_cast<int>(::storm::utility::convertNumber<int64_t>(v));
+		return static_cast<int>(::storm::numbers::convert<int64_t>(v));
 	}
     else
     {
-        return ::storm::utility::convertNumber<ToType>(v);
+        return ::storm::numbers::convert<ToType>(v);
     }
 }
 

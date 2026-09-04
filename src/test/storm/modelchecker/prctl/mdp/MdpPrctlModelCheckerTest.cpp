@@ -39,7 +39,7 @@ class SparseDoubleValueIterationViOpGaussSeidelMultEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         env.solver().minMax().setMultiplicationStyle(storm::solver::MultiplicationStyle::GaussSeidel);
         env.solver().multiplier().setType(storm::solver::MultiplierType::ViOperator);
         return env;
@@ -56,7 +56,7 @@ class SparseDoubleValueIterationViOpRegularMultEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         env.solver().minMax().setMultiplicationStyle(storm::solver::MultiplicationStyle::Regular);
         env.solver().multiplier().setType(storm::solver::MultiplierType::ViOperator);
         return env;
@@ -73,7 +73,7 @@ class SparseDoubleValueIterationNativeGaussSeidelMultEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         env.solver().minMax().setMultiplicationStyle(storm::solver::MultiplicationStyle::GaussSeidel);
         env.solver().multiplier().setType(storm::solver::MultiplierType::Native);
         return env;
@@ -90,7 +90,7 @@ class SparseDoubleValueIterationNativeRegularMultEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         env.solver().minMax().setMultiplicationStyle(storm::solver::MultiplicationStyle::Regular);
         env.solver().multiplier().setType(storm::solver::MultiplierType::Native);
         return env;
@@ -107,7 +107,7 @@ class JaniSparseDoubleValueIterationEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         return env;
     }
 };
@@ -123,7 +123,7 @@ class SparseDoubleIntervalIterationEnvironment {
         storm::Environment env;
         env.solver().setForceSoundness(true);
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::IntervalIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
     }
@@ -140,7 +140,7 @@ class SparseDoubleSoundValueIterationEnvironment {
         storm::Environment env;
         env.solver().setForceSoundness(true);
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::SoundValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
     }
@@ -157,7 +157,7 @@ class SparseDoubleOptimisticValueIterationEnvironment {
         storm::Environment env;
         env.solver().setForceSoundness(true);
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::OptimisticValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
     }
@@ -174,7 +174,7 @@ class SparseDoubleGuessingValueIterationEnvironment {
         storm::Environment env;
         env.solver().setForceSoundness(true);
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::GuessingValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
     }
@@ -191,7 +191,7 @@ class SparseDoubleTopologicalValueIterationEnvironment {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
         env.solver().topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
     }
@@ -209,7 +209,7 @@ class SparseDoubleTopologicalSoundValueIterationEnvironment {
         env.solver().setForceSoundness(true);
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
         env.solver().topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::SoundValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
     }
@@ -227,7 +227,7 @@ class SparseDoubleTopologicalGuessingValueIterationEnvironment {
         env.solver().setForceSoundness(true);
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
         env.solver().topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::GuessingValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
     }
@@ -243,7 +243,7 @@ class SparseDoubleLPEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::LinearProgramming);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         return env;
     }
 };
@@ -258,7 +258,7 @@ class SparseDoubleViToLPEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ViToLp);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         return env;
     }
 };
@@ -321,7 +321,7 @@ class HybridCuddDoubleValueIterationEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         return env;
     }
 };
@@ -342,7 +342,7 @@ class HybridSylvanDoubleValueIterationEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         return env;
     }
 };
@@ -364,7 +364,7 @@ class HybridCuddDoubleSoundValueIterationEnvironment {
         storm::Environment env;
         env.solver().setForceSoundness(true);
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::SoundValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
     }
@@ -387,7 +387,7 @@ class HybridCuddDoubleOptimisticValueIterationEnvironment {
         storm::Environment env;
         env.solver().setForceSoundness(true);
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::OptimisticValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
     }
@@ -410,7 +410,7 @@ class HybridCuddDoubleGuessingValueIterationEnvironment {
         storm::Environment env;
         env.solver().setForceSoundness(true);
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::GuessingValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
     }
@@ -452,7 +452,7 @@ class DdCuddDoubleValueIterationEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         return env;
     }
 };
@@ -473,7 +473,7 @@ class JaniDdCuddDoubleValueIterationEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         return env;
     }
 };
@@ -494,7 +494,7 @@ class DdSylvanDoubleValueIterationEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         return env;
     }
 };
@@ -515,7 +515,7 @@ class DdCuddDoublePolicyIterationEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::PolicyIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         return env;
     }
 };
@@ -562,7 +562,7 @@ class MdpPrctlModelCheckerTest : public ::testing::Test {
         return _environment;
     }
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
     ValueType precision() const {
         return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");
@@ -811,10 +811,10 @@ STORM_EXPENSIVE_TYPED_TEST(MdpPrctlModelCheckerTest, consensus) {
         EXPECT_TRUE(this->getQualitativeResultAtInitialState(model, result));
 
         result = checker->check(this->env(), tasks[4]);
-        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+        EXPECT_TRUE(storm::numbers::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
 
         result = checker->check(this->env(), tasks[5]);
-        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+        EXPECT_TRUE(storm::numbers::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
 
         result = checker->check(this->env(), tasks[6]);
         EXPECT_NEAR(this->parseNumber("75"), this->getQuantitativeResultAtInitialState(model, result), this->precision());

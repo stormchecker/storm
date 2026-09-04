@@ -317,7 +317,7 @@ SampleInformation<ValueType> parseSamples(std::shared_ptr<storm::models::ModelBa
 
             for (auto& value : splitValues) {
                 boost::trim(value);
-                list.push_back(storm::utility::convertNumber<typename storm::utility::parametric::CoefficientType<ValueType>::type>(value));
+                list.push_back(storm::numbers::convert<typename storm::utility::parametric::CoefficientType<ValueType>::type>(value));
             }
         }
 
@@ -361,7 +361,7 @@ void sampleDerivatives(std::shared_ptr<storm::models::sparse::Model<ValueType>> 
         instantiation;
     for (auto const& pair : keyValue) {
         auto variable = carl::VariablePool::getInstance().findVariableWithName(pair.first);
-        auto value = storm::utility::convertNumber<typename storm::utility::parametric::CoefficientType<ValueType>::type>(pair.second);
+        auto value = storm::numbers::convert<typename storm::utility::parametric::CoefficientType<ValueType>::type>(pair.second);
         instantiation.emplace(variable, value);
     }
 

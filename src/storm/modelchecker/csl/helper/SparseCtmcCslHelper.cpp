@@ -28,13 +28,13 @@ bool SparseCtmcCslHelper::checkAndUpdateTransientProbabilityEpsilon(storm::Envir
         return false;
     }
 
-    ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
+    ValueType precision = storm::numbers::convert<ValueType>(env.solver().timeBounded().getPrecision());
     // If we need to compute values with relative precision, it might be necessary to increase the precision requirements (epsilon)
     ValueType newEpsilon = epsilon;
     // Only consider positions that are relevant for the solve goal (e.g. initial states of the model) and are supposed to have a non-zero value
     for (uint64_t state : relevantPositions) {
-        if (storm::utility::isZero(resultVector[state])) {
-            newEpsilon = std::min(epsilon * storm::utility::convertNumber<ValueType>(0.1), newEpsilon);
+        if (storm::numbers::isZero(resultVector[state])) {
+            newEpsilon = std::min(epsilon * storm::numbers::convert<ValueType>(0.1), newEpsilon);
         } else {
             ValueType relativeError = epsilon / resultVector[state];  // epsilon is an upper bound for the absolute error we made
             if (relativeError > precision) {
@@ -53,7 +53,7 @@ bool SparseCtmcCslHelper::checkAndUpdateTransientProbabilityEpsilon(storm::Envir
 }
 
 template<typename ValueType>
-    requires storm::NumberTraits<ValueType>::SupportsExponential
+    requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
 std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
     Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& rateMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
@@ -64,7 +64,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
     uint_fast64_t numberOfStates = rateMatrix.getRowCount();
 
     // If the time bounds are [0, inf], we rather call untimed reachability.
-    if (storm::utility::isZero(lowerBound) && !upperBound) {
+    if (storm::numbers::isZero(lowerBound) && !upperBound) {
         return computeUntilProbabilities(env, std::move(goal), rateMatrix, backwardTransitions, exitRates, phiStates, psiStates, qualitative);
     }
 
@@ -75,7 +75,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
     std::vector<ValueType> result;
 
     // Set the possible (absolute) error allowed for truncation (epsilon for fox-glynn)
-    ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision()) / 8.0;
+    ValueType epsilon = storm::numbers::convert<ValueType>(env.solver().timeBounded().getPrecision()) / 8.0;
 
     // If we identify the states that have probability 0 of reaching the target states, we can exclude them from the
     // further computations.
@@ -95,17 +95,17 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
 
     do {  // Iterate until the desired precision is reached (only relevant for relative precision criterion)
         if (!statesWithProbabilityGreater0.empty()) {
-            if (upperBound && storm::utility::isZero(*upperBound)) {
+            if (upperBound && storm::numbers::isZero(*upperBound)) {
                 // In this case, the interval is of the form [0, 0].
-                result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
-                storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
+                result = std::vector<ValueType>(numberOfStates, storm::numbers::zero<ValueType>());
+                storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::numbers::one<ValueType>());
             } else {
-                if (storm::utility::isZero(lowerBound)) {
+                if (storm::numbers::isZero(lowerBound)) {
                     // In this case, the interval is of the form [0, t].
                     // Note that this excludes [0, inf] since this is untimed reachability and we considered this case earlier.
 
-                    result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
-                    storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
+                    result = std::vector<ValueType>(numberOfStates, storm::numbers::zero<ValueType>());
+                    storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::numbers::one<ValueType>());
                     if (!statesWithProbabilityGreater0NonPsi.empty()) {
                         // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
                         ValueType uniformizationRate = 0;
@@ -126,7 +126,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
                         }
 
                         // Finally compute the transient probabilities.
-                        std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::utility::zero<ValueType>());
+                        std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::numbers::zero<ValueType>());
                         std::vector<ValueType> subresult =
                             computeTransientProbabilities(env, uniformizedMatrix, &b, *upperBound, uniformizationRate, values, epsilon);
                         storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0NonPsi, subresult);
@@ -159,7 +159,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
                     subResult = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, lowerBound, uniformizationRate, subResult, epsilon);
 
                     // Fill in the correct values.
-                    storm::utility::vector::setVectorValues(result, ~relevantStates, storm::utility::zero<ValueType>());
+                    storm::utility::vector::setVectorValues(result, ~relevantStates, storm::numbers::zero<ValueType>());
                     storm::utility::vector::setVectorValues(result, relevantStates, subResult);
                 } else {
                     // In this case, the interval is of the form [t, t'] with t != 0 and t' != inf.
@@ -168,11 +168,11 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
                         // In this case, the interval is of the form [t, t'] with t != 0, t' != inf and t != t'.
 
                         storm::storage::BitVector relevantStates = statesWithProbabilityGreater0 & phiStates;
-                        std::vector<ValueType> newSubresult(relevantStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
-                        storm::utility::vector::setVectorValues(newSubresult, psiStates % relevantStates, storm::utility::one<ValueType>());
+                        std::vector<ValueType> newSubresult(relevantStates.getNumberOfSetBits(), storm::numbers::zero<ValueType>());
+                        storm::utility::vector::setVectorValues(newSubresult, psiStates % relevantStates, storm::numbers::one<ValueType>());
                         if (!statesWithProbabilityGreater0NonPsi.empty()) {
                             // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
-                            ValueType uniformizationRate = storm::utility::zero<ValueType>();
+                            ValueType uniformizationRate = storm::numbers::zero<ValueType>();
                             for (uint64_t state : statesWithProbabilityGreater0NonPsi) {
                                 uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                             }
@@ -190,17 +190,17 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
                             }
 
                             // Start by computing the transient probabilities of reaching a psi state in time t' - t.
-                            std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::utility::zero<ValueType>());
+                            std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::numbers::zero<ValueType>());
                             // divide the possible error by two since we will make this error two times.
                             std::vector<ValueType> subresult =
                                 computeTransientProbabilities(env, uniformizedMatrix, &b, *upperBound - lowerBound, uniformizationRate, values,
-                                                              epsilon / storm::utility::convertNumber<ValueType>(2.0));
+                                                              epsilon / storm::numbers::convert<ValueType>(2.0));
                             storm::utility::vector::setVectorValues(newSubresult, statesWithProbabilityGreater0NonPsi % relevantStates, subresult);
                         }
 
                         // Then compute the transient probabilities of being in such a state after t time units. For this,
                         // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
-                        ValueType uniformizationRate = storm::utility::zero<ValueType>();
+                        ValueType uniformizationRate = storm::numbers::zero<ValueType>();
                         for (uint64_t state : relevantStates) {
                             uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                         }
@@ -211,21 +211,21 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
                         storm::storage::SparseMatrix<ValueType> uniformizedMatrix =
                             computeUniformizedMatrix(rateMatrix, relevantStates, uniformizationRate, exitRates);
                         newSubresult = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult,
-                                                                                epsilon / storm::utility::convertNumber<ValueType>(2.0));
+                                                                                epsilon / storm::numbers::convert<ValueType>(2.0));
 
                         // Fill in the correct values.
-                        result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
-                        storm::utility::vector::setVectorValues(result, ~relevantStates, storm::utility::zero<ValueType>());
+                        result = std::vector<ValueType>(numberOfStates, storm::numbers::zero<ValueType>());
+                        storm::utility::vector::setVectorValues(result, ~relevantStates, storm::numbers::zero<ValueType>());
                         storm::utility::vector::setVectorValues(result, relevantStates, newSubresult);
                     } else {
                         // In this case, the interval is of the form [t, t] with t != 0, t != inf.
 
                         std::vector<ValueType> newSubresult = std::vector<ValueType>(statesWithProbabilityGreater0.getNumberOfSetBits());
-                        storm::utility::vector::setVectorValues(newSubresult, psiStates % statesWithProbabilityGreater0, storm::utility::one<ValueType>());
+                        storm::utility::vector::setVectorValues(newSubresult, psiStates % statesWithProbabilityGreater0, storm::numbers::one<ValueType>());
 
                         // Then compute the transient probabilities of being in such a state after t time units. For this,
                         // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
-                        ValueType uniformizationRate = storm::utility::zero<ValueType>();
+                        ValueType uniformizationRate = storm::numbers::zero<ValueType>();
                         for (uint64_t state : statesWithProbabilityGreater0) {
                             uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                         }
@@ -239,14 +239,14 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
                             computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, epsilon);
 
                         // Fill in the correct values.
-                        result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
-                        storm::utility::vector::setVectorValues(result, ~statesWithProbabilityGreater0, storm::utility::zero<ValueType>());
+                        result = std::vector<ValueType>(numberOfStates, storm::numbers::zero<ValueType>());
+                        storm::utility::vector::setVectorValues(result, ~statesWithProbabilityGreater0, storm::numbers::zero<ValueType>());
                         storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, newSubresult);
                     }
                 }
             }
         } else {
-            result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
+            result = std::vector<ValueType>(numberOfStates, storm::numbers::zero<ValueType>());
         }
     } while (checkAndUpdateTransientProbabilityEpsilon(env, epsilon, result, relevantValues));
     return result;
@@ -281,7 +281,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeNextProbabilities(Environment
 }
 
 template<typename ValueType, typename RewardModelType>
-    requires storm::NumberTraits<ValueType>::SupportsExponential
+    requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
 std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
                                                                         storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                                         std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel,
@@ -296,13 +296,13 @@ std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environm
     std::vector<ValueType> result(rewardModel.getStateRewardVector());
 
     // If the time-bound is zero, just return the current reward vector
-    if (storm::utility::isZero(timeBound)) {
+    if (storm::numbers::isZero(timeBound)) {
         return result;
     }
     ValueType maxValue = storm::utility::vector::maximumElementAbs(result);
 
     // If all entries are zero, we return the zero-vector
-    if (storm::utility::isZero(maxValue)) {
+    if (storm::numbers::isZero(maxValue)) {
         return result;
     }
 
@@ -317,13 +317,13 @@ std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environm
         computeUniformizedMatrix(rateMatrix, storm::storage::BitVector(numberOfStates, true), uniformizationRate, exitRateVector);
 
     // Set the possible error allowed for truncation (epsilon for fox-glynn)
-    ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
+    ValueType epsilon = storm::numbers::convert<ValueType>(env.solver().timeBounded().getPrecision());
     if (env.solver().timeBounded().getRelativeTerminationCriterion()) {
         // Be more precise, if the maximum value is very small (precision can/has to be refined later)
-        epsilon *= std::min(storm::utility::one<ValueType>(), maxValue);
+        epsilon *= std::min(storm::numbers::one<ValueType>(), maxValue);
     } else {
         // Be more precise, if the maximal possible value is very large
-        epsilon /= std::max(storm::utility::one<ValueType>(), maxValue);
+        epsilon /= std::max(storm::numbers::one<ValueType>(), maxValue);
     }
 
     storm::storage::BitVector relevantValues;
@@ -342,7 +342,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environm
 }
 
 template<typename ValueType, typename RewardModelType>
-    requires storm::NumberTraits<ValueType>::SupportsExponential
+    requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
 std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
                                                                      storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                                      std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel,
@@ -357,7 +357,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment
 
     // If the time bound is zero, the result is the constant zero vector.
     if (timeBound == 0) {
-        return std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
+        return std::vector<ValueType>(numberOfStates, storm::numbers::zero<ValueType>());
     }
 
     // Otherwise, we need to perform some computations.
@@ -378,18 +378,18 @@ std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment
     ValueType maxReward = storm::utility::vector::maximumElementAbs(totalRewardVector);
 
     // If all rewards are zero, the result is the constant zero vector.
-    if (storm::utility::isZero(maxReward)) {
-        return std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
+    if (storm::numbers::isZero(maxReward)) {
+        return std::vector<ValueType>(numberOfStates, storm::numbers::zero<ValueType>());
     }
 
     // Set the possible (absolute) error allowed for truncation (epsilon for fox-glynn)
-    ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
+    ValueType epsilon = storm::numbers::convert<ValueType>(env.solver().timeBounded().getPrecision());
     if (env.solver().timeBounded().getRelativeTerminationCriterion()) {
         // Be more precise, if the value is very small (precision can/has to be refined later)
-        epsilon *= std::min(storm::utility::one<ValueType>(), maxReward);
+        epsilon *= std::min(storm::numbers::one<ValueType>(), maxReward);
     } else {
         // Be more precise, if the maximal possible value is very large
-        epsilon /= std::max(storm::utility::one<ValueType>(), maxReward * timeBound);
+        epsilon /= std::max(storm::numbers::one<ValueType>(), maxReward * timeBound);
     }
 
     storm::storage::BitVector relevantValues;
@@ -420,12 +420,12 @@ std::vector<ValueType> SparseCtmcCslHelper::computeReachabilityTimes(Environment
     // Initialize rewards.
     std::vector<ValueType> totalRewardVector;
     for (size_t i = 0; i < exitRateVector.size(); ++i) {
-        if (targetStates[i] || storm::utility::isZero(exitRateVector[i])) {
+        if (targetStates[i] || storm::numbers::isZero(exitRateVector[i])) {
             // Set reward for target states or states without outgoing transitions to 0.
-            totalRewardVector.push_back(storm::utility::zero<ValueType>());
+            totalRewardVector.push_back(storm::numbers::zero<ValueType>());
         } else {
             // Reward is (1 / exitRate).
-            totalRewardVector.push_back(storm::utility::one<ValueType>() / exitRateVector[i]);
+            totalRewardVector.push_back(storm::numbers::one<ValueType>() / exitRateVector[i]);
         }
     }
 
@@ -509,7 +509,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeTotalRewards(Environment cons
 }
 
 template<typename ValueType>
-    requires storm::NumberTraits<ValueType>::SupportsExponential
+    requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
 std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                                              storm::storage::BitVector const& initialStates,
                                                                              storm::storage::BitVector const& phiStates,
@@ -520,13 +520,13 @@ std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Env
     uint_fast64_t numberOfStates = rateMatrix.getRowCount();
 
     // Create the result vector.
-    std::vector<ValueType> result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
+    std::vector<ValueType> result = std::vector<ValueType>(numberOfStates, storm::numbers::zero<ValueType>());
 
     storm::storage::SparseMatrix<ValueType> transposedMatrix(rateMatrix);
     transposedMatrix.makeRowsAbsorbing(psiStates);
     std::vector<ValueType> newRates = exitRates;
     for (uint64_t state : psiStates) {
-        newRates[state] = storm::utility::one<ValueType>();
+        newRates[state] = storm::numbers::one<ValueType>();
     }
 
     // Identify all maybe states which have a probability greater than 0 to be reached from the initial state.
@@ -558,13 +558,13 @@ std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Env
             std::cout << element << '\n';
         }*/
 
-        ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision()) / 8.0;
+        ValueType epsilon = storm::numbers::convert<ValueType>(env.solver().timeBounded().getPrecision()) / 8.0;
         STORM_LOG_WARN_COND(!env.solver().timeBounded().getRelativeTerminationCriterion(),
                             "Computation of transient probabilities with relative precision not supported. Using absolute precision instead.");
-        std::vector<ValueType> values(relevantStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
+        std::vector<ValueType> values(relevantStates.getNumberOfSetBits(), storm::numbers::zero<ValueType>());
         // Set initial states
         size_t i = 0;
-        ValueType initDist = storm::utility::one<ValueType>() / initialStates.getNumberOfSetBits();
+        ValueType initDist = storm::numbers::one<ValueType>() / initialStates.getNumberOfSetBits();
         for (uint64_t state : relevantStates) {
             if (initialStates.get(state)) {
                 values[i] = initDist;
@@ -582,7 +582,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Env
 }
 
 template<typename ValueType>
-    requires storm::NumberTraits<ValueType>::SupportsExponential
+    requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
 storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper::computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                                                       storm::storage::BitVector const& maybeStates,
                                                                                       ValueType uniformizationRate, std::vector<ValueType> const& exitRates) {
@@ -600,7 +600,7 @@ storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper::computeUniformizedM
     for (uint64_t state : maybeStates) {
         for (auto& element : uniformizedMatrix.getRow(currentRow)) {
             if (element.getColumn() == currentRow) {
-                element.setValue((element.getValue() - exitRates[state]) / uniformizationRate + storm::utility::one<ValueType>());
+                element.setValue((element.getValue() - exitRates[state]) / uniformizationRate + storm::numbers::one<ValueType>());
             } else {
                 element.setValue(element.getValue() / uniformizationRate);
             }
@@ -612,17 +612,17 @@ storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper::computeUniformizedM
 }
 
 template<typename ValueType, bool useMixedPoissonProbabilities>
-    requires storm::NumberTraits<ValueType>::SupportsExponential
+    requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
 std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Environment const& env,
                                                                           storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix,
                                                                           std::vector<ValueType> const* addVector, ValueType timeBound,
                                                                           ValueType uniformizationRate, std::vector<ValueType> values, ValueType epsilon) {
-    STORM_LOG_WARN_COND(epsilon > storm::utility::convertNumber<ValueType>(1e-20),
+    STORM_LOG_WARN_COND(epsilon > storm::numbers::convert<ValueType>(1e-20),
                         "Very low truncation error " << epsilon << " requested. Numerical inaccuracies are possible.");
     ValueType lambda = timeBound * uniformizationRate;
 
     // If no time can pass, the current values are the result.
-    if (storm::utility::isZero(lambda)) {
+    if (storm::numbers::isZero(lambda)) {
         return values;
     }
 
@@ -639,7 +639,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Enviro
         // and then sets foxGlynnResult.weights = v / uniformizationRate.
         // We do this in place and with numerical stability in mind. Note that the weights commonly range to values from 1e-200 to 1e+200
         uint64_t l{0ull}, r{foxGlynnResult.weights.size() - 1};
-        ValueType sumLeft{storm::utility::zero<ValueType>()}, sumRight{storm::utility::zero<ValueType>()};
+        ValueType sumLeft{storm::numbers::zero<ValueType>()}, sumRight{storm::numbers::zero<ValueType>()};
         while (l <= r) {
             if (foxGlynnResult.weights[l] < foxGlynnResult.weights[r]) {
                 sumLeft += foxGlynnResult.weights[l];
@@ -656,8 +656,8 @@ std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Enviro
                 --r;
             }
         }
-        auto const relDiff = storm::utility::abs<ValueType>(foxGlynnResult.totalWeight - (sumLeft + sumRight)) / foxGlynnResult.totalWeight;
-        STORM_LOG_WARN_COND(relDiff < storm::utility::convertNumber<ValueType>(1e-8),
+        auto const relDiff = storm::numbers::abs<ValueType>(foxGlynnResult.totalWeight - (sumLeft + sumRight)) / foxGlynnResult.totalWeight;
+        STORM_LOG_WARN_COND(relDiff < storm::numbers::convert<ValueType>(1e-8),
                             "Numerical instability when adjusting the FoxGlynn weights. Relative Difference: " << relDiff << ".");
     }
 
@@ -716,7 +716,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Enviro
     }
 
     // Finally, divide the result by the total weight
-    storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(result, storm::utility::one<ValueType>() / foxGlynnResult.totalWeight);
+    storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(result, storm::numbers::one<ValueType>() / foxGlynnResult.totalWeight);
     return result;
 }
 

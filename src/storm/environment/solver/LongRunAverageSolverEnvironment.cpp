@@ -1,8 +1,8 @@
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/LongRunAverageSolverSettings.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -13,12 +13,12 @@ LongRunAverageSolverEnvironment::LongRunAverageSolverEnvironment() {
     detMethodSetFromDefault = lraSettings.isDetLraMethodSetFromDefaultValue();
     nondetMethod = lraSettings.getNondetLraMethod();
     nondetMethodSetFromDefault = lraSettings.isNondetLraMethodSetFromDefaultValue();
-    precision = storm::utility::convertNumber<storm::RationalNumber>(lraSettings.getPrecision());
+    precision = storm::numbers::convert<storm::RationalNumber>(lraSettings.getPrecision());
     relative = lraSettings.isRelativePrecision();
     if (lraSettings.isMaximalIterationCountSet()) {
         maxIters = lraSettings.getMaximalIterationCount();
     }
-    aperiodicFactor = storm::utility::convertNumber<storm::RationalNumber>(lraSettings.getAperiodicFactor());
+    aperiodicFactor = storm::numbers::convert<storm::RationalNumber>(lraSettings.getAperiodicFactor());
 }
 
 LongRunAverageSolverEnvironment::~LongRunAverageSolverEnvironment() {

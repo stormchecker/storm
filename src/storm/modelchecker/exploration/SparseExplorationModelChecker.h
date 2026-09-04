@@ -9,7 +9,7 @@
 #include "storm/generator/CompressedState.h"
 #include "storm/generator/VariableInformation.h"
 
-#include "storm/utility/ConstantsComparator.h"
+#include "storm/numbers/ConstantsComparator.h"
 
 namespace storm {
 
@@ -110,7 +110,7 @@ class SparseExplorationModelChecker : public AbstractModelChecker<ModelType> {
     mutable std::default_random_engine randomGenerator;
 
     // A comparator used to determine whether values are equal.
-    storm::utility::ConstantsComparator<ValueType> comparator;
+    storm::numbers::ConstantsComparator<ValueType> comparator;
 };
 }  // namespace modelchecker
 }  // namespace storm

@@ -1,8 +1,8 @@
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -17,14 +17,14 @@ NativeSolverEnvironment::NativeSolverEnvironment() {
     } else {
         maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
     }
-    precision = storm::utility::convertNumber<storm::RationalNumber>(nativeSettings.getPrecision());
+    precision = storm::numbers::convert<storm::RationalNumber>(nativeSettings.getPrecision());
     considerRelativeTerminationCriterion =
         nativeSettings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
     STORM_LOG_ASSERT(considerRelativeTerminationCriterion ||
                          nativeSettings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Absolute,
                      "Unknown convergence criterion.");
     powerMethodMultiplicationStyle = nativeSettings.getPowerMethodMultiplicationStyle();
-    sorOmega = storm::utility::convertNumber<storm::RationalNumber>(nativeSettings.getOmega());
+    sorOmega = storm::numbers::convert<storm::RationalNumber>(nativeSettings.getOmega());
     symmetricUpdates = nativeSettings.isForceIntervalIterationSymmetricUpdatesSet();
 }
 

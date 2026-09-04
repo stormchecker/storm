@@ -56,21 +56,21 @@ template<>
 storm::RationalFunction OperatorFormula::getThresholdAs() const {
     STORM_LOG_THROW(!operatorInformation.bound.get().threshold.containsVariables(), storm::exceptions::InvalidOperationException,
                     "Cannot evaluate threshold '" << operatorInformation.bound.get().threshold << "' as it contains undefined constants.");
-    return storm::utility::convertNumber<storm::RationalFunction>(operatorInformation.bound.get().threshold.evaluateAsRational());
+    return storm::numbers::convert<storm::RationalFunction>(operatorInformation.bound.get().threshold.evaluateAsRational());
 }
 
 template<>
 storm::Interval OperatorFormula::getThresholdAs() const {
     STORM_LOG_THROW(!operatorInformation.bound.get().threshold.containsVariables(), storm::exceptions::InvalidOperationException,
                     "Cannot evaluate threshold '" << operatorInformation.bound.get().threshold << "' as it contains undefined constants.");
-    return storm::utility::convertNumber<storm::Interval>(operatorInformation.bound.get().threshold.evaluateAsRational());
+    return storm::numbers::convert<storm::Interval>(operatorInformation.bound.get().threshold.evaluateAsRational());
 }
 
 template<>
 storm::RationalInterval OperatorFormula::getThresholdAs() const {
     STORM_LOG_THROW(!operatorInformation.bound.get().threshold.containsVariables(), storm::exceptions::InvalidOperationException,
                     "Cannot evaluate threshold '" << operatorInformation.bound.get().threshold << "' as it contains undefined constants.");
-    return storm::utility::convertNumber<storm::RationalInterval>(operatorInformation.bound.get().threshold.evaluateAsRational());
+    return storm::numbers::convert<storm::RationalInterval>(operatorInformation.bound.get().threshold.evaluateAsRational());
 }
 
 void OperatorFormula::setThreshold(storm::expressions::Expression const& newThreshold) {

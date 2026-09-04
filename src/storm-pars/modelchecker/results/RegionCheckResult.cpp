@@ -3,7 +3,7 @@
 #include <map>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -13,7 +13,7 @@ template<typename ValueType>
 RegionCheckResult<ValueType>::RegionCheckResult(
     std::vector<std::pair<storm::storage::ParameterRegion<ValueType>, storm::modelchecker::RegionResult>> const& regionResults)
     : regionResults(regionResults) {
-    auto overallArea = storm::utility::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
+    auto overallArea = storm::numbers::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
     for (auto const& res : this->regionResults) {
         overallArea += res.first.area();
     }
@@ -24,7 +24,7 @@ template<typename ValueType>
 RegionCheckResult<ValueType>::RegionCheckResult(
     std::vector<std::pair<storm::storage::ParameterRegion<ValueType>, storm::modelchecker::RegionResult>>&& regionResults)
     : regionResults(std::move(regionResults)) {
-    auto overallArea = storm::utility::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
+    auto overallArea = storm::numbers::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
     for (auto const& res : this->regionResults) {
         overallArea += res.first.area();
     }
@@ -79,11 +79,11 @@ std::ostream& RegionCheckResult<ValueType>::writeToStream(std::ostream& out) con
 
 template<typename ValueType>
 std::ostream& RegionCheckResult<ValueType>::writeCondensedToStream(std::ostream& out) const {
-    double satPercent = storm::utility::convertNumber<double>(satFraction) * 100.0;
-    double unsatPercent = storm::utility::convertNumber<double>(unsatFraction) * 100.0;
-    double illDefinedPercent = storm::utility::convertNumber<double>(illDefinedFraction) * 100.0;
-    auto oneHundred = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(100.0);
-    auto one = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(1.0);
+    double satPercent = storm::numbers::convert<double>(satFraction) * 100.0;
+    double unsatPercent = storm::numbers::convert<double>(unsatFraction) * 100.0;
+    double illDefinedPercent = storm::numbers::convert<double>(illDefinedFraction) * 100.0;
+    auto oneHundred = storm::numbers::convert<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(100.0);
+    auto one = storm::numbers::convert<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(1.0);
     out << "  Fraction of satisfied area: " << satPercent << "%\n";
     out << "Fraction of unsatisfied area: " << unsatPercent << "%\n";
     if (illDefinedPercent > 0) {
@@ -109,9 +109,9 @@ std::ostream& RegionCheckResult<ValueType>::writeIllustrationToStream(std::ostre
 
 template<typename ValueType>
 void RegionCheckResult<ValueType>::initFractions(typename storm::storage::ParameterRegion<ValueType>::CoefficientType const& overallArea) {
-    auto satArea = storm::utility::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
-    auto unsatArea = storm::utility::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
-    auto illDefinedArea = storm::utility::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
+    auto satArea = storm::numbers::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
+    auto unsatArea = storm::numbers::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
+    auto illDefinedArea = storm::numbers::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
     for (auto const& res : this->regionResults) {
         if (res.second == storm::modelchecker::RegionResult::AllSat) {
             satArea += res.first.area();

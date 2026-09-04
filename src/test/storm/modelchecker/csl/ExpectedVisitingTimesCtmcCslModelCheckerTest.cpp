@@ -28,7 +28,7 @@ class SparseGmmxxGmresIluEnvironment {
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
         env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
         env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
-        // env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6)); // Need to increase precision because eq sys yields
+        // env.solver().gmmxx().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6)); // Need to increase precision because eq sys yields
         // incorrect results
         return env;
     }
@@ -81,7 +81,7 @@ class ExpectedVisitingTimesCtmcCslModelCheckerTest : public ::testing::Test {
         return _environment;
     }
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
     ValueType precision() const {
         return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");
@@ -150,13 +150,13 @@ TYPED_TEST(ExpectedVisitingTimesCtmcCslModelCheckerTest, expvisittimestest) {
         << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_NEAR(sortedVector[5], this->parseNumber("341/1215"), this->precision())
         << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
-    EXPECT_EQ(sortedVector[6], storm::utility::infinity<ValueType>())
+    EXPECT_EQ(sortedVector[6], storm::numbers::infinity<ValueType>())
         << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
-    EXPECT_EQ(sortedVector[7], storm::utility::infinity<ValueType>())
+    EXPECT_EQ(sortedVector[7], storm::numbers::infinity<ValueType>())
         << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
-    EXPECT_EQ(sortedVector[8], storm::utility::infinity<ValueType>())
+    EXPECT_EQ(sortedVector[8], storm::numbers::infinity<ValueType>())
         << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
-    EXPECT_EQ(sortedVector[9], storm::utility::infinity<ValueType>())
+    EXPECT_EQ(sortedVector[9], storm::numbers::infinity<ValueType>())
         << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
 }
 }  // namespace

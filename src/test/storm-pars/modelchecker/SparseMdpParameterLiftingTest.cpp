@@ -9,8 +9,8 @@
 #include "storm/api/properties.h"
 #include "storm/api/verification.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/prism/Program.h"
-#include "storm/utility/constants.h"
 
 namespace {
 class DoubleViEnvironment {
@@ -20,7 +20,7 @@ class DoubleViEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         return env;
     }
 };

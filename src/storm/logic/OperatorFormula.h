@@ -7,7 +7,7 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/expressions/Expression.h"
 
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 namespace storm {
 namespace logic {

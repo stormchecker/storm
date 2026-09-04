@@ -66,9 +66,9 @@ static bool validateParameterLiftingSound(storm::models::sparse::Model<ValueType
             if (markovianStates.get(state)) {
                 auto const& exitRate = rateVector[state];
                 for (auto const& entry : model.getTransitionMatrix().getRowGroup(state)) {
-                    if (!storm::utility::parametric::isMultiLinearPolynomial(storm::utility::simplify(entry.getValue() * exitRate))) {
+                    if (!storm::utility::parametric::isMultiLinearPolynomial(storm::numbers::simplify(entry.getValue() * exitRate))) {
                         STORM_LOG_WARN("The input model contains a non-linear polynomial as transition rate: '"
-                                       << storm::utility::simplify(entry.getValue() * exitRate)
+                                       << storm::numbers::simplify(entry.getValue() * exitRate)
                                        << "'. Can not validate that parameter lifting is sound on this model.");
                         return false;
                     }

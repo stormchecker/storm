@@ -184,13 +184,13 @@ void SparseMultiObjectiveRewardAnalysis<SparseModelType>::computeUpperResultBoun
                             if (!expRewGreater0EStates.get(entry.getColumn())) {
                                 isOutChoice = true;
                                 outStates.set(state, true);
-                                rew0StateProbs.push_back(storm::utility::one<ValueType>() - ecElimRes.matrix.getRowSum(choice));
-                                STORM_LOG_ASSERT(!storm::utility::isZero(rew0StateProbs.back()), "Expected non-zero state probability.");
+                                rew0StateProbs.push_back(storm::numbers::one<ValueType>() - ecElimRes.matrix.getRowSum(choice));
+                                STORM_LOG_ASSERT(!storm::numbers::isZero(rew0StateProbs.back()), "Expected non-zero state probability.");
                                 break;
                             }
                         }
                         if (!isOutChoice) {
-                            rew0StateProbs.push_back(storm::utility::zero<ValueType>());
+                            rew0StateProbs.push_back(storm::numbers::zero<ValueType>());
                         }
                     }
                 }

@@ -358,7 +358,7 @@ void ValuationsStorage::setValuesInEvaluator(uint64_t entity, storm::expressions
             evaluator.setIntegerValue(var, value);
             // evaluator has no support for arbitrary-precision integers.
         } else if constexpr (std::is_same_v<ValueType, double> || std::is_same_v<ValueType, storm::RationalNumber>) {
-            evaluator.setRationalValue(var, storm::utility::convertNumber<RationalValueType>(value));
+            evaluator.setRationalValue(var, storm::numbers::convert<RationalValueType>(value));
         } else {
             STORM_LOG_THROW(
                 (std::is_same_v<ValueType, std::string_view> || std::is_same_v<ValueType, std::string> || std::is_same_v<ValueType, std::nullopt_t>),
@@ -484,8 +484,8 @@ ValuationsStorage::Integer ValuationsStorage::readInteger(std::span<char const> 
     Integer result = storm::umb::ValueEncoding::decodeArbitraryPrecisionInteger<false>(chunksView);
     if constexpr (Signed) {
         // Check if this number is supposed to be negative
-        if (result >= storm::utility::pow<Integer>(2, bitSize - 1)) {
-            return result - storm::utility::pow<Integer>(2, bitSize);
+        if (result >= storm::numbers::pow<Integer>(2, bitSize - 1)) {
+            return result - storm::numbers::pow<Integer>(2, bitSize);
         }
     }
     return result;
@@ -564,9 +564,9 @@ void ValuationsStorage::writeValue(std::span<char> bytes, uint64_t bitOffset, ui
     } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
         STORM_LOG_ASSERT(bitSize % 2 == 0, "Uneven bitsize for rational number not expected.");
         auto const numDenSize = bitSize / 2;
-        writeInteger<true>(bytes, bitOffset, numDenSize, storm::utility::numerator(value));
+        writeInteger<true>(bytes, bitOffset, numDenSize, storm::numbers::numerator(value));
         static_assert(storm::RationalNumberDenominatorAlwaysPositive);
-        writeInteger<false>(bytes, bitOffset + numDenSize, numDenSize, storm::utility::denominator(value));
+        writeInteger<false>(bytes, bitOffset + numDenSize, numDenSize, storm::numbers::denominator(value));
     } else {
         // Note: overwriting the string does not erase the old string from the strings vector as it might still be in use elsewhere
         static_assert(std::is_same_v<ValueType, std::string_view> || std::is_same_v<ValueType, std::string>);

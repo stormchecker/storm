@@ -47,7 +47,7 @@ bool WinningRegionQueryInterface<ValueType>::staysInWinningRegion(storm::storage
     for (uint64_t oldState : currentBeliefSupport) {
         uint64_t row = pomdp.getTransitionMatrix().getRowGroupIndices()[oldState] + actionIndex;
         for (auto const& successor : pomdp.getTransitionMatrix().getRow(row)) {
-            STORM_LOG_ASSERT(!storm::utility::isZero(successor.getValue()), "Unexpected zero successor probability.");
+            STORM_LOG_ASSERT(!storm::numbers::isZero(successor.getValue()), "Unexpected zero successor probability.");
             uint32_t obs = pomdp.getObservation(successor.getColumn());
             if (successors.count(obs) == 0) {
                 successors[obs] = storm::storage::BitVector(pomdp.getNumberOfStates());

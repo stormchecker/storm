@@ -47,8 +47,8 @@ TEST_F(ModelInstantiatorTest, BrpProb) {
         ASSERT_NE(pL, carl::Variable::NO_VARIABLE);
         storm::RationalFunctionVariable const& pK = carl::VariablePool::getInstance().findVariableWithName("pK");
         ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
-        valuation.insert(std::make_pair(pL, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.8)));
-        valuation.insert(std::make_pair(pK, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.9)));
+        valuation.insert(std::make_pair(pL, storm::numbers::convert<storm::RationalFunctionCoefficient>(0.8)));
+        valuation.insert(std::make_pair(pK, storm::numbers::convert<storm::RationalFunctionCoefficient>(0.9)));
 
         storm::models::sparse::Dtmc<double> const& instantiated(modelInstantiator.instantiate(valuation));
 
@@ -82,8 +82,8 @@ TEST_F(ModelInstantiatorTest, BrpProb) {
         ASSERT_NE(pL, carl::Variable::NO_VARIABLE);
         storm::RationalFunctionVariable const& pK = carl::VariablePool::getInstance().findVariableWithName("pK");
         ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
-        valuation.insert(std::make_pair(pL, storm::utility::one<storm::RationalFunctionCoefficient>()));
-        valuation.insert(std::make_pair(pK, storm::utility::one<storm::RationalFunctionCoefficient>()));
+        valuation.insert(std::make_pair(pL, storm::numbers::one<storm::RationalFunctionCoefficient>()));
+        valuation.insert(std::make_pair(pK, storm::numbers::one<storm::RationalFunctionCoefficient>()));
 
         storm::models::sparse::Dtmc<double> const& instantiated(modelInstantiator.instantiate(valuation));
 
@@ -116,8 +116,8 @@ TEST_F(ModelInstantiatorTest, BrpProb) {
         ASSERT_NE(pL, carl::Variable::NO_VARIABLE);
         storm::RationalFunctionVariable const& pK = carl::VariablePool::getInstance().findVariableWithName("pK");
         ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
-        valuation.insert(std::make_pair(pL, storm::utility::one<storm::RationalFunctionCoefficient>()));
-        valuation.insert(std::make_pair(pK, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.9)));
+        valuation.insert(std::make_pair(pL, storm::numbers::one<storm::RationalFunctionCoefficient>()));
+        valuation.insert(std::make_pair(pK, storm::numbers::convert<storm::RationalFunctionCoefficient>(0.9)));
 
         storm::models::sparse::Dtmc<double> const& instantiated(modelInstantiator.instantiate(valuation));
 
@@ -175,10 +175,10 @@ TEST_F(ModelInstantiatorTest, Brp_Rew) {
         ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
         storm::RationalFunctionVariable const& TOAck = carl::VariablePool::getInstance().findVariableWithName("TOAck");
         ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
-        valuation.insert(std::make_pair(pL, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.9)));
-        valuation.insert(std::make_pair(pK, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.3)));
-        valuation.insert(std::make_pair(TOMsg, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.3)));
-        valuation.insert(std::make_pair(TOAck, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.5)));
+        valuation.insert(std::make_pair(pL, storm::numbers::convert<storm::RationalFunctionCoefficient>(0.9)));
+        valuation.insert(std::make_pair(pK, storm::numbers::convert<storm::RationalFunctionCoefficient>(0.3)));
+        valuation.insert(std::make_pair(TOMsg, storm::numbers::convert<storm::RationalFunctionCoefficient>(0.3)));
+        valuation.insert(std::make_pair(TOAck, storm::numbers::convert<storm::RationalFunctionCoefficient>(0.5)));
 
         storm::models::sparse::Dtmc<double> const& instantiated(modelInstantiator.instantiate(valuation));
 
@@ -242,8 +242,8 @@ TEST_F(ModelInstantiatorTest, Consensus) {
     ASSERT_NE(p1, carl::Variable::NO_VARIABLE);
     storm::RationalFunctionVariable const& p2 = carl::VariablePool::getInstance().findVariableWithName("p2");
     ASSERT_NE(p2, carl::Variable::NO_VARIABLE);
-    valuation.insert(std::make_pair(p1, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.51)));
-    valuation.insert(std::make_pair(p2, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.49)));
+    valuation.insert(std::make_pair(p1, storm::numbers::convert<storm::RationalFunctionCoefficient>(0.51)));
+    valuation.insert(std::make_pair(p2, storm::numbers::convert<storm::RationalFunctionCoefficient>(0.49)));
     storm::models::sparse::Mdp<double> const& instantiated(modelInstantiator.instantiate(valuation));
 
     ASSERT_EQ(mdp->getTransitionMatrix().getRowGroupIndices(), instantiated.getTransitionMatrix().getRowGroupIndices());

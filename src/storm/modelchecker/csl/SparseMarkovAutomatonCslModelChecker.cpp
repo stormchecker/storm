@@ -38,7 +38,7 @@ bool SparseMarkovAutomatonCslModelChecker<ModelType>::canHandleStatic(CheckTask<
                                        .setInstantaneousFormulasAllowed(false);
     auto multiObjectiveFragment =
         storm::logic::multiObjective().setTimeAllowed(true).setTimeBoundedUntilFormulasAllowed(true).setRewardAccumulationAllowed(true);
-    if (!storm::NumberTraits<ValueType>::SupportsExponential) {
+    if (!storm::numbers::NumberTraits<ValueType>::SupportsExponential) {
         singleObjectiveFragment.setBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false);
         multiObjectiveFragment.setTimeBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false);
     }

@@ -5,9 +5,9 @@
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Expressions.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -155,16 +155,16 @@ storm::expressions::Expression Z3ExpressionAdapter::translateExpression(z3::expr
                     Z3_SIGNED_INTEGER num;
                     Z3_SIGNED_INTEGER den;
                     if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {
-                        return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(static_cast<int_fast64_t>(num)) /
-                                                storm::utility::convertNumber<storm::RationalNumber>(static_cast<int_fast64_t>(den)));
+                        return manager.rational(storm::numbers::convert<storm::RationalNumber>(static_cast<int_fast64_t>(num)) /
+                                                storm::numbers::convert<storm::RationalNumber>(static_cast<int_fast64_t>(den)));
                     } else {
-                        return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(std::string(Z3_get_numeral_string(expr.ctx(), expr))));
+                        return manager.rational(storm::numbers::convert<storm::RationalNumber>(std::string(Z3_get_numeral_string(expr.ctx(), expr))));
                     }
                 }
             case Z3_OP_AGNUM:
                 STORM_LOG_WARN("Interpreting algebraic numbers as rational numbers. This is not an exact computation.");
                 // Get the value of an algebraic number, converted to a rational, with precision 1/10^16.
-                return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(
+                return manager.rational(storm::numbers::convert<storm::RationalNumber>(
                     std::string(Z3_get_numeral_string(expr.ctx(), Z3_get_algebraic_number_lower(expr.ctx(), expr, 16)))));
             case Z3_OP_UNINTERPRETED:
                 // Currently, we only support uninterpreted constant functions.

@@ -61,7 +61,7 @@ class StandardGameSolver : public GameSolver<ValueType> {
                         std::vector<ValueType> const& b, std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices,
                         std::vector<uint_fast64_t>& player2Choices) const;
 
-    bool valueImproved(OptimizationDirection dir, storm::utility::ConstantsComparator<ValueType> const& comparator, ValueType const& value1,
+    bool valueImproved(OptimizationDirection dir, storm::numbers::ConstantsComparator<ValueType> const& comparator, ValueType const& value1,
                        ValueType const& value2) const;
 
     bool player1RepresentedByMatrix() const;

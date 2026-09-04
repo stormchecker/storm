@@ -12,7 +12,7 @@
 #include "storm-dft/storage/DFTState.h"
 #include "storm-dft/storage/DFTStateSpaceGenerationQueues.h"
 #include "storm-dft/storage/elements/DFTElementType.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 namespace storm::dft {
 namespace storage {

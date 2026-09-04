@@ -29,7 +29,7 @@ class SparseGmmxxGmresIluEnvironment {
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
         env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
         env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
-        // env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6)); // Need to increase precision because eq sys yields
+        // env.solver().gmmxx().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6)); // Need to increase precision because eq sys yields
         // incorrect results
         return env;
     }
@@ -89,7 +89,7 @@ class SteadyStateCtmcCslModelCheckerTest : public ::testing::Test {
         return _environment;
     }
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
     ValueType precision() const {
         return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");
@@ -145,11 +145,11 @@ TYPED_TEST(SteadyStateCtmcCslModelCheckerTest, steadystatetest) {
     auto resultVector = result->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector();
     auto sortedVector = resultVector;
     std::sort(sortedVector.begin(), sortedVector.end());
-    EXPECT_EQ(sortedVector[0], storm::utility::zero<ValueType>())
+    EXPECT_EQ(sortedVector[0], storm::numbers::zero<ValueType>())
         << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << '\n';
-    EXPECT_EQ(sortedVector[1], storm::utility::zero<ValueType>())
+    EXPECT_EQ(sortedVector[1], storm::numbers::zero<ValueType>())
         << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << '\n';
-    EXPECT_EQ(sortedVector[2], storm::utility::zero<ValueType>())
+    EXPECT_EQ(sortedVector[2], storm::numbers::zero<ValueType>())
         << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_NEAR(sortedVector[3], this->parseNumber("1/35"), this->precision())
         << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << '\n';

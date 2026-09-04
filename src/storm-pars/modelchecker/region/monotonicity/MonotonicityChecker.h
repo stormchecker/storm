@@ -7,11 +7,11 @@
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm-pars/modelchecker/region/monotonicity/Order.h"
 #include "storm-pars/storage/ParameterRegion.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/solver.h"
 
 namespace storm {

@@ -3,9 +3,9 @@
 #include <type_traits>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/utility/Extremum.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
 namespace storm::solver::helper {
@@ -60,11 +60,11 @@ bool checkConvergence(std::pair<std::vector<ValueType>, std::vector<ValueType>> 
         for (; convergenceCheckState < xy.first.size(); getNextConvergenceCheckState()) {
             ValueType const& l = xy.first[convergenceCheckState];
             ValueType const& u = xy.second[convergenceCheckState];
-            if (l > storm::utility::zero<ValueType>()) {
+            if (l > storm::numbers::zero<ValueType>()) {
                 if ((u - l) > l * precision) {
                     return false;
                 }
-            } else if (u < storm::utility::zero<ValueType>()) {
+            } else if (u < storm::numbers::zero<ValueType>()) {
                 if ((l - u) < u * precision) {
                     return false;
                 }
@@ -140,7 +140,7 @@ SolverStatus IntervalIterationHelper<ValueType, TrivialRowGrouping>::II(std::vec
     } else {
         status = II<OptimizationDirection::Minimize>(xy, offsets, numIterations, relative, precision, iterationCallback, relevantValues);
     }
-    auto two = storm::utility::convertNumber<ValueType>(2.0);
+    auto two = storm::numbers::convert<ValueType>(2.0);
     // get the average of lower- and upper result
     storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
         xy.first, xy.second, xy.first, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });

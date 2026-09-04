@@ -27,7 +27,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/ExplorationSettings.h"
 
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 
@@ -298,12 +298,12 @@ bool SparseExplorationModelChecker<ModelType, StateType>::exploreState(StateGene
 
         if (isTargetState) {
             bounds.setBoundsForState(currentStateId, explorationInformation,
-                                     std::make_pair(storm::utility::one<ValueType>(), storm::utility::one<ValueType>()));
-            bounds.initializeBoundsForNextAction(std::make_pair(storm::utility::one<ValueType>(), storm::utility::one<ValueType>()));
+                                     std::make_pair(storm::numbers::one<ValueType>(), storm::numbers::one<ValueType>()));
+            bounds.initializeBoundsForNextAction(std::make_pair(storm::numbers::one<ValueType>(), storm::numbers::one<ValueType>()));
         } else {
             bounds.setBoundsForState(currentStateId, explorationInformation,
-                                     std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>()));
-            bounds.initializeBoundsForNextAction(std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>()));
+                                     std::make_pair(storm::numbers::zero<ValueType>(), storm::numbers::zero<ValueType>()));
+            bounds.initializeBoundsForNextAction(std::make_pair(storm::numbers::zero<ValueType>(), storm::numbers::zero<ValueType>()));
         }
 
         // Increase the size of the matrix, but leave the row empty.
@@ -409,7 +409,7 @@ bool SparseExplorationModelChecker<ModelType, StateType>::performPrecomputation(
     std::vector<StateType> relevantStates;
     if (explorationInformation.useLocalPrecomputation()) {
         for (auto const& stateActionPair : stack) {
-            if (explorationInformation.maximize() || !storm::utility::isOne(bounds.getLowerBoundForState(stateActionPair.first, explorationInformation))) {
+            if (explorationInformation.maximize() || !storm::numbers::isOne(bounds.getLowerBoundForState(stateActionPair.first, explorationInformation))) {
                 relevantStates.push_back(stateActionPair.first);
             }
         }
@@ -432,7 +432,7 @@ bool SparseExplorationModelChecker<ModelType, StateType>::performPrecomputation(
     storm::storage::BitVector targetStates(sink + 1);
     for (StateType index = 0; index < relevantStates.size(); ++index) {
         relevantStateToNewRowGroupMapping.emplace(relevantStates[index], index);
-        if (storm::utility::isOne(bounds.getLowerBoundForState(relevantStates[index], explorationInformation))) {
+        if (storm::numbers::isOne(bounds.getLowerBoundForState(relevantStates[index], explorationInformation))) {
             targetStates.set(index);
         }
     }
@@ -443,7 +443,7 @@ bool SparseExplorationModelChecker<ModelType, StateType>::performPrecomputation(
         builder.newRowGroup(currentRow);
         StateType rowGroup = explorationInformation.getRowGroup(state);
         for (auto row = explorationInformation.getStartRowOfGroup(rowGroup); row < explorationInformation.getStartRowOfGroup(rowGroup + 1); ++row) {
-            ValueType unexpandedProbability = storm::utility::zero<ValueType>();
+            ValueType unexpandedProbability = storm::numbers::zero<ValueType>();
             for (auto const& entry : explorationInformation.getRowOfMatrix(row)) {
                 auto it = relevantStateToNewRowGroupMapping.find(entry.getColumn());
                 if (it != relevantStateToNewRowGroupMapping.end()) {
@@ -454,7 +454,7 @@ bool SparseExplorationModelChecker<ModelType, StateType>::performPrecomputation(
                     unexpandedProbability += entry.getValue();
                 }
             }
-            if (unexpandedProbability != storm::utility::zero<ValueType>()) {
+            if (unexpandedProbability != storm::numbers::zero<ValueType>()) {
                 builder.addNextValue(currentRow, sink, unexpandedProbability);
             }
             ++currentRow;
@@ -462,7 +462,7 @@ bool SparseExplorationModelChecker<ModelType, StateType>::performPrecomputation(
     }
     // Then, make the unexpanded state absorbing.
     builder.newRowGroup(currentRow);
-    builder.addNextValue(currentRow, sink, storm::utility::one<ValueType>());
+    builder.addNextValue(currentRow, sink, storm::numbers::one<ValueType>());
     storm::storage::SparseMatrix<ValueType> relevantStatesMatrix = builder.build();
     storm::storage::SparseMatrix<ValueType> transposedMatrix = relevantStatesMatrix.transpose(true);
     STORM_LOG_TRACE("Successfully built matrix for precomputation.");
@@ -525,7 +525,7 @@ bool SparseExplorationModelChecker<ModelType, StateType>::performPrecomputation(
         }
 
         StateType originalState = relevantStates[state];
-        bounds.setUpperBoundForState(originalState, explorationInformation, storm::utility::zero<ValueType>());
+        bounds.setUpperBoundForState(originalState, explorationInformation, storm::numbers::zero<ValueType>());
         explorationInformation.addTerminalState(originalState);
     }
     for (uint64_t state : statesWithProbability1) {
@@ -535,7 +535,7 @@ bool SparseExplorationModelChecker<ModelType, StateType>::performPrecomputation(
         }
 
         StateType originalState = relevantStates[state];
-        bounds.setLowerBoundForState(originalState, explorationInformation, storm::utility::one<ValueType>());
+        bounds.setLowerBoundForState(originalState, explorationInformation, storm::numbers::one<ValueType>());
         explorationInformation.addTerminalState(originalState);
     }
     return true;
@@ -557,7 +557,7 @@ void SparseExplorationModelChecker<ModelType, StateType>::collapseMec(storm::sto
         StateType originalRowGroup = explorationInformation.getRowGroup(originalState);
 
         // Check whether a target state is contained in the MEC.
-        if (!containsTargetState && storm::utility::isOne(bounds.getLowerBoundForRowGroup(originalRowGroup))) {
+        if (!containsTargetState && storm::numbers::isOne(bounds.getLowerBoundForRowGroup(originalRowGroup))) {
             containsTargetState = true;
         }
 
@@ -621,7 +621,7 @@ void SparseExplorationModelChecker<ModelType, StateType>::collapseMec(storm::sto
 template<typename ModelType, typename StateType>
 typename ModelType::ValueType SparseExplorationModelChecker<ModelType, StateType>::computeLowerBoundOfAction(
     ActionType const& action, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
-    ValueType result = storm::utility::zero<ValueType>();
+    ValueType result = storm::numbers::zero<ValueType>();
     for (auto const& element : explorationInformation.getRowOfMatrix(action)) {
         result += element.getValue() * bounds.getLowerBoundForState(element.getColumn(), explorationInformation);
     }
@@ -631,7 +631,7 @@ typename ModelType::ValueType SparseExplorationModelChecker<ModelType, StateType
 template<typename ModelType, typename StateType>
 typename ModelType::ValueType SparseExplorationModelChecker<ModelType, StateType>::computeUpperBoundOfAction(
     ActionType const& action, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
-    ValueType result = storm::utility::zero<ValueType>();
+    ValueType result = storm::numbers::zero<ValueType>();
     for (auto const& element : explorationInformation.getRowOfMatrix(action)) {
         result += element.getValue() * bounds.getUpperBoundForState(element.getColumn(), explorationInformation);
     }
@@ -642,7 +642,7 @@ template<typename ModelType, typename StateType>
 std::pair<typename ModelType::ValueType, typename ModelType::ValueType> SparseExplorationModelChecker<ModelType, StateType>::computeBoundsOfAction(
     ActionType const& action, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
     // TODO: take into account self-loops?
-    std::pair<ValueType, ValueType> result = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
+    std::pair<ValueType, ValueType> result = std::make_pair(storm::numbers::zero<ValueType>(), storm::numbers::zero<ValueType>());
     for (auto const& element : explorationInformation.getRowOfMatrix(action)) {
         result.first += element.getValue() * bounds.getLowerBoundForState(element.getColumn(), explorationInformation);
         result.second += element.getValue() * bounds.getUpperBoundForState(element.getColumn(), explorationInformation);
@@ -743,9 +743,9 @@ std::pair<typename ModelType::ValueType, typename ModelType::ValueType> SparseEx
 template<typename ModelType, typename StateType>
 typename ModelType::ValueType SparseExplorationModelChecker<ModelType, StateType>::getLowestBound(storm::OptimizationDirection const& direction) const {
     if (direction == storm::OptimizationDirection::Maximize) {
-        return storm::utility::zero<ValueType>();
+        return storm::numbers::zero<ValueType>();
     } else {
-        return storm::utility::one<ValueType>();
+        return storm::numbers::one<ValueType>();
     }
 }
 

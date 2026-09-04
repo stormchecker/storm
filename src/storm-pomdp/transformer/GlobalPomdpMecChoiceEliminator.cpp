@@ -203,7 +203,7 @@ storm::storage::MaximalEndComponentDecomposition<ValueType> GlobalPomdpMecChoice
             builder.newRowGroup(row);
             for (; row < pomdp.getTransitionMatrix().getRowGroupIndices()[rowGroup + 1]; ++row) {
                 ValueType redirectedProbabilityMass = pomdp.getTransitionMatrix().getConstrainedRowSum(row, redirectingStates);
-                bool insertSelfloop = !storm::utility::isZero(redirectedProbabilityMass);
+                bool insertSelfloop = !storm::numbers::isZero(redirectedProbabilityMass);
                 for (auto const& entry : pomdp.getTransitionMatrix().getRow(row)) {
                     if (!redirectingStates.get(entry.getColumn())) {
                         if (insertSelfloop && entry.getColumn() >= rowGroup) {

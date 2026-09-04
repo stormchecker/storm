@@ -40,15 +40,15 @@ storm::storage::Scheduler<typename PcaaWeightVectorChecker<ModelType>::ValueType
 template<class SparseModelType>
 boost::optional<typename SparseModelType::ValueType> PcaaWeightVectorChecker<SparseModelType>::computeWeightedResultBound(
     bool lower, std::vector<ValueType> const& weightVector, storm::storage::BitVector const& objectiveFilter) const {
-    ValueType result = storm::utility::zero<ValueType>();
+    ValueType result = storm::numbers::zero<ValueType>();
     for (uint64_t objIndex : objectiveFilter) {
         // get the actual weight for this objective, i.e., negate it if this is a minimizing objective
         auto const weight = storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
-        if (storm::utility::isZero(weight)) {
+        if (storm::numbers::isZero(weight)) {
             continue;  // this objective is not relevant for the weighted sum, so we can skip it
         } else {
             // Choose the requested, relevant bound (lower or upper). Invert the choice for negative weights.
-            boost::optional<ValueType> const& objBound = (lower == (weight > storm::utility::zero<ValueType>())) ? this->objectives[objIndex].lowerResultBound
+            boost::optional<ValueType> const& objBound = (lower == (weight > storm::numbers::zero<ValueType>())) ? this->objectives[objIndex].lowerResultBound
                                                                                                                  : this->objectives[objIndex].upperResultBound;
             if (objBound) {
                 result += objBound.get() * weight;

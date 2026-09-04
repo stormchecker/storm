@@ -1,6 +1,6 @@
 #pragma once
 
-namespace storm::utility {
+namespace storm::numbers {
 
 template<typename ValueType>
 class ConstantsComparator {
@@ -15,4 +15,4 @@ class ConstantsComparator {
     ValueType precision;
     bool relative;
 };
-}  // namespace storm::utility
+}  // namespace storm::numbers

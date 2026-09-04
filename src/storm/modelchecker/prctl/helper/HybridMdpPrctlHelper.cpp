@@ -8,7 +8,7 @@
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Odd.h"
 
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/graph.h"
 
 #include "storm/models/symbolic/StandardRewardModel.h"
@@ -50,7 +50,7 @@ std::vector<uint64_t> computeValidInitialSchedulerForUntilProbabilities(storm::s
     for (uint64_t state = 0; state < numberOfMaybeStates; ++state) {
         // Record all states with non-zero probability of moving directly to the target states.
         for (uint64_t row = transitionMatrix.getRowGroupIndices()[state]; row < transitionMatrix.getRowGroupIndices()[state + 1]; ++row) {
-            if (!storm::utility::isZero(b[row])) {
+            if (!storm::numbers::isZero(b[row])) {
                 targetStates.set(state);
                 result[state] = row - transitionMatrix.getRowGroupIndices()[state];
             }
@@ -157,9 +157,8 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeUnt
     if (qualitative) {
         // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
         return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(
-            model.getReachableStates(),
-            statesWithProbability01.second.template toAdd<ValueType>() +
-                maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::utility::convertNumber<ValueType>(0.5))));
+            model.getReachableStates(), statesWithProbability01.second.template toAdd<ValueType>() +
+                                            maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::numbers::convert<ValueType>(0.5))));
     } else {
         // If there are maybe states, we need to solve an equation system.
         if (!maybeStates.isZero()) {
@@ -256,7 +255,7 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeUnt
             STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
 
             // Create the solution vector.
-            std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::utility::zero<ValueType>());
+            std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::numbers::zero<ValueType>());
 
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver =
                 linearEquationSolverFactory.create(env, std::move(explicitRepresentation.first));
@@ -268,7 +267,7 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeUnt
             if (solverRequirementsData.initialScheduler) {
                 solver->setInitialScheduler(std::move(solverRequirementsData.initialScheduler.get()));
             }
-            solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+            solver->setBounds(storm::numbers::zero<ValueType>(), storm::numbers::one<ValueType>());
             solver->setRequirementsChecked();
             solver->solveEquations(env, dir, x, explicitRepresentation.second);
 
@@ -355,7 +354,7 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeBou
         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
 
         // Create the solution vector.
-        std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::zero<ValueType>());
+        std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::numbers::zero<ValueType>());
 
         // Translate the symbolic matrix/vector to their explicit representations.
         conversionWatch.start();
@@ -417,7 +416,7 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeCum
     storm::dd::Add<DdType, ValueType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix, model.getColumnVariables());
 
     // Create the solution vector.
-    std::vector<ValueType> x(model.getNumberOfStates(), storm::utility::zero<ValueType>());
+    std::vector<ValueType> x(model.getNumberOfStates(), storm::numbers::zero<ValueType>());
 
     storm::utility::Stopwatch conversionWatch(true);
 
@@ -494,7 +493,7 @@ void eliminateEndComponentsAndTargetStatesReachabilityRewards(
 
     uint64_t index = 0;
     for (auto const& e : rewardVector) {
-        if (storm::utility::isZero(e)) {
+        if (storm::numbers::isZero(e)) {
             zeroRewardChoices.set(index);
         }
         ++index;
@@ -541,10 +540,10 @@ void eliminateEndComponentsAndTargetStatesReachabilityRewards(
         STORM_LOG_DEBUG("Eliminating " << endComponentDecomposition.size() << " EC(s).");
         if (computeOneStepTargetProbabilities) {
             solverRequirementsData.oneStepTargetProbabilities =
-                std::vector<ValueType>(solverRequirementsData.properMaybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
+                std::vector<ValueType>(solverRequirementsData.properMaybeStates.getNumberOfSetBits(), storm::numbers::zero<ValueType>());
         }
 
-        std::vector<ValueType> subvector(solverRequirementsData.properMaybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
+        std::vector<ValueType> subvector(solverRequirementsData.properMaybeStates.getNumberOfSetBits(), storm::numbers::zero<ValueType>());
         SparseMdpEndComponentInformation<ValueType>::eliminateEndComponents(
             endComponentDecomposition, transitionMatrix, solverRequirementsData.properMaybeStates, computeOneStepTargetProbabilities ? &targetStates : nullptr,
             nullptr, &rewardVector, transitionMatrix, computeOneStepTargetProbabilities ? &solverRequirementsData.oneStepTargetProbabilities.get() : nullptr,
@@ -608,8 +607,8 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeRea
         // are neither 0 nor infinity.
         return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType, ValueType>(
             model.getReachableStates(),
-            infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()) +
-                maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::utility::one<ValueType>())));
+            infinityStates.ite(model.getManager().getConstant(storm::numbers::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()) +
+                maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::numbers::one<ValueType>())));
     } else {
         // If there are maybe states, we need to solve an equation system.
         if (!maybeStates.isZero()) {
@@ -726,7 +725,7 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeRea
             }
 
             // Create the solution vector.
-            std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::utility::zero<ValueType>());
+            std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::numbers::zero<ValueType>());
 
             // Now solve the resulting equation system.
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env);
@@ -748,7 +747,7 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeRea
                 solver->setInitialScheduler(std::move(solverRequirementsData.initialScheduler.get()));
             }
 
-            solver->setLowerBound(storm::utility::zero<ValueType>());
+            solver->setLowerBound(storm::numbers::zero<ValueType>());
             solver->setRequirementsChecked();
             solver->solveEquations(env, dir, x, explicitRepresentation.second);
 
@@ -767,11 +766,11 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeRea
             // Return a hybrid check result that stores the numerical values explicitly.
             return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType, ValueType>(
                 model.getReachableStates(), model.getReachableStates() && !maybeStates,
-                infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()),
+                infinityStates.ite(model.getManager().getConstant(storm::numbers::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()),
                 maybeStates, odd, x));
         } else {
             return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(
-                model.getReachableStates(), infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()),
+                model.getReachableStates(), infinityStates.ite(model.getManager().getConstant(storm::numbers::infinity<ValueType>()),
                                                                model.getManager().template getAddZero<ValueType>())));
         }
     }
@@ -781,7 +780,7 @@ template<storm::dd::DdType DdType, typename ValueType>
 std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeReachabilityTimes(
     Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model,
     storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, bool qualitative) {
-    RewardModelType rewardModel(model.getManager().getConstant(storm::utility::one<ValueType>()), boost::none, boost::none);
+    RewardModelType rewardModel(model.getManager().getConstant(storm::numbers::one<ValueType>()), boost::none, boost::none);
     return computeReachabilityRewards(env, dir, model, transitionMatrix, rewardModel, targetStates, qualitative);
 }
 

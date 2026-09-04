@@ -66,8 +66,8 @@ template<typename ValueType, bool Nondeterministic>
 std::vector<ValueType> SparseInfiniteHorizonHelper<ValueType, Nondeterministic>::computeLongRunAverageProbabilities(
     Environment const& env, storm::storage::BitVector const& psiStates) {
     return computeLongRunAverageValues(
-        env, [&psiStates](uint64_t stateIndex) { return psiStates.get(stateIndex) ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>(); },
-        [](uint64_t) { return storm::utility::zero<ValueType>(); });
+        env, [&psiStates](uint64_t stateIndex) { return psiStates.get(stateIndex) ? storm::numbers::one<ValueType>() : storm::numbers::zero<ValueType>(); },
+        [](uint64_t) { return storm::numbers::zero<ValueType>(); });
 }
 
 template<typename ValueType, bool Nondeterministic>
@@ -77,7 +77,7 @@ std::vector<ValueType> SparseInfiniteHorizonHelper<ValueType, Nondeterministic>:
     if (rewardModel.hasStateRewards()) {
         stateRewardsGetter = [&rewardModel](uint64_t stateIndex) { return rewardModel.getStateReward(stateIndex); };
     } else {
-        stateRewardsGetter = [](uint64_t) { return storm::utility::zero<ValueType>(); };
+        stateRewardsGetter = [](uint64_t) { return storm::numbers::zero<ValueType>(); };
     }
     ValueGetter actionRewardsGetter;
     if (rewardModel.hasStateActionRewards() || rewardModel.hasTransitionRewards()) {
@@ -89,7 +89,7 @@ std::vector<ValueType> SparseInfiniteHorizonHelper<ValueType, Nondeterministic>:
             actionRewardsGetter = [&](uint64_t globalChoiceIndex) { return rewardModel.getStateActionReward(globalChoiceIndex); };
         }
     } else {
-        actionRewardsGetter = [](uint64_t) { return storm::utility::zero<ValueType>(); };
+        actionRewardsGetter = [](uint64_t) { return storm::numbers::zero<ValueType>(); };
     }
 
     return computeLongRunAverageValues(env, stateRewardsGetter, actionRewardsGetter);
@@ -103,13 +103,13 @@ std::vector<ValueType> SparseInfiniteHorizonHelper<ValueType, Nondeterministic>:
     if (stateValues) {
         stateValuesGetter = [&stateValues](uint64_t stateIndex) { return (*stateValues)[stateIndex]; };
     } else {
-        stateValuesGetter = [](uint64_t) { return storm::utility::zero<ValueType>(); };
+        stateValuesGetter = [](uint64_t) { return storm::numbers::zero<ValueType>(); };
     }
     ValueGetter actionValuesGetter;
     if (actionValues) {
         actionValuesGetter = [&actionValues](uint64_t globalChoiceIndex) { return (*actionValues)[globalChoiceIndex]; };
     } else {
-        actionValuesGetter = [](uint64_t) { return storm::utility::zero<ValueType>(); };
+        actionValuesGetter = [](uint64_t) { return storm::numbers::zero<ValueType>(); };
     }
 
     return computeLongRunAverageValues(env, stateValuesGetter, actionValuesGetter);
@@ -127,7 +127,7 @@ std::vector<ValueType> SparseInfiniteHorizonHelper<ValueType, Nondeterministic>:
     auto underlyingSolverEnvironment = env;
     if (env.solver().isForceSoundness()) {
         // For sound computations, the error in the MECS plus the error in the remaining system should not exceed the user defined precsion.
-        storm::RationalNumber newPrecision = env.solver().lra().getPrecision() / storm::utility::convertNumber<storm::RationalNumber>(2);
+        storm::RationalNumber newPrecision = env.solver().lra().getPrecision() / storm::numbers::convert<storm::RationalNumber>(2);
         underlyingSolverEnvironment.solver().minMax().setPrecision(newPrecision);
         underlyingSolverEnvironment.solver().minMax().setRelativeTerminationCriterion(env.solver().lra().getRelativeTerminationCriterion());
         underlyingSolverEnvironment.solver().setLinearEquationSolverPrecision(newPrecision, env.solver().lra().getRelativeTerminationCriterion());

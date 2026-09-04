@@ -278,7 +278,7 @@ std::vector<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeDAPr
         if (this->isProduceSchedulerSet()) {
             this->_schedulerHelper.get().setRandom();
         }
-        std::vector<ValueType> numericResult(this->_transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+        std::vector<ValueType> numericResult(this->_transitionMatrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
         return numericResult;
     }
 
@@ -361,7 +361,7 @@ std::vector<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeLTLP
     if (Nondeterministic && this->getOptimizationDirection() == OptimizationDirection::Minimize) {
         // compute 1-Pmax[!fomula]
         for (auto& value : numericResult) {
-            value = storm::utility::one<ValueType>() - value;
+            value = storm::numbers::one<ValueType>() - value;
         }
     }
 

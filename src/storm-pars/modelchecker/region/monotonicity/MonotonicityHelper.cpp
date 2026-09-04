@@ -27,7 +27,7 @@ MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<
 
     this->model = model;
     this->formulas = formulas;
-    this->precision = utility::convertNumber<ConstantType>(precision);
+    this->precision = storm::numbers::convert<ConstantType>(precision);
     this->matrix = model->getTransitionMatrix();
     this->dotOutput = dotOutput;
 
@@ -39,8 +39,8 @@ MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<
         std::set<VariableType> vars;
         vars = models::sparse::getProbabilityParameters(*model);
         for (auto var : vars) {
-            typename storage::ParameterRegion<ValueType>::CoefficientType lb = utility::convertNumber<CoefficientType>(0 + precision);
-            typename storage::ParameterRegion<ValueType>::CoefficientType ub = utility::convertNumber<CoefficientType>(1 - precision);
+            typename storage::ParameterRegion<ValueType>::CoefficientType lb = storm::numbers::convert<CoefficientType>(0 + precision);
+            typename storage::ParameterRegion<ValueType>::CoefficientType ub = storm::numbers::convert<CoefficientType>(1 - precision);
             lowerBoundaries.insert(std::make_pair(var, lb));
             upperBoundaries.insert(std::make_pair(var, ub));
         }
@@ -299,10 +299,10 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
                     auto lb = region.getLowerBoundary(itr->name());
                     auto ub = region.getUpperBoundary(itr->name());
                     // Creates samples between lb and ub, that is: lb, lb + (ub-lb)/(#samples -1), lb + 2* (ub-lb)/(#samples -1), ..., ub
-                    valuation[*itr2] = (lb + utility::convertNumber<CoefficientType>(i / (numberOfSamples - 1)) * (ub - lb));
+                    valuation[*itr2] = (lb + storm::numbers::convert<CoefficientType>(i / (numberOfSamples - 1)) * (ub - lb));
                 } else {
                     auto lb = region.getLowerBoundary(itr2->name());
-                    valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb);
+                    valuation[*itr2] = storm::numbers::convert<typename utility::parametric::CoefficientType<ValueType>::type>(lb);
                 }
             }
 

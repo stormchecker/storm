@@ -2,9 +2,9 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -30,26 +30,26 @@ FlexibleSparseMatrix<ValueType>::FlexibleSparseMatrix(storm::storage::SparseMatr
         reserveInRow(rowIndex, row.getNumberOfEntries());
         for (auto const& element : row) {
             // If the probability is zero, we skip this entry.
-            if (storm::utility::isZero(element.getValue())) {
+            if (storm::numbers::isZero(element.getValue())) {
                 if (revertEquationSystem && rowIndex == element.getColumn()) {
-                    getRow(rowIndex).emplace_back(element.getColumn(), storm::utility::one<ValueType>());
+                    getRow(rowIndex).emplace_back(element.getColumn(), storm::numbers::one<ValueType>());
                 } else {
                     continue;
                 }
             }
             if (setAllValuesToOne) {
-                if (revertEquationSystem && element.getColumn() == rowIndex && storm::utility::isOne(element.getValue())) {
+                if (revertEquationSystem && element.getColumn() == rowIndex && storm::numbers::isOne(element.getValue())) {
                     continue;
                 } else {
-                    getRow(rowIndex).emplace_back(element.getColumn(), storm::utility::one<ValueType>());
+                    getRow(rowIndex).emplace_back(element.getColumn(), storm::numbers::one<ValueType>());
                 }
             } else {
                 if (revertEquationSystem) {
                     if (element.getColumn() == rowIndex) {
-                        if (storm::utility::isOne(element.getValue())) {
+                        if (storm::numbers::isOne(element.getValue())) {
                             continue;
                         }
-                        getRow(rowIndex).emplace_back(element.getColumn(), storm::utility::one<ValueType>() - element.getValue());
+                        getRow(rowIndex).emplace_back(element.getColumn(), storm::numbers::one<ValueType>() - element.getValue());
                     } else {
                         getRow(rowIndex).emplace_back(element.getColumn(), -element.getValue());
                     }
@@ -122,7 +122,7 @@ typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueT
 
 template<typename ValueType>
 ValueType FlexibleSparseMatrix<ValueType>::getRowSum(index_type row) const {
-    ValueType sum = storm::utility::zero<ValueType>();
+    ValueType sum = storm::numbers::zero<ValueType>();
     for (auto const& element : getRow(row)) {
         sum += element.getValue();
     }
@@ -135,7 +135,7 @@ void FlexibleSparseMatrix<ValueType>::updateDimensions() {
     this->columnCount = 0;
     for (auto const& row : this->data) {
         for (auto const& element : row) {
-            STORM_LOG_ASSERT(!storm::utility::isZero(element.getValue()), "Entry is 0.");
+            STORM_LOG_ASSERT(!storm::numbers::isZero(element.getValue()), "Entry is 0.");
             ++this->nonzeroEntryCount;
             this->columnCount = std::max(element.getColumn() + 1, this->columnCount);
         }

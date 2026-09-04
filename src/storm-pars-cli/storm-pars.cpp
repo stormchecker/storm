@@ -66,8 +66,8 @@ std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared
         // As an approximation, we only check if the region intersects 0 or 1.
         for (auto const& region : result) {
             for (auto const& variable : region.getVariables()) {
-                if (region.getLowerBoundary(variable) <= storm::utility::zero<typename storm::utility::parametric::CoefficientType<ValueType>::type>() ||
-                    region.getUpperBoundary(variable) >= storm::utility::one<typename storm::utility::parametric::CoefficientType<ValueType>::type>()) {
+                if (region.getLowerBoundary(variable) <= storm::numbers::zero<typename storm::utility::parametric::CoefficientType<ValueType>::type>() ||
+                    region.getUpperBoundary(variable) >= storm::numbers::one<typename storm::utility::parametric::CoefficientType<ValueType>::type>()) {
                     STORM_LOG_WARN(
                         "Region "
                         << region
@@ -125,7 +125,7 @@ std::shared_ptr<storm::models::ModelBase> eliminateScc(std::shared_ptr<storm::mo
 
         storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(matrix);
         storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardsTransitionMatrix, true);
-        auto actionRewards = std::vector<ValueType>(matrix.getRowCount(), storm::utility::zero<ValueType>());
+        auto actionRewards = std::vector<ValueType>(matrix.getRowCount(), storm::numbers::zero<ValueType>());
         storm::solver::stateelimination::NondeterministicModelStateEliminator<ValueType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions,
                                                                                                          actionRewards);
         for (auto state : selectedStates) {
@@ -382,7 +382,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     auto partitionSettings = storm::settings::getModule<storm::settings::modules::PartitionSettings>();
     auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
-    ValueType refinementThreshold = storm::utility::convertNumber<ValueType>(partitionSettings.getCoverageThreshold());
+    ValueType refinementThreshold = storm::numbers::convert<ValueType>(partitionSettings.getCoverageThreshold());
     std::optional<uint64_t> optionalDepthLimit;
     if (partitionSettings.isDepthLimitSet()) {
         optionalDepthLimit = partitionSettings.getDepthLimit();

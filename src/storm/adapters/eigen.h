@@ -2,7 +2,7 @@
 
 #include <iostream>
 // Include these utility headers so we can access utility function from Eigen.
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 #if defined(__clang__)
 #pragma clang diagnostic push

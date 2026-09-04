@@ -211,7 +211,7 @@ TEST(FormulaParserTest, DiscountedFormulaTest) {
     ASSERT_TRUE(formula->asRewardOperatorFormula().getSubformula().isDiscountedTotalRewardFormula());
     ASSERT_FALSE(formula->asRewardOperatorFormula().getSubformula().isTotalRewardFormula());
     static const std::string discountFactorString1 = "9/10";
-    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(discountFactorString1),
+    EXPECT_EQ(storm::numbers::convert<storm::RationalNumber>(discountFactorString1),
               formula->asRewardOperatorFormula().getSubformula().asDiscountedTotalRewardFormula().getDiscountFactor<storm::RationalNumber>());
     EXPECT_FLOAT_EQ(0.9, formula->asRewardOperatorFormula().getSubformula().asDiscountedTotalRewardFormula().getDiscountFactor<double>());
 
@@ -222,7 +222,7 @@ TEST(FormulaParserTest, DiscountedFormulaTest) {
     EXPECT_TRUE(formula->isRewardOperatorFormula());
     ASSERT_TRUE(formula->asRewardOperatorFormula().getSubformula().isDiscountedCumulativeRewardFormula());
     static const std::string discountFactorString2 = "19/20";
-    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(discountFactorString2),
+    EXPECT_EQ(storm::numbers::convert<storm::RationalNumber>(discountFactorString2),
               formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getDiscountFactor().evaluateAsRational());
     EXPECT_FLOAT_EQ(0.95, formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getDiscountFactor().evaluateAsDouble());
     EXPECT_TRUE(formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getTimeBoundReference().isTimeBound());
@@ -235,7 +235,7 @@ TEST(FormulaParserTest, DiscountedFormulaTest) {
     EXPECT_TRUE(formula->isRewardOperatorFormula());
     ASSERT_TRUE(formula->asRewardOperatorFormula().getSubformula().isDiscountedCumulativeRewardFormula());
     static const std::string discountFactorString3 = "1/2";
-    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(discountFactorString3),
+    EXPECT_EQ(storm::numbers::convert<storm::RationalNumber>(discountFactorString3),
               formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getDiscountFactor().evaluateAsRational());
     EXPECT_FLOAT_EQ(0.5, formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getDiscountFactor().evaluateAsDouble());
     EXPECT_FALSE(formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getTimeBoundReference().isTimeBound());

@@ -8,7 +8,7 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/FormulaVisitor.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

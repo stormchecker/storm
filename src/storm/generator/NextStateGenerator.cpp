@@ -8,11 +8,11 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/StateLabeling.h"
+#include "storm/numbers/NumberTraits.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
-#include "storm/utility/NumberTraits.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -41,8 +41,8 @@ NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions:
       variableInformation(variableInformation),
       evaluator(nullptr),
       state(nullptr),
-      comparator(storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>()
-                                                         : storm::utility::convertNumber<ValueType>(options.getStochasticTolerance())),
+      comparator(storm::numbers::NumberTraits<ValueType>::IsExact ? storm::numbers::zero<ValueType>()
+                                                                  : storm::numbers::convert<ValueType>(options.getStochasticTolerance())),
       actionMask(mask) {
     initializeSpecialStates();
 }
@@ -56,8 +56,8 @@ NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions:
       variableInformation(),
       evaluator(nullptr),
       state(nullptr),
-      comparator(storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>()
-                                                         : storm::utility::convertNumber<ValueType>(options.getStochasticTolerance())),
+      comparator(storm::numbers::NumberTraits<ValueType>::IsExact ? storm::numbers::zero<ValueType>()
+                                                                  : storm::numbers::convert<ValueType>(options.getStochasticTolerance())),
       actionMask(mask) {}
 
 template<typename ValueType, typename StateType>

@@ -26,11 +26,11 @@ std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType
     STORM_LOG_THROW(this->currentCheckTask, storm::exceptions::InvalidStateException, "Checking has been invoked but no property has been specified before.");
     auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
     if (instantiatedModel.isExact()) {
-        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::zero<ConstantType>()),
+        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::numbers::zero<ConstantType>()),
                         storm::exceptions::InvalidArgumentException, "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
     } else {
         auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(generalSettings.getPrecision())),
+        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::numbers::convert<ConstantType>(generalSettings.getPrecision())),
                         storm::exceptions::InvalidArgumentException, "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
     }
 
@@ -82,7 +82,7 @@ std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType
                 modelChecker.computeProbabilities(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
         }
         storm::storage::BitVector maybeStates = storm::utility::vector::filter<ConstantType>(qualitativeResult, [](ConstantType const& value) -> bool {
-            return !(storm::utility::isZero<ConstantType>(value) || storm::utility::isOne<ConstantType>(value));
+            return !(storm::numbers::isZero<ConstantType>(value) || storm::numbers::isOne<ConstantType>(value));
         });
         hint.setMaybeStates(std::move(maybeStates));
         hint.setResultHint(std::move(qualitativeResult));
@@ -131,7 +131,7 @@ std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType
             qualitativeResult = modelChecker.computeRewards(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
         }
         storm::storage::BitVector maybeStates = storm::utility::vector::filter<ConstantType>(qualitativeResult, [](ConstantType const& value) -> bool {
-            return !(storm::utility::isZero<ConstantType>(value) || storm::utility::isInfinity<ConstantType>(value));
+            return !(storm::numbers::isZero<ConstantType>(value) || storm::numbers::isInfinity<ConstantType>(value));
         });
         hint.setMaybeStates(std::move(maybeStates));
         hint.setResultHint(std::move(qualitativeResult));
@@ -206,10 +206,10 @@ bool SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>::isWellD
     auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
     // Should be moved further outside.
     if (instantiatedModel.isExact()) {
-        return instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::zero<ConstantType>());
+        return instantiatedModel.getTransitionMatrix().isProbabilistic(storm::numbers::zero<ConstantType>());
     } else {
         auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-        return instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(generalSettings.getPrecision()));
+        return instantiatedModel.getTransitionMatrix().isProbabilistic(storm::numbers::convert<ConstantType>(generalSettings.getPrecision()));
     }
 }
 

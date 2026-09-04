@@ -118,10 +118,10 @@ void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::sha
     for (auto const& param : parameters) {
         std::vector<Instantiation<storm::RationalFunction>> newInstantiations;
         for (auto point : testInstantiations) {
-            for (typename TestType::ConstantType x = storm::utility::convertNumber<ConstantType>(1e-6); x <= 1;
-                 x += (1 - storm::utility::convertNumber<ConstantType>(1e-6)) / 10) {
+            for (typename TestType::ConstantType x = storm::numbers::convert<ConstantType>(1e-6); x <= 1;
+                 x += (1 - storm::numbers::convert<ConstantType>(1e-6)) / 10) {
                 std::map<VariableType<storm::RationalFunction>, CoefficientType<storm::RationalFunction>> newMap(point);
-                newMap[param] = storm::utility::convertNumber<CoefficientType<storm::RationalFunction>>(x);
+                newMap[param] = storm::numbers::convert<CoefficientType<storm::RationalFunction>>(x);
                 newInstantiations.push_back(newMap);
             }
         }
@@ -152,7 +152,7 @@ void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::sha
             auto expectedResult = testCase.second.at(parameter);
 
             auto derivative = derivativeModelChecker.check(env(), instantiation, parameter);
-            ASSERT_NEAR(storm::utility::convertNumber<double>(derivative->getValueVector()[0]), storm::utility::convertNumber<double>(expectedResult), 1e-6)
+            ASSERT_NEAR(storm::numbers::convert<double>(derivative->getValueVector()[0]), storm::numbers::convert<double>(expectedResult), 1e-6)
                 << instantiation;
         }
     }

@@ -6,6 +6,7 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/MissingLibraryException.h"
+#include "storm/numbers/NumberTraits.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/GlpkLpSolver.h"
@@ -15,7 +16,6 @@
 #include "storm/solver/SoplexLpSolver.h"
 #include "storm/solver/Z3LpSolver.h"
 #include "storm/solver/Z3SmtSolver.h"
-#include "storm/utility/NumberTraits.h"
 
 namespace storm {
 namespace utility {
@@ -116,7 +116,7 @@ std::unique_ptr<LpSolverFactory<ValueType>> getLpSolverFactory(storm::Environmen
     storm::solver::LpSolverType t;
     if (solvType == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
         t = env.solver().getLpSolverType();
-        bool useExact = storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact();
+        bool useExact = storm::numbers::NumberTraits<ValueType>::IsExact || env.solver().isForceExact();
         if (useExact && t != storm::solver::LpSolverType::Z3 && env.solver().isLpSolverTypeSetFromDefaultValue()) {
             t = storm::solver::LpSolverType::Z3;
         }

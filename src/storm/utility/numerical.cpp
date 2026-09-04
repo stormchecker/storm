@@ -5,7 +5,7 @@
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -13,7 +13,7 @@ namespace utility {
 namespace numerical {
 
 template<typename ValueType>
-FoxGlynnResult<ValueType>::FoxGlynnResult() : left(0), right(0), totalWeight(storm::utility::zero<ValueType>()) {
+FoxGlynnResult<ValueType>::FoxGlynnResult() : left(0), right(0), totalWeight(storm::numbers::zero<ValueType>()) {
     // Intentionally left empty.
 }
 
@@ -244,7 +244,7 @@ FoxGlynnResult<ValueType> foxGlynnWeighter(ValueType lambda, ValueType epsilon) 
     }
 
     // It is time to compute the normalization weight W.
-    result.totalWeight = storm::utility::zero<ValueType>();
+    result.totalWeight = storm::numbers::zero<ValueType>();
     j = 0;
 
     // t was set above.

@@ -14,13 +14,13 @@
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/numbers/constants.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm/utility/Extremum.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
@@ -78,8 +78,8 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
             auto variables = transition.gatherVariables();
             occurringVariables.insert(variables.begin(), variables.end());
 
-            if (storm::utility::isConstant(transition)) {
-                builder.addNextValue(oldToNewColumnIndexMapping[row], oldToNewColumnIndexMapping[column], utility::convertNumber<double>(transition));
+            if (storm::numbers::isConstant(transition)) {
+                builder.addNextValue(oldToNewColumnIndexMapping[row], oldToNewColumnIndexMapping[column], storm::numbers::convert<double>(transition));
             } else {
                 nonConstMatrixEntries.set(pMatrixEntryCount, true);
                 auto valuation = RobustAbstractValuation(transition);
@@ -103,8 +103,8 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
         if (!selectedRows.get(i)) {
             continue;
         }
-        if (storm::utility::isConstant(transition)) {
-            vector.push_back(utility::convertNumber<double>(transition));
+        if (storm::numbers::isConstant(transition)) {
+            vector.push_back(storm::numbers::convert<double>(transition));
         } else {
             nonConstVectorEntries.set(pVectorEntryCount, true);
             auto valuation = RobustAbstractValuation(transition);
@@ -224,7 +224,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
 
             double value = model->getRationalValue(var);
 
-            zeroes.emplace(utility::convertNumber<CoefficientType>(value));
+            zeroes.emplace(storm::numbers::convert<CoefficientType>(value));
 
             // Add new constraint so we search for the next zero in the polynomial
             // Get another model (or unsat)
@@ -247,7 +247,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
     UniPoly polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
     CoefficientType c;
     auto const& carlRoots = carl::rootfinder::realRoots<CoefficientType, CoefficientType>(
-        polynomial, carl::Interval<CoefficientType>(utility::zero<CoefficientType>(), utility::one<CoefficientType>()),
+        polynomial, carl::Interval<CoefficientType>(storm::numbers::zero<CoefficientType>(), storm::numbers::one<CoefficientType>()),
         carl::rootfinder::SplittingStrategy::ABERTH);
     std::set<CoefficientType> zeroes = {};
     for (carl::RealAlgebraicNumber<CoefficientType> const& root : carlRoots) {
@@ -273,8 +273,8 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
     // Polynomial is a*p^3 + b*p^2 + c*p + d
 
     // Recover factors from polynomial
-    CoefficientType a = utility::zero<CoefficientType>(), b = a, c = a, d = a;
-    utility::convertNumber<ConstantType>(a);
+    CoefficientType a = storm::numbers::zero<CoefficientType>(), b = a, c = a, d = a;
+    storm::numbers::convert<ConstantType>(a);
     for (auto const& term : polynomial.getTerms()) {
         STORM_LOG_ASSERT(term.getNrVariables() <= 1, "No terms with more than one variable allowed but " << term << " has " << term.getNrVariables());
         if (!term.isConstant() && term.getSingleVariable() != parameter) {
@@ -302,26 +302,26 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
     // Translated from https://stackoverflow.com/questions/27176423/function-to-solve-cubic-equation-analytically
 
     // Quadratic case
-    if (utility::isZero(a)) {
+    if (storm::numbers::isZero(a)) {
         a = b;
         b = c;
         c = d;
         // Linear case
-        if (utility::isZero(a)) {
+        if (storm::numbers::isZero(a)) {
             a = b;
             b = c;
             // Constant case
-            if (utility::isZero(a)) {
+            if (storm::numbers::isZero(a)) {
                 return {};
             }
             return {-b / a};
         }
 
         CoefficientType D = b * b - 4 * a * c;
-        if (utility::isZero(D)) {
+        if (storm::numbers::isZero(D)) {
             return {-b / (2 * a)};
         } else if (D > 0) {
-            return {(-b + utility::sqrt(D)) / (2 * a), (-b - utility::sqrt(D)) / (2 * a)};
+            return {(-b + storm::numbers::sqrt(D)) / (2 * a), (-b - storm::numbers::sqrt(D)) / (2 * a)};
         }
         return {};
     }
@@ -330,34 +330,34 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
     // Convert to depressed cubic t^3+pt+q = 0 (subst x = t - b/3a)
     CoefficientType p = (3 * a * c - b * b) / (3 * a * a);
     CoefficientType q = (2 * b * b * b - 9 * a * b * c + 27 * a * a * d) / (27 * a * a * a);
-    double pDouble = utility::convertNumber<ConstantType>(p);
-    double qDouble = utility::convertNumber<ConstantType>(q);
+    double pDouble = storm::numbers::convert<ConstantType>(p);
+    double qDouble = storm::numbers::convert<ConstantType>(q);
 
-    if (utility::isZero(p)) {  // p = 0 -> t^3 = -q -> t = -q^1/3
-        roots = {utility::convertNumber<CoefficientType>(std::cbrt(-qDouble))};
-    } else if (utility::isZero(q)) {  // q = 0 -> t^3 + pt = 0 -> t(t^2+p)=0
+    if (storm::numbers::isZero(p)) {  // p = 0 -> t^3 = -q -> t = -q^1/3
+        roots = {storm::numbers::convert<CoefficientType>(std::cbrt(-qDouble))};
+    } else if (storm::numbers::isZero(q)) {  // q = 0 -> t^3 + pt = 0 -> t(t^2+p)=0
         roots = {0};
         if (p < 0) {
-            roots.emplace(utility::convertNumber<CoefficientType>(utility::sqrt(-pDouble)));
-            roots.emplace(utility::convertNumber<CoefficientType>(-utility::sqrt(-pDouble)));
+            roots.emplace(storm::numbers::convert<CoefficientType>(storm::numbers::sqrt(-pDouble)));
+            roots.emplace(storm::numbers::convert<CoefficientType>(-storm::numbers::sqrt(-pDouble)));
         }
     } else {
         // These are all coefficients (we also plug the values into RationalFunctions later), i.e., they are rational numbers,
         // but some of these operations are strictly real, so we convert to double and back (i.e., approximate).
         CoefficientType D = q * q / 4 + p * p * p / 27;
-        if (utility::isZero(D)) {  // D = 0 -> two roots
+        if (storm::numbers::isZero(D)) {  // D = 0 -> two roots
             roots = {-3 * q / (p * 2), 3 * q / p};
         } else if (D > 0) {  // Only one real root
-            double Ddouble = utility::convertNumber<ConstantType>(D);
-            CoefficientType u = utility::convertNumber<CoefficientType>(std::cbrt(-qDouble / 2 - utility::sqrt(Ddouble)));
+            double Ddouble = storm::numbers::convert<ConstantType>(D);
+            CoefficientType u = storm::numbers::convert<CoefficientType>(std::cbrt(-qDouble / 2 - storm::numbers::sqrt(Ddouble)));
             roots = {u - p / (3 * u)};
         } else {  // D < 0, three roots, but needs to use complex numbers/trigonometric solution
-            double u = 2 * utility::sqrt(-pDouble / 3);
+            double u = 2 * storm::numbers::sqrt(-pDouble / 3);
             double t = std::acos(3 * qDouble / pDouble / u) / 3;  // D < 0 implies p < 0 and acos argument in [-1..1]
             double k = 2 * M_PI / 3;
 
-            roots = {utility::convertNumber<CoefficientType>(u * std::cos(t)), utility::convertNumber<CoefficientType>(u * std::cos(t - k)),
-                     utility::convertNumber<CoefficientType>(u * std::cos(t - 2 * k))};
+            roots = {storm::numbers::convert<CoefficientType>(u * std::cos(t)), storm::numbers::convert<CoefficientType>(u * std::cos(t - k)),
+                     storm::numbers::convert<CoefficientType>(u * std::cos(t - 2 * k))};
         }
     }
 
@@ -434,7 +434,7 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
             this->extrema = std::map<VariableType, std::set<CoefficientType>>();
             (*this->extrema)[annotation.getParameter()];
             for (auto const& root : *carlResult) {
-                (*this->extrema).at(annotation.getParameter()).emplace(utility::convertNumber<CoefficientType>(root));
+                (*this->extrema).at(annotation.getParameter()).emplace(storm::numbers::convert<CoefficientType>(root));
             }
         } else {
             // TODO make evaluation depth configurable
@@ -468,7 +468,7 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
             }
             STORM_LOG_ERROR_COND(zeroes, "Zeroes of " << derivative << " could not be found.");
             for (auto const& zero : *zeroes) {
-                if (zero >= utility::zero<CoefficientType>() && zero <= utility::one<CoefficientType>()) {
+                if (zero >= storm::numbers::zero<CoefficientType>() && zero <= storm::numbers::one<CoefficientType>()) {
                     this->extrema->at(p).emplace(zero);
                 }
             }
@@ -522,7 +522,7 @@ Interval evaluateExtremaAnnotations(std::map<UniPoly, std::set<double>> extremaA
         utility::Maximum<double> maxValue;
 
         for (auto const& potentialExtremum : potentialExtrema) {
-            auto value = utility::convertNumber<double>(poly.evaluate(utility::convertNumber<RationalFunctionCoefficient>(potentialExtremum)));
+            auto value = storm::numbers::convert<double>(poly.evaluate(storm::numbers::convert<RationalFunctionCoefficient>(potentialExtremum)));
             maxValue &= value;
             minValue &= value;
         }
@@ -538,8 +538,8 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
     std::unordered_map<RobustAbstractValuation, Interval, RobustAbstractValuationHash> insertThese;
     for (auto& [abstrValuation, placeholder] : collectedValuations) {
         // Results of our computations go here, we use different methods
-        ConstantType lowerBound = utility::zero<ConstantType>();
-        ConstantType upperBound = utility::zero<ConstantType>();
+        ConstantType lowerBound = storm::numbers::zero<ConstantType>();
+        ConstantType upperBound = storm::numbers::zero<ConstantType>();
 
         if (abstrValuation.getExtrema()) {
             // We know the extrema of this abstract valuation => we can get the exact bounds easily
@@ -567,7 +567,7 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                 utility::Maximum<ConstantType> maximum;
                 for (auto const& potentialExtremum : potentialExtrema) {
                     // Possible optimization: evaluate all transitions together, keeping track of intermediate results
-                    auto value = maybeAnnotation->evaluate(utility::convertNumber<double>(potentialExtremum));
+                    auto value = maybeAnnotation->evaluate(storm::numbers::convert<double>(potentialExtremum));
                     maximum &= value;
                     minimum &= value;
                 }
@@ -618,11 +618,11 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                 }
 
                 // Compute function values at left and right ends
-                lowerBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(lowerPositions));
-                upperBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(upperPositions));
+                lowerBound = storm::numbers::convert<ConstantType>(abstrValuation.getTransition().evaluate(lowerPositions));
+                upperBound = storm::numbers::convert<ConstantType>(abstrValuation.getTransition().evaluate(upperPositions));
             }
 
-            if (upperBound < utility::zero<ConstantType>() || lowerBound > utility::one<ConstantType>()) {
+            if (upperBound < storm::numbers::zero<ConstantType>() || lowerBound > storm::numbers::one<ConstantType>()) {
                 // Current region is entirely ill-defined (partially ill-defined is fine:)
                 return true;
             }
@@ -651,8 +651,8 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                             break;
                         }
                     }
-                    lowerBound = utility::min(lowerBound, bound.lower());
-                    upperBound = utility::max(upperBound, bound.upper());
+                    lowerBound = storm::numbers::min(lowerBound, bound.lower());
+                    upperBound = storm::numbers::max(upperBound, bound.upper());
                     regionsInPLARegion.push_back(i);
                 }
 
@@ -703,12 +703,13 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
 
         // bool graphPreserving = true;
         // // const ConstantType epsilon =
-        // //     graphPreserving ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
-        // //                     : utility::zero<ConstantType>();
+        // //     graphPreserving ?
+        // storm::numbers::convert<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
+        // //                     : storm::numbers::zero<ConstantType>();
         const ConstantType epsilon = 0;
         // We want to check in the realm of feasible instantiations, even if our not our entire parameter space is feasible
-        lowerBound = utility::max(utility::min(lowerBound, utility::one<ConstantType>() - epsilon), epsilon);
-        upperBound = utility::max(utility::min(upperBound, utility::one<ConstantType>() - epsilon), epsilon);
+        lowerBound = storm::numbers::max(storm::numbers::min(lowerBound, storm::numbers::one<ConstantType>() - epsilon), epsilon);
+        upperBound = storm::numbers::max(storm::numbers::min(upperBound, storm::numbers::one<ConstantType>() - epsilon), epsilon);
 
         STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops.");
 

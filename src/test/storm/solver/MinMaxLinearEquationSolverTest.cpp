@@ -17,7 +17,7 @@ class DoubleViEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         return env;
     }
 };
@@ -29,7 +29,7 @@ class DoubleViRegMultEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         env.solver().minMax().setMultiplicationStyle(storm::solver::MultiplicationStyle::Regular);
         return env;
     }
@@ -43,7 +43,7 @@ class DoubleSoundViEnvironment {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::SoundValueIteration);
         env.solver().setForceSoundness(true);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         return env;
     }
 };
@@ -56,7 +56,7 @@ class DoubleIntervalIterationEnvironment {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::IntervalIteration);
         env.solver().setForceSoundness(true);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         return env;
     }
 };
@@ -69,7 +69,7 @@ class DoubleGuessingViEnvironment {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::GuessingValueIteration);
         env.solver().setForceSoundness(true);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         return env;
     }
 };
@@ -82,7 +82,7 @@ class DoubleOptimisticViEnvironment {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::OptimisticValueIteration);
         env.solver().setForceSoundness(true);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         return env;
     }
 };
@@ -95,7 +95,7 @@ class DoubleTopologicalViEnvironment {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
         env.solver().topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         return env;
     }
 };
@@ -107,7 +107,7 @@ class DoublePIEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::PolicyIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
         env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::Jacobi);
         env.solver().setLinearEquationSolverPrecision(env.solver().minMax().getPrecision());
@@ -147,7 +147,7 @@ class MinMaxLinearEquationSolverTest : public ::testing::Test {
         return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");
     }
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
 
    private:

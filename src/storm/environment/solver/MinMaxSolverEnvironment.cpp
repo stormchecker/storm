@@ -1,9 +1,9 @@
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 #include "storm/environment/solver/MinMaxLpSolverEnvironment.h"
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -18,7 +18,7 @@ MinMaxSolverEnvironment::MinMaxSolverEnvironment() {
     } else {
         maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
     }
-    precision = storm::utility::convertNumber<storm::RationalNumber>(minMaxSettings.getPrecision());
+    precision = storm::numbers::convert<storm::RationalNumber>(minMaxSettings.getPrecision());
     considerRelativeTerminationCriterion =
         minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
     STORM_LOG_ASSERT(considerRelativeTerminationCriterion ||

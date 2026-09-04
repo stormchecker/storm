@@ -11,11 +11,11 @@
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/utility/Stopwatch.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 
@@ -53,13 +53,13 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeUntilProbabilities(Envi
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-    requires storm::NumberTraits<ValueType>::SupportsExponential
+    requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
 std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(
     Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant,
     storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates,
     storm::dd::Bdd<DdType> const& psiStates, bool qualitative, ValueType lowerBound, std::optional<ValueType> const& upperBound) {
     // If the time bounds are [0, inf], we rather call untimed reachability.
-    if (storm::utility::isZero(lowerBound) && !upperBound) {
+    if (storm::numbers::isZero(lowerBound) && !upperBound) {
         return computeUntilProbabilities(env, model, rateMatrix, exitRateVector, phiStates, psiStates, qualitative);
     }
 
@@ -86,7 +86,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
     }
 
     // Set the possible (absolute) error allowed for truncation (epsilon for fox-glynn)
-    ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision()) / 8.0;
+    ValueType epsilon = storm::numbers::convert<ValueType>(env.solver().timeBounded().getPrecision()) / 8.0;
 
     // From this point on, we know that we have to solve a more complicated problem [t, t'] with either t != 0
     // or t' != inf.
@@ -99,12 +99,12 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
     STORM_LOG_INFO("Found " << statesWithProbabilityGreater0NonPsi.getNonZeroCount() << " 'maybe' states.");
 
     if (!statesWithProbabilityGreater0NonPsi.isZero()) {
-        if (upperBound && storm::utility::isZero(*upperBound)) {
+        if (upperBound && storm::numbers::isZero(*upperBound)) {
             // In this case, the interval is of the form [0, 0].
             return std::unique_ptr<CheckResult>(
                 new SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), psiStates.template toAdd<ValueType>()));
         } else {
-            if (storm::utility::isZero(lowerBound)) {
+            if (storm::numbers::isZero(lowerBound)) {
                 // In this case, the interval is of the form [0, t].
                 // Note that this excludes [0, inf] since this is untimed reachability and we considered this case earlier.
 
@@ -134,7 +134,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
                 STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
 
                 // Finally compute the transient probabilities.
-                std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNonZeroCount(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNonZeroCount(), storm::numbers::zero<ValueType>());
                 std::vector<ValueType> subresult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities(
                     env, explicitUniformizedMatrix, &explicitB, *upperBound, uniformizationRate, values, epsilon);
 
@@ -221,7 +221,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
                     conversionWatch.stop();
 
                     // Compute the transient probabilities.
-                    std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNonZeroCount(), storm::utility::zero<ValueType>());
+                    std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNonZeroCount(), storm::numbers::zero<ValueType>());
                     std::vector<ValueType> subResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities(
                         env, explicitUniformizedMatrix, &explicitB, *upperBound - lowerBound, uniformizationRate, values, epsilon);
 
@@ -310,7 +310,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-    requires storm::NumberTraits<ValueType>::SupportsExponential
+    requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
 std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(
     Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant,
     storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector,
@@ -332,7 +332,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(
     ValueType maxValue = std::max(rewardsAdd.getMax(), -rewardsAdd.getMin());
 
     // If the rewards are not zero and the time-bound is not zero, we need to perform a transient analysis.
-    if (!storm::utility::isZero(maxValue) && timeBound > 0) {
+    if (!storm::numbers::isZero(maxValue) && timeBound > 0) {
         ValueType uniformizationRate = 1.02 * exitRateVector.getMax();
         STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
 
@@ -345,13 +345,13 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(
         STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
 
         // Set the possible error allowed for truncation (epsilon for fox-glynn)
-        ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
+        ValueType epsilon = storm::numbers::convert<ValueType>(env.solver().timeBounded().getPrecision());
         if (env.solver().timeBounded().getRelativeTerminationCriterion()) {
             // Be more precise, if the maximum value is very small (This still gives no sound guarantee!)
-            epsilon *= std::min(storm::utility::one<ValueType>(), maxValue);
+            epsilon *= std::min(storm::numbers::one<ValueType>(), maxValue);
         } else {
             // Be more precise, if the maximal possible value is very large
-            epsilon /= std::max(storm::utility::one<ValueType>(), maxValue);
+            epsilon /= std::max(storm::numbers::one<ValueType>(), maxValue);
         }
 
         storm::storage::BitVector relevantValues;
@@ -374,7 +374,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-    requires storm::NumberTraits<ValueType>::SupportsExponential
+    requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
 std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(
     Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant,
     storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector,
@@ -418,19 +418,19 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(
     ValueType maxReward = std::max(totalRewardVector.getMax(), -totalRewardVector.getMin());
 
     // If all rewards are zero, the result is the constant zero vector.
-    if (storm::utility::isZero(maxReward)) {
+    if (storm::numbers::isZero(maxReward)) {
         return std::unique_ptr<CheckResult>(
             new SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().template getAddZero<ValueType>()));
     }
 
     // Set the possible (absolute) error allowed for truncation (epsilon for fox-glynn)
-    ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
+    ValueType epsilon = storm::numbers::convert<ValueType>(env.solver().timeBounded().getPrecision());
     if (env.solver().timeBounded().getRelativeTerminationCriterion()) {
         // Be more precise, if the value is very small (this still gives no sound guarantee)
-        epsilon *= std::min(storm::utility::one<ValueType>(), maxReward);
+        epsilon *= std::min(storm::numbers::one<ValueType>(), maxReward);
     } else {
         // Be more precise, if the maximal possible value is very large
-        epsilon /= std::max(storm::utility::one<ValueType>(), maxReward * timeBound);
+        epsilon /= std::max(storm::numbers::one<ValueType>(), maxReward * timeBound);
     }
 
     storm::storage::BitVector relevantValues;

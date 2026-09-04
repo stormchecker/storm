@@ -3,7 +3,7 @@
 #include <sstream>
 
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/utility/NumberTraits.h"
+#include "storm/numbers/NumberTraits.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -19,12 +19,12 @@ bool isJsonNumberExportAccurate(storm::json<ValueType> const& j) {
         return false;
     }
     // Parse the dumped value with full accuracy
-    auto parsed = storm::utility::convertNumber<storm::RationalNumber, std::string>(jDump);
+    auto parsed = storm::numbers::convert<storm::RationalNumber, std::string>(jDump);
     // Check if parsed and actual value coincide.
     if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
         return parsed == j.template get_ref<ValueType const&>();
     } else {
-        return parsed == storm::utility::convertNumber<storm::RationalNumber>(j.template get_ref<ValueType const&>());
+        return parsed == storm::numbers::convert<storm::RationalNumber>(j.template get_ref<ValueType const&>());
     }
 }
 
@@ -58,7 +58,7 @@ void warnIfJsonExportNotAccurate(storm::json<ValueType> const& j) {
 
 template<typename ValueType>
 std::string dumpJson(storm::json<ValueType> const& j, bool compact) {
-    if constexpr (storm::NumberTraits<ValueType>::IsExact) {
+    if constexpr (storm::numbers::NumberTraits<ValueType>::IsExact) {
         warnIfJsonExportNotAccurate(j);
     }
     if (compact) {

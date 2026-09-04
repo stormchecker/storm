@@ -1,8 +1,8 @@
 #include "storm/environment/solver/MultiplierEnvironment.h"
 
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MultiplierSettings.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

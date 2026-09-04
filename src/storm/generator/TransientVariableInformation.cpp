@@ -12,7 +12,7 @@
 
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 #include <cmath>
@@ -92,9 +92,9 @@ void TransientVariableValuation<ValueType>::setInValuations(uint64_t const state
             }
             if constexpr (std::is_same_v<std::remove_cvref_t<decltype(value)>, storm::RationalFunction>) {
                 STORM_LOG_THROW(
-                    storm::utility::isConstant(value), storm::exceptions::NotSupportedException,
+                    storm::numbers::isConstant(value), storm::exceptions::NotSupportedException,
                     "Non-constant variable valuations are not supported. Got value " << value << " for variable " << varInfo.variable.getName() << ".");
-                valuations.writeValue(stateIndex, varInfo.variable, storm::utility::convertNumber<storm::RationalNumber>(value));
+                valuations.writeValue(stateIndex, varInfo.variable, storm::numbers::convert<storm::RationalNumber>(value));
             } else {
                 valuations.writeValue(stateIndex, varInfo.variable, value);
             }
@@ -198,7 +198,7 @@ void TransientVariableInformation<ValueType>::createVariablesForVariableSet(stor
     for (auto const& variable : variableSet.getRealVariables()) {
         if (variable.isTransient()) {
             rationalVariableInformation.emplace_back(variable.getExpressionVariable(),
-                                                     storm::utility::convertNumber<ValueType>(variable.getInitExpression().evaluateAsRational()), global);
+                                                     storm::numbers::convert<ValueType>(variable.getInitExpression().evaluateAsRational()), global);
         }
     }
 }

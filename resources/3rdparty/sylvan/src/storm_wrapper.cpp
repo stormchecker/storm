@@ -8,8 +8,8 @@
 #include <mutex>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/utility/constants.h"
-#include "storm/utility/KwekMehlhorn.h"
+#include "storm/numbers/constants.h"
+#include "storm/numbers/KwekMehlhorn.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
 
@@ -97,7 +97,7 @@ storm_rational_number_ptr storm_rational_number_get_zero() {
     std::lock_guard<std::mutex> lock(rationalNumberMutex);
 #endif
 
-    storm::RationalNumber* result_srn = new storm::RationalNumber(storm::utility::zero<storm::RationalNumber>());
+    storm::RationalNumber* result_srn = new storm::RationalNumber(storm::numbers::zero<storm::RationalNumber>());
     return static_cast<storm_rational_number_ptr>(result_srn);
 }
 
@@ -106,7 +106,7 @@ storm_rational_number_ptr storm_rational_number_get_one() {
     std::lock_guard<std::mutex> lock(rationalNumberMutex);
 #endif
 
-    storm::RationalNumber* result_srn = new storm::RationalNumber(storm::utility::one<storm::RationalNumber>());
+    storm::RationalNumber* result_srn = new storm::RationalNumber(storm::numbers::one<storm::RationalNumber>());
     return static_cast<storm_rational_number_ptr>(result_srn);
 }
 
@@ -115,7 +115,7 @@ storm_rational_number_ptr storm_rational_number_get_infinity() {
     std::lock_guard<std::mutex> lock(rationalNumberMutex);
 #endif
 
-    storm::RationalNumber* result_srn = new storm::RationalNumber(storm::utility::infinity<storm::RationalNumber>());
+    storm::RationalNumber* result_srn = new storm::RationalNumber(storm::numbers::infinity<storm::RationalNumber>());
     return static_cast<storm_rational_number_ptr>(result_srn);
 }
 
@@ -124,7 +124,7 @@ int storm_rational_number_is_zero(storm_rational_number_ptr a) {
     std::lock_guard<std::mutex> lock(rationalNumberMutex);
 #endif
 
-    return storm::utility::isZero(*static_cast<storm::RationalNumber const*>(a)) ? 1 : 0;
+    return storm::numbers::isZero(*static_cast<storm::RationalNumber const*>(a)) ? 1 : 0;
 }
 
 uint64_t storm_rational_number_hash(storm_rational_number_ptr const a, uint64_t const seed) {
@@ -144,7 +144,7 @@ double storm_rational_number_get_value_double(storm_rational_number_ptr a) {
 #endif
 
     storm::RationalNumber const& srn_a = *static_cast<storm::RationalNumber const*>(a);
-    return storm::utility::convertNumber<double>(srn_a);
+    return storm::numbers::convert<double>(srn_a);
 }
 
 storm_rational_number_ptr storm_rational_number_from_double(double value) {
@@ -152,7 +152,7 @@ storm_rational_number_ptr storm_rational_number_from_double(double value) {
     std::lock_guard<std::mutex> lock(rationalNumberMutex);
 #endif
 
-    storm::RationalNumber* number = new storm::RationalNumber(storm::utility::convertNumber<storm::RationalNumber>(value));
+    storm::RationalNumber* number = new storm::RationalNumber(storm::numbers::convert<storm::RationalNumber>(value));
     return number;
 }
 
@@ -213,7 +213,7 @@ storm_rational_number_ptr storm_rational_number_pow(storm_rational_number_ptr a,
     storm::RationalNumber const& srn_b = *static_cast<storm::RationalNumber const*>(b);
 
     carl::sint exponentAsInteger = carl::toInt<carl::sint>(srn_b);
-    storm::RationalNumber* result_srn = new storm::RationalNumber(storm::utility::pow(srn_a, exponentAsInteger));
+    storm::RationalNumber* result_srn = new storm::RationalNumber(storm::numbers::pow(srn_a, exponentAsInteger));
     return static_cast<storm_rational_number_ptr>(result_srn);
 }
 
@@ -247,9 +247,9 @@ int storm_rational_number_less(storm_rational_number_ptr a, storm_rational_numbe
     storm::RationalNumber const& srn_a = *static_cast<storm::RationalNumber const*>(a);
     storm::RationalNumber const& srn_b = *static_cast<storm::RationalNumber const*>(b);
 
-    if (storm::utility::isInfinity<storm::RationalNumber>(srn_b)) {
-        return storm::utility::isInfinity<storm::RationalNumber>(srn_a) ? 0 : 1;
-    } else if (storm::utility::isInfinity<storm::RationalNumber>(srn_a)) {
+    if (storm::numbers::isInfinity<storm::RationalNumber>(srn_b)) {
+        return storm::numbers::isInfinity<storm::RationalNumber>(srn_a) ? 0 : 1;
+    } else if (storm::numbers::isInfinity<storm::RationalNumber>(srn_a)) {
         return 0;
     }
 
@@ -264,9 +264,9 @@ int storm_rational_number_less_or_equal(storm_rational_number_ptr a, storm_ratio
     storm::RationalNumber const& srn_a = *static_cast<storm::RationalNumber const*>(a);
     storm::RationalNumber const& srn_b = *static_cast<storm::RationalNumber const*>(b);
 
-    if (storm::utility::isInfinity<storm::RationalNumber>(srn_b)) {
+    if (storm::numbers::isInfinity<storm::RationalNumber>(srn_b)) {
         return 1;
-    } else if (storm::utility::isInfinity<storm::RationalNumber>(srn_a)) {
+    } else if (storm::numbers::isInfinity<storm::RationalNumber>(srn_a)) {
         return 0;
     }
 
@@ -309,7 +309,7 @@ storm_rational_number_ptr storm_double_sharpen(double value, size_t precision) {
 #endif
 
     try {
-        storm::RationalNumber tmp = storm::utility::kwek_mehlhorn::sharpen<storm::RationalNumber, double>(precision, value);
+        storm::RationalNumber tmp = storm::numbers::kwek_mehlhorn::sharpen<storm::RationalNumber, double>(precision, value);
         storm::RationalNumber* result_srn = new storm::RationalNumber(tmp);
         return static_cast<storm_rational_number_ptr>(result_srn);
     } catch (storm::exceptions::PrecisionExceededException const& e) {
@@ -323,7 +323,7 @@ storm_rational_number_ptr storm_rational_number_sharpen(storm_rational_number_pt
 #endif
 
     storm::RationalNumber const& srn_a = *static_cast<storm::RationalNumber const*>(a);
-    storm::RationalNumber tmp = storm::utility::kwek_mehlhorn::sharpen<storm::RationalNumber, storm::RationalNumber>(precision, srn_a);
+    storm::RationalNumber tmp = storm::numbers::kwek_mehlhorn::sharpen<storm::RationalNumber, storm::RationalNumber>(precision, srn_a);
     storm::RationalNumber* result_srn = new storm::RationalNumber(tmp);
     return static_cast<storm_rational_number_ptr>(result_srn);
 }
@@ -338,8 +338,8 @@ int storm_rational_number_equal_modulo_precision(int relative, storm_rational_nu
     storm::RationalNumber const& srn_p = *static_cast<storm::RationalNumber const*>(precision);
 
     if (relative) {
-        if (storm::utility::isZero<storm::RationalNumber>(srn_a)) {
-            return storm::utility::isZero<storm::RationalNumber>(srn_b);
+        if (storm::numbers::isZero<storm::RationalNumber>(srn_a)) {
+            return storm::numbers::isZero<storm::RationalNumber>(srn_b);
         } else {
             return carl::abs(srn_a - srn_b)/srn_a < srn_p ? 1 : 0;
         }
@@ -435,7 +435,7 @@ storm_rational_function_ptr storm_rational_function_get_zero() {
     std::lock_guard<std::mutex> lock(rationalFunctionMutex);
 #endif
 
-    storm::RationalFunction* result_srf = new storm::RationalFunction(storm::utility::zero<storm::RationalFunction>());
+    storm::RationalFunction* result_srf = new storm::RationalFunction(storm::numbers::zero<storm::RationalFunction>());
     return static_cast<storm_rational_function_ptr>(result_srf);
 }
 
@@ -444,7 +444,7 @@ storm_rational_function_ptr storm_rational_function_get_one() {
     std::lock_guard<std::mutex> lock(rationalFunctionMutex);
 #endif
 
-    storm::RationalFunction* result_srf = new storm::RationalFunction(storm::utility::one<storm::RationalFunction>());
+    storm::RationalFunction* result_srf = new storm::RationalFunction(storm::numbers::one<storm::RationalFunction>());
     return static_cast<storm_rational_function_ptr>(result_srf);
 }
 
@@ -453,7 +453,7 @@ storm_rational_function_ptr storm_rational_function_get_infinity() {
     std::lock_guard<std::mutex> lock(rationalFunctionMutex);
 #endif
 
-    storm::RationalFunction* result_srf = new storm::RationalFunction(storm::utility::infinity<storm::RationalFunction>());
+    storm::RationalFunction* result_srf = new storm::RationalFunction(storm::numbers::infinity<storm::RationalFunction>());
     return static_cast<storm_rational_function_ptr>(result_srf);
 }
 
@@ -463,7 +463,7 @@ int storm_rational_function_is_zero(storm_rational_function_ptr a) {
     std::lock_guard<std::mutex> lock(rationalFunctionMutex);
 #endif
 
-    return storm::utility::isZero(*static_cast<storm::RationalFunction const*>(a)) ? 1 : 0;
+    return storm::numbers::isZero(*static_cast<storm::RationalFunction const*>(a)) ? 1 : 0;
 }
 
 uint64_t storm_rational_function_hash(storm_rational_function_ptr const a, uint64_t const seed) {
@@ -484,7 +484,7 @@ double storm_rational_function_get_value_double(storm_rational_function_ptr a) {
 
     storm::RationalFunction const& srf_a = *static_cast<storm::RationalFunction const*>(a);
     if (srf_a.isConstant()) {
-        return storm::utility::convertNumber<double>(srf_a);
+        return storm::numbers::convert<double>(srf_a);
     } else {
         throw storm::exceptions::InvalidOperationException() << "Cannot evaluate rational function as it's not constant.";
     }
@@ -563,7 +563,7 @@ storm_rational_function_ptr storm_rational_function_mod(storm_rational_function_
     storm::RationalFunction const& srf_a = *static_cast<storm::RationalFunction const*>(a);
     storm::RationalFunction const& srf_b = *static_cast<storm::RationalFunction const*>(b);
 
-    if (!storm::utility::isConstant(srf_a) || !storm::utility::isConstant(srf_b)) {
+    if (!storm::numbers::isConstant(srf_a) || !storm::numbers::isConstant(srf_b)) {
         throw storm::exceptions::InvalidOperationException() << "Operands of mod must not be non-constant rational functions.";
     }
     throw storm::exceptions::InvalidOperationException() << "Modulo not supported for rational functions.";
@@ -584,16 +584,16 @@ int storm_rational_function_less(storm_rational_function_ptr a, storm_rational_f
 
     storm::RationalFunction const& srf_a = *static_cast<storm::RationalFunction const*>(a);
     storm::RationalFunction const& srf_b = *static_cast<storm::RationalFunction const*>(b);
-    if (!storm::utility::isConstant(srf_a) || !storm::utility::isConstant(srf_b)) {
+    if (!storm::numbers::isConstant(srf_a) || !storm::numbers::isConstant(srf_b)) {
         throw storm::exceptions::InvalidOperationException() << "Operands of less must not be non-constant rational functions.";
     }
 
-    storm::RationalFunctionCoefficient srn_a = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_a);
-    storm::RationalFunctionCoefficient srn_b = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_b);
+    storm::RationalFunctionCoefficient srn_a = storm::numbers::convert<storm::RationalFunctionCoefficient>(srf_a);
+    storm::RationalFunctionCoefficient srn_b = storm::numbers::convert<storm::RationalFunctionCoefficient>(srf_b);
 
-    if (storm::utility::isInfinity<storm::RationalFunctionCoefficient>(srn_b)) {
-        return storm::utility::isInfinity<storm::RationalFunctionCoefficient>(srn_a) ? 0 : 1;
-    } else if (storm::utility::isInfinity<storm::RationalFunctionCoefficient>(srn_a)) {
+    if (storm::numbers::isInfinity<storm::RationalFunctionCoefficient>(srn_b)) {
+        return storm::numbers::isInfinity<storm::RationalFunctionCoefficient>(srn_a) ? 0 : 1;
+    } else if (storm::numbers::isInfinity<storm::RationalFunctionCoefficient>(srn_a)) {
         return 0;
     }
 
@@ -607,16 +607,16 @@ int storm_rational_function_less_or_equal(storm_rational_function_ptr a, storm_r
 
     storm::RationalFunction const& srf_a = *static_cast<storm::RationalFunction const*>(a);
     storm::RationalFunction const& srf_b = *static_cast<storm::RationalFunction const*>(b);
-    if (!storm::utility::isConstant(srf_a) || !storm::utility::isConstant(srf_b)) {
+    if (!storm::numbers::isConstant(srf_a) || !storm::numbers::isConstant(srf_b)) {
         throw storm::exceptions::InvalidOperationException() << "Operands of less-or-equal must not be non-constant rational functions.";
     }
 
-    storm::RationalFunctionCoefficient srn_a = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_a);
-    storm::RationalFunctionCoefficient srn_b = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_b);
+    storm::RationalFunctionCoefficient srn_a = storm::numbers::convert<storm::RationalFunctionCoefficient>(srf_a);
+    storm::RationalFunctionCoefficient srn_b = storm::numbers::convert<storm::RationalFunctionCoefficient>(srf_b);
 
-    if (storm::utility::isInfinity<storm::RationalFunctionCoefficient>(srn_b)) {
+    if (storm::numbers::isInfinity<storm::RationalFunctionCoefficient>(srn_b)) {
         return 1;
-    } else if (storm::utility::isInfinity<storm::RationalFunctionCoefficient>(srn_a)) {
+    } else if (storm::numbers::isInfinity<storm::RationalFunctionCoefficient>(srn_a)) {
         return 0;
     }
 
@@ -639,10 +639,10 @@ storm_rational_function_ptr storm_rational_function_floor(storm_rational_functio
 #endif
 
     storm::RationalFunction const& srf_a = *static_cast<storm::RationalFunction const*>(a);
-    if (!storm::utility::isConstant(srf_a)) {
+    if (!storm::numbers::isConstant(srf_a)) {
         throw storm::exceptions::InvalidOperationException() << "Operand of floor must not be non-constant rational function.";
     }
-    storm::RationalFunction* result_srf = new storm::RationalFunction(carl::floor(storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_a)));
+    storm::RationalFunction* result_srf = new storm::RationalFunction(carl::floor(storm::numbers::convert<storm::RationalFunctionCoefficient>(srf_a)));
     return static_cast<storm_rational_function_ptr>(result_srf);
 }
 
@@ -652,10 +652,10 @@ storm_rational_function_ptr storm_rational_function_ceil(storm_rational_function
 #endif
 
     storm::RationalFunction const& srf_a = *static_cast<storm::RationalFunction const*>(a);
-    if (!storm::utility::isConstant(srf_a)) {
+    if (!storm::numbers::isConstant(srf_a)) {
         throw storm::exceptions::InvalidOperationException() << "Operand of ceil must not be non-constant rational function.";
     }
-    storm::RationalFunction* result_srf = new storm::RationalFunction(carl::ceil(storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_a)));
+    storm::RationalFunction* result_srf = new storm::RationalFunction(carl::ceil(storm::numbers::convert<storm::RationalFunctionCoefficient>(srf_a)));
     return static_cast<storm_rational_function_ptr>(result_srf);
 }
 
@@ -668,13 +668,13 @@ int storm_rational_function_equal_modulo_precision(int relative, storm_rational_
     storm::RationalFunction const& srf_b = *static_cast<storm::RationalFunction const*>(b);
     storm::RationalFunction const& srf_p = *static_cast<storm::RationalFunction const*>(precision);
 
-    if (!storm::utility::isConstant(srf_a) || !storm::utility::isConstant(srf_b) || !storm::utility::isConstant(srf_p)) {
+    if (!storm::numbers::isConstant(srf_a) || !storm::numbers::isConstant(srf_b) || !storm::numbers::isConstant(srf_p)) {
         throw storm::exceptions::InvalidOperationException() << "Operands of equal-modulo-precision must not be non-constant rational functions.";
     }
 
-    storm::RationalFunctionCoefficient srn_a = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_a);
-    storm::RationalFunctionCoefficient srn_b = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_b);
-    storm::RationalFunctionCoefficient srn_p = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_p);
+    storm::RationalFunctionCoefficient srn_a = storm::numbers::convert<storm::RationalFunctionCoefficient>(srf_a);
+    storm::RationalFunctionCoefficient srn_b = storm::numbers::convert<storm::RationalFunctionCoefficient>(srf_b);
+    storm::RationalFunctionCoefficient srn_p = storm::numbers::convert<storm::RationalFunctionCoefficient>(srf_p);
 
     if (relative) {
         return carl::abs(srn_a - srn_b)/srn_a < srn_p ? 1 : 0;

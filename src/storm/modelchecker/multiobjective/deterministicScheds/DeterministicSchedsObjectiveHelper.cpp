@@ -50,17 +50,17 @@ std::vector<ValueType> getTotalRewardVector(storm::models::sparse::MarkovAutomat
             rewardModelName.is_initialized() ? model.getRewardModel(rewardModelName.get()) : model.getUniqueRewardModel();
 
         // Get a reward model where the state rewards are scaled accordingly
-        std::vector<ValueType> stateRewardWeights(model.getNumberOfStates(), storm::utility::zero<ValueType>());
+        std::vector<ValueType> stateRewardWeights(model.getNumberOfStates(), storm::numbers::zero<ValueType>());
         for (auto const markovianState : model.getMarkovianStates()) {
-            stateRewardWeights[markovianState] = storm::utility::one<ValueType>() / model.getExitRate(markovianState);
+            stateRewardWeights[markovianState] = storm::numbers::one<ValueType>() / model.getExitRate(markovianState);
         }
         return rewardModel.getTotalActionRewardVector(model.getTransitionMatrix(), stateRewardWeights);
     } else {
         STORM_LOG_ASSERT(formula.isTimeOperatorFormula(), "Expected time operator formula.");
-        std::vector<ValueType> result(model.getNumberOfChoices(), storm::utility::zero<ValueType>());
+        std::vector<ValueType> result(model.getNumberOfChoices(), storm::numbers::zero<ValueType>());
         for (auto const markovianState : model.getMarkovianStates()) {
             for (auto const& choice : model.getTransitionMatrix().getRowGroupIndices(markovianState)) {
-                result[choice] = storm::utility::one<ValueType>() / model.getExitRate(markovianState);
+                result[choice] = storm::numbers::one<ValueType>() / model.getExitRate(markovianState);
             }
         }
         return result;
@@ -76,7 +76,7 @@ std::vector<ValueType> getTotalRewardVector(storm::models::sparse::Mdp<ValueType
         return rewardModel.getTotalRewardVector(model.getTransitionMatrix());
     } else {
         STORM_LOG_ASSERT(formula.isTimeOperatorFormula(), "Expected time operator formula.");
-        return std::vector<ValueType>(model.getNumberOfChoices(), storm::utility::one<ValueType>());
+        return std::vector<ValueType>(model.getNumberOfChoices(), storm::numbers::one<ValueType>());
     }
 }
 
@@ -94,9 +94,9 @@ void DeterministicSchedsObjectiveHelper<ModelType>::initialize() {
                                                                 phiStates, psiStates);
         auto prob0States = storm::utility::graph::performProb0A(backwardTransitions, phiStates, psiStates);
         if (prob0States.get(initialState)) {
-            constantInitialStateValue = storm::utility::zero<ValueType>();
+            constantInitialStateValue = storm::numbers::zero<ValueType>();
         } else if (prob1States.get(initialState)) {
-            constantInitialStateValue = storm::utility::one<ValueType>();
+            constantInitialStateValue = storm::numbers::one<ValueType>();
         }
         maybeStates = ~(prob0States | prob1States);
         // Cut away those states that are not reachable, or only reachable via non-maybe states.
@@ -104,7 +104,7 @@ void DeterministicSchedsObjectiveHelper<ModelType>::initialize() {
         for (uint64_t state : maybeStates) {
             for (auto const& choice : model.getTransitionMatrix().getRowGroupIndices(state)) {
                 auto rowSum = model.getTransitionMatrix().getConstrainedRowSum(choice, prob1States);
-                if (storm::utility::isZero(rowSum)) {
+                if (storm::numbers::isZero(rowSum)) {
                     relevantZeroRewardChoices.set(choice);
                 } else {
                     choiceRewards.emplace(choice, rowSum);
@@ -124,7 +124,7 @@ void DeterministicSchedsObjectiveHelper<ModelType>::initialize() {
                                                               model.getBackwardTransitions(), statesWithoutReward, rew0States);
         }
         if (rew0States.get(initialState)) {
-            constantInitialStateValue = storm::utility::zero<ValueType>();
+            constantInitialStateValue = storm::numbers::zero<ValueType>();
         }
         maybeStates = ~rew0States;
         // Cut away those states that are not reachable, or only reachable via non-maybe states.
@@ -133,7 +133,7 @@ void DeterministicSchedsObjectiveHelper<ModelType>::initialize() {
         for (uint64_t state : maybeStates) {
             for (auto const& choice : model.getTransitionMatrix().getRowGroupIndices(state)) {
                 auto const& value = choiceBasedRewards[choice];
-                if (storm::utility::isZero(value)) {
+                if (storm::numbers::isZero(value)) {
                     relevantZeroRewardChoices.set(choice);
                 } else {
                     choiceRewards.emplace(choice, value);
@@ -151,7 +151,7 @@ void DeterministicSchedsObjectiveHelper<ModelType>::initialize() {
             storm::utility::graph::performProbGreater0E(model.getBackwardTransitions(), statesWithoutReward, ~statesWithoutReward);
         rew0States.complement();
         if (rew0States.get(initialState)) {
-            constantInitialStateValue = storm::utility::zero<ValueType>();
+            constantInitialStateValue = storm::numbers::zero<ValueType>();
         }
         maybeStates = ~rew0States;
         // Cut away those states that are not reachable, or only reachable via non-maybe states.
@@ -160,7 +160,7 @@ void DeterministicSchedsObjectiveHelper<ModelType>::initialize() {
         for (uint64_t state : maybeStates) {
             for (auto const& choice : model.getTransitionMatrix().getRowGroupIndices(state)) {
                 auto const& value = choiceBasedRewards[choice];
-                if (storm::utility::isZero(value)) {
+                if (storm::numbers::isZero(value)) {
                     relevantZeroRewardChoices.set(choice);
                 } else {
                     choiceRewards.emplace(choice, value);
@@ -174,7 +174,7 @@ void DeterministicSchedsObjectiveHelper<ModelType>::initialize() {
     // negate choice rewards for minimizing objectives
     if (storm::solver::minimize(formula.getOptimalityType())) {
         for (auto& entry : choiceRewards) {
-            entry.second *= -storm::utility::one<ValueType>();
+            entry.second *= -storm::numbers::one<ValueType>();
         }
     }
 
@@ -182,10 +182,10 @@ void DeterministicSchedsObjectiveHelper<ModelType>::initialize() {
     storm::storage::BitVector negativeRewardChoices(model.getNumberOfChoices(), false);
     storm::storage::BitVector positiveRewardChoices(model.getNumberOfChoices(), false);
     for (auto const& rew : getChoiceRewards()) {
-        if (rew.second > storm::utility::zero<ValueType>()) {
+        if (rew.second > storm::numbers::zero<ValueType>()) {
             positiveRewardChoices.set(rew.first, true);
         } else {
-            STORM_LOG_ASSERT(rew.second < storm::utility::zero<ValueType>(), "Expected negative reward.");
+            STORM_LOG_ASSERT(rew.second < storm::numbers::zero<ValueType>(), "Expected negative reward.");
             negativeRewardChoices.set(rew.first, true);
         }
     }
@@ -284,7 +284,7 @@ typename DeterministicSchedsObjectiveHelper<ModelType>::ValueType DeterministicS
                     "Objective " << *objective.originalFormula << ":  Strict objective thresholds are not supported.");
     ValueType threshold = objective.formula->template getThresholdAs<ValueType>();
     if (storm::solver::minimize(objective.formula->getOptimalityType())) {
-        threshold *= -storm::utility::one<ValueType>();  // negate minimizing thresholds
+        threshold *= -storm::numbers::one<ValueType>();  // negate minimizing thresholds
         STORM_LOG_THROW(!storm::logic::isLowerBound(objective.formula->getBound().comparisonType), storm::exceptions::NotSupportedException,
                         "Objective " << *objective.originalFormula << ":  Minimizing objective should specify an upper bound.");
     } else {
@@ -309,17 +309,17 @@ void setLowerUpperTotalRewardBoundsToSolver(storm::solver::AbstractEquationSolve
     STORM_LOG_ASSERT(!rewards.empty(), "Empty reward vector,.");
 
     auto [minIt, maxIt] = std::minmax_element(rewards.begin(), rewards.end());
-    bool const hasNegativeValues = *minIt < storm::utility::zero<ValueType>();
-    bool const hasPositiveValues = *maxIt > storm::utility::zero<ValueType>();
+    bool const hasNegativeValues = *minIt < storm::numbers::zero<ValueType>();
+    bool const hasPositiveValues = *maxIt > storm::numbers::zero<ValueType>();
 
     std::optional<ValueType> lowerBound, upperBound;
 
     // Get 0 as a  trivial lower/upper bound if possible
     if (!hasNegativeValues) {
-        lowerBound = storm::utility::zero<ValueType>();
+        lowerBound = storm::numbers::zero<ValueType>();
     }
     if (!hasPositiveValues) {
-        upperBound = storm::utility::zero<ValueType>();
+        upperBound = storm::numbers::zero<ValueType>();
     }
 
     // Invoke the respective reward bound computers if needed
@@ -331,7 +331,7 @@ void setLowerUpperTotalRewardBoundsToSolver(storm::solver::AbstractEquationSolve
         } else {
             if (hasNegativeValues) {
                 tmpRewards.resize(rewards.size());
-                storm::utility::vector::applyPointwise(rewards, tmpRewards, [](ValueType const& v) { return std::max(storm::utility::zero<ValueType>(), v); });
+                storm::utility::vector::applyPointwise(rewards, tmpRewards, [](ValueType const& v) { return std::max(storm::numbers::zero<ValueType>(), v); });
             }
             solver.setUpperBounds(
                 storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ValueType>(matrix, hasNegativeValues ? tmpRewards : rewards, exitProbabilities)
@@ -346,7 +346,7 @@ void setLowerUpperTotalRewardBoundsToSolver(storm::solver::AbstractEquationSolve
             // For lower bounds we actually compute upper bounds for the negated rewards because DsMpi is not implemented for negative rewards.
             tmpRewards.resize(rewards.size());
             storm::utility::vector::applyPointwise(rewards, tmpRewards,
-                                                   [](ValueType const& v) { return std::max<ValueType>(storm::utility::zero<ValueType>(), -v); });
+                                                   [](ValueType const& v) { return std::max<ValueType>(storm::numbers::zero<ValueType>(), -v); });
             auto lowerBounds =
                 storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ValueType>(matrix, tmpRewards, exitProbabilities).computeUpperBounds();
             storm::utility::vector::applyPointwise(lowerBounds, lowerBounds, [](ValueType const& v) { return -v; });
@@ -376,7 +376,7 @@ std::vector<ValueType> computeValuesOfReducedSystem(Environment const& env, stor
                 continue;
             }
             for (auto choice : submatrix.getRowGroupIndices(state)) {
-                if (!storm::utility::isZero(exitProbs[choice])) {
+                if (!storm::numbers::isZero(exitProbs[choice])) {
                     initSched[state] = choice - submatrix.getRowGroupIndices()[state];
                     statesWithChoice.set(state);
                     foundStates.set(state);
@@ -396,7 +396,7 @@ std::vector<ValueType> computeValuesOfReducedSystem(Environment const& env, stor
             for (auto choice : submatrix.getRowGroupIndices(state)) {
                 auto row = submatrix.getRow(choice);
                 if (std::any_of(row.begin(), row.end(), [&statesWithChoice](auto const& entry) {
-                        return !storm::utility::isZero(entry.getValue()) && statesWithChoice.get(entry.getColumn());
+                        return !storm::numbers::isZero(entry.getValue()) && statesWithChoice.get(entry.getColumn());
                     })) {
                     initSched[state] = choice - submatrix.getRowGroupIndices()[state];
                     statesWithChoice.set(state);
@@ -427,8 +427,8 @@ std::vector<ValueType> computeValuesOfReducedSystem(Environment const& env, stor
 
 template<typename ValueType>
 void plusMinMaxSolverPrecision(Environment const& env, ValueType& value) {
-    if (!storm::NumberTraits<ValueType>::IsExact) {
-        auto eps = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
+    if (!storm::numbers::NumberTraits<ValueType>::IsExact) {
+        auto eps = storm::numbers::convert<ValueType>(env.solver().minMax().getPrecision());
         if (env.solver().minMax().getRelativeTerminationCriterion()) {
             value += value * eps;
         } else {
@@ -439,8 +439,8 @@ void plusMinMaxSolverPrecision(Environment const& env, ValueType& value) {
 
 template<typename ValueType>
 void minusMinMaxSolverPrecision(Environment const& env, ValueType& value) {
-    if (!storm::NumberTraits<ValueType>::IsExact) {
-        auto eps = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
+    if (!storm::numbers::NumberTraits<ValueType>::IsExact) {
+        auto eps = storm::numbers::convert<ValueType>(env.solver().minMax().getPrecision());
         if (env.solver().minMax().getRelativeTerminationCriterion()) {
             value -= value * eps;
         } else {
@@ -451,7 +451,7 @@ void minusMinMaxSolverPrecision(Environment const& env, ValueType& value) {
 
 template<storm::OptimizationDirection Dir, typename ValueType>
 ValueType sumOfMecRewards(storm::storage::MaximalEndComponent const& mec, std::vector<ValueType> const& rewards) {
-    auto sum = storm::utility::zero<ValueType>();
+    auto sum = storm::numbers::zero<ValueType>();
     for (auto const& stateChoices : mec) {
         storm::utility::Extremum<Dir, ValueType> optimalStateValue;
         for (auto const& choice : stateChoices.second) {
@@ -470,7 +470,7 @@ ValueType getLowerBoundForNonZeroReachProb(storm::storage::SparseMatrix<ValueTyp
     storm::storage::BitVector targetAsBitVector(transitions.getRowGroupCount(), false);
     targetAsBitVector.set(target, true);
     auto relevantStates = storm::utility::graph::getReachableStates(transitions, initialAsBitVector, allStates, targetAsBitVector);
-    auto product = storm::utility::one<ValueType>();
+    auto product = storm::numbers::one<ValueType>();
     for (auto state : relevantStates) {
         if (state == target) {
             continue;
@@ -496,8 +496,8 @@ void DeterministicSchedsObjectiveHelper<ModelType>::computeLowerUpperBounds(Envi
                                                                           getRelevantZeroRewardChoices());
     auto quotient1 = storm::transformer::EndComponentEliminator<ValueType>::transform(model.getTransitionMatrix(), problMecs, maybeStates, maybeStates);
     auto backwardTransitions1 = quotient1.matrix.transpose(true);
-    std::vector<ValueType> rewards1(quotient1.matrix.getRowCount(), storm::utility::zero<ValueType>());
-    std::vector<ValueType> exitProbs1(quotient1.matrix.getRowCount(), storm::utility::zero<ValueType>());
+    std::vector<ValueType> rewards1(quotient1.matrix.getRowCount(), storm::numbers::zero<ValueType>());
+    std::vector<ValueType> exitProbs1(quotient1.matrix.getRowCount(), storm::numbers::zero<ValueType>());
     storm::storage::BitVector subsystemChoices1(quotient1.matrix.getRowCount(), true);
     storm::storage::BitVector allQuotient1States(quotient1.matrix.getRowGroupCount(), true);
     for (uint64_t choice = 0; choice < quotient1.matrix.getRowCount(); ++choice) {
@@ -507,8 +507,8 @@ void DeterministicSchedsObjectiveHelper<ModelType>::computeLowerUpperBounds(Envi
         }
         if (quotient1.sinkRows.get(choice)) {
             subsystemChoices1.set(choice, false);
-            exitProbs1[choice] = storm::utility::one<ValueType>();
-        } else if (auto prob = model.getTransitionMatrix().getConstrainedRowSum(oldChoice, nonMaybeStates); !storm::utility::isZero(prob)) {
+            exitProbs1[choice] = storm::numbers::one<ValueType>();
+        } else if (auto prob = model.getTransitionMatrix().getConstrainedRowSum(oldChoice, nonMaybeStates); !storm::numbers::isZero(prob)) {
             exitProbs1[choice] = prob;
             subsystemChoices1.set(choice, false);
         }
@@ -521,7 +521,7 @@ void DeterministicSchedsObjectiveHelper<ModelType>::computeLowerUpperBounds(Envi
     // Compute bounds for finite cases
     if (getInfinityCase() != InfinityCase::HasNegativeInfinite) {
         auto result1 = computeValuesOfReducedSystem(env, quotient1.matrix, exitProbs1, rewards1, storm::OptimizationDirection::Minimize);
-        lowerResultBounds = std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
+        lowerResultBounds = std::vector<ValueType>(model.getNumberOfStates(), storm::numbers::zero<ValueType>());
         for (uint64_t state : maybeStates) {
             ValueType val = result1.at(quotient1.oldToNewStateMapping.at(state));
             minusMinMaxSolverPrecision(env, val);
@@ -530,12 +530,12 @@ void DeterministicSchedsObjectiveHelper<ModelType>::computeLowerUpperBounds(Envi
     }
     if (getInfinityCase() != InfinityCase::HasPositiveInfinite) {
         auto result1 = computeValuesOfReducedSystem(env, quotient1.matrix, exitProbs1, rewards1, storm::OptimizationDirection::Maximize);
-        upperResultBounds = std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
+        upperResultBounds = std::vector<ValueType>(model.getNumberOfStates(), storm::numbers::zero<ValueType>());
         for (uint64_t state : maybeStates) {
             ValueType val = result1.at(quotient1.oldToNewStateMapping.at(state));
             plusMinMaxSolverPrecision(env, val);
             if (infinityCase == InfinityCase::HasNegativeInfinite) {  // Upper bound has to be at least 0 to allow for "trivial solution" in encoding
-                val = std::max(val, storm::utility::zero<ValueType>());
+                val = std::max(val, storm::numbers::zero<ValueType>());
             }
             (*upperResultBounds)[state] = val;
         }
@@ -552,12 +552,12 @@ void DeterministicSchedsObjectiveHelper<ModelType>::computeLowerUpperBounds(Envi
         STORM_LOG_ASSERT(!remainingMecs.empty(), "Incorrect infinityCase: There is no MEC with rewards.");
         auto quotient2 =
             storm::transformer::EndComponentEliminator<ValueType>::transform(quotient1.matrix, remainingMecs, allQuotient1States, allQuotient1States);
-        std::vector<ValueType> rewards2(quotient2.matrix.getRowCount(), storm::utility::zero<ValueType>());
-        std::vector<ValueType> exitProbs2(quotient2.matrix.getRowCount(), storm::utility::zero<ValueType>());
+        std::vector<ValueType> rewards2(quotient2.matrix.getRowCount(), storm::numbers::zero<ValueType>());
+        std::vector<ValueType> exitProbs2(quotient2.matrix.getRowCount(), storm::numbers::zero<ValueType>());
         for (uint64_t choice = 0; choice < quotient2.matrix.getRowCount(); ++choice) {
             auto const& oldChoice = quotient2.newToOldRowMapping[choice];
             if (quotient2.sinkRows.get(choice)) {
-                exitProbs2[choice] = storm::utility::one<ValueType>();
+                exitProbs2[choice] = storm::numbers::one<ValueType>();
             } else {
                 rewards2[choice] = rewards1[oldChoice];
                 exitProbs2[choice] = exitProbs1[oldChoice];
@@ -573,7 +573,7 @@ void DeterministicSchedsObjectiveHelper<ModelType>::computeLowerUpperBounds(Envi
             std::vector<ValueType> rewards2Negative;
             rewards2Negative.reserve(rewards2.size());
             for (auto const& rew : rewards2) {
-                rewards2Negative.push_back(std::min(rew, storm::utility::zero<ValueType>()));
+                rewards2Negative.push_back(std::min(rew, storm::numbers::zero<ValueType>()));
             }
             auto lower2 = computeValuesOfReducedSystem(env, quotient2.matrix, exitProbs2, rewards2Negative, storm::OptimizationDirection::Minimize);
             rewardValueForPosInfCase -= lower2.at(initialState2);
@@ -598,7 +598,7 @@ void DeterministicSchedsObjectiveHelper<ModelType>::computeLowerUpperBounds(Envi
         // Compute and insert missing bounds
         if (getInfinityCase() == InfinityCase::HasNegativeInfinite) {
             auto result2 = computeValuesOfReducedSystem(env, quotient2.matrix, exitProbs2, rewards2, storm::OptimizationDirection::Minimize);
-            lowerResultBounds = std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
+            lowerResultBounds = std::vector<ValueType>(model.getNumberOfStates(), storm::numbers::zero<ValueType>());
             for (uint64_t state : maybeStates) {
                 ValueType val = result2.at(quotient2.oldToNewStateMapping.at(quotient1.oldToNewStateMapping.at(state)));
                 minusMinMaxSolverPrecision(env, val);
@@ -607,7 +607,7 @@ void DeterministicSchedsObjectiveHelper<ModelType>::computeLowerUpperBounds(Envi
         } else {
             STORM_LOG_ASSERT(getInfinityCase() == InfinityCase::HasPositiveInfinite, "Expected positive infinity case.");
             auto result2 = computeValuesOfReducedSystem(env, quotient2.matrix, exitProbs2, rewards2, storm::OptimizationDirection::Maximize);
-            upperResultBounds = std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
+            upperResultBounds = std::vector<ValueType>(model.getNumberOfStates(), storm::numbers::zero<ValueType>());
             for (uint64_t state : maybeStates) {
                 ValueType val = result2.at(quotient2.oldToNewStateMapping.at(quotient1.oldToNewStateMapping.at(state)));
                 plusMinMaxSolverPrecision(env, val);
@@ -661,7 +661,7 @@ typename DeterministicSchedsObjectiveHelper<ModelType>::ValueType DeterministicS
                 if (auto findRes = allRewards.find(choice); findRes != allRewards.end()) {
                     rewards.push_back(findRes->second);
                 } else {
-                    rewards.push_back(storm::utility::zero<ValueType>());
+                    rewards.push_back(storm::numbers::zero<ValueType>());
                 }
             } else {
                 STORM_LOG_ASSERT(!bsccCandidates.get(state) || allRewards.count(choice) == 0, "Strategy selected a bscc with rewards.");
@@ -689,7 +689,7 @@ typename DeterministicSchedsObjectiveHelper<ModelType>::ValueType DeterministicS
         return x[initState];
     } else {
         // initial state is on a bscc
-        return storm::utility::zero<ValueType>();
+        return storm::numbers::zero<ValueType>();
     }
 }
 

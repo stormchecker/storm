@@ -248,7 +248,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getBoundAtIni
     STORM_LOG_THROW(hasUniqueInitialState(), storm::exceptions::NotSupportedException,
                     "Getting a bound at the initial state requires a model with a single initial state.");
     auto result = computeQuantitativeValues(env, region, dirForParameters).at(getUniqueInitialState());
-    return storm::utility::isInfinity(result) ? storm::utility::infinity<CoefficientType>() : storm::utility::convertNumber<CoefficientType>(result);
+    return storm::numbers::isInfinity(result) ? storm::numbers::infinity<CoefficientType>() : storm::numbers::convert<CoefficientType>(result);
 }
 
 template<typename SparseModelType, typename ConstantType>
@@ -319,7 +319,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getAndEvaluat
     }
     auto value = getInstantiationChecker(true).check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[getUniqueInitialState()];
 
-    return std::make_pair(storm::utility::convertNumber<CoefficientType>(value), std::move(point));
+    return std::make_pair(storm::numbers::convert<CoefficientType>(value), std::move(point));
 }
 
 template<typename SparseModelType, typename ConstantType>
@@ -330,7 +330,7 @@ void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::updateKn
         // Catch the infinity case since conversion might fail otherwise
         auto const& newValue = newValues.at(getUniqueInitialState());
         CoefficientType convertedValue =
-            storm::utility::isInfinity(newValue) ? storm::utility::infinity<CoefficientType>() : storm::utility::convertNumber<CoefficientType>(newValue);
+            storm::numbers::isInfinity(newValue) ? storm::numbers::infinity<CoefficientType>() : storm::numbers::convert<CoefficientType>(newValue);
         region.updateValueBound(convertedValue, dir);
     }
 }

@@ -2,7 +2,7 @@
 
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -57,9 +57,9 @@ std::ostream& RegionRefinementCheckResult<ValueType>::writeIllustrationToStream(
         out << '\n';
 
         CoefficientType deltaX =
-            (getParameterSpace().getUpperBoundary(x) - getParameterSpace().getLowerBoundary(x)) / storm::utility::convertNumber<CoefficientType>(sizeX);
+            (getParameterSpace().getUpperBoundary(x) - getParameterSpace().getLowerBoundary(x)) / storm::numbers::convert<CoefficientType>(sizeX);
         CoefficientType deltaY =
-            (getParameterSpace().getUpperBoundary(y) - getParameterSpace().getLowerBoundary(y)) / storm::utility::convertNumber<CoefficientType>(sizeY);
+            (getParameterSpace().getUpperBoundary(y) - getParameterSpace().getLowerBoundary(y)) / storm::numbers::convert<CoefficientType>(sizeY);
         CoefficientType printedRegionArea = deltaX * deltaY;
         for (CoefficientType yUpper = getParameterSpace().getUpperBoundary(y); yUpper != getParameterSpace().getLowerBoundary(y); yUpper -= deltaY) {
             CoefficientType yLower = yUpper - deltaY;
@@ -70,18 +70,18 @@ std::ostream& RegionRefinementCheckResult<ValueType>::writeIllustrationToStream(
                 bool currRegionUnSafe = false;
                 bool currRegionIllDefined = false;
                 bool currRegionComplete = false;
-                CoefficientType coveredArea = storm::utility::zero<CoefficientType>();
+                CoefficientType coveredArea = storm::numbers::zero<CoefficientType>();
                 for (auto const& r : this->getRegionResults()) {
                     if (r.second != storm::modelchecker::RegionResult::AllSat && r.second != storm::modelchecker::RegionResult::AllViolated &&
                         r.second != storm::modelchecker::RegionResult::AllIllDefined) {
                         continue;
                     }
                     CoefficientType interesctionSizeY = std::min(yUpper, r.first.getUpperBoundary(y)) - std::max(yLower, r.first.getLowerBoundary(y));
-                    interesctionSizeY = std::max(interesctionSizeY, storm::utility::zero<CoefficientType>());
+                    interesctionSizeY = std::max(interesctionSizeY, storm::numbers::zero<CoefficientType>());
                     CoefficientType interesctionSizeX = std::min(xUpper, r.first.getUpperBoundary(x)) - std::max(xLower, r.first.getLowerBoundary(x));
-                    interesctionSizeX = std::max(interesctionSizeX, storm::utility::zero<CoefficientType>());
+                    interesctionSizeX = std::max(interesctionSizeX, storm::numbers::zero<CoefficientType>());
                     CoefficientType intersectionArea = interesctionSizeY * interesctionSizeX;
-                    if (!storm::utility::isZero(intersectionArea)) {
+                    if (!storm::numbers::isZero(intersectionArea)) {
                         currRegionSafe = currRegionSafe || r.second == storm::modelchecker::RegionResult::AllSat;
                         currRegionUnSafe = currRegionUnSafe || r.second == storm::modelchecker::RegionResult::AllViolated;
                         currRegionIllDefined = currRegionIllDefined || r.second == storm::modelchecker::RegionResult::AllIllDefined;

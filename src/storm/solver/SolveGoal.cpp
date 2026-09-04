@@ -60,7 +60,7 @@ void SolveGoal<ValueType, SolutionType>::oneMinus() {
         }
     }
     if (threshold) {
-        this->threshold = storm::utility::one<SolutionType>() - this->threshold.get();
+        this->threshold = storm::numbers::one<SolutionType>() - this->threshold.get();
     }
     if (comparisonType) {
         switch (comparisonType.get()) {

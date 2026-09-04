@@ -42,7 +42,7 @@ LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentTyp
     // We will need to uniformize the timed MEC states by introducing a selfloop.
     // For this, we need to find a uniformization rate which will be a little higher (given by aperiodicFactor) than the maximum rate occurring in the
     // component.
-    _uniformizationRate = exitRates == nullptr ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
+    _uniformizationRate = exitRates == nullptr ? storm::numbers::one<ValueType>() : storm::numbers::zero<ValueType>();
     // Now run over the MEC and collect the required data.
     for (auto const& element : _component) {
         uint64_t componentState = element.first;
@@ -71,7 +71,7 @@ LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentTyp
         "Bottom Component has no timed states. Computation of Long Run Average values not supported. Is this a Markov Automaton with Zeno behavior?");
 
     // We make sure that every timed state gets a selfloop to make the model aperiodic
-    _uniformizationRate *= storm::utility::one<ValueType>() + aperiodicFactor;
+    _uniformizationRate *= storm::numbers::one<ValueType>() + aperiodicFactor;
 
     // Now build the timed and the instant submodels.
     // In addition, we also need the transitions between the two.
@@ -87,7 +87,7 @@ LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentTyp
                                                                                   nondetIs() ? numIsSubModelStates : 0);
         _isChoiceValues.reserve(numIsSubModelChoices);
     }
-    ValueType uniformizationFactor = storm::utility::one<ValueType>() / _uniformizationRate;
+    ValueType uniformizationFactor = storm::numbers::one<ValueType>() / _uniformizationRate;
     uint64_t currTsRow = 0;
     uint64_t currIsRow = 0;
     for (auto const& element : _component) {
@@ -105,7 +105,7 @@ LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentTyp
                 uniformizationFactor = (*exitRates)[componentState] / _uniformizationRate;
             }
             // We need to uniformize which means that a diagonal entry for the selfloop will be inserted.
-            ValueType selfLoopProb = storm::utility::one<ValueType>() - uniformizationFactor;
+            ValueType selfLoopProb = storm::numbers::one<ValueType>() - uniformizationFactor;
             for (auto const& componentChoice : element.second) {
                 tsTransitionsBuilder.addDiagonalEntry(currTsRow, selfLoopProb);
                 for (auto const& entry : this->_transitionMatrix.getRow(componentChoice)) {
@@ -174,7 +174,7 @@ ValueType LraViHelper<ValueType, ComponentType, TransitionsType>::performValueIt
                                                                                         storm::solver::OptimizationDirection const* dir,
                                                                                         std::vector<uint64_t>* choices) {
     initializeNewValues(stateValueGetter, actionValueGetter, exitRates);
-    ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().lra().getPrecision());
+    ValueType precision = storm::numbers::convert<ValueType>(env.solver().lra().getPrecision());
     bool relative = env.solver().lra().getRelativeTerminationCriterion();
     boost::optional<uint64_t> maxIter;
     if (env.solver().lra().isMaximalIterationCountSet()) {
@@ -182,7 +182,7 @@ ValueType LraViHelper<ValueType, ComponentType, TransitionsType>::performValueIt
     }
 
     // start the iterations
-    ValueType result = storm::utility::zero<ValueType>();
+    ValueType result = storm::numbers::zero<ValueType>();
     uint64_t iter = 0;
     while (!maxIter.is_initialized() || iter < maxIter.get()) {
         ++iter;
@@ -228,7 +228,7 @@ void LraViHelper<ValueType, ComponentType, TransitionsType>::initializeNewValues
     }
 
     // Set the new choice-based values
-    ValueType actionRewardScalingFactor = storm::utility::one<ValueType>() / _uniformizationRate;
+    ValueType actionRewardScalingFactor = storm::numbers::one<ValueType>() / _uniformizationRate;
     for (auto const& element : _component) {
         uint64_t componentState = element.first;
         if (isTimedState(componentState)) {
@@ -250,12 +250,12 @@ void LraViHelper<ValueType, ComponentType, TransitionsType>::initializeNewValues
     }
 
     // Set-up new iteration vectors for timed states
-    _tsx1.assign(_tsTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
+    _tsx1.assign(_tsTransitions.getRowGroupCount(), storm::numbers::zero<ValueType>());
     _tsx2 = _tsx1;
 
     if (_hasInstantStates) {
         // Set-up vectors for storing intermediate results for instant states.
-        _isx.resize(_isTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
+        _isx.resize(_isTransitions.getRowGroupCount(), storm::numbers::zero<ValueType>());
         _isb = _isChoiceValues;
     }
 }
@@ -431,9 +431,9 @@ LraViHelper<ValueType, ComponentType, TransitionsType>::checkConvergence(bool re
     // However, for relative precision, the scaling cancels out.
     ValueType threshold = relative ? precision : ValueType(precision / _uniformizationRate);
 
-    ConvergenceCheckResult res = {true, storm::utility::one<ValueType>()};
+    ConvergenceCheckResult res = {true, storm::numbers::one<ValueType>()};
     // Now check whether the currently produced results are precise enough
-    STORM_LOG_ASSERT(threshold > storm::utility::zero<ValueType>(), "Did not expect a non-positive threshold.");
+    STORM_LOG_ASSERT(threshold > storm::numbers::zero<ValueType>(), "Did not expect a non-positive threshold.");
     auto x1It = xOld().begin();
     auto x1Ite = xOld().end();
     auto x2It = xNew().begin();
@@ -459,7 +459,7 @@ LraViHelper<ValueType, ComponentType, TransitionsType>::checkConvergence(bool re
     }
 
     // Compute the average of the maximal and the minimal difference.
-    ValueType avgDiff = (maxDiff + minDiff) / (storm::utility::convertNumber<ValueType>(2.0));
+    ValueType avgDiff = (maxDiff + minDiff) / (storm::numbers::convert<ValueType>(2.0));
 
     // "Undo" the scaling of the values
     res.currentValue = avgDiff * _uniformizationRate;

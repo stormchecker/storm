@@ -2,8 +2,8 @@
 
 #include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 #include "storm/models/symbolic/Ctmc.h"
+#include "storm/numbers/NumberTraits.h"
 #include "storm/solver/LinearEquationSolver.h"
-#include "storm/utility/NumberTraits.h"
 
 namespace storm {
 namespace modelchecker {

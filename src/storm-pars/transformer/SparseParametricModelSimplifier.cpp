@@ -110,23 +110,23 @@ std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType
         actionRewards = model.getRewardModel(*rewardModelName).getTotalRewardVector(sparseMatrix);
     } else {
         actionRewards = std::vector<typename SparseModelType::ValueType>(model.getTransitionMatrix().getRowCount(),
-                                                                         storm::utility::zero<typename SparseModelType::ValueType>());
+                                                                         storm::numbers::zero<typename SparseModelType::ValueType>());
     }
 
     // Find the states that are to be eliminated
     storm::storage::BitVector selectedStates = consideredStates;
     for (uint64_t state : consideredStates) {
         if (sparseMatrix.getRowGroupSize(state) == 1 &&
-            (!rewardModelName.is_initialized() || storm::utility::isConstant(actionRewards[sparseMatrix.getRowGroupIndices()[state]]))) {
+            (!rewardModelName.is_initialized() || storm::numbers::isConstant(actionRewards[sparseMatrix.getRowGroupIndices()[state]]))) {
             for (auto const& entry : sparseMatrix.getRowGroup(state)) {
-                if (!storm::utility::isConstant(entry.getValue())) {
+                if (!storm::numbers::isConstant(entry.getValue())) {
                     selectedStates.set(state, false);
                     break;
                 }
             }
             if (state && this->preserveParametricTransitions) {
                 for (auto const& entry : backwardsSparseMatrix.getRowGroup(state)) {
-                    if (!storm::utility::isConstant(entry.getValue())) {
+                    if (!storm::numbers::isConstant(entry.getValue())) {
                         selectedStates.set(state, false);
                         break;
                     }

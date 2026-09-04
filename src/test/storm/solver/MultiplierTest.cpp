@@ -42,7 +42,7 @@ class MultiplierTest : public ::testing::Test {
         return TestType::isExact ? parseNumber("0") : parseNumber("1e-15");
     }
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
 
    private:

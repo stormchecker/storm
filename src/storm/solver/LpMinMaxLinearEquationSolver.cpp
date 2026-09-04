@@ -5,10 +5,10 @@
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/numbers/NumberTraits.h"
 #include "storm/solver/helper/ValueIterationHelper.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/storage/expressions/BinaryRelationType.h"
-#include "storm/utility/NumberTraits.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
@@ -73,17 +73,17 @@ bool LpMinMaxLinearEquationSolver<ValueType>::solveEquationsViToLp(Environment c
         this->startMeasureProgress();
         if constexpr (std::is_same_v<ValueType, double>) {
             viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
-                        storm::utility::convertNumber<double>(env.solver().minMax().getPrecision()), dir, viCallback);
+                        storm::numbers::convert<double>(env.solver().minMax().getPrecision()), dir, viCallback);
         } else {
             // convert from/to double
             auto xVi = storm::utility::vector::convertNumericVector<double>(x);
             auto bVi = storm::utility::vector::convertNumericVector<double>(b);
-            double const precision = storm::utility::convertNumber<double>(env.solver().minMax().getPrecision());
+            double const precision = storm::numbers::convert<double>(env.solver().minMax().getPrecision());
             bool const relative = env.solver().minMax().getRelativeTerminationCriterion();
             viHelper.VI(xVi, bVi, numIterations, relative, precision, dir, viCallback);
             auto xIt = xVi.cbegin();
             for (auto& xi : x) {
-                xi = storm::utility::convertNumber<ValueType>(*xIt);
+                xi = storm::numbers::convert<ValueType>(*xIt);
                 ++xIt;
             }
         }
@@ -100,7 +100,7 @@ bool LpMinMaxLinearEquationSolver<ValueType>::solveEquationsViToLp(Environment c
         return false;
     }
 
-    if constexpr (storm::NumberTraits<ValueType>::IsExact) {
+    if constexpr (storm::numbers::NumberTraits<ValueType>::IsExact) {
         // The above-computed bounds might be incorrect. To obtain a correct procedure, we catch those cases here!
         for (uint64_t rowGroup = 0; rowGroup < this->A->getRowGroupCount(); ++rowGroup) {
             uint64_t row = this->A->getRowGroupIndices()[rowGroup];
@@ -167,7 +167,7 @@ bool LpMinMaxLinearEquationSolver<ValueType>::solveEquationsLp(Environment const
     // Create a variable for each row group
     for (uint64_t rowGroup = 0; rowGroup < this->A->getRowGroupCount(); ++rowGroup) {
         ValueType const objValue =
-            (optimizeOnlyRelevant && !this->getRelevantValues().get(rowGroup)) ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>();
+            (optimizeOnlyRelevant && !this->getRelevantValues().get(rowGroup)) ? storm::numbers::zero<ValueType>() : storm::numbers::one<ValueType>();
         std::optional<ValueType> lowerBound, upperBound;
         if (useBounds) {
             if (lower) {
@@ -225,7 +225,7 @@ bool LpMinMaxLinearEquationSolver<ValueType>::solveEquationsLp(Environment const
             for (; entryIt != entryItEnd && entryIt->getColumn() < rowGroup; ++entryIt) {
                 addToConstraint(entryIt->getColumn(), entryIt->getValue());
             }
-            ValueType diagVal = -storm::utility::one<ValueType>();
+            ValueType diagVal = -storm::numbers::one<ValueType>();
             if (entryIt != entryItEnd && entryIt->getColumn() == rowGroup) {
                 diagVal += entryIt->getValue();
                 ++entryIt;

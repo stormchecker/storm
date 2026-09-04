@@ -1,7 +1,7 @@
 #pragma once
 
 #include "storm/generator/NextStateGenerator.h"
-#include "storm/utility/ConstantsComparator.h"
+#include "storm/numbers/ConstantsComparator.h"
 
 #include "storm-dft/storage/DFT.h"
 

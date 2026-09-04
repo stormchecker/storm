@@ -11,9 +11,9 @@
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/ModelComponents.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
 
@@ -129,7 +129,7 @@ typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transf
             ++currAuxState;
             queue.push(StateWithRow{currAuxState, newStateRight});
             outgoing.push_back(storage::MatrixEntry<uint64_t, RationalFunction>(
-                currAuxState, (sumOfRightBranch) * (utility::one<RationalFunction>() - RationalFunction(carl::makePolynomial<Polynomial>(parameter)))));
+                currAuxState, (sumOfRightBranch) * (storm::numbers::one<RationalFunction>() - RationalFunction(carl::makePolynomial<Polynomial>(parameter)))));
             ++currAuxState;
 
             for (auto const& entry : outgoing) {
@@ -170,7 +170,7 @@ storm::models::sparse::StandardRewardModel<RationalFunction> BinaryDtmcTransform
     STORM_LOG_THROW(rewardModel.hasStateActionRewards(), storm::exceptions::NotSupportedException, "Only state rewards supported.");
     if (rewardModel.hasStateRewards()) {
         stateRewards = rewardModel.getStateRewardVector();
-        stateRewards->resize(data.simpleMatrix.getRowCount(), storm::utility::zero<RationalFunction>());
+        stateRewards->resize(data.simpleMatrix.getRowCount(), storm::numbers::zero<RationalFunction>());
     }
     return storm::models::sparse::StandardRewardModel<RationalFunction>(std::move(stateRewards), std::move(actionRewards));
 }

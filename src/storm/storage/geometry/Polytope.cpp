@@ -68,7 +68,7 @@ std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::createSelectiveDownwar
     for (auto const& point : points) {
         for (auto dim : selectedDimensions) {
             auxiliaryPoints.push_back(point);
-            auxiliaryPoints.back()[dim] -= storm::utility::one<ValueType>();
+            auxiliaryPoints.back()[dim] -= storm::numbers::one<ValueType>();
         }
     }
     std::vector<Halfspace<ValueType>> auxiliaryHalfspaces = create(auxiliaryPoints)->getHalfspaces();
@@ -76,7 +76,7 @@ std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::createSelectiveDownwar
     for (auto& h : auxiliaryHalfspaces) {
         bool allGreaterEqZero = true;
         for (auto dim : selectedDimensions) {
-            allGreaterEqZero &= (h.normalVector()[dim] >= storm::utility::zero<ValueType>());
+            allGreaterEqZero &= (h.normalVector()[dim] >= storm::numbers::zero<ValueType>());
         }
         if (allGreaterEqZero) {
             halfspaces.push_back(std::move(h));
@@ -162,9 +162,9 @@ std::vector<typename Polytope<ValueType>::Point> Polytope<ValueType>::getVertice
 template<typename ValueType>
 std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::shift(Point const& b) const {
     // perform an affine transformation with identity matrix
-    std::vector<Point> idMatrix(b.size(), Point(b.size(), storm::utility::zero<ValueType>()));
+    std::vector<Point> idMatrix(b.size(), Point(b.size(), storm::numbers::zero<ValueType>()));
     for (uint64_t i = 0; i < b.size(); ++i) {
-        idMatrix[i][i] = storm::utility::one<ValueType>();
+        idMatrix[i][i] = storm::numbers::one<ValueType>();
     }
     return affineTransformation(idMatrix, b);
 }
@@ -220,7 +220,7 @@ std::shared_ptr<Polytope<TargetType>> Polytope<ValueType>::convertNumberRepresen
     halfspacesPrime.reserve(halfspaces.size());
     for (auto const& h : halfspaces) {
         halfspacesPrime.emplace_back(storm::utility::vector::convertNumericVector<TargetType>(h.normalVector()),
-                                     storm::utility::convertNumber<TargetType>(h.offset()));
+                                     storm::numbers::convert<TargetType>(h.offset()));
     }
 
     return Polytope<TargetType>::create(halfspacesPrime);

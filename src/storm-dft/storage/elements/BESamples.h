@@ -47,7 +47,7 @@ class BESamples : public DFTBE<ValueType> {
     bool canFail() const override {
         // At least one sample is not zero
         for (auto const& sample : mActiveSamples) {
-            if (!storm::utility::isZero(sample.second)) {
+            if (!storm::numbers::isZero(sample.second)) {
                 return true;
             }
         }

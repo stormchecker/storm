@@ -9,7 +9,7 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/graph.h"
 
 namespace storm {
@@ -21,7 +21,7 @@ template<typename ModelType>
 DeterministicModelBisimulationDecomposition<ModelType>::DeterministicModelBisimulationDecomposition(
     ModelType const& model, typename BisimulationDecomposition<ModelType, DeterministicModelBisimulationDecomposition::BlockDataType>::Options const& options)
     : BisimulationDecomposition<ModelType, DeterministicModelBisimulationDecomposition::BlockDataType>(model, options),
-      probabilitiesToCurrentSplitter(model.getNumberOfStates(), storm::utility::zero<ValueType>()) {
+      probabilitiesToCurrentSplitter(model.getNumberOfStates(), storm::numbers::zero<ValueType>()) {
     // Intentionally left empty.
 }
 
@@ -92,7 +92,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::splitOffDivergentSt
 
 template<typename ModelType>
 void DeterministicModelBisimulationDecomposition<ModelType>::initializeSilentProbabilities() {
-    silentProbabilities.resize(this->model.getNumberOfStates(), storm::utility::zero<ValueType>());
+    silentProbabilities.resize(this->model.getNumberOfStates(), storm::numbers::zero<ValueType>());
     for (storm::storage::sparse::state_type state = 0; state < this->model.getNumberOfStates(); ++state) {
         Block<BlockDataType> const* currentBlockPtr = &this->partition.getBlock(state);
         for (auto const& successorEntry : this->model.getTransitionMatrix().getRowGroup(state)) {
@@ -127,8 +127,8 @@ void DeterministicModelBisimulationDecomposition<ModelType>::postProcessInitialP
         std::optional<std::vector<ValueType>> const& optionalStateActionRewardVector = this->model.getUniqueRewardModel().getOptionalStateActionRewardVector();
         for (auto& block : this->partition.getBlocks()) {
             auto state = *this->partition.begin(*block);
-            block->data().setHasRewards((optionalStateRewardVector && !storm::utility::isZero(optionalStateRewardVector.value()[state])) ||
-                                        (optionalStateActionRewardVector && !storm::utility::isZero(optionalStateActionRewardVector.value()[state])));
+            block->data().setHasRewards((optionalStateRewardVector && !storm::numbers::isZero(optionalStateRewardVector.value()[state])) ||
+                                        (optionalStateActionRewardVector && !storm::numbers::isZero(optionalStateActionRewardVector.value()[state])));
         }
     }
 }
@@ -340,7 +340,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::updateSilentProbabi
     }
     // All non-predecessors have a silent probability of zero.
     for (auto stateIt = this->partition.begin() + block.data().marker1(), stateIte = this->partition.end(block); stateIt != stateIte; ++stateIt) {
-        silentProbabilities[*stateIt] = storm::utility::zero<ValueType>();
+        silentProbabilities[*stateIt] = storm::numbers::zero<ValueType>();
     }
 }
 
@@ -348,7 +348,7 @@ template<typename ModelType>
 void DeterministicModelBisimulationDecomposition<ModelType>::updateSilentProbabilitiesBasedOnTransitions(bisimulation::Block<BlockDataType>& block) {
     for (auto stateIt = this->partition.begin(block), stateIte = this->partition.end(block); stateIt != stateIte; ++stateIt) {
         if (hasNonZeroSilentProbability(*stateIt)) {
-            ValueType newSilentProbability = storm::utility::zero<ValueType>();
+            ValueType newSilentProbability = storm::numbers::zero<ValueType>();
             for (auto const& successorEntry : this->model.getTransitionMatrix().getRow(*stateIt)) {
                 if (this->partition.getBlock(successorEntry.getColumn()) == block) {
                     newSilentProbability += getTransitionValue(successorEntry, *stateIt);
@@ -364,7 +364,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::computeConditionalP
     for (auto stateIt = this->partition.begin() + block.getBeginIndex(), stateIte = this->partition.begin() + block.data().marker1(); stateIt != stateIte;
          ++stateIt) {
         if (!this->comparator.isOne(getSilentProbability(*stateIt))) {
-            probabilitiesToCurrentSplitter[*stateIt] /= storm::utility::one<ValueType>() - getSilentProbability(*stateIt);
+            probabilitiesToCurrentSplitter[*stateIt] /= storm::numbers::one<ValueType>() - getSilentProbability(*stateIt);
         }
     }
 }
@@ -400,7 +400,7 @@ std::vector<storm::storage::BitVector> DeterministicModelBisimulationDecompositi
                 for (auto const& predecessorEntry : this->backwardTransitions.getRow(currentState)) {
                     storm::storage::sparse::state_type predecessor = predecessorEntry.getColumn();
 
-                    if (storm::utility::isZero(predecessorEntry.getValue())) {
+                    if (storm::numbers::isZero(predecessorEntry.getValue())) {
                         continue;
                     }
 
@@ -630,7 +630,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() {
 
         // If the block is absorbing, we simply add a self-loop.
         if (oldBlock.data().absorbing()) {
-            builder.addNextValue(blockIndex, blockIndex, storm::utility::one<ValueType>());
+            builder.addNextValue(blockIndex, blockIndex, storm::numbers::one<ValueType>());
 
             // If the block has a special representative state, we retrieve it now.
             if (oldBlock.data().hasRepresentativeState()) {
@@ -668,7 +668,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() {
                 if (this->options.getType() == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Dtmc &&
                     !oldBlock.data().hasRewards()) {
                     builder.addNextValue(blockIndex, probabilityEntry.first,
-                                         probabilityEntry.second / (storm::utility::one<ValueType>() - getSilentProbability(representativeState)));
+                                         probabilityEntry.second / (storm::numbers::one<ValueType>() - getSilentProbability(representativeState)));
                 } else {
                     builder.addNextValue(blockIndex, probabilityEntry.first, probabilityEntry.second);
                 }

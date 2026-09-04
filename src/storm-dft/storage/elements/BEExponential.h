@@ -22,7 +22,7 @@ class BEExponential : public DFTBE<ValueType> {
      */
     BEExponential(size_t id, std::string const& name, ValueType failureRate, ValueType dormancyFactor, bool transient = false)
         : DFTBE<ValueType>(id, name), mActiveFailureRate(failureRate), mPassiveFailureRate(dormancyFactor * failureRate), mTransient(transient) {
-        STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(failureRate), "Exponential failure rate should not be zero.");
+        STORM_LOG_ASSERT(!storm::numbers::isZero<ValueType>(failureRate), "Exponential failure rate should not be zero.");
     }
 
     std::shared_ptr<DFTElement<ValueType>> clone() const override {
@@ -55,7 +55,7 @@ class BEExponential : public DFTBE<ValueType> {
      * @return Dormancy factor.
      */
     ValueType dormancyFactor() const {
-        STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(this->activeFailureRate()), "Active failure rate should not be zero.");
+        STORM_LOG_ASSERT(!storm::numbers::isZero<ValueType>(this->activeFailureRate()), "Active failure rate should not be zero.");
         return this->passiveFailureRate() / this->activeFailureRate();
     }
 
@@ -70,7 +70,7 @@ class BEExponential : public DFTBE<ValueType> {
     }
 
     bool canFail() const override {
-        STORM_LOG_ASSERT(!storm::utility::isZero(this->activeFailureRate()), "BE EXP should have failure rate > 0.");
+        STORM_LOG_ASSERT(!storm::numbers::isZero(this->activeFailureRate()), "BE EXP should have failure rate > 0.");
         return true;
     }
 
@@ -79,7 +79,7 @@ class BEExponential : public DFTBE<ValueType> {
      * @return True iff BE is cold BE.
      */
     bool isColdBasicElement() const {
-        return storm::utility::isZero(this->passiveFailureRate());
+        return storm::numbers::isZero(this->passiveFailureRate());
     }
 
     std::string distributionString() const override {

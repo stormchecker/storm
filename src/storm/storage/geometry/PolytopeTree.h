@@ -127,7 +127,7 @@ class PolytopeTree {
         for (auto const& v : vertices) {
             s << "_";
             for (auto const& vi : v) {
-                s << storm::utility::convertNumber<double>(vi) << "-";
+                s << storm::numbers::convert<double>(vi) << "-";
             }
         }
         s << "_id" << children.data();
@@ -147,7 +147,7 @@ class PolytopeTree {
         for (auto const& v : vertices) {
             s << "[";
             for (auto const& vi : v) {
-                s << storm::utility::convertNumber<double>(vi) << ",";
+                s << storm::numbers::convert<double>(vi) << ",";
             }
             s << "]\t";
         }

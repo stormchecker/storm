@@ -8,7 +8,7 @@
 #include <boost/optional/optional_io.hpp>
 
 #include "storm/adapters/RationalNumberForward.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/initialize.h"
 
 #define STORM_SILENT_ASSERT_THROW(statement, expected_exception) \

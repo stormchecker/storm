@@ -9,10 +9,10 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Pomdp.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/utility/SignalHandler.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -52,7 +52,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::startNewExploration(std::opt
                                                                         std::optional<ValueType> extraBottomStateValue) {
     status = Status::Exploring;
     // Reset data from potential previous explorations
-    prio = storm::utility::zero<ValueType>();
+    prio = storm::numbers::zero<ValueType>();
     nextId = 0;
     mdpStateToBeliefIdMap.clear();
     beliefIdToMdpStateMap.clear();
@@ -86,10 +86,10 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::startNewExploration(std::opt
         currentMdpState = getCurrentNumberOfMdpStates();
         extraBottomState = currentMdpState;
         mdpStateToBeliefIdMap.push_back(beliefManager->noId());
-        probabilityEstimation.push_back(storm::utility::zero<ValueType>());
+        probabilityEstimation.push_back(storm::numbers::zero<ValueType>());
         insertValueHints(extraBottomStateValue.value(), extraBottomStateValue.value());
 
-        internalAddTransition(getStartOfCurrentRowGroup(), extraBottomState.value(), storm::utility::one<ValueType>());
+        internalAddTransition(getStartOfCurrentRowGroup(), extraBottomState.value(), storm::numbers::one<ValueType>());
         mdpStateToChoiceLabelsMap[getStartOfCurrentRowGroup()][0] = "loop";
         internalAddRowGroupIndex();
         ++nextId;
@@ -100,10 +100,10 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::startNewExploration(std::opt
         currentMdpState = getCurrentNumberOfMdpStates();
         extraTargetState = currentMdpState;
         mdpStateToBeliefIdMap.push_back(beliefManager->noId());
-        probabilityEstimation.push_back(storm::utility::zero<ValueType>());
+        probabilityEstimation.push_back(storm::numbers::zero<ValueType>());
         insertValueHints(extraTargetStateValue.value(), extraTargetStateValue.value());
 
-        internalAddTransition(getStartOfCurrentRowGroup(), extraTargetState.value(), storm::utility::one<ValueType>());
+        internalAddTransition(getStartOfCurrentRowGroup(), extraTargetState.value(), storm::numbers::one<ValueType>());
         mdpStateToChoiceLabelsMap[getStartOfCurrentRowGroup()][0] = "loop";
         internalAddRowGroupIndex();
 
@@ -124,7 +124,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::restartExploration() {
     STORM_LOG_ASSERT(status == Status::ModelChecked || status == Status::ModelFinished, "Method call is invalid in current status.");
     status = Status::Exploring;
     // We will not erase old states during the exploration phase, so most state-based data (like mappings between MDP and Belief states) remain valid.
-    prio = storm::utility::zero<ValueType>();
+    prio = storm::numbers::zero<ValueType>();
     stateRemapping.clear();
     exploredBeliefIds.clear();
     exploredBeliefIds.grow(beliefManager->getNumberOfBeliefIds(), false);
@@ -257,10 +257,10 @@ typename BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefId BeliefMdpExplor
     if (currentMdpState != nextId && !currentStateHasOldBehavior()) {
         stateRemapping[currentMdpState] = nextId;
         STORM_LOG_DEBUG("Explore state " << currentMdpState << " [Bel " << getCurrentBeliefId() << " " << beliefManager->toString(getCurrentBeliefId())
-                                         << "] as state with ID " << nextId << " (Prio: " << storm::utility::to_string(currprio) << ")");
+                                         << "] as state with ID " << nextId << " (Prio: " << storm::numbers::to_string(currprio) << ")");
     } else {
         STORM_LOG_DEBUG("Explore state " << currentMdpState << " [Bel " << getCurrentBeliefId() << " " << beliefManager->toString(getCurrentBeliefId()) << "]"
-                                         << " (Prio: " << storm::utility::to_string(currprio) << ")");
+                                         << " (Prio: " << storm::numbers::to_string(currprio) << ")");
     }
 
     if (!currentStateHasOldBehavior()) {
@@ -281,11 +281,11 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::addTransitionsToExtraStates(
                          getCurrentStateWasTruncated(),
                      "Action index " << localActionIndex << " was not valid at non-truncated state " << currentMdpState << " of the previously explored MDP.");
     uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
-    if (!storm::utility::isZero(bottomStateValue)) {
+    if (!storm::numbers::isZero(bottomStateValue)) {
         STORM_LOG_ASSERT(extraBottomState.has_value(), "Requested a transition to the extra bottom state but there is none.");
         internalAddTransition(row, extraBottomState.value(), bottomStateValue);
     }
-    if (!storm::utility::isZero(targetStateValue)) {
+    if (!storm::numbers::isZero(targetStateValue)) {
         STORM_LOG_ASSERT(extraTargetState.has_value(), "Requested a transition to the extra target state but there is none.");
         internalAddTransition(row, extraTargetState.value(), targetStateValue);
     }
@@ -330,7 +330,7 @@ template<typename PomdpType, typename BeliefValueType>
 void BeliefMdpExplorer<PomdpType, BeliefValueType>::computeRewardAtCurrentState(uint64_t const &localActionIndex, ValueType extraReward) {
     STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
     if (getCurrentNumberOfMdpChoices() > mdpActionRewards.size()) {
-        mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::utility::zero<ValueType>());
+        mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::numbers::zero<ValueType>());
     }
     uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
     mdpActionRewards[row] = beliefManager->getBeliefActionReward(getCurrentBeliefId(), localActionIndex) + extraReward;
@@ -340,7 +340,7 @@ template<typename PomdpType, typename BeliefValueType>
 void BeliefMdpExplorer<PomdpType, BeliefValueType>::addRewardToCurrentState(uint64_t const &localActionIndex, ValueType rewardValue) {
     STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
     if (getCurrentNumberOfMdpChoices() > mdpActionRewards.size()) {
-        mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::utility::zero<ValueType>());
+        mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::numbers::zero<ValueType>());
     }
     uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
     mdpActionRewards[row] = rewardValue;
@@ -482,7 +482,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::restoreOldBehaviorAtCurrentS
                 switch (explHeuristic) {
                     case ExplorationHeuristic::BreadthFirst:
                         currentPrio = prio;
-                        prio = prio - storm::utility::one<ValueType>();
+                        prio = prio - storm::numbers::one<ValueType>();
                         break;
                     case ExplorationHeuristic::LowerBoundPrio:
                         currentPrio = getLowerValueBoundAtCurrentState();
@@ -497,7 +497,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::restoreOldBehaviorAtCurrentS
                         if (getCurrentMdpState() != noState()) {
                             currentPrio = probabilityEstimation[getCurrentMdpState()] * transition.getValue();
                         } else {
-                            currentPrio = storm::utility::one<ValueType>();
+                            currentPrio = storm::numbers::one<ValueType>();
                         }
                         break;
                     default:
@@ -527,7 +527,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::finishExploration() {
     truncatedStates.resize(getCurrentNumberOfMdpStates(), false);
     clippedStates.resize(getCurrentNumberOfMdpStates(), false);
     if (!mdpActionRewards.empty()) {
-        mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::utility::zero<ValueType>());
+        mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::numbers::zero<ValueType>());
     }
 
     // We are not exploring anymore
@@ -626,7 +626,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::finishExploration() {
     // Create a standard reward model (if rewards are available)
     std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> mdpRewardModels;
     if (!mdpActionRewards.empty()) {
-        mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::utility::zero<ValueType>());
+        mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::numbers::zero<ValueType>());
         if (!clippingTransitionRewards.empty()) {
             storm::storage::SparseMatrixBuilder<ValueType> rewardBuilder(getCurrentNumberOfMdpChoices(), getCurrentNumberOfMdpStates(),
                                                                          clippingTransitionRewards.size(), true, true, getCurrentNumberOfMdpStates());
@@ -1042,7 +1042,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::computeOptimalChoicesAndReac
                 if (exploredMdp->hasRewardModel()) {
                     choiceValue += exploredMdp->getUniqueRewardModel().getStateActionReward(globalChoice);
                 }
-                auto absDiff = storm::utility::abs<ValueType>((choiceValue - stateValue));
+                auto absDiff = storm::numbers::abs<ValueType>((choiceValue - stateValue));
                 if ((relativeDifference && absDiff <= ancillaryChoicesEpsilon * stateValue) || (!relativeDifference && absDiff <= ancillaryChoicesEpsilon)) {
                     optimalChoices->set(globalChoice, true);
                 }
@@ -1146,7 +1146,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::insertValueHints(ValueType c
     lowerValueBounds.push_back(lowerBound);
     upperValueBounds.push_back(upperBound);
     // Take the middle value as a hint
-    values.push_back((lowerBound + upperBound) / storm::utility::convertNumber<ValueType, uint64_t>(2));
+    values.push_back((lowerBound + upperBound) / storm::numbers::convert<ValueType, uint64_t>(2));
     STORM_LOG_ASSERT(lowerValueBounds.size() == getCurrentNumberOfMdpStates(), "Value vectors have different size then number of available states.");
     STORM_LOG_ASSERT(lowerValueBounds.size() == upperValueBounds.size() && values.size() == upperValueBounds.size(), "Value vectors have inconsistent size.");
 }
@@ -1186,7 +1186,7 @@ typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpEx
                 switch (explHeuristic) {
                     case ExplorationHeuristic::BreadthFirst:
                         currentPrio = prio;
-                        prio = prio - storm::utility::one<ValueType>();
+                        prio = prio - storm::numbers::one<ValueType>();
                         break;
                     case ExplorationHeuristic::LowerBoundPrio:
                         currentPrio = getLowerValueBoundAtCurrentState();
@@ -1201,7 +1201,7 @@ typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpEx
                         if (getCurrentMdpState() != noState()) {
                             currentPrio = probabilityEstimation[getCurrentMdpState()] * transitionValue;
                         } else {
-                            currentPrio = storm::utility::one<ValueType>();
+                            currentPrio = storm::numbers::one<ValueType>();
                         }
                         break;
                     default:
@@ -1222,7 +1222,7 @@ typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpEx
         switch (explHeuristic) {
             case ExplorationHeuristic::BreadthFirst:
                 currentPrio = prio;
-                prio = prio - storm::utility::one<ValueType>();
+                prio = prio - storm::numbers::one<ValueType>();
                 break;
             case ExplorationHeuristic::LowerBoundPrio:
                 currentPrio = getLowerValueBoundAtCurrentState();
@@ -1237,7 +1237,7 @@ typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpEx
                 if (getCurrentMdpState() != noState()) {
                     currentPrio = probabilityEstimation[getCurrentMdpState()] * transitionValue;
                 } else {
-                    currentPrio = storm::utility::one<ValueType>();
+                    currentPrio = storm::numbers::one<ValueType>();
                 }
                 break;
             default:

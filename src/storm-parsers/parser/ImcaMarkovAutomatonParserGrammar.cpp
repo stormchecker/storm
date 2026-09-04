@@ -106,11 +106,11 @@ void ImcaParserGrammar<ValueType, StateType>::addChoiceToStateBehavior(StateType
         choice.addReward(reward.get());
     }
     for (auto const& t : transitions) {
-        STORM_LOG_THROW(t.second > storm::utility::zero<ValueType>(), storm::exceptions::WrongFormatException,
+        STORM_LOG_THROW(t.second > storm::numbers::zero<ValueType>(), storm::exceptions::WrongFormatException,
                         "Probabilities and rates have to be positive. got " << t.second << " at state s" << state << ".");
         choice.addProbability(t.first, t.second);
     }
-    STORM_LOG_THROW(isMarkovian || storm::utility::isOne(choice.getTotalMass()), storm::exceptions::WrongFormatException,
+    STORM_LOG_THROW(isMarkovian || storm::numbers::isOne(choice.getTotalMass()), storm::exceptions::WrongFormatException,
                     "Probability for choice " << label << " on state s" << state << " does not sum up to one.");
 
     ++numChoices;
@@ -144,7 +144,7 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
         for (auto& behavior : stateBehaviors) {
             if (!behavior.wasExpanded()) {
                 storm::generator::Choice<ValueType, StateType> choice(0, true);
-                choice.addProbability(state, storm::utility::one<ValueType>());
+                choice.addProbability(state, storm::numbers::one<ValueType>());
                 behavior.setExpanded(true);
                 behavior.addChoice(std::move(choice));
                 markovianStates.set(state);
@@ -161,10 +161,10 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
     exitRates.reserve(numStates);
     std::optional<std::vector<ValueType>> stateRewards, actionRewards;
     if (hasStateReward) {
-        stateRewards = std::vector<ValueType>(numStates, storm::utility::zero<ValueType>());
+        stateRewards = std::vector<ValueType>(numStates, storm::numbers::zero<ValueType>());
     }
     if (hasActionReward) {
-        actionRewards = std::vector<ValueType>(numChoices, storm::utility::zero<ValueType>());
+        actionRewards = std::vector<ValueType>(numChoices, storm::numbers::zero<ValueType>());
     }
     std::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
     if (options.buildChoiceLabels) {
@@ -206,7 +206,7 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
                 }
             }
         } else {
-            exitRates.push_back(storm::utility::zero<ValueType>());
+            exitRates.push_back(storm::numbers::zero<ValueType>());
         }
         // Now add all probabilistic choices.
         for (auto const& choice : behavior) {

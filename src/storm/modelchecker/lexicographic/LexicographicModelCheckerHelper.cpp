@@ -397,7 +397,7 @@ LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::a
                 sTstatesForBCC[stateToMEC[newRowGroup]] = newestRowGroup;
                 newestRowGroup++;
             }
-            builder.addNextValue(newRow, sTstatesForBCC[stateToMEC[newRowGroup]], storm::utility::one<ValueType>());
+            builder.addNextValue(newRow, sTstatesForBCC[stateToMEC[newRowGroup]], storm::numbers::one<ValueType>());
             newRow++;
         }
     }
@@ -405,7 +405,7 @@ LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::a
     // only possible action of those is a self-loop
     for (uint64_t newRowGroup = matrix.getColumnCount(); newRowGroup < numRowGroups; newRowGroup++) {
         builder.newRowGroup(newRow);
-        builder.addNextValue(newRow, newRowGroup, storm::utility::one<ValueType>());
+        builder.addNextValue(newRow, newRowGroup, storm::numbers::one<ValueType>());
         newRow++;
     }
     storm::storage::SparseMatrix<ValueType> newMatrix = builder.build();

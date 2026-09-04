@@ -438,7 +438,7 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                     bool steps = (boundRewardAccumulation.isStepsSet() || boundRewardAccumulation.isExitSet()) && boundRewardAccumulation.size() == 1;
                     bool time = boundRewardAccumulation.isTimeSet() && boundRewardAccumulation.size() == 1 && !model.isDiscreteTimeModel();
                     if ((steps || time) && !rewInstRewardModelExpression.containsVariables() &&
-                        storm::utility::isOne(rewInstRewardModelExpression.evaluateAsRational())) {
+                        storm::numbers::isOne(rewInstRewardModelExpression.evaluateAsRational())) {
                         boundReferences.emplace_back(steps ? storm::logic::TimeBoundType::Steps : storm::logic::TimeBoundType::Time);
                     } else {
                         std::string rewInstRewardModelName = rewInstRewardModelExpression.toString();
@@ -456,7 +456,7 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                 return std::make_shared<storm::logic::RewardOperatorFormula>(
                     std::make_shared<storm::logic::CumulativeRewardFormula>(bounds, boundReferences, rewardAccumulation), rewardName, opInfo);
             } else {
-                time = !rewExpr.containsVariables() && storm::utility::isOne(rewExpr.evaluateAsRational());
+                time = !rewExpr.containsVariables() && storm::numbers::isOne(rewExpr.evaluateAsRational());
                 std::shared_ptr<storm::logic::Formula const> subformula;
                 if (propertyStructure.count("reach") > 0) {
                     auto formulaContext = time ? storm::logic::FormulaContext::Time : storm::logic::FormulaContext::Reward;
@@ -547,7 +547,7 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                     bool steps = (boundRewardAccumulation.isStepsSet() || boundRewardAccumulation.isExitSet()) && boundRewardAccumulation.size() == 1;
                     bool time = boundRewardAccumulation.isTimeSet() && boundRewardAccumulation.size() == 1 && !model.isDiscreteTimeModel();
                     if ((steps || time) && !rewInstRewardModelExpression.containsVariables() &&
-                        storm::utility::isOne(rewInstRewardModelExpression.evaluateAsRational())) {
+                        storm::numbers::isOne(rewInstRewardModelExpression.evaluateAsRational())) {
                         tbReferences.emplace_back(steps ? storm::logic::TimeBoundType::Steps : storm::logic::TimeBoundType::Time);
                     } else {
                         std::string rewInstRewardModelName = rewInstRewardModelExpression.toString();
@@ -632,13 +632,13 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                             STORM_LOG_THROW(!boundExpr.containsVariables(), storm::exceptions::NotSupportedException,
                                             "Comparison operators '=' or '≠' in property specifications are currently not supported.");
                             auto boundValue = boundExpr.evaluateAsRational();
-                            if (storm::utility::isZero(boundValue)) {
+                            if (storm::numbers::isZero(boundValue)) {
                                 if (opString == "=") {
                                     ct = storm::logic::ComparisonType::LessEqual;
                                 } else {
                                     ct = storm::logic::ComparisonType::Greater;
                                 }
-                            } else if (storm::utility::isOne(boundValue) && (propertyOperatorString == "Pmin" || propertyOperatorString == "Pmax")) {
+                            } else if (storm::numbers::isOne(boundValue) && (propertyOperatorString == "Pmin" || propertyOperatorString == "Pmax")) {
                                 if (opString == "=") {
                                     ct = storm::logic::ComparisonType::GreaterEqual;
                                 } else {
@@ -1173,7 +1173,7 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
     } else if (expressionStructure.is_number_integer()) {
         return expressionManager->integer(expressionStructure.template get<int64_t>());
     } else if (expressionStructure.is_number_float()) {
-        return expressionManager->rational(storm::utility::convertNumber<storm::RationalNumber>(expressionStructure.template get<ValueType>()));
+        return expressionManager->rational(storm::numbers::convert<storm::RationalNumber>(expressionStructure.template get<ValueType>()));
     } else if (expressionStructure.is_string()) {
         std::string ident = expressionStructure.template get<std::string>();
         return storm::expressions::Expression(getVariableOrConstantExpression(ident, scope, auxiliaryVariables));
@@ -1653,7 +1653,7 @@ storm::jani::Automaton JaniParser<ValueType>::parseAutomaton(Json const& automat
                             "Rate in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a defing expression.");
             rateExpr = parseExpression(edgeEntry.at("rate").at("exp"), scope.refine("rate expression in edge from '" + sourceLoc));
             STORM_LOG_THROW(rateExpr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Rate '" << rateExpr << "' has not a numerical type.");
-            STORM_LOG_THROW(rateExpr.containsVariables() || rateExpr.evaluateAsRational() > storm::utility::zero<storm::RationalNumber>(),
+            STORM_LOG_THROW(rateExpr.containsVariables() || rateExpr.evaluateAsRational() > storm::numbers::zero<storm::RationalNumber>(),
                             storm::exceptions::InvalidJaniException, "Only positive rates are allowed but rate '" << rateExpr << " was found.");
         }
         // guard

@@ -2,7 +2,7 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
-namespace storm::utility::vector {
+namespace storm::numbers::vector {
 inline std::set<storm::RationalFunctionVariable> getVariables(std::vector<storm::RationalFunction> const& vector) {
     std::set<storm::RationalFunctionVariable> result;
     for (auto const& entry : vector) {
@@ -10,4 +10,4 @@ inline std::set<storm::RationalFunctionVariable> getVariables(std::vector<storm:
     }
     return result;
 }
-}  // namespace storm::utility::vector
+}  // namespace storm::numbers::vector

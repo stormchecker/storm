@@ -3,12 +3,12 @@
 #include <optional>
 
 #include "storm/modelchecker/prctl/helper/MDPModelCheckingHelperReturnType.h"
+#include "storm/numbers/NumberTraits.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolveGoal.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/MaximalEndComponent.h"
-#include "storm/utility/NumberTraits.h"
 #include "storm/utility/numerical.h"
 
 namespace storm {
@@ -20,7 +20,7 @@ namespace helper {
 
 class SparseMarkovAutomatonCslHelper {
    public:
-    template<typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
+    template<typename ValueType, typename std::enable_if<storm::numbers::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
     static std::vector<ValueType> computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
                                                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                    std::vector<ValueType> const& exitRateVector,
@@ -28,7 +28,7 @@ class SparseMarkovAutomatonCslHelper {
                                                                    storm::storage::BitVector const& psiStates,
                                                                    std::pair<double, std::optional<double>> const& boundsPair);
 
-    template<typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
+    template<typename ValueType, typename std::enable_if<!storm::numbers::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
     static std::vector<ValueType> computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
                                                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                    std::vector<ValueType> const& exitRateVector,

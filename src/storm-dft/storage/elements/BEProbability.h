@@ -34,7 +34,7 @@ class BEProbability : public DFTBE<ValueType> {
     }
 
     bool canFail() const override {
-        STORM_LOG_ASSERT(!storm::utility::isZero(this->activeFailureProbability()), "BE CONST should have failure probability > 0.");
+        STORM_LOG_ASSERT(!storm::numbers::isZero(this->activeFailureProbability()), "BE CONST should have failure probability > 0.");
         return true;
     }
 
@@ -59,7 +59,7 @@ class BEProbability : public DFTBE<ValueType> {
      * @return Dormancy factor.
      */
     ValueType dormancyFactor() const {
-        STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(this->activeFailureProbability()), "Active failure probability should not be zero.");
+        STORM_LOG_ASSERT(!storm::numbers::isZero<ValueType>(this->activeFailureProbability()), "Active failure probability should not be zero.");
         return this->passiveFailureProbability() / this->activeFailureProbability();
     }
 

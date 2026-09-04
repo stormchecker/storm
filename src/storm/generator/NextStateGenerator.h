@@ -8,12 +8,12 @@
 #include "storm/generator/CompressedState.h"
 #include "storm/generator/StateBehavior.h"
 #include "storm/generator/VariableInformation.h"
+#include "storm/numbers/ConstantsComparator.h"
 #include "storm/storage/PlayerIndex.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/StateStorage.h"
 #include "storm/storage/valuations/Valuations.h"
-#include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
 namespace expressions {
@@ -186,7 +186,7 @@ class NextStateGenerator {
     CompressedState const* state;
 
     /// A comparator used to approximately compare constants, e.g., whether they sum to one..
-    storm::utility::ConstantsComparator<ValueType> comparator;
+    storm::numbers::ConstantsComparator<ValueType> comparator;
 
     /// The mask to compute the observability class (Constructed upon first use)
     mutable storm::storage::BitVector mask;

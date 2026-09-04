@@ -1,8 +1,8 @@
 #include "storm/environment/solver/GameSolverEnvironment.h"
 
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GameSolverSettings.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -17,7 +17,7 @@ GameSolverEnvironment::GameSolverEnvironment() {
     } else {
         maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
     }
-    precision = storm::utility::convertNumber<storm::RationalNumber>(gameSettings.getPrecision());
+    precision = storm::numbers::convert<storm::RationalNumber>(gameSettings.getPrecision());
     considerRelativeTerminationCriterion =
         gameSettings.getConvergenceCriterion() == storm::settings::modules::GameSolverSettings::ConvergenceCriterion::Relative;
     STORM_LOG_ASSERT(considerRelativeTerminationCriterion ||

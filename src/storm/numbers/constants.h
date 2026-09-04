@@ -10,12 +10,11 @@
 
 #include <cstdint>
 #include <limits>
-#include <string>
-
 #include <map>
+#include <string>
 #include <vector>
 
-#include "storm/utility/NumberTraits.h"
+#include "storm/numbers/NumberTraits.h"
 
 namespace storm {
 
@@ -25,10 +24,10 @@ template<typename IndexType, typename ValueType>
 class MatrixEntry;
 }
 
+namespace numbers {
+
 template<typename RationalType>
 struct NumberTraits;
-
-namespace utility {
 
 namespace detail {
 template<typename ValueType>
@@ -119,7 +118,7 @@ template<typename ValueType>
 bool isInteger(ValueType const& number);
 
 template<typename TargetType, typename SourceType>
-TargetType convertNumber(SourceType const& number);
+TargetType convert(SourceType const& number);
 
 template<typename ValueType>
 std::pair<ValueType, ValueType> asFraction(ValueType const& number);
@@ -216,5 +215,5 @@ IntegerType mod(IntegerType const& first, IntegerType const& second);
 
 template<typename ValueType>
 std::string to_string(ValueType const& value);
-}  // namespace utility
+}  // namespace numbers
 }  // namespace storm

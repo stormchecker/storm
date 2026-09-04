@@ -51,7 +51,7 @@ class ParametricDtmcPrctlModelCheckerTest : public ::testing::Test {
 };
 
 storm::RationalFunctionCoefficient parseNumber(std::string const& input) {
-    return storm::utility::convertNumber<storm::RationalFunctionCoefficient>(input);
+    return storm::numbers::convert<storm::RationalFunctionCoefficient>(input);
 }
 
 void checkDie(storm::Environment const& env) {

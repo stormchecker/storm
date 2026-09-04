@@ -2,8 +2,8 @@
 
 #include "storm/storage/Distribution.h"
 
-#include "storm/utility/ConstantsComparator.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/ConstantsComparator.h"
+#include "storm/numbers/constants.h"
 
 namespace storm {
 
@@ -15,7 +15,7 @@ class DistributionWithReward : public Distribution<ValueType, StateType> {
     /*!
      * Creates an empty distribution.
      */
-    DistributionWithReward(ValueType const& reward = storm::utility::zero<ValueType>());
+    DistributionWithReward(ValueType const& reward = storm::numbers::zero<ValueType>());
 
     DistributionWithReward(DistributionWithReward const& other) = default;
     DistributionWithReward& operator=(DistributionWithReward const& other) = default;
@@ -28,9 +28,9 @@ class DistributionWithReward : public Distribution<ValueType, StateType> {
      * @param other The distribution with which the current distribution is to be compared.
      * @return True iff the two distributions are equal.
      */
-    bool equals(DistributionWithReward<ValueType, StateType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const;
+    bool equals(DistributionWithReward<ValueType, StateType> const& other, storm::numbers::ConstantsComparator<ValueType> const& comparator) const;
 
-    bool less(DistributionWithReward<ValueType, StateType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const;
+    bool less(DistributionWithReward<ValueType, StateType> const& other, storm::numbers::ConstantsComparator<ValueType> const& comparator) const;
 
     /*!
      * Sets the reward of this distribution.

@@ -1,8 +1,8 @@
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/EigenEquationSolverSettings.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -19,7 +19,7 @@ EigenSolverEnvironment::EigenSolverEnvironment() {
     } else {
         maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
     }
-    precision = storm::utility::convertNumber<storm::RationalNumber>(eigenSettings.getPrecision());
+    precision = storm::numbers::convert<storm::RationalNumber>(eigenSettings.getPrecision());
 }
 
 EigenSolverEnvironment::~EigenSolverEnvironment() {

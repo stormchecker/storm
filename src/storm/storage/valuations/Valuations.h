@@ -5,9 +5,9 @@
 
 #include "storm/adapters/JsonForward.h"
 #include "storm/adapters/RationalNumberForward.h"
+#include "storm/numbers/NumberTraits.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/expressions/Variable.h"
-#include "storm/utility/NumberTraits.h"
 
 namespace storm {
 

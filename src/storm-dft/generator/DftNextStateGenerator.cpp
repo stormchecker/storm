@@ -3,8 +3,8 @@
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidModelException.h"
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm::dft {
@@ -86,7 +86,7 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
     if (!this->state->hasOperationalRelevantEvent() || iterFailable == this->state->getFailableElements().end(!exploreDependencies)) {
         storm::generator::Choice<ValueType, StateType> choice(0, true);
         // Add self loop
-        choice.addProbability(this->state->getId(), storm::utility::one<ValueType>());
+        choice.addProbability(this->state->getId(), storm::numbers::one<ValueType>());
         STORM_LOG_TRACE("Added self loop for " << state->getId());
         // No further exploration required
         result.addChoice(std::move(choice));
@@ -118,12 +118,12 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
             choice.addProbability(newStateId, probability);
             STORM_LOG_TRACE("Added transition to " << newStateId << " with probability " << probability);
 
-            if (!storm::utility::isOne(probability)) {
+            if (!storm::numbers::isOne(probability)) {
                 // Add transition to state where dependency was unsuccessful
                 DFTStatePointer unsuccessfulState = createSuccessorState(this->state, dependency, false);
                 // Add state
                 StateType unsuccessfulStateId = stateToIdCallback(unsuccessfulState);
-                ValueType remainingProbability = storm::utility::one<ValueType>() - probability;
+                ValueType remainingProbability = storm::numbers::one<ValueType>() - probability;
                 choice.addProbability(unsuccessfulStateId, remainingProbability);
                 STORM_LOG_TRACE("Added transition to " << unsuccessfulStateId << " with remaining probability " << remainingProbability);
                 STORM_LOG_ASSERT(unsuccessfulStateId != this->state->getId(),
@@ -158,7 +158,7 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
 
             // Set failure rate according to activation
             ValueType rate = this->state->getBERate(nextBE->id());
-            STORM_LOG_ASSERT(!storm::utility::isZero(rate), "Failure rate should not be zero.");
+            STORM_LOG_ASSERT(!storm::numbers::isZero(rate), "Failure rate should not be zero.");
             choice.addProbability(newStateId, rate);
             STORM_LOG_TRACE("Added transition to " << newStateId << " with failure rate " << rate);
         }
@@ -175,7 +175,7 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
             // No transition was generated
             STORM_LOG_TRACE("No transitions were generated.");
             // Add self loop
-            choice.addProbability(this->state->getId(), storm::utility::one<ValueType>());
+            choice.addProbability(this->state->getId(), storm::numbers::one<ValueType>());
             STORM_LOG_TRACE("Added self loop for " << state->getId());
         }
         STORM_LOG_ASSERT(choice.size() > 0, "At least one choice should have been generated.");
@@ -332,7 +332,7 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
 
     // Add self loop
     storm::generator::Choice<ValueType, StateType> choice(0, true);
-    choice.addProbability(0, storm::utility::one<ValueType>());
+    choice.addProbability(0, storm::numbers::one<ValueType>());
 
     // No further exploration required
     storm::generator::StateBehavior<ValueType, StateType> result;

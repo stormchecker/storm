@@ -96,7 +96,7 @@ ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForC
 
     // Solve nontrivial MEC with the method specified in the settings
     storm::solver::LraMethod method = env.solver().lra().getNondetLraMethod();
-    if ((storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact()) && env.solver().lra().isNondetLraMethodSetFromDefault() &&
+    if ((storm::numbers::NumberTraits<ValueType>::IsExact || env.solver().isForceExact()) && env.solver().lra().isNondetLraMethodSetFromDefault() &&
         method != storm::solver::LraMethod::LinearProgramming) {
         STORM_LOG_INFO(
             "Selecting 'LP' as the solution technique for long-run properties to guarantee exact results. If you want to override this, please explicitly "
@@ -175,10 +175,10 @@ std::optional<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>:
     std::map<uint64_t, std::set<uint64_t>> zeroLraStatesChoices;
     for (auto const& [state, choices] : component) {
         auto const stateReward = stateRewardsGetter(state);
-        if (!storm::utility::isZero(stateReward)) {
+        if (!storm::numbers::isZero(stateReward)) {
             // If we minimize and see a negative reward, we cannot infer zero long-run average reward for the entire MEC, even if a 0 reward sub-EC exists.
             // Maximize and seeing a positive reward is similar.
-            if ((stateReward < storm::utility::zero<ValueType>()) == this->minimize()) {
+            if ((stateReward < storm::numbers::zero<ValueType>()) == this->minimize()) {
                 // Component has non-zero reward, but in the wrong direction
                 return std::nullopt;
             }
@@ -188,9 +188,9 @@ std::optional<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>:
         std::set<uint64_t> zeroLraChoices;
         for (auto const choice : choices) {
             auto const actionReward = actionRewardsGetter(choice);
-            if (!storm::utility::isZero(actionReward)) {
+            if (!storm::numbers::isZero(actionReward)) {
                 // Catch non-zero reward in the wrong direction, similar to state rewards above.
-                if ((actionReward < storm::utility::zero<ValueType>()) == this->minimize()) {
+                if ((actionReward < storm::numbers::zero<ValueType>()) == this->minimize()) {
                     return std::nullopt;
                 }
                 hasNonZeroReward = true;
@@ -281,7 +281,7 @@ std::optional<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>:
         }
     }
 
-    return storm::utility::zero<ValueType>();
+    return storm::numbers::zero<ValueType>();
 }
 
 template<typename ValueType>
@@ -289,7 +289,7 @@ ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForM
                                                                                      ValueGetter const& actionRewardsGetter,
                                                                                      storm::storage::MaximalEndComponent const& mec) {
     // Collect some parameters of the computation
-    ValueType aperiodicFactor = storm::utility::convertNumber<ValueType>(env.solver().lra().getAperiodicFactor());
+    ValueType aperiodicFactor = storm::numbers::convert<ValueType>(env.solver().lra().getAperiodicFactor());
     std::vector<uint64_t>* optimalChoices = nullptr;
     if (this->isProduceSchedulerSet()) {
         optimalChoices = &this->_producedOptimalChoices.get();
@@ -330,7 +330,7 @@ ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForM
         std::string variableName = "x" + std::to_string(stateChoicesPair.first);
         stateToVariableMap[stateChoicesPair.first] = solver->addUnboundedContinuousVariable(variableName);
     }
-    storm::expressions::Variable k = solver->addUnboundedContinuousVariable("k", storm::utility::one<ValueType>());
+    storm::expressions::Variable k = solver->addUnboundedContinuousVariable("k", storm::numbers::one<ValueType>());
     solver->update();
 
     // Add constraints.
@@ -396,7 +396,7 @@ void addSspMatrixChoice(uint64_t const& inputMatrixChoice, storm::storage::Spars
     std::map<uint64_t, ValueType> auxiliaryStateToProbabilityMap;
 
     for (auto const& transition : inputTransitionMatrix.getRow(inputMatrixChoice)) {
-        if (!storm::utility::isZero(transition.getValue())) {
+        if (!storm::numbers::isZero(transition.getValue())) {
             auto const& sspTransitionTarget = inputToSspStateMap[transition.getColumn()];
             // Since the auxiliary Component states are appended at the end of the matrix, we can use this check to
             // decide whether the transition leads to a component state or not
@@ -436,7 +436,7 @@ std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Spars
     for (uint64_t nonComponentState : statesNotInComponent) {
         sspMatrixBuilder.newRowGroup(currentSspChoice);
         for (uint64_t choice = choiceIndices[nonComponentState]; choice < choiceIndices[nonComponentState + 1]; ++choice, ++currentSspChoice) {
-            rhs.push_back(storm::utility::zero<ValueType>());
+            rhs.push_back(storm::numbers::zero<ValueType>());
             addSspMatrixChoice(choice, this->_transitionMatrix, inputToSspStateMap, numberOfNonComponentStates, currentSspChoice, sspMatrixBuilder);
         }
     }
@@ -451,7 +451,7 @@ std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Spars
             for (uint64_t choice = choiceIndices[componentState]; choice < choiceIndices[componentState + 1]; ++choice) {
                 // If the choice is not contained in the component itself, we have to add a similar distribution to the auxiliary state.
                 if (!internal::componentElementChoicesContains(element, choice)) {
-                    rhs.push_back(storm::utility::zero<ValueType>());
+                    rhs.push_back(storm::numbers::zero<ValueType>());
                     addSspMatrixChoice(choice, this->_transitionMatrix, inputToSspStateMap, numberOfNonComponentStates, currentSspChoice, sspMatrixBuilder);
                     if (sspComponentExitChoicesToOriginalMap) {
                         // Later we need to be able to map this choice back to the original input model
@@ -525,7 +525,7 @@ void SparseNondeterministicInfiniteHorizonHelper<ValueType>::constructOptimalCho
                             // We now need to check whether there is a *MEC* choice leading to currentState
                             for (auto const& predChoice : mec.getChoicesForState(predecessorState)) {
                                 for (auto const& forwardTransition : this->_transitionMatrix.getRow(predChoice)) {
-                                    if (forwardTransition.getColumn() == currentState && !storm::utility::isZero(forwardTransition.getValue())) {
+                                    if (forwardTransition.getColumn() == currentState && !storm::numbers::isZero(forwardTransition.getValue())) {
                                         // Playing this choice (infinitely often) will lead to current state (infinitely often)!
                                         selectedPredChoice = predChoice - this->_transitionMatrix.getRowGroupIndices()[predecessorState];
                                         stack.push_back(predecessorState);

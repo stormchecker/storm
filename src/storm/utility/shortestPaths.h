@@ -11,8 +11,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "storm/numbers/constants.h"
 #include "storm/storage/BitVector.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -206,10 +206,10 @@ class ShortestPathsGenerator {
         } else {
             if (tailNode == headNode) {
                 // diagonal: 1-p = dist
-                return one<T>() - distance;
+                return storm::numbers::one<T>() - distance;
             } else {
                 // non-diag: -p = dist
-                return zero<T>() - distance;
+                return storm::numbers::zero<T>() - distance;
             }
         }
     }
@@ -220,7 +220,7 @@ class ShortestPathsGenerator {
     inline StateProbMap allProbOneMap(BitVector bitVector) const {
         StateProbMap stateProbMap;
         for (state_t node : bitVector) {
-            stateProbMap.emplace(node, one<T>());  // FIXME check rvalue warning (here and below)
+            stateProbMap.emplace(node, storm::numbers::one<T>());  // FIXME check rvalue warning (here and below)
         }
         return stateProbMap;
     }

@@ -12,6 +12,7 @@
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/stateelimination/ConditionalStateEliminator.h"
 #include "storm/solver/stateelimination/DynamicStatePriorityQueue.h"
 #include "storm/solver/stateelimination/MultiValueStateEliminator.h"
@@ -19,7 +20,6 @@
 #include "storm/solver/stateelimination/StateEliminationUtility.h"
 #include "storm/solver/stateelimination/StaticStatePriorityQueue.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -55,11 +55,11 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     uint_fast64_t numberOfStates = transitionMatrix.getRowCount();
     if (psiStates.empty()) {
         return std::unique_ptr<CheckResult>(
-            new ExplicitQuantitativeCheckResult<ValueType>(std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>())));
+            new ExplicitQuantitativeCheckResult<ValueType>(std::vector<ValueType>(numberOfStates, storm::numbers::zero<ValueType>())));
     }
     if (psiStates.full()) {
         return std::unique_ptr<CheckResult>(
-            new ExplicitQuantitativeCheckResult<ValueType>(std::vector<ValueType>(numberOfStates, storm::utility::one<ValueType>())));
+            new ExplicitQuantitativeCheckResult<ValueType>(std::vector<ValueType>(numberOfStates, storm::numbers::one<ValueType>())));
     }
 
     storm::storage::BitVector const& initialStates = this->getModel().getInitialStates();
@@ -72,7 +72,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     storm::storage::BitVector maybeStates =
         storm::utility::graph::performProbGreater0(backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowCount(), true), psiStates);
 
-    std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
+    std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::numbers::zero<ValueType>());
 
     // Determine whether we need to perform some further computation.
     bool furtherComputationNeeded = true;
@@ -95,8 +95,8 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
             maybeStates &= reachableStates;
         }
 
-        std::vector<ValueType> stateValues(maybeStates.size(), storm::utility::zero<ValueType>());
-        storm::utility::vector::setVectorValues(stateValues, psiStates, storm::utility::one<ValueType>());
+        std::vector<ValueType> stateValues(maybeStates.size(), storm::numbers::zero<ValueType>());
+        storm::utility::vector::setVectorValues(stateValues, psiStates, storm::numbers::one<ValueType>());
         result = computeLongRunValues(env, transitionMatrix, backwardTransitions, initialStates, maybeStates, checkTask.isOnlyInitialStatesRelevantSet(),
                                       stateValues);
     }
@@ -133,7 +133,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     storm::storage::BitVector maybeStates(stateRewardValues.size());
     uint_fast64_t index = 0;
     for (auto const& value : stateRewardValues) {
-        if (value != storm::utility::zero<ValueType>()) {
+        if (value != storm::numbers::zero<ValueType>()) {
             maybeStates.set(index, true);
         }
         ++index;
@@ -144,7 +144,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     storm::storage::BitVector allStates(numberOfStates, true);
     maybeStates = storm::utility::graph::performProbGreater0(backwardTransitions, allStates, maybeStates);
 
-    std::vector<ValueType> result(numberOfStates, storm::utility::zero<ValueType>());
+    std::vector<ValueType> result(numberOfStates, storm::numbers::zero<ValueType>());
 
     // Determine whether we need to perform some further computation.
     bool furtherComputationNeeded = true;
@@ -232,7 +232,7 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(Env
     regularStatesInBsccs &= ~bsccRepresentativesAsBitVector;
 
     // Compute the average time to stay in each state for all states in BSCCs.
-    std::vector<ValueType> averageTimeInStates(stateValues.size(), storm::utility::one<ValueType>());
+    std::vector<ValueType> averageTimeInStates(stateValues.size(), storm::numbers::one<ValueType>());
 
     // First, we eliminate all states in BSCCs (except for the representative states).
     std::shared_ptr<StatePriorityQueue> priorityQueue =
@@ -259,7 +259,7 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(Env
             }
         } else {
             for (auto const& state : bscc) {
-                stateValues[state] = storm::utility::zero<ValueType>();
+                stateValues[state] = storm::numbers::zero<ValueType>();
             }
             stateValues[*representativeIt] = bsccValue;
         }
@@ -288,7 +288,7 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(Env
     // BSCCs by the previous state elimination.
     for (uint64_t state : remainingStates) {
         if (!bsccRepresentativesAsBitVector.get(state)) {
-            stateValues[state] = storm::utility::zero<ValueType>();
+            stateValues[state] = storm::numbers::zero<ValueType>();
         }
     }
 
@@ -324,7 +324,7 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(Env
     // Now, we return the value for the only initial state.
     STORM_LOG_DEBUG("Simplifying and returning result.");
     for (auto& value : stateValues) {
-        value = storm::utility::simplify(value);
+        value = storm::numbers::simplify(value);
     }
     return stateValues;
 }
@@ -363,7 +363,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
     storm::storage::BitVector const& initialStates = this->getModel().getInitialStates();
 
-    std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
+    std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::numbers::zero<ValueType>());
 
     if (furtherComputationNeeded) {
         uint_fast64_t timeBound = pathFormula.getUpperBound<uint64_t>();
@@ -416,9 +416,9 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
                 for (uint64_t state : relevantStates) {
                     if (distancesFromInitialStates[state] > (timeBound - timeStep)) {
                         for (auto& element : submatrix.getRow(state)) {
-                            element.setValue(storm::utility::zero<ValueType>());
+                            element.setValue(storm::numbers::zero<ValueType>());
                         }
-                        b[state] = storm::utility::zero<ValueType>();
+                        b[state] = storm::numbers::zero<ValueType>();
                         relevantStates.set(state, false);
                     }
                 }
@@ -428,7 +428,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         // Set the values of the resulting vector accordingly.
         storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
     }
-    storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
+    storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::numbers::one<ValueType>());
 
     // Construct check result based on whether we have computed values for all states or just the initial states.
     std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
@@ -506,8 +506,8 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     }
 
     // Construct full result.
-    storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability0, storm::utility::zero<ValueType>());
-    storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability1, storm::utility::one<ValueType>());
+    storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability0, storm::numbers::zero<ValueType>());
+    storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability1, storm::numbers::one<ValueType>());
 
     if (computeForInitialStatesOnly) {
         // If we computed the results for the initial (and prob 0 and prob1) states only, we need to filter the
@@ -616,8 +616,8 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     }
 
     // Construct full result.
-    storm::utility::vector::setVectorValues<ValueType>(result, infinityStates, storm::utility::infinity<ValueType>());
-    storm::utility::vector::setVectorValues<ValueType>(result, targetStates, storm::utility::zero<ValueType>());
+    storm::utility::vector::setVectorValues<ValueType>(result, infinityStates, storm::numbers::infinity<ValueType>());
+    storm::utility::vector::setVectorValues<ValueType>(result, targetStates, storm::numbers::zero<ValueType>());
     if (computeForInitialStatesOnly) {
         // If we computed the results for the initial (and inf) states only, we need to filter the result to
         // only communicate these results.
@@ -689,7 +689,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     storm::storage::BitVector newInitialStates = this->getModel().getInitialStates() % maybeStates;
 
     // Create a dummy vector for the one-step probabilities.
-    std::vector<ValueType> oneStepProbabilities(maybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
+    std::vector<ValueType> oneStepProbabilities(maybeStates.getNumberOfSetBits(), storm::numbers::zero<ValueType>());
 
     // We then build the submatrix that only has the transitions of the maybe states.
     storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
@@ -700,7 +700,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
 
     // If there are no phi states in the reduced model, the conditional probability is trivially zero.
     if (phiStates.empty()) {
-        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, storm::utility::zero<ValueType>()));
+        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, storm::numbers::zero<ValueType>()));
     }
 
     psiStates = psiStates % maybeStates;
@@ -815,8 +815,8 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         }
     }
 
-    ValueType numerator = storm::utility::zero<ValueType>();
-    ValueType denominator = storm::utility::zero<ValueType>();
+    ValueType numerator = storm::numbers::zero<ValueType>();
+    ValueType denominator = storm::numbers::zero<ValueType>();
 
     for (auto const& trans1 : flexibleMatrix.getRow(*newInitialStates.begin())) {
         auto initialStateSuccessor = trans1.getColumn();
@@ -825,7 +825,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
                 numerator += trans1.getValue();
                 denominator += trans1.getValue();
             } else {
-                ValueType additiveTerm = storm::utility::zero<ValueType>();
+                ValueType additiveTerm = storm::numbers::zero<ValueType>();
                 for (auto const& trans2 : flexibleMatrix.getRow(initialStateSuccessor)) {
                     if (psiStates.get(trans2.getColumn())) {
                         additiveTerm += trans2.getValue();
@@ -838,7 +838,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         } else {
             STORM_LOG_ASSERT(psiStates.get(initialStateSuccessor), "Expected psi state.");
             denominator += trans1.getValue();
-            ValueType additiveTerm = storm::utility::zero<ValueType>();
+            ValueType additiveTerm = storm::numbers::zero<ValueType>();
             for (auto const& trans2 : flexibleMatrix.getRow(initialStateSuccessor)) {
                 if (phiStates.get(trans2.getColumn())) {
                     additiveTerm += trans2.getValue();
@@ -863,7 +863,7 @@ void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performPrioritizedS
         bool removeForwardTransitions = computeResultsForInitialStatesOnly && !initialStates.get(state);
         stateEliminator.eliminateState(state, removeForwardTransitions);
         if (removeForwardTransitions) {
-            values[state] = storm::utility::zero<ValueType>();
+            values[state] = storm::numbers::zero<ValueType>();
         }
     }
 }
@@ -942,7 +942,7 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityValue
     // Now, we return the value for the only initial state.
     STORM_LOG_DEBUG("Simplifying and returning result.");
     for (auto& value : values) {
-        value = storm::utility::simplify(value);
+        value = storm::numbers::simplify(value);
     }
     return values;
 }
@@ -999,7 +999,7 @@ uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::treatScc(
             storm::storage::BitVector entryStates(forwardTransitions.getRowCount());
             for (auto const& state : newScc) {
                 for (auto const& predecessor : backwardTransitions.getRow(state)) {
-                    if (predecessor.getValue() != storm::utility::zero<ValueType>() && !newSccAsBitVector.get(predecessor.getColumn())) {
+                    if (predecessor.getValue() != storm::numbers::zero<ValueType>() && !newSccAsBitVector.get(predecessor.getColumn())) {
                         entryStates.set(state);
                     }
                 }

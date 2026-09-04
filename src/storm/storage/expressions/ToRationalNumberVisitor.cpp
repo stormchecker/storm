@@ -2,7 +2,7 @@
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 namespace storm {
 namespace expressions {
@@ -68,10 +68,10 @@ boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BinaryNumericalFun
             result = std::max(firstOperandAsRationalNumber, secondOperandAsRationalNumber);
             return result;
         case BinaryNumericalFunctionExpression::OperatorType::Power: {
-            STORM_LOG_THROW(storm::utility::isInteger(secondOperandAsRationalNumber), storm::exceptions::InvalidArgumentException,
+            STORM_LOG_THROW(storm::numbers::isInteger(secondOperandAsRationalNumber), storm::exceptions::InvalidArgumentException,
                             "Exponent of power operator must be an integer.");
-            auto exponentAsInteger = storm::utility::convertNumber<int_fast64_t>(secondOperandAsRationalNumber);
-            result = storm::utility::pow(firstOperandAsRationalNumber, exponentAsInteger);
+            auto exponentAsInteger = storm::numbers::convert<int_fast64_t>(secondOperandAsRationalNumber);
+            result = storm::numbers::pow(firstOperandAsRationalNumber, exponentAsInteger);
             return result;
         }
         default:
@@ -108,19 +108,19 @@ boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryNumericalFunc
             return result;
             break;
         case UnaryNumericalFunctionExpression::OperatorType::Floor:
-            result = storm::utility::floor(operandAsRationalNumber);
+            result = storm::numbers::floor(operandAsRationalNumber);
             return result;
             break;
         case UnaryNumericalFunctionExpression::OperatorType::Ceil:
-            result = storm::utility::ceil(operandAsRationalNumber);
+            result = storm::numbers::ceil(operandAsRationalNumber);
             return result;
             break;
         case UnaryNumericalFunctionExpression::OperatorType::Sin:
-            result = storm::utility::sin(operandAsRationalNumber);
+            result = storm::numbers::sin(operandAsRationalNumber);
             return result;
             break;
         case UnaryNumericalFunctionExpression::OperatorType::Cos:
-            result = storm::utility::cos(operandAsRationalNumber);
+            result = storm::numbers::cos(operandAsRationalNumber);
             return result;
             break;
     }

@@ -1,7 +1,7 @@
 #include "storm/solver/stateelimination/MultiValueStateEliminator.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 namespace storm {
 namespace solver {
@@ -25,9 +25,9 @@ MultiValueStateEliminator<ValueType>::MultiValueStateEliminator(storm::storage::
 
 template<typename ValueType>
 void MultiValueStateEliminator<ValueType>::updateValue(storm::storage::sparse::state_type const& state, ValueType const& loopProbability) {
-    this->stateValues[state] = storm::utility::simplify((ValueType)(loopProbability * this->stateValues[state]));
+    this->stateValues[state] = storm::numbers::simplify((ValueType)(loopProbability * this->stateValues[state]));
     for (auto additionalStateValueVectorRef : additionalStateValues) {
-        additionalStateValueVectorRef.get()[state] = storm::utility::simplify((ValueType)(loopProbability * additionalStateValueVectorRef.get()[state]));
+        additionalStateValueVectorRef.get()[state] = storm::numbers::simplify((ValueType)(loopProbability * additionalStateValueVectorRef.get()[state]));
     }
 }
 
@@ -35,11 +35,11 @@ template<typename ValueType>
 void MultiValueStateEliminator<ValueType>::updatePredecessor(storm::storage::sparse::state_type const& predecessor, ValueType const& probability,
                                                              storm::storage::sparse::state_type const& state) {
     this->stateValues[predecessor] =
-        storm::utility::simplify((ValueType)(this->stateValues[predecessor] + storm::utility::simplify((ValueType)(probability * this->stateValues[state]))));
+        storm::numbers::simplify((ValueType)(this->stateValues[predecessor] + storm::numbers::simplify((ValueType)(probability * this->stateValues[state]))));
     for (auto additionalStateValueVectorRef : additionalStateValues) {
         additionalStateValueVectorRef.get()[predecessor] =
-            storm::utility::simplify((ValueType)(additionalStateValueVectorRef.get()[predecessor] +
-                                                 storm::utility::simplify((ValueType)(probability * additionalStateValueVectorRef.get()[state]))));
+            storm::numbers::simplify((ValueType)(additionalStateValueVectorRef.get()[predecessor] +
+                                                 storm::numbers::simplify((ValueType)(probability * additionalStateValueVectorRef.get()[state]))));
     }
 }
 
@@ -47,7 +47,7 @@ template<typename ValueType>
 void MultiValueStateEliminator<ValueType>::clearStateValues(storm::storage::sparse::state_type const& state) {
     super::clearStateValues(state);
     for (auto additionStateValueVectorRef : additionalStateValues) {
-        additionStateValueVectorRef.get()[state] = storm::utility::zero<ValueType>();
+        additionStateValueVectorRef.get()[state] = storm::numbers::zero<ValueType>();
     }
 }
 

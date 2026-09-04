@@ -142,8 +142,8 @@ void ShortestPathsGenerator<T>::performDijkstra() {
     // the existing Dijkstra isn't working anyway AND
     // doesn't fully meet our requirements, so let's roll our own
 
-    T inftyDistance = zero<T>();
-    T zeroDistance = one<T>();
+    T inftyDistance = storm::numbers::zero<T>();
+    T zeroDistance = storm::numbers::one<T>();
     shortestPathDistances.resize(numStates, inftyDistance);
     shortestPathPredecessors.resize(numStates, boost::optional<state_t>());
 
@@ -167,7 +167,8 @@ void ShortestPathsGenerator<T>::performDijkstra() {
 
                 // note that distances are probabilities, thus they are multiplied and larger is better
                 T alternateDistance = shortestPathDistances[currentNode] * convertDistance(currentNode, otherNode, transition.getValue());
-                STORM_LOG_ASSERT((zero<T>() <= alternateDistance) && (alternateDistance <= one<T>()), "Distance out of [0,1] range.");
+                STORM_LOG_ASSERT((storm::numbers::zero<T>() <= alternateDistance) && (alternateDistance <= storm::numbers::one<T>()),
+                                 "Distance out of [0,1] range.");
                 if (alternateDistance > shortestPathDistances[otherNode]) {
                     shortestPathDistances[otherNode] = alternateDistance;
                     shortestPathPredecessors[otherNode] = boost::optional<state_t>(currentNode);

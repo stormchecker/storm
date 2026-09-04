@@ -20,7 +20,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 #include "storm-pars/api/region.h"
 
@@ -75,8 +75,8 @@ class MonotonicityHelper {
             expressions::Expression exprBounds = manager->boolean(true);
             for (auto variable : variables) {
                 auto managerVariable = manager->declareRationalVariable(variable.name());
-                auto lb = utility::convertNumber<RationalNumber>(reg.getLowerBoundary(variable));
-                auto ub = utility::convertNumber<RationalNumber>(reg.getUpperBoundary(variable));
+                auto lb = storm::numbers::convert<RationalNumber>(reg.getLowerBoundary(variable));
+                auto ub = storm::numbers::convert<RationalNumber>(reg.getUpperBoundary(variable));
                 exprBounds = exprBounds && manager->rational(lb) < managerVariable && managerVariable < manager->rational(ub);
             }
 

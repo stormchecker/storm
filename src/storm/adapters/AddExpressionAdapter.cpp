@@ -4,10 +4,10 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -213,12 +213,12 @@ boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::Bool
 
 template<storm::dd::DdType Type, typename ValueType>
 boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&) {
-    return ddManager->getConstant(storm::utility::convertNumber<ValueType>(expression.getValue()));
+    return ddManager->getConstant(storm::numbers::convert<ValueType>(expression.getValue()));
 }
 
 template<storm::dd::DdType Type, typename ValueType>
 boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) {
-    return ddManager->getConstant(storm::utility::convertNumber<ValueType>(expression.getValue()));
+    return ddManager->getConstant(storm::numbers::convert<ValueType>(expression.getValue()));
 }
 
 // Explicitly instantiate the symbolic expression adapter

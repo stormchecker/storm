@@ -777,7 +777,7 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType, Expo
         }
 
         if (sylvan_isconst(variables)) {
-            result[offset] = storm::utility::convertNumber<ExportValueType>(storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(vector));
+            result[offset] = storm::numbers::convert<ExportValueType>(storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(vector));
         } else {
             MTBDD vectorT;
             MTBDD vectorE;
@@ -858,7 +858,7 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType, Expo
             STORM_LOG_ASSERT(mtbdd_isleaf(transitionMatrixNode), "Expected constant node.");
             this->addMatrixEntry(
                 sourceOffset, blockToOffset.at(targetPartitionNode),
-                storm::utility::convertNumber<ExportValueType>(storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(transitionMatrixNode)));
+                storm::numbers::convert<ExportValueType>(storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(transitionMatrixNode)));
             if (stateOdd) {
                 this->assignRowToState(sourceOffset, stateOffset);
             }
@@ -1167,16 +1167,16 @@ QuotientExtractor<DdType, ValueType, ExportValueType>::extractQuotientUsingBlock
 
         // Check quotient matrix for sanity.
         if (std::is_same<ValueType, storm::RationalNumber>::value) {
-            STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
+            STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::numbers::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
         } else if (std::is_same<ValueType, storm::RationalFunction>::value) {
             // No comparison for rational functions
         } else {
-            STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(1e-6)).isZero(),
+            STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::numbers::one<ValueType>() + storm::numbers::convert<ValueType>(1e-6)).isZero(),
                              "Illegal entries in quotient matrix.");
         }
         STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet)
                              .equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(blockPrimeVariableSet).template toAdd<ValueType>(),
-                                                   storm::utility::convertNumber<ValueType>(1e-6)),
+                                                   storm::numbers::convert<ValueType>(1e-6)),
                          "Illegal non-probabilistic matrix.");
 
         STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
@@ -1331,14 +1331,14 @@ QuotientExtractor<DdType, ValueType, ExportValueType>::extractQuotientUsingOrigi
 
         // Check quotient matrix for sanity.
         if (std::is_same<ValueType, storm::RationalNumber>::value) {
-            STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
+            STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::numbers::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
         } else {
-            STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(1e-6)).isZero(),
+            STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::numbers::one<ValueType>() + storm::numbers::convert<ValueType>(1e-6)).isZero(),
                              "Illegal entries in quotient matrix.");
         }
         STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(model.getColumnVariables())
                              .equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(model.getColumnVariables()).template toAdd<ValueType>(),
-                                                   storm::utility::convertNumber<ValueType>(1e-6)),
+                                                   storm::numbers::convert<ValueType>(1e-6)),
                          "Illegal probabilistic matrix.");
 
         STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");

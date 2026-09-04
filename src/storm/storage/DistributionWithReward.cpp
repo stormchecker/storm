@@ -1,7 +1,7 @@
 #include "storm/storage/DistributionWithReward.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/utility/ConstantsComparator.h"
+#include "storm/numbers/ConstantsComparator.h"
 
 namespace storm {
 namespace storage {
@@ -13,7 +13,7 @@ DistributionWithReward<ValueType, StateType>::DistributionWithReward(ValueType c
 
 template<typename ValueType, typename StateType>
 bool DistributionWithReward<ValueType, StateType>::equals(DistributionWithReward<ValueType, StateType> const& other,
-                                                          storm::utility::ConstantsComparator<ValueType> const& comparator) const {
+                                                          storm::numbers::ConstantsComparator<ValueType> const& comparator) const {
     if (this->reward != other.reward) {
         return false;
     }
@@ -22,7 +22,7 @@ bool DistributionWithReward<ValueType, StateType>::equals(DistributionWithReward
 
 template<typename ValueType, typename StateType>
 bool DistributionWithReward<ValueType, StateType>::less(DistributionWithReward<ValueType, StateType> const& other,
-                                                        storm::utility::ConstantsComparator<ValueType> const& comparator) const {
+                                                        storm::numbers::ConstantsComparator<ValueType> const& comparator) const {
     if (comparator.isLess(this->reward, other.reward)) {
         return true;
     } else if (comparator.isLess(other.reward, this->reward)) {

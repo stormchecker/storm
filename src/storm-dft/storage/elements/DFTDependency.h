@@ -66,7 +66,7 @@ class DFTDependency : public DFTElement<ValueType> {
      * @return True iff p=1.
      */
     bool isFDEP() const {
-        return storm::utility::isOne(this->probability());
+        return storm::numbers::isOne(this->probability());
     }
 
     /*!

@@ -1,4 +1,4 @@
-#include "storm/utility/constants.h"
+#include "constants.h"
 
 #include <cmath>
 
@@ -7,13 +7,13 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/numbers/NumberTraits.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/utility/NumberTraits.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
-namespace utility {
+namespace numbers {
 
 template<typename ValueType>
 ValueType one() {
@@ -94,12 +94,12 @@ bool isBetween(ValueType const& a, ValueType const& b, ValueType const& c, bool 
 
 template<typename ValueType>
 bool isAlmostZero(ValueType const& a) {
-    return a < convertNumber<ValueType>(1e-12) && a > -convertNumber<ValueType>(1e-12);
+    return a < convert<ValueType>(1e-12) && a > -convert<ValueType>(1e-12);
 }
 
 template<typename ValueType>
 bool isAlmostOne(ValueType const& a) {
-    return a < convertNumber<ValueType>(1.0 + 1e-12) && a > convertNumber<ValueType>(1.0 - 1e-12);
+    return a < convert<ValueType>(1.0 + 1e-12) && a > convert<ValueType>(1.0 - 1e-12);
 }
 
 template<typename ValueType>
@@ -140,37 +140,37 @@ bool isInteger(storm::storage::sparse::state_type const&) {
 }
 
 template<typename TargetType, typename SourceType>
-TargetType convertNumber(SourceType const& number) {
+TargetType convert(SourceType const& number) {
     return static_cast<TargetType>(number);
 }
 
 template<>
-uint_fast64_t convertNumber(double const& number) {
+uint_fast64_t convert(double const& number) {
     return std::llround(number);
 }
 
 template<>
-int_fast64_t convertNumber(double const& number) {
+int_fast64_t convert(double const& number) {
     return std::llround(number);
 }
 
 template<>
-double convertNumber(uint_fast64_t const& number) {
+double convert(uint_fast64_t const& number) {
     return number;
 }
 
 template<>
-double convertNumber(double const& number) {
+double convert(double const& number) {
     return number;
 }
 
 template<>
-double convertNumber(long long const& number) {
+double convert(long long const& number) {
     return static_cast<double>(number);
 }
 
 template<>
-storm::storage::sparse::state_type convertNumber(long long const& number) {
+storm::storage::sparse::state_type convert(long long const& number) {
     return static_cast<storm::storage::sparse::state_type>(number);
 }
 
@@ -285,7 +285,7 @@ ValueType ceil(ValueType const& number) {
 template<typename ValueType>
 ValueType round(ValueType const& number) {
     // Rounding towards infinity
-    return floor<ValueType>(number + storm::utility::convertNumber<ValueType>(0.5));
+    return floor<ValueType>(number + storm::numbers::convert<ValueType>(0.5));
 }
 
 template<typename ValueType>
@@ -311,11 +311,11 @@ ValueType sin(ValueType const& number) {
 template<typename ValueType>
 uint64_t numDigits(ValueType const& number) {
     auto numDigits = 0;
-    ValueType remaining = storm::utility::one<ValueType>() / number;
-    ValueType ten = storm::utility::convertNumber<ValueType>(10);
-    while (remaining >= storm::utility::one<ValueType>()) {
+    ValueType remaining = storm::numbers::one<ValueType>() / number;
+    ValueType ten = storm::numbers::convert<ValueType>(10);
+    while (remaining >= storm::numbers::one<ValueType>()) {
         ++numDigits;
-        remaining = storm::utility::floor<ValueType>(remaining / ten);
+        remaining = storm::numbers::floor<ValueType>(remaining / ten);
     }
     return numDigits;
 }
@@ -325,7 +325,7 @@ uint64_t bitsize(ValueType const& number) {
     if constexpr (std::is_same_v<ValueType, uint64_t>) {
         return std::bit_width(number);
     } else {
-        if (storm::utility::isZero(number)) {
+        if (storm::numbers::isZero(number)) {
             return 0;
         } else {
             // GMPs sizeinbase returns 1 if number is zero.
@@ -386,7 +386,7 @@ std::pair<storm::ClnRationalNumber, storm::ClnRationalNumber> minmax(std::vector
     storm::ClnRationalNumber min = values.front();
     storm::ClnRationalNumber max = values.front();
     for (auto const& vt : values) {
-        if (vt == storm::utility::infinity<storm::ClnRationalNumber>()) {
+        if (vt == storm::numbers::infinity<storm::ClnRationalNumber>()) {
             max = vt;
         } else {
             if (vt < min) {
@@ -401,55 +401,55 @@ std::pair<storm::ClnRationalNumber, storm::ClnRationalNumber> minmax(std::vector
 }
 
 template<>
-uint_fast64_t convertNumber(ClnRationalNumber const& number) {
+uint_fast64_t convert(ClnRationalNumber const& number) {
     return carl::toInt<carl::uint>(number);
 }
 
 template<>
-int_fast64_t convertNumber(ClnRationalNumber const& number) {
+int_fast64_t convert(ClnRationalNumber const& number) {
     return carl::toInt<carl::sint>(number);
 }
 
 template<>
-ClnRationalNumber convertNumber(double const& number) {
+ClnRationalNumber convert(double const& number) {
     return carl::rationalize<ClnRationalNumber>(number);
 }
 
 template<>
-ClnRationalNumber convertNumber(int const& number) {
+ClnRationalNumber convert(int const& number) {
     return carl::rationalize<ClnRationalNumber>(number);
 }
 
 template<>
-ClnRationalNumber convertNumber(NumberTraits<ClnRationalNumber>::IntegerType const& number) {
+ClnRationalNumber convert(NumberTraits<ClnRationalNumber>::IntegerType const& number) {
     return ClnRationalNumber(number);
 }
 
 template<>
-ClnRationalNumber convertNumber(uint_fast64_t const& number) {
+ClnRationalNumber convert(uint_fast64_t const& number) {
     STORM_LOG_ASSERT(static_cast<carl::uint>(number) == number, "Rationalizing failed, because the number is too large.");
     return carl::rationalize<ClnRationalNumber>(static_cast<carl::uint>(number));
 }
 
 template<>
-int64_t convertNumber(NumberTraits<ClnRationalNumber>::IntegerType const& number) {
+int64_t convert(NumberTraits<ClnRationalNumber>::IntegerType const& number) {
     return carl::toInt<carl::sint>(number);
 }
 
 template<>
-typename NumberTraits<ClnRationalNumber>::IntegerType convertNumber(uint_fast64_t const& number) {
+typename NumberTraits<ClnRationalNumber>::IntegerType convert(uint_fast64_t const& number) {
     STORM_LOG_ASSERT(static_cast<unsigned long int>(number) == number, "Conversion failed, because the number is too large.");
     return NumberTraits<ClnRationalNumber>::IntegerType(static_cast<unsigned long int>(number));
 }
 
 template<>
-typename NumberTraits<ClnRationalNumber>::IntegerType convertNumber(int_fast64_t const& number) {
+typename NumberTraits<ClnRationalNumber>::IntegerType convert(int_fast64_t const& number) {
     STORM_LOG_ASSERT(static_cast<long int>(number) == number, "Conversion failed, because the number is too large.");
     return NumberTraits<ClnRationalNumber>::IntegerType(static_cast<long int>(number));
 }
 
 template<>
-typename NumberTraits<ClnRationalNumber>::IntegerType convertNumber(double const& number) {
+typename NumberTraits<ClnRationalNumber>::IntegerType convert(double const& number) {
     if (number < static_cast<double>(std::numeric_limits<uint64_t>::max())) {
         return NumberTraits<ClnRationalNumber>::IntegerType(static_cast<uint64_t>(number));
     } else {
@@ -458,18 +458,18 @@ typename NumberTraits<ClnRationalNumber>::IntegerType convertNumber(double const
 }
 
 template<>
-ClnRationalNumber convertNumber(int_fast64_t const& number) {
+ClnRationalNumber convert(int_fast64_t const& number) {
     STORM_LOG_ASSERT(static_cast<carl::sint>(number) == number, "Rationalizing failed, because the number is too large.");
     return carl::rationalize<ClnRationalNumber>(static_cast<carl::sint>(number));
 }
 
 template<>
-double convertNumber(ClnRationalNumber const& number) {
+double convert(ClnRationalNumber const& number) {
     return carl::toDouble(number);
 }
 
 template<>
-ClnRationalNumber convertNumber(std::string const& number) {
+ClnRationalNumber convert(std::string const& number) {
     ClnRationalNumber result;
     if (carl::try_parse<ClnRationalNumber>(number, result)) {
         return result;
@@ -553,7 +553,7 @@ ClnRationalNumber pow(ClnRationalNumber const& value, int_fast64_t exponent) {
     if (exponent >= 0) {
         return carl::pow(value, exponent);
     } else {
-        return storm::utility::one<ClnRationalNumber>() / carl::pow(value, -exponent);
+        return storm::numbers::one<ClnRationalNumber>() / carl::pow(value, -exponent);
     }
 }
 
@@ -596,7 +596,7 @@ std::pair<storm::GmpRationalNumber, storm::GmpRationalNumber> minmax(std::vector
     storm::GmpRationalNumber min = values.front();
     storm::GmpRationalNumber max = values.front();
     for (auto const& vt : values) {
-        if (vt == storm::utility::infinity<storm::GmpRationalNumber>()) {
+        if (vt == storm::numbers::infinity<storm::GmpRationalNumber>()) {
             max = vt;
         } else {
             if (vt < min) {
@@ -616,7 +616,7 @@ std::pair<storm::GmpRationalNumber, storm::GmpRationalNumber> minmax(std::map<ui
     storm::GmpRationalNumber min = values.begin()->second;
     storm::GmpRationalNumber max = values.begin()->second;
     for (auto const& vt : values) {
-        if (vt.second == storm::utility::infinity<storm::GmpRationalNumber>()) {
+        if (vt.second == storm::numbers::infinity<storm::GmpRationalNumber>()) {
             max = vt.second;
         } else {
             if (vt.second < min) {
@@ -631,71 +631,71 @@ std::pair<storm::GmpRationalNumber, storm::GmpRationalNumber> minmax(std::map<ui
 }
 
 template<>
-uint_fast64_t convertNumber(GmpRationalNumber const& number) {
+uint_fast64_t convert(GmpRationalNumber const& number) {
     return carl::toInt<carl::uint>(number);
 }
 
 template<>
-int_fast64_t convertNumber(GmpRationalNumber const& number) {
+int_fast64_t convert(GmpRationalNumber const& number) {
     return carl::toInt<carl::sint>(number);
 }
 
 template<>
-GmpRationalNumber convertNumber(double const& number) {
+GmpRationalNumber convert(double const& number) {
     return carl::rationalize<GmpRationalNumber>(number);
 }
 
 template<>
-GmpRationalNumber convertNumber(int const& number) {
+GmpRationalNumber convert(int const& number) {
     return carl::rationalize<GmpRationalNumber>(number);
 }
 
 template<>
-GmpRationalNumber convertNumber(uint_fast64_t const& number) {
+GmpRationalNumber convert(uint_fast64_t const& number) {
     STORM_LOG_ASSERT(static_cast<carl::uint>(number) == number, "Rationalizing failed, because the number is too large.");
     return carl::rationalize<GmpRationalNumber>(static_cast<carl::uint>(number));
 }
 
 template<>
-GmpRationalNumber convertNumber(NumberTraits<GmpRationalNumber>::IntegerType const& number) {
+GmpRationalNumber convert(NumberTraits<GmpRationalNumber>::IntegerType const& number) {
     return GmpRationalNumber(number);
 }
 
 template<>
-int64_t convertNumber(NumberTraits<GmpRationalNumber>::IntegerType const& number) {
+int64_t convert(NumberTraits<GmpRationalNumber>::IntegerType const& number) {
     return carl::toInt<carl::sint>(number);
 }
 
 template<>
-typename NumberTraits<GmpRationalNumber>::IntegerType convertNumber(uint_fast64_t const& number) {
+typename NumberTraits<GmpRationalNumber>::IntegerType convert(uint_fast64_t const& number) {
     STORM_LOG_ASSERT(static_cast<unsigned long int>(number) == number, "Conversion failed, because the number is too large.");
     return NumberTraits<GmpRationalNumber>::IntegerType(static_cast<unsigned long int>(number));
 }
 
 template<>
-typename NumberTraits<GmpRationalNumber>::IntegerType convertNumber(int_fast64_t const& number) {
+typename NumberTraits<GmpRationalNumber>::IntegerType convert(int_fast64_t const& number) {
     STORM_LOG_ASSERT(static_cast<long int>(number) == number, "Conversion failed, because the number is too large.");
     return NumberTraits<GmpRationalNumber>::IntegerType(static_cast<long int>(number));
 }
 
 template<>
-typename NumberTraits<GmpRationalNumber>::IntegerType convertNumber(double const& number) {
+typename NumberTraits<GmpRationalNumber>::IntegerType convert(double const& number) {
     return NumberTraits<GmpRationalNumber>::IntegerType(number);
 }
 
 template<>
-GmpRationalNumber convertNumber(int_fast64_t const& number) {
+GmpRationalNumber convert(int_fast64_t const& number) {
     STORM_LOG_ASSERT(static_cast<carl::sint>(number) == number, "Rationalizing failed, because the number is too large.");
     return carl::rationalize<GmpRationalNumber>(static_cast<carl::sint>(number));
 }
 
 template<>
-double convertNumber(GmpRationalNumber const& number) {
+double convert(GmpRationalNumber const& number) {
     return carl::toDouble(number);
 }
 
 template<>
-GmpRationalNumber convertNumber(std::string const& number) {
+GmpRationalNumber convert(std::string const& number) {
     GmpRationalNumber result;
     if (carl::try_parse<GmpRationalNumber>(number, result)) {
         return result;
@@ -780,7 +780,7 @@ GmpRationalNumber pow(GmpRationalNumber const& value, int_fast64_t exponent) {
     if (exponent >= 0) {
         return carl::pow(value, exponent);
     } else {
-        return storm::utility::one<GmpRationalNumber>() / carl::pow(value, -exponent);
+        return storm::numbers::one<GmpRationalNumber>() / carl::pow(value, -exponent);
     }
 }
 
@@ -797,12 +797,12 @@ typename NumberTraits<GmpRationalNumber>::IntegerType denominator(GmpRationalNum
 
 #if defined(STORM_HAVE_GMP) && defined(STORM_HAVE_CLN)
 template<>
-storm::GmpRationalNumber convertNumber(storm::ClnRationalNumber const& number) {
+storm::GmpRationalNumber convert(storm::ClnRationalNumber const& number) {
     return carl::parse<storm::GmpRationalNumber>(to_string(number));
 }
 
 template<>
-storm::ClnRationalNumber convertNumber(storm::GmpRationalNumber const& number) {
+storm::ClnRationalNumber convert(storm::GmpRationalNumber const& number) {
     return carl::parse<storm::ClnRationalNumber>(to_string(number));
 }
 #endif
@@ -810,7 +810,7 @@ storm::ClnRationalNumber convertNumber(storm::GmpRationalNumber const& number) {
 template<>
 storm::RationalFunction infinity() {
     // FIXME: this should be treated more properly.
-    return storm::RationalFunction(convertNumber<RationalFunctionCoefficient>(100000000000));
+    return storm::RationalFunction(convert<RationalFunctionCoefficient>(100000000000));
 }
 
 template<>
@@ -867,73 +867,73 @@ bool isInfinity(storm::RationalFunction const& a) {
 
 template<>
 bool isInteger(storm::RationalFunction const& func) {
-    return storm::utility::isConstant(func) && storm::utility::isOne(func.denominator());
+    return storm::numbers::isConstant(func) && storm::numbers::isOne(func.denominator());
 }
 
 template<>
-RationalFunction convertNumber(double const& number) {
+RationalFunction convert(double const& number) {
     return RationalFunction(carl::rationalize<RationalFunctionCoefficient>(number));
 }
 
 template<>
-RationalFunction convertNumber(int_fast64_t const& number) {
+RationalFunction convert(int_fast64_t const& number) {
     STORM_LOG_ASSERT(static_cast<carl::sint>(number) == number, "Rationalizing failed, because the number is too large.");
     return RationalFunction(carl::rationalize<RationalFunctionCoefficient>(static_cast<carl::sint>(number)));
 }
 
 #if defined(STORM_HAVE_CLN)
 template<>
-RationalFunction convertNumber(ClnRationalNumber const& number) {
-    return RationalFunction(convertNumber<storm::RationalFunctionCoefficient>(number));
+RationalFunction convert(ClnRationalNumber const& number) {
+    return RationalFunction(convert<storm::RationalFunctionCoefficient>(number));
 }
 
 template<>
-ClnRationalNumber convertNumber(RationalFunction const& number) {
+ClnRationalNumber convert(RationalFunction const& number) {
     storm::RationalFunctionCoefficient tmp = number.nominatorAsNumber() / number.denominatorAsNumber();
-    return convertNumber<ClnRationalNumber>(tmp);
+    return convert<ClnRationalNumber>(tmp);
 }
 #endif
 
 #if defined(STORM_HAVE_GMP)
 template<>
-RationalFunction convertNumber(GmpRationalNumber const& number) {
-    return RationalFunction(convertNumber<storm::RationalFunctionCoefficient>(number));
+RationalFunction convert(GmpRationalNumber const& number) {
+    return RationalFunction(convert<storm::RationalFunctionCoefficient>(number));
 }
 
 template<>
-GmpRationalNumber convertNumber(RationalFunction const& number) {
-    return convertNumber<GmpRationalNumber>(number.nominatorAsNumber() / number.denominatorAsNumber());
+GmpRationalNumber convert(RationalFunction const& number) {
+    return convert<GmpRationalNumber>(number.nominatorAsNumber() / number.denominatorAsNumber());
 }
 #endif
 
 template<>
-carl::uint convertNumber(RationalFunction const& func) {
-    return carl::toInt<carl::uint>(convertNumber<RationalFunctionCoefficient>(func));
+carl::uint convert(RationalFunction const& func) {
+    return carl::toInt<carl::uint>(convert<RationalFunctionCoefficient>(func));
 }
 
 template<>
-carl::sint convertNumber(RationalFunction const& func) {
-    return carl::toInt<carl::sint>(convertNumber<RationalFunctionCoefficient>(func));
+carl::sint convert(RationalFunction const& func) {
+    return carl::toInt<carl::sint>(convert<RationalFunctionCoefficient>(func));
 }
 
 template<>
-double convertNumber(RationalFunction const& func) {
-    return carl::toDouble(convertNumber<RationalFunctionCoefficient>(func));
+double convert(RationalFunction const& func) {
+    return carl::toDouble(convert<RationalFunctionCoefficient>(func));
 }
 
 template<>
-RationalFunction convertNumber(RationalFunction const& number) {
+RationalFunction convert(RationalFunction const& number) {
     return number;
 }
 
 template<>
-RationalFunction convertNumber(std::string const& number) {
-    return RationalFunction(convertNumber<RationalFunctionCoefficient>(number));
+RationalFunction convert(std::string const& number) {
+    return RationalFunction(convert<RationalFunctionCoefficient>(number));
 }
 
 template<>
-RationalFunction convertNumber(storm::storage::sparse::state_type const& number) {
-    return RationalFunction(convertNumber<RationalFunctionCoefficient>(number));
+RationalFunction convert(storm::storage::sparse::state_type const& number) {
+    return RationalFunction(convert<RationalFunctionCoefficient>(number));
 }
 
 template<>
@@ -962,30 +962,30 @@ RationalFunction&& simplify(RationalFunction&& value) {
 
 template<>
 bool isAlmostZero(storm::RationalFunction const& a) {
-    return a.isConstant() && isAlmostZero(convertNumber<RationalFunctionCoefficient>(a));
+    return a.isConstant() && isAlmostZero(convert<RationalFunctionCoefficient>(a));
 }
 
 template<>
 bool isAlmostOne(storm::RationalFunction const& a) {
-    return a.isConstant() && isAlmostOne(convertNumber<RationalFunctionCoefficient>(a));
+    return a.isConstant() && isAlmostOne(convert<RationalFunctionCoefficient>(a));
 }
 
 template<>
 bool isNonNegative(storm::RationalFunction const& a) {
-    return a.isConstant() && isNonNegative(convertNumber<RationalFunctionCoefficient>(a));
+    return a.isConstant() && isNonNegative(convert<RationalFunctionCoefficient>(a));
 }
 
 template<>
 bool isPositive(storm::RationalFunction const& a) {
-    return a.isConstant() && isPositive(convertNumber<RationalFunctionCoefficient>(a));
+    return a.isConstant() && isPositive(convert<RationalFunctionCoefficient>(a));
 }
 
 template<>
 bool isBetween(storm::RationalFunction const& a, storm::RationalFunction const& b, storm::RationalFunction const& c, bool strict) {
     STORM_LOG_ASSERT(a.isConstant(), "Lower bound must be a constant.");
     STORM_LOG_ASSERT(c.isConstant(), "Upper bound must be a constant.");
-    return b.isConstant() && isBetween(convertNumber<RationalFunctionCoefficient>(a), convertNumber<RationalFunctionCoefficient>(b),
-                                       convertNumber<RationalFunctionCoefficient>(c), strict);
+    return b.isConstant() &&
+           isBetween(convert<RationalFunctionCoefficient>(a), convert<RationalFunctionCoefficient>(b), convert<RationalFunctionCoefficient>(c), strict);
 }
 
 template<>
@@ -1023,7 +1023,7 @@ RationalFunction pow(RationalFunction const& value, int_fast64_t exponent) {
     if (exponent >= 0) {
         return carl::pow(value, exponent);
     } else {
-        return storm::utility::one<RationalFunction>() / carl::pow(value, -exponent);
+        return storm::numbers::one<RationalFunction>() / carl::pow(value, -exponent);
     }
 }
 
@@ -1045,100 +1045,100 @@ std::string to_string(RationalFunction const& f) {
 }
 
 template<>
-double convertNumber(std::string const& value) {
-    return convertNumber<double>(convertNumber<storm::RationalNumber>(value));
+double convert(std::string const& value) {
+    return convert<double>(convert<storm::RationalNumber>(value));
 }
 
 template<>
-storm::Interval convertNumber(double const& number) {
+storm::Interval convert(double const& number) {
     return storm::Interval(number);
 }
 
 template<>
-storm::Interval convertNumber(uint64_t const& number) {
-    return storm::Interval(convertNumber<double>(number));
+storm::Interval convert(uint64_t const& number) {
+    return storm::Interval(convert<double>(number));
 }
 
 template<>
-storm::RationalInterval convertNumber(double const& number) {
-    return storm::RationalInterval(convertNumber<storm::RationalNumber>(number));
+storm::RationalInterval convert(double const& number) {
+    return storm::RationalInterval(convert<storm::RationalNumber>(number));
 }
 
 template<>
-storm::RationalInterval convertNumber(uint64_t const& number) {
-    return storm::RationalInterval(convertNumber<storm::RationalNumber>(number));
+storm::RationalInterval convert(uint64_t const& number) {
+    return storm::RationalInterval(convert<storm::RationalNumber>(number));
 }
 
 #if defined(STORM_HAVE_GMP)
 template<>
-storm::Interval convertNumber(storm::GmpRationalNumber const& n) {
-    return storm::Interval(convertNumber<double>(n));
+storm::Interval convert(storm::GmpRationalNumber const& n) {
+    return storm::Interval(convert<double>(n));
 }
 
 template<>
-storm::GmpRationalNumber convertNumber(storm::Interval const& number) {
+storm::GmpRationalNumber convert(storm::Interval const& number) {
     STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert.");
-    return convertNumber<storm::GmpRationalNumber>(number.lower());
+    return convert<storm::GmpRationalNumber>(number.lower());
 }
 
 template<>
-storm::RationalInterval convertNumber(storm::GmpRationalNumber const& n) {
-    return storm::RationalInterval(convertNumber<storm::RationalNumber>(n));
+storm::RationalInterval convert(storm::GmpRationalNumber const& n) {
+    return storm::RationalInterval(convert<storm::RationalNumber>(n));
 }
 
 template<>
-storm::GmpRationalNumber convertNumber(storm::RationalInterval const& number) {
+storm::GmpRationalNumber convert(storm::RationalInterval const& number) {
     STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert.");
-    return convertNumber<storm::GmpRationalNumber>(number.lower());
+    return convert<storm::GmpRationalNumber>(number.lower());
 }
 #endif
 
 #if defined(STORM_HAVE_CLN)
 template<>
-storm::Interval convertNumber(storm::ClnRationalNumber const& n) {
-    return storm::Interval(convertNumber<double>(n));
+storm::Interval convert(storm::ClnRationalNumber const& n) {
+    return storm::Interval(convert<double>(n));
 }
 
 template<>
-storm::ClnRationalNumber convertNumber(storm::Interval const& number) {
+storm::ClnRationalNumber convert(storm::Interval const& number) {
     STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert.");
-    return convertNumber<storm::ClnRationalNumber>(number.lower());
+    return convert<storm::ClnRationalNumber>(number.lower());
 }
 
 template<>
-storm::RationalInterval convertNumber(storm::ClnRationalNumber const& n) {
-    return storm::RationalInterval(convertNumber<storm::RationalNumber>(n));
+storm::RationalInterval convert(storm::ClnRationalNumber const& n) {
+    return storm::RationalInterval(convert<storm::RationalNumber>(n));
 }
 
 template<>
-storm::ClnRationalNumber convertNumber(storm::RationalInterval const& number) {
+storm::ClnRationalNumber convert(storm::RationalInterval const& number) {
     STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert.");
-    return convertNumber<storm::ClnRationalNumber>(number.lower());
+    return convert<storm::ClnRationalNumber>(number.lower());
 }
 #endif
 
 template<>
-double convertNumber(storm::Interval const& number) {
+double convert(storm::Interval const& number) {
     STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert.");
     return number.lower();
 }
 
 template<>
-double convertNumber(storm::RationalInterval const& number) {
+double convert(storm::RationalInterval const& number) {
     STORM_LOG_ASSERT(number.isPointInterval(), "Rational interval must be a point interval to convert.");
-    return convertNumber<double>(number.lower());
+    return convert<double>(number.lower());
 }
 
 template<>
-storm::Interval convertNumber(storm::RationalInterval const& number) {
+storm::Interval convert(storm::RationalInterval const& number) {
     using BT = storm::IntervalBaseType<storm::Interval>;
-    return storm::Interval(convertNumber<BT>(number.lower()), convertNumber<BT>(number.upper()));
+    return storm::Interval(convert<BT>(number.lower()), convert<BT>(number.upper()));
 }
 
 template<>
-storm::RationalInterval convertNumber(storm::Interval const& number) {
+storm::RationalInterval convert(storm::Interval const& number) {
     using BT = storm::IntervalBaseType<storm::RationalInterval>;
-    return storm::RationalInterval(convertNumber<BT>(number.lower()), convertNumber<BT>(number.upper()));
+    return storm::RationalInterval(convert<BT>(number.lower()), convert<BT>(number.upper()));
 }
 
 template<>
@@ -1246,11 +1246,11 @@ template uint64_t bitsize(storm::storage::sparse::state_type const& number);
 // int64_t
 template int64_t zero();
 template int64_t one();
-template int64_t convertNumber(int64_t const&);
+template int64_t convert(int64_t const&);
 
 // other instantiations
-template unsigned long convertNumber(long const&);
-template double convertNumber(long const&);
+template unsigned long convert(long const&);
+template double convert(long const&);
 
 #if defined(STORM_HAVE_CLN)
 // Instantiations for (CLN) rational number.
@@ -1268,8 +1268,8 @@ template bool isAlmostZero(storm::ClnRationalNumber const& value);
 template bool isAlmostOne(storm::ClnRationalNumber const& value);
 template bool isApproxEqual(storm::ClnRationalNumber const& a, storm::ClnRationalNumber const& b, storm::ClnRationalNumber const& precision, bool relative);
 template bool isBetween(storm::ClnRationalNumber const& a, storm::ClnRationalNumber const& b, storm::ClnRationalNumber const& c, bool strict);
-template storm::NumberTraits<ClnRationalNumber>::IntegerType convertNumber(storm::NumberTraits<ClnRationalNumber>::IntegerType const& number);
-template storm::ClnRationalNumber convertNumber(storm::ClnRationalNumber const& number);
+template storm::numbers::NumberTraits<ClnRationalNumber>::IntegerType convert(storm::numbers::NumberTraits<ClnRationalNumber>::IntegerType const& number);
+template storm::ClnRationalNumber convert(storm::ClnRationalNumber const& number);
 template storm::ClnRationalNumber simplify(storm::ClnRationalNumber value);
 template std::pair<storm::ClnRationalNumber, storm::ClnRationalNumber> minmax(std::map<uint64_t, storm::ClnRationalNumber> const&);
 template storm::ClnRationalNumber minimum(std::map<uint64_t, storm::ClnRationalNumber> const&);
@@ -1300,8 +1300,8 @@ template bool isAlmostZero(storm::GmpRationalNumber const& value);
 template bool isAlmostOne(storm::GmpRationalNumber const& value);
 template bool isBetween(storm::GmpRationalNumber const&, storm::GmpRationalNumber const&, storm::GmpRationalNumber const&, bool);
 template bool isApproxEqual(storm::GmpRationalNumber const& a, storm::GmpRationalNumber const& b, storm::GmpRationalNumber const& precision, bool relative);
-template storm::NumberTraits<GmpRationalNumber>::IntegerType convertNumber(storm::NumberTraits<GmpRationalNumber>::IntegerType const& number);
-template storm::GmpRationalNumber convertNumber(storm::GmpRationalNumber const& number);
+template storm::numbers::NumberTraits<GmpRationalNumber>::IntegerType convert(storm::numbers::NumberTraits<GmpRationalNumber>::IntegerType const& number);
+template storm::GmpRationalNumber convert(storm::GmpRationalNumber const& number);
 template storm::GmpRationalNumber simplify(storm::GmpRationalNumber value);
 template storm::GmpRationalNumber minimum(std::map<uint64_t, storm::GmpRationalNumber> const&);
 template storm::GmpRationalNumber maximum(std::map<uint64_t, storm::GmpRationalNumber> const&);
@@ -1335,7 +1335,7 @@ template bool isAlmostZero(Interval const& value);
 template bool isNonNegative(Interval const& value);
 template bool isPositive(Interval const& value);
 template bool isBetween(Interval const&, Interval const&, Interval const& value, bool);
-template Interval convertNumber(Interval const&);
+template Interval convert(Interval const&);
 
 template std::string to_string(storm::Interval const& value);
 
@@ -1349,8 +1349,8 @@ template bool isAlmostZero(RationalInterval const& value);
 template bool isNonNegative(RationalInterval const& value);
 template bool isPositive(RationalInterval const& value);
 template bool isBetween(RationalInterval const&, RationalInterval const&, RationalInterval const& value, bool);
-template RationalInterval convertNumber(RationalInterval const&);
+template RationalInterval convert(RationalInterval const&);
 
 template std::string to_string(storm::RationalInterval const& value);
-}  // namespace utility
+}  // namespace numbers
 }  // namespace storm

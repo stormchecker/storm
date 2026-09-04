@@ -5,9 +5,9 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/IOSettings.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/string.h"
 
@@ -28,7 +28,7 @@ std::string getString(storm::json<storm::RationalNumber> const& structure, std::
     if (structure.is_number_integer()) {
         return std::to_string(structure.get<int64_t>());
     } else if (structure.is_number_float()) {
-        return storm::utility::to_string(structure.get<storm::RationalNumber>());
+        return storm::numbers::to_string(structure.get<storm::RationalNumber>());
     } else if (structure.is_string()) {
         return structure.get<std::string>();
     } else if (structure.is_boolean()) {

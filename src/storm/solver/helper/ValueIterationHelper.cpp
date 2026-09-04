@@ -30,9 +30,9 @@ class VIOperatorBackend {
     void applyUpdate(ValueType& currValue, [[maybe_unused]] uint64_t rowGroup) {
         if (isConverged) {
             if constexpr (Relative) {
-                isConverged = storm::utility::abs<ValueType>(currValue - *best) <= storm::utility::abs<ValueType>(precision * currValue);
+                isConverged = storm::numbers::abs<ValueType>(currValue - *best) <= storm::numbers::abs<ValueType>(precision * currValue);
             } else {
-                isConverged = storm::utility::abs<ValueType>(currValue - *best) <= precision;
+                isConverged = storm::numbers::abs<ValueType>(currValue - *best) <= precision;
             }
         }
         currValue = std::move(*best);

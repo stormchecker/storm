@@ -9,10 +9,10 @@
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/expressions/BinaryRelationType.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/LinearCoefficientVisitor.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -36,7 +36,7 @@ HighsConstraintData createConstraintData(typename HighsLpSolver<ValueType, RawMo
                                          std::map<storm::expressions::Variable, uint64_t> const& variableToIndexMap) {
     HighsConstraintData result;
     if constexpr (RawMode) {
-        result.rhs = storm::utility::convertNumber<double>(constraint.rhs);
+        result.rhs = storm::numbers::convert<double>(constraint.rhs);
         result.relationType = constraint.relationType;
         result.variableIndices.reserve(constraint.lhsVariableIndices.size());
         result.coefficients.reserve(constraint.lhsCoefficients.size());
@@ -44,7 +44,7 @@ HighsConstraintData createConstraintData(typename HighsLpSolver<ValueType, RawMo
             result.variableIndices.push_back(static_cast<HighsInt>(variable));
         }
         for (auto const& coefficient : constraint.lhsCoefficients) {
-            result.coefficients.push_back(storm::utility::convertNumber<double>(coefficient));
+            result.coefficients.push_back(storm::numbers::convert<double>(coefficient));
         }
     } else {
         STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
@@ -53,14 +53,14 @@ HighsConstraintData createConstraintData(typename HighsLpSolver<ValueType, RawMo
         storm::expressions::LinearCoefficientVisitor::VariableCoefficients rightCoefficients =
             storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(1));
         leftCoefficients.separateVariablesFromConstantPart(rightCoefficients);
-        result.rhs = storm::utility::convertNumber<double>(rightCoefficients.getConstantPart());
+        result.rhs = storm::numbers::convert<double>(rightCoefficients.getConstantPart());
         result.relationType = constraint.getBaseExpression().asBinaryRelationExpression().getRelationType();
         result.variableIndices.reserve(leftCoefficients.size());
         result.coefficients.reserve(leftCoefficients.size());
         for (auto const& variableCoefficientPair : leftCoefficients) {
             auto variableIndexPair = variableToIndexMap.find(variableCoefficientPair.first);
             result.variableIndices.push_back(static_cast<HighsInt>(variableIndexPair->second));
-            result.coefficients.push_back(storm::utility::convertNumber<double>(variableCoefficientPair.second));
+            result.coefficients.push_back(storm::numbers::convert<double>(variableCoefficientPair.second));
         }
     }
     return result;
@@ -109,15 +109,15 @@ typename HighsLpSolver<ValueType, RawMode>::Variable HighsLpSolver<ValueType, Ra
         this->variableToIndexMap.emplace(resultVar, nextVariableIndex);
     }
 
-    double lower = lowerBound.has_value() ? storm::utility::convertNumber<double>(*lowerBound) : -highInfinity;
-    double upper = upperBound.has_value() ? storm::utility::convertNumber<double>(*upperBound) : highInfinity;
+    double lower = lowerBound.has_value() ? storm::numbers::convert<double>(*lowerBound) : -highInfinity;
+    double upper = upperBound.has_value() ? storm::numbers::convert<double>(*upperBound) : highInfinity;
     if (type == VariableType::Binary) {
         lower = 0.0;
         upper = 1.0;
     }
 
     HighsStatus addColStatus =
-        highs.addCol(storm::utility::convertNumber<double>(objectiveFunctionCoefficient), toHighsBound(lower), toHighsBound(upper), 0, nullptr, nullptr);
+        highs.addCol(storm::numbers::convert<double>(objectiveFunctionCoefficient), toHighsBound(lower), toHighsBound(upper), 0, nullptr, nullptr);
     STORM_LOG_THROW(addColStatus != HighsStatus::kError, storm::exceptions::InvalidStateException, "Unable to add variable to HiGHS model.");
     HighsInt column = static_cast<HighsInt>(nextVariableIndex);
 
@@ -309,7 +309,7 @@ ValueType HighsLpSolver<ValueType, RawMode>::getContinuousValue(Variable const& 
     }
     STORM_LOG_ASSERT(variableIndex < nextVariableIndex, "Variable Index exceeds highest value.");
 
-    return storm::utility::convertNumber<ValueType>(highs.getSolution().col_value[variableIndex]);
+    return storm::numbers::convert<ValueType>(highs.getSolution().col_value[variableIndex]);
 }
 
 template<typename ValueType, bool RawMode>
@@ -352,7 +352,7 @@ template<typename ValueType, bool RawMode>
 ValueType HighsLpSolver<ValueType, RawMode>::getObjectiveValue() const {
     STORM_LOG_THROW(this->isOptimal(), storm::exceptions::InvalidAccessException,
                     "Unable to get HiGHS solution from a model that has not been solved optimally.");
-    return storm::utility::convertNumber<ValueType>(highs.getObjectiveValue());
+    return storm::numbers::convert<ValueType>(highs.getObjectiveValue());
 }
 
 template<typename ValueType, bool RawMode>
@@ -373,7 +373,7 @@ void HighsLpSolver<ValueType, RawMode>::pop() {
 
 template<typename ValueType, bool RawMode>
 void HighsLpSolver<ValueType, RawMode>::setMaximalMILPGap(ValueType const& gap, bool relative) {
-    double gapAsDouble = storm::utility::convertNumber<double>(gap);
+    double gapAsDouble = storm::numbers::convert<double>(gap);
     HighsStatus status = relative ? highs.setOptionValue("mip_rel_gap", gapAsDouble) : highs.setOptionValue("mip_abs_gap", gapAsDouble);
     STORM_LOG_THROW(status != HighsStatus::kError, storm::exceptions::InvalidStateException, "Unable to set HiGHS MILP gap.");
 }
@@ -383,11 +383,11 @@ ValueType HighsLpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
     auto const& info = highs.getInfo();
     // HiGHS reports the relative MILP gap as a percentage.
     double relativeGap = info.mip_gap / 100.0;
-    auto result = storm::utility::convertNumber<ValueType>(relativeGap);
+    auto result = storm::numbers::convert<ValueType>(relativeGap);
     if (relative) {
         return result;
     } else {
-        return storm::utility::abs<ValueType>(result * getObjectiveValue());
+        return storm::numbers::abs<ValueType>(result * getObjectiveValue());
     }
 }
 

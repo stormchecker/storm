@@ -6,7 +6,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -40,8 +40,8 @@ void ParameterRegionParser<ParametricType>::parseParameterBoundaries(Valuation& 
         }
     }
     if (var) {
-        CoefficientType lb = storm::utility::convertNumber<CoefficientType>(parameterBoundariesString.substr(0, positionOfFirstRelation));
-        CoefficientType ub = storm::utility::convertNumber<CoefficientType>(parameterBoundariesString.substr(positionOfSecondRelation + 2));
+        CoefficientType lb = storm::numbers::convert<CoefficientType>(parameterBoundariesString.substr(0, positionOfFirstRelation));
+        CoefficientType ub = storm::numbers::convert<CoefficientType>(parameterBoundariesString.substr(positionOfSecondRelation + 2));
         lowerBoundaries.emplace(std::make_pair(*var, lb));
         upperBoundaries.emplace(std::make_pair(*var, ub));
     } else {
@@ -78,7 +78,7 @@ storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<Parametric
     Valuation lowerBoundaries;
     Valuation upperBoundaries;
     std::vector<std::string> parameterBoundaries;
-    CoefficientType bound = storm::utility::convertNumber<CoefficientType>(regionBound);
+    CoefficientType bound = storm::numbers::convert<CoefficientType>(regionBound);
     for (auto const& v : consideredVariables) {
         lowerBoundaries.emplace(std::make_pair(v, 0 + bound));
         upperBoundaries.emplace(std::make_pair(v, 1 - bound));

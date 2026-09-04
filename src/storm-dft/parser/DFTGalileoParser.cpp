@@ -128,7 +128,7 @@ storm::dft::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const 
                 } else if (type == "mutex") {
                     builder.addMutex(name, childNames);
                 } else if (type == "fdep") {
-                    builder.addPdep(name, childNames, storm::utility::one<ValueType>());
+                    builder.addPdep(name, childNames, storm::numbers::one<ValueType>());
                 } else if (boost::starts_with(type, "pdep=")) {
                     ValueType probability = valueParser.parseValue(type.substr(5));
                     builder.addPdep(name, childNames, probability);
@@ -304,7 +304,7 @@ void DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std
                             "Distribution " << toString(BEType::PROBABILITY) << " requires parameter 'prob' for BE '" << name << "'.");
             if (!dorm.has_value()) {
                 STORM_LOG_WARN("No dormancy factor was provided for basic element '" << name << "'. Assuming dormancy factor of 1.");
-                dorm = storm::utility::one<ValueType>();
+                dorm = storm::numbers::one<ValueType>();
             }
             builder.addBasicElementProbability(name, prob.value(), dorm.value());
             break;
@@ -313,7 +313,7 @@ void DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std
                             "Distribution " << toString(BEType::EXPONENTIAL) << " requires parameter 'lambda' for BE '" << name << "'.");
             if (!dorm.has_value()) {
                 STORM_LOG_WARN("No dormancy factor was provided for basic element '" << name << "'. Assuming dormancy factor of 1.");
-                dorm = storm::utility::one<ValueType>();
+                dorm = storm::numbers::one<ValueType>();
             }
             builder.addBasicElementExponential(name, lambda.value(), dorm.value());
             break;
@@ -324,7 +324,7 @@ void DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std
                             "Distribution " << toString(BEType::ERLANG) << " requires parameter 'phases' for BE '" << name << "'.");
             if (!dorm.has_value()) {
                 STORM_LOG_WARN("No dormancy factor was provided for basic element '" << name << "'. Assuming dormancy factor of 1.");
-                dorm = storm::utility::one<ValueType>();
+                dorm = storm::numbers::one<ValueType>();
             }
             builder.addBasicElementErlang(name, lambda.value(), phases.value(), dorm.value());
             break;

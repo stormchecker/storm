@@ -145,7 +145,7 @@ class MultiObjectiveSchedRestModelCheckerTest : public ::testing::Test {
     typedef std::vector<storm::RationalNumber> Point;
 
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
 
     std::vector<Point> parsePoints(std::vector<std::string> const& input) {
@@ -189,7 +189,7 @@ class MultiObjectiveSchedRestModelCheckerTest : public ::testing::Test {
                 s << ", ";
             }
             if (asDouble) {
-                s << storm::utility::convertNumber<double>(pi);
+                s << storm::numbers::convert<double>(pi);
             } else {
                 s << pi;
             }
@@ -292,7 +292,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, steps) {
     {
         auto result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-        auto expected = storm::utility::convertNumber<ValueType, std::string>("0.375");
+        auto expected = storm::numbers::convert<ValueType, std::string>("0.375");
         EXPECT_EQ(result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()], expected);
     }
     ++formulaIndex;

@@ -1,10 +1,10 @@
 #include "storm/storage/jani/traverser/RewardModelInformation.h"
 
+#include "storm/numbers/constants.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
-#include "storm/utility/constants.h"
 
 namespace storm {
 namespace jani {
@@ -42,7 +42,7 @@ RewardModelInformation::RewardModelInformation(Model const& model, storm::expres
         }
     }
     auto initExpr = storm::jani::substituteJaniExpression(rewardModelExpression, initialSubstitution, true).simplify();
-    if (containsNonTransientVariable || initExpr.containsVariables() || !storm::utility::isZero(initExpr.evaluateAsRational())) {
+    if (containsNonTransientVariable || initExpr.containsVariables() || !storm::numbers::isZero(initExpr.evaluateAsRational())) {
         stateRewards = true;
         actionRewards = true;
         transitionRewards = true;

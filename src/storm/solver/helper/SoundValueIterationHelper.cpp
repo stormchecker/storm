@@ -3,9 +3,9 @@
 #include <type_traits>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/utility/Extremum.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
@@ -112,8 +112,8 @@ class SVIBackend {
         // keep track of bounds a,b
         if constexpr (Stage == SVIStage::Initial) {
             if (allYLessOne) {
-                if (yCurr < storm::utility::one<ValueType>()) {
-                    ValueType val = xCurr / (storm::utility::one<ValueType>() - yCurr);
+                if (yCurr < storm::numbers::one<ValueType>()) {
+                    ValueType val = xCurr / (storm::numbers::one<ValueType>() - yCurr);
                     curr_a &= val;
                     curr_b &= val;
                 } else {
@@ -121,8 +121,8 @@ class SVIBackend {
                 }
             }
         } else {
-            STORM_LOG_ASSERT(yCurr < storm::utility::one<ValueType>(), "Unexpected y value for this stage.");
-            ValueType val = xCurr / (storm::utility::one<ValueType>() - yCurr);
+            STORM_LOG_ASSERT(yCurr < storm::numbers::one<ValueType>(), "Unexpected y value for this stage.");
+            ValueType val = xCurr / (storm::numbers::one<ValueType>() - yCurr);
             curr_a &= val;
             curr_b &= val;
         }
@@ -219,7 +219,7 @@ class SVIBackend {
 template<typename ValueType, bool TrivialRowGrouping>
 void SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::trySetAverage(std::vector<ValueType>& out) const {
     if (a.has_value() && b.has_value()) {
-        ValueType abAvg = (*a + *b) / storm::utility::convertNumber<ValueType, uint64_t>(2);
+        ValueType abAvg = (*a + *b) / storm::numbers::convert<ValueType, uint64_t>(2);
         storm::utility::vector::applyPointwise(xy.first, xy.second, out,
                                                [&abAvg](ValueType const& xVal, ValueType const& yVal) -> ValueType { return xVal + abAvg * yVal; });
     }
@@ -267,17 +267,17 @@ bool SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::checkCon
     }
     if (relative) {
         auto [min, max] = std::minmax(*a, *b);
-        if (min >= storm::utility::zero<ValueType>()) {
+        if (min >= storm::numbers::zero<ValueType>()) {
             ValueType const val = (max - min) / precision - min;
             for (; convergenceCheckState < xy.first.size(); getNextConvergenceCheckState()) {
-                if (!storm::utility::isZero(xy.second[convergenceCheckState]) && val > xy.first[convergenceCheckState] / xy.second[convergenceCheckState]) {
+                if (!storm::numbers::isZero(xy.second[convergenceCheckState]) && val > xy.first[convergenceCheckState] / xy.second[convergenceCheckState]) {
                     return false;
                 }
             }
-        } else if (max <= storm::utility::zero<ValueType>()) {
+        } else if (max <= storm::numbers::zero<ValueType>()) {
             ValueType const val = (min - max) / precision - max;
             for (; convergenceCheckState < xy.first.size(); getNextConvergenceCheckState()) {
-                if (!storm::utility::isZero(xy.second[convergenceCheckState]) && val < xy.first[convergenceCheckState] / xy.second[convergenceCheckState]) {
+                if (!storm::numbers::isZero(xy.second[convergenceCheckState]) && val < xy.first[convergenceCheckState] / xy.second[convergenceCheckState]) {
                     return false;
                 }
             }
@@ -286,11 +286,11 @@ bool SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::checkCon
                 ValueType l = xy.first[convergenceCheckState] + min * xy.second[convergenceCheckState];
                 ValueType u = xy.first[convergenceCheckState] + max * xy.second[convergenceCheckState];
                 STORM_LOG_ASSERT(u >= l, "Upper bound less than lower bound.");
-                if (l > storm::utility::zero<ValueType>()) {
+                if (l > storm::numbers::zero<ValueType>()) {
                     if ((u - l) > l * precision) {
                         return false;
                     }
-                } else if (u < storm::utility::zero<ValueType>()) {
+                } else if (u < storm::numbers::zero<ValueType>()) {
                     if ((l - u) < u * precision) {
                         return false;
                     }
@@ -302,7 +302,7 @@ bool SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::checkCon
             }
         }
     } else {
-        ValueType val = precision / storm::utility::abs<ValueType>(*b - *a);
+        ValueType val = precision / storm::numbers::abs<ValueType>(*b - *a);
         for (; convergenceCheckState < xy.first.size(); getNextConvergenceCheckState()) {
             if (xy.second[convergenceCheckState] > val) {
                 return false;
@@ -319,8 +319,8 @@ typename SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData Sound
     bool relative, ValueType const& precision, BackendType&& backend, std::function<SolverStatus(SVIData const&)> const& iterationCallback,
     std::optional<storm::storage::BitVector> const& relevantValues, uint64_t convergenceCheckState) const {
     if constexpr (BackendType::CurrentStage == SVIStage::Initial) {
-        xy.first.assign(xy.first.size(), storm::utility::zero<ValueType>());
-        xy.second.assign(xy.first.size(), storm::utility::one<ValueType>());
+        xy.first.assign(xy.first.size(), storm::numbers::zero<ValueType>());
+        xy.second.assign(xy.first.size(), storm::numbers::one<ValueType>());
         convergenceCheckState = relevantValues.has_value() ? relevantValues->getNextSetIndex(0ull) : 0ull;
     }
     std::function<void()> getNextConvergenceCheckState;
@@ -380,7 +380,7 @@ typename SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData Sound
     ValueType const& precision, std::optional<storm::OptimizationDirection> const& dir, std::optional<ValueType> const& lowerBound,
     std::optional<ValueType> const& upperBound, std::function<SolverStatus(SVIData const&)> const& iterationCallback,
     std::optional<storm::storage::BitVector> const& relevantValues) const {
-    std::pair<std::vector<ValueType> const*, ValueType> offsetsPair{&offsets, storm::utility::zero<ValueType>()};
+    std::pair<std::vector<ValueType> const*, ValueType> offsetsPair{&offsets, storm::numbers::zero<ValueType>()};
     if (!dir.has_value() || maximize(*dir)) {
         // When we maximize, a is the lower bound and b is the upper bound
         return SVI<storm::OptimizationDirection::Maximize>(xy, offsetsPair, numIterations, relative, precision, lowerBound, upperBound, iterationCallback,

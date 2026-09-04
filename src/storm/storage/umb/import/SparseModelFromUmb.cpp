@@ -195,33 +195,33 @@ storm::storage::SparseMatrix<ValueType> constructTransitionMatrix(storm::umb::Um
     if (umbModel.branchToProbability.hasValue()) {
         auto const probType = umbModel.index.transitionSystem.branchProbabilityType.value();
         auto result = createBranchMatrix<ValueType>(umbModel, umbModel.branchToProbability, probType);
-        if constexpr (storm::NumberTraits<ValueType>::IsExact) {
+        if constexpr (storm::numbers::NumberTraits<ValueType>::IsExact) {
             if (umbModel.branchToProbability.isType<double>() || umbModel.branchToProbability.isType<storm::Interval>()) {
                 // If the branch probabilities are imprecise, we might need to adapt the matrix rows to ensure they sum up to 1.
                 uint64_t numNormalized{0};
-                auto maxDiff = storm::utility::zero<storm::IntervalBaseType<ValueType>>();
+                auto maxDiff = storm::numbers::zero<storm::IntervalBaseType<ValueType>>();
                 auto updateNormStats = [&numNormalized, &maxDiff](auto const& rowSum) {
                     maxDiff = std::max(
-                        maxDiff, storm::utility::abs<storm::IntervalBaseType<ValueType>>(storm::utility::one<storm::IntervalBaseType<ValueType>>() - rowSum));
+                        maxDiff, storm::numbers::abs<storm::IntervalBaseType<ValueType>>(storm::numbers::one<storm::IntervalBaseType<ValueType>>() - rowSum));
                     ++numNormalized;
                 };
 
                 for (uint64_t rowIndex = 0; rowIndex < result.getRowCount(); ++rowIndex) {
                     auto const rowSum = result.getRowSum(rowIndex);
                     if constexpr (storm::IsIntervalType<ValueType>) {
-                        if (rowSum.lower() > storm::utility::one<ValueType>()) {
+                        if (rowSum.lower() > storm::numbers::one<ValueType>()) {
                             updateNormStats(rowSum.lower());
                             for (auto& entry : result.getRow(rowIndex)) {
                                 entry.setValue({entry.getValue().lower() / rowSum.lower(), entry.getValue().upper()});
                             }
-                        } else if (rowSum.upper() < storm::utility::one<ValueType>()) {
+                        } else if (rowSum.upper() < storm::numbers::one<ValueType>()) {
                             updateNormStats(rowSum.upper());
                             for (auto& entry : result.getRow(rowIndex)) {
                                 entry.setValue({entry.getValue().lower(), entry.getValue().upper() / rowSum.upper()});
                             }
                         }
                     } else {
-                        if (!storm::utility::isOne(rowSum)) {
+                        if (!storm::numbers::isOne(rowSum)) {
                             updateNormStats(rowSum);
                             for (auto& entry : result.getRow(rowIndex)) {
                                 entry.setValue(entry.getValue() / rowSum);
@@ -236,7 +236,7 @@ storm::storage::SparseMatrix<ValueType> constructTransitionMatrix(storm::umb::Um
         }
         return result;
     } else {
-        return createBranchMatrix<ValueType>(umbModel, storm::utility::one<ValueType>());
+        return createBranchMatrix<ValueType>(umbModel, storm::numbers::one<ValueType>());
     }
 }
 

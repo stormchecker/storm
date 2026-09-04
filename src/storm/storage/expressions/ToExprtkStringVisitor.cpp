@@ -1,6 +1,6 @@
 #include "storm/storage/expressions/ToExprtkStringVisitor.h"
 
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 namespace storm {
 namespace expressions {
@@ -112,12 +112,12 @@ boost::any ToExprtkStringVisitor::visit(BinaryNumericalFunctionExpression const&
         case BinaryNumericalFunctionExpression::OperatorType::Logarithm:
             if (expression.getSecondOperand()->isLiteral()) {
                 auto base = expression.getSecondOperand()->evaluateAsRational();
-                if (base == storm::utility::convertNumber<storm::RationalNumber, uint64_t>(2ull)) {
+                if (base == storm::numbers::convert<storm::RationalNumber, uint64_t>(2ull)) {
                     stream << "log2(";
                     expression.getFirstOperand()->accept(*this, data);
                     stream << ")";
                     break;
-                } else if (base == storm::utility::convertNumber<storm::RationalNumber, uint64_t>(10ull)) {
+                } else if (base == storm::numbers::convert<storm::RationalNumber, uint64_t>(10ull)) {
                     stream << "log10(";
                     expression.getFirstOperand()->accept(*this, data);
                     stream << ")";

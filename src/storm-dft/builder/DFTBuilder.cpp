@@ -142,9 +142,9 @@ void DFTBuilder<ValueType>::addBasicElementConst(std::string const& name, bool f
 template<typename ValueType>
 void DFTBuilder<ValueType>::addBasicElementProbability(std::string const& name, ValueType probability, ValueType dormancyFactor) {
     // Handle special cases
-    if (storm::utility::isZero<ValueType>(probability)) {
+    if (storm::numbers::isZero<ValueType>(probability)) {
         addBasicElementConst(name, false);
-    } else if (storm::utility::isOne<ValueType>(probability)) {
+    } else if (storm::numbers::isOne<ValueType>(probability)) {
         addBasicElementConst(name, true);
     } else {
         STORM_LOG_THROW(isValidProbability(probability), storm::exceptions::WrongFormatException,
@@ -158,10 +158,10 @@ void DFTBuilder<ValueType>::addBasicElementProbability(std::string const& name, 
 template<typename ValueType>
 void DFTBuilder<ValueType>::addBasicElementExponential(std::string const& name, ValueType rate, ValueType dormancyFactor, bool transient) {
     // Handle special cases
-    if (storm::utility::isZero<ValueType>(rate)) {
+    if (storm::numbers::isZero<ValueType>(rate)) {
         addBasicElementConst(name, false);
     } else {
-        STORM_LOG_THROW(!storm::utility::isConstant(rate) || storm::utility::isPositive(rate), storm::exceptions::WrongFormatException,
+        STORM_LOG_THROW(!storm::numbers::isConstant(rate) || storm::numbers::isPositive(rate), storm::exceptions::WrongFormatException,
                         "Failure rate " << rate << " of BE " << name << " must be positive.");
         STORM_LOG_THROW(isValidProbability(dormancyFactor), storm::exceptions::WrongFormatException,
                         "Dormancy factor " << dormancyFactor << " of BE " << name << " is not within interval [0, 1].");
@@ -172,13 +172,13 @@ void DFTBuilder<ValueType>::addBasicElementExponential(std::string const& name, 
 template<typename ValueType>
 void DFTBuilder<ValueType>::addBasicElementErlang(std::string const& name, ValueType rate, unsigned phases, ValueType dormancyFactor) {
     // Handle special cases
-    if (storm::utility::isZero<ValueType>(rate)) {
+    if (storm::numbers::isZero<ValueType>(rate)) {
         addBasicElementConst(name, false);
     } else if (phases == 1) {
         // shape=1 reduces to exponential distribution
         addBasicElementExponential(name, rate, dormancyFactor);
     } else {
-        STORM_LOG_THROW(!storm::utility::isConstant(rate) || storm::utility::isPositive(rate), storm::exceptions::WrongFormatException,
+        STORM_LOG_THROW(!storm::numbers::isConstant(rate) || storm::numbers::isPositive(rate), storm::exceptions::WrongFormatException,
                         "Erlang distribution of BE " << name << " requires a positive rate.");
         STORM_LOG_THROW(phases > 0, storm::exceptions::WrongFormatException, "Erlang distribution of BE " << name << " requires a positive number of phases.");
         STORM_LOG_THROW(isValidProbability(dormancyFactor), storm::exceptions::WrongFormatException,
@@ -189,15 +189,15 @@ void DFTBuilder<ValueType>::addBasicElementErlang(std::string const& name, Value
 
 template<typename ValueType>
 void DFTBuilder<ValueType>::addBasicElementWeibull(std::string const& name, ValueType shape, ValueType rate) {
-    STORM_LOG_THROW(!storm::utility::isConstant(rate) || storm::utility::isPositive(rate), storm::exceptions::WrongFormatException,
+    STORM_LOG_THROW(!storm::numbers::isConstant(rate) || storm::numbers::isPositive(rate), storm::exceptions::WrongFormatException,
                     "Weibull distribution of BE " << name << " requires a positive scale.");
-    STORM_LOG_THROW(!storm::utility::isConstant(shape) || storm::utility::isPositive(shape), storm::exceptions::WrongFormatException,
+    STORM_LOG_THROW(!storm::numbers::isConstant(shape) || storm::numbers::isPositive(shape), storm::exceptions::WrongFormatException,
                     "Weibull distribution of BE " << name << " requires a positive shape.");
 
     // Handle special cases
-    if (storm::utility::isOne<ValueType>(shape)) {
+    if (storm::numbers::isOne<ValueType>(shape)) {
         // shape=1 reduces to exponential distribution with rate 1/lambda
-        addBasicElementExponential(name, storm::utility::one<ValueType>() / rate, storm::utility::one<ValueType>());
+        addBasicElementExponential(name, storm::numbers::one<ValueType>() / rate, storm::numbers::one<ValueType>());
     } else {
         addElement(std::make_shared<storm::dft::storage::elements::BEWeibull<ValueType>>(0, name, shape, rate));
     }
@@ -205,7 +205,7 @@ void DFTBuilder<ValueType>::addBasicElementWeibull(std::string const& name, Valu
 
 template<typename ValueType>
 void DFTBuilder<ValueType>::addBasicElementLogNormal(std::string const& name, ValueType mean, ValueType standardDeviation) {
-    STORM_LOG_THROW(!storm::utility::isConstant(standardDeviation) || storm::utility::isPositive(standardDeviation), storm::exceptions::WrongFormatException,
+    STORM_LOG_THROW(!storm::numbers::isConstant(standardDeviation) || storm::numbers::isPositive(standardDeviation), storm::exceptions::WrongFormatException,
                     "Log-normal distribution of BE " << name << " requires a positive standard deviation.");
     addElement(std::make_shared<storm::dft::storage::elements::BELogNormal<ValueType>>(0, name, mean, standardDeviation));
 }
@@ -216,7 +216,7 @@ void DFTBuilder<ValueType>::addBasicElementSamples(std::string const& name, std:
     bool canFail = false;
     for (auto const& sample : activeSamples) {
         // At least one sample is not zero
-        if (!storm::utility::isZero(sample.second)) {
+        if (!storm::numbers::isZero(sample.second)) {
             canFail = true;
             break;
         }
@@ -278,7 +278,7 @@ void DFTBuilder<ValueType>::addSpareGate(std::string const& name, std::vector<st
 template<typename ValueType>
 void DFTBuilder<ValueType>::addDependency(DFTDependencyPointer dependency, std::vector<std::string> const& children) {
     STORM_LOG_THROW(children.size() > 1, storm::exceptions::WrongFormatException, "Dependency " << dependency->name() << " requires at least two children.");
-    if (storm::utility::isZero(dependency->probability())) {
+    if (storm::numbers::isZero(dependency->probability())) {
         STORM_LOG_WARN("Dependency " << dependency->name() << " with probability 0 is superfluous and will not be added.");
     } else {
         STORM_LOG_THROW(isValidProbability(dependency->probability()), storm::exceptions::WrongFormatException,
@@ -428,11 +428,11 @@ bool DFTBuilder<ValueType>::nameInUse(std::string const& name) const {
 
 template<typename ValueType>
 bool DFTBuilder<ValueType>::isValidProbability(ValueType value) const {
-    if (!storm::utility::isConstant(value)) {
+    if (!storm::numbers::isConstant(value)) {
         // Do not check further if value is non-constant rational function
         return true;
     } else {
-        return storm::utility::isBetween(storm::utility::zero<ValueType>(), value, storm::utility::one<ValueType>());
+        return storm::numbers::isBetween(storm::numbers::zero<ValueType>(), value, storm::numbers::one<ValueType>());
     }
 }
 

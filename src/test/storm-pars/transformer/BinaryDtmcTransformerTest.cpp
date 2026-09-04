@@ -18,10 +18,10 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Model.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/prism/Program.h"
-#include "storm/utility/constants.h"
 
 void testModelB(std::string programFile, std::string formulaAsString, std::string constantsAsString) {
     storm::prism::Program program = storm::api::parseProgram(programFile);
@@ -54,10 +54,10 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
     for (auto const& param : parameters) {
         std::vector<std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient>> newInstantiations;
         for (auto point : testInstantiations) {
-            for (storm::RationalNumber x = storm::utility::convertNumber<storm::RationalNumber>(1e-6); x <= 1;
-                 x += (1 - storm::utility::convertNumber<storm::RationalNumber>(1e-6)) / 10) {
+            for (storm::RationalNumber x = storm::numbers::convert<storm::RationalNumber>(1e-6); x <= 1;
+                 x += (1 - storm::numbers::convert<storm::RationalNumber>(1e-6)) / 10) {
                 std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> newMap(point);
-                newMap[param] = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(x);
+                newMap[param] = storm::numbers::convert<storm::RationalFunctionCoefficient>(x);
                 newInstantiations.push_back(newMap);
             }
         }
@@ -68,7 +68,7 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
     for (auto const& instantiation : testInstantiations) {
         auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
         auto resultSimple = modelCheckerSimple.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
-        ASSERT_TRUE(storm::utility::isAlmostZero(result - resultSimple))
+        ASSERT_TRUE(storm::numbers::isAlmostZero(result - resultSimple))
             << "Results " << result << " and " << resultSimple << " are not the same but should be.";
     }
 
@@ -109,7 +109,7 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
             uint64_t seenOneMinusP = 0;
 
             for (auto const& entry : row) {
-                if (!storm::utility::isZero(entry.getValue())) {
+                if (!storm::numbers::isZero(entry.getValue())) {
                     if (entry.getValue() == parameterRational) {
                         seenP++;
                     } else if (entry.getValue() == oneMinusParameterRational) {

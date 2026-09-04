@@ -59,9 +59,9 @@ std::map<storm::storage::sparse::state_type, SolutionType> SparseMdpPrctlHelper<
         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
 
         ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(
-            initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
+            initEpoch, storm::numbers::convert<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
         Environment preciseEnv = env;
-        preciseEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
+        preciseEnv.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(precision));
 
         // In case of cdf export we store the necessary data.
         std::vector<std::vector<ValueType>> cdfData;
@@ -82,7 +82,7 @@ std::map<storm::storage::sparse::state_type, SolutionType> SparseMdpPrctlHelper<
                 std::vector<ValueType> cdfEntry;
                 for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
                     uint64_t offset = rewardUnfolding.getDimension(i).boundType == helper::rewardbounded::DimensionBoundType::LowerBound ? 1 : 0;
-                    cdfEntry.push_back(storm::utility::convertNumber<ValueType>(rewardUnfolding.getEpochManager().getDimensionOfEpoch(epoch, i) + offset) *
+                    cdfEntry.push_back(storm::numbers::convert<ValueType>(rewardUnfolding.getEpochManager().getDimensionOfEpoch(epoch, i) + offset) *
                                        rewardUnfolding.getDimension(i).scalingFactor);
                 }
                 cdfEntry.push_back(rewardUnfolding.getInitialStateResult(epoch));
@@ -131,7 +131,7 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
     storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates) {
     // Create the vector with which to multiply and initialize it correctly.
     std::vector<SolutionType> result(transitionMatrix.getRowGroupCount());
-    storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<SolutionType>());
+    storm::utility::vector::setVectorValues(result, nextStates, storm::numbers::one<SolutionType>());
 
     auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, transitionMatrix);
     multiplier->multiplyAndReduce(env, dir, result, nullptr, result, uncertaintyResolutionMode);
@@ -390,10 +390,10 @@ SparseMdpHintType<SolutionType> computeHints(Environment const& env, SemanticSol
 
     // Only set bounds if we did not obtain them from the hint.
     if (!result.hasLowerResultBound()) {
-        result.lowerResultBound = storm::utility::zero<SolutionType>();
+        result.lowerResultBound = storm::numbers::zero<SolutionType>();
     }
     if (!result.hasUpperResultBound() && type == SemanticSolutionType::UntilProbabilities) {
-        result.upperResultBound = storm::utility::one<SolutionType>();
+        result.upperResultBound = storm::numbers::one<SolutionType>();
     }
 
     // If we received an upper bound, we can drop the requirement to compute one.
@@ -434,7 +434,7 @@ MaybeStateResult<SolutionType> computeValuesForMaybeStates(Environment const& en
     std::vector<SolutionType> x =
         hint.hasValueHint() ? std::move(hint.getValueHint())
                             : std::vector<SolutionType>(submatrix.getRowGroupCount(),
-                                                        hint.hasLowerResultBound() ? hint.getLowerResultBound() : storm::utility::zero<SolutionType>());
+                                                        hint.hasLowerResultBound() ? hint.getLowerResultBound() : storm::numbers::zero<SolutionType>());
 
     // Capture the uncertainty resolution mode before the goal is consumed by the solver configuration.
     auto const uncertaintyResolutionMode = goal.getUncertaintyResolutionMode();
@@ -475,10 +475,10 @@ MaybeStateResult<SolutionType> computeValuesForMaybeStates(Environment const& en
             getNextRelevantStateIndex = [&relevantState]() { ++relevantState; };
         }
         for (; relevantState < solver->getUpperBounds().size(); getNextRelevantStateIndex()) {
-            STORM_LOG_ASSERT(x.at(relevantState) <=
-                                 solver->getUpperBounds().at(relevantState) + storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()),
-                             "Expecting result value for state " << relevantState << " to be <= " << solver->getUpperBounds().at(relevantState) << ", but got "
-                                                                 << x.at(relevantState) << ".");
+            STORM_LOG_ASSERT(
+                x.at(relevantState) <= solver->getUpperBounds().at(relevantState) + storm::numbers::convert<ValueType>(env.solver().minMax().getPrecision()),
+                "Expecting result value for state " << relevantState << " to be <= " << solver->getUpperBounds().at(relevantState) << ", but got "
+                                                    << x.at(relevantState) << ".");
         }
     }
 #endif
@@ -510,10 +510,10 @@ QualitativeStateSetsUntilProbabilities getQualitativeStateSetsUntilProbabilities
     result.statesWithProbability0 = storm::storage::BitVector(result.maybeStates.size());
     storm::storage::BitVector nonMaybeStates = ~result.maybeStates;
     for (uint64_t state : nonMaybeStates) {
-        if (storm::utility::isOne(resultsForNonMaybeStates[state])) {
+        if (storm::numbers::isOne(resultsForNonMaybeStates[state])) {
             result.statesWithProbability1.set(state, true);
         } else {
-            STORM_LOG_THROW(storm::utility::isZero(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException,
+            STORM_LOG_THROW(storm::numbers::isZero(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException,
                             "Expected that the result hint specifies probabilities in {0,1} for non-maybe states.");
             result.statesWithProbability0.set(state, true);
         }
@@ -688,7 +688,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                     "Cannot produce scheduler when performing qualitative model checking only.");
 
     // Prepare resulting vector.
-    std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
+    std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::numbers::zero<SolutionType>());
 
     // We need to identify the maybe states (states which have a probability for satisfying the until formula
     // that is strictly between 0 and 1) and the states that satisfy the formula with probablity 1 and 0, respectively.
@@ -700,7 +700,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                                      << qualitativeStateSets.maybeStates.getNumberOfSetBits() << " states remaining).");
 
     // Set values of resulting vector that are known exactly.
-    storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.statesWithProbability1, storm::utility::one<SolutionType>());
+    storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.statesWithProbability1, storm::numbers::one<SolutionType>());
 
     // Check if the values of the maybe states are relevant for the SolveGoal
     bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(qualitativeStateSets.maybeStates);
@@ -722,7 +722,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     // Check whether we need to compute exact probabilities for some states.
     if (qualitative || maybeStatesNotRelevant) {
         // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
-        storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, storm::utility::convertNumber<SolutionType>(0.5));
+        storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, storm::numbers::convert<SolutionType>(0.5));
     } else {
         if (!qualitativeStateSets.maybeStates.empty()) {
             // In this case we have have to compute the remaining probabilities.
@@ -817,7 +817,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
             computeUntilProbabilities(env, std::move(goal), transitionMatrix, backwardTransitions,
                                       storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), ~psiStates, qualitative, produceScheduler);
         for (auto& element : result.values) {
-            element = storm::utility::one<SolutionType>() - element;
+            element = storm::numbers::one<SolutionType>() - element;
         }
         return result;
     }
@@ -859,7 +859,7 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
         std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix);
 
         // Initialize result to the zero vector.
-        std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
+        std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::numbers::zero<SolutionType>());
 
         auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
         multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, &totalRewardVector, stepBound, goal.getUncertaintyResolutionMode());
@@ -981,7 +981,7 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
     std::vector<SolutionType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix);
 
     // Initialize result to the zero vector.
-    std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+    std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
 
     auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
     multiplier->repeatedMultiplyAndReduceWithFactor(env, goal.direction(), result, &totalRewardVector, stepBound, discountFactor,
@@ -1002,7 +1002,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
     std::vector<ValueType> b;
 
-    std::vector<SolutionType> x = std::vector<SolutionType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
+    std::vector<SolutionType> x = std::vector<SolutionType>(transitionMatrix.getRowGroupCount(), storm::numbers::zero<SolutionType>());
     b = rewardModel.getTotalRewardVector(transitionMatrix);
     storm::modelchecker::helper::DiscountingHelper<ValueType> discountingHelper(transitionMatrix, discountFactor, produceScheduler);
 
@@ -1044,7 +1044,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     return computeReachabilityRewardsHelper(
         env, std::move(goal), transitionMatrix, backwardTransitions,
         [](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&) {
-            return std::vector<ValueType>(rowCount, storm::utility::one<ValueType>());
+            return std::vector<ValueType>(rowCount, storm::numbers::one<ValueType>());
         },
         targetStates, qualitative, produceScheduler, [&]() { return storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false); },
         [&]() { return storm::storage::BitVector(transitionMatrix.getRowCount(), false); }, hint);
@@ -1076,12 +1076,12 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
                    targetStates, qualitative, false,
                    [&]() {
                        return intervalRewardModel.getStatesWithFilter(transitionMatrix, [&](IntervalRewardType const& i) {
-                           return storm::utility::isZero(lowerBoundOfIntervals ? i.lower() : i.upper());
+                           return storm::numbers::isZero(lowerBoundOfIntervals ? i.lower() : i.upper());
                        });
                    },
                    [&]() {
                        return intervalRewardModel.getChoicesWithFilter(transitionMatrix, [&](IntervalRewardType const& i) {
-                           return storm::utility::isZero(lowerBoundOfIntervals ? i.lower() : i.upper());
+                           return storm::numbers::isZero(lowerBoundOfIntervals ? i.lower() : i.upper());
                        });
                    })
             .values;
@@ -1106,10 +1106,10 @@ QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewar
     result.rewardZeroStates = storm::storage::BitVector(result.maybeStates.size());
     storm::storage::BitVector nonMaybeStates = ~result.maybeStates;
     for (uint64_t state : nonMaybeStates) {
-        if (storm::utility::isZero(resultsForNonMaybeStates[state])) {
+        if (storm::numbers::isZero(resultsForNonMaybeStates[state])) {
             result.rewardZeroStates.set(state, true);
         } else {
-            STORM_LOG_THROW(storm::utility::isInfinity(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException,
+            STORM_LOG_THROW(storm::numbers::isInfinity(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException,
                             "Expected that the result hint specifies probabilities in {0,infinity} for non-maybe states.");
             result.infinityStates.set(state, true);
         }
@@ -1256,7 +1256,7 @@ boost::optional<SparseMdpEndComponentInformation<ValueType>> computeFixedPointSy
 
     uint64_t index = 0;
     for (auto const& e : rewardVector) {
-        if (storm::utility::isZero(e)) {
+        if (storm::numbers::isZero(e)) {
             zeroRewardChoices.set(index);
         }
         ++index;
@@ -1351,7 +1351,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     std::function<storm::storage::BitVector()> const& zeroRewardStatesGetter, std::function<storm::storage::BitVector()> const& zeroRewardChoicesGetter,
     ModelCheckerHint const& hint) {
     // Prepare resulting vector.
-    std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
+    std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::numbers::zero<SolutionType>());
 
     // Determine which states have a reward that is infinity or less than infinity.
     QualitativeStateSetsReachabilityRewards qualitativeStateSets = getQualitativeStateSetsReachabilityRewards(
@@ -1361,7 +1361,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                                      << qualitativeStateSets.rewardZeroStates.getNumberOfSetBits() << " states with reward zero ("
                                      << qualitativeStateSets.maybeStates.getNumberOfSetBits() << " states remaining).");
 
-    storm::utility::vector::setVectorValues(result, qualitativeStateSets.infinityStates, storm::utility::infinity<SolutionType>());
+    storm::utility::vector::setVectorValues(result, qualitativeStateSets.infinityStates, storm::numbers::infinity<SolutionType>());
 
     // If requested, we will produce a scheduler.
     std::unique_ptr<storm::storage::Scheduler<SolutionType>> scheduler;
@@ -1383,7 +1383,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
         STORM_LOG_INFO("The rewards for the initial states were determined in a preprocessing step. No exact rewards were computed.");
         // Set the values for all maybe-states to 1 to indicate that their reward values
         // are neither 0 nor infinity.
-        storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, storm::utility::one<SolutionType>());
+        storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, storm::numbers::one<SolutionType>());
     } else {
         if (!qualitativeStateSets.maybeStates.empty()) {
             // In this case we have to compute the reward values for the remaining states.

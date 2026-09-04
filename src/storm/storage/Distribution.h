@@ -4,8 +4,8 @@
 #include <iosfwd>
 #include <vector>
 
+#include "storm/numbers/ConstantsComparator.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
 
@@ -44,7 +44,7 @@ class Distribution {
      * @param other The distribution with which the current distribution is to be compared.
      * @return True iff the two distributions are equal.
      */
-    bool equals(Distribution<ValueType, StateType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const;
+    bool equals(Distribution<ValueType, StateType> const& other, storm::numbers::ConstantsComparator<ValueType> const& comparator) const;
 
     /*!
      * Assigns the given state the given probability under this distribution.
@@ -62,7 +62,7 @@ class Distribution {
      * @param comparator A comparator that is used to determine if the remaining probability is zero. If so, the
      * entry is removed.
      */
-    void removeProbability(StateType const& state, ValueType const& probability, storm::utility::ConstantsComparator<ValueType> const& comparator);
+    void removeProbability(StateType const& state, ValueType const& probability, storm::numbers::ConstantsComparator<ValueType> const& comparator);
 
     /*!
      * Removes the probability mass from one state and adds it to another.
@@ -74,7 +74,7 @@ class Distribution {
      * entry is removed.
      */
     void shiftProbability(StateType const& fromState, StateType const& toState, ValueType const& probability,
-                          storm::utility::ConstantsComparator<ValueType> const& comparator);
+                          storm::numbers::ConstantsComparator<ValueType> const& comparator);
 
     /*!
      * Retrieves an iterator to the elements in this distribution.
@@ -132,7 +132,7 @@ class Distribution {
      */
     std::size_t size() const;
 
-    bool less(Distribution<ValueType, StateType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const;
+    bool less(Distribution<ValueType, StateType> const& other, storm::numbers::ConstantsComparator<ValueType> const& comparator) const;
 
     /*!
      * Returns the probability of the given state

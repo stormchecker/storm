@@ -10,7 +10,7 @@
 
 #include "storm/solver/LinearEquationSolver.h"
 
-#include "storm/utility/NumberTraits.h"
+#include "storm/numbers/NumberTraits.h"
 
 namespace storm {
 
@@ -21,7 +21,7 @@ namespace modelchecker::helper {
 class HybridCtmcCslHelper {
    public:
     template<storm::dd::DdType DdType, typename ValueType>
-        requires storm::NumberTraits<ValueType>::SupportsExponential
+        requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
     static std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model,
                                                                          bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix,
                                                                          storm::dd::Add<DdType, ValueType> const& exitRateVector,
@@ -29,14 +29,14 @@ class HybridCtmcCslHelper {
                                                                          bool qualitative, ValueType lowerBound, std::optional<ValueType> const& upperBound);
 
     template<storm::dd::DdType DdType, typename ValueType>
-        requires storm::NumberTraits<ValueType>::SupportsExponential
+        requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
     static std::unique_ptr<CheckResult> computeInstantaneousRewards(
         Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant,
         storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector,
         typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, ValueType timeBound);
 
     template<storm::dd::DdType DdType, typename ValueType>
-        requires storm::NumberTraits<ValueType>::SupportsExponential
+        requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
     static std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model,
                                                                  bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix,
                                                                  storm::dd::Add<DdType, ValueType> const& exitRateVector,

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "storm/numbers/constants.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 
@@ -146,12 +146,12 @@ class EndComponentEliminator {
                         builder.addNextValue(row, entry.getColumn(), entry.getValue());
                     }
                 } else {
-                    builder.addNextValue(row, sinkState, storm::utility::one<ValueType>());
+                    builder.addNextValue(row, sinkState, storm::numbers::one<ValueType>());
                 }
             }
         }
         builder.newRowGroup(row);
-        builder.addNextValue(row, sinkState, storm::utility::one<ValueType>());
+        builder.addNextValue(row, sinkState, storm::numbers::one<ValueType>());
         storm::storage::SparseMatrix<ValueType> auxiliaryMatrix =
             builder.build(originalMatrix.getRowCount() + 1, originalMatrix.getColumnCount() + 1, originalMatrix.getRowGroupCount() + 1);
         storm::storage::SparseMatrix<ValueType> backwardsTransitions = auxiliaryMatrix.transpose(true);
@@ -179,7 +179,7 @@ class EndComponentEliminator {
             for (; newRow < newRowGroupIndices[newRowGroup + 1]; ++newRow) {
                 if (sinkRows.get(newRow)) {
                     if (addSelfLoopAtSinkStates) {
-                        builder.addNextValue(newRow, newRowGroup, storm::utility::one<ValueType>());
+                        builder.addNextValue(newRow, newRowGroup, storm::numbers::one<ValueType>());
                     }
                 } else {
                     // Make sure that the entries for this row are inserted in the right order.

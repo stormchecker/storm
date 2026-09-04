@@ -14,11 +14,11 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/numbers/NumberTraits.h"
+#include "storm/numbers/rationalfunction.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/SparseMatrixOperations.h"
-#include "storm/utility/NumberTraits.h"
-#include "storm/utility/rationalfunction.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -54,8 +54,8 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) const {
     // More costly checks are only asserted to avoid doing them in release mode.
     [[maybe_unused]] ValueType const stochasticTolerance =
-        isExact() ? storm::utility::zero<ValueType>()
-                  : storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+        isExact() ? storm::numbers::zero<ValueType>()
+                  : storm::numbers::convert<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
     uint64_t stateCount = this->getNumberOfStates();
     uint64_t choiceCount = this->getTransitionMatrix().getRowCount();
@@ -538,8 +538,8 @@ void Model<ValueType, RewardModelType>::writeJsonToStream(std::ostream& outStrea
         for (auto const& rm : rewardModels) {
             if (rm.second.hasStateRewards()) {
                 auto const& r = rm.second.getStateReward(state);
-                if (!storm::utility::isZero(r)) {
-                    stateRewardsJson[rm.first] = storm::utility::to_string(r);
+                if (!storm::numbers::isZero(r)) {
+                    stateRewardsJson[rm.first] = storm::numbers::to_string(r);
                 }
             }
         }
@@ -549,15 +549,15 @@ void Model<ValueType, RewardModelType>::writeJsonToStream(std::ostream& outStrea
 
         // For CTMCs we need to scale the transition probabilities as the transition matrix contains rates.
         // This is not the case for MA.
-        auto rateForProbabilityScaling = storm::utility::one<ValueType>();
+        auto rateForProbabilityScaling = storm::numbers::one<ValueType>();
         if (this->isOfType(storm::models::ModelType::Ctmc)) {
             auto const& ctmc = this->template as<storm::models::sparse::Ctmc<ValueType, RewardModelType>>();
             rateForProbabilityScaling = ctmc->getExitRateVector()[state];
-            stateChoicesJson["rate"] = storm::utility::to_string(rateForProbabilityScaling);
+            stateChoicesJson["rate"] = storm::numbers::to_string(rateForProbabilityScaling);
         } else if (this->isOfType(storm::models::ModelType::MarkovAutomaton)) {
             auto const& ma = this->template as<storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>>();
             if (ma->isMarkovianState(state)) {
-                stateChoicesJson["rate"] = storm::utility::to_string(ma->getExitRate(state));  // Only export rate for Markovian states
+                stateChoicesJson["rate"] = storm::numbers::to_string(ma->getExitRate(state));  // Only export rate for Markovian states
             }
         }
 
@@ -579,8 +579,8 @@ void Model<ValueType, RewardModelType>::writeJsonToStream(std::ostream& outStrea
             for (auto const& rm : rewardModels) {
                 if (rm.second.hasStateActionRewards()) {
                     auto r = rm.second.getStateActionReward(choiceIndex);
-                    if (!storm::utility::isZero(r)) {
-                        choiceRewardsJson[rm.first] = storm::utility::to_string(r);
+                    if (!storm::numbers::isZero(r)) {
+                        choiceRewardsJson[rm.first] = storm::numbers::to_string(r);
                     }
                 }
             }
@@ -591,7 +591,7 @@ void Model<ValueType, RewardModelType>::writeJsonToStream(std::ostream& outStrea
             for (auto const& entry : transitionMatrix.getRow(choiceIndex)) {
                 storm::json<JsonValueType> successor;
                 successor["id"] = entry.getColumn();
-                successor["prob"] = storm::utility::to_string<ValueType>(entry.getValue() / rateForProbabilityScaling);
+                successor["prob"] = storm::numbers::to_string<ValueType>(entry.getValue() / rateForProbabilityScaling);
                 successors.push_back(successor);
             }
             choiceJson["succ"] = std::move(successors);
@@ -624,7 +624,7 @@ bool Model<ValueType, RewardModelType>::isSinkState(uint64_t state) const {
         if (entry.getColumn() != state) {
             return false;
         }
-        if (!storm::utility::isOne(entry.getValue())) {
+        if (!storm::numbers::isOne(entry.getValue())) {
             return false;
         }
     }
@@ -653,7 +653,7 @@ bool Model<ValueType, RewardModelType>::hasParameters() const {
     }
     // Check for parameters
     for (auto const& entry : this->getTransitionMatrix()) {
-        if (!storm::utility::isConstant(entry.getValue())) {
+        if (!storm::numbers::isConstant(entry.getValue())) {
             return true;
         }
     }
@@ -668,7 +668,7 @@ bool Model<ValueType, RewardModelType>::hasUncertainty() const {
     }
     // Check for intervals
     for (auto const& entry : this->getTransitionMatrix()) {
-        if (!storm::utility::isConstant(entry.getValue())) {
+        if (!storm::numbers::isConstant(entry.getValue())) {
             return true;
         }
     }
@@ -678,7 +678,7 @@ bool Model<ValueType, RewardModelType>::hasUncertainty() const {
 
 template<typename ValueType, typename RewardModelType>
 bool Model<ValueType, RewardModelType>::isExact() const {
-    return storm::NumberTraits<ValueType>::IsExact && storm::NumberTraits<typename RewardModelType::ValueType>::IsExact;
+    return storm::numbers::NumberTraits<ValueType>::IsExact && storm::numbers::NumberTraits<typename RewardModelType::ValueType>::IsExact;
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -707,10 +707,10 @@ std::set<storm::RationalFunctionVariable> getRewardParameters(Model<storm::Ratio
 std::set<storm::RationalFunctionVariable> getRateParameters(Model<storm::RationalFunction> const& model) {
     if (model.isOfType(storm::models::ModelType::Ctmc)) {
         auto const& ctmc = model.template as<storm::models::sparse::Ctmc<storm::RationalFunction>>();
-        return storm::utility::vector::getVariables(ctmc->getExitRateVector());
+        return storm::numbers::vector::getVariables(ctmc->getExitRateVector());
     } else if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
         auto const& ma = model.template as<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>();
-        return storm::utility::vector::getVariables(ma->getExitRates());
+        return storm::numbers::vector::getVariables(ma->getExitRates());
     } else {
         return {};
     }

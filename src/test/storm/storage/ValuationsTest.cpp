@@ -171,8 +171,8 @@ TEST(ValuationTest, Valuations2classes) {
                     s_values.push_back(value);
                 } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
                     EXPECT_EQ(r, var);
-                    auto const uint64max = storm::utility::convertNumber<storm::RationalNumber, uint64_t>(std::numeric_limits<uint64_t>::max());
-                    value = (uint64max + uint64max + storm::utility::convertNumber<storm::RationalNumber>(entity)) / (uint64max);
+                    auto const uint64max = storm::numbers::convert<storm::RationalNumber, uint64_t>(std::numeric_limits<uint64_t>::max());
+                    value = (uint64max + uint64max + storm::numbers::convert<storm::RationalNumber>(entity)) / (uint64max);
                     if (entity % 8 == 0) {
                         value = -value;
                     }
@@ -188,7 +188,7 @@ TEST(ValuationTest, Valuations2classes) {
                 if constexpr (std::is_same_v<ValueType, double>) {
                     EXPECT_EQ(r, var);
                     value = static_cast<double>(entity) / 3.0;
-                    r_values.push_back(storm::utility::convertNumber<storm::RationalNumber>(value));
+                    r_values.push_back(storm::numbers::convert<storm::RationalNumber>(value));
                 } else if constexpr (std::is_same_v<ValueType, bool>) {
                     EXPECT_EQ(b, var);
                     value = entity % 2 == 0;
@@ -237,7 +237,7 @@ TEST(ValuationTest, Valuations2classes) {
             static_assert(std::is_same_v<ValueType, double>);
             EXPECT_EQ(1, valuations.getClassOfEntity(entity));
             EXPECT_EQ(r, var);
-            EXPECT_EQ(storm::utility::convertNumber<double>(r_values[entity]), storm::utility::convertNumber<double>(value));
+            EXPECT_EQ(storm::numbers::convert<double>(r_values[entity]), storm::numbers::convert<double>(value));
         }
     });
 }

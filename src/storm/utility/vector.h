@@ -7,9 +7,9 @@
 #include <numeric>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -50,8 +50,8 @@ std::size_t findOrInsert(std::vector<T>& vector, T&& element) {
 }
 
 template<typename T>
-void setAllValues(std::vector<T>& vec, storm::storage::BitVector const& positions, T const& positiveValue = storm::utility::one<T>(),
-                  T const& negativeValue = storm::utility::zero<T>()) {
+void setAllValues(std::vector<T>& vec, storm::storage::BitVector const& positions, T const& positiveValue = storm::numbers::one<T>(),
+                  T const& negativeValue = storm::numbers::zero<T>()) {
     if (positions.getNumberOfSetBits() * 2 > positions.size()) {
         vec.resize(positions.size(), positiveValue);
         uint64_t index = positions.getNextUnsetIndex(0);
@@ -106,7 +106,7 @@ template<typename T>
 void setNonzeroIndices(std::vector<T> const& vec, storm::storage::BitVector& bv) {
     STORM_LOG_ASSERT(bv.size() == vec.size(), "Bitvector size should match vector size.");
     for (uint64_t i = 0; i < vec.size(); ++i) {
-        if (!storm::utility::isZero(vec[i])) {
+        if (!storm::numbers::isZero(vec[i])) {
             bv.set(i, true);
         }
     }
@@ -276,7 +276,7 @@ void selectVectorValuesRepeatedly(std::vector<T>& vector, storm::storage::BitVec
 template<class T>
 void subtractFromConstantOneVector(std::vector<T>& vector) {
     for (auto& element : vector) {
-        element = storm::utility::one<T>() - element;
+        element = storm::numbers::one<T>() - element;
     }
 }
 
@@ -471,7 +471,7 @@ void addScaledVector(std::vector<InValueType1>& firstOperand, std::vector<InValu
  */
 template<class T>
 T dotProduct(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand) {
-    return std::inner_product(firstOperand.begin(), firstOperand.end(), secondOperand.begin(), storm::utility::zero<T>());
+    return std::inner_product(firstOperand.begin(), firstOperand.end(), secondOperand.begin(), storm::numbers::zero<T>());
 }
 
 /*!
@@ -506,7 +506,7 @@ storm::storage::BitVector filter(std::vector<T> const& values, std::function<boo
  */
 template<class T>
 storm::storage::BitVector filterGreaterZero(std::vector<T> const& values) {
-    return filter<T>(values, [](T const& value) -> bool { return value > storm::utility::zero<T>(); });
+    return filter<T>(values, [](T const& value) -> bool { return value > storm::numbers::zero<T>(); });
 }
 
 /*!
@@ -517,7 +517,7 @@ storm::storage::BitVector filterGreaterZero(std::vector<T> const& values) {
  */
 template<class T>
 storm::storage::BitVector filterZero(std::vector<T> const& values) {
-    return filter<T>(values, storm::utility::isZero<T>);
+    return filter<T>(values, storm::numbers::isZero<T>);
 }
 
 /*!
@@ -528,7 +528,7 @@ storm::storage::BitVector filterZero(std::vector<T> const& values) {
  */
 template<class T>
 storm::storage::BitVector filterOne(std::vector<T> const& values) {
-    return filter<T>(values, storm::utility::isOne<T>);
+    return filter<T>(values, storm::numbers::isOne<T>);
 }
 
 /*!
@@ -539,7 +539,7 @@ storm::storage::BitVector filterOne(std::vector<T> const& values) {
  */
 template<class T>
 storm::storage::BitVector filterInfinity(std::vector<T> const& values) {
-    return filter<T>(values, storm::utility::isInfinity<T>);
+    return filter<T>(values, storm::numbers::isInfinity<T>);
 }
 
 /**
@@ -551,7 +551,7 @@ storm::storage::BitVector filterInfinity(std::vector<T> const& values) {
 template<typename VT>
 VT sum_if(std::vector<VT> const& values, storm::storage::BitVector const& filter) {
     STORM_LOG_ASSERT(values.size() == filter.size(), "Vector sizes mismatch.");
-    VT sum = storm::utility::zero<VT>();
+    VT sum = storm::numbers::zero<VT>();
     for (uint64_t pos : filter) {
         sum += values[pos];
     }
@@ -665,7 +665,7 @@ void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vec
             }
         } else {
             *choiceIt = 0;
-            *targetIt = storm::utility::zero<T>();
+            *targetIt = storm::numbers::zero<T>();
         }
     }
 }
@@ -681,7 +681,7 @@ void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vec
 template<class T>
 void reduceVectorMin(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping,
                      std::vector<uint_fast64_t>* choices = nullptr) {
-    reduceVector<T, storm::utility::ElementLess<T>>(source, target, rowGrouping, choices);
+    reduceVector<T, storm::numbers::ElementLess<T>>(source, target, rowGrouping, choices);
 }
 
 /*!
@@ -695,7 +695,7 @@ void reduceVectorMin(std::vector<T> const& source, std::vector<T>& target, std::
 template<class T>
 void reduceVectorMax(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping,
                      std::vector<uint_fast64_t>* choices = nullptr) {
-    reduceVector<T, storm::utility::ElementGreater<T>>(source, target, rowGrouping, choices);
+    reduceVector<T, storm::numbers::ElementGreater<T>>(source, target, rowGrouping, choices);
 }
 
 /*!
@@ -730,16 +730,16 @@ void reduceVectorMinOrMax(storm::solver::OptimizationDirection dir, std::vector<
 template<class T>
 bool equalModuloPrecision(T const& val1, T const& val2, T const& precision, bool relativeError = true) {
     if (relativeError) {
-        if (storm::utility::isZero<T>(val1)) {
-            return storm::utility::isZero(val2);
+        if (storm::numbers::isZero<T>(val1)) {
+            return storm::numbers::isZero(val2);
         }
         T relDiff = (val1 - val2) / val1;
-        if (storm::utility::abs(relDiff) > precision) {
+        if (storm::numbers::abs(relDiff) > precision) {
             return false;
         }
     } else {
         T diff = val1 - val2;
-        if (storm::utility::abs(diff) > precision) {
+        if (storm::numbers::abs(diff) > precision) {
             return false;
         }
     }
@@ -750,16 +750,16 @@ bool equalModuloPrecision(T const& val1, T const& val2, T const& precision, bool
 template<>
 inline bool equalModuloPrecision(double const& val1, double const& val2, double const& precision, bool relativeError) {
     if (relativeError) {
-        if (storm::utility::isAlmostZero(val2)) {
-            return storm::utility::isAlmostZero(val1);
+        if (storm::numbers::isAlmostZero(val2)) {
+            return storm::numbers::isAlmostZero(val1);
         }
         double relDiff = (val1 - val2) / val1;
-        if (storm::utility::abs(relDiff) > precision) {
+        if (storm::numbers::abs(relDiff) > precision) {
             return false;
         }
     } else {
         double diff = val1 - val2;
-        if (storm::utility::abs(diff) > precision) {
+        if (storm::numbers::abs(diff) > precision) {
             return false;
         }
     }
@@ -843,22 +843,22 @@ bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const
 
 template<class T>
 T maximumElementAbs(std::vector<T> const& vector) {
-    T res = storm::utility::zero<T>();
+    T res = storm::numbers::zero<T>();
     for (auto const& element : vector) {
-        res = std::max(res, storm::utility::abs(element));
+        res = std::max(res, storm::numbers::abs(element));
     }
     return res;
 }
 
 template<class T>
 T maximumElementDiff(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight) {
-    T maxDiff = storm::utility::zero<T>();
+    T maxDiff = storm::numbers::zero<T>();
     auto leftIt = vectorLeft.begin();
     auto leftIte = vectorLeft.end();
     auto rightIt = vectorRight.begin();
     for (; leftIt != leftIte; ++leftIt, ++rightIt) {
         T diff = *leftIt - *rightIt;
-        T possDiff = storm::utility::abs(diff);
+        T possDiff = storm::numbers::abs(diff);
         maxDiff = maxDiff < possDiff ? possDiff : maxDiff;
     }
     return maxDiff;
@@ -868,14 +868,14 @@ template<class T>
 T computeSquaredNorm2Difference(std::vector<T> const& b1, std::vector<T> const& b2) {
     STORM_LOG_ASSERT(b1.size() == b2.size(), "Vector sizes mismatch.");
 
-    T result = storm::utility::zero<T>();
+    T result = storm::numbers::zero<T>();
 
     auto b1It = b1.begin();
     auto b1Ite = b1.end();
     auto b2It = b2.begin();
 
     for (; b1It != b1Ite; ++b1It, ++b2It) {
-        result += storm::utility::pow<T>(*b1It - *b2It, 2);
+        result += storm::numbers::pow<T>(*b1It - *b2It, 2);
     }
 
     return result;
@@ -967,7 +967,7 @@ std::vector<TargetType> convertNumericVector(std::vector<SourceType> const& oldV
     std::vector<TargetType> resultVector;
     resultVector.reserve(oldVector.size());
     for (auto const& oldValue : oldVector) {
-        resultVector.push_back(storm::utility::convertNumber<TargetType>(oldValue));
+        resultVector.push_back(storm::numbers::convert<TargetType>(oldValue));
     }
     return resultVector;
 }
@@ -984,7 +984,7 @@ std::vector<TargetType> convertNumericVector(std::vector<SourceType> const& oldV
 template<typename TargetType, typename SourceType>
 void convertNumericVector(std::vector<SourceType> const& inputVector, std::vector<TargetType>& targetVector) {
     STORM_LOG_ASSERT(inputVector.size() == targetVector.size(), "Vector size mismatch.");
-    applyPointwise(inputVector, targetVector, [](SourceType const& v) { return storm::utility::convertNumber<TargetType>(v); });
+    applyPointwise(inputVector, targetVector, [](SourceType const& v) { return storm::numbers::convert<TargetType>(v); });
 }
 
 /*!
@@ -1006,7 +1006,7 @@ typename std::enable_if<std::is_same<ValueType, storm::RationalNumber>::value, s
     // Collect the numbers occurring in the input vector
     std::set<ValueType> occurringNonZeroNumbers;
     for (auto const& v : vec) {
-        if (!storm::utility::isZero(v)) {
+        if (!storm::numbers::isZero(v)) {
             occurringNonZeroNumbers.insert(v);
         }
     }
@@ -1014,16 +1014,16 @@ typename std::enable_if<std::is_same<ValueType, storm::RationalNumber>::value, s
     // Compute the scaling factor
     ValueType factor;
     if (occurringNonZeroNumbers.empty()) {
-        factor = storm::utility::one<ValueType>();
+        factor = storm::numbers::one<ValueType>();
     } else if (occurringNonZeroNumbers.size() == 1) {
         factor = *occurringNonZeroNumbers.begin();
     } else {
         // Obtain the least common multiple of the denominators of the occurring numbers.
         // We can then multiply the numbers with the lcm to obtain integers.
         auto numberIt = occurringNonZeroNumbers.begin();
-        ValueType lcm = storm::utility::asFraction(*numberIt).second;
+        ValueType lcm = storm::numbers::asFraction(*numberIt).second;
         for (++numberIt; numberIt != occurringNonZeroNumbers.end(); ++numberIt) {
-            lcm = carl::lcm(lcm, storm::utility::asFraction(*numberIt).second);
+            lcm = carl::lcm(lcm, storm::numbers::asFraction(*numberIt).second);
         }
         // Multiply all values with the lcm. To reduce the range of considered integers, we also obtain the gcd of the results.
         numberIt = occurringNonZeroNumbers.begin();
@@ -1040,8 +1040,8 @@ typename std::enable_if<std::is_same<ValueType, storm::RationalNumber>::value, s
     result.reserve(vec.size());
     for (auto const& v : vec) {
         ValueType vScaled = v / factor;
-        STORM_LOG_ASSERT(storm::utility::isInteger(vScaled), "Resulting number '(" << v << ")/(" << factor << ") = " << vScaled << "' is not integral.");
-        result.push_back(storm::utility::convertNumber<TargetValueType, ValueType>(vScaled));
+        STORM_LOG_ASSERT(storm::numbers::isInteger(vScaled), "Resulting number '(" << v << ")/(" << factor << ") = " << vScaled << "' is not integral.");
+        result.push_back(storm::numbers::convert<TargetValueType, ValueType>(vScaled));
     }
     return std::make_pair(std::move(result), std::move(factor));
 }
@@ -1053,7 +1053,7 @@ typename std::enable_if<!std::is_same<ValueType, storm::RationalNumber>::value, 
     auto rationalNumberVec = convertNumericVector<storm::RationalNumber>(vec);
     auto rationalNumberResult = toIntegralVector<storm::RationalNumber, TargetValueType>(rationalNumberVec);
 
-    return std::make_pair(std::move(rationalNumberResult.first), storm::utility::convertNumber<ValueType>(rationalNumberResult.second));
+    return std::make_pair(std::move(rationalNumberResult.first), storm::numbers::convert<ValueType>(rationalNumberResult.second));
 }
 
 template<typename Type>
@@ -1098,7 +1098,7 @@ void filterVectorInPlace(std::vector<Type>& v, storm::storage::BitVector const& 
  *
  */
 template<class T>
-void blowUpVectorInPlace(std::vector<T>& vector, storm::storage::BitVector const& positions, T const& defaultValue = storm::utility::zero<T>()) {
+void blowUpVectorInPlace(std::vector<T>& vector, storm::storage::BitVector const& positions, T const& defaultValue = storm::numbers::zero<T>()) {
     STORM_LOG_ASSERT(vector.size() == positions.getNumberOfSetBits(), "The number of selected positions (" << positions.getNumberOfSetBits()
                                                                                                            << ") must match the size of the input vector ("
                                                                                                            << vector.size() << ").");
@@ -1121,27 +1121,27 @@ void blowUpVectorInPlace(std::vector<T>& vector, storm::storage::BitVector const
 
 template<typename T>
 bool hasNegativeEntry(std::vector<T> const& v) {
-    return std::any_of(v.begin(), v.end(), [](T value) { return value < storm::utility::zero<T>(); });
+    return std::any_of(v.begin(), v.end(), [](T value) { return value < storm::numbers::zero<T>(); });
 }
 
 template<typename T>
 bool hasPositiveEntry(std::vector<T> const& v) {
-    return std::any_of(v.begin(), v.end(), [](T value) { return value > storm::utility::zero<T>(); });
+    return std::any_of(v.begin(), v.end(), [](T value) { return value > storm::numbers::zero<T>(); });
 }
 
 template<typename T>
 bool hasNonZeroEntry(std::vector<T> const& v) {
-    return std::any_of(v.begin(), v.end(), [](T value) { return !storm::utility::isZero(value); });
+    return std::any_of(v.begin(), v.end(), [](T value) { return !storm::numbers::isZero(value); });
 }
 
 template<typename T>
 bool hasZeroEntry(std::vector<T> const& v) {
-    return std::any_of(v.begin(), v.end(), [](T value) { return storm::utility::isZero(value); });
+    return std::any_of(v.begin(), v.end(), [](T value) { return storm::numbers::isZero(value); });
 }
 
 template<typename T>
 bool hasInfinityEntry(std::vector<T> const& v) {
-    return std::any_of(v.begin(), v.end(), [](T value) { return storm::utility::isInfinity(value); });
+    return std::any_of(v.begin(), v.end(), [](T value) { return storm::numbers::isInfinity(value); });
 }
 
 template<typename T>

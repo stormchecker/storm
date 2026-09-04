@@ -125,25 +125,25 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
 
     template<typename ConstantType>
     ConstantType evaluate(ConstantType input) const {
-        ConstantType sumOfTerms = utility::zero<ConstantType>();
+        ConstantType sumOfTerms = storm::numbers::zero<ConstantType>();
         for (auto const& [info, constant] : *this) {
-            ConstantType outerMult = utility::one<ConstantType>();
+            ConstantType outerMult = storm::numbers::one<ConstantType>();
             for (uint64_t i = 0; i < info.size(); i++) {
                 auto polynomial = this->polynomialCache->at(parameter).second[i];
                 // Evaluate the inner polynomial by its coefficients
                 auto coefficients = polynomial.coefficients();
-                ConstantType innerSum = utility::zero<ConstantType>();
+                ConstantType innerSum = storm::numbers::zero<ConstantType>();
                 for (uint64_t exponent = 0; exponent < coefficients.size(); exponent++) {
                     if (exponent != 0) {
-                        innerSum += carl::pow(input, exponent) * utility::convertNumber<ConstantType>(coefficients[exponent]);
+                        innerSum += carl::pow(input, exponent) * storm::numbers::convert<ConstantType>(coefficients[exponent]);
                     } else {
-                        innerSum += utility::convertNumber<ConstantType>(coefficients[exponent]);
+                        innerSum += storm::numbers::convert<ConstantType>(coefficients[exponent]);
                     }
                 }
                 // Inner polynomial ^ exponent
                 outerMult *= carl::pow(innerSum, info[i]);
             }
-            sumOfTerms += outerMult * utility::convertNumber<ConstantType>(constant);
+            sumOfTerms += outerMult * storm::numbers::convert<ConstantType>(constant);
         }
         return sumOfTerms;
     }

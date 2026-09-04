@@ -45,10 +45,10 @@ class GBSparseGmmxxGmresIluEnvironment {
         env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
         env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
         env.solver().gmmxx().setPrecision(
-            storm::utility::convertNumber<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
+            storm::numbers::convert<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
         env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
         env.solver().lra().setPrecision(
-            storm::utility::convertNumber<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
+            storm::numbers::convert<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
         return env;
     }
 };
@@ -66,10 +66,10 @@ class GBJaniSparseGmmxxGmresIluEnvironment {
         env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
         env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
         env.solver().gmmxx().setPrecision(
-            storm::utility::convertNumber<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
+            storm::numbers::convert<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
         env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
         env.solver().lra().setPrecision(
-            storm::utility::convertNumber<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
+            storm::numbers::convert<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
         return env;
     }
 };
@@ -94,10 +94,10 @@ class GBJaniHybridCuddGmmxxGmresEnvironment {
         env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
         env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
         env.solver().gmmxx().setPrecision(
-            storm::utility::convertNumber<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
+            storm::numbers::convert<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
         env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
         env.solver().lra().setPrecision(
-            storm::utility::convertNumber<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
+            storm::numbers::convert<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
         return env;
     }
 };
@@ -122,10 +122,10 @@ class GBJaniHybridSylvanGmmxxGmresEnvironment {
         env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
         env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
         env.solver().gmmxx().setPrecision(
-            storm::utility::convertNumber<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
+            storm::numbers::convert<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
         env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
         env.solver().lra().setPrecision(
-            storm::utility::convertNumber<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
+            storm::numbers::convert<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
         return env;
     }
 };
@@ -175,9 +175,9 @@ class GBSparseNativeSorEnvironment {
         storm::Environment env;
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
         env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SOR);
-        env.solver().native().setSorOmega(storm::utility::convertNumber<storm::RationalNumber>(0.7));  // LRA computation fails for 0.9
+        env.solver().native().setSorOmega(storm::numbers::convert<storm::RationalNumber>(0.7));  // LRA computation fails for 0.9
         env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
-        env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-9));
+        env.solver().lra().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-9));
         return env;
     }
 };
@@ -196,10 +196,10 @@ class DistrSparseGmmxxGmresIluEnvironment {
         env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
         env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
         env.solver().gmmxx().setPrecision(
-            storm::utility::convertNumber<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
+            storm::numbers::convert<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
         env.solver().lra().setDetLraMethod(storm::solver::LraMethod::LraDistributionEquations);
         env.solver().lra().setPrecision(
-            storm::utility::convertNumber<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
+            storm::numbers::convert<storm::RationalNumber>(1e-8));  // Need to increase precision because eq sys yields incorrect results
         return env;
     }
 };
@@ -217,7 +217,7 @@ class DistrSparseEigenDoubleLUEnvironment {
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
         env.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::DGmres);
         env.solver().eigen().setPreconditioner(storm::solver::EigenLinearEquationSolverPreconditioner::Ilu);
-        env.solver().eigen().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().eigen().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         env.solver().lra().setDetLraMethod(storm::solver::LraMethod::LraDistributionEquations);
         return env;
     }
@@ -273,7 +273,7 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
         return _environment;
     }
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
     ValueType precision() const {
         return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");

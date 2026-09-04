@@ -29,7 +29,7 @@ bool SparseCtmcInstantiationModelChecker<SparseModelType, ConstantType>::isWellD
     auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
     // Check that all rates are non-negative.
     for (auto const& entry : instantiatedModel.getTransitionMatrix()) {
-        if (!storm::utility::isNonNegative(entry.getValue())) {
+        if (!storm::numbers::isNonNegative(entry.getValue())) {
             return false;
         }
     }

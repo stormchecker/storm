@@ -5,7 +5,7 @@
 #include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/models/sparse/Model.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 namespace storm::transformer {
 
@@ -27,7 +27,7 @@ class AddUncertainty {
 
     AddUncertainty(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& originalModel);
     std::shared_ptr<storm::models::sparse::Model<IntervalType>> transform(ValueType additiveUncertainty,
-                                                                          ValueType minimalValue = storm::utility::convertNumber<ValueType>(0.0001),
+                                                                          ValueType minimalValue = storm::numbers::convert<ValueType>(0.0001),
                                                                           std::optional<uint64_t> maxSuccessors = {});
 
    private:

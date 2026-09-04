@@ -21,11 +21,11 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Model.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/prism/Program.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
 void testModelInterval(std::string programFile, std::string formulaAsString, std::string constantsAsString) {
@@ -44,8 +44,8 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
             ->template asExplicitQualitativeCheckResult<storm::RationalFunction>()
             .getTruthValuesVector();
 
-    std::vector<storm::RationalFunction> target(model->getNumberOfStates(), storm::utility::zero<storm::RationalFunction>());
-    storm::utility::vector::setVectorValues(target, psiStates, storm::utility::one<storm::RationalFunction>());
+    std::vector<storm::RationalFunction> target(model->getNumberOfStates(), storm::numbers::zero<storm::RationalFunction>());
+    storm::utility::vector::setVectorValues(target, psiStates, storm::numbers::one<storm::RationalFunction>());
 
     storm::storage::BitVector allTrue(model->getNumberOfStates(), true);
 
@@ -63,11 +63,11 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
     auto const& withoutMECs = *result;
 
     auto target2 = parameterLifter.getVector();
-    target2.push_back(storm::utility::zero<storm::Interval>());
+    target2.push_back(storm::numbers::zero<storm::Interval>());
 
     auto env = storm::Environment();
     env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-    env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+    env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
 
     auto factory = std::make_unique<storm::solver::GeneralMinMaxLinearEquationSolverFactory<storm::Interval, double>>();
 

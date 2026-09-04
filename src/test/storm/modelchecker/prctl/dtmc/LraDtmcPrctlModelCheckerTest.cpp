@@ -29,8 +29,8 @@ class GBGmmxxDoubleGmresEnvironment {
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
         env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
         env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
-        env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
-        env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().gmmxx().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
+        env.solver().lra().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         return env;
     }
 };
@@ -45,8 +45,8 @@ class GBEigenDoubleDGmresEnvironment {
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
         env.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::DGmres);
         env.solver().eigen().setPreconditioner(storm::solver::EigenLinearEquationSolverPreconditioner::Ilu);
-        env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
-        env.solver().eigen().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().lra().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
+        env.solver().eigen().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         return env;
     }
 };
@@ -74,9 +74,9 @@ class GBNativeSorEnvironment {
         env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
         env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SOR);
-        env.solver().native().setSorOmega(storm::utility::convertNumber<storm::RationalNumber>(0.8));  // A test fails if this is set to 0.9...
-        env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
-        env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().native().setSorOmega(storm::numbers::convert<storm::RationalNumber>(0.8));  // A test fails if this is set to 0.9...
+        env.solver().native().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
+        env.solver().lra().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         return env;
     }
 };
@@ -90,8 +90,8 @@ class GBNativeWalkerChaeEnvironment {
         env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
         env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::WalkerChae);
-        env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
-        env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().native().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
+        env.solver().lra().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         env.solver().native().setMaximalNumberOfIterations(50000);
         return env;
     }
@@ -108,8 +108,8 @@ class DistrGmmxxDoubleGmresEnvironment {
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
         env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
         env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
-        env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
-        env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().gmmxx().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
+        env.solver().lra().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         return env;
     }
 };
@@ -137,8 +137,8 @@ class DistrNativeWalkerChaeEnvironment {
         env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
         env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::WalkerChae);
-        env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
-        env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().lra().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
+        env.solver().native().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         env.solver().native().setMaximalNumberOfIterations(50000);
         return env;
     }
@@ -151,7 +151,7 @@ class ValueIterationEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().lra().setDetLraMethod(storm::solver::LraMethod::ValueIteration);
-        env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().lra().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         return env;
     }
 };
@@ -165,7 +165,7 @@ class LraDtmcPrctlModelCheckerTest : public ::testing::Test {
         return _environment;
     }
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
     ValueType precision() const {
         return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");

@@ -74,7 +74,7 @@ storm::storage::MemoryStructure incorporateGoalMemoryHelper(SparseModelType cons
             // For bounded formulas it is only reasonable to add the goal memory if it considers a single upper step/time bound.
             auto const& buf = subsubFormula.asBoundedUntilFormula();
             if (!buf.isMultiDimensional() && !buf.getTimeBoundReference().isRewardBound() &&
-                (!buf.hasLowerBound() || (!buf.isLowerBoundStrict() && storm::utility::isZero(buf.template getLowerBound<storm::RationalNumber>())))) {
+                (!buf.hasLowerBound() || (!buf.isLowerBoundStrict() && storm::numbers::isZero(buf.template getLowerBound<storm::RationalNumber>())))) {
                 memory = memory.product(getUntilFormulaMemory(model, buf.getLeftSubformula(), buf.getRightSubformula()));
             }
         } else if (subsubFormula.isGloballyFormula()) {

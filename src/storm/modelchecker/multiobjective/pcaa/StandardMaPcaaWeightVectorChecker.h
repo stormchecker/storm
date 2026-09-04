@@ -4,9 +4,9 @@
 #include <vector>
 
 #include "storm/modelchecker/multiobjective/pcaa/StandardPcaaWeightVectorChecker.h"
+#include "storm/numbers/NumberTraits.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/utility/NumberTraits.h"
 
 namespace storm {
 namespace modelchecker {
@@ -104,17 +104,17 @@ class StandardMaPcaaWeightVectorChecker : public StandardPcaaWeightVectorChecker
     /*!
      * Retrieves the delta used for digitization
      */
-    template<typename VT = ValueType, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
+    template<typename VT = ValueType, typename std::enable_if<storm::numbers::NumberTraits<VT>::SupportsExponential, int>::type = 0>
     VT getDigitizationConstant(std::vector<ValueType> const& weightVector) const;
-    template<typename VT = ValueType, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
+    template<typename VT = ValueType, typename std::enable_if<!storm::numbers::NumberTraits<VT>::SupportsExponential, int>::type = 0>
     VT getDigitizationConstant(std::vector<ValueType> const& weightVector) const;
 
     /*!
      * Digitizes the given matrix and vectors w.r.t. the given digitization constant and the given rate vector.
      */
-    template<typename VT = ValueType, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
+    template<typename VT = ValueType, typename std::enable_if<storm::numbers::NumberTraits<VT>::SupportsExponential, int>::type = 0>
     void digitize(SubModel& subModel, VT const& digitizationConstant) const;
-    template<typename VT = ValueType, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
+    template<typename VT = ValueType, typename std::enable_if<!storm::numbers::NumberTraits<VT>::SupportsExponential, int>::type = 0>
     void digitize(SubModel& subModel, VT const& digitizationConstant) const;
 
     /*!
@@ -132,9 +132,9 @@ class StandardMaPcaaWeightVectorChecker : public StandardPcaaWeightVectorChecker
     /*!
      * Initializes the data for the LinEq solver
      */
-    template<typename VT = ValueType, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
+    template<typename VT = ValueType, typename std::enable_if<storm::numbers::NumberTraits<VT>::SupportsExponential, int>::type = 0>
     std::unique_ptr<LinEqSolverData> initLinEqSolver(Environment const& env, SubModel const& PS, bool acyclic) const;
-    template<typename VT = ValueType, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
+    template<typename VT = ValueType, typename std::enable_if<!storm::numbers::NumberTraits<VT>::SupportsExponential, int>::type = 0>
     std::unique_ptr<LinEqSolverData> initLinEqSolver(Environment const& env, SubModel const& PS, bool acyclic) const;
 
     /*

@@ -28,7 +28,7 @@ class SparseValueTypeValueIterationEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().lra().setNondetLraMethod(storm::solver::LraMethod::ValueIteration);
-        env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().lra().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         return env;
     }
 };
@@ -41,7 +41,7 @@ class SparseValueTypeLinearProgrammingEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().lra().setNondetLraMethod(storm::solver::LraMethod::LinearProgramming);
-        env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().lra().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         return env;
     }
 };
@@ -88,7 +88,7 @@ class LraMdpPrctlModelCheckerTest : public ::testing::Test {
         return _environment;
     }
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
     ValueType precision() const {
         return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");

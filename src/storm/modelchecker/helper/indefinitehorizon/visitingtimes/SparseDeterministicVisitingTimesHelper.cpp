@@ -8,10 +8,10 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -58,8 +58,8 @@ std::vector<ValueType> SparseDeterministicVisitingTimesHelper<ValueType>::comput
                                                                                                        storm::storage::BitVector const& initialStates) {
     STORM_LOG_ASSERT(!initialStates.empty(), "Provided an empty set of initial states.");
     STORM_LOG_ASSERT(initialStates.size() == transitionMatrix.getRowCount(), "Dimension mismatch.");
-    ValueType const p = storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(initialStates.getNumberOfSetBits());
-    std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
+    ValueType const p = storm::numbers::one<ValueType>() / storm::numbers::convert<ValueType, uint64_t>(initialStates.getNumberOfSetBits());
+    std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::numbers::zero<ValueType>());
     storm::utility::vector::setVectorValues(result, initialStates, p);
     computeExpectedVisitingTimes(env, result);
     return result;
@@ -68,8 +68,8 @@ std::vector<ValueType> SparseDeterministicVisitingTimesHelper<ValueType>::comput
 template<typename ValueType>
 std::vector<ValueType> SparseDeterministicVisitingTimesHelper<ValueType>::computeExpectedVisitingTimes(Environment const& env, uint64_t initialState) {
     STORM_LOG_ASSERT(initialState < transitionMatrix.getRowCount(), "Invalid initial state index.");
-    std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
-    result[initialState] = storm::utility::one<ValueType>();
+    std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::numbers::zero<ValueType>());
+    result[initialState] = storm::numbers::one<ValueType>();
     computeExpectedVisitingTimes(env, result);
     return result;
 }
@@ -97,10 +97,10 @@ void SparseDeterministicVisitingTimesHelper<ValueType>::computeExpectedVisitingT
     storm::storage::BitVector sccAsBitVector(stateValues.size(), false);
     auto isLeavingTransition = [&sccAsBitVector](auto const& e) { return !sccAsBitVector.get(e.getColumn()); };
     auto isLeavingTransitionWithNonZeroValue = [&isLeavingTransition, &stateValues](auto const& e) {
-        return isLeavingTransition(e) && !storm::utility::isZero(stateValues[e.getColumn()]);
+        return isLeavingTransition(e) && !storm::numbers::isZero(stateValues[e.getColumn()]);
     };
     auto isReachableInState = [this, &isLeavingTransitionWithNonZeroValue, &stateValues](uint64_t state) {
-        if (!storm::utility::isZero(stateValues[state])) {
+        if (!storm::numbers::isZero(stateValues[state])) {
             return true;
         }
         auto row = this->backwardTransitions->getRow(state);
@@ -131,9 +131,9 @@ void SparseDeterministicVisitingTimesHelper<ValueType>::computeExpectedVisitingT
                 } else {
                     // This is a BSCC
                     if (std::any_of(sccAsBitVector.begin(), sccAsBitVector.end(), isReachableInState)) {
-                        storm::utility::vector::setVectorValues(stateValues, sccAsBitVector, storm::utility::infinity<ValueType>());
+                        storm::utility::vector::setVectorValues(stateValues, sccAsBitVector, storm::numbers::infinity<ValueType>());
                     } else {
-                        storm::utility::vector::setVectorValues(stateValues, sccAsBitVector, storm::utility::zero<ValueType>());
+                        storm::utility::vector::setVectorValues(stateValues, sccAsBitVector, storm::numbers::zero<ValueType>());
                     }
                 }
                 sccAsBitVector.clear();
@@ -163,10 +163,10 @@ void SparseDeterministicVisitingTimesHelper<ValueType>::computeExpectedVisitingT
                 // This is a BSCC, we set the values of the states to infinity or 0.
                 if (std::any_of(sccAsBitVector.begin(), sccAsBitVector.end(), isReachableInState)) {
                     // The BSCC is reachable: The EVT is infinity
-                    storm::utility::vector::setVectorValues(stateValues, sccAsBitVector, storm::utility::infinity<ValueType>());
+                    storm::utility::vector::setVectorValues(stateValues, sccAsBitVector, storm::numbers::infinity<ValueType>());
                 } else {
                     // The BSCC is not reachable: The EVT is zero
-                    storm::utility::vector::setVectorValues(stateValues, sccAsBitVector, storm::utility::zero<ValueType>());
+                    storm::utility::vector::setVectorValues(stateValues, sccAsBitVector, storm::numbers::zero<ValueType>());
                 }
             }
             sccAsBitVector.clear();
@@ -175,9 +175,9 @@ void SparseDeterministicVisitingTimesHelper<ValueType>::computeExpectedVisitingT
 
     if (isContinuousTime()) {
         // Divide with the exit rates
-        // Since storm::utility::infinity<storm::RationalNumber>() is just set to some big number, we have to treat the infinity-case explicitly.
+        // Since storm::numbers::infinity<storm::RationalNumber>() is just set to some big number, we have to treat the infinity-case explicitly.
         storm::utility::vector::applyPointwise(stateValues, *exitRates, stateValues, [](ValueType const& xi, ValueType const& yi) -> ValueType {
-            return storm::utility::isInfinity(xi) ? xi : xi / yi;
+            return storm::numbers::isInfinity(xi) ? xi : xi / yi;
         });
     }
 }
@@ -282,16 +282,16 @@ storm::Environment SparseDeterministicVisitingTimesHelper<ValueType>::getEnviron
         if (needAdaptPrecision) {
             // the precision is relevant (e.g. not the case for elimination, sparselu etc.)
             ValueType min = *std::min_element(exitRates->begin(), exitRates->end());
-            STORM_LOG_THROW(!storm::utility::isZero(min), storm::exceptions::InvalidOperationException,
+            STORM_LOG_THROW(!storm::numbers::isZero(min), storm::exceptions::InvalidOperationException,
                             "An error occurred during the adjustment of the precision. Min. rate = " << min << ".");
             newEnv.solver().setLinearEquationSolverPrecision(
-                static_cast<storm::RationalNumber>(prec.first.get() * storm::utility::convertNumber<storm::RationalNumber>(min)));
+                static_cast<storm::RationalNumber>(prec.first.get() * storm::numbers::convert<storm::RationalNumber>(min)));
         }
     }
 
     auto prec = newEnv.solver().getPrecisionOfLinearEquationSolver(newEnv.solver().getLinearEquationSolverType());
     if (prec.first.is_initialized()) {
-        STORM_LOG_INFO("Precision for EVTs computation: " << storm::utility::convertNumber<double>(prec.first.get()) << " (exact: " << prec.first.get() << ")"
+        STORM_LOG_INFO("Precision for EVTs computation: " << storm::numbers::convert<double>(prec.first.get()) << " (exact: " << prec.first.get() << ")"
                                                           << '\n');
     }
 
@@ -337,10 +337,10 @@ storm::Environment SparseDeterministicVisitingTimesHelper<ValueType>::getEnviron
         // We need to increase the solver's relative precision that is used in an SCC depending on the maximal SCC chain length.
         auto subEnvPrec = subEnv.solver().getPrecisionOfLinearEquationSolver(subEnv.solver().getLinearEquationSolverType());
 
-        double scaledPrecision1 = 1 - std::pow(1 - storm::utility::convertNumber<double>(subEnvPrec.first.get()), 1.0 / sccDecomposition->getMaxSccDepth());
+        double scaledPrecision1 = 1 - std::pow(1 - storm::numbers::convert<double>(subEnvPrec.first.get()), 1.0 / sccDecomposition->getMaxSccDepth());
 
         // set new precision
-        subEnv.solver().setLinearEquationSolverPrecision(storm::utility::convertNumber<storm::RationalNumber>(scaledPrecision1));
+        subEnv.solver().setLinearEquationSolverPrecision(storm::numbers::convert<storm::RationalNumber>(scaledPrecision1));
 
     } else if (needAdaptPrecision && !subEnv.solver().getPrecisionOfLinearEquationSolver(subEnv.solver().getLinearEquationSolverType()).second.get()) {
         // Sound computations wrt. absolute precision:
@@ -358,7 +358,7 @@ storm::Environment SparseDeterministicVisitingTimesHelper<ValueType>::getEnviron
             uint_fast64_t maxNumInc = 0;
 
             // maxEVT: the maximal value of 1/(1-p), where p is the recurrence probability within an SCC (this value stays 0 if there are no cycles)
-            ValueType boundEVT = storm::utility::zero<ValueType>();
+            ValueType boundEVT = storm::numbers::zero<ValueType>();
 
             auto sccItEnd = std::make_reverse_iterator(sccDecomposition->begin());
             for (auto sccIt = std::make_reverse_iterator(sccDecomposition->end()); sccIt != sccItEnd; ++sccIt) {
@@ -370,7 +370,7 @@ storm::Environment SparseDeterministicVisitingTimesHelper<ValueType>::getEnviron
                     // Get number of incoming transitions to this scc (from different sccs)
                     auto toSccMatrix = transitionMatrix.getSubmatrix(false, ~sccAsBitVector, sccAsBitVector);
                     uint_fast64_t localNumInc =
-                        std::count_if(toSccMatrix.begin(), toSccMatrix.end(), [](auto const& e) { return !storm::utility::isZero(e.getValue()); });
+                        std::count_if(toSccMatrix.begin(), toSccMatrix.end(), [](auto const& e) { return !storm::numbers::isZero(e.getValue()); });
                     maxNumInc = std::max(maxNumInc, localNumInc);
 
                     // Compute the upper bounds on 1/(1-p) within the SCC
@@ -389,8 +389,8 @@ storm::Environment SparseDeterministicVisitingTimesHelper<ValueType>::getEnviron
                 // As the maximal number of incoming transitions is greater than one, adjustment is necessary.
                 // For this, we need the number of SCCs in the longest SCC chain -1, i.e., sccDecomposition->getMaxSccDepth() -1
                 for (uint64_t i = 1; i < sccDecomposition->getMaxSccDepth(); i++) {
-                    scale = scale + storm::utility::pow(storm::utility::convertNumber<storm::RationalNumber>(maxNumInc), i) *
-                                        storm::utility::convertNumber<storm::RationalNumber>(boundEVT);
+                    scale = scale + storm::numbers::pow(storm::numbers::convert<storm::RationalNumber>(maxNumInc), i) *
+                                        storm::numbers::convert<storm::RationalNumber>(boundEVT);
                 }
             }
             subEnv.solver().setLinearEquationSolverPrecision(static_cast<storm::RationalNumber>(subEnvPrec.first.get() / scale));
@@ -407,16 +407,16 @@ void SparseDeterministicVisitingTimesHelper<ValueType>::processSingletonScc(uint
     auto backwardRow = backwardTransitions->getRow(sccState);
     if (forwardRow.getNumberOfEntries() == 1 && forwardRow.begin()->getColumn() == sccState) {
         // This is a BSCC. We only have to check if there is some non-zero "input"
-        if (!storm::utility::isZero(stateVal) || std::any_of(backwardRow.begin(), backwardRow.end(),
-                                                             [&stateValues](auto const& e) { return !storm::utility::isZero(stateValues[e.getColumn()]); })) {
-            stateVal = storm::utility::infinity<ValueType>();
+        if (!storm::numbers::isZero(stateVal) || std::any_of(backwardRow.begin(), backwardRow.end(),
+                                                             [&stateValues](auto const& e) { return !storm::numbers::isZero(stateValues[e.getColumn()]); })) {
+            stateVal = storm::numbers::infinity<ValueType>();
         }  // else stateVal = 0 (already implied by !(if-condition))
     } else {
         // This is not a BSCC. Compute the state value
-        ValueType divisor = storm::utility::one<ValueType>();
+        ValueType divisor = storm::numbers::one<ValueType>();
         for (auto const& entry : backwardRow) {
             if (entry.getColumn() == sccState) {
-                STORM_LOG_ASSERT(!storm::utility::isOne(entry.getValue()), "Found a self-loop state. This is not expected.");
+                STORM_LOG_ASSERT(!storm::numbers::isOne(entry.getValue()), "Found a self-loop state. This is not expected.");
                 divisor -= entry.getValue();
             } else {
                 stateVal += entry.getValue() * stateValues[entry.getColumn()];
@@ -480,7 +480,7 @@ std::vector<ValueType> SparseDeterministicVisitingTimesHelper<ValueType>::comput
         req.clearAcyclic();
     }
     auto solver = linearEquationSolverFactory.create(env, std::move(sccMatrix));
-    solver->setLowerBound(storm::utility::zero<ValueType>());
+    solver->setLowerBound(storm::numbers::zero<ValueType>());
     req = solver->getRequirements(env);
     req.clearLowerBounds();
     if (req.upperBounds().isCritical()) {

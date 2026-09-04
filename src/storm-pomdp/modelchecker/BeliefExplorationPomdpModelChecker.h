@@ -358,8 +358,8 @@ class BeliefExplorationPomdpModelChecker {
     std::shared_ptr<PomdpModelType> inputPomdp;
     std::shared_ptr<PomdpModelType> preprocessedPomdp;
 
-    storm::utility::ConstantsComparator<BeliefValueType> beliefTypeCC;
-    storm::utility::ConstantsComparator<ValueType> valueTypeCC;
+    storm::numbers::ConstantsComparator<BeliefValueType> beliefTypeCC;
+    storm::numbers::ConstantsComparator<ValueType> valueTypeCC;
 
     storm::pomdp::modelchecker::POMDPValueBounds<ValueType> pomdpValueBounds;
 
@@ -367,7 +367,7 @@ class BeliefExplorationPomdpModelChecker {
 
     Status unfoldingStatus;
     UnfoldingControl unfoldingControl;
-    Result interactiveResult = Result(-storm::utility::infinity<ValueType>(), storm::utility::infinity<ValueType>());
+    Result interactiveResult = Result(-storm::numbers::infinity<ValueType>(), storm::numbers::infinity<ValueType>());
 };
 
 }  // namespace modelchecker

@@ -36,7 +36,7 @@ bool HybridMarkovAutomatonCslModelChecker<ModelType>::canHandleStatic(CheckTask<
                                        .setRewardAccumulationAllowed(true)
                                        .setInstantaneousFormulasAllowed(false)
                                        .setCumulativeRewardFormulasAllowed(false);
-    if (!storm::NumberTraits<ValueType>::SupportsExponential) {
+    if (!storm::numbers::NumberTraits<ValueType>::SupportsExponential) {
         singleObjectiveFragment.setBoundedUntilFormulasAllowed(false);
     }
     return checkTask.getFormula().isInFragment(singleObjectiveFragment);
@@ -87,7 +87,7 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::co
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
     SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
 
-    storm::models::symbolic::StandardRewardModel<DdType, ValueType> timeRewardModel(this->getModel().getManager().getConstant(storm::utility::one<ValueType>()),
+    storm::models::symbolic::StandardRewardModel<DdType, ValueType> timeRewardModel(this->getModel().getManager().getConstant(storm::numbers::one<ValueType>()),
                                                                                     boost::none, boost::none);
     return storm::modelchecker::helper::HybridMarkovAutomatonCslHelper::computeReachabilityRewards<DdType, ValueType>(
         env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(),

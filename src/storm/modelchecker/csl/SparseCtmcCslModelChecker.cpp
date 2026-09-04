@@ -33,7 +33,7 @@ bool SparseCtmcCslModelChecker<ModelType>::canHandleStatic(CheckTask<storm::logi
                         .setTimeOperatorsAllowed(true)
                         .setTotalRewardFormulasAllowed(true)
                         .setRewardAccumulationAllowed(true);
-    if (!storm::NumberTraits<ValueType>::SupportsExponential) {
+    if (!storm::numbers::NumberTraits<ValueType>::SupportsExponential) {
         fragment.setBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false).setInstantaneousFormulasAllowed(false);
     }
     return checkTask.getFormula().isInFragment(fragment);
@@ -47,7 +47,7 @@ bool SparseCtmcCslModelChecker<SparseCtmcModelType>::canHandle(CheckTask<storm::
 template<typename SparseCtmcModelType>
 std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeBoundedUntilProbabilities(
     Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
-    if constexpr (!storm::NumberTraits<ValueType>::SupportsExponential) {
+    if constexpr (!storm::numbers::NumberTraits<ValueType>::SupportsExponential) {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing bounded until probabilities is not supported for this numeric type.");
         return nullptr;
     } else {
@@ -153,7 +153,7 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
 template<typename SparseCtmcModelType>
 std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeInstantaneousRewards(
     Environment const& env, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
-    if constexpr (!storm::NumberTraits<ValueType>::SupportsExponential) {
+    if constexpr (!storm::numbers::NumberTraits<ValueType>::SupportsExponential) {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing instantaneous rewards is not supported for this numeric type.");
         return nullptr;
     } else {
@@ -171,7 +171,7 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
 template<typename SparseCtmcModelType>
 std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeCumulativeRewards(
     Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
-    if constexpr (!storm::NumberTraits<ValueType>::SupportsExponential) {
+    if constexpr (!storm::numbers::NumberTraits<ValueType>::SupportsExponential) {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing cumulative rewards is not supported for this numeric type.");
         return nullptr;
     } else {
@@ -252,7 +252,7 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
 template<typename SparseCtmcModelType>
 std::vector<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeAllTransientProbabilities(
     Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
-    if constexpr (!storm::NumberTraits<ValueType>::SupportsExponential) {
+    if constexpr (!storm::numbers::NumberTraits<ValueType>::SupportsExponential) {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing transient probabilities is not supported for this numeric type.");
         return {};
     } else {
@@ -288,9 +288,9 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
         result = helper.computeLongRunAverageStateDistribution(env, *initialStates.begin());
     } else {
         STORM_LOG_WARN("Multiple initial states found. A uniform distribution over initial states is assumed.");
-        ValueType initProb = storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(numInitStates);
+        ValueType initProb = storm::numbers::one<ValueType>() / storm::numbers::convert<ValueType, uint64_t>(numInitStates);
         result = helper.computeLongRunAverageStateDistribution(env, [&initialStates, &initProb](uint64_t const& stateIndex) {
-            return initialStates.get(stateIndex) ? initProb : storm::utility::zero<ValueType>();
+            return initialStates.get(stateIndex) ? initProb : storm::numbers::zero<ValueType>();
         });
     }
 

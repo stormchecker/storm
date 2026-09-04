@@ -37,12 +37,12 @@ void transitionMatrixToUmb(storm::storage::SparseMatrix<ValueType> const& matrix
         auto const& row = matrix.getRow(rowIndex);
         for (auto const& entry : row) {
             umb.branchToTarget->push_back(entry.getColumn());
-            branchProbabilities.push_back(storm::utility::convertNumber<TargetValueType>(entry.getValue()));
+            branchProbabilities.push_back(storm::numbers::convert<TargetValueType>(entry.getValue()));
         }
         if (normalize) {
             auto rowProbs = std::span<TargetValueType>(branchProbabilities.end() - row.getNumberOfEntries(), branchProbabilities.end());
-            TargetValueType const rowSum = std::accumulate(rowProbs.begin(), rowProbs.end(), storm::utility::zero<TargetValueType>());
-            if (!storm::utility::isOne(rowSum)) {
+            TargetValueType const rowSum = std::accumulate(rowProbs.begin(), rowProbs.end(), storm::numbers::zero<TargetValueType>());
+            if (!storm::numbers::isOne(rowSum)) {
                 std::for_each(rowProbs.begin(), rowProbs.end(), [&rowSum](TargetValueType& entry) { entry /= rowSum; });
             }
         }
@@ -200,10 +200,10 @@ void rewardToUmb(std::string const& rewardModelName, storm::models::sparse::Stan
                     ++rewIt;
                 }
                 if (rewIt == rewardRow.end() || rewIt->getColumn() > entry.getColumn()) {
-                    branchRewards.push_back(storm::utility::zero<TargetValueType>());
+                    branchRewards.push_back(storm::numbers::zero<TargetValueType>());
                 } else {
                     STORM_LOG_ASSERT(rewIt->getColumn() == entry.getColumn(), "Unexpected column in reward model.");
-                    branchRewards.push_back(storm::utility::convertNumber<TargetValueType>(rewIt->getValue()));
+                    branchRewards.push_back(storm::numbers::convert<TargetValueType>(rewIt->getValue()));
                 }
             }
         }
@@ -462,7 +462,7 @@ void sparseModelToUmb(storm::models::sparse::Model<ValueType> const& model, UmbM
     // Transition matrix
     using enum storm::models::ModelType;
     bool normalize = model.isOfType(Ctmc);
-    if (!storm::NumberTraits<ValueType>::IsExact && storm::NumberTraits<TargetValueType>::IsExact) {
+    if (!storm::numbers::NumberTraits<ValueType>::IsExact && storm::numbers::NumberTraits<TargetValueType>::IsExact) {
         STORM_LOG_WARN("Translating from non-exact to exact model representation. This may lead to rounding errors.");
         normalize = true;
     }

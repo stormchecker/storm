@@ -1,6 +1,6 @@
 #include "storm/storage/geometry/ReduceVertexCloud.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/Stopwatch.h"
-#include "storm/utility/constants.h"
 #undef _DEBUG_REDUCE_VERTEX_CLOUD
 
 namespace storm {
@@ -48,7 +48,7 @@ std::pair<storm::storage::BitVector, bool> ReduceVertexCloud<ValueType>::elimina
         smtSolver->add((weightVariableExpr >= expressionManager->rational(0.0)));
         smtSolver->add(weightVariableExpr < expressionManager->rational(1.0));
     }
-    if (storm::utility::isZero(wiggle)) {
+    if (storm::numbers::isZero(wiggle)) {
         smtSolver->add(storm::expressions::sum(weightVariableExpressions) <= expressionManager->rational(1));
     } else {
         smtSolver->add(storm::expressions::sum(weightVariableExpressions) <= expressionManager->rational(1 + wiggle));
@@ -102,7 +102,7 @@ std::pair<storm::storage::BitVector, bool> ReduceVertexCloud<ValueType>::elimina
             auto val = smtSolver->getModelAsValuation();
             uint64_t varIndex = 0;
             for (auto const& wvar : weightVariables) {
-                if (!storm::utility::isZero(val.getRationalValue(wvar))) {
+                if (!storm::numbers::isZero(val.getRationalValue(wvar))) {
                     std::cout << toString(input[varIndex]) << " (weight: " << val.getRationalValue(wvar) << ")";
                 }
                 varIndex++;

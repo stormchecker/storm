@@ -317,7 +317,7 @@ std::shared_ptr<SparseModelType> SparseParametricMdpSimplifier<SparseModelType>:
         actionRewards = model.getRewardModel(*rewardModelName).getTotalRewardVector(model.getTransitionMatrix());
         uint_fast64_t actionIndex = 0;
         for (auto const& actionReward : actionRewards) {
-            if (!storm::utility::isZero(actionReward)) {
+            if (!storm::numbers::isZero(actionReward)) {
                 possibleECActions.set(actionIndex, false);
             }
             ++actionIndex;

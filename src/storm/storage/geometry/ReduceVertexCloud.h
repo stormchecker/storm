@@ -1,8 +1,8 @@
 #pragma once
 
+#include "storm/numbers/constants.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/storage/BitVector.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/solver.h"
 
 namespace storm {
@@ -17,7 +17,7 @@ class ReduceVertexCloud {
      * @param wiggle
      * @param timeout: Maximal time in milliseconds, 0 is no timeout
      */
-    ReduceVertexCloud(std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory, ValueType wiggle = storm::utility::zero<ValueType>(),
+    ReduceVertexCloud(std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory, ValueType wiggle = storm::numbers::zero<ValueType>(),
                       uint64_t timeout = 0)
         : smtSolverFactory(smtSolverFactory), wiggle(wiggle), timeOut(timeout) {}
 

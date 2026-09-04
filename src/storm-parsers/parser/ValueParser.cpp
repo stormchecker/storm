@@ -8,8 +8,8 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/utility/constants.h"
 
 namespace storm {
 namespace parser {
@@ -66,7 +66,7 @@ bool parseDouble(std::string const& value, double& result) {
         // Try as rational number
         storm::RationalNumber rationalResult;
         if (parseNumber(value, rationalResult)) {
-            result = storm::utility::convertNumber<double>(rationalResult);
+            result = storm::numbers::convert<double>(rationalResult);
             return true;
         } else {
             return false;

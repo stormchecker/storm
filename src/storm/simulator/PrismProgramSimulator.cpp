@@ -14,7 +14,7 @@ DiscreteTimePrismProgramSimulator<ValueType>::DiscreteTimePrismProgramSimulator(
     : program(program),
       currentState(),
       stateGenerator(std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(program, options)),
-      zeroRewards(stateGenerator->getNumberOfRewardModels(), storm::utility::zero<ValueType>()),
+      zeroRewards(stateGenerator->getNumberOfRewardModels(), storm::numbers::zero<ValueType>()),
       lastActionRewards(zeroRewards),
       stateToId(stateGenerator->getStateSize()),
       idToState() {

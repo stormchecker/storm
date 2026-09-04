@@ -2,11 +2,11 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/Extremum.h"
-#include "storm/utility/constants.h"
 
 namespace storm::modelchecker::multiobjective {
 
@@ -15,7 +15,7 @@ ValueType VisitingTimesHelper<ValueType>::computeMecTraversalLowerBound(storm::s
                                                                         storm::storage::SparseMatrix<ValueType> const& transitions,
                                                                         bool assumeOptimalTransitionProbabilities) {
     STORM_LOG_ASSERT(mec.size() > 0, "Empty mec not expected.");
-    auto res = storm::utility::one<ValueType>();
+    auto res = storm::numbers::one<ValueType>();
     if (mec.size() == 1) {
         return res;
     }
@@ -39,12 +39,12 @@ ValueType VisitingTimesHelper<ValueType>::computeMecTraversalLowerBound(storm::s
                     }
                 }
                 if (numEntries > 0) {
-                    v &= storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType>(numEntries);
+                    v &= storm::numbers::one<ValueType>() / storm::numbers::convert<ValueType>(numEntries);
                 }
             } else {
                 // actually determine the minimal probability
                 for (auto const& entry : row) {
-                    if (entry.getColumn() != s && !storm::utility::isZero(entry.getValue())) {
+                    if (entry.getColumn() != s && !storm::numbers::isZero(entry.getValue())) {
                         v &= entry.getValue();
                     }
                 }
@@ -60,20 +60,20 @@ template<typename ValueType>
 ValueType VisitingTimesHelper<ValueType>::computeMecVisitsUpperBound(storm::storage::MaximalEndComponent const& mec,
                                                                      storm::storage::SparseMatrix<ValueType> const& transitions,
                                                                      bool assumeOptimalTransitionProbabilities) {
-    auto const one = storm::utility::one<ValueType>();
+    auto const one = storm::numbers::one<ValueType>();
     auto const traversalLowerBound = computeMecTraversalLowerBound(mec, transitions, assumeOptimalTransitionProbabilities);
     if (assumeOptimalTransitionProbabilities) {
         // We assume that the probability to go back to the MEC using an exiting choice is zero.
         return one / traversalLowerBound;
     } else {
         // compute the largest probability to go back to the MEC when using an exiting choice
-        storm::utility::Maximum<ValueType> q(storm::utility::zero<ValueType>());
+        storm::utility::Maximum<ValueType> q(storm::numbers::zero<ValueType>());
         for (auto const& stateChoices : mec) {
             for (auto c : transitions.getRowGroupIndices(stateChoices.first)) {
                 if (stateChoices.second.contains(c)) {
                     continue;  // not an exit choice!
                 }
-                auto choiceValue = storm::utility::zero<ValueType>();
+                auto choiceValue = storm::numbers::zero<ValueType>();
                 for (auto const& entry : transitions.getRow(c)) {
                     if (mec.containsState(entry.getColumn())) {
                         choiceValue += entry.getValue();
@@ -108,13 +108,13 @@ std::vector<ValueType> VisitingTimesHelper<ValueType>::computeUpperBoundsOnExpec
     toSinkProbabilities.reserve(quotientData.matrix.getRowGroupCount());
     for (uint64_t state = 0; state < quotientData.matrix.getRowGroupCount(); ++state) {
         modifiedQuotientBuilder.newRowGroup(quotientData.matrix.getRowGroupIndices()[state]);
-        ValueType scalingFactor = storm::utility::one<ValueType>();
+        ValueType scalingFactor = storm::numbers::one<ValueType>();
         if (auto findRes = collapsedStateToValueMap.find(state); findRes != collapsedStateToValueMap.end()) {
             scalingFactor = findRes->second;
         }
         for (auto const choice : quotientData.matrix.getRowGroupIndices(state)) {
-            if (!storm::utility::isOne(scalingFactor)) {
-                modifiedQuotientBuilder.addDiagonalEntry(choice, storm::utility::one<ValueType>() - scalingFactor);
+            if (!storm::numbers::isOne(scalingFactor)) {
+                modifiedQuotientBuilder.addDiagonalEntry(choice, storm::numbers::one<ValueType>() - scalingFactor);
             }
             for (auto const& entry : quotientData.matrix.getRow(choice)) {
                 modifiedQuotientBuilder.addNextValue(choice, entry.getColumn(), scalingFactor * entry.getValue());
@@ -140,7 +140,7 @@ std::vector<ValueType> VisitingTimesHelper<ValueType>::computeUpperBoundsOnExpec
         if (quotientState < quotientData.matrix.getRowGroupCount()) {
             result.push_back(quotientUpperBounds.at(quotientState));
         } else {
-            result.push_back(-storm::utility::one<ValueType>());  // not in given subsystem;
+            result.push_back(-storm::numbers::one<ValueType>());  // not in given subsystem;
         }
     }
     return result;

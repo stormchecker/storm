@@ -2,9 +2,9 @@
 
 #include <iomanip>
 #include <iostream>
+#include "storm/numbers/constants.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Expressions.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -40,7 +40,7 @@ class Halfspace {
      * In contrast to the euclideanDistance method, there are no inaccuracies introduced (providing ValueType is exact for +, -, and *)
      */
     ValueType distance(std::vector<ValueType> const& point) const {
-        return std::max(storm::utility::zero<ValueType>(), (ValueType)(storm::utility::vector::dotProduct(point, normalVector()) - offset()));
+        return std::max(storm::numbers::zero<ValueType>(), (ValueType)(storm::utility::vector::dotProduct(point, normalVector()) - offset()));
     }
 
     /*
@@ -50,7 +50,7 @@ class Halfspace {
      */
     ValueType euclideanDistance(std::vector<ValueType> const& point) const {
         // divide the distance with the 2-norm of the normal vector
-        return distance(point) / storm::utility::sqrt(storm::utility::vector::dotProduct(normalVector(), normalVector()));
+        return distance(point) / storm::numbers::sqrt(storm::utility::vector::dotProduct(normalVector(), normalVector()));
     }
 
     /*
@@ -65,7 +65,7 @@ class Halfspace {
      */
     Halfspace<ValueType> invert() const {
         std::vector<ValueType> resNormalVector = normalVector();
-        storm::utility::vector::scaleVectorInPlace(resNormalVector, -storm::utility::one<ValueType>());
+        storm::utility::vector::scaleVectorInPlace(resNormalVector, -storm::numbers::one<ValueType>());
         return Halfspace<ValueType>(std::move(resNormalVector), -offset());
     }
 
@@ -82,7 +82,7 @@ class Halfspace {
             }
             std::stringstream numberStream;
             if (numbersAsDouble) {
-                numberStream << storm::utility::convertNumber<double>(*it);
+                numberStream << storm::numbers::convert<double>(*it);
             } else {
                 numberStream << *it;
             }
@@ -90,7 +90,7 @@ class Halfspace {
         }
         stream << ") * x <= ";
         if (numbersAsDouble) {
-            stream << storm::utility::convertNumber<double>(offset());
+            stream << storm::numbers::convert<double>(offset());
         } else {
             stream << offset();
         }

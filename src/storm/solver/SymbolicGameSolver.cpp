@@ -7,7 +7,7 @@
 #include "storm/environment/solver/GameSolverEnvironment.h"
 
 #include "storm/exceptions/IllegalFunctionCallException.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -23,9 +23,9 @@ SymbolicGameSolver<Type, ValueType>::SymbolicGameSolver(
     : A(A),
       allRows(allRows),
       illegalPlayer1Mask(
-          illegalPlayer1Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())),
+          illegalPlayer1Mask.ite(A.getDdManager().getConstant(storm::numbers::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())),
       illegalPlayer2Mask(
-          illegalPlayer2Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())),
+          illegalPlayer2Mask.ite(A.getDdManager().getConstant(storm::numbers::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())),
       rowMetaVariables(rowMetaVariables),
       columnMetaVariables(columnMetaVariables),
       rowColumnMetaVariablePairs(rowColumnMetaVariablePairs),
@@ -46,7 +46,7 @@ storm::dd::Add<Type, ValueType> SymbolicGameSolver<Type, ValueType>::solveGame(E
                         "Switching game method to Value iteration since the selected method is not supported by this solver.");
 
     // Set up the environment.
-    ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().game().getPrecision());
+    ValueType precision = storm::numbers::convert<ValueType>(env.solver().game().getPrecision());
     bool relative = env.solver().game().getRelativeTerminationCriterion();
     uint64_t maxIter = env.solver().game().getMaximalNumberOfIterations();
     storm::dd::Add<Type, ValueType> xCopy = x;

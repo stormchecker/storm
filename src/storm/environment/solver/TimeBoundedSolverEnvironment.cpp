@@ -1,8 +1,8 @@
 #include "storm/environment/solver/TimeBoundedSolverEnvironment.h"
 
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/TimeBoundedSolverSettings.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -11,9 +11,9 @@ TimeBoundedSolverEnvironment::TimeBoundedSolverEnvironment() {
     auto const& tbSettings = storm::settings::getModule<storm::settings::modules::TimeBoundedSolverSettings>();
     maMethod = tbSettings.getMaMethod();
     maMethodSetFromDefault = tbSettings.isMaMethodSetFromDefaultValue();
-    precision = storm::utility::convertNumber<storm::RationalNumber>(tbSettings.getPrecision());
+    precision = storm::numbers::convert<storm::RationalNumber>(tbSettings.getPrecision());
     relative = tbSettings.isRelativePrecision();
-    unifPlusKappa = storm::utility::convertNumber<storm::RationalNumber>(tbSettings.getUnifPlusKappa());
+    unifPlusKappa = storm::numbers::convert<storm::RationalNumber>(tbSettings.getUnifPlusKappa());
 }
 
 TimeBoundedSolverEnvironment::~TimeBoundedSolverEnvironment() {

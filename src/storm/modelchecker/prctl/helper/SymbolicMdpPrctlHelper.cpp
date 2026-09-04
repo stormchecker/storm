@@ -8,7 +8,7 @@
 
 #include "storm/environment/Environment.h"
 
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/graph.h"
 
 #include "storm/models/symbolic/StandardRewardModel.h"
@@ -95,7 +95,7 @@ std::unique_ptr<CheckResult> SymbolicMdpPrctlHelper<DdType, ValueType>::computeU
     if (initialScheduler) {
         solver->setInitialScheduler(initialScheduler.get());
     }
-    solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+    solver->setBounds(storm::numbers::zero<ValueType>(), storm::numbers::one<ValueType>());
     solver->setRequirementsChecked();
 
     storm::dd::Add<DdType, ValueType> result =
@@ -128,9 +128,8 @@ std::unique_ptr<CheckResult> SymbolicMdpPrctlHelper<DdType, ValueType>::computeU
     if (qualitative) {
         // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
         return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(
-            model.getReachableStates(),
-            statesWithProbability01.second.template toAdd<ValueType>() +
-                maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::utility::convertNumber<ValueType>(0.5))));
+            model.getReachableStates(), statesWithProbability01.second.template toAdd<ValueType>() +
+                                            maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::numbers::convert<ValueType>(0.5))));
     } else {
         // If there are maybe states, we need to solve an equation system.
         if (!maybeStates.isZero()) {
@@ -310,14 +309,14 @@ std::unique_ptr<CheckResult> SymbolicMdpPrctlHelper<DdType, ValueType>::computeR
     if (initialScheduler) {
         solver->setInitialScheduler(initialScheduler.get());
     }
-    solver->setLowerBound(storm::utility::zero<ValueType>());
+    solver->setLowerBound(storm::numbers::zero<ValueType>());
     solver->setRequirementsChecked();
 
     storm::dd::Add<DdType, ValueType> result =
         solver->solveEquations(env, dir, startValues ? startValues.get() : maybeStatesAdd.getDdManager().template getAddZero<ValueType>(), subvector);
 
     return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(
-        model.getReachableStates(), infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), result)));
+        model.getReachableStates(), infinityStates.ite(model.getManager().getConstant(storm::numbers::infinity<ValueType>()), result)));
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
@@ -355,7 +354,7 @@ std::unique_ptr<CheckResult> SymbolicMdpPrctlHelper<DdType, ValueType>::computeR
     } else {
         return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(
             model.getReachableStates(),
-            infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>())));
+            infinityStates.ite(model.getManager().getConstant(storm::numbers::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>())));
     }
 }
 
@@ -364,7 +363,7 @@ std::unique_ptr<CheckResult> SymbolicMdpPrctlHelper<DdType, ValueType>::computeR
     Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model,
     storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates,
     boost::optional<storm::dd::Add<DdType, ValueType>> const& startValues) {
-    RewardModelType rewardModel(model.getManager().getConstant(storm::utility::one<ValueType>()), boost::none, boost::none);
+    RewardModelType rewardModel(model.getManager().getConstant(storm::numbers::one<ValueType>()), boost::none, boost::none);
     return computeReachabilityRewards(env, dir, model, transitionMatrix, rewardModel, targetStates, startValues);
 }
 

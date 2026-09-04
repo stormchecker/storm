@@ -124,7 +124,7 @@ typename BinaryPomdpTransformer<ValueType>::TransformationData BinaryPomdpTransf
                     ++currRow;
                 } else {
                     queue.push(std::move(splittedGroup));
-                    builder.addNextValue(currRow, currAuxState, storm::utility::one<ValueType>());
+                    builder.addNextValue(currRow, currAuxState, storm::numbers::one<ValueType>());
                     ++currAuxState;
                     ++currRow;
                 }
@@ -166,10 +166,10 @@ storm::models::sparse::StandardRewardModel<ValueType> BinaryPomdpTransformer<Val
     std::optional<std::vector<ValueType>> stateRewards, actionRewards;
     if (rewardModel.hasStateRewards()) {
         stateRewards = rewardModel.getStateRewardVector();
-        stateRewards.value().resize(data.simpleMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+        stateRewards.value().resize(data.simpleMatrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
     }
     if (rewardModel.hasStateActionRewards()) {
-        actionRewards = std::vector<ValueType>(data.simpleMatrix.getRowCount(), storm::utility::zero<ValueType>());
+        actionRewards = std::vector<ValueType>(data.simpleMatrix.getRowCount(), storm::numbers::zero<ValueType>());
         for (uint64_t pomdpChoice = 0; pomdpChoice < pomdp.getNumberOfChoices(); ++pomdpChoice) {
             STORM_LOG_ASSERT(data.originalToSimpleChoiceMap[pomdpChoice] < data.simpleMatrix.getRowCount(), "Invalid entry in map for choice " << pomdpChoice);
             actionRewards.value()[data.originalToSimpleChoiceMap[pomdpChoice]] = rewardModel.getStateActionReward(pomdpChoice);

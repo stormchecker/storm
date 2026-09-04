@@ -9,10 +9,10 @@
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/LinearCoefficientVisitor.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
@@ -24,11 +24,11 @@ namespace solver {
 using namespace soplex;
 
 soplex::Rational to_soplex_rational(storm::RationalNumber const& in) {
-    return soplex::Rational(storm::utility::convertNumber<GmpRationalNumber>(in).get_mpq_t());
+    return soplex::Rational(storm::numbers::convert<GmpRationalNumber>(in).get_mpq_t());
 }
 
 storm::RationalNumber from_soplex_rational(soplex::Rational const& r) {
-    return storm::utility::convertNumber<storm::RationalNumber>(GmpRationalNumber(r.backend().data()));
+    return storm::numbers::convert<storm::RationalNumber>(GmpRationalNumber(r.backend().data()));
 }
 
 template<typename ValueType, bool RawMode>
@@ -245,7 +245,7 @@ ValueType SoplexLpSolver<ValueType, RawMode>::getContinuousValue(Variable const&
         }
     }
     if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
-        return storm::utility::convertNumber<ValueType>(from_soplex_rational(primalSolution[varIndex]));
+        return storm::numbers::convert<ValueType>(from_soplex_rational(primalSolution[varIndex]));
     } else {
         return primalSolution[varIndex];
     }
@@ -260,7 +260,7 @@ double SoplexLpSolver<double>::getObjectiveValue() const {
 template<typename ValueType, bool RawMode>
 ValueType SoplexLpSolver<ValueType, RawMode>::getObjectiveValue() const {
     ensureSolved();
-    return storm::utility::convertNumber<ValueType>(from_soplex_rational(solver.objValueRational()));
+    return storm::numbers::convert<ValueType>(from_soplex_rational(solver.objValueRational()));
 }
 
 template<typename ValueType, bool RawMode>

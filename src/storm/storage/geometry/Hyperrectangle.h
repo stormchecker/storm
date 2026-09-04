@@ -64,13 +64,13 @@ class Hyperrectangle {
         std::vector<Halfspace<ValueType>> halfspaces;
         halfspaces.reserve(2 * lowerBounds().size());
         for (uint_fast64_t i = 0; i < lowerBounds().size(); ++i) {
-            std::vector<ValueType> direction(lowerBounds().size(), storm::utility::zero<ValueType>());
-            direction[i] = -storm::utility::one<ValueType>();
+            std::vector<ValueType> direction(lowerBounds().size(), storm::numbers::zero<ValueType>());
+            direction[i] = -storm::numbers::one<ValueType>();
             ValueType offset = -lowerBounds()[i];
             halfspaces.emplace_back(std::move(direction), std::move(offset));
 
-            direction = std::vector<ValueType>(lowerBounds().size(), storm::utility::zero<ValueType>());
-            direction[i] = storm::utility::one<ValueType>();
+            direction = std::vector<ValueType>(lowerBounds().size(), storm::numbers::zero<ValueType>());
+            direction[i] = storm::numbers::one<ValueType>();
             offset = upperBounds()[i];
             halfspaces.emplace_back(std::move(direction), std::move(offset));
         }

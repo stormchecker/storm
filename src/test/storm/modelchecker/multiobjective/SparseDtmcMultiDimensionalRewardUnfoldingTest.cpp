@@ -6,10 +6,10 @@
 #include "storm/environment/Environment.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/jani/Property.h"
-#include "storm/utility/constants.h"
 
 class SparseDtmcMultiDimensionalRewardUnfoldingTest : public ::testing::Test {
    protected:
@@ -39,17 +39,16 @@ TEST_F(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_die) {
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[0], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("0")),
-              result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
+    EXPECT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("0")), result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[1], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("1/8")),
+    EXPECT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("1/8")),
               result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[2], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("21/128")),
+    EXPECT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("21/128")),
               result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
@@ -73,22 +72,22 @@ TEST_F(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_leader) {
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[0], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("24/25")),
+    EXPECT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("24/25")),
               result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[1], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("624/625")),
+    EXPECT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("624/625")),
               result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[2], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("1/625")),
+    EXPECT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("1/625")),
               result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[3], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("24/625")),
+    EXPECT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("24/625")),
               result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
@@ -111,16 +110,16 @@ TEST_F(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_crowds) {
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[0], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("78686542099694893/1268858272000000000")),
+    EXPECT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("78686542099694893/1268858272000000000")),
               result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[1], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("13433618626105041/1268858272000000000")),
+    EXPECT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("13433618626105041/1268858272000000000")),
               result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[2], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("620529/1364000")),
+    EXPECT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("620529/1364000")),
               result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 }

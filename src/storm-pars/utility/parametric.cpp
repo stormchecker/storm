@@ -1,7 +1,7 @@
 #include "storm-pars/utility/parametric.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 namespace storm {
 namespace utility {
@@ -13,7 +13,7 @@ ReturnType evaluateRationalFunction(storm::RationalFunction const& function, Val
     if constexpr (std::is_same<ReturnType, typename CoefficientType<storm::RationalFunction>::type>::value) {
         return function.evaluate(valuation);
     } else {
-        return storm::utility::convertNumber<ReturnType>(function.evaluate(valuation));
+        return storm::numbers::convert<ReturnType>(function.evaluate(valuation));
     }
 }
 
@@ -50,12 +50,12 @@ void gatherOccurringVariables<storm::RationalFunction>(storm::RationalFunction c
 
 template<>
 bool isLinear<storm::RationalFunction>(storm::RationalFunction const& function) {
-    return storm::utility::isConstant(function.denominator()) && function.nominator().isLinear();
+    return storm::numbers::isConstant(function.denominator()) && function.nominator().isLinear();
 }
 
 template<>
 bool isMultiLinearPolynomial<storm::RationalFunction>(storm::RationalFunction const& function) {
-    if (!storm::utility::isConstant(function.denominator())) {
+    if (!storm::numbers::isConstant(function.denominator())) {
         return false;
     }
     auto varInfos = function.nominator().getVarInfo<false>();

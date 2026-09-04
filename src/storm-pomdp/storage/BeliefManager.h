@@ -6,10 +6,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include "storm/numbers/ConstantsComparator.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/storage/BitVector.h"
-#include "storm/utility/ConstantsComparator.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/solver.h"
 
 namespace storm {
@@ -162,7 +162,7 @@ class BeliefManager {
     std::vector<std::unordered_map<BeliefType, BeliefId, BeliefHash, Belief_equal_to>> beliefToIdMap;
     BeliefId initialBeliefId;
 
-    storm::utility::ConstantsComparator<BeliefValueType> cc;
+    storm::numbers::ConstantsComparator<BeliefValueType> cc;
 
     std::shared_ptr<storm::solver::LpSolver<BeliefValueType>> lpSolver;
 

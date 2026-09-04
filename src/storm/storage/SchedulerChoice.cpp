@@ -4,7 +4,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -17,7 +17,7 @@ SchedulerChoice<ValueType>::SchedulerChoice() {
 
 template<typename ValueType>
 SchedulerChoice<ValueType>::SchedulerChoice(uint_fast64_t deterministicChoice) {
-    distribution.addProbability(deterministicChoice, storm::utility::one<ValueType>());
+    distribution.addProbability(deterministicChoice, storm::numbers::one<ValueType>());
 }
 
 template<typename ValueType>

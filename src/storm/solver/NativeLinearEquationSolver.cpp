@@ -6,6 +6,8 @@
 #include "storm/environment/solver/OviSolverEnvironment.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/numbers/NumberTraits.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/helper/GuessingValueIterationHelper.h"
 #include "storm/solver/helper/IntervalterationHelper.h"
 #include "storm/solver/helper/OptimisticValueIterationHelper.h"
@@ -13,9 +15,7 @@
 #include "storm/solver/helper/SoundValueIterationHelper.h"
 #include "storm/solver/helper/ValueIterationHelper.h"
 #include "storm/solver/multiplier/Multiplier.h"
-#include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -67,7 +67,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsSOR(Environment const&
         this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
     }
 
-    ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
+    ValueType precision = storm::numbers::convert<ValueType>(env.solver().native().getPrecision());
     uint64_t maxIter = env.solver().native().getMaximalNumberOfIterations();
     bool relative = env.solver().native().getRelativeTerminationCriterion();
 
@@ -127,7 +127,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsJacobi(Environment con
         jacobiDecomposition = std::make_unique<JacobiDecomposition>(env, *A);
     }
 
-    ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
+    ValueType precision = storm::numbers::convert<ValueType>(env.solver().native().getPrecision());
     uint64_t maxIter = env.solver().native().getMaximalNumberOfIterations();
     bool relative = env.solver().native().getRelativeTerminationCriterion();
 
@@ -179,7 +179,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsJacobi(Environment con
 template<typename ValueType>
 NativeLinearEquationSolver<ValueType>::WalkerChaeData::WalkerChaeData(Environment const& env, storm::storage::SparseMatrix<ValueType> const& originalMatrix,
                                                                       std::vector<ValueType> const& originalB)
-    : t(storm::utility::convertNumber<ValueType>(1000.0)) {
+    : t(storm::numbers::convert<ValueType>(1000.0)) {
     computeWalkerChaeMatrix(originalMatrix);
     computeNewB(originalB);
     precomputeAuxiliaryData();
@@ -189,7 +189,7 @@ NativeLinearEquationSolver<ValueType>::WalkerChaeData::WalkerChaeData(Environmen
 template<typename ValueType>
 void NativeLinearEquationSolver<ValueType>::WalkerChaeData::computeWalkerChaeMatrix(storm::storage::SparseMatrix<ValueType> const& originalMatrix) {
     storm::storage::BitVector columnsWithNegativeEntries(originalMatrix.getColumnCount());
-    ValueType zero = storm::utility::zero<ValueType>();
+    ValueType zero = storm::numbers::zero<ValueType>();
     for (auto const& e : originalMatrix) {
         if (e.getValue() < zero) {
             columnsWithNegativeEntries.set(e.getColumn());
@@ -210,7 +210,7 @@ void NativeLinearEquationSolver<ValueType>::WalkerChaeData::computeWalkerChaeMat
             }
         }
     }
-    ValueType one = storm::utility::one<ValueType>();
+    ValueType one = storm::numbers::one<ValueType>();
     for (uint64_t column : columnsWithNegativeEntries) {
         builder.addNextValue(row, column, one);
         builder.addNextValue(row, originalMatrix.getRowCount() + columnsWithNegativeEntriesBefore[column], one);
@@ -250,7 +250,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsWalkerChae(Environment
 
     // Square the error bound, so we can use it to check for convergence. We take the squared error, because we
     // do not want to compute the root in the 2-norm computation.
-    ValueType squaredErrorBound = storm::utility::pow(storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()), 2);
+    ValueType squaredErrorBound = storm::numbers::pow(storm::numbers::convert<ValueType>(env.solver().native().getPrecision()), 2);
 
     uint64_t maxIter = env.solver().native().getMaximalNumberOfIterations();
 
@@ -380,7 +380,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsPower(Environment cons
     };
     this->startMeasureProgress();
     auto status = viHelper.VI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(),
-                              storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()), {}, viCallback,
+                              storm::numbers::convert<ValueType>(env.solver().native().getPrecision()), {}, viCallback,
                               env.solver().native().getPowerMethodMultiplicationStyle());
 
     this->reportStatus(status, numIterations);
@@ -399,10 +399,10 @@ void preserveOldRelevantValues(std::vector<ValueType> const& allValues, storm::s
 
 template<typename ValueType>
 ValueType computeMaxAbsDiff(std::vector<ValueType> const& allValues, storm::storage::BitVector const& relevantValues, std::vector<ValueType> const& oldValues) {
-    ValueType result = storm::utility::zero<ValueType>();
+    ValueType result = storm::numbers::zero<ValueType>();
     auto oldValueIt = oldValues.begin();
     for (uint64_t value : relevantValues) {
-        result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allValues[value] - *oldValueIt));
+        result = storm::numbers::max<ValueType>(result, storm::numbers::abs<ValueType>(allValues[value] - *oldValueIt));
     }
     return result;
 }
@@ -410,9 +410,9 @@ ValueType computeMaxAbsDiff(std::vector<ValueType> const& allValues, storm::stor
 template<typename ValueType>
 ValueType computeMaxAbsDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues,
                             storm::storage::BitVector const& relevantValues) {
-    ValueType result = storm::utility::zero<ValueType>();
+    ValueType result = storm::numbers::zero<ValueType>();
     for (uint64_t value : relevantValues) {
-        result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[value] - allOldValues[value]));
+        result = storm::numbers::max<ValueType>(result, storm::numbers::abs<ValueType>(allNewValues[value] - allOldValues[value]));
     }
     return result;
 }
@@ -425,7 +425,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsIntervalIteration(Envi
     STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (IntervalIteration)");
     setUpViOperator();
     helper::IntervalIterationHelper<ValueType, true> iiHelper(viOperator);
-    auto prec = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
+    auto prec = storm::numbers::convert<ValueType>(env.solver().native().getPrecision());
     auto lowerBoundsCallback = [&](std::vector<ValueType>& vector) { this->createLowerBoundsVector(vector); };
     auto upperBoundsCallback = [&](std::vector<ValueType>& vector) { this->createUpperBoundsVector(vector); };
 
@@ -468,7 +468,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(En
 
     setUpViOperator();
 
-    auto precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
+    auto precision = storm::numbers::convert<ValueType>(env.solver().native().getPrecision());
     uint64_t numIterations{0};
     auto sviCallback = [&](typename helper::SoundValueIterationHelper<ValueType, true>::SVIData const& current) {
         this->showProgressIterative(numIterations);
@@ -499,14 +499,14 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIterati
                                                                                    std::vector<ValueType> const& b) const {
     if (!storm::utility::vector::hasNonZeroEntry(b)) {
         // If all entries are zero, OVI might run in an endless loop. However, the result is easy in this case.
-        x.assign(x.size(), storm::utility::zero<ValueType>());
+        x.assign(x.size(), storm::numbers::zero<ValueType>());
         return true;
     }
 
     setUpViOperator();
 
     helper::OptimisticValueIterationHelper<ValueType, true> oviHelper(viOperator);
-    auto prec = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
+    auto prec = storm::numbers::convert<ValueType>(env.solver().native().getPrecision());
     std::optional<ValueType> lowerBound, upperBound;
     if (this->hasLowerBound()) {
         lowerBound = this->getLowerBound(true);
@@ -522,7 +522,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIterati
     this->createLowerBoundsVector(x);
     std::optional<ValueType> guessingFactor;
     if (env.solver().ovi().getUpperBoundGuessingFactor()) {
-        guessingFactor = storm::utility::convertNumber<ValueType>(*env.solver().ovi().getUpperBoundGuessingFactor());
+        guessingFactor = storm::numbers::convert<ValueType>(*env.solver().ovi().getUpperBoundGuessingFactor());
     }
     this->startMeasureProgress();
     auto status = oviHelper.OVI(x, b, env.solver().native().getRelativeTerminationCriterion(), prec, {}, guessingFactor, lowerBound, upperBound, oviCallback);
@@ -559,10 +559,10 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsGuessingValueIteration
     };
 
     this->startMeasureProgress();
-    auto status = helper.solveEquations(*lowerX, *upperX, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
+    auto status = helper.solveEquations(*lowerX, *upperX, b, numIterations, storm::numbers::convert<ValueType>(env.solver().native().getPrecision()),
                                         {},  // No optimization dir
                                         gviCallback);
-    auto two = storm::utility::convertNumber<ValueType>(2.0);
+    auto two = storm::numbers::convert<ValueType>(2.0);
     storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
         *lowerX, *upperX, x, [&two](ValueType const& first, ValueType const& second) -> ValueType { return (first + second) / two; });
     this->reportStatus(status, numIterations);
@@ -598,7 +598,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsRationalSearch(Environ
         return this->updateStatus(current, x, SolverGuarantee::None, numIterations, env.solver().native().getMaximalNumberOfIterations());
     };
     this->startMeasureProgress();
-    auto status = rsHelper.RS(x, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()), {}, rsCallback);
+    auto status = rsHelper.RS(x, b, numIterations, storm::numbers::convert<ValueType>(env.solver().native().getPrecision()), {}, rsCallback);
 
     this->reportStatus(status, numIterations);
 
@@ -640,11 +640,11 @@ NativeLinearEquationSolverMethod NativeLinearEquationSolver<ValueType>::getMetho
 
 template<typename ValueType>
 bool NativeLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-    switch (getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact())) {
+    switch (getMethod(env, storm::numbers::NumberTraits<ValueType>::IsExact || env.solver().isForceExact())) {
         case NativeLinearEquationSolverMethod::SOR:
-            return this->solveEquationsSOR(env, x, b, storm::utility::convertNumber<ValueType>(env.solver().native().getSorOmega()));
+            return this->solveEquationsSOR(env, x, b, storm::numbers::convert<ValueType>(env.solver().native().getSorOmega()));
         case NativeLinearEquationSolverMethod::GaussSeidel:
-            return this->solveEquationsSOR(env, x, b, storm::utility::one<ValueType>());
+            return this->solveEquationsSOR(env, x, b, storm::numbers::one<ValueType>());
         case NativeLinearEquationSolverMethod::Jacobi:
             return this->solveEquationsJacobi(env, x, b);
         case NativeLinearEquationSolverMethod::WalkerChae:
@@ -668,7 +668,7 @@ bool NativeLinearEquationSolver<ValueType>::internalSolveEquations(Environment c
 
 template<typename ValueType>
 LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
-    auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
+    auto method = getMethod(env, storm::numbers::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
     if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::SoundValueIteration ||
         method == NativeLinearEquationSolverMethod::OptimisticValueIteration || method == NativeLinearEquationSolverMethod::RationalSearch ||
         method == NativeLinearEquationSolverMethod::IntervalIteration || method == NativeLinearEquationSolverMethod::GuessingValueIteration) {
@@ -681,7 +681,7 @@ LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEqua
 template<typename ValueType>
 LinearEquationSolverRequirements NativeLinearEquationSolver<ValueType>::getRequirements(Environment const& env) const {
     LinearEquationSolverRequirements requirements;
-    auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
+    auto method = getMethod(env, storm::numbers::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
     if (method == NativeLinearEquationSolverMethod::IntervalIteration || method == NativeLinearEquationSolverMethod::GuessingValueIteration) {
         requirements.requireBounds();
     } else if (method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::OptimisticValueIteration) {

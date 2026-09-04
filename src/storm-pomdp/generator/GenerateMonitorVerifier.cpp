@@ -12,13 +12,13 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
 #include "storm/storage/valuations/Valuations.h"
 #include "storm/storage/valuations/ValuationsStorage.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -86,7 +86,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
     rowActionObservationMap[std::make_pair("end", nextObservation)].grow(currentRow + 1);
     rowActionObservationMap[std::make_pair("end", nextObservation)].set(currentRow);
     observationUsedActions.push_back({"end"});
-    builder.addDiagonalEntry(currentRow++, utility::one<ValueType>());
+    builder.addDiagonalEntry(currentRow++, storm::numbers::one<ValueType>());
     observations.push_back(nextObservation++);
 
     state_type stopIndex = nextStateId++;
@@ -94,7 +94,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
     rowActionObservationMap[std::make_pair("end", nextObservation)].grow(currentRow + 1);
     rowActionObservationMap[std::make_pair("end", nextObservation)].set(currentRow);
     observationUsedActions.push_back({"end"});
-    builder.addDiagonalEntry(currentRow++, utility::one<ValueType>());
+    builder.addDiagonalEntry(currentRow++, storm::numbers::one<ValueType>());
     observations.push_back(nextObservation++);
 
     std::map<product_state_type, state_type> prodToIndexMap;
@@ -108,7 +108,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
         rowActionObservationMap[std::make_pair("end", nextObservation)].grow(currentRow + 1);
         rowActionObservationMap[std::make_pair("end", nextObservation)].set(currentRow);
         observationUsedActions.push_back({"end"});
-        builder.addDiagonalEntry(currentRow++, utility::one<ValueType>());
+        builder.addDiagonalEntry(currentRow++, storm::numbers::one<ValueType>());
         observations.push_back(nextObservation++);
         rejectToStates.push_back(rejectionIndex);
     }
@@ -154,7 +154,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
         if (monitor.getStateLabeling().getLabelsOfState(mon_from).contains(options.horizonLabel)) {
             const auto& action = *actions.begin();
             for (state_type initState : rejectToStates) {
-                builder.addNextValue(currentRow, initState, storm::utility::one<ValueType>() / rejectToStates.size());
+                builder.addNextValue(currentRow, initState, storm::numbers::one<ValueType>() / rejectToStates.size());
             }
             rowActionObservationMap[std::make_pair(action, currentObservation)].grow(currentRow + 1);
             rowActionObservationMap[std::make_pair(action, currentObservation)].set(currentRow);
@@ -177,7 +177,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
                 const auto& mcRow = mc.getTransitionMatrix().getRow(mc_from);
 
                 // Find total probability of the transitions to a state with label action
-                auto totalProbability = utility::zero<ValueType>();
+                auto totalProbability = storm::numbers::zero<ValueType>();
                 for (const auto& mcEntry : mcRow) {
                     if (mc.getStateLabeling().getStateHasLabel(action, mcEntry.getColumn())) {
                         totalProbability += mcEntry.getValue();
@@ -188,7 +188,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
                 std::map<state_type, ValueType> newRow;
 
                 // Direct probability not used towards the initial states
-                if (totalProbability < storm::utility::one<ValueType>()) {
+                if (totalProbability < storm::numbers::one<ValueType>()) {
                     for (state_type initState : rejectToStates) {
                         if (newRow.contains(initState)) {
                             newRow[initState] = newRow[initState] + (1 - totalProbability) / rejectToStates.size();
@@ -199,7 +199,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
                 }
 
                 // Add transitions to the successors, if the successor has not yet been added, add it to the todo list
-                if (totalProbability > storm::utility::zero<ValueType>()) {
+                if (totalProbability > storm::numbers::zero<ValueType>()) {
                     for (const auto& mcEntry : mcRow) {
                         if (mc.getStateLabeling().getStateHasLabel(action, mcEntry.getColumn())) {
                             const product_state_type to_pair(mcEntry.getColumn(), monitorEntry->getColumn());
@@ -235,7 +235,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
 
             for (const auto& action : actionsNotTaken) {
                 for (state_type initState : rejectToStates) {
-                    builder.addNextValue(currentRow, initState, storm::utility::one<ValueType>() / rejectToStates.size());
+                    builder.addNextValue(currentRow, initState, storm::numbers::one<ValueType>() / rejectToStates.size());
                 }
                 auto& rowBitVec = rowActionObservationMap[std::make_pair(action, currentObservation)];
                 rowBitVec.grow(currentRow + 1);
@@ -245,15 +245,15 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
         }
 
         if (monitor.getStateLabeling().getStateHasLabel(options.acceptingLabel, mon_from)) {
-            STORM_LOG_THROW(risk[mc_from] >= -utility::convertNumber<ValueType>(1e-12) && risk[mc_from] <= utility::convertNumber<ValueType>(1.0 + 1e-12),
+            STORM_LOG_THROW(risk[mc_from] >= -storm::numbers::convert<ValueType>(1e-12) && risk[mc_from] <= storm::numbers::convert<ValueType>(1.0 + 1e-12),
                             exceptions::IllegalArgumentException, "Risk for state " + std::to_string(mc_from) + " is not in [0, 1].");
-            if (utility::isAlmostZero(risk[mc_from])) {
-                builder.addNextValue(currentRow, stopIndex, utility::one<ValueType>());
-            } else if (utility::isAlmostOne(risk[mc_from])) {
-                builder.addNextValue(currentRow, goalIndex, utility::one<ValueType>());
+            if (storm::numbers::isAlmostZero(risk[mc_from])) {
+                builder.addNextValue(currentRow, stopIndex, storm::numbers::one<ValueType>());
+            } else if (storm::numbers::isAlmostOne(risk[mc_from])) {
+                builder.addNextValue(currentRow, goalIndex, storm::numbers::one<ValueType>());
             } else {
                 builder.addNextValue(currentRow, goalIndex, risk[mc_from]);
-                builder.addNextValue(currentRow, stopIndex, utility::one<ValueType>() - risk[mc_from]);
+                builder.addNextValue(currentRow, stopIndex, storm::numbers::one<ValueType>() - risk[mc_from]);
             }
             observationUsedActions[currentObservation].emplace("end");
             auto& rowBitVec = rowActionObservationMap[std::make_pair("end", currentObservation)];

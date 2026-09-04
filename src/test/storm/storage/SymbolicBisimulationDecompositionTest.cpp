@@ -117,8 +117,8 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient) {
         result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
         resultBounds.second = result->asQuantitativeCheckResult<double>().sum();
 
-        EXPECT_EQ(resultBounds.first, storm::utility::zero<double>());
-        EXPECT_EQ(resultBounds.second, storm::utility::one<double>());
+        EXPECT_EQ(resultBounds.first, storm::numbers::zero<double>());
+        EXPECT_EQ(resultBounds.second, storm::numbers::one<double>());
 
         // Perform only one step.
         decomposition.compute(1);
@@ -137,7 +137,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient) {
         result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
         resultBounds.second = result->asQuantitativeCheckResult<double>().sum();
 
-        EXPECT_EQ(resultBounds.first, storm::utility::zero<double>());
+        EXPECT_EQ(resultBounds.first, storm::numbers::zero<double>());
         EXPECT_NEAR(resultBounds.second, static_cast<double>(1) / 3, 1e-6);
 
         // Perform only one step.

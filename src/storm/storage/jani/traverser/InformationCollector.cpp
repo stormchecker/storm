@@ -1,7 +1,7 @@
 #include "storm/storage/jani/traverser/InformationCollector.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/traverser/JaniTraverser.h"
-#include "storm/utility/constants.h"
 
 namespace storm {
 namespace jani {
@@ -11,16 +11,16 @@ class InformationCollector : public ConstJaniTraverser {
     InformationObject collect(Model const& model) {
         info = InformationObject();
         domainSizesSum = 0;
-        domainSizesProduct = storm::utility::one<storm::RationalNumber>();
+        domainSizesProduct = storm::numbers::one<storm::RationalNumber>();
         this->traverse(model, boost::any());
-        if (domainSizesProduct > storm::utility::convertNumber<storm::RationalNumber>(std::numeric_limits<uint64_t>::max())) {
+        if (domainSizesProduct > storm::numbers::convert<storm::RationalNumber>(std::numeric_limits<uint64_t>::max())) {
             STORM_LOG_WARN("Truncating the domain size as it does not fit in an unsigned 64 bit number.");
             info.stateDomainSize = std::numeric_limits<uint64_t>::max();
         } else {
-            info.stateDomainSize = storm::utility::convertNumber<uint64_t>(domainSizesProduct);
+            info.stateDomainSize = storm::numbers::convert<uint64_t>(domainSizesProduct);
         }
         if (info.stateDomainSize > 0) {
-            info.avgVarDomainSize = storm::utility::convertNumber<double>(domainSizesSum) / storm::utility::convertNumber<double>(info.nrVariables);
+            info.avgVarDomainSize = storm::numbers::convert<double>(domainSizesSum) / storm::numbers::convert<double>(info.nrVariables);
         } else {
             info.avgVarDomainSize = 0.0;
         }
@@ -35,7 +35,7 @@ class InformationCollector : public ConstJaniTraverser {
 
     virtual void traverse(Automaton const& automaton, boost::any const& data) override {
         info.nrLocations += automaton.getNumberOfLocations();
-        domainSizesProduct *= storm::utility::convertNumber<storm::RationalNumber, uint64_t>(automaton.getNumberOfLocations());
+        domainSizesProduct *= storm::numbers::convert<storm::RationalNumber, uint64_t>(automaton.getNumberOfLocations());
         domainSizesSum += automaton.getNumberOfLocations();
         info.nrEdges += automaton.getNumberOfEdges();
         ConstJaniTraverser::traverse(automaton, data);
@@ -51,16 +51,16 @@ class InformationCollector : public ConstJaniTraverser {
             // Only consider domain size for non-transient variables
             auto const& type = variable.getType();
             if (type.isBasicType() && type.asBasicType().isBooleanType()) {
-                domainSizesProduct *= storm::utility::convertNumber<storm::RationalNumber, uint64_t>(2u);
+                domainSizesProduct *= storm::numbers::convert<storm::RationalNumber, uint64_t>(2u);
                 domainSizesSum += 2;
             } else if (type.isBoundedType() && type.asBoundedType().isIntegerType() && type.asBoundedType().hasLowerBound() &&
                        type.asBoundedType().hasUpperBound() && !type.asBoundedType().getLowerBound().containsVariables() &&
                        !type.asBoundedType().getUpperBound().containsVariables()) {
                 auto size = type.asBoundedType().getUpperBound().evaluateAsInt() - type.asBoundedType().getLowerBound().evaluateAsInt();
-                domainSizesProduct *= storm::utility::convertNumber<storm::RationalNumber, uint64_t>(size);
+                domainSizesProduct *= storm::numbers::convert<storm::RationalNumber, uint64_t>(size);
                 domainSizesSum += size;
             } else {
-                domainSizesProduct = storm::utility::zero<storm::RationalNumber>();  // i.e. unknown
+                domainSizesProduct = storm::numbers::zero<storm::RationalNumber>();  // i.e. unknown
             }
         }
         ConstJaniTraverser::traverse(variable, data);

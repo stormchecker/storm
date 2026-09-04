@@ -5,7 +5,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

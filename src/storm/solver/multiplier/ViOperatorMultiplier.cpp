@@ -3,11 +3,11 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/Extremum.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm::solver {
@@ -191,7 +191,7 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiply
     if (b) {
         viOp.apply(x, result, *b, backend);
     } else {
-        viOp.apply(x, result, storm::utility::zero<ValueType>(), backend);
+        viOp.apply(x, result, storm::numbers::zero<ValueType>(), backend);
     }
 }
 
@@ -205,7 +205,7 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiply
     if (b) {
         viOp.applyInPlace(x, *b, backend);
     } else {
-        viOp.applyInPlace(x, storm::utility::zero<ValueType>(), backend);
+        viOp.applyInPlace(x, storm::numbers::zero<ValueType>(), backend);
     }
 }
 
@@ -264,7 +264,7 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiply
     if (b) {
         applyBackend(*b);
     } else {
-        applyBackend(storm::utility::zero<ValueType>());
+        applyBackend(storm::numbers::zero<ValueType>());
     }
 }
 
@@ -279,7 +279,7 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiply
         if (b) {
             viOp.applyInPlace(x, *b, backend);
         } else {
-            viOp.applyInPlace(x, storm::utility::zero<ValueType>(), backend);
+            viOp.applyInPlace(x, storm::numbers::zero<ValueType>(), backend);
         }
     };
     if (storm::solver::minimize(dir)) {

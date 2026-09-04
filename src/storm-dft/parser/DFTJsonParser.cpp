@@ -120,12 +120,12 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
             } else if (type == "mutex") {
                 builder.addMutex(name, childNames);
             } else if (type == "fdep") {
-                builder.addPdep(name, childNames, storm::utility::one<ValueType>());
+                builder.addPdep(name, childNames, storm::numbers::one<ValueType>());
             } else if (type == "pdep") {
                 STORM_LOG_THROW(data.count("probability") > 0, storm::exceptions::WrongFormatException,
                                 "PDEP '" << name << "' requires parameter 'probability'.");
                 ValueType probability = valueParser.parseValue(parseValue(data.at("probability")));
-                if (storm::utility::isZero<ValueType>(probability)) {
+                if (storm::numbers::isZero<ValueType>(probability)) {
                     // Skip element. Otherwise, trying to add layout information later on will fail
                     STORM_LOG_WARN("Dependency " << name << " with probability 0 is superfluous and will not be added.");
                     continue;
@@ -213,7 +213,7 @@ void DFTJsonParser<ValueType>::parseBasicElement(std::string const& name, std::s
         STORM_LOG_THROW(input.count("prob") > 0, storm::exceptions::WrongFormatException,
                         "BE '" << name << "' with probability distribution requires parameter 'prob'.");
         ValueType probability = valueParser.parseValue(parseValue(input.at("prob")));
-        ValueType dormancy = storm::utility::one<ValueType>();
+        ValueType dormancy = storm::numbers::one<ValueType>();
         if (input.count("dorm") > 0) {
             dormancy = valueParser.parseValue(parseValue(input.at("dorm")));
         } else {
@@ -225,7 +225,7 @@ void DFTJsonParser<ValueType>::parseBasicElement(std::string const& name, std::s
         STORM_LOG_THROW(input.count("rate") > 0, storm::exceptions::WrongFormatException,
                         "BE '" << name << "' with exponential distribution requires parameter 'rate'.");
         ValueType rate = valueParser.parseValue(parseValue(input.at("rate")));
-        ValueType dormancy = storm::utility::one<ValueType>();
+        ValueType dormancy = storm::numbers::one<ValueType>();
         if (input.count("dorm") > 0) {
             dormancy = valueParser.parseValue(parseValue(input.at("dorm")));
         } else {
@@ -244,7 +244,7 @@ void DFTJsonParser<ValueType>::parseBasicElement(std::string const& name, std::s
         STORM_LOG_THROW(input.count("phases") > 0, storm::exceptions::WrongFormatException,
                         "BE '" << name << "' with Erlang distribution requires parameter 'phases'.");
         size_t phases = storm::parser::parseNumber<size_t>(parseValue(input.at("phases")));
-        ValueType dormancy = storm::utility::one<ValueType>();
+        ValueType dormancy = storm::numbers::one<ValueType>();
         if (input.count("dorm") > 0) {
             dormancy = valueParser.parseValue(parseValue(input.at("dorm")));
         } else {

@@ -6,8 +6,8 @@
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/MissingLibraryException.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/SignalHandler.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -80,7 +80,7 @@ bool GmmxxLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
         if (env.solver().gmmxx().getMaximalNumberOfIterations() < static_cast<uint64_t>(maxIter)) {
             maxIter = env.solver().gmmxx().getMaximalNumberOfIterations();
         }
-        gmm::iteration iter(storm::utility::convertNumber<ValueType>(env.solver().gmmxx().getPrecision()), 0, maxIter);
+        gmm::iteration iter(storm::numbers::convert<ValueType>(env.solver().gmmxx().getPrecision()), 0, maxIter);
         iter.set_callback([](const gmm::iteration& iteration) -> void {
             STORM_LOG_THROW(!storm::utility::resources::isTerminate(), storm::exceptions::AbortException,
                             "Gmm++ (externally) aborted after " << iteration.get_iteration() << " iterations.");

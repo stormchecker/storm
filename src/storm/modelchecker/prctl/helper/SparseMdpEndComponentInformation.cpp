@@ -148,7 +148,7 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
                     summandResultVector->emplace_back((*summand)[row]);
                 }
                 if (columnSumVector) {
-                    columnSumVector->emplace_back(storm::utility::zero<ValueType>());
+                    columnSumVector->emplace_back(storm::numbers::zero<ValueType>());
                 }
                 for (auto const& e : transitionMatrix.getRow(row)) {
                     if (sumColumns && sumColumns->get(e.getColumn())) {
@@ -200,7 +200,7 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
                     summandResultVector->emplace_back((*summand)[row]);
                 }
                 if (columnSumVector) {
-                    columnSumVector->emplace_back(storm::utility::zero<ValueType>());
+                    columnSumVector->emplace_back(storm::numbers::zero<ValueType>());
                 }
                 for (auto const& e : transitionMatrix.getRow(row)) {
                     if (sumColumns && sumColumns->get(e.getColumn())) {

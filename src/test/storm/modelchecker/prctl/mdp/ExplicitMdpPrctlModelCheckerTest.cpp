@@ -19,7 +19,7 @@ TEST(ExplicitMdpPrctlModelCheckerTest, Dice) {
     storm::Environment env;
     double const precision = 1e-6;
     // Increase precision a little to get more accurate results
-    env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+    env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -141,7 +141,7 @@ TEST(ExplicitMdpPrctlModelCheckerTest, AsynchronousLeader) {
     storm::Environment env;
     double const precision = 1e-6;
     // Increase precision a little to get more accurate results
-    env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+    env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
 
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(
         STORM_TEST_RESOURCES_DIR "/tra/leader4.tra", STORM_TEST_RESOURCES_DIR "/lab/leader4.lab", "", STORM_TEST_RESOURCES_DIR "/rew/leader4.trans.rew");

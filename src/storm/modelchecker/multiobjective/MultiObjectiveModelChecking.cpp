@@ -72,7 +72,7 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
                 SparsePcaaQuery<SparseModelType, storm::RationalNumber> query(preprocessorResult);
                 // Adapt environment for the query
                 auto subEnv = env;
-                if (storm::NumberTraits<typename SparseModelType::ValueType>::IsExact) {
+                if (storm::numbers::NumberTraits<typename SparseModelType::ValueType>::IsExact) {
                     subEnv.solver().setForceExact(true);
                 }
                 // Solve the query

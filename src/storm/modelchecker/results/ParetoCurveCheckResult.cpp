@@ -73,17 +73,17 @@ std::ostream& ParetoCurveCheckResult<ValueType>::writeToStream(std::ostream& out
             if (it != p.begin()) {
                 out << ", ";
             }
-            out << std::setw(storm::NumberTraits<ValueType>::IsExact ? 20 : 11) << *it;
+            out << std::setw(storm::numbers::NumberTraits<ValueType>::IsExact ? 20 : 11) << *it;
         }
         out << " )";
-        if (storm::NumberTraits<ValueType>::IsExact) {
+        if (storm::numbers::NumberTraits<ValueType>::IsExact) {
             out << " approx. ";
             out << "   (";
             for (auto it = p.begin(); it != p.end(); ++it) {
                 if (it != p.begin()) {
                     out << ", ";
                 }
-                out << std::setw(11) << storm::utility::convertNumber<double>(*it);
+                out << std::setw(11) << storm::numbers::convert<double>(*it);
             }
             out << " )";
         }

@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "storm/logic/Formulas.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 #include "storm/adapters/IntervalForward.h"
 #include "storm/logic/ComparisonType.h"
@@ -86,8 +86,8 @@ class CheckTask {
                 storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.get().asProbabilityOperatorFormula();
 
                 if (probabilityOperatorFormula.hasBound()) {
-                    if (storm::utility::isZero(probabilityOperatorFormula.template getThresholdAs<ValueType>()) ||
-                        storm::utility::isOne(probabilityOperatorFormula.template getThresholdAs<ValueType>())) {
+                    if (storm::numbers::isZero(probabilityOperatorFormula.template getThresholdAs<ValueType>()) ||
+                        storm::numbers::isOne(probabilityOperatorFormula.template getThresholdAs<ValueType>())) {
                         this->qualitative = true;
                     }
                 }
@@ -96,7 +96,7 @@ class CheckTask {
                 this->rewardModel = rewardOperatorFormula.getOptionalRewardModelName();
 
                 if (rewardOperatorFormula.hasBound()) {
-                    if (storm::utility::isZero(rewardOperatorFormula.template getThresholdAs<ValueType>())) {
+                    if (storm::numbers::isZero(rewardOperatorFormula.template getThresholdAs<ValueType>())) {
                         this->qualitative = true;
                     }
                 }

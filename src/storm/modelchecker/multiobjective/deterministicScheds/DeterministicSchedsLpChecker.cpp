@@ -63,7 +63,7 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::setCurrentWeigh
     // set up objective function for the given weight vector
     for (uint64_t objIndex = 0; objIndex < initialStateResults.size(); ++objIndex) {
         currentObjectiveVariables.push_back(
-            lpModel->addUnboundedContinuousVariable("w_" + std::to_string(objIndex), storm::utility::convertNumber<ValueType>(weightVector[objIndex])));
+            lpModel->addUnboundedContinuousVariable("w_" + std::to_string(objIndex), storm::numbers::convert<ValueType>(weightVector[objIndex])));
         lpModel->addConstraint("", currentObjectiveVariables.back().getExpression() == initialStateResults[objIndex]);
     }
     lpModel->update();
@@ -87,7 +87,7 @@ std::optional<std::pair<std::vector<GeometryValueType>, GeometryValueType>> Dete
         STORM_LOG_ASSERT(currentWeightVector.size() == eps.size(), "Eps vector has unexpected size.");
         // Specify the allowed gap between the obtained lower/upper objective bounds.
         GeometryValueType milpGap = storm::utility::vector::dotProduct(currentWeightVector, eps);
-        lpModel->setMaximalMILPGap(storm::utility::convertNumber<ValueType>(milpGap), false);
+        lpModel->setMaximalMILPGap(storm::numbers::convert<ValueType>(milpGap), false);
     }
     lpModel->update();
     swCheckWeightVectors.start();
@@ -104,7 +104,7 @@ std::optional<std::pair<std::vector<GeometryValueType>, GeometryValueType>> Dete
         swValidate.stop();
         auto resultValue = storm::utility::vector::dotProduct(resultPoint, currentWeightVector);
         if (!eps.empty()) {
-            resultValue += storm::utility::convertNumber<GeometryValueType>(lpModel->getMILPGap(false));
+            resultValue += storm::numbers::convert<GeometryValueType>(lpModel->getMILPGap(false));
         }
         result = std::make_pair(resultPoint, resultValue);
     }
@@ -130,7 +130,7 @@ DeterministicSchedsLpChecker<ModelType, GeometryValueType>::check(storm::Environ
     // Let p be the found solution point, q be the optimal (unknown) solution point, and w be the current weight vector.
     // The gap between the solution p and q is |w*p - w*q| = |w*(p-q)|
     GeometryValueType milpGap = storm::utility::vector::dotProduct(currentWeightVector, eps);
-    lpModel->setMaximalMILPGap(storm::utility::convertNumber<ValueType>(milpGap), false);
+    lpModel->setMaximalMILPGap(storm::numbers::convert<ValueType>(milpGap), false);
     lpModel->update();
 
     std::vector<Point> foundPoints;
@@ -147,7 +147,7 @@ auto createChoiceVariables(storm::solver::LpSolver<ValueType>& lpModel, storm::s
     for (uint64_t state = 0; state < matrix.getRowGroupCount(); ++state) {
         auto choices = matrix.getRowGroupIndices(state);
         if (choices.size() == 1) {
-            choiceVariables.push_back(lpModel.getConstant(storm::utility::one<ValueType>()));  // Unique choice; no variable necessary
+            choiceVariables.push_back(lpModel.getConstant(storm::numbers::one<ValueType>()));  // Unique choice; no variable necessary
         } else {
             std::vector<storm::expressions::Expression> localChoices;
             for (auto const choice : choices) {
@@ -185,7 +185,7 @@ std::vector<storm::expressions::Expression> classicConstraints(storm::solver::Lp
         }
         STORM_LOG_ASSERT(objectiveHelper.getRewMinusInfEStates().get(initialState), "Initial state must be in RewMinusInfEStates.");
         lpModel.update();
-        lpModel.addConstraint("", reachVars[initialState] == lpModel.getConstant(storm::utility::one<ValueType>()));
+        lpModel.addConstraint("", reachVars[initialState] == lpModel.getConstant(storm::numbers::one<ValueType>()));
     }
     lpModel.update();
     for (auto const& state : objectiveHelper.getMaybeStates()) {
@@ -194,11 +194,11 @@ std::vector<storm::expressions::Expression> classicConstraints(storm::solver::Lp
         for (auto choice : matrix.getRowGroupIndices(state)) {
             auto const& choiceVarAsExpression = choiceVariables.at(choice);
             STORM_LOG_ASSERT(choiceVarAsExpression.isVariable() ||
-                                 (!choiceVarAsExpression.containsVariables() && storm::utility::isOne(choiceVarAsExpression.evaluateAsRational())),
+                                 (!choiceVarAsExpression.containsVariables() && storm::numbers::isOne(choiceVarAsExpression.evaluateAsRational())),
                              "Unexpected kind of choice variable: " << choiceVarAsExpression);
             std::vector<storm::expressions::Expression> summands;
             if (!indicatorConstraints && choiceVarAsExpression.isVariable()) {
-                summands.push_back((lpModel.getConstant(storm::utility::one<ValueType>()) - choiceVarAsExpression) *
+                summands.push_back((lpModel.getConstant(storm::numbers::one<ValueType>()) - choiceVarAsExpression) *
                                    lpModel.getConstant(objectiveHelper.getUpperValueBoundAtState(state) - objectiveHelper.getLowerValueBoundAtState(state)));
             }
             if (auto findRes = objectiveHelper.getChoiceRewards().find(choice); findRes != objectiveHelper.getChoiceRewards().end()) {
@@ -215,11 +215,11 @@ std::vector<storm::expressions::Expression> classicConstraints(storm::solver::Lp
                 }
                 if (requireReachConstraints && objectiveHelper.getRewMinusInfEStates().get(succ.getColumn())) {
                     lpModel.addConstraint(
-                        "", reachVars[state] <= reachVars[succ.getColumn()] + lpModel.getConstant(storm::utility::one<ValueType>()) - choiceVarAsExpression);
+                        "", reachVars[state] <= reachVars[succ.getColumn()] + lpModel.getConstant(storm::numbers::one<ValueType>()) - choiceVarAsExpression);
                 }
             }
             if (summands.empty()) {
-                summands.push_back(lpModel.getConstant(storm::utility::zero<ValueType>()));
+                summands.push_back(lpModel.getConstant(storm::numbers::zero<ValueType>()));
             }
             if (indicatorConstraints && choiceVarAsExpression.isVariable()) {
                 auto choiceVar = choiceVarAsExpression.getBaseExpression().asVariableExpression().getVariable();
@@ -284,22 +284,22 @@ auto problematicMecConstraintsExpVisits(storm::solver::LpSolver<ValueType>& lpMo
         bsccIndicatorVariables.emplace(state, bsccIndicatorVar.getExpression());
         std::string visitsVarPref = "z_" + std::to_string(mecIndex) + "_";
         auto stateBotVisitsVar =
-            lpModel.addLowerBoundedContinuousVariable(visitsVarPref + std::to_string(state) + "bot", storm::utility::zero<ValueType>()).getExpression();
+            lpModel.addLowerBoundedContinuousVariable(visitsVarPref + std::to_string(state) + "bot", storm::numbers::zero<ValueType>()).getExpression();
         botVars.emplace(state, stateBotVisitsVar);
         lpModel.update();
         if (indicatorConstraints) {
-            lpModel.addIndicatorConstraint("", bsccIndicatorVar, false, stateBotVisitsVar <= lpModel.getConstant(storm::utility::zero<ValueType>()));
+            lpModel.addIndicatorConstraint("", bsccIndicatorVar, false, stateBotVisitsVar <= lpModel.getConstant(storm::numbers::zero<ValueType>()));
         } else {
             lpModel.addConstraint("", stateBotVisitsVar <= bsccIndicatorVar.getExpression() * visitsUpperBound);
         }
         for (auto choice : matrix.getRowGroupIndices(state)) {
             auto stateActionVisitsVar =
-                lpModel.addLowerBoundedContinuousVariable(visitsVarPref + std::to_string(choice), storm::utility::zero<ValueType>()).getExpression();
+                lpModel.addLowerBoundedContinuousVariable(visitsVarPref + std::to_string(choice), storm::numbers::zero<ValueType>()).getExpression();
             lpModel.update();
             if (indicatorConstraints) {
                 if (auto const& a = choiceVariables[choice]; a.isVariable()) {
                     auto aVar = a.getBaseExpression().asVariableExpression().getVariable();
-                    lpModel.addIndicatorConstraint("", aVar, false, stateActionVisitsVar <= lpModel.getConstant(storm::utility::zero<ValueType>()));
+                    lpModel.addIndicatorConstraint("", aVar, false, stateActionVisitsVar <= lpModel.getConstant(storm::numbers::zero<ValueType>()));
                 }
             } else {
                 lpModel.addConstraint("", stateActionVisitsVar <= choiceVariables[choice] * visitsUpperBound);
@@ -312,7 +312,7 @@ auto problematicMecConstraintsExpVisits(storm::solver::LpSolver<ValueType>& lpMo
         for (auto const& objIndex : relevantObjectiveIndices) {
             if (indicatorConstraints) {
                 lpModel.addIndicatorConstraint("", bsccIndicatorVar, true,
-                                               objectiveValueVariables[objIndex][state] <= lpModel.getConstant(storm::utility::zero<ValueType>()));
+                                               objectiveValueVariables[objIndex][state] <= lpModel.getConstant(storm::numbers::zero<ValueType>()));
             } else {
                 auto const upperBnd = lpModel.getConstant(objectiveStateUpperBoundGetter(objIndex, state));
                 lpModel.addConstraint("", objectiveValueVariables[objIndex][state] <= upperBnd - upperBnd * bsccIndicatorVar.getExpression());
@@ -321,7 +321,7 @@ auto problematicMecConstraintsExpVisits(storm::solver::LpSolver<ValueType>& lpMo
     }
 
     // Create visits constraints
-    auto const initProb = lpModel.getConstant(storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(problematicMec.size()));
+    auto const initProb = lpModel.getConstant(storm::numbers::one<ValueType>() / storm::numbers::convert<ValueType, uint64_t>(problematicMec.size()));
     std::vector<storm::expressions::Expression> outVisitsSummands;
     for (auto const& stateChoices : problematicMec) {
         auto const state = stateChoices.first;
@@ -336,12 +336,12 @@ auto problematicMecConstraintsExpVisits(storm::solver::LpSolver<ValueType>& lpMo
             if (choices.count(choice) != 0) {
                 if (redundantConstraints) {
                     for (auto const& postElem : matrix.getRow(choice)) {
-                        if (storm::utility::isZero(postElem.getValue())) {
+                        if (storm::numbers::isZero(postElem.getValue())) {
                             continue;
                         }
                         auto succ = postElem.getColumn();
                         lpModel.addConstraint("", bsccIndicatorVariables.at(state) + choiceVariables.at(choice) <=
-                                                      lpModel.getConstant(storm::utility::one<ValueType>()) + bsccIndicatorVariables.at(succ));
+                                                      lpModel.getConstant(storm::numbers::one<ValueType>()) + bsccIndicatorVariables.at(succ));
                     }
                 }
             } else {
@@ -352,13 +352,13 @@ auto problematicMecConstraintsExpVisits(storm::solver::LpSolver<ValueType>& lpMo
             uint64_t const preChoice = preEntry.getColumn();
             if (mecChoices.get(preChoice)) {
                 ValueType preProb =
-                    storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(matrix.getRow(preChoice).getNumberOfEntries());
+                    storm::numbers::one<ValueType>() / storm::numbers::convert<ValueType, uint64_t>(matrix.getRow(preChoice).getNumberOfEntries());
                 stateVisitsSummands.push_back(lpModel.getConstant(-preProb) * expVisitsVars.at(preChoice));
             }
         }
         lpModel.addConstraint("", storm::expressions::sum(stateVisitsSummands) == initProb);
     }
-    lpModel.addConstraint("", storm::expressions::sum(outVisitsSummands) == lpModel.getConstant(storm::utility::one<ValueType>()));
+    lpModel.addConstraint("", storm::expressions::sum(outVisitsSummands) == lpModel.getConstant(storm::numbers::one<ValueType>()));
 }
 
 template<typename ValueType, typename UpperBoundsGetterType>
@@ -377,8 +377,8 @@ auto problematicMecConstraintsOrder(storm::solver::LpSolver<ValueType>& lpModel,
         auto bsccIndicatorVar = lpModel.addBinaryVariable("b_" + std::to_string(mecIndex) + "_" + std::to_string(state));
         bsccIndicatorVariables.emplace(state, bsccIndicatorVar.getExpression());
         auto orderVar = lpModel
-                            .addBoundedContinuousVariable("r_" + std::to_string(mecIndex) + "_" + std::to_string(state), storm::utility::zero<ValueType>(),
-                                                          storm::utility::one<ValueType>())
+                            .addBoundedContinuousVariable("r_" + std::to_string(mecIndex) + "_" + std::to_string(state), storm::numbers::zero<ValueType>(),
+                                                          storm::numbers::one<ValueType>())
                             .getExpression();
         lpModel.update();
         orderVariables.emplace(state, orderVar);
@@ -388,7 +388,7 @@ auto problematicMecConstraintsOrder(storm::solver::LpSolver<ValueType>& lpModel,
         for (auto const& objIndex : relevantObjectiveIndices) {
             if (indicatorConstraints) {
                 lpModel.addIndicatorConstraint("", bsccIndicatorVar, true,
-                                               objectiveValueVariables[objIndex][state] <= lpModel.getConstant(storm::utility::zero<ValueType>()));
+                                               objectiveValueVariables[objIndex][state] <= lpModel.getConstant(storm::numbers::zero<ValueType>()));
             } else {
                 auto const upperBnd = lpModel.getConstant(objectiveStateUpperBoundGetter(objIndex, state));
                 lpModel.addConstraint("", objectiveValueVariables[objIndex][state] <= upperBnd - upperBnd * bsccIndicatorVar.getExpression());
@@ -397,7 +397,7 @@ auto problematicMecConstraintsOrder(storm::solver::LpSolver<ValueType>& lpModel,
     }
 
     // Create order constraints
-    auto const minDiff = lpModel.getConstant(-storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(problematicMec.size()));
+    auto const minDiff = lpModel.getConstant(-storm::numbers::one<ValueType>() / storm::numbers::convert<ValueType, uint64_t>(problematicMec.size()));
     for (auto const& stateChoices : problematicMec) {
         auto const state = stateChoices.first;
         auto const& choices = stateChoices.second;
@@ -409,19 +409,19 @@ auto problematicMecConstraintsOrder(storm::solver::LpSolver<ValueType>& lpModel,
             choiceConstraint.push_back(bsccIndicatorVar);
             std::string const transSelectPrefix = "d_" + std::to_string(mecIndex) + "_" + std::to_string(choice) + "_";
             for (auto const& postElem : matrix.getRow(choice)) {
-                if (storm::utility::isZero(postElem.getValue())) {
+                if (storm::numbers::isZero(postElem.getValue())) {
                     continue;
                 }
                 auto succ = postElem.getColumn();
                 if (redundantConstraints) {
                     lpModel.addConstraint(
-                        "", bsccIndicatorVar + choiceVariable <= lpModel.getConstant(storm::utility::one<ValueType>()) + bsccIndicatorVariables.at(succ));
+                        "", bsccIndicatorVar + choiceVariable <= lpModel.getConstant(storm::numbers::one<ValueType>()) + bsccIndicatorVariables.at(succ));
                 }
                 auto transVar = lpModel.addBinaryVariable(transSelectPrefix + std::to_string(succ)).getExpression();
                 lpModel.update();
                 choiceConstraint.push_back(transVar);
                 lpModel.addConstraint("", transVar <= choiceVariable);
-                lpModel.addConstraint("", orderVar <= minDiff + orderVariables.at(succ) + lpModel.getConstant(storm::utility::one<ValueType>()) - transVar);
+                lpModel.addConstraint("", orderVar <= minDiff + orderVariables.at(succ) + lpModel.getConstant(storm::numbers::one<ValueType>()) - transVar);
             }
             lpModel.addConstraint("", choiceVariable <= storm::expressions::sum(choiceConstraint));
         }
@@ -443,7 +443,7 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
     storm::storage::BitVector allZeroRewardChoices(matrix.getRowCount(), true);
     for (auto const& oh : objectiveHelper) {
         for (auto const& rew : oh.getChoiceRewards()) {
-            STORM_LOG_ASSERT(!storm::utility::isZero(rew.second), "Reward value is zero.");
+            STORM_LOG_ASSERT(!storm::numbers::isZero(rew.second), "Reward value is zero.");
             allZeroRewardChoices.set(rew.first, false);
         }
     }
@@ -463,15 +463,15 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
     std::vector<storm::expressions::Expression> choiceVisitsVars(matrix.getRowCount()), botVisitsVars(matrix.getRowGroupCount()),
         bsccVars(matrix.getRowGroupCount());
     for (uint64_t state : anyMaybeStates) {
-        STORM_LOG_ASSERT(indicatorConstraints || maxVisits[state] >= storm::utility::zero<ValueType>(), "Unexpected negative max visits.");
+        STORM_LOG_ASSERT(indicatorConstraints || maxVisits[state] >= storm::numbers::zero<ValueType>(), "Unexpected negative max visits.");
         for (auto choice : matrix.getRowGroupIndices(state)) {
             choiceVisitsVars[choice] =
-                lpModel.addLowerBoundedContinuousVariable("y_" + std::to_string(choice), storm::utility::zero<ValueType>()).getExpression();
+                lpModel.addLowerBoundedContinuousVariable("y_" + std::to_string(choice), storm::numbers::zero<ValueType>()).getExpression();
             lpModel.update();
             if (indicatorConstraints) {
                 if (auto const& a = choiceVariables[choice]; a.isVariable()) {
                     auto aVar = a.getBaseExpression().asVariableExpression().getVariable();
-                    lpModel.addIndicatorConstraint("", aVar, false, choiceVisitsVars[choice] <= lpModel.getConstant(storm::utility::zero<ValueType>()));
+                    lpModel.addIndicatorConstraint("", aVar, false, choiceVisitsVars[choice] <= lpModel.getConstant(storm::numbers::zero<ValueType>()));
                 }
             } else {
                 lpModel.addConstraint("", choiceVisitsVars[choice] <= choiceVariables.at(choice) * lpModel.getConstant(maxVisits[state]));
@@ -480,11 +480,11 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
         if (mecStates.get(state)) {
             bsccVars[state] = lpModel.addBinaryVariable("b_" + std::to_string(state)).getExpression();
             botVisitsVars[state] =
-                lpModel.addLowerBoundedContinuousVariable("y_" + std::to_string(state) + "bot", storm::utility::zero<ValueType>()).getExpression();
+                lpModel.addLowerBoundedContinuousVariable("y_" + std::to_string(state) + "bot", storm::numbers::zero<ValueType>()).getExpression();
             lpModel.update();
             if (indicatorConstraints) {
                 lpModel.addIndicatorConstraint("", bsccVars[state].getBaseExpression().asVariableExpression().getVariable(), false,
-                                               botVisitsVars[state] <= lpModel.getConstant(storm::utility::zero<ValueType>()));
+                                               botVisitsVars[state] <= lpModel.getConstant(storm::numbers::zero<ValueType>()));
             } else {
                 lpModel.addConstraint("", botVisitsVars[state] <= bsccVars[state] * lpModel.getConstant(maxVisits[state]));
             }
@@ -502,20 +502,20 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
         }
         for (auto choice : matrix.getRowGroupIndices(state)) {
             visitsSummands.push_back(-choiceVisitsVars[choice]);
-            if (auto outProb = matrix.getConstrainedRowSum(choice, notMaybe); !storm::utility::isZero(outProb)) {
+            if (auto outProb = matrix.getConstrainedRowSum(choice, notMaybe); !storm::numbers::isZero(outProb)) {
                 outSummands.push_back(lpModel.getConstant(outProb) * choiceVisitsVars[choice]);
             }
         }
         if (state == initialState) {
-            visitsSummands.push_back(lpModel.getConstant(storm::utility::one<ValueType>()));
+            visitsSummands.push_back(lpModel.getConstant(storm::numbers::one<ValueType>()));
         }
         for (auto const& preEntry : backwardChoices.getRow(state)) {
             STORM_LOG_ASSERT(choiceVisitsVars[preEntry.getColumn()].isInitialized(), "Choice visit variable not initialized.");
             visitsSummands.push_back(lpModel.getConstant(preEntry.getValue()) * choiceVisitsVars[preEntry.getColumn()]);
         }
-        lpModel.addConstraint("", storm::expressions::sum(visitsSummands) == lpModel.getConstant(storm::utility::zero<ValueType>()));
+        lpModel.addConstraint("", storm::expressions::sum(visitsSummands) == lpModel.getConstant(storm::numbers::zero<ValueType>()));
     }
-    lpModel.addConstraint("", storm::expressions::sum(outSummands) == lpModel.getConstant(storm::utility::one<ValueType>()));
+    lpModel.addConstraint("", storm::expressions::sum(outSummands) == lpModel.getConstant(storm::numbers::one<ValueType>()));
 
     // Add bscc constraints
     for (auto const& mec : mecs) {
@@ -524,15 +524,15 @@ std::vector<storm::expressions::Expression> expVisitsConstraints(storm::solver::
             for (auto choice : matrix.getRowGroupIndices(state)) {
                 if (stateChoices.second.count(choice) != 0) {
                     for (auto const& succ : matrix.getRow(choice)) {
-                        if (storm::utility::isZero(succ.getValue())) {
+                        if (storm::numbers::isZero(succ.getValue())) {
                             continue;
                         }
                         STORM_LOG_ASSERT(mecStates.get(succ.getColumn()), "MEC state not set for successor.");
-                        lpModel.addConstraint("", bsccVars[state] <= bsccVars[succ.getColumn()] + lpModel.getConstant(storm::utility::one<ValueType>()) -
+                        lpModel.addConstraint("", bsccVars[state] <= bsccVars[succ.getColumn()] + lpModel.getConstant(storm::numbers::one<ValueType>()) -
                                                                          choiceVariables[choice]);
                     }
                 } else {
-                    lpModel.addConstraint("", bsccVars[state] <= lpModel.getConstant(storm::utility::one<ValueType>()) - choiceVariables[choice]);
+                    lpModel.addConstraint("", bsccVars[state] <= lpModel.getConstant(storm::numbers::one<ValueType>()) - choiceVariables[choice]);
                 }
             }
         }
@@ -673,14 +673,14 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(
                 // There is no progress if (due to numerical inaccuracies) the downwardclosure (including points that are epsilon close to it) contained in this
                 // polytope. We multiply eps by 0.999 so that points that lie on the boundary of polytope and downw. do not count in the intersection.
                 Point newPointPlusEps = newPoint;
-                storm::utility::vector::addScaledVector(newPointPlusEps, eps, storm::utility::convertNumber<GeometryValueType>(0.999));
+                storm::utility::vector::addScaledVector(newPointPlusEps, eps, storm::numbers::convert<GeometryValueType>(0.999));
                 if (polytopeTree.getPolytope()->contains(newPoint) ||
                     !polytopeTree.getPolytope()
                          ->intersection(storm::storage::geometry::Polytope<GeometryValueType>::createDownwardClosure({newPointPlusEps}))
                          ->isEmpty()) {
-                    GeometryValueType offset = storm::utility::convertNumber<GeometryValueType>(lpModel->getObjectiveValue());
+                    GeometryValueType offset = storm::numbers::convert<GeometryValueType>(lpModel->getObjectiveValue());
                     // Get the gap between the found solution and the known bound.
-                    offset += storm::utility::convertNumber<GeometryValueType>(lpModel->getMILPGap(false));
+                    offset += storm::numbers::convert<GeometryValueType>(lpModel->getMILPGap(false));
                     // we might want to shift the halfspace to guarantee that our point is included.
                     offset = std::max(offset, storm::utility::vector::dotProduct(currentWeightVector, newPoint));
                     auto halfspace = storm::storage::geometry::Halfspace<GeometryValueType>(currentWeightVector, offset).invert();
@@ -700,18 +700,18 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(
                     for (auto& h : halfspaces) {
                         GeometryValueType distance = h.distance(newPoint);
                         // Check if the found point is outside of this halfspace
-                        if (!storm::utility::isZero(distance)) {
+                        if (!storm::numbers::isZero(distance)) {
                             // The issue has to be for some normal vector with a negative entry. Otherwise, the intersection with the downward closure wouldn't
                             // be empty
                             bool normalVectorContainsNegative = false;
                             for (auto const& hi : h.normalVector()) {
-                                if (hi < storm::utility::zero<GeometryValueType>()) {
+                                if (hi < storm::numbers::zero<GeometryValueType>()) {
                                     normalVectorContainsNegative = true;
                                     break;
                                 }
                             }
                             if (normalVectorContainsNegative) {
-                                h.offset() -= distance / storm::utility::convertNumber<GeometryValueType, uint64_t>(2);
+                                h.offset() -= distance / storm::numbers::convert<GeometryValueType, uint64_t>(2);
                                 if (num_sharpen == 0) {
                                     lpModel->push();
                                 }
@@ -782,12 +782,12 @@ typename DeterministicSchedsLpChecker<ModelType, GeometryValueType>::Point Deter
     Point inducedPoint;
     for (uint64_t objIndex = 0; objIndex < objectiveHelper.size(); ++objIndex) {
         ValueType inducedValue = objectiveHelper[objIndex].evaluateScheduler(env, selectedChoices);
-        inducedPoint.push_back(storm::utility::convertNumber<GeometryValueType>(inducedValue));
+        inducedPoint.push_back(storm::numbers::convert<GeometryValueType>(inducedValue));
         // If this objective has weight zero, the lp solution is not necessarily correct
-        if (!storm::utility::isZero(currentWeightVector[objIndex])) {
+        if (!storm::numbers::isZero(currentWeightVector[objIndex])) {
             ValueType lpValue = lpModel->getContinuousValue(currentObjectiveVariables[objIndex]);
-            double diff = storm::utility::convertNumber<double>(storm::utility::abs<ValueType>(inducedValue - lpValue));
-            STORM_LOG_WARN_COND(diff <= 1e-4 * std::abs(storm::utility::convertNumber<double>(inducedValue)),
+            double diff = storm::numbers::convert<double>(storm::numbers::abs<ValueType>(inducedValue - lpValue));
+            STORM_LOG_WARN_COND(diff <= 1e-4 * std::abs(storm::numbers::convert<double>(inducedValue)),
                                 "Imprecise value for objective " << objIndex << ": LP says " << lpValue << " but scheduler induces " << inducedValue
                                                                  << " (difference is " << diff << ")");
         }

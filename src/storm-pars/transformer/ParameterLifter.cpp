@@ -41,13 +41,13 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
         std::set<VariableType> occurringVariables;
         for (auto const& entry : pMatrix.getRow(rowIndex)) {
             if (selectedColumns.get(entry.getColumn())) {
-                if (!storm::utility::isConstant(entry.getValue())) {
+                if (!storm::numbers::isConstant(entry.getValue())) {
                     storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
                     nonConstMatrixEntries.set(pMatrixEntryCount, true);
                 }
                 ++pMatrixEntryCount;
             } else {
-                if (!storm::utility::isConstant(entry.getValue())) {
+                if (!storm::numbers::isConstant(entry.getValue())) {
                     storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
                 }
             }
@@ -55,7 +55,7 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
 
         ParametricType const& pVectorEntry = pVector[rowIndex];
         std::set<VariableType> vectorEntryVariables;
-        if (!storm::utility::isConstant(pVectorEntry)) {
+        if (!storm::numbers::isConstant(pVectorEntry)) {
             storm::utility::parametric::gatherOccurringVariables(pVectorEntry, vectorEntryVariables);
             if (generateRowLabels) {
                 // If row labels are to be generated, we do not allow unspecified valuations.
@@ -77,11 +77,11 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
             // finished
             for (auto const& entry : pMatrix.getRow(rowIndex)) {
                 if (selectedColumns.get(entry.getColumn())) {
-                    if (storm::utility::isConstant(entry.getValue())) {
+                    if (storm::numbers::isConstant(entry.getValue())) {
                         builder.addNextValue(newRowIndex, oldToNewColumnIndexMapping[entry.getColumn()],
-                                             storm::utility::convertNumber<ConstantType>(entry.getValue()));
+                                             storm::numbers::convert<ConstantType>(entry.getValue()));
                     } else {
-                        builder.addNextValue(newRowIndex, oldToNewColumnIndexMapping[entry.getColumn()], storm::utility::one<ConstantType>());
+                        builder.addNextValue(newRowIndex, oldToNewColumnIndexMapping[entry.getColumn()], storm::numbers::one<ConstantType>());
                         ConstantType& placeholder = functionValuationCollector.add(entry.getValue(), val);
                         matrixAssignment.push_back(std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>(
                             typename storm::storage::SparseMatrix<ConstantType>::iterator(), placeholder));
@@ -90,10 +90,10 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
             }
 
             // Insert the vector entry for this row
-            if (storm::utility::isConstant(pVectorEntry)) {
-                vector.push_back(storm::utility::convertNumber<ConstantType>(pVectorEntry));
+            if (storm::numbers::isConstant(pVectorEntry)) {
+                vector.push_back(storm::numbers::convert<ConstantType>(pVectorEntry));
             } else {
-                vector.push_back(storm::utility::one<ConstantType>());
+                vector.push_back(storm::numbers::one<ConstantType>());
                 AbstractValuation vectorVal(val);
                 for (auto const& vectorVar : vectorEntryVariables) {
                     if (occurringVariables.find(vectorVar) == occurringVariables.end()) {
@@ -161,7 +161,7 @@ void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage
     // apply the matrix and vector assignments to write the contents of the placeholder into the matrix/vector
     for (auto& assignment : matrixAssignment) {
         STORM_LOG_WARN_COND(
-            !storm::utility::isZero(assignment.second),
+            !storm::numbers::isZero(assignment.second),
             "Parameter lifting on region "
                 << region.toString()
                 << " affects the underlying graph structure (the region is not strictly well defined). The result for this region might be incorrect.");
@@ -334,14 +334,14 @@ template<typename ParametricType, typename ConstantType>
 ConstantType& ParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::add(ParametricType const& function,
                                                                                              AbstractValuation const& valuation) {
     ParametricType simplifiedFunction = function;
-    storm::utility::simplify(simplifiedFunction);
+    storm::numbers::simplify(simplifiedFunction);
     std::set<VariableType> variablesInFunction;
     storm::utility::parametric::gatherOccurringVariables(simplifiedFunction, variablesInFunction);
     AbstractValuation simplifiedValuation = valuation.getSubValuation(variablesInFunction);
     // insert the function and the valuation
     // Note that references to elements of an unordered map remain valid after calling unordered_map::insert.
     auto insertionRes = collectedFunctions.insert(std::pair<FunctionValuation, ConstantType>(
-        FunctionValuation(std::move(simplifiedFunction), std::move(simplifiedValuation)), storm::utility::one<ConstantType>()));
+        FunctionValuation(std::move(simplifiedFunction), std::move(simplifiedValuation)), storm::numbers::one<ConstantType>()));
     return insertionRes.first->second;
 }
 

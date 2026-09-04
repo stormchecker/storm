@@ -1,7 +1,7 @@
 #pragma once
 
 #include "storm-gspn/storage/gspn/Transition.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 namespace storm {
 namespace gspn {
@@ -30,7 +30,7 @@ class ImmediateTransition : public storm::gspn::Transition {
      * True iff no weight is attached.
      */
     bool noWeightAttached() const {
-        return storm::utility::isZero(weight);
+        return storm::numbers::isZero(weight);
     }
 
    private:

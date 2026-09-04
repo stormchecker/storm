@@ -193,7 +193,7 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
                 }
                 auto row = transitionMatrix.getRow(choice);
                 if (std::any_of(row.begin(), row.end(), [&sccIndex, &sccDecRes](auto const& entry) {
-                        return sccIndex != sccDecRes.stateToSccMapping[entry.getColumn()] && !storm::utility::isZero(entry.getValue());
+                        return sccIndex != sccDecRes.stateToSccMapping[entry.getColumn()] && !storm::numbers::isZero(entry.getValue());
                     })) {
                     ecChoices.set(choice, false);       // The choice leaves the SCC
                     ecSccIndices.set(sccIndex, false);  // This SCC is not 'stable' yet

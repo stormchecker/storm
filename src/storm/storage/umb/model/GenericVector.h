@@ -6,9 +6,9 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/umb/model/FileTypes.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm::umb {
@@ -63,7 +63,7 @@ class GenericVector {
             return get<ToType>();
         } else {
             return get<FromType>() |
-                   std::ranges::views::transform([](FromType const& value) -> ToType { return storm::utility::convertNumber<ToType, FromType>(value); });
+                   std::ranges::views::transform([](FromType const& value) -> ToType { return storm::numbers::convert<ToType, FromType>(value); });
         }
     }
 
@@ -101,9 +101,9 @@ class GenericVector {
     ValueType at(uint64_t index) const {
         STORM_LOG_ASSERT(isType<double>() || isType<storm::RationalNumber>(), "Unexpected type.");
         if (isType<double>()) {
-            return storm::utility::convertNumber<ValueType>(get<double>()[index]);
+            return storm::numbers::convert<ValueType>(get<double>()[index]);
         } else {
-            return storm::utility::convertNumber<ValueType>(get<storm::RationalNumber>()[index]);
+            return storm::numbers::convert<ValueType>(get<storm::RationalNumber>()[index]);
         }
     }
 

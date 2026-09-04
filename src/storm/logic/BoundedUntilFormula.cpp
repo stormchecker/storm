@@ -8,7 +8,7 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/FormulaVisitor.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -273,11 +273,11 @@ double BoundedUntilFormula::getUpperBound(unsigned i) const {
 template<>
 storm::RationalNumber BoundedUntilFormula::getLowerBound(unsigned i) const {
     if (!hasLowerBound(i)) {
-        return storm::utility::zero<storm::RationalNumber>();
+        return storm::numbers::zero<storm::RationalNumber>();
     }
     checkNoVariablesInBound(this->getLowerBound(i));
     storm::RationalNumber bound = this->getLowerBound(i).evaluateAsRational();
-    STORM_LOG_THROW(bound >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException,
+    STORM_LOG_THROW(bound >= storm::numbers::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException,
                     "Time-bound must not evaluate to negative number.");
     return bound;
 }
@@ -286,7 +286,7 @@ template<>
 storm::RationalNumber BoundedUntilFormula::getUpperBound(unsigned i) const {
     checkNoVariablesInBound(this->getUpperBound(i));
     storm::RationalNumber bound = this->getUpperBound(i).evaluateAsRational();
-    STORM_LOG_THROW(bound >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException,
+    STORM_LOG_THROW(bound >= storm::numbers::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException,
                     "Time-bound must not evaluate to negative number.");
     return bound;
 }

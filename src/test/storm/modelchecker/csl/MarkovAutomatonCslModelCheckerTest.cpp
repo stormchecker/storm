@@ -38,7 +38,7 @@ class SparseDoubleValueIterationEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration, true);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         return env;
     }
 };
@@ -52,7 +52,7 @@ class JaniSparseDoubleValueIterationEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration, true);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         return env;
     }
 };
@@ -73,7 +73,7 @@ class JaniHybridDoubleValueIterationEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration, true);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10));
         return env;
     }
 };
@@ -88,7 +88,7 @@ class SparseDoubleIntervalIterationEnvironment {
         storm::Environment env;
         env.solver().setForceSoundness(true);
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::IntervalIteration, true);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
     }
@@ -142,7 +142,7 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
         return _environment;
     }
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
     ValueType precision() const {
         return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");
@@ -280,7 +280,7 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, server) {
         result = checker->check(this->env(), tasks[1]);
         EXPECT_NEAR(this->parseNumber("2/3"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
-        if (!storm::utility::isZero(this->precision())) {
+        if (!storm::numbers::isZero(this->precision())) {
             result = checker->check(this->env(), tasks[2]);
             EXPECT_NEAR(this->parseNumber("0.455504"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
         }
@@ -301,7 +301,7 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, simple) {
         auto checker = this->createModelChecker(model);
         std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-        if (!storm::utility::isZero(this->precision())) {
+        if (!storm::numbers::isZero(this->precision())) {
             result = checker->check(this->env(), tasks[0]);
             EXPECT_NEAR(this->parseNumber("0.6321205588"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
@@ -342,19 +342,19 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, simple2) {
         EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
         result = checker->check(this->env(), tasks[2]);
-        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+        EXPECT_TRUE(storm::numbers::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
 
         result = checker->check(this->env(), tasks[3]);
         EXPECT_NEAR(this->parseNumber("7/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
         result = checker->check(this->env(), tasks[4]);
-        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+        EXPECT_TRUE(storm::numbers::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
 
         result = checker->check(this->env(), tasks[5]);
         EXPECT_NEAR(this->parseNumber("7/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
         result = checker->check(this->env(), tasks[6]);
-        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+        EXPECT_TRUE(storm::numbers::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
     }
 
     // Checking LRA properties exactly requires an exact LP solver.
@@ -385,7 +385,7 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, erlang) {
         auto checker = this->createModelChecker(model);
         std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-        if (!storm::utility::isZero(this->precision())) {
+        if (!storm::numbers::isZero(this->precision())) {
             result = checker->check(this->env(), tasks[0]);
             EXPECT_NEAR(this->parseNumber("0.13212055882856"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 

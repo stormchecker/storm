@@ -11,9 +11,9 @@
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "storm/numbers/NumberTraits.h"
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
-#include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 
 namespace storm {
@@ -138,8 +138,8 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unhandled filter type.");
             }
-            if (storm::NumberTraits<ValueType>::IsExact && storm::utility::isConstant(resultValue)) {
-                STORM_PRINT(resultValue << " (approx. " << storm::utility::convertNumber<double>(resultValue) << ")");
+            if (storm::numbers::NumberTraits<ValueType>::IsExact && storm::numbers::isConstant(resultValue)) {
+                STORM_PRINT(resultValue << " (approx. " << storm::numbers::convert<double>(resultValue) << ")");
             } else {
                 STORM_PRINT(resultValue);
             }

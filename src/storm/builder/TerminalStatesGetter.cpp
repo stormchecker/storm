@@ -38,7 +38,7 @@ void getTerminalStatesFromFormula(storm::logic::Formula const& formula,
             bool hasLowerBound = false;
             for (uint64_t i = 0; i < boundedUntil.getDimension(); ++i) {
                 if (boundedUntil.hasLowerBound(i) &&
-                    (boundedUntil.getLowerBound(i).containsVariables() || !storm::utility::isZero(boundedUntil.getLowerBound(i).evaluateAsRational()))) {
+                    (boundedUntil.getLowerBound(i).containsVariables() || !storm::numbers::isZero(boundedUntil.getLowerBound(i).evaluateAsRational()))) {
                     hasLowerBound = true;
                     break;
                 }

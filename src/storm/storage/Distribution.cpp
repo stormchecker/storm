@@ -7,8 +7,8 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/utility/ConstantsComparator.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/ConstantsComparator.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -34,7 +34,7 @@ void Distribution<ValueType, StateType>::add(Distribution const& other) {
 
 template<typename ValueType, typename StateType>
 bool Distribution<ValueType, StateType>::equals(Distribution<ValueType, StateType> const& other,
-                                                storm::utility::ConstantsComparator<ValueType> const& comparator) const {
+                                                storm::numbers::ConstantsComparator<ValueType> const& comparator) const {
     // We need to check equality by ourselves, because we need to account for epsilon differences.
     if (this->distribution.size() != other.distribution.size()) {
         return false;
@@ -66,7 +66,7 @@ void Distribution<ValueType, StateType>::addProbability(StateType const& state, 
 
 template<typename ValueType, typename StateType>
 void Distribution<ValueType, StateType>::removeProbability(StateType const& state, ValueType const& probability,
-                                                           storm::utility::ConstantsComparator<ValueType> const& comparator) {
+                                                           storm::numbers::ConstantsComparator<ValueType> const& comparator) {
     auto it = this->distribution.find(state);
     STORM_LOG_ASSERT(it != this->distribution.end(), "Cannot remove probability, because the state is not in the support of the distribution.");
     it->second -= probability;
@@ -77,7 +77,7 @@ void Distribution<ValueType, StateType>::removeProbability(StateType const& stat
 
 template<typename ValueType, typename StateType>
 void Distribution<ValueType, StateType>::shiftProbability(StateType const& fromState, StateType const& toState, ValueType const& probability,
-                                                          storm::utility::ConstantsComparator<ValueType> const& comparator) {
+                                                          storm::numbers::ConstantsComparator<ValueType> const& comparator) {
     removeProbability(fromState, probability, comparator);
     addProbability(toState, probability);
 }
@@ -116,7 +116,7 @@ template<typename ValueType, typename StateType>
 void Distribution<ValueType, StateType>::scale(StateType const& state) {
     auto probabilityIterator = this->distribution.find(state);
     if (probabilityIterator != this->distribution.end()) {
-        ValueType scaleValue = storm::utility::one<ValueType>() / probabilityIterator->second;
+        ValueType scaleValue = storm::numbers::one<ValueType>() / probabilityIterator->second;
         this->distribution.erase(probabilityIterator);
 
         for (auto& entry : this->distribution) {
@@ -143,7 +143,7 @@ std::ostream& operator<<(std::ostream& out, Distribution<ValueType, StateType> c
 
 template<typename ValueType, typename StateType>
 bool Distribution<ValueType, StateType>::less(Distribution<ValueType, StateType> const& other,
-                                              storm::utility::ConstantsComparator<ValueType> const& comparator) const {
+                                              storm::numbers::ConstantsComparator<ValueType> const& comparator) const {
     if (this->size() != other.size()) {
         return this->size() < other.size();
     }
@@ -168,7 +168,7 @@ template<typename ValueType, typename StateType>
 ValueType Distribution<ValueType, StateType>::getProbability(StateType const& state) const {
     auto it = this->distribution.find(state);
     if (it == this->distribution.end()) {
-        return storm::utility::zero<ValueType>();
+        return storm::numbers::zero<ValueType>();
     } else {
         return it->second;
     }
@@ -176,7 +176,7 @@ ValueType Distribution<ValueType, StateType>::getProbability(StateType const& st
 
 template<typename ValueType, typename StateType>
 void Distribution<ValueType, StateType>::normalize() {
-    ValueType sum = storm::utility::zero<ValueType>();
+    ValueType sum = storm::numbers::zero<ValueType>();
     for (auto const& entry : distribution) {
         sum += entry.second;
     }
@@ -188,7 +188,7 @@ void Distribution<ValueType, StateType>::normalize() {
 template<typename ValueType, typename StateType>
 typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value, StateType>::type sample(
     boost::container::flat_map<StateType, ValueType> const& distr, ValueType const& quantile) {
-    ValueType sum = storm::utility::zero<ValueType>();
+    ValueType sum = storm::numbers::zero<ValueType>();
     for (auto const& entry : distr) {
         sum += entry.second;
         if (quantile < sum) {

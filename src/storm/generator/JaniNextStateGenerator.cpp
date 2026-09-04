@@ -8,6 +8,7 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/generator/Distribution.h"
 #include "storm/models/sparse/StateLabeling.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/SimpleValuation.h"
@@ -24,7 +25,6 @@
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
 #include "storm/utility/combinatorics.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
@@ -81,7 +81,7 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
         for (auto const& rewExpr : rewardExpressions) {
             STORM_LOG_ASSERT(rewExpr.second.isVariable(), "Expected trivial reward expression to be a variable. Got " << rewExpr.second << " instead.");
             auto const& var = this->model.getGlobalVariables().getVariable(rewExpr.second.getBaseExpression().asVariableExpression().getVariable());
-            if (var.isTransient() && var.hasInitExpression() && !storm::utility::isZero(var.getInitExpression().evaluateAsRational())) {
+            if (var.isTransient() && var.hasInitExpression() && !storm::numbers::isZero(var.getInitExpression().evaluateAsRational())) {
                 hasNonTrivialRewardExpressions = true;
                 break;
             }
@@ -671,7 +671,7 @@ StateBehavior<ValueType, StateType> JaniNextStateGenerator<ValueType, StateType>
 
         // For CTMCs, we need to keep track of the total exit rate to scale the action rewards later. For DTMCs
         // this is equal to the number of choices, which is why we initialize it like this here.
-        ValueType totalExitRate = this->isDiscreteTimeModel() ? static_cast<ValueType>(totalNumberOfChoices) : storm::utility::zero<ValueType>();
+        ValueType totalExitRate = this->isDiscreteTimeModel() ? static_cast<ValueType>(totalNumberOfChoices) : storm::numbers::zero<ValueType>();
 
         // Iterate over all choices and combine the probabilities/rates into one choice.
         for (auto const& choice : allChoices) {
@@ -688,7 +688,7 @@ StateBehavior<ValueType, StateType> JaniNextStateGenerator<ValueType, StateType>
             }
         }
 
-        std::vector<ValueType> stateActionRewards(rewardExpressions.size(), storm::utility::zero<ValueType>());
+        std::vector<ValueType> stateActionRewards(rewardExpressions.size(), storm::numbers::zero<ValueType>());
         for (auto const& choice : allChoices) {
             if (hasStateActionRewards) {
                 for (uint_fast64_t rewardVariableIndex = 0; rewardVariableIndex < rewardExpressions.size(); ++rewardVariableIndex) {
@@ -733,7 +733,7 @@ Choice<ValueType> JaniNextStateGenerator<ValueType, StateType>::expandNonSynchro
     // Perform the transient edge assignments and create the state action rewards
     TransientVariableValuation<ValueType> transientVariableValuation;
     if (!evaluateRewardExpressionsAtEdges || edge.getAssignments().empty()) {
-        stateActionRewards.resize(rewardModelInformation.size(), storm::utility::zero<ValueType>());
+        stateActionRewards.resize(rewardModelInformation.size(), storm::numbers::zero<ValueType>());
     } else {
         for (int64_t assignmentLevel = edge.getAssignments().getLowestLevel(true); assignmentLevel <= edge.getAssignments().getHighestLevel(true);
              ++assignmentLevel) {
@@ -746,11 +746,11 @@ Choice<ValueType> JaniNextStateGenerator<ValueType, StateType>::expandNonSynchro
     }
 
     // Iterate over all updates of the current command.
-    ValueType probabilitySum = storm::utility::zero<ValueType>();
+    ValueType probabilitySum = storm::numbers::zero<ValueType>();
     for (auto const& destination : edge.getDestinations()) {
         ValueType probability = this->evaluator->asRational(destination.getProbability());
 
-        if (probability != storm::utility::zero<ValueType>()) {
+        if (probability != storm::numbers::zero<ValueType>()) {
             bool evaluatorChanged = false;
             // Obtain target state index and add it to the list of known states. If it has not yet been
             // seen, we also add it to the set of states that have yet to be explored.
@@ -814,7 +814,7 @@ Choice<ValueType> JaniNextStateGenerator<ValueType, StateType>::expandNonSynchro
 
     if (this->options.isExplorationChecksSet()) {
         // Check that the resulting distribution is in fact a distribution.
-        STORM_LOG_THROW(!this->isDiscreteTimeModel() || (!storm::utility::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum)),
+        STORM_LOG_THROW(!this->isDiscreteTimeModel() || (!storm::numbers::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum)),
                         storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
     }
 
@@ -860,7 +860,7 @@ void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribut
             }
             transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
         }
-        addEvaluatedRewardExpressions(stateActionRewards, storm::utility::one<ValueType>());
+        addEvaluatedRewardExpressions(stateActionRewards, storm::numbers::one<ValueType>());
         transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
     }
 
@@ -875,7 +875,7 @@ void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribut
         locationVars.clear();
         transientVariableValuation.clear();
         CompressedState successorState = state;
-        ValueType successorProbability = storm::utility::one<ValueType>();
+        ValueType successorProbability = storm::numbers::one<ValueType>();
 
         uint64_t destinationIndex = destinationId;
         for (uint64_t i = 0; i < iteratorList.size(); ++i) {
@@ -891,7 +891,7 @@ void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribut
             } else {
                 successorProbability *= probability;
             }
-            if (storm::utility::isZero(successorProbability)) {
+            if (storm::numbers::isZero(successorProbability)) {
                 break;
             }
 
@@ -900,7 +900,7 @@ void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribut
                                  destinations.back()->getOrderedAssignments().getTransientAssignments(lowestDestinationAssignmentLevel), *this->evaluator);
         }
 
-        if (!storm::utility::isZero(successorProbability)) {
+        if (!storm::numbers::isZero(successorProbability)) {
             bool evaluatorChanged = false;
             // remaining assignment levels (if there are any)
             for (int64_t assignmentLevel = lowestDestinationAssignmentLevel + 1; assignmentLevel <= highestDestinationAssignmentLevel; ++assignmentLevel) {
@@ -961,8 +961,8 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
         distribution.clear();
 
         EdgeIndexSet edgeIndices;
-        std::vector<ValueType> stateActionRewards(rewardExpressions.size(), storm::utility::zero<ValueType>());
-        // old version without assignment levels generateSynchronizedDistribution(state, storm::utility::one<ValueType>(), 0, edgeCombination, iteratorList,
+        std::vector<ValueType> stateActionRewards(rewardExpressions.size(), storm::numbers::zero<ValueType>());
+        // old version without assignment levels generateSynchronizedDistribution(state, storm::numbers::one<ValueType>(), 0, edgeCombination, iteratorList,
         // distribution, stateActionRewards, edgeIndices, stateToIdCallback);
         generateSynchronizedDistribution(state, edgeCombination, iteratorList, distribution, stateActionRewards, edgeIndices, stateToIdCallback);
         distribution.compress();
@@ -984,7 +984,7 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
         choice.addRewards(std::move(stateActionRewards));
 
         // Add the probabilities/rates to the newly created choice.
-        ValueType probabilitySum = storm::utility::zero<ValueType>();
+        ValueType probabilitySum = storm::numbers::zero<ValueType>();
         choice.reserve(std::distance(distribution.begin(), distribution.end()));
         for (auto const& stateProbability : distribution) {
             choice.addProbability(stateProbability.getState(), stateProbability.getValue());
@@ -996,7 +996,7 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
 
         if (this->options.isExplorationChecksSet()) {
             // Check that the resulting distribution is in fact a distribution.
-            STORM_LOG_THROW(!this->isDiscreteTimeModel() || !storm::utility::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
+            STORM_LOG_THROW(!this->isDiscreteTimeModel() || !storm::numbers::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
                             storm::exceptions::WrongFormatException,
                             "Sum of update probabilities do not sum to one for some edge (actually sum to " << probabilitySum << ").");
         }

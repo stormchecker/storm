@@ -10,7 +10,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
@@ -147,10 +147,10 @@ storm::storage::SparseMatrix<typename SparseModelType::ValueType> GoalStateMerge
                 }
             }
             if (targetValue) {
-                builder.addNextValue(currRow, *resultData.targetState, storm::utility::simplify(*targetValue));
+                builder.addNextValue(currRow, *resultData.targetState, storm::numbers::simplify(*targetValue));
             }
             if (sinkValue) {
-                builder.addNextValue(currRow, *resultData.sinkState, storm::utility::simplify(*sinkValue));
+                builder.addNextValue(currRow, *resultData.sinkState, storm::numbers::simplify(*sinkValue));
             }
             ++currRow;
         }
@@ -161,14 +161,14 @@ storm::storage::SparseMatrix<typename SparseModelType::ValueType> GoalStateMerge
         if (!origMatrix.hasTrivialRowGrouping()) {
             builder.newRowGroup(currRow);
         }
-        builder.addNextValue(currRow, *resultData.targetState, storm::utility::one<typename SparseModelType::ValueType>());
+        builder.addNextValue(currRow, *resultData.targetState, storm::numbers::one<typename SparseModelType::ValueType>());
         ++currRow;
     }
     if (resultData.sinkState) {
         if (!origMatrix.hasTrivialRowGrouping()) {
             builder.newRowGroup(currRow);
         }
-        builder.addNextValue(currRow, *resultData.sinkState, storm::utility::one<typename SparseModelType::ValueType>());
+        builder.addNextValue(currRow, *resultData.sinkState, storm::numbers::one<typename SparseModelType::ValueType>());
         ++currRow;
     }
 
@@ -215,13 +215,13 @@ std::unordered_map<std::string, typename SparseModelType::RewardModelType> GoalS
         std::optional<std::vector<RewardValueType>> stateRewards;
         if (origRewardModel.hasStateRewards()) {
             stateRewards = storm::utility::vector::filterVector(origRewardModel.getStateRewardVector(), maybeStates);
-            stateRewards->resize(stateCount, storm::utility::zero<RewardValueType>());
+            stateRewards->resize(stateCount, storm::numbers::zero<RewardValueType>());
         }
 
         std::optional<std::vector<RewardValueType>> stateActionRewards;
         if (origRewardModel.hasStateActionRewards()) {
             stateActionRewards = storm::utility::vector::filterVector(origRewardModel.getStateActionRewardVector(), resultData.keptChoices);
-            stateActionRewards->resize(choiceCount, storm::utility::zero<RewardValueType>());
+            stateActionRewards->resize(choiceCount, storm::numbers::zero<RewardValueType>());
         }
 
         std::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
@@ -243,10 +243,10 @@ std::unordered_map<std::string, typename SparseModelType::RewardModelType> GoalS
                     }
                 }
                 if (targetValue) {
-                    builder.addNextValue(row, *resultData.targetState, storm::utility::simplify(*targetValue));
+                    builder.addNextValue(row, *resultData.targetState, storm::numbers::simplify(*targetValue));
                 }
                 if (sinkValue) {
-                    builder.addNextValue(row, *resultData.sinkState, storm::utility::simplify(*sinkValue));
+                    builder.addNextValue(row, *resultData.sinkState, storm::numbers::simplify(*sinkValue));
                 }
             }
             transitionRewards = builder.build();
@@ -270,7 +270,7 @@ std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> GoalStateMerger<
     modelComponents.markovianStates->resize(stateCount, true);
 
     modelComponents.exitRates = storm::utility::vector::filterVector(originalModel.getExitRates(), maybeStates);
-    modelComponents.exitRates->resize(stateCount, storm::utility::one<double>());
+    modelComponents.exitRates->resize(stateCount, storm::numbers::one<double>());
 
     return std::make_shared<storm::models::sparse::MarkovAutomaton<double>>(std::move(modelComponents));
 }
@@ -288,7 +288,7 @@ GoalStateMerger<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::
     modelComponents.markovianStates->resize(stateCount, true);
 
     modelComponents.exitRates = storm::utility::vector::filterVector(originalModel.getExitRates(), maybeStates);
-    modelComponents.exitRates->resize(stateCount, storm::utility::one<storm::RationalNumber>());
+    modelComponents.exitRates->resize(stateCount, storm::numbers::one<storm::RationalNumber>());
 
     return std::make_shared<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(std::move(modelComponents));
 }

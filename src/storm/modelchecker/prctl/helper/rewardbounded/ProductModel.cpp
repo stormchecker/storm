@@ -392,7 +392,7 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
             sinkStatesFormula =
                 std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, sinkStatesFormula);
 
-            std::vector<ValueType> objRew(getProduct().getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
+            std::vector<ValueType> objRew(getProduct().getTransitionMatrix().getRowCount(), storm::numbers::zero<ValueType>());
             storm::storage::BitVector relevantObjectives(objectiveDimensions[objIndex].getNumberOfSetBits());
 
             while (!relevantObjectives.full()) {
@@ -463,7 +463,7 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
             if (rewardCollectedInEpoch) {
                 objectiveRewards.push_back(rewModel.getTotalRewardVector(getProduct().getTransitionMatrix()));
             } else {
-                objectiveRewards.emplace_back(getProduct().getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
+                objectiveRewards.emplace_back(getProduct().getTransitionMatrix().getRowCount(), storm::numbers::zero<ValueType>());
             }
         } else {
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula << ".");

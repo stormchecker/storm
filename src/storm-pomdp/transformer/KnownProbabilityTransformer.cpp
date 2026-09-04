@@ -72,13 +72,13 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
     storm::storage::SparseMatrixBuilder<ValueType> smb(0, 0, 0, false, true);
     // new row for prob 1 state
     smb.newRowGroup(currentRow);
-    smb.addNextValue(currentRow, 0, storm::utility::one<ValueType>());
+    smb.addNextValue(currentRow, 0, storm::numbers::one<ValueType>());
     newObservations.push_back(0);
     ++currentRowGroup;
     ++currentRow;
     if (!prob0States.empty()) {
         smb.newRowGroup(currentRow);
-        smb.addNextValue(currentRow, 1, storm::utility::one<ValueType>());
+        smb.addNextValue(currentRow, 1, storm::numbers::one<ValueType>());
         ++currentRowGroup;
         ++currentRow;
         newObservations.push_back(1);

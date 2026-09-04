@@ -137,7 +137,7 @@ index 10a090b53..78d8fc9f9 100644
 +    void findLargestAbsolutePivotElement(const Index& nsupc, const Index& nsupr, Scalar const* lu_col_ptr, StorageIndex const* lsub_ptr, Index const& diagind, Index& diag, Index& pivptr, Scalar& pivmax) {
 +        Scalar rtemp = 0;
 +        for (Index isub = nsupc; isub < nsupr; ++isub) {
-+            rtemp = storm::utility::abs(lu_col_ptr[isub]);
++            rtemp = storm::numbers::abs(lu_col_ptr[isub]);
 +            if (rtemp > pivmax) {
 +                pivmax = rtemp;
 +                pivptr = isub;
@@ -151,7 +151,7 @@ index 10a090b53..78d8fc9f9 100644
 +        bool foundPivotElement = false;
 +        for (Index isub = nsupc; isub < nsupr; ++isub) {
 +            Scalar const& rtemp = lu_col_ptr[isub];
-+            if (!foundPivotElement && !storm::utility::isZero(rtemp)) {
++            if (!foundPivotElement && !storm::numbers::isZero(rtemp)) {
 +                foundPivotElement = true;
 +                pivmax = rtemp;
 +                pivptr = isub;
@@ -164,13 +164,13 @@ index 10a090b53..78d8fc9f9 100644
 +    bool diagonalElementCanBePivot(Scalar const* lu_col_ptr, Index const& diag, Scalar const& diagpivotthresh, Scalar const& pivmax) {
 +        Scalar thresh = diagpivotthresh * pivmax;
 +        double rtemp = std::abs(lu_col_ptr[diag]);
-+        if (!storm::utility::isZero(rtemp) && rtemp >= thresh) return true;
++        if (!storm::numbers::isZero(rtemp) && rtemp >= thresh) return true;
 +        return false;
 +    }
  
 +    template<typename Scalar, typename std::enable_if<!std::is_same<Scalar, double>::value, int>::type = 0>
 +    bool diagonalElementCanBePivot(Scalar const* lu_col_ptr, Index const& diag, Scalar const& diagpivotthresh, Scalar const& pivmax) {
-+        if (!storm::utility::isZero(lu_col_ptr[diag])) return true;
++        if (!storm::numbers::isZero(lu_col_ptr[diag])) return true;
 +        return false;
 +    }
  /**
@@ -202,7 +202,7 @@ index 10a090b53..78d8fc9f9 100644
    // Test for singularity
 -  if (pivmax <= RealScalar(0.0)) {
 +  bool const columnStructurallyEmpty = nsupr <= nsupc;
-+  if ( columnStructurallyEmpty || storm::utility::isZero(pivmax)) {
++  if ( columnStructurallyEmpty || storm::numbers::isZero(pivmax)) {
      // if pivmax == -1, the column is structurally empty, otherwise it is only numerically zero
 -    pivrow = pivmax < RealScalar(0.0) ? diagind : lsub_ptr[pivptr];
 +    pivrow = columnStructurallyEmpty ? diagind : lsub_ptr[pivptr];

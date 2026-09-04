@@ -11,7 +11,7 @@ std::pair<ValueType, ValueType> Bounds<StateType, ValueType>::getBoundsForState(
     StateType const& state, ExplorationInformation<StateType, ValueType> const& explorationInformation) const {
     ActionType index = explorationInformation.getRowGroup(state);
     if (index == explorationInformation.getUnexploredMarker()) {
-        return std::make_pair(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+        return std::make_pair(storm::numbers::zero<ValueType>(), storm::numbers::one<ValueType>());
     } else {
         return boundsPerState[index];
     }
@@ -22,7 +22,7 @@ ValueType Bounds<StateType, ValueType>::getLowerBoundForState(StateType const& s
                                                               ExplorationInformation<StateType, ValueType> const& explorationInformation) const {
     ActionType index = explorationInformation.getRowGroup(state);
     if (index == explorationInformation.getUnexploredMarker()) {
-        return storm::utility::zero<ValueType>();
+        return storm::numbers::zero<ValueType>();
     } else {
         return getLowerBoundForRowGroup(index);
     }
@@ -38,7 +38,7 @@ ValueType Bounds<StateType, ValueType>::getUpperBoundForState(StateType const& s
                                                               ExplorationInformation<StateType, ValueType> const& explorationInformation) const {
     ActionType index = explorationInformation.getRowGroup(state);
     if (index == explorationInformation.getUnexploredMarker()) {
-        return storm::utility::one<ValueType>();
+        return storm::numbers::one<ValueType>();
     } else {
         return getUpperBoundForRowGroup(index);
     }

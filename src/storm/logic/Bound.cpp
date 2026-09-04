@@ -26,7 +26,7 @@ storm::RationalNumber Bound::evaluateThresholdAsRational() const {
 
 template<typename ValueType>
 ValueType Bound::evaluateThresholdAs() const {
-    return storm::utility::convertNumber<ValueType>(evaluateThresholdAsRational());
+    return storm::numbers::convert<ValueType>(evaluateThresholdAsRational());
 }
 
 template bool Bound::isSatisfied(double const& compareValue) const;

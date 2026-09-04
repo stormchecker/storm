@@ -122,8 +122,8 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     maybeStates &= ~psiStates;
 
     // set the result for all non-maybe states
-    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
-    storm::utility::vector::setVectorValues(resultsForNonMaybeStates, psiStates, storm::utility::one<ConstantType>());
+    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::numbers::zero<ConstantType>());
+    storm::utility::vector::setVectorValues(resultsForNonMaybeStates, psiStates, storm::numbers::one<ConstantType>());
 
     // if there are maybestates, create the parameterLifter
     if (!maybeStates.empty()) {
@@ -139,8 +139,8 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     }
 
     // We know some bounds for the results
-    lowerResultBound = storm::utility::zero<ConstantType>();
-    upperResultBound = storm::utility::one<ConstantType>();
+    lowerResultBound = storm::numbers::zero<ConstantType>();
+    upperResultBound = storm::numbers::one<ConstantType>();
 }
 
 template<typename SparseModelType, typename ConstantType>
@@ -170,8 +170,8 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     maybeStates = ~(statesWithProbability01.first | statesWithProbability01.second);
 
     // set the result for all non-maybe states
-    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
-    storm::utility::vector::setVectorValues(resultsForNonMaybeStates, statesWithProbability01.second, storm::utility::one<ConstantType>());
+    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::numbers::zero<ConstantType>());
+    storm::utility::vector::setVectorValues(resultsForNonMaybeStates, statesWithProbability01.second, storm::numbers::one<ConstantType>());
 
     // if there are maybestates, create the parameterLifter
     if (!maybeStates.empty()) {
@@ -193,8 +193,8 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     }
 
     // We know some bounds for the results
-    lowerResultBound = storm::utility::zero<ConstantType>();
-    upperResultBound = storm::utility::one<ConstantType>();
+    lowerResultBound = storm::numbers::zero<ConstantType>();
+    upperResultBound = storm::numbers::one<ConstantType>();
 }
 
 template<typename SparseModelType, typename ConstantType>
@@ -221,8 +221,8 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     maybeStates = ~(targetStates | infinityStates);
 
     // set the result for all the non-maybe states
-    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
-    storm::utility::vector::setVectorValues(resultsForNonMaybeStates, infinityStates, storm::utility::infinity<ConstantType>());
+    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::numbers::zero<ConstantType>());
+    storm::utility::vector::setVectorValues(resultsForNonMaybeStates, infinityStates, storm::numbers::infinity<ConstantType>());
 
     // if there are maybestates, create the parameterLifter
     if (!maybeStates.empty()) {
@@ -255,7 +255,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     }
 
     // We only know a lower bound for the result
-    lowerResultBound = storm::utility::zero<ConstantType>();
+    lowerResultBound = storm::numbers::zero<ConstantType>();
 }
 
 template<typename SparseModelType, typename ConstantType>
@@ -290,7 +290,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     applyPreviousResultAsHint = false;
 
     // We only know a lower bound for the result
-    lowerResultBound = storm::utility::zero<ConstantType>();
+    lowerResultBound = storm::numbers::zero<ConstantType>();
 }
 
 template<typename SparseModelType, typename ConstantType>
@@ -332,7 +332,7 @@ std::vector<ConstantType> SparseMdpParameterLiftingModelChecker<SparseModelType,
     }
     if (applyPreviousResultAsHint) {
         solver->setTrackSchedulers(true);
-        x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
+        x.resize(maybeStates.getNumberOfSetBits(), storm::numbers::zero<ConstantType>());
         if (storm::solver::minimize(dirForParameters) && minSchedChoices && player1SchedChoices) {
             solver->setSchedulerHints(std::move(player1SchedChoices.value()), std::move(minSchedChoices.value()));
         }
@@ -340,7 +340,7 @@ std::vector<ConstantType> SparseMdpParameterLiftingModelChecker<SparseModelType,
             solver->setSchedulerHints(std::move(player1SchedChoices.value()), std::move(maxSchedChoices.value()));
         }
     } else {
-        x.assign(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
+        x.assign(maybeStates.getNumberOfSetBits(), storm::numbers::zero<ConstantType>());
     }
     if (this->currentCheckTask->isBoundSet() && this->currentCheckTask->getOptimizationDirection() == dirForParameters && solver->hasSchedulerHints()) {
         // If we reach this point, we know that after applying the hints, the x-values can only become larger (if we maximize) or smaller (if we minimize).
@@ -407,13 +407,13 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::compu
         if (selectedRows) {
             for (uint64_t row = selectedRows->getNextSetIndex(this->parametricModel->getTransitionMatrix().getRowGroupIndices()[maybeState]);
                  row < this->parametricModel->getTransitionMatrix().getRowGroupIndices()[maybeState + 1]; row = selectedRows->getNextSetIndex(row + 1)) {
-                matrixBuilder.addNextValue(p1MatrixRow, p1MatrixRow, storm::utility::one<storm::storage::sparse::state_type>());
+                matrixBuilder.addNextValue(p1MatrixRow, p1MatrixRow, storm::numbers::one<storm::storage::sparse::state_type>());
                 ++p1MatrixRow;
             }
         } else {
             for (uint64_t endOfGroup = p1MatrixRow + this->parametricModel->getTransitionMatrix().getRowGroupSize(maybeState); p1MatrixRow < endOfGroup;
                  ++p1MatrixRow) {
-                matrixBuilder.addNextValue(p1MatrixRow, p1MatrixRow, storm::utility::one<storm::storage::sparse::state_type>());
+                matrixBuilder.addNextValue(p1MatrixRow, p1MatrixRow, storm::numbers::one<storm::storage::sparse::state_type>());
             }
         }
     }

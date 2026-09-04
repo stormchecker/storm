@@ -5,7 +5,7 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 namespace storm {
 namespace analysis {
@@ -33,7 +33,7 @@ std::set<storm::RationalFunctionVariable> const& ConstraintCollector<ValueType>:
 template<typename ValueType>
 void ConstraintCollector<ValueType>::wellformedRequiresNonNegativeEntries(std::vector<ValueType> const& vec) {
     for (auto const& entry : vec) {
-        if (!storm::utility::isConstant(entry)) {
+        if (!storm::numbers::isConstant(entry)) {
             auto const& transitionVars = entry.gatherVariables();
             variableSet.insert(transitionVars.begin(), transitionVars.end());
             if (entry.denominator().isConstant()) {
@@ -61,12 +61,12 @@ template<typename ValueType>
 void ConstraintCollector<ValueType>::process(storm::models::sparse::Model<ValueType> const& model) {
     if (model.getType() != storm::models::ModelType::Ctmc) {
         for (uint_fast64_t action = 0; action < model.getTransitionMatrix().getRowCount(); ++action) {
-            ValueType sum = storm::utility::zero<ValueType>();
+            ValueType sum = storm::numbers::zero<ValueType>();
 
             for (auto transitionIt = model.getTransitionMatrix().begin(action); transitionIt != model.getTransitionMatrix().end(action); ++transitionIt) {
                 auto const& transition = *transitionIt;
                 sum += transition.getValue();
-                if (!storm::utility::isConstant(transition.getValue())) {
+                if (!storm::numbers::isConstant(transition.getValue())) {
                     auto const& transitionVars = transition.getValue().gatherVariables();
                     variableSet.insert(transitionVars.begin(), transitionVars.end());
                     // Assert: 0 <= transition <= 1
@@ -106,8 +106,8 @@ void ConstraintCollector<ValueType>::process(storm::models::sparse::Model<ValueT
                     graphPreservingConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
                 }
             }
-            STORM_LOG_ASSERT(!storm::utility::isConstant(sum) || storm::utility::isOne(sum), "If the sum is a constant, it must be equal to 1.");
-            if (!storm::utility::isConstant(sum)) {
+            STORM_LOG_ASSERT(!storm::numbers::isConstant(sum) || storm::numbers::isOne(sum), "If the sum is a constant, it must be equal to 1.");
+            if (!storm::numbers::isConstant(sum)) {
                 // Assert: sum == 1
                 wellformedConstraintSet.emplace((sum.nominator() - sum.denominator()).polynomialWithCoefficient(), storm::CompareRelation::EQ);
             }

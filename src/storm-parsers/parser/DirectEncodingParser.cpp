@@ -18,9 +18,9 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/ArchiveReader.h"
 #include "storm/io/file.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/builder.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm::parser {
@@ -306,7 +306,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseM
                     line = "";
                 }
                 ValueType exitRate = parseValue(curString, placeholders, valueParser);
-                if (header.modelType == storm::models::ModelType::MarkovAutomaton && !storm::utility::isZero<ValueType>(exitRate)) {
+                if (header.modelType == storm::models::ModelType::MarkovAutomaton && !storm::numbers::isZero<ValueType>(exitRate)) {
                     modelComponents.markovianStates.get().set(state);
                 }
                 STORM_LOG_TRACE("Exit rate " << exitRate);
@@ -346,9 +346,9 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseM
                 auto stateRewardsIt = stateRewards.begin();
                 for (auto const& rew : rewards) {
                     auto rewardValue = parseValue(rew, placeholders, valueParser);
-                    if (!storm::utility::isZero(rewardValue)) {
+                    if (!storm::numbers::isZero(rewardValue)) {
                         if (stateRewardsIt->empty()) {
-                            stateRewardsIt->resize(nrStates, storm::utility::zero<ValueType>());
+                            stateRewardsIt->resize(nrStates, storm::numbers::zero<ValueType>());
                         }
                         (*stateRewardsIt)[state] = std::move(rewardValue);
                     }
@@ -434,9 +434,9 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseM
                 auto actionRewardsIt = actionRewards.begin();
                 for (auto const& rew : rewards) {
                     auto rewardValue = parseValue(rew, placeholders, valueParser);
-                    if (!storm::utility::isZero(rewardValue)) {
+                    if (!storm::numbers::isZero(rewardValue)) {
                         if (actionRewardsIt->size() <= row) {
-                            actionRewardsIt->resize(std::max(row + 1, nrStates), storm::utility::zero<ValueType>());
+                            actionRewardsIt->resize(std::max(row + 1, nrStates), storm::numbers::zero<ValueType>());
                         }
                         (*actionRewardsIt)[row] = std::move(rewardValue);
                     }
@@ -492,7 +492,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseM
             stateRewardVector = std::move(stateRewards[i]);
         }
         if (i < actionRewards.size() && !actionRewards[i].empty()) {
-            actionRewards[i].resize(row + 1, storm::utility::zero<ValueType>());
+            actionRewards[i].resize(row + 1, storm::numbers::zero<ValueType>());
             actionRewardVector = std::move(actionRewards[i]);
         }
         modelComponents.rewardModels.emplace(

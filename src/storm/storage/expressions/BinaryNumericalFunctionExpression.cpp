@@ -6,12 +6,12 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidTypeException.h"
+#include "storm/numbers/NumberTraits.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
 #include "storm/storage/expressions/IntegerLiteralExpression.h"
 #include "storm/storage/expressions/OperatorType.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"
-#include "storm/utility/NumberTraits.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -230,14 +230,14 @@ std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplif
                             newValue = carl::pow(firstOperandEvaluation, exponent);
                         } else {
                             storm::RationalNumber power = carl::pow(firstOperandEvaluation, -exponent);
-                            newValue = storm::utility::one<storm::RationalNumber>() / power;
+                            newValue = storm::numbers::one<storm::RationalNumber>() / power;
                         }
                     }
                     break;
                 }
                 case OperatorType::Modulo: {
                     if (carl::isInteger(firstOperandEvaluation) && carl::isInteger(secondOperandEvaluation)) {
-                        newValue = storm::utility::mod(storm::utility::numerator(firstOperandEvaluation), storm::utility::numerator(secondOperandEvaluation));
+                        newValue = storm::numbers::mod(storm::numbers::numerator(firstOperandEvaluation), storm::numbers::numerator(secondOperandEvaluation));
                     }
                     break;
                 }

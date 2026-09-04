@@ -34,7 +34,7 @@ std::vector<ValueType> analyzeTrivialDtmcEpochModel(EpochModel<ValueType, true> 
             if (*stepChoiceIt == state) {
                 epochResult.push_back(*stepSolutionIt);
             } else {
-                epochResult.push_back(storm::utility::zero<ValueType>());
+                epochResult.push_back(storm::numbers::zero<ValueType>());
             }
         }
     }
@@ -47,7 +47,7 @@ std::vector<ValueType> analyzeNonTrivialDtmcEpochModel(Environment const &env, E
                                                        boost::optional<ValueType> const &lowerBound, boost::optional<ValueType> const &upperBound) {
     // Update some data for the case that the Matrix has changed
     if (epochModel.epochMatrixChanged) {
-        x.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+        x.assign(epochModel.epochMatrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
         storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
         // We only check for acyclic models if the equation problem has the fixedPointSystem format.
         // We could also do this for other formats, however, this requires either matrix conversions or a different 'hasCycle' implementation.
@@ -83,7 +83,7 @@ std::vector<ValueType> analyzeNonTrivialDtmcEpochModel(Environment const &env, E
     }
 
     // Prepare the right hand side of the equation system
-    b.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
+    b.assign(epochModel.epochMatrix.getRowCount(), storm::numbers::zero<ValueType>());
     std::vector<ValueType> const &objectiveValues = epochModel.objectiveRewards.front();
     for (auto choice : epochModel.objectiveRewardFilter.front()) {
         b[choice] = objectiveValues[choice];
@@ -122,7 +122,7 @@ std::vector<ValueType> analyzeTrivialMdpEpochModel(OptimizationDirection dir, Ep
                 ++stepSolutionIt;
             }
 
-            ValueType choiceValue = storm::utility::zero<ValueType>();
+            ValueType choiceValue = storm::numbers::zero<ValueType>();
             if (epochModel.objectiveRewardFilter.front().get(choice)) {
                 choiceValue += epochModel.objectiveRewards.front()[choice];
             }
@@ -158,7 +158,7 @@ std::vector<ValueType> analyzeNonTrivialMdpEpochModel(Environment const &env, Op
                                                       boost::optional<ValueType> const &lowerBound, boost::optional<ValueType> const &upperBound) {
     // Update some data for the case that the Matrix has changed
     if (epochModel.epochMatrixChanged) {
-        x.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+        x.assign(epochModel.epochMatrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
         storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
         bool epochMatrixAcyclic = !storm::utility::graph::hasCycle(epochModel.epochMatrix);
         Environment acyclicEnv;
@@ -197,7 +197,7 @@ std::vector<ValueType> analyzeNonTrivialMdpEpochModel(Environment const &env, Op
     }
 
     // Prepare the right hand side of the equation system
-    b.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
+    b.assign(epochModel.epochMatrix.getRowCount(), storm::numbers::zero<ValueType>());
     std::vector<ValueType> const &objectiveValues = epochModel.objectiveRewards.front();
     for (auto choice : epochModel.objectiveRewardFilter.front()) {
         b[choice] = objectiveValues[choice];

@@ -5,11 +5,11 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/numbers/ConstantsComparator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
 #include "storm/storage/valuations/Valuations.h"
 #include "storm/storage/valuations/ValuationsStorage.h"
-#include "storm/utility/ConstantsComparator.h"
 
 #undef _VERBOSE_OBSERVATION_UNFOLDING
 
@@ -84,7 +84,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     if (!options.useRestartSemantics) {
         // the violated state (only used when no rejection sampling) is a sink state
         transitionMatrixBuilder.newRowGroup(violatedState);
-        transitionMatrixBuilder.addNextValue(violatedState, violatedState, storm::utility::one<ValueType>());
+        transitionMatrixBuilder.addNextValue(violatedState, violatedState, storm::numbers::one<ValueType>());
         addStateValuation(-1, -1);
     }
 
@@ -115,7 +115,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
                 std::cout << "\t\tconsider new row nr " << newRowCount << '\n';
 #endif
 
-                ValueType resetProb = storm::utility::zero<ValueType>();
+                ValueType resetProb = storm::numbers::zero<ValueType>();
                 // We first find the reset probability
                 for (auto const& oldRowEntry : model.getTransitionMatrix().getRow(oldRowIndex)) {
                     if (model.getObservation(oldRowEntry.getColumn()) != observations[step + 1]) {
@@ -124,8 +124,8 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
                             resetProb.setUpper(std::min(resetProb.upper(), 1.0));
                             resetProb.setLower(std::max(resetProb.lower(), 0.0));
                         } else if constexpr (std::is_same_v<ValueType, storm::RationalInterval>) {
-                            resetProb.setUpper(std::min(resetProb.upper(), utility::one<storm::RationalNumber>()));
-                            resetProb.setLower(std::max(resetProb.lower(), utility::zero<storm::RationalNumber>()));
+                            resetProb.setUpper(std::min(resetProb.upper(), storm::numbers::one<storm::RationalNumber>()));
+                            resetProb.setLower(std::max(resetProb.lower(), storm::numbers::zero<storm::RationalNumber>()));
                         }
                     }
                 }
@@ -134,7 +134,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
 #endif
 
                 // Add the resets
-                if (resetProb != storm::utility::zero<ValueType>()) {
+                if (resetProb != storm::numbers::zero<ValueType>()) {
                     transitionMatrixBuilder.addNextValue(newRowCount, resetDestination, resetProb);
                 }
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
@@ -174,26 +174,26 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
         addStateValuation(unfoldedToOldEntry.second, observations.size() - 1);
         transitionMatrixBuilder.newRowGroup(newRowGroupStart);
         STORM_LOG_ASSERT(risk.size() > unfoldedToOldEntry.second, "Must be a state.");
-        STORM_LOG_ASSERT(storm::utility::isBetween(storm::utility::zero<ValueType>(), risk[unfoldedToOldEntry.second], storm::utility::one<ValueType>()),
+        STORM_LOG_ASSERT(storm::numbers::isBetween(storm::numbers::zero<ValueType>(), risk[unfoldedToOldEntry.second], storm::numbers::one<ValueType>()),
                          "Risk must be a probability");
         // std::cout << "risk is" <<  risk[unfoldedToOldEntry.second] << '\n';
-        if (!storm::utility::isOne(risk[unfoldedToOldEntry.second])) {
-            transitionMatrixBuilder.addNextValue(newRowGroupStart, sinkState, storm::utility::one<ValueType>() - risk[unfoldedToOldEntry.second]);
+        if (!storm::numbers::isOne(risk[unfoldedToOldEntry.second])) {
+            transitionMatrixBuilder.addNextValue(newRowGroupStart, sinkState, storm::numbers::one<ValueType>() - risk[unfoldedToOldEntry.second]);
         }
-        if (!storm::utility::isZero(risk[unfoldedToOldEntry.second])) {
+        if (!storm::numbers::isZero(risk[unfoldedToOldEntry.second])) {
             transitionMatrixBuilder.addNextValue(newRowGroupStart, targetState, risk[unfoldedToOldEntry.second]);
         }
         newRowGroupStart++;
     }
     // sink state
     transitionMatrixBuilder.newRowGroup(newRowGroupStart);
-    transitionMatrixBuilder.addNextValue(newRowGroupStart, sinkState, storm::utility::one<ValueType>());
+    transitionMatrixBuilder.addNextValue(newRowGroupStart, sinkState, storm::numbers::one<ValueType>());
     addStateValuation(-1, -1);
 
     newRowGroupStart++;
     transitionMatrixBuilder.newRowGroup(newRowGroupStart);
     // target state
-    transitionMatrixBuilder.addNextValue(newRowGroupStart, targetState, storm::utility::one<ValueType>());
+    transitionMatrixBuilder.addNextValue(newRowGroupStart, targetState, storm::numbers::one<ValueType>());
     addStateValuation(-1, -1);
 
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING

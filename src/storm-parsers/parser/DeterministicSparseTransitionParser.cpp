@@ -8,7 +8,7 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -105,7 +105,7 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
             for (uint_fast64_t skippedRow = 0; skippedRow < row; ++skippedRow) {
                 hadDeadlocks = true;
                 if (fixDeadlocks) {
-                    resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::one<ValueType>());
+                    resultMatrix.addNextValue(skippedRow, skippedRow, storm::numbers::one<ValueType>());
                     STORM_LOG_WARN("Warning while parsing " << filename << ": state " << skippedRow
                                                             << " has no outgoing transitions. A self-loop was inserted.");
                 } else {
@@ -127,7 +127,7 @@ storm::storage::SparseMatrix<ValueType> DeterministicSparseTransitionParser<Valu
                 for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
                     hadDeadlocks = true;
                     if (fixDeadlocks) {
-                        resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::one<ValueType>());
+                        resultMatrix.addNextValue(skippedRow, skippedRow, storm::numbers::one<ValueType>());
                         STORM_LOG_INFO("Warning while parsing " << filename << ": state " << skippedRow
                                                                 << " has no outgoing transitions. A self-loop was inserted.");
                     } else {

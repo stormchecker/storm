@@ -4,8 +4,8 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/numbers/rationalfunction.h"
 #include "storm/storage/SparseMatrixOperations.h"
-#include "storm/utility/rationalfunction.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -193,7 +193,7 @@ template<typename ValueType>
 template<typename MatrixValueType>
 ValueType StandardRewardModel<ValueType>::getStateActionAndTransitionReward(uint_fast64_t choiceIndex,
                                                                             storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const {
-    ValueType result = this->hasStateActionRewards() ? this->getStateActionReward(choiceIndex) : storm::utility::zero<ValueType>();
+    ValueType result = this->hasStateActionRewards() ? this->getStateActionReward(choiceIndex) : storm::numbers::zero<ValueType>();
     if (this->hasTransitionRewards()) {
         result += transitionMatrix.getPointwiseProductRowSum(getTransitionRewardMatrix(), choiceIndex);
     }
@@ -299,7 +299,7 @@ template<typename MatrixValueType>
 std::vector<ValueType> StandardRewardModel<ValueType>::getTotalRewardVector(uint_fast64_t numberOfRows,
                                                                             storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix,
                                                                             storm::storage::BitVector const& filter) const {
-    std::vector<ValueType> result(numberOfRows, storm::utility::zero<ValueType>());
+    std::vector<ValueType> result(numberOfRows, storm::numbers::zero<ValueType>());
     if (this->hasTransitionRewards()) {
         std::vector<ValueType> pointwiseProductRowSumVector = transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix());
         storm::utility::vector::selectVectorValues(result, filter, transitionMatrix.getRowGroupIndices(), pointwiseProductRowSumVector);
@@ -339,7 +339,7 @@ std::vector<ValueType> StandardRewardModel<ValueType>::getTotalActionRewardVecto
 template<typename ValueType>
 template<typename MatrixValueType>
 storm::storage::BitVector StandardRewardModel<ValueType>::getStatesWithZeroReward(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const {
-    return getStatesWithFilter(transitionMatrix, storm::utility::isZero<ValueType>);
+    return getStatesWithFilter(transitionMatrix, storm::numbers::isZero<ValueType>);
 }
 
 template<typename ValueType>
@@ -375,7 +375,7 @@ template<typename ValueType>
 template<typename MatrixValueType>
 storm::storage::BitVector StandardRewardModel<ValueType>::getChoicesWithZeroReward(
     storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const {
-    return getChoicesWithFilter(transitionMatrix, storm::utility::isZero<ValueType>);
+    return getChoicesWithFilter(transitionMatrix, storm::numbers::isZero<ValueType>);
 }
 
 template<typename ValueType>
@@ -412,16 +412,16 @@ template<typename ValueType>
 template<typename MatrixValueType>
 void StandardRewardModel<ValueType>::clearRewardAtState(uint_fast64_t state, storm::storage::SparseMatrix<MatrixValueType> const& transitions) {
     if (hasStateRewards()) {
-        getStateRewardVector()[state] = storm::utility::zero<ValueType>();
+        getStateRewardVector()[state] = storm::numbers::zero<ValueType>();
     }
     if (hasStateActionRewards()) {
         for (uint_fast64_t choice = transitions.getRowGroupIndices()[state]; choice < transitions.getRowGroupIndices()[state + 1]; ++choice) {
-            getStateActionRewardVector()[choice] = storm::utility::zero<ValueType>();
+            getStateActionRewardVector()[choice] = storm::numbers::zero<ValueType>();
         }
     }
     if (hasTransitionRewards()) {
         for (auto& entry : getTransitionRewardMatrix().getRowGroup(state)) {
-            entry.setValue(storm::utility::zero<ValueType>());
+            entry.setValue(storm::numbers::zero<ValueType>());
         }
     }
 }
@@ -456,7 +456,7 @@ bool anyOfRewardValues(StandardRewardModel<ValueType> const& rewardModel, auto c
 
 template<typename ValueType>
 bool StandardRewardModel<ValueType>::isAllZero() const {
-    bool const hasNonZeroReward = anyOfRewardValues(*this, [](auto&& value) { return !storm::utility::isZero<ValueType>(value); });
+    bool const hasNonZeroReward = anyOfRewardValues(*this, [](auto&& value) { return !storm::numbers::isZero<ValueType>(value); });
     return !hasNonZeroReward;
 }
 
@@ -467,7 +467,7 @@ bool StandardRewardModel<ValueType>::hasNegativeRewards() const {
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Checking Rational functions for negativity is not possible.");
         return false;
     } else {
-        return anyOfRewardValues(*this, [](auto&& value) { return value < storm::utility::zero<ValueType>(); });
+        return anyOfRewardValues(*this, [](auto&& value) { return value < storm::numbers::zero<ValueType>(); });
     }
 }
 
@@ -478,7 +478,7 @@ bool StandardRewardModel<ValueType>::hasPositiveRewards() const {
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Checking Rational functions for negativity is not possible.");
         return false;
     } else {
-        return anyOfRewardValues(*this, [](auto&& value) { return value > storm::utility::zero<ValueType>(); });
+        return anyOfRewardValues(*this, [](auto&& value) { return value > storm::numbers::zero<ValueType>(); });
     }
 }
 
@@ -526,11 +526,11 @@ std::set<storm::RationalFunctionVariable> getRewardModelParameters(StandardRewar
         vars = storm::storage::getVariables(rewModel.getTransitionRewardMatrix());
     }
     if (rewModel.hasStateActionRewards()) {
-        std::set<storm::RationalFunctionVariable> tmp = storm::utility::vector::getVariables(rewModel.getStateActionRewardVector());
+        std::set<storm::RationalFunctionVariable> tmp = storm::numbers::vector::getVariables(rewModel.getStateActionRewardVector());
         vars.insert(tmp.begin(), tmp.end());
     }
     if (rewModel.hasStateRewards()) {
-        std::set<storm::RationalFunctionVariable> tmp = storm::utility::vector::getVariables(rewModel.getStateRewardVector());
+        std::set<storm::RationalFunctionVariable> tmp = storm::numbers::vector::getVariables(rewModel.getStateRewardVector());
         vars.insert(tmp.begin(), tmp.end());
     }
     return vars;

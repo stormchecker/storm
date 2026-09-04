@@ -4,7 +4,7 @@
 #include "storm-parsers/util/cstring.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -269,9 +269,9 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomato
     if (fixDeadlocks) {
         for (uint_fast64_t index = lastsource + 1; index <= firstPassResult.highestStateIndex; ++index) {
             result.markovianStates.set(index, true);
-            result.exitRates[index] = storm::utility::one<ValueType>();
+            result.exitRates[index] = storm::numbers::one<ValueType>();
             result.transitionMatrixBuilder.newRowGroup(currentChoice);
-            result.transitionMatrixBuilder.addNextValue(currentChoice, index, storm::utility::one<ValueType>());
+            result.transitionMatrixBuilder.addNextValue(currentChoice, index, storm::numbers::one<ValueType>());
             ++currentChoice;
         }
     } else {

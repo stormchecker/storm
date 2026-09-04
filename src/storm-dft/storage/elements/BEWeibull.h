@@ -32,8 +32,8 @@ class BEWeibull : public DFTBE<ValueType> {
     }
 
     bool canFail() const override {
-        STORM_LOG_ASSERT(!storm::utility::isZero(this->rate()), "BE WEIBULL should have rate > 0.");
-        STORM_LOG_ASSERT(!storm::utility::isZero(this->shape()), "BE WEIBULL should have shape > 0.");
+        STORM_LOG_ASSERT(!storm::numbers::isZero(this->rate()), "BE WEIBULL should have rate > 0.");
+        STORM_LOG_ASSERT(!storm::numbers::isZero(this->shape()), "BE WEIBULL should have shape > 0.");
         return true;
     }
 

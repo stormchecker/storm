@@ -5,10 +5,10 @@
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/umb/model/FileTypes.h"
 #include "storm/storage/umb/model/GenericVector.h"
 #include "storm/storage/umb/model/Type.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/NotSupportedException.h"
@@ -19,9 +19,9 @@ class ValueEncoding {
    public:
     template<bool Signed, std::ranges::input_range InputRange>
         requires std::same_as<std::ranges::range_value_t<InputRange>, uint64_t>
-    static storm::NumberTraits<storm::RationalNumber>::IntegerType decodeArbitraryPrecisionInteger(InputRange&& input) {
-        using IntegerType = typename storm::NumberTraits<storm::RationalNumber>::IntegerType;
-        auto const twoTo64 = storm::utility::pow<IntegerType>(2, 64);
+    static storm::numbers::NumberTraits<storm::RationalNumber>::IntegerType decodeArbitraryPrecisionInteger(InputRange&& input) {
+        using IntegerType = typename storm::numbers::NumberTraits<storm::RationalNumber>::IntegerType;
+        auto const twoTo64 = storm::numbers::pow<IntegerType>(2, 64);
 
         STORM_LOG_ASSERT(std::ranges::size(input) > 0, "Input range must not be empty.");
         // We assume a little endian representation, so we reverse the input to start with the most significant bits.
@@ -29,13 +29,13 @@ class ValueEncoding {
 
         // Helper function to decode from an unsigned range (with the most significant bits first).
         auto decodeFromUnsignedRange = [](auto&& input) -> IntegerType {
-            auto const twoTo64 = storm::utility::pow<IntegerType>(2, 64);
+            auto const twoTo64 = storm::numbers::pow<IntegerType>(2, 64);
             auto inputIt = std::ranges::begin(input);
             auto const inputEnd = std::ranges::end(input);
-            auto result = storm::utility::convertNumber<IntegerType>(*inputIt);
+            auto result = storm::numbers::convert<IntegerType>(*inputIt);
             for (++inputIt; inputIt != inputEnd; ++inputIt) {
                 result *= twoTo64;
-                result += storm::utility::convertNumber<IntegerType>(*inputIt);
+                result += storm::numbers::convert<IntegerType>(*inputIt);
             }
             return result;
         };
@@ -85,18 +85,18 @@ class ValueEncoding {
     }
 
     template<bool Signed>
-    static uint64_t getSizeOfIntegerEncoding(typename storm::NumberTraits<storm::RationalNumber>::IntegerType const& value) {
+    static uint64_t getSizeOfIntegerEncoding(typename storm::numbers::NumberTraits<storm::RationalNumber>::IntegerType const& value) {
         // The bitsize method returns the smallest n with -2^n <= x < 2^n.
         if constexpr (Signed) {
             // For signed integers, we need one additional bit for the sign.
             // the only exception is when value is equal to -2^n, in which case we don't need that extra bit.
             if (value < 0) {
-                return storm::utility::bitsize(typename storm::NumberTraits<storm::RationalNumber>::IntegerType(value + 1)) + 1;
+                return storm::numbers::bitsize(typename storm::numbers::NumberTraits<storm::RationalNumber>::IntegerType(value + 1)) + 1;
             }
-            return storm::utility::bitsize(value) + 1;
+            return storm::numbers::bitsize(value) + 1;
         } else {
             // For unsigned integers, we get n with 2^{n-1} <= x < 2^n.
-            return storm::utility::bitsize(value);
+            return storm::numbers::bitsize(value);
         }
     }
 
@@ -107,8 +107,8 @@ class ValueEncoding {
         static_assert(storm::RationalNumberDenominatorAlwaysPositive);
         uint64_t minimalIntegerSize = 1;
         for (auto const& r : input) {
-            minimalIntegerSize = std::max(minimalIntegerSize, getSizeOfIntegerEncoding<true>(storm::utility::numerator(r)));
-            minimalIntegerSize = std::max(minimalIntegerSize, getSizeOfIntegerEncoding<false>(storm::utility::denominator(r)));
+            minimalIntegerSize = std::max(minimalIntegerSize, getSizeOfIntegerEncoding<true>(storm::numbers::numerator(r)));
+            minimalIntegerSize = std::max(minimalIntegerSize, getSizeOfIntegerEncoding<false>(storm::numbers::denominator(r)));
         }
         if (multiplesOf64) {
             // Round up to the next multiple of 64
@@ -125,11 +125,11 @@ class ValueEncoding {
     }
 
     template<bool Signed>
-    static void appendEncodedInteger(std::vector<uint64_t>& result, typename storm::NumberTraits<storm::RationalNumber>::IntegerType const& value,
+    static void appendEncodedInteger(std::vector<uint64_t>& result, typename storm::numbers::NumberTraits<storm::RationalNumber>::IntegerType const& value,
                                      uint64_t uint64BucketsPerInteger) {
-        using IntegerType = typename storm::NumberTraits<storm::RationalNumber>::IntegerType;
+        using IntegerType = typename storm::numbers::NumberTraits<storm::RationalNumber>::IntegerType;
         if (uint64BucketsPerInteger == 0) {
-            STORM_LOG_ASSERT(value == storm::utility::zero<IntegerType>(), "Unexpected non-zero value for zero bucket size.");
+            STORM_LOG_ASSERT(value == storm::numbers::zero<IntegerType>(), "Unexpected non-zero value for zero bucket size.");
             // nothing to do
         } else if constexpr (Signed) {
             if (value < 0) {
@@ -148,16 +148,16 @@ class ValueEncoding {
                                  "Encoding error for positive signed integer: most significant bit is set. Not enough uint64 buckets allocated?");
             }
         } else {
-            auto const twoTo64 = storm::utility::pow<IntegerType>(2, 64);
+            auto const twoTo64 = storm::numbers::pow<IntegerType>(2, 64);
             // We assume a little endian representation, so we start with the least significant bits.
 
             STORM_LOG_ASSERT(value >= 0, "Value must be non-negative for unsigned encoding.");
-            auto divisionResult = storm::utility::divide<IntegerType>(value, twoTo64);
-            result.push_back(storm::utility::convertNumber<uint64_t, storm::RationalNumber>(divisionResult.second));
+            auto divisionResult = storm::numbers::divide<IntegerType>(value, twoTo64);
+            result.push_back(storm::numbers::convert<uint64_t, storm::RationalNumber>(divisionResult.second));
             uint64_t buckets = 1;
             while (divisionResult.first != 0) {
-                divisionResult = storm::utility::divide<IntegerType>(divisionResult.first, twoTo64);
-                result.push_back(storm::utility::convertNumber<uint64_t, storm::RationalNumber>(divisionResult.second));
+                divisionResult = storm::numbers::divide<IntegerType>(divisionResult.first, twoTo64);
+                result.push_back(storm::numbers::convert<uint64_t, storm::RationalNumber>(divisionResult.second));
                 ++buckets;
             }
             // fill remaining buckets with zeros
@@ -171,8 +171,8 @@ class ValueEncoding {
     static void appendEncodedRational(std::vector<uint64_t>& result, storm::RationalNumber const& value, uint64_t uint64BucketsPerInteger) {
         // We may assume that the denominator is always positive as this is a requirement for both GMP and CLN
         static_assert(storm::RationalNumberDenominatorAlwaysPositive);
-        appendEncodedInteger<true>(result, storm::utility::numerator(value), uint64BucketsPerInteger);     // signed
-        appendEncodedInteger<false>(result, storm::utility::denominator(value), uint64BucketsPerInteger);  // unsigned
+        appendEncodedInteger<true>(result, storm::numbers::numerator(value), uint64BucketsPerInteger);     // signed
+        appendEncodedInteger<false>(result, storm::numbers::denominator(value), uint64BucketsPerInteger);  // unsigned
     }
 
     template<std::ranges::input_range InputRange>
@@ -213,9 +213,9 @@ class ValueEncoding {
     static auto intervalToBaseRangeView(InputRange&& input) {
         return std::ranges::iota_view(0ull, std::ranges::size(input) * 2) | std::views::transform([&input](auto i) -> BaseType {
                    if (i % 2 == 0) {
-                       return storm::utility::convertNumber<BaseType>(input[i / 2].lower());
+                       return storm::numbers::convert<BaseType>(input[i / 2].lower());
                    } else {
-                       return storm::utility::convertNumber<BaseType>(input[i / 2].upper());
+                       return storm::numbers::convert<BaseType>(input[i / 2].upper());
                    }
                });
     }
@@ -237,7 +237,7 @@ class ValueEncoding {
                 return input;
             } else {
                 return input | std::ranges::views::transform(
-                                   [](SourceType const& value) -> ValueType { return storm::utility::convertNumber<ValueType, SourceType>(value); });
+                                   [](SourceType const& value) -> ValueType { return storm::numbers::convert<ValueType, SourceType>(value); });
             }
         };
 
@@ -247,13 +247,13 @@ class ValueEncoding {
         switch (sourceType.type) {
             case Double:
                 STORM_LOG_WARN_COND(
-                    !storm::NumberTraits<ValueType>::IsExact,
+                    !storm::numbers::NumberTraits<ValueType>::IsExact,
                     "Some values are given in type double but will be converted to an exact (arbitrary precision) type. Rounding errors may occur.");
                 STORM_LOG_ASSERT(input.template isType<double>(), "Unexpected type for values. Expected double.");
                 STORM_LOG_ASSERT(sourceType.bitSize() == 64, "Unexpected source type size for double representation. Expected 64.");
                 return func(conversionView(input.template get<double>()));
             case Rational:
-                STORM_LOG_WARN_COND(storm::NumberTraits<ValueType>::IsExact,
+                STORM_LOG_WARN_COND(storm::numbers::NumberTraits<ValueType>::IsExact,
                                     "Some values are given in an exact type but converted to an inexact type. Rounding errors may occur.");
                 if (input.template isType<storm::RationalNumber>()) {
                     return func(conversionView(input.template get<storm::RationalNumber>()));
@@ -269,7 +269,7 @@ class ValueEncoding {
                     return func(std::ranges::empty_view<ValueType>{});
                 } else {
                     STORM_LOG_WARN_COND(
-                        !storm::NumberTraits<ValueType>::IsExact,
+                        !storm::numbers::NumberTraits<ValueType>::IsExact,
                         "Some values are given in type double but will be converted to an exact (arbitrary precision) type. Rounding errors may occur.");
                     STORM_LOG_ASSERT(sourceType.bitSize() == 128ull, "Unexpected source type size for double interval representation. Expected 128.");
                     if (input.template isType<storm::Interval>()) {
@@ -286,7 +286,7 @@ class ValueEncoding {
                                     "Some values are given as rational intervals but a model with a non-interval type is requested.");
                     return func(std::ranges::empty_view<ValueType>{});
                 } else {
-                    STORM_LOG_WARN_COND(storm::NumberTraits<ValueType>::IsExact,
+                    STORM_LOG_WARN_COND(storm::numbers::NumberTraits<ValueType>::IsExact,
                                         "Some values are given in an exact type but converted to an inexact type. Rounding errors may occur.");
                     if (input.template isType<storm::RationalInterval>()) {
                         return func(conversionView(input.template get<storm::RationalInterval>()));

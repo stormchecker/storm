@@ -1159,7 +1159,7 @@ void performDijkstraStep(std::set<ExplicitDijkstraQueueElement<ValueType>, Expli
             if (probabilityDistances) {
                 alternateDistance = currentDistance * entry.getValue();
             } else {
-                alternateDistance = currentDistance + storm::utility::one<ValueType>();
+                alternateDistance = currentDistance + storm::numbers::one<ValueType>();
             }
             if (probabilityDistances ? alternateDistance > distances[player1Successor] : alternateDistance < distances[player1Successor]) {
                 distances[player1Successor] = alternateDistance;
@@ -1195,9 +1195,8 @@ boost::optional<ExplicitPivotStateResult<ValueType>> pickPivotState(
     // The distance of a state that has not been reached yet, i.e. one that any real distance improves upon. With
     // probability distances that is zero. With hop distances no reachable state is more than numberOfStates - 1 hops
     // away, so numberOfStates lies beyond every achievable distance.
-    ValueType unreachableDistance =
-        probabilityDistances ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType, uint64_t>(numberOfStates);
-    ValueType zeroDistance = probabilityDistances ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
+    ValueType unreachableDistance = probabilityDistances ? storm::numbers::zero<ValueType>() : storm::numbers::convert<ValueType, uint64_t>(numberOfStates);
+    ValueType zeroDistance = probabilityDistances ? storm::numbers::one<ValueType>() : storm::numbers::zero<ValueType>();
 
     // Create storages for the lower and upper Dijkstra search.
     std::vector<ValueType> lowerDistances(numberOfStates, unreachableDistance);
@@ -1233,7 +1232,7 @@ boost::optional<ExplicitPivotStateResult<ValueType>> pickPivotState(
     bool foundPivotState = false;
 
     ExplicitDijkstraQueueElement<ValueType> pivotState(unreachableDistance, 0, true);
-    ValueType pivotStateDeviation = storm::utility::zero<ValueType>();
+    ValueType pivotStateDeviation = storm::numbers::zero<ValueType>();
     auto const& player2Grouping = transitionMatrix.getRowGroupIndices();
 
     while (!dijkstraQueue.empty()) {

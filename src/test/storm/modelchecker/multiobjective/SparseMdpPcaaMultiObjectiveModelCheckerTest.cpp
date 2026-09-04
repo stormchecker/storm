@@ -23,7 +23,7 @@ bool expectPointConained(std::vector<std::vector<ValueType>> const& pointset, st
         EXPECT_EQ(p.size(), point.size()) << "Missmatch in point dimension.";
         bool found = true;
         for (uint64_t i = 0; i < p.size(); ++i) {
-            if (storm::utility::abs<ValueType>(p[i] - point[i]) > precision) {
+            if (storm::numbers::abs<ValueType>(p[i] - point[i]) > precision) {
                 found = false;
                 break;
             }
@@ -85,7 +85,7 @@ std::vector<std::vector<ValueType>> convertPointset(std::vector<std::vector<std:
     for (auto const& point_str : in) {
         out.emplace_back();
         for (auto const& pi_str : point_str) {
-            out.back().push_back(storm::utility::convertNumber<ValueType>(pi_str));
+            out.back().push_back(storm::numbers::convert<ValueType>(pi_str));
         }
     }
     return out;
@@ -116,7 +116,7 @@ template<typename ValueType>
 void assertParetoResult(storm::Environment const& env, storm::models::sparse::Mdp<ValueType> const& mdp, storm::logic::MultiObjectiveFormula const& formula,
                         storm::modelchecker::CheckResult const& result, std::vector<std::vector<std::string>> const& expectedPoints, bool expectSchedulers) {
     ASSERT_TRUE(result.isExplicitParetoCurveCheckResult()) << "Result is not an explicit Pareto curve check result.";
-    ValueType const eps = storm::utility::convertNumber<ValueType>(1e-4);
+    ValueType const eps = storm::numbers::convert<ValueType>(1e-4);
     auto const& paretoResult = result.asExplicitParetoCurveCheckResult<ValueType>();
     EXPECT_TRUE(expectSubset(paretoResult.getPoints(), convertPointset<ValueType>(expectedPoints), eps)) << "Non-Pareto point found.";
     EXPECT_TRUE(expectSubset(convertPointset<ValueType>(expectedPoints), paretoResult.getPoints(), eps)) << "Pareto point missing.";
@@ -212,7 +212,7 @@ TEST_F(SparseMdpPcaaMultiObjectiveModelCheckerTest, consensus) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
     env.solver().setForceSoundness(true);
-    auto const prec = storm::utility::convertNumber<double>(env.modelchecker().multi().getPrecision());
+    auto const prec = storm::numbers::convert<double>(env.modelchecker().multi().getPrecision());
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/multiobj_consensus2_3_2.nm";
     std::string formulasAsString = "multi(Pmax=? [ F \"one_proc_err\" ], P>=0.8916673903 [ G \"one_coin_ok\" ]) ";  // numerical
@@ -244,7 +244,7 @@ TEST_F(SparseMdpPcaaMultiObjectiveModelCheckerTest, zeroconf) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
     env.solver().setForceSoundness(true);
-    auto const prec = storm::utility::convertNumber<double>(env.modelchecker().multi().getPrecision());
+    auto const prec = storm::numbers::convert<double>(env.modelchecker().multi().getPrecision());
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/multiobj_zeroconf4.nm";
     std::string formulasAsString = "multi(Pmax=? [ F l=4 & ip=1 ] , P>=0.993141[ G (error=0) ]) ";  // numerical
@@ -267,7 +267,7 @@ TEST_F(SparseMdpPcaaMultiObjectiveModelCheckerTest, team3with3objectives) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
     env.solver().setForceSoundness(true);
-    auto const prec = storm::utility::convertNumber<double>(env.modelchecker().multi().getPrecision());
+    auto const prec = storm::numbers::convert<double>(env.modelchecker().multi().getPrecision());
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/multiobj_team3.nm";
     std::string formulasAsString = "multi(Pmax=? [ F \"task1_compl\" ], R{\"w_1_total\"}>=2.210204082 [ C ], P>=0.5 [ F \"task2_compl\" ])";  // numerical
@@ -329,7 +329,7 @@ TEST_F(SparseMdpPcaaMultiObjectiveModelCheckerTest, scheduler) {
 TEST_F(SparseMdpPcaaMultiObjectiveModelCheckerTest, dpm) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
-    auto const prec = storm::utility::convertNumber<double>(env.modelchecker().multi().getPrecision());
+    auto const prec = storm::numbers::convert<double>(env.modelchecker().multi().getPrecision());
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/multiobj_dpm100.nm";
     std::string formulasAsString = "multi(R{\"power\"}min=? [ C<=100 ], R{\"queue\"}<=70 [ C<=100 ])";  // numerical

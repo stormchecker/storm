@@ -664,7 +664,7 @@ storm::dd::Add<Type, ValueType> encodeIndex(uint64_t index, uint64_t localNondet
         }
     }
 
-    result.setValue(metaVariableNameToValueMap, storm::utility::one<ValueType>());
+    result.setValue(metaVariableNameToValueMap, storm::numbers::one<ValueType>());
     return result;
 }
 

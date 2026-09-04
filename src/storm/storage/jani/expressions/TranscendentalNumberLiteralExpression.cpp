@@ -4,7 +4,7 @@
 #include "storm/storage/jani/expressions/TranscendentalNumberLiteralExpression.h"
 #include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
 
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 namespace storm {
 namespace expressions {

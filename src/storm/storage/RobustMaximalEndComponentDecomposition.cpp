@@ -3,10 +3,10 @@
 #include <numeric>
 
 #include "storm/adapters/IntervalAdapter.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/StronglyConnectedComponent.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 
 namespace storm {
@@ -101,7 +101,7 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
                 for (auto const& entry : transitionMatrix.getRow(state)) {
                     const bool targetInSCC = sccIndex == sccDecRes.stateToSccMapping[entry.getColumn()];
                     auto const& interval = entry.getValue();
-                    if (!utility::isZero(interval.lower()) && !targetInSCC) {
+                    if (!storm::numbers::isZero(interval.lower()) && !targetInSCC) {
                         // You have to leave the SCC here
                         probabilityToStayInScc = 0;
                         break;
@@ -111,7 +111,7 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
                 }
             }
 
-            // if (probabilityToStayInScc < 1 && !utility::isAlmostOne(probabilityToStayInScc)) {
+            // if (probabilityToStayInScc < 1 && !storm::numbers::isAlmostOne(probabilityToStayInScc)) {
             if (probabilityToStayInScc < 1) {
                 // This state is not in an EC
                 remainingEcCandidates.set(state, false);

@@ -7,8 +7,8 @@
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
 
+#include "storm/numbers/constants.h"
 #include "storm/solver/SolveGoal.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 
@@ -49,19 +49,19 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeReachability
                                                                                qualitative);
 }
 
-template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<storm::numbers::NumberTraits<ValueType>::SupportsExponential, int>::type>
 std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(
     Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<DdType, ValueType> const& model,
     storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& markovianStates,
     storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative,
     double lowerBound, std::optional<double> const& upperBound) {
     // If the time bounds are [0, inf], we rather call untimed reachability.
-    if (storm::utility::isZero(lowerBound) && !upperBound) {
+    if (storm::numbers::isZero(lowerBound) && !upperBound) {
         return storm::modelchecker::helper::HybridMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(env, dir, model, transitionMatrix, phiStates,
                                                                                                                psiStates, qualitative);
     }
     // If the interval is of the form [0,0], we can return the result directly
-    if (upperBound && storm::utility::isZero(*upperBound)) {
+    if (upperBound && storm::numbers::isZero(*upperBound)) {
         // In this case, the interval is of the form [0, 0].
         return std::unique_ptr<CheckResult>(
             new SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), psiStates.template toAdd<ValueType>()));
@@ -84,7 +84,7 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBoundedUntil
         std::move(odd), std::move(explicitResult)));
 }
 
-template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::numbers::NumberTraits<ValueType>::SupportsExponential, int>::type>
 std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(
     Environment const&, OptimizationDirection, storm::models::symbolic::MarkovAutomaton<DdType, ValueType> const&, storm::dd::Add<DdType, ValueType> const&,
     storm::dd::Bdd<DdType> const&, storm::dd::Add<DdType, ValueType> const&, storm::dd::Bdd<DdType> const&, storm::dd::Bdd<DdType> const&, bool, double,

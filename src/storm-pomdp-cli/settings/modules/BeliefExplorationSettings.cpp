@@ -2,9 +2,9 @@
 
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/numbers/NumberTraits.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/OptionBuilder.h"
-#include "storm/utility/NumberTraits.h"
 
 namespace storm {
 namespace settings {
@@ -250,31 +250,31 @@ bool BeliefExplorationSettings::isCutZeroGapSet() const {
 template<typename ValueType>
 void BeliefExplorationSettings::setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const {
     options.refine = isRefineSet();
-    options.refinePrecision = storm::utility::convertNumber<ValueType>(getRefinePrecision());
+    options.refinePrecision = storm::numbers::convert<ValueType>(getRefinePrecision());
     options.refineStepLimit = getRefineStepLimit();
     options.explorationTimeLimit = getExplorationTimeLimit();
 
     options.clippingGridRes = getClippingGridResolution();
     options.resolutionInit = getResolutionInit();
-    options.resolutionFactor = storm::utility::convertNumber<ValueType>(getResolutionFactor());
+    options.resolutionFactor = storm::numbers::convert<ValueType>(getResolutionFactor());
     options.sizeThresholdInit = getSizeThresholdInit();
-    options.sizeThresholdFactor = storm::utility::convertNumber<ValueType>(getSizeThresholdFactor());
-    options.gapThresholdInit = storm::utility::convertNumber<ValueType>(getGapThresholdInit());
-    options.gapThresholdFactor = storm::utility::convertNumber<ValueType>(getGapThresholdFactor());
-    options.optimalChoiceValueThresholdInit = storm::utility::convertNumber<ValueType>(getOptimalChoiceValueThresholdInit());
-    options.optimalChoiceValueThresholdFactor = storm::utility::convertNumber<ValueType>(getOptimalChoiceValueThresholdFactor());
-    options.obsThresholdInit = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdInit());
-    options.obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdFactor());
+    options.sizeThresholdFactor = storm::numbers::convert<ValueType>(getSizeThresholdFactor());
+    options.gapThresholdInit = storm::numbers::convert<ValueType>(getGapThresholdInit());
+    options.gapThresholdFactor = storm::numbers::convert<ValueType>(getGapThresholdFactor());
+    options.optimalChoiceValueThresholdInit = storm::numbers::convert<ValueType>(getOptimalChoiceValueThresholdInit());
+    options.optimalChoiceValueThresholdFactor = storm::numbers::convert<ValueType>(getOptimalChoiceValueThresholdFactor());
+    options.obsThresholdInit = storm::numbers::convert<ValueType>(getObservationScoreThresholdInit());
+    options.obsThresholdIncrementFactor = storm::numbers::convert<ValueType>(getObservationScoreThresholdFactor());
     options.useClipping = isUseClippingSet();
     options.useStateEliminationCutoff = isStateEliminationCutoffSet();
 
-    options.numericPrecision = storm::utility::convertNumber<ValueType>(getNumericPrecision());
-    if (storm::NumberTraits<ValueType>::IsExact) {
+    options.numericPrecision = storm::numbers::convert<ValueType>(getNumericPrecision());
+    if (storm::numbers::NumberTraits<ValueType>::IsExact) {
         if (isNumericPrecisionSetFromDefault()) {
-            STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "Setting numeric precision to zero because exact arithmethic is used.");
-            options.numericPrecision = storm::utility::zero<ValueType>();
+            STORM_LOG_WARN_COND(storm::numbers::isZero(options.numericPrecision), "Setting numeric precision to zero because exact arithmethic is used.");
+            options.numericPrecision = storm::numbers::zero<ValueType>();
         } else {
-            STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision),
+            STORM_LOG_WARN_COND(storm::numbers::isZero(options.numericPrecision),
                                 "A non-zero numeric precision was set although exact arithmethic is used. Results might be inexact.");
         }
     }

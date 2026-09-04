@@ -1637,7 +1637,7 @@ class SMTMinimalLabelSetGenerator {
                     transitionMatrixBuilder.newRowGroup(currentRow);
                 }
                 uint64_t targetState = (absorbState == boost::none ? state : absorbState.get());
-                transitionMatrixBuilder.addNextValue(currentRow, targetState, storm::utility::one<T>());
+                transitionMatrixBuilder.addNextValue(currentRow, targetState, storm::numbers::one<T>());
                 // Insert an empty label set for this choice
                 resultLabelSet.emplace_back();
                 ++currentRow;
@@ -1667,7 +1667,7 @@ class SMTMinimalLabelSetGenerator {
                                                                 << " transitions.");
         if (model.isOfType(storm::models::ModelType::Dtmc)) {
             if (rewardName == boost::none) {
-                results.push_back(storm::utility::zero<T>());
+                results.push_back(storm::numbers::zero<T>());
                 allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeUntilProbabilities(
                     env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false);
                 for (auto state : model.getInitialStates()) {
@@ -1677,7 +1677,7 @@ class SMTMinimalLabelSetGenerator {
                 STORM_LOG_TRACE("Final probability " << results.back());
             } else {
                 for (auto const& rewName : rewardName.get()) {
-                    results.push_back(storm::utility::zero<T>());
+                    results.push_back(storm::numbers::zero<T>());
                     allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeReachabilityRewards(
                         env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), model.getRewardModel(rewName), psiStates, false);
                     for (auto state : model.getInitialStates()) {
@@ -1687,7 +1687,7 @@ class SMTMinimalLabelSetGenerator {
             }
         } else {
             if (rewardName == boost::none) {
-                results.push_back(storm::utility::zero<T>());
+                results.push_back(storm::numbers::zero<T>());
                 storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
                 allStatesResult = std::move(
                     modelCheckerHelper
@@ -1922,7 +1922,7 @@ class SMTMinimalLabelSetGenerator {
             }
 
             if (violation) {
-                if (!rewardName && maximalPropertyValue.front() == storm::utility::zero<T>()) {
+                if (!rewardName && maximalPropertyValue.front() == storm::numbers::zero<T>()) {
                     ++zeroProbabilityCount;
                 }
 
@@ -2091,7 +2091,7 @@ class SMTMinimalLabelSetGenerator {
 
                 // Check for which successor states choices need to be added
                 for (auto const& successorEntry : model.getTransitionMatrix().getRow(smallestCommandChoice)) {
-                    if (!storm::utility::isZero(successorEntry.getValue())) {
+                    if (!storm::numbers::isZero(successorEntry.getValue())) {
                         if (!reachableProb0EStates.get(successorEntry.getColumn())) {
                             reachableProb0EStates.set(successorEntry.getColumn());
                             prob0EWorklist.push(successorEntry.getColumn());
@@ -2201,7 +2201,7 @@ class SMTMinimalLabelSetGenerator {
 
             // Modify bound appropriately.
             result.comparisonType = storm::logic::invertPreserveStrictness(result.comparisonType);
-            result.threshold.back() = storm::utility::one<T>() - result.threshold.back();
+            result.threshold.back() = storm::numbers::one<T>() - result.threshold.back();
 
             // Modify the phi and psi states appropriately.
             storm::storage::BitVector statesWithProbability0E =

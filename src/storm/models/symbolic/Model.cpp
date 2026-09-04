@@ -15,7 +15,7 @@
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
 
@@ -388,7 +388,7 @@ std::optional<storm::dd::DdType> Model<Type, ValueType>::getDdType() const {
 
 template<storm::dd::DdType Type, typename ValueType>
 bool Model<Type, ValueType>::isExact() const {
-    return storm::NumberTraits<ValueType>::IsExact;
+    return storm::numbers::NumberTraits<ValueType>::IsExact;
 }
 
 template<storm::dd::DdType Type, typename ValueType>
@@ -412,7 +412,7 @@ bool Model<Type, ValueType>::hasParameters() const {
     }
     // Check for parameters
     for (auto it = this->getTransitionMatrix().begin(false); it != this->getTransitionMatrix().end(); ++it) {
-        if (!storm::utility::isConstant((*it).second)) {
+        if (!storm::numbers::isConstant((*it).second)) {
             return true;
         }
     }

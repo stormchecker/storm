@@ -27,10 +27,10 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/numbers/NumberTraits.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/transformer/MakePOMDPCanonic.h"
-#include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
 
@@ -78,29 +78,28 @@ bool performPreprocessing(std::shared_ptr<storm::models::sparse::Pomdp<ValueType
 template<typename ValueType>
 void printResult(ValueType const& lowerBound, ValueType const& upperBound) {
     if (lowerBound == upperBound) {
-        if (storm::utility::isInfinity(lowerBound)) {
+        if (storm::numbers::isInfinity(lowerBound)) {
             STORM_PRINT_AND_LOG("inf");
         } else {
             STORM_PRINT_AND_LOG(lowerBound);
         }
-    } else if (storm::utility::isInfinity<ValueType>(-lowerBound)) {
-        if (storm::utility::isInfinity(upperBound)) {
+    } else if (storm::numbers::isInfinity<ValueType>(-lowerBound)) {
+        if (storm::numbers::isInfinity(upperBound)) {
             STORM_PRINT_AND_LOG("[-inf, inf] (width=inf)");
         } else {
             // Only upper bound is known
             STORM_PRINT_AND_LOG("≤ " << upperBound);
         }
-    } else if (storm::utility::isInfinity(upperBound)) {
+    } else if (storm::numbers::isInfinity(upperBound)) {
         STORM_PRINT_AND_LOG("≥ " << lowerBound);
     } else {
         STORM_PRINT_AND_LOG("[" << lowerBound << ", " << upperBound << "] (width=" << ValueType(upperBound - lowerBound) << ")");
     }
-    if (storm::NumberTraits<ValueType>::IsExact) {
+    if (storm::numbers::NumberTraits<ValueType>::IsExact) {
         STORM_PRINT_AND_LOG(" (approx. ");
         double roundedLowerBound =
-            storm::utility::isInfinity<ValueType>(-lowerBound) ? -storm::utility::infinity<double>() : storm::utility::convertNumber<double>(lowerBound);
-        double roundedUpperBound =
-            storm::utility::isInfinity(upperBound) ? storm::utility::infinity<double>() : storm::utility::convertNumber<double>(upperBound);
+            storm::numbers::isInfinity<ValueType>(-lowerBound) ? -storm::numbers::infinity<double>() : storm::numbers::convert<double>(lowerBound);
+        double roundedUpperBound = storm::numbers::isInfinity(upperBound) ? storm::numbers::infinity<double>() : storm::numbers::convert<double>(upperBound);
         printResult(roundedLowerBound, roundedUpperBound);
         STORM_PRINT_AND_LOG(")");
     }

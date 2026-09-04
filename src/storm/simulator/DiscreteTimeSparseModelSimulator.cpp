@@ -6,7 +6,7 @@ namespace simulator {
 template<typename ValueType, typename RewardModelType>
 DiscreteTimeSparseModelSimulator<ValueType, RewardModelType>::DiscreteTimeSparseModelSimulator(
     storm::models::sparse::Model<ValueType, RewardModelType> const& model)
-    : model(model), currentState(*model.getInitialStates().begin()), zeroRewards(model.getNumberOfRewardModels(), storm::utility::zero<ValueType>()) {
+    : model(model), currentState(*model.getInitialStates().begin()), zeroRewards(model.getNumberOfRewardModels(), storm::numbers::zero<ValueType>()) {
     STORM_LOG_WARN_COND(model.getInitialStates().getNumberOfSetBits() == 1,
                         "The model has multiple initial states. This simulator assumes it starts from the initial state with the lowest index.");
     lastRewards = zeroRewards;
@@ -48,7 +48,7 @@ bool DiscreteTimeSparseModelSimulator<ValueType, RewardModelType>::step(uint64_t
         }
         ++i;
     }
-    ValueType sum = storm::utility::zero<ValueType>();
+    ValueType sum = storm::numbers::zero<ValueType>();
     for (auto const& entry : model.getTransitionMatrix().getRow(row)) {
         sum += entry.getValue();
         if (sum >= probability) {

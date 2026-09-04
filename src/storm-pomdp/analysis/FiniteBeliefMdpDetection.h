@@ -41,7 +41,7 @@ bool detectFiniteBeliefMdp(storm::models::sparse::Pomdp<ValueType> const& pomdp,
             for (uint64_t rowIndex = pomdp.getNondeterministicChoiceIndices()[sccState]; rowIndex < pomdp.getNondeterministicChoiceIndices()[sccState + 1];
                  ++rowIndex) {
                 for (auto const& entry : pomdp.getTransitionMatrix().getRow(rowIndex)) {
-                    if (!storm::utility::isOne(entry.getValue()) && !storm::utility::isZero(entry.getValue())) {
+                    if (!storm::numbers::isOne(entry.getValue()) && !storm::numbers::isZero(entry.getValue())) {
                         if (scc.containsState(entry.getColumn())) {
                             // There is a non-dirac choice that stays in the SCC.
                             // This could still mean that the belief MDP is finite

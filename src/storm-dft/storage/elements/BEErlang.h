@@ -35,7 +35,7 @@ class BEErlang : public DFTBE<ValueType> {
     }
 
     bool canFail() const override {
-        STORM_LOG_ASSERT(!storm::utility::isZero(this->activeFailureRate()), "BE ERLANG should have failure rate > 0.");
+        STORM_LOG_ASSERT(!storm::numbers::isZero(this->activeFailureRate()), "BE ERLANG should have failure rate > 0.");
         return true;
     }
 
@@ -68,7 +68,7 @@ class BEErlang : public DFTBE<ValueType> {
      * @return Dormancy factor.
      */
     ValueType dormancyFactor() const {
-        STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(this->activeFailureRate()), "Active failure rate should not be zero.");
+        STORM_LOG_ASSERT(!storm::numbers::isZero<ValueType>(this->activeFailureRate()), "Active failure rate should not be zero.");
         return this->passiveFailureRate() / this->activeFailureRate();
     }
 

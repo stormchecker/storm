@@ -122,7 +122,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
 
                 // Combine modularisation results
                 STORM_LOG_TRACE("Combining all results... K=" << nrK << "; M=" << nrM << "; invResults=" << (invResults ? "On" : "Off"));
-                ValueType result = storm::utility::zero<ValueType>();
+                ValueType result = storm::numbers::zero<ValueType>();
                 int limK = invResults ? -1 : nrM + 1;
                 int chK = invResults ? -1 : 1;
                 for (int cK = nrK; cK != limK; cK += chK) {
@@ -130,12 +130,12 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
                     uint64_t permutation = smallestIntWithNBitsSet(static_cast<uint64_t>(cK));
                     do {
                         STORM_LOG_TRACE("Permutation=" << permutation);
-                        ValueType permResult = storm::utility::one<ValueType>();
+                        ValueType permResult = storm::numbers::one<ValueType>();
                         for (size_t i = 0; i < res.size(); ++i) {
                             if (permutation & (1ul << i)) {
                                 permResult *= res[i];
                             } else {
-                                permResult *= storm::utility::one<ValueType>() - res[i];
+                                permResult *= storm::numbers::one<ValueType>() - res[i];
                             }
                         }
                         STORM_LOG_TRACE("Result for permutation:" << permResult);
@@ -144,7 +144,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
                     } while (permutation < (1ul << nrM) && permutation != 0);
                 }
                 if (invResults) {
-                    result = storm::utility::one<ValueType>() - result;
+                    result = storm::numbers::one<ValueType>() - result;
                 }
                 results.push_back(result);
             }
@@ -301,15 +301,14 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
     }
 
     auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-    ValueType const precision = std::is_same<ValueType, storm::RationalFunction>::value
-                                    ? storm::utility::zero<ValueType>()
-                                    : storm::utility::convertNumber<ValueType>(generalSettings.getPrecision());
+    ValueType const precision = std::is_same<ValueType, storm::RationalFunction>::value ? storm::numbers::zero<ValueType>()
+                                                                                        : storm::numbers::convert<ValueType>(generalSettings.getPrecision());
     if (approximationError > 0.0) {
         // Comparator for checking the error of the approximation
-        storm::utility::ConstantsComparator<ValueType> comparator(precision);
+        storm::numbers::ConstantsComparator<ValueType> comparator(precision);
 
         // Build approximate Markov Automata for lower and upper bound
-        approximation_result approxResult = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
+        approximation_result approxResult = std::make_pair(storm::numbers::zero<ValueType>(), storm::numbers::zero<ValueType>());
         std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
         std::vector<ValueType> newResult;
         storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
@@ -385,7 +384,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
             }
 
             totalTimer.start();
-            STORM_LOG_THROW(!storm::utility::isInfinity<ValueType>(approxResult.first) && !storm::utility::isInfinity<ValueType>(approxResult.second),
+            STORM_LOG_THROW(!storm::numbers::isInfinity<ValueType>(approxResult.first) && !storm::numbers::isInfinity<ValueType>(approxResult.second),
                             storm::exceptions::NotSupportedException, "Approximation does not work if result might be infinity.");
             ++iteration;
         } while (!isApproximationSufficient(approxResult.first, approxResult.second, approximationError, probabilityFormula));
@@ -471,7 +470,7 @@ std::vector<ValueType> DFTModelChecker<ValueType>::checkModel(std::shared_ptr<st
             results.push_back(resultValue);
         } else {
             STORM_LOG_WARN("The property '" << *property << "' could not be checked with the current settings.");
-            results.push_back(-storm::utility::one<ValueType>());
+            results.push_back(-storm::numbers::one<ValueType>());
         }
         // STORM_PRINT_AND_LOG("Result (initial states): " << resultValue << '\n');
         singleModelCheckingTimer.stop();

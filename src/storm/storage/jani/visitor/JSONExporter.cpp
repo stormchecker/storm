@@ -816,8 +816,8 @@ boost::any ExpressionToJson::visit(storm::expressions::RationalLiteralExpression
 
     if (!storm::isJsonNumberExportAccurate(val)) {
         // Try if exact export is possible as fraction of two literals
-        auto [num, den] = storm::utility::asFraction(expression.getValue());
-        if (!storm::utility::isOne(den)) {
+        auto [num, den] = storm::numbers::asFraction(expression.getValue());
+        if (!storm::numbers::isOne(den)) {
             ExportJsonType numJson(num), denJson(den);
             if (isJsonNumberExportAccurate(numJson) && isJsonNumberExportAccurate(denJson)) {
                 val = ExportJsonType();
@@ -1137,7 +1137,7 @@ ExportJsonType buildDestinations(std::vector<EdgeDestination> const& destination
         destEntry["location"] = locationNames.at(destination.getLocationIndex());
         bool prob1 = false;
         if (destination.getProbability().isLiteral()) {
-            if (storm::utility::isOne(destination.getProbability().evaluateAsRational())) {
+            if (storm::numbers::isOne(destination.getProbability().evaluateAsRational())) {
                 prob1 = true;
             }
         }

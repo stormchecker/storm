@@ -9,9 +9,9 @@
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/utility/builder.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -161,7 +161,7 @@ void SparseModelMemoryProduct<ValueType, RewardModelType>::computeReachableState
                                      "Invalid choice " << choice.first << " at model state " << modelState << ".");
                     auto const& row = model.getTransitionMatrix().getRow(groupStart + choice.first);
                     for (auto modelTransitionIt = row.begin(); modelTransitionIt != row.end(); ++modelTransitionIt) {
-                        if (!storm::utility::isZero(modelTransitionIt->getValue())) {
+                        if (!storm::numbers::isZero(modelTransitionIt->getValue())) {
                             uint64_t successorModelState = modelTransitionIt->getColumn();
                             uint64_t modelTransitionId = modelTransitionIt - model.getTransitionMatrix().begin();
                             uint64_t successorMemoryState = memorySuccessors[modelTransitionId * memoryStateCount + memoryState];
@@ -176,7 +176,7 @@ void SparseModelMemoryProduct<ValueType, RewardModelType>::computeReachableState
             } else {
                 auto const& rowGroup = model.getTransitionMatrix().getRowGroup(modelState);
                 for (auto modelTransitionIt = rowGroup.begin(); modelTransitionIt != rowGroup.end(); ++modelTransitionIt) {
-                    if (!storm::utility::isZero(modelTransitionIt->getValue())) {
+                    if (!storm::numbers::isZero(modelTransitionIt->getValue())) {
                         uint64_t successorModelState = modelTransitionIt->getColumn();
                         uint64_t modelTransitionId = modelTransitionIt - model.getTransitionMatrix().begin();
                         uint64_t successorMemoryState = memorySuccessors[modelTransitionId * memoryStateCount + memoryState];
@@ -270,7 +270,7 @@ storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType, Rewa
             } else {
                 std::set<uint64_t> successors;
                 for (auto const& choiceIndex : choice.getChoiceAsDistribution()) {
-                    if (!storm::utility::isZero(choiceIndex.second)) {
+                    if (!storm::numbers::isZero(choiceIndex.second)) {
                         uint64_t modelRow = model.getTransitionMatrix().getRowGroupIndices()[modelState] + choiceIndex.first;
                         for (auto const& entry : model.getTransitionMatrix().getRow(modelRow)) {
                             successors.insert(entry.getColumn());
@@ -312,7 +312,7 @@ storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType, Rewa
             } else {
                 std::map<uint64_t, ValueType> transitions;
                 for (auto const& choiceIndex : choice.getChoiceAsDistribution()) {
-                    if (!storm::utility::isZero(choiceIndex.second)) {
+                    if (!storm::numbers::isZero(choiceIndex.second)) {
                         uint64_t modelRowIndex = model.getTransitionMatrix().getRowGroupIndices()[modelState] + choiceIndex.first;
                         auto const& modelRow = model.getTransitionMatrix().getRow(modelRowIndex);
                         for (auto entryIt = modelRow.begin(); entryIt != modelRow.end(); ++entryIt) {
@@ -413,10 +413,10 @@ std::unordered_map<std::string, RewardModelType> SparseModelMemoryProduct<ValueT
     for (auto const& rewardModel : model.getRewardModels()) {
         std::optional<std::vector<RewardValueType>> stateRewards;
         if (rewardModel.second.hasStateRewards()) {
-            stateRewards = std::vector<RewardValueType>(numResStates, storm::utility::zero<RewardValueType>());
+            stateRewards = std::vector<RewardValueType>(numResStates, storm::numbers::zero<RewardValueType>());
             uint64_t modelState = 0;
             for (auto const& modelStateReward : rewardModel.second.getStateRewardVector()) {
-                if (!storm::utility::isZero(modelStateReward)) {
+                if (!storm::numbers::isZero(modelStateReward)) {
                     for (uint64_t memoryState = 0; memoryState < memoryStateCount; ++memoryState) {
                         if (isStateReachable(modelState, memoryState)) {
                             stateRewards.value()[getResultState(modelState, memoryState)] = modelStateReward;
@@ -428,11 +428,11 @@ std::unordered_map<std::string, RewardModelType> SparseModelMemoryProduct<ValueT
         }
         std::optional<std::vector<RewardValueType>> stateActionRewards;
         if (rewardModel.second.hasStateActionRewards()) {
-            stateActionRewards = std::vector<RewardValueType>(resultTransitionMatrix.getRowCount(), storm::utility::zero<RewardValueType>());
+            stateActionRewards = std::vector<RewardValueType>(resultTransitionMatrix.getRowCount(), storm::numbers::zero<RewardValueType>());
             uint64_t modelState = 0;
             uint64_t modelRow = 0;
             for (auto const& modelStateActionReward : rewardModel.second.getStateActionRewardVector()) {
-                if (!storm::utility::isZero(modelStateActionReward)) {
+                if (!storm::numbers::isZero(modelStateActionReward)) {
                     while (modelRow >= model.getTransitionMatrix().getRowGroupIndices()[modelState + 1]) {
                         ++modelState;
                     }

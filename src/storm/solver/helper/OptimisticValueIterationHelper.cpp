@@ -3,9 +3,9 @@
 #include <type_traits>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/utility/Extremum.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
@@ -14,9 +14,9 @@ namespace storm::solver::helper {
 template<bool Relative, typename ValueType>
 static ValueType diff(ValueType const& oldValue, ValueType const& newValue) {
     if constexpr (Relative) {
-        return storm::utility::abs<ValueType>((newValue - oldValue) / newValue);
+        return storm::numbers::abs<ValueType>((newValue - oldValue) / newValue);
     } else {
-        return storm::utility::abs<ValueType>(newValue - oldValue);
+        return storm::numbers::abs<ValueType>(newValue - oldValue);
     }
 }
 
@@ -41,7 +41,7 @@ class GSVIBackend {
 
     void applyUpdate(ValueType& currValue, [[maybe_unused]] uint64_t rowGroup) {
         if (isConverged) {
-            isConverged = storm::utility::isZero(*best) || diff<Relative>(currValue, *best) <= precision;
+            isConverged = storm::numbers::isZero(*best) || diff<Relative>(currValue, *best) <= precision;
         }
         currValue = std::move(*best);
     }
@@ -86,16 +86,16 @@ template<bool Relative, typename ValueType>
 void guessCandidate(std::pair<std::vector<ValueType>, std::vector<ValueType>>& vu, ValueType const& guessValue, std::optional<ValueType> const& lowerBound,
                     std::optional<ValueType> const& upperBound) {
     std::function<ValueType(ValueType const&)> guess;
-    [[maybe_unused]] ValueType factor = storm::utility::one<ValueType>() + guessValue;
+    [[maybe_unused]] ValueType factor = storm::numbers::one<ValueType>() + guessValue;
     if constexpr (Relative) {
         // the guess is given by value + |value * guessValue|. If all values are positive, this can be simplified a bit
-        if (lowerBound && *lowerBound < storm::utility::zero<ValueType>()) {
-            guess = [&guessValue](ValueType const& val) { return val + storm::utility::abs<ValueType>(val * guessValue); };
+        if (lowerBound && *lowerBound < storm::numbers::zero<ValueType>()) {
+            guess = [&guessValue](ValueType const& val) { return val + storm::numbers::abs<ValueType>(val * guessValue); };
         } else {
             guess = [&factor](ValueType const& val) { return val * factor; };
         }
     } else {
-        guess = [&guessValue](ValueType const& val) { return storm::utility::isZero(val) ? storm::utility::zero<ValueType>() : val + guessValue; };
+        guess = [&guessValue](ValueType const& val) { return storm::numbers::isZero(val) ? storm::numbers::zero<ValueType>() : val + guessValue; };
     }
     if (lowerBound || upperBound) {
         std::function<ValueType(ValueType const&)> guessAndClamp;
@@ -119,7 +119,7 @@ class OVIBackend {
         isAllUp = true;
         isAllDown = true;
         crossed = false;
-        errorValue = storm::utility::zero<ValueType>();
+        errorValue = storm::numbers::zero<ValueType>();
     }
 
     void firstRow(std::pair<ValueType, ValueType>&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
@@ -133,7 +133,7 @@ class OVIBackend {
     }
 
     void applyUpdate(ValueType& vCurr, ValueType& uCurr, [[maybe_unused]] uint64_t rowGroup) {
-        if (*vBest != storm::utility::zero<ValueType>()) {
+        if (*vBest != storm::numbers::zero<ValueType>()) {
             errorValue &= diff<Relative>(vCurr, *vBest);
         }
         if (*uBest < uCurr) {
@@ -202,11 +202,11 @@ SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
         guessCandidate<Relative>(vu, precision, lowerBound, upperBound);
         OVIBackend<ValueType, Dir, Relative> backend;
         uint64_t maxIters;
-        if (storm::utility::isZero(currentGuessValue)) {
+        if (storm::numbers::isZero(currentGuessValue)) {
             maxIters = std::numeric_limits<uint64_t>::max();
         } else {
-            maxIters = numIterations + storm::utility::convertNumber<uint64_t, ValueType>(
-                                           storm::utility::ceil<ValueType>(storm::utility::one<ValueType>() / currentGuessValue));
+            maxIters = numIterations +
+                       storm::numbers::convert<uint64_t, ValueType>(storm::numbers::ceil<ValueType>(storm::numbers::one<ValueType>() / currentGuessValue));
         }
         while (numIterations < maxIters) {
             ++numIterations;
@@ -228,7 +228,7 @@ SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
             }
         }
         STORM_LOG_WARN_COND(numTries != 20, "Optimistic Value Iteration did not terminate after 20 refinements. It might be stuck.");
-        currentGuessValue = backend.error() / storm::utility::convertNumber<ValueType, uint64_t>(2u);
+        currentGuessValue = backend.error() / storm::numbers::convert<ValueType, uint64_t>(2u);
     }
 }
 
@@ -242,7 +242,7 @@ SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
     // when lowerBound==upperBound)
     if (lowerBound && upperBound) {
         ValueType diff = *upperBound - *lowerBound;
-        if ((relative && diff <= precision * std::min(storm::utility::abs(*lowerBound), storm::utility::abs(*upperBound))) ||
+        if ((relative && diff <= precision * std::min(storm::numbers::abs(*lowerBound), storm::numbers::abs(*upperBound))) ||
             (!relative && diff <= precision)) {
             vu.first.assign(vu.first.size(), *lowerBound);
             vu.second.assign(vu.second.size(), *upperBound);
@@ -281,7 +281,7 @@ SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
         doublePrec -= precision * 1e-6;  // be slightly more precise to avoid a good chunk of floating point issues
     }
     auto status = OVI(vu, offsets, numIterations, relative, doublePrec, dir, guessValue ? *guessValue : doublePrec, lowerBound, upperBound, iterationCallback);
-    auto two = storm::utility::convertNumber<ValueType>(2.0);
+    auto two = storm::numbers::convert<ValueType>(2.0);
     // get the average of lower- and upper result
     storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
         vu.first, vu.second, vu.first, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });

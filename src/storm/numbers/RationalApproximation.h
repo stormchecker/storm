@@ -2,7 +2,7 @@
 
 #include "storm/adapters/RationalNumberForward.h"
 
-namespace storm::utility {
+namespace storm::numbers {
 
 /*!
  * Finds the "simplest" rational number in the given interval, where "simplest" means having the smallest denominator
@@ -15,4 +15,4 @@ namespace storm::utility {
  */
 storm::RationalNumber findRational(storm::RationalNumber const& lowerBound, bool lowerInclusive, storm::RationalNumber const& upperBound, bool upperInclusive);
 
-}  // namespace storm::utility
+}  // namespace storm::numbers

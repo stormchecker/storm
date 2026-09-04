@@ -372,7 +372,7 @@ void Scheduler<ValueType>::printJsonToStream(std::ostream& out, std::shared_ptr<
                         choiceJson["labels"] = std::vector<std::string>(choiceLabels.begin(), choiceLabels.end());
                     }
                     choiceJson["index"] = globalChoiceIndex;
-                    choiceJson["prob"] = storm::utility::convertNumber<storm::RationalNumber>(choiceProbPair.second);
+                    choiceJson["prob"] = storm::numbers::convert<storm::RationalNumber>(choiceProbPair.second);
 
                     // Memory updates
                     if (!isMemorylessScheduler()) {

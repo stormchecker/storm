@@ -5,9 +5,9 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/geometry/nativepolytopeconversion/HyperplaneCollector.h"
 #include "storm/storage/geometry/nativepolytopeconversion/SubsetEnumerator.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
@@ -32,7 +32,7 @@ void QuickHull<ValueType>::generateHalfspacesFromPoints(std::vector<EigenVector>
             for (uint_fast64_t vertexIndex : vertexIndices) {
                 insidePoint += points[vertexIndex];
             }
-            insidePoint /= storm::utility::convertNumber<ValueType>(static_cast<uint_fast64_t>(vertexIndices.size()));
+            insidePoint /= storm::numbers::convert<ValueType>(static_cast<uint_fast64_t>(vertexIndices.size()));
 
             // Create the initial facets from the found vertices.
             std::vector<Facet> facets = computeInitialFacets(points, vertexIndices, insidePoint);
@@ -89,8 +89,8 @@ void QuickHull<ValueType>::handle1DPoints(std::vector<EigenVector>& points, bool
         }
     }
     resultMatrix = EigenMatrix(2, 1);
-    resultMatrix(0, 0) = -storm::utility::one<ValueType>();
-    resultMatrix(1, 0) = storm::utility::one<ValueType>();
+    resultMatrix(0, 0) = -storm::numbers::one<ValueType>();
+    resultMatrix(1, 0) = storm::numbers::one<ValueType>();
     resultVector = EigenVector(2);
     resultVector(0) = -minValue;
     resultVector(1) = maxValue;
@@ -112,9 +112,9 @@ template<typename ValueType>
 bool QuickHull<ValueType>::affineFilter(std::vector<uint_fast64_t> const& subset, uint_fast64_t const& item, std::vector<EigenVector> const& points) {
     EigenMatrix vectorMatrix(points[item].rows() + 1, subset.size() + 1);
     for (uint_fast64_t i = 0; i < subset.size(); ++i) {
-        vectorMatrix.col(i) << points[subset[i]], storm::utility::one<ValueType>();
+        vectorMatrix.col(i) << points[subset[i]], storm::numbers::one<ValueType>();
     }
-    vectorMatrix.col(subset.size()) << points[item], storm::utility::one<ValueType>();
+    vectorMatrix.col(subset.size()) << points[item], storm::numbers::one<ValueType>();
     return (vectorMatrix.fullPivLu().rank() > (Eigen::Index)subset.size());
 }
 
@@ -129,7 +129,7 @@ void QuickHull<ValueType>::handleAffineDependentPoints(std::vector<EigenVector>&
         EigenVector normal;
         if (points.size() == 1) {
             normal.resize(dimension);
-            normal(0) = storm::utility::one<ValueType>();
+            normal(0) = storm::numbers::one<ValueType>();
         } else {
             EigenMatrix constraints(points.size() - 1, dimension);
             for (unsigned row = 1; row < points.size(); ++row) {

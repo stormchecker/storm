@@ -1,7 +1,7 @@
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 
+#include "storm/numbers/constants.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/utility/constants.h"
 
 namespace storm {
 namespace expressions {
@@ -47,16 +47,16 @@ void ExpressionEvaluator<RationalNumber>::setBooleanValue(storm::expressions::Va
 
 void ExpressionEvaluator<RationalNumber>::setIntegerValue(storm::expressions::Variable const& variable, int_fast64_t value) {
     ExprtkExpressionEvaluatorBase<RationalNumber>::setIntegerValue(variable, value);
-    rationalNumberVisitor.setMapping(variable, storm::utility::convertNumber<RationalNumber>(value));
+    rationalNumberVisitor.setMapping(variable, storm::numbers::convert<RationalNumber>(value));
 }
 
 void ExpressionEvaluator<RationalNumber>::setRationalValue(storm::expressions::Variable const& variable, double value) {
     ExprtkExpressionEvaluatorBase<RationalNumber>::setRationalValue(variable, value);
-    rationalNumberVisitor.setMapping(variable, storm::utility::convertNumber<RationalNumber>(value));
+    rationalNumberVisitor.setMapping(variable, storm::numbers::convert<RationalNumber>(value));
 }
 
 void ExpressionEvaluator<RationalNumber>::setRationalValue(storm::expressions::Variable const& variable, RationalNumber const& value) {
-    ExprtkExpressionEvaluatorBase<RationalNumber>::setRationalValue(variable, storm::utility::convertNumber<double>(value));
+    ExprtkExpressionEvaluatorBase<RationalNumber>::setRationalValue(variable, storm::numbers::convert<double>(value));
     rationalNumberVisitor.setMapping(variable, value);
 }
 
@@ -78,17 +78,17 @@ void ExpressionEvaluator<RationalFunction>::setBooleanValue(storm::expressions::
 
 void ExpressionEvaluator<RationalFunction>::setIntegerValue(storm::expressions::Variable const& variable, int_fast64_t value) {
     ExprtkExpressionEvaluatorBase<RationalFunction>::setIntegerValue(variable, value);
-    rationalFunctionVisitor.setMapping(variable, storm::utility::convertNumber<RationalFunction>(value));
+    rationalFunctionVisitor.setMapping(variable, storm::numbers::convert<RationalFunction>(value));
 }
 
 void ExpressionEvaluator<RationalFunction>::setRationalValue(storm::expressions::Variable const& variable, double value) {
     ExprtkExpressionEvaluatorBase<RationalFunction>::setRationalValue(variable, value);
-    rationalFunctionVisitor.setMapping(variable, storm::utility::convertNumber<RationalFunction>(value));
+    rationalFunctionVisitor.setMapping(variable, storm::numbers::convert<RationalFunction>(value));
 }
 
 void ExpressionEvaluator<RationalFunction>::setRationalValue(storm::expressions::Variable const& variable, RationalFunction const& value) {
-    STORM_LOG_ASSERT(storm::utility::isConstant(value), "Value for rational variable is not a constant.");
-    ExprtkExpressionEvaluatorBase<RationalFunction>::setRationalValue(variable, storm::utility::convertNumber<double>(value));
+    STORM_LOG_ASSERT(storm::numbers::isConstant(value), "Value for rational variable is not a constant.");
+    ExprtkExpressionEvaluatorBase<RationalFunction>::setRationalValue(variable, storm::numbers::convert<double>(value));
     rationalFunctionVisitor.setMapping(variable, value);
 }
 

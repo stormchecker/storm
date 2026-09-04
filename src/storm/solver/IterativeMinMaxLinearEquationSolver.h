@@ -4,7 +4,7 @@
 #include "storm/solver/MultiplicationStyle.h"
 #include "storm/solver/OptimizationDirection.h"
 
-#include "storm/utility/NumberTraits.h"
+#include "storm/numbers/NumberTraits.h"
 
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"

@@ -84,7 +84,7 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftTransformer<ValueType>::
         builder.addBasicElementConst("Unique_Constant_Failure", true);
         failedBEs.insert(failedBEs.begin(), "Unique_Constant_Failure");
         STORM_LOG_TRACE("Add FDEP 'Failure_Trigger'");
-        builder.addPdep("Failure_Trigger", failedBEs, storm::utility::one<ValueType>());
+        builder.addPdep("Failure_Trigger", failedBEs, storm::numbers::one<ValueType>());
     }
 
     builder.setTopLevel(dft.getTopLevelElement()->name());
@@ -117,7 +117,7 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftTransformer<ValueType>::
                     // Already binary dependency -> simply clone element
                     builder.cloneElement(dep);
                 } else {
-                    if (!storm::utility::isOne(dep->probability())) {
+                    if (!storm::numbers::isOne(dep->probability())) {
                         // PDEP with probability < 1
                         STORM_LOG_TRACE("Transform " << *element);
                         // Introduce additional element to first capture the probabilistic dependency
@@ -132,7 +132,7 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftTransformer<ValueType>::
                             std::string nameDep = dep->name() + "_" + std::to_string(j);
                             std::string dependentName = dep->dependentEvents()[j]->name();
                             STORM_LOG_TRACE("Add FDEP " << nameDep << " for " << dependentName);
-                            builder.addPdep(nameDep, {nameAdditional, dependentName}, storm::utility::one<ValueType>());
+                            builder.addPdep(nameDep, {nameAdditional, dependentName}, storm::numbers::one<ValueType>());
                         }
                     } else {
                         // FDEP -> add explicit dependencies for each dependent event
@@ -141,7 +141,7 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftTransformer<ValueType>::
                             std::string nameDep = dep->name() + "_" + std::to_string(j);
                             std::string dependentName = dep->dependentEvents()[j]->name();
                             STORM_LOG_TRACE("Add FDEP " << nameDep << " for " << dependentName);
-                            builder.addPdep(nameDep, {dep->triggerEvent()->name(), dependentName}, storm::utility::one<ValueType>());
+                            builder.addPdep(nameDep, {dep->triggerEvent()->name(), dependentName}, storm::numbers::one<ValueType>());
                         }
                     }
                 }

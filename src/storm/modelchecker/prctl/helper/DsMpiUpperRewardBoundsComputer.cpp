@@ -2,12 +2,12 @@
 
 #include "storm-config.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/numbers/ConstantsComparator.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/ConsecutiveUint64DynamicPriorityQueue.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/utility/ConstantsComparator.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -39,16 +39,16 @@ std::vector<ValueType> DsMpiDtmcUpperRewardBoundsComputer<ValueType>::computeUpp
 
     // Finally compute the upper bounds for the states.
     std::vector<ValueType> result(transitionMatrix.getRowGroupCount());
-    auto one = storm::utility::one<ValueType>();
+    auto one = storm::numbers::one<ValueType>();
     for (storm::storage::sparse::state_type state = 0; state < result.size(); ++state) {
         result[state] = w[state] + (one - p[state]) * lambda;
     }
 
 #ifndef NDEBUG
-    ValueType max = storm::utility::zero<ValueType>();
+    ValueType max = storm::numbers::zero<ValueType>();
     uint64_t nonZeroCount = 0;
     for (auto const& e : result) {
-        if (!storm::utility::isZero(e)) {
+        if (!storm::numbers::isZero(e)) {
             ++nonZeroCount;
             max = std::max(max, e);
         }
@@ -62,7 +62,7 @@ std::vector<ValueType> DsMpiDtmcUpperRewardBoundsComputer<ValueType>::computeUpp
 
 template<typename ValueType>
 ValueType DsMpiDtmcUpperRewardBoundsComputer<ValueType>::computeLambda() const {
-    ValueType lambda = storm::utility::zero<ValueType>();
+    ValueType lambda = storm::numbers::zero<ValueType>();
     for (storm::storage::sparse::state_type state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
         lambda = std::max(lambda, computeLambdaForChoice(state));
     }
@@ -71,7 +71,7 @@ ValueType DsMpiDtmcUpperRewardBoundsComputer<ValueType>::computeLambda() const {
 
 template<typename ValueType>
 ValueType DsMpiDtmcUpperRewardBoundsComputer<ValueType>::computeLambdaForChoice(uint64_t choice) const {
-    ValueType localLambda = storm::utility::zero<ValueType>();
+    ValueType localLambda = storm::numbers::zero<ValueType>();
     uint64_t state = this->getStateForChoice(choice);
 
     // Check whether condition (I) or (II) applies.
@@ -102,7 +102,7 @@ ValueType DsMpiDtmcUpperRewardBoundsComputer<ValueType>::computeLambdaForChoice(
             rewardSum += e.getValue() * w[e.getColumn()];
         }
         // The following is a bit of a hack but I'd prefer not getting the settings into this part of the code for such a simple check.
-        storm::utility::ConstantsComparator<ValueType> cc(storm::utility::convertNumber<ValueType>(0.0001));
+        storm::numbers::ConstantsComparator<ValueType> cc(storm::numbers::convert<ValueType>(0.0001));
         STORM_LOG_WARN_COND(w[state] >= rewardSum || cc.isEqual(w[state], rewardSum),
                             "Expected condition (II) to hold in state " << state << ", but " << w[state] << " < " << rewardSum << ".");
         STORM_LOG_WARN_COND(cc.isEqual(probSum, p[state]),
@@ -187,7 +187,7 @@ DsMpiMdpUpperRewardBoundsComputer<ValueType>::DsMpiMdpUpperRewardBoundsComputer(
         uint64_t choice = transitionMatrix.getRowGroupIndices()[state];
 
         boost::optional<ValueType> minReward;
-        ValueType maxProb = storm::utility::zero<ValueType>();
+        ValueType maxProb = storm::numbers::zero<ValueType>();
 
         for (uint64_t row = choice, endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
             choiceToState[row] = state;
@@ -208,7 +208,7 @@ DsMpiMdpUpperRewardBoundsComputer<ValueType>::DsMpiMdpUpperRewardBoundsComputer(
 
 template<typename ValueType>
 ValueType DsMpiMdpUpperRewardBoundsComputer<ValueType>::computeLambda() const {
-    ValueType lambda = storm::utility::zero<ValueType>();
+    ValueType lambda = storm::numbers::zero<ValueType>();
     for (storm::storage::sparse::state_type state = 0; state < this->transitionMatrix.getRowGroupCount(); ++state) {
         lambda = std::max(lambda, this->computeLambdaForChoice(this->getChoiceInState(state)));
     }

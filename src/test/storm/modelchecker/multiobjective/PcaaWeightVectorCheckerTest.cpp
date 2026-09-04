@@ -42,7 +42,7 @@ class RationalExactEnvironment {
    public:
     using ValueType = storm::RationalNumber;
     static ValueType precision() {
-        return storm::utility::zero<ValueType>();
+        return storm::numbers::zero<ValueType>();
     }
     static storm::Environment getEnv() {
         storm::Environment env;
@@ -72,7 +72,7 @@ class PcaaWeightVectorCheckerTest : public ::testing::Test {
     }
 
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
 
     std::vector<ValueType> parseVector(std::string const& input) const {
@@ -98,20 +98,20 @@ class PcaaWeightVectorCheckerTest : public ::testing::Test {
     void testWeightVectorCheck(auto const& wvChecker, std::vector<ValueType> const& weightVector, std::vector<ValueType> const& expectedPoint,
                                ValueType const& expectedSum) {
         wvChecker->setWeightedPrecision(this->precision());
-        ValueType const wvLength = storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
-        ValueType const wvAbsSum = std::accumulate(weightVector.begin(), weightVector.end(), storm::utility::zero<ValueType>(),
-                                                   [](ValueType acc, ValueType w) -> ValueType { return acc + storm::utility::abs(w); });
+        ValueType const wvLength = storm::numbers::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
+        ValueType const wvAbsSum = std::accumulate(weightVector.begin(), weightVector.end(), storm::numbers::zero<ValueType>(),
+                                                   [](ValueType acc, ValueType w) -> ValueType { return acc + storm::numbers::abs(w); });
 
         EXPECT_NO_THROW(wvChecker->check(this->env(), weightVector));
         EXPECT_EQ(weightVector.size(), expectedPoint.size());
         // Check point
         auto const point = wvChecker->getAchievablePoint();
         for (uint64_t i = 0; i < expectedPoint.size(); ++i) {
-            if (storm::utility::isZero(weightVector[i])) {
+            if (storm::numbers::isZero(weightVector[i])) {
                 continue;
             }
             // Dimensions with relatively low weight don't require as much precision.
-            ValueType const prec = this->precision() / (storm::utility::abs(weightVector[i]) / wvAbsSum);
+            ValueType const prec = this->precision() / (storm::numbers::abs(weightVector[i]) / wvAbsSum);
             EXPECT_NEAR(expectedPoint[i], point[i], prec)
                 << "Found point " << storm::utility::vector::toString(point) << " for weight vector " << storm::utility::vector::toString(weightVector)
                 << "does not match expected point " << storm::utility::vector::toString(expectedPoint) << ".\n"

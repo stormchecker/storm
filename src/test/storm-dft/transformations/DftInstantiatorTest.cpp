@@ -21,14 +21,14 @@ TEST(DftInstantiatorTest, InstantiateSimple) {
     storm::RationalFunctionVariable const& x = carl::VariablePool::getInstance().findVariableWithName("x");
     ASSERT_NE(x, carl::Variable::NO_VARIABLE);
 
-    valuation.insert(std::make_pair(x, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.5)));
+    valuation.insert(std::make_pair(x, storm::numbers::convert<storm::RationalFunctionCoefficient>(0.5)));
     std::shared_ptr<storm::dft::storage::DFT<double>> instDft = instantiator.instantiate(valuation);
     std::shared_ptr<storm::dft::storage::elements::DFTBE<double> const> elem = instDft->getBasicElement(dft->getIndex("C"));
     auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<double> const>(elem);
     EXPECT_EQ(beExp->activeFailureRate(), 0.5);
 
     valuation.clear();
-    valuation.insert(std::make_pair(x, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(1.5)));
+    valuation.insert(std::make_pair(x, storm::numbers::convert<storm::RationalFunctionCoefficient>(1.5)));
     instDft = instantiator.instantiate(valuation);
     elem = instDft->getBasicElement(dft->getIndex("C"));
     beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<double> const>(elem);
@@ -51,8 +51,8 @@ TEST(DftInstantiatorTest, InstantiateSymmetry) {
     storm::RationalFunctionVariable const& y = carl::VariablePool::getInstance().findVariableWithName("y");
     ASSERT_NE(y, carl::Variable::NO_VARIABLE);
 
-    valuation.insert(std::make_pair(x, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(5)));
-    valuation.insert(std::make_pair(y, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.01)));
+    valuation.insert(std::make_pair(x, storm::numbers::convert<storm::RationalFunctionCoefficient>(5)));
+    valuation.insert(std::make_pair(y, storm::numbers::convert<storm::RationalFunctionCoefficient>(0.01)));
     std::shared_ptr<storm::dft::storage::DFT<double>> instDft = instantiator.instantiate(valuation);
     std::shared_ptr<storm::dft::storage::elements::DFTBE<double> const> elem = instDft->getBasicElement(dft->getIndex("C"));
     auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<double> const>(elem);

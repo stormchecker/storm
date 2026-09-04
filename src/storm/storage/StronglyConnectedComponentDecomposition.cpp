@@ -3,8 +3,8 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
@@ -160,7 +160,7 @@ void performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& t
                 }
 
                 for (auto const& successor : transitionMatrix.getRow(row)) {
-                    if ((!subsystem || subsystem->get(successor.getColumn())) && successor.getValue() != storm::utility::zero<ValueType>()) {
+                    if ((!subsystem || subsystem->get(successor.getColumn())) && successor.getValue() != storm::numbers::zero<ValueType>()) {
                         if (currentState == successor.getColumn()) {
                             result.nonTrivialStates.set(currentState, true);
                         }
@@ -196,7 +196,7 @@ void performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& t
                                 continue;
                             }
                             for (auto const& successor : transitionMatrix.getRow(row)) {
-                                if ((!subsystem || subsystem->get(successor.getColumn())) && successor.getValue() != storm::utility::zero<ValueType>() &&
+                                if ((!subsystem || subsystem->get(successor.getColumn())) && successor.getValue() != storm::numbers::zero<ValueType>() &&
                                     result.stateHasScc(successor.getColumn())) {
                                     sccDepth = std::max(sccDepth, (*result.sccDepths)[result.stateToSccMapping[successor.getColumn()]] + 1);
                                 }

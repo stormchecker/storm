@@ -908,7 +908,7 @@ storm::dd::Add<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::encodeChoi
         }
     }
 
-    result.setValue(metaVariableNameToValueMap, storm::utility::one<ValueType>());
+    result.setValue(metaVariableNameToValueMap, storm::numbers::one<ValueType>());
     return result;
 }
 

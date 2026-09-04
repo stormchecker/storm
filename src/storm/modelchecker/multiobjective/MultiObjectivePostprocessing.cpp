@@ -10,13 +10,13 @@ template<typename ValueType, typename GeometryValueType>
 GeometryValueType transformObjectiveValueToOriginal(Objective<ValueType> const& objective, GeometryValueType const& value) {
     if (storm::solver::maximize(objective.formula->getOptimalityType())) {
         if (objective.considersComplementaryEvent) {
-            return storm::utility::one<GeometryValueType>() - value;
+            return storm::numbers::one<GeometryValueType>() - value;
         } else {
             return value;
         }
     } else {
         if (objective.considersComplementaryEvent) {
-            return storm::utility::one<GeometryValueType>() + value;
+            return storm::numbers::one<GeometryValueType>() + value;
         } else {
             return -value;
         }
@@ -45,26 +45,26 @@ std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> transform
     }
     uint_fast64_t numObjectives = objectives.size();
     std::vector<std::vector<GeometryValueType>> transformationMatrix(numObjectives,
-                                                                     std::vector<GeometryValueType>(numObjectives, storm::utility::zero<GeometryValueType>()));
+                                                                     std::vector<GeometryValueType>(numObjectives, storm::numbers::zero<GeometryValueType>()));
     std::vector<GeometryValueType> transformationVector;
     transformationVector.reserve(numObjectives);
     for (uint_fast64_t objIndex = 0; objIndex < numObjectives; ++objIndex) {
         auto const& obj = objectives[objIndex];
         if (storm::solver::maximize(obj.formula->getOptimalityType())) {
             if (obj.considersComplementaryEvent) {
-                transformationMatrix[objIndex][objIndex] = -storm::utility::one<GeometryValueType>();
-                transformationVector.push_back(storm::utility::one<GeometryValueType>());
+                transformationMatrix[objIndex][objIndex] = -storm::numbers::one<GeometryValueType>();
+                transformationVector.push_back(storm::numbers::one<GeometryValueType>());
             } else {
-                transformationMatrix[objIndex][objIndex] = storm::utility::one<GeometryValueType>();
-                transformationVector.push_back(storm::utility::zero<GeometryValueType>());
+                transformationMatrix[objIndex][objIndex] = storm::numbers::one<GeometryValueType>();
+                transformationVector.push_back(storm::numbers::zero<GeometryValueType>());
             }
         } else {
             if (obj.considersComplementaryEvent) {
-                transformationMatrix[objIndex][objIndex] = storm::utility::one<GeometryValueType>();
-                transformationVector.push_back(storm::utility::one<GeometryValueType>());
+                transformationMatrix[objIndex][objIndex] = storm::numbers::one<GeometryValueType>();
+                transformationVector.push_back(storm::numbers::one<GeometryValueType>());
             } else {
-                transformationMatrix[objIndex][objIndex] = -storm::utility::one<GeometryValueType>();
-                transformationVector.push_back(storm::utility::zero<GeometryValueType>());
+                transformationMatrix[objIndex][objIndex] = -storm::numbers::one<GeometryValueType>();
+                transformationVector.push_back(storm::numbers::zero<GeometryValueType>());
             }
         }
     }

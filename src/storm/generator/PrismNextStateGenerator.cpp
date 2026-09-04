@@ -10,11 +10,11 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/generator/Distribution.h"
 #include "storm/models/sparse/StateLabeling.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
 #include "storm/utility/combinatorics.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
@@ -275,7 +275,7 @@ StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType
     // First, construct the state rewards, as we may return early if there are no choices later and we already
     // need the state rewards then.
     for (auto const& rewardModel : rewardModels) {
-        ValueType stateRewardValue = storm::utility::zero<ValueType>();
+        ValueType stateRewardValue = storm::numbers::zero<ValueType>();
         if (rewardModel.get().hasStateRewards()) {
             for (auto const& stateReward : rewardModel.get().getStateRewards()) {
                 if (this->evaluator->asBool(stateReward.getStatePredicateExpression())) {
@@ -344,8 +344,8 @@ StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType
 
         // For CTMCs, we need to keep track of the total exit rate to scale the action rewards later. For DTMCs
         // this is equal to the number of choices, which is why we initialize it like this here.
-        ValueType const totalNumberOfChoices = storm::utility::convertNumber<ValueType, uint64_t>(allChoices.size());
-        ValueType totalExitRate = this->isDiscreteTimeModel() ? totalNumberOfChoices : storm::utility::zero<ValueType>();
+        ValueType const totalNumberOfChoices = storm::numbers::convert<ValueType, uint64_t>(allChoices.size());
+        ValueType totalExitRate = this->isDiscreteTimeModel() ? totalNumberOfChoices : storm::numbers::zero<ValueType>();
 
         // Iterate over all choices and combine the probabilities/rates into one choice.
         for (auto const& choice : allChoices) {
@@ -372,7 +372,7 @@ StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType
 
         // Now construct the state-action reward for all selected reward models.
         for (auto const& rewardModel : rewardModels) {
-            ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
+            ValueType stateActionRewardValue = storm::numbers::zero<ValueType>();
             if (rewardModel.get().hasStateActionRewards()) {
                 for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
                     for (auto const& choice : allChoices) {
@@ -643,12 +643,12 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
             }
 
             // Iterate over all updates of the current command.
-            ValueType probabilitySum = storm::utility::zero<ValueType>();
+            ValueType probabilitySum = storm::numbers::zero<ValueType>();
             for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
                 storm::prism::Update const& update = command.getUpdate(k);
 
                 ValueType probability = evaluateLikelihoodExpression<ValueType>(update, *this->evaluator);
-                if (probability != storm::utility::zero<ValueType>()) {
+                if (probability != storm::numbers::zero<ValueType>()) {
                     // Obtain target state index and add it to the list of known states. If it has not yet been
                     // seen, we also add it to the set of states that have yet to be explored.
                     StateType stateIndex = stateToIdCallback(applyUpdate(state, update));
@@ -657,9 +657,9 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
                     choice.addProbability(stateIndex, probability);
                     if (this->options.isExplorationChecksSet()) {
                         if constexpr (!std::is_same_v<ValueType, storm::RationalFunction>) {
-                            STORM_LOG_THROW(probability > storm::utility::zero<ValueType>(), storm::exceptions::WrongFormatException,
+                            STORM_LOG_THROW(probability > storm::numbers::zero<ValueType>(), storm::exceptions::WrongFormatException,
                                             "Probability expression in update '" << update << " evaluates to negative value " << probability << ".");
-                            STORM_LOG_THROW(!program.isDiscreteTimeModel() || probability <= storm::utility::one<ValueType>(),
+                            STORM_LOG_THROW(!program.isDiscreteTimeModel() || probability <= storm::numbers::one<ValueType>(),
                                             storm::exceptions::WrongFormatException,
                                             "Probability expression in update '" << update << " evaluates to value " << probability << " >1.");
                         }
@@ -670,7 +670,7 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
 
             // Create the state-action reward for the newly created choice.
             for (auto const& rewardModel : rewardModels) {
-                ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
+                ValueType stateActionRewardValue = storm::numbers::zero<ValueType>();
                 if (rewardModel.get().hasStateActionRewards()) {
                     for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
                         if (stateActionReward.getActionIndex() == choice.getActionIndex() &&
@@ -704,7 +704,7 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
 
             if (this->options.isExplorationChecksSet()) {
                 // Check that the resulting distribution is in fact a distribution.
-                STORM_LOG_THROW(!program.isDiscreteTimeModel() || !storm::utility::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
+                STORM_LOG_THROW(!program.isDiscreteTimeModel() || !storm::numbers::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
                                 storm::exceptions::WrongFormatException,
                                 "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
             }
@@ -753,11 +753,11 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
                 CommandSet commandIndex{command.getGlobalIndex()};
                 choice.addOriginData(boost::any(std::move(commandIndex)));
             }
-            choice.addProbability(stateToIdCallback(*this->state), storm::utility::one<ValueType>());
+            choice.addProbability(stateToIdCallback(*this->state), storm::numbers::one<ValueType>());
 
             // Create the state-action reward for the newly created choice.
             for (auto const& rewardModel : rewardModels) {
-                ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
+                ValueType stateActionRewardValue = storm::numbers::zero<ValueType>();
                 if (rewardModel.get().hasStateActionRewards()) {
                     for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
                         if (stateActionReward.getActionIndex() == choice.getActionIndex() &&
@@ -817,11 +817,11 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
                     }
                     choice.addOriginData(boost::any(std::move(commandIndices)));
                 }
-                choice.addProbability(stateToIdCallback(*this->state), storm::utility::one<ValueType>());
+                choice.addProbability(stateToIdCallback(*this->state), storm::numbers::one<ValueType>());
 
                 // Create the state-action reward for the newly created choice.
                 for (auto const& rewardModel : rewardModels) {
-                    ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
+                    ValueType stateActionRewardValue = storm::numbers::zero<ValueType>();
                     if (rewardModel.get().hasStateActionRewards()) {
                         for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
                             if (stateActionReward.getActionIndex() == choice.getActionIndex() &&
@@ -858,7 +858,7 @@ void PrismNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribu
     storm::storage::BitVector const& state, ValueType const& probability, uint64_t position,
     std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator> const& iteratorList,
     storm::generator::Distribution<StateType, ValueType>& distribution, StateToIdCallback stateToIdCallback) {
-    if (storm::utility::isZero<ValueType>(probability)) {
+    if (storm::numbers::isZero<ValueType>(probability)) {
         return;
     }
 
@@ -872,9 +872,9 @@ void PrismNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribu
             ValueType updateProbability = evaluateLikelihoodExpression<ValueType>(update, *this->evaluator);
             if constexpr (!std::is_same_v<ValueType, storm::RationalFunction>) {
                 if (this->options.isExplorationChecksSet()) {
-                    STORM_LOG_THROW(updateProbability >= storm::utility::zero<ValueType>(), storm::exceptions::WrongFormatException,
+                    STORM_LOG_THROW(updateProbability >= storm::numbers::zero<ValueType>(), storm::exceptions::WrongFormatException,
                                     "Probability expression in update '" << update << " evaluates to negative value " << updateProbability << ".");
-                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || updateProbability <= storm::utility::one<ValueType>(),
+                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || updateProbability <= storm::numbers::one<ValueType>(),
                                     storm::exceptions::WrongFormatException,
                                     "Probability expression in update '" << update << " evaluates to value " << updateProbability << " >1.");
                 }
@@ -913,7 +913,7 @@ void PrismNextStateGenerator<ValueType, StateType>::addSynchronousChoices(std::v
             bool done = false;
             while (!done) {
                 distribution.clear();
-                generateSynchronizedDistribution(state, storm::utility::one<ValueType>(), 0, iteratorList, distribution, stateToIdCallback);
+                generateSynchronizedDistribution(state, storm::numbers::one<ValueType>(), 0, iteratorList, distribution, stateToIdCallback);
                 distribution.compress();
 
                 // At this point, we applied all commands of the current command combination and newTargetStates
@@ -945,7 +945,7 @@ void PrismNextStateGenerator<ValueType, StateType>::addSynchronousChoices(std::v
                 }
 
                 // Add the probabilities/rates to the newly created choice.
-                ValueType probabilitySum = storm::utility::zero<ValueType>();
+                ValueType probabilitySum = storm::numbers::zero<ValueType>();
                 choice.reserve(std::distance(distribution.begin(), distribution.end()));
                 for (auto const& stateProbability : distribution) {
                     choice.addProbability(stateProbability.getState(), stateProbability.getValue());
@@ -956,14 +956,14 @@ void PrismNextStateGenerator<ValueType, StateType>::addSynchronousChoices(std::v
 
                 if (this->options.isExplorationChecksSet()) {
                     // Check that the resulting distribution is in fact a distribution.
-                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || !storm::utility::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
+                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || !storm::numbers::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
                                     storm::exceptions::WrongFormatException,
                                     "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
                 }
 
                 // Create the state-action reward for the newly created choice.
                 for (auto const& rewardModel : rewardModels) {
-                    ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
+                    ValueType stateActionRewardValue = storm::numbers::zero<ValueType>();
                     if (rewardModel.get().hasStateActionRewards()) {
                         for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
                             if (stateActionReward.getActionIndex() == choice.getActionIndex() &&

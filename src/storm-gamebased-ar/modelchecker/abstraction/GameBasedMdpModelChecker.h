@@ -22,7 +22,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"
 
-#include "storm/utility/ConstantsComparator.h"
+#include "storm/numbers/ConstantsComparator.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/solver.h"
@@ -183,7 +183,7 @@ class GameBasedMdpModelChecker : public storm::modelchecker::AbstractModelChecke
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
 
     /// A comparator that can be used for detecting convergence.
-    storm::utility::ConstantsComparator<ValueType> comparator;
+    storm::numbers::ConstantsComparator<ValueType> comparator;
 
     /// A flag indicating whether to reuse the qualitative results.
     bool reuseQualitativeResults;

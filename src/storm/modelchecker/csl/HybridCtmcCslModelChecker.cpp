@@ -28,7 +28,7 @@ bool HybridCtmcCslModelChecker<ModelType>::canHandleStatic(CheckTask<storm::logi
                         .setTimeAllowed(true)
                         .setTimeOperatorsAllowed(true)
                         .setRewardAccumulationAllowed(true);
-    if (!storm::NumberTraits<ValueType>::SupportsExponential) {
+    if (!storm::numbers::NumberTraits<ValueType>::SupportsExponential) {
         fragment.setBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false).setInstantaneousFormulasAllowed(false);
     }
     return checkTask.getFormula().isInFragment(fragment);
@@ -83,7 +83,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeReacha
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
     SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
 
-    storm::models::symbolic::StandardRewardModel<DdType, ValueType> timeRewardModel(this->getModel().getManager().getConstant(storm::utility::one<ValueType>()),
+    storm::models::symbolic::StandardRewardModel<DdType, ValueType> timeRewardModel(this->getModel().getManager().getConstant(storm::numbers::one<ValueType>()),
                                                                                     boost::none, boost::none);
     return storm::modelchecker::helper::HybridCtmcCslHelper::computeReachabilityRewards<DdType, ValueType>(
         env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), timeRewardModel, subResult.getTruthValuesVector(),
@@ -93,7 +93,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeReacha
 template<typename ModelType>
 std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeBoundedUntilProbabilities(
     Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
-    if constexpr (!storm::NumberTraits<ValueType>::SupportsExponential) {
+    if constexpr (!storm::numbers::NumberTraits<ValueType>::SupportsExponential) {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing bounded until probabilities is not supported for this numeric type.");
         return nullptr;
     } else {
@@ -123,7 +123,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeBounde
 template<typename ModelType>
 std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeInstantaneousRewards(
     Environment const& env, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
-    if constexpr (!storm::NumberTraits<ValueType>::SupportsExponential) {
+    if constexpr (!storm::numbers::NumberTraits<ValueType>::SupportsExponential) {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing Instantaneous Rewards is not supported for this numeric type.");
         return nullptr;
     } else {
@@ -141,7 +141,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeInstan
 template<typename ModelType>
 std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeCumulativeRewards(
     Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
-    if constexpr (!storm::NumberTraits<ValueType>::SupportsExponential) {
+    if constexpr (!storm::numbers::NumberTraits<ValueType>::SupportsExponential) {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing Cumulative Rewards is not supported for this numeric type.");
         return nullptr;
     } else {

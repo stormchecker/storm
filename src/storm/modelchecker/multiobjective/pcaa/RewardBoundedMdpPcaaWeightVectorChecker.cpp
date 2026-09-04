@@ -65,15 +65,15 @@ RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::~RewardBoundedMdpPc
 
 template<class SparseMdpModelType>
 void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environment const& env, std::vector<ValueType> weightVector) {
-    STORM_LOG_THROW(std::any_of(weightVector.begin(), weightVector.end(), [](auto const& w_i) { return !storm::utility::isZero(w_i); }),
+    STORM_LOG_THROW(std::any_of(weightVector.begin(), weightVector.end(), [](auto const& w_i) { return !storm::numbers::isZero(w_i); }),
                     storm::exceptions::InvalidOperationException, "Weight vector must not be the zero vector.");
     ++numChecks;
     STORM_LOG_INFO("Analyzing weight vector #" << numChecks << ": " << storm::utility::vector::toString(weightVector));
 
     // Normalize weights so the vector has length 1.
     // This is necessary for ensuring the required accuracy, i.e. distance between halfspace induced by weightedSum and weightvector and achievable point.
-    ValueType const inputWeightVectorLength = storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
-    storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(weightVector, storm::utility::one<ValueType>() / (inputWeightVectorLength));
+    ValueType const inputWeightVectorLength = storm::numbers::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
+    storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(weightVector, storm::numbers::one<ValueType>() / (inputWeightVectorLength));
 
     // In case we want to export the cdf, we will collect the corresponding data
     std::vector<std::vector<ValueType>> cdfData;
@@ -81,13 +81,13 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
     auto initEpoch = rewardUnfolding.getStartEpoch();
     auto epochOrder = rewardUnfolding.getEpochComputationOrder(initEpoch);
     EpochCheckingData cachedData;
-    ValueType const globalPrecision = this->getWeightedPrecision() / storm::utility::convertNumber<ValueType>(4.0);  // 4=2*2:
+    ValueType const globalPrecision = this->getWeightedPrecision() / storm::numbers::convert<ValueType>(4.0);  // 4=2*2:
     // We divide the precision by 2 to distribute the approximation error over weighted (minmax) optimization and linear equation solving
     // We again divide by 2 to account for the fact that we only compute a mid-point p such that the real value is in [p - precision, p + precision].
     ValueType const epochPrecision = rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, globalPrecision);
     Environment newEnv = env;
-    newEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(epochPrecision));
-    newEnv.solver().setLinearEquationSolverPrecision(storm::utility::convertNumber<storm::RationalNumber>(epochPrecision));
+    newEnv.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(epochPrecision));
+    newEnv.solver().setLinearEquationSolverPrecision(storm::numbers::convert<storm::RationalNumber>(epochPrecision));
     storm::utility::ProgressMeasurement progress("epochs");
     progress.setMaxCount(epochOrder.size());
     progress.startNewMeasurement(0);
@@ -99,7 +99,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
             std::vector<ValueType> cdfEntry;
             for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
                 uint64_t offset = rewardUnfolding.getDimension(i).boundType == helper::rewardbounded::DimensionBoundType::LowerBound ? 1 : 0;
-                cdfEntry.push_back(storm::utility::convertNumber<ValueType>(rewardUnfolding.getEpochManager().getDimensionOfEpoch(epoch, i) + offset) *
+                cdfEntry.push_back(storm::numbers::convert<ValueType>(rewardUnfolding.getEpochManager().getDimensionOfEpoch(epoch, i) + offset) *
                                    rewardUnfolding.getDimension(i).scalingFactor);
             }
             auto const& solution = rewardUnfolding.getInitialStateResult(epoch);
@@ -129,7 +129,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
             weightVector, headers);
     }
     auto solution = rewardUnfolding.getInitialStateResult(initEpoch);
-    ValueType const precisionOffset = env.solver().isForceExact() ? storm::utility::zero<ValueType>() : globalPrecision;
+    ValueType const precisionOffset = env.solver().isForceExact() ? storm::numbers::zero<ValueType>() : globalPrecision;
     // compute a point p that is known to be achievable and a value v with sup_{r is achievable} w*r <= v (when assuming only maximizing objectives)
     // We can use the facts that the computed solutions for the individual objectives are within precisionOffset of the actual values
     weightedSum = solution[0] + precisionOffset;  // upper bound on sup_{r is achievable} w*r
@@ -161,7 +161,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSo
         std::vector<ValueType> weights = weightVector;
         for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
             if (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) {
-                weights[objIndex] *= -storm::utility::one<ValueType>();
+                weights[objIndex] *= -storm::numbers::one<ValueType>();
             }
         }
 
@@ -175,7 +175,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSo
             uint64_t lastChoice = epochModel.epochMatrix.getRowGroupIndices()[state + 1];
             bool firstChoice = true;
             for (uint64_t choice = epochModel.epochMatrix.getRowGroupIndices()[state]; choice < lastChoice; ++choice) {
-                ValueType choiceValue = storm::utility::zero<ValueType>();
+                ValueType choiceValue = storm::numbers::zero<ValueType>();
                 // Obtain the (weighted) objective rewards
                 for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     if (epochModel.objectiveRewardFilter[objIndex].get(choice)) {
@@ -222,7 +222,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSo
                     if (epochModel.objectiveRewardFilter[objIndex].get(bestChoice)) {
                         result.back().push_back((epochModel.objectiveRewards[objIndex][bestChoice]));
                     } else {
-                        result.back().push_back(storm::utility::zero<ValueType>());
+                        result.back().push_back(storm::numbers::zero<ValueType>());
                     }
                 }
             }
@@ -233,11 +233,11 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSo
         // Formulate a min-max equation system max(A*x+b)=x for the weighted sum of the objectives
         STORM_LOG_ASSERT(cachedData.bMinMax.capacity() >= epochModel.epochMatrix.getRowCount(), "BMinMax capacity insufficient.");
         STORM_LOG_ASSERT(cachedData.xMinMax.size() == epochModel.epochMatrix.getRowGroupCount(), "XMinMax size mismatch.");
-        cachedData.bMinMax.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
+        cachedData.bMinMax.assign(epochModel.epochMatrix.getRowCount(), storm::numbers::zero<ValueType>());
         for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
             ValueType weight =
                 storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
-            if (!storm::utility::isZero(weight)) {
+            if (!storm::numbers::isZero(weight)) {
                 std::vector<ValueType> const& objectiveReward = epochModel.objectiveRewards[objIndex];
                 for (auto choice : epochModel.objectiveRewardFilter[objIndex]) {
                     cachedData.bMinMax[choice] += weight * objectiveReward[choice];
@@ -290,7 +290,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSo
                 if (epochModel.objectiveRewardFilter[objIndex].get(i)) {
                     b_i = objectiveReward[i];
                 } else {
-                    b_i = storm::utility::zero<ValueType>();
+                    b_i = storm::numbers::zero<ValueType>();
                 }
                 while (*stepChoiceIt < i) {
                     ++stepChoiceIt;
@@ -342,7 +342,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedDa
     if (epochModel.epochMatrixChanged) {
         // Update the cached MinMaxSolver data
         cachedData.bMinMax.resize(epochModel.epochMatrix.getRowCount());
-        cachedData.xMinMax.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+        cachedData.xMinMax.assign(epochModel.epochMatrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
         storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxSolverFactory;
         cachedData.minMaxSolver = minMaxSolverFactory.create(env, epochModel.epochMatrix);
         cachedData.minMaxSolver->setHasUniqueSolution();
@@ -373,7 +373,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedDa
         cachedData.bLinEq.resize(epochModel.epochMatrix.getRowGroupCount());
         cachedData.xLinEq.resize(this->objectives.size());
         for (auto& x_o : cachedData.xLinEq) {
-            x_o.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+            x_o.assign(epochModel.epochMatrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
         }
     }
 }

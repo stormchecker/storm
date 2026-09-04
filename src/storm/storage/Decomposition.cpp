@@ -2,9 +2,9 @@
 
 #include <vector>
 
+#include "storm/numbers/constants.h"
 #include "storm/storage/MaximalEndComponent.h"
 #include "storm/storage/StronglyConnectedComponent.h"
-#include "storm/utility/constants.h"
 
 namespace storm {
 namespace storage {
@@ -120,7 +120,7 @@ storm::storage::SparseMatrix<ValueType> Decomposition<BlockType>::extractPartiti
 
         // Now we can just enumerate all the target blocks and insert the corresponding transitions.
         for (auto const& targetBlock : allTargetBlocks) {
-            dependencyGraphBuilder.addNextValue(currentBlockIndex, targetBlock, storm::utility::one<ValueType>());
+            dependencyGraphBuilder.addNextValue(currentBlockIndex, targetBlock, storm::numbers::one<ValueType>());
         }
     }
 

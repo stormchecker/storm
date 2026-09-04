@@ -23,7 +23,7 @@ class DoubleViEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         env.solver().lra().setNondetLraMethod(storm::solver::LraMethod::ValueIteration);
         return env;
     }
@@ -35,7 +35,7 @@ class DoubleSoundViEnvironment {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
         env.solver().setForceSoundness(true);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         env.solver().lra().setNondetLraMethod(storm::solver::LraMethod::ValueIteration);
         return env;
     }
@@ -46,7 +46,7 @@ class DoublePIEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::PolicyIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         env.solver().lra().setNondetLraMethod(storm::solver::LraMethod::ValueIteration);
         return env;
     }
@@ -107,7 +107,7 @@ class SchedulerGenerationMdpPrctlModelCheckerTest : public ::testing::Test {
     }
 
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
 
    private:
@@ -172,7 +172,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, total_reward) {
         auto result = checker.check(this->env(), tasks[0]);
         ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("0"), result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
         ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
         storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
         EXPECT_TRUE(scheduler.isDeterministicScheduler());
@@ -187,7 +187,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, total_reward) {
         auto inducedResult = inducedChecker.check(this->env(), tasks[0]);
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("0"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
     }
 }
 
@@ -208,7 +208,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, reach_reward) {
     {
         auto result = checker.check(this->env(), tasks[0]);
         ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-        ASSERT_TRUE(storm::utility::isInfinity(result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]));
+        ASSERT_TRUE(storm::numbers::isInfinity(result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]));
         ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
         storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
         EXPECT_TRUE(scheduler.isDeterministicScheduler());
@@ -222,7 +222,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, reach_reward) {
         storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> inducedChecker(*inducedDtmc);
         auto inducedResult = inducedChecker.check(this->env(), tasks[0]);
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
-        EXPECT_TRUE(storm::utility::isInfinity(inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]));
+        EXPECT_TRUE(storm::numbers::isInfinity(inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]));
     }
 }
 
@@ -243,7 +243,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, reach_reward2) {
     {
         auto result = checker.check(this->env(), tasks[0]);
         ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-        ASSERT_TRUE(storm::utility::isInfinity(result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]));
+        ASSERT_TRUE(storm::numbers::isInfinity(result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]));
         ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
         storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
         EXPECT_TRUE(scheduler.isDeterministicScheduler());
@@ -257,7 +257,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, reach_reward2) {
         storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> inducedChecker(*inducedDtmc);
         auto inducedResult = inducedChecker.check(this->env(), tasks[0]);
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
-        EXPECT_TRUE(storm::utility::isInfinity(inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]));
+        EXPECT_TRUE(storm::numbers::isInfinity(inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]));
     }
 }
 
@@ -282,7 +282,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, lra) {
         auto result = checker.check(this->env(), tasks[0]);
         ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("333/1000"), result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().lra().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().lra().getPrecision()));
         ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
         storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
         EXPECT_TRUE(scheduler.isDeterministicScheduler());
@@ -297,13 +297,13 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, lra) {
         auto inducedResult = inducedChecker.check(this->env(), tasks[0]);
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("333/1000"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().lra().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().lra().getPrecision()));
     }
     {
         auto result = checker.check(this->env(), tasks[1]);
         ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("0"), result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().lra().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().lra().getPrecision()));
         ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
         storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
         EXPECT_TRUE(scheduler.isDeterministicScheduler());
@@ -317,7 +317,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, lra) {
         auto inducedResult = inducedChecker.check(this->env(), tasks[1]);
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("0"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().lra().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().lra().getPrecision()));
     }
 }
 
@@ -341,7 +341,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltl) {
         auto result = checker.check(this->env(), tasks[0]);
         ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("81/100"), result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
         ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
         storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
 
@@ -359,14 +359,14 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltl) {
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("81/100"),
                     inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*inducedDtmc->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
     }
     {
         tasks[1].setOnlyInitialStatesRelevant(true);
         auto result = checker.check(this->env(), tasks[1]);
         ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("1/2"), result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
         ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
         storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
 
@@ -384,14 +384,14 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltl) {
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
 
         EXPECT_NEAR(this->parseNumber("1/2"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*inducedDtmc->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
     }
     {
         tasks[2].setOnlyInitialStatesRelevant(false);
         auto result = checker.check(this->env(), tasks[2]);
         ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("1/2"), result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
         ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
         storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
 
@@ -410,11 +410,11 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltl) {
 
         auto test = inducedResult->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector();
         EXPECT_NEAR(this->parseNumber("1/2"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[0],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
         EXPECT_NEAR(this->parseNumber("1"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[1],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
         EXPECT_NEAR(this->parseNumber("0"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[2],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
     }
 #else
     GTEST_SKIP();
@@ -442,7 +442,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltlNondetChoice) {
         auto result = checker.check(this->env(), tasks[0]);
         ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("1"), result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
         ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
         storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
 
@@ -459,7 +459,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltlNondetChoice) {
         auto inducedResult = inducedChecker.check(this->env(), tasks[0]);
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("1"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*inducedDtmc->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
     }
 #else
     GTEST_SKIP();
@@ -487,7 +487,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltlUnsat) {
         auto result = checker.check(this->env(), tasks[0]);
         ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("0"), result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
         ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
         storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
 
@@ -504,7 +504,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltlUnsat) {
         auto inducedResult = inducedChecker.check(this->env(), tasks[0]);
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("0"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*inducedMdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
     }
 
     {
@@ -513,7 +513,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltlUnsat) {
         ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
         ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
         EXPECT_NEAR(this->parseNumber("1"), result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
         storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
 
         EXPECT_TRUE(scheduler.isDeterministicScheduler());
@@ -529,7 +529,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltlUnsat) {
         auto inducedResult = inducedChecker.check(this->env(), tasks[1]);
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("1"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*inducedMdp->getInitialStates().begin()],
-                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+                    storm::numbers::convert<ValueType>(this->env().solver().minMax().getPrecision()));
     }
 #else
     GTEST_SKIP();

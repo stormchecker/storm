@@ -5,14 +5,14 @@
 #include "storm-pars/modelchecker/region/SparseMdpParameterLiftingModelChecker.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/utility/NumberTraits.h"
+#include "storm/numbers/NumberTraits.h"
 
 namespace storm {
 namespace modelchecker {
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
 class ValidatingSparseParameterLiftingModelChecker : public RegionModelChecker<typename SparseModelType::ValueType> {
-    static_assert(storm::NumberTraits<PreciseType>::IsExact, "Specified type for exact computations is not exact.");
+    static_assert(storm::numbers::NumberTraits<PreciseType>::IsExact, "Specified type for exact computations is not exact.");
 
     using ParametricType = typename SparseModelType::ValueType;
     using CoefficientType = typename RegionModelChecker<ParametricType>::CoefficientType;

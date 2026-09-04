@@ -8,7 +8,7 @@ namespace elements {
 
 template<typename ValueType>
 ValueType BEConst<ValueType>::getUnreliability(ValueType time) const {
-    return failed() ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
+    return failed() ? storm::numbers::one<ValueType>() : storm::numbers::zero<ValueType>();
 }
 
 // Explicitly instantiate the class.

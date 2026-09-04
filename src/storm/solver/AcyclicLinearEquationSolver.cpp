@@ -77,7 +77,7 @@ bool AcyclicLinearEquationSolver<ValueType>::internalSolveEquations(Environment 
                 (*auxiliaryRowVector)[bFactor.first] *= *bFactor.second;
             } else {
                 // A selfloop of probability one: the equation for this row can only be satisfied if it contributes nothing.
-                STORM_LOG_ASSERT(storm::utility::isZero((*auxiliaryRowVector)[bFactor.first]),
+                STORM_LOG_ASSERT(storm::numbers::isZero((*auxiliaryRowVector)[bFactor.first]),
                                  "Expected a zero b vector entry for a row with a selfloop of probability one.");
             }
         }

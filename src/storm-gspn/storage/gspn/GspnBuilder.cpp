@@ -45,8 +45,8 @@ uint_fast64_t GspnBuilder::addImmediateTransition(uint_fast64_t const& priority,
         partitions[priority].push_back(newPart);
     }
 
-    if (storm::utility::isZero(weight)) {
-        trans.setWeight(storm::utility::one<double>());
+    if (storm::numbers::isZero(weight)) {
+        trans.setWeight(storm::numbers::one<double>());
         TransitionPartition newPart;
         newPart.priority = priority;
         newPart.transitions = {newId};

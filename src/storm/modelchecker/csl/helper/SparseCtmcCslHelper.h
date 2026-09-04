@@ -8,7 +8,7 @@
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/SolveGoal.h"
 
-#include "storm/utility/NumberTraits.h"
+#include "storm/numbers/NumberTraits.h"
 
 #include "storm/storage/sparse/StateType.h"
 
@@ -20,7 +20,7 @@ namespace modelchecker::helper {
 class SparseCtmcCslHelper {
    public:
     template<typename ValueType>
-        requires storm::NumberTraits<ValueType>::SupportsExponential
+        requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
     static std::vector<ValueType> computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
                                                                    storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                                    storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
@@ -46,14 +46,14 @@ class SparseCtmcCslHelper {
                                                            std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& nextStates);
 
     template<typename ValueType, typename RewardModelType>
-        requires storm::NumberTraits<ValueType>::SupportsExponential
+        requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
     static std::vector<ValueType> computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
                                                               storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                               std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel,
                                                               ValueType timeBound);
 
     template<typename ValueType, typename RewardModelType>
-        requires storm::NumberTraits<ValueType>::SupportsExponential
+        requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
     static std::vector<ValueType> computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
                                                            storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                            std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel,
@@ -80,7 +80,7 @@ class SparseCtmcCslHelper {
                                                            bool qualitative);
 
     template<typename ValueType>
-        requires storm::NumberTraits<ValueType>::SupportsExponential
+        requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
     static std::vector<ValueType> computeAllTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                                    storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates,
                                                                    storm::storage::BitVector const& psiStates, std::vector<ValueType> const& exitRates,
@@ -96,7 +96,7 @@ class SparseCtmcCslHelper {
      * @return The uniformized matrix.
      */
     template<typename ValueType>
-        requires storm::NumberTraits<ValueType>::SupportsExponential
+        requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
     static storm::storage::SparseMatrix<ValueType> computeUniformizedMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                                             storm::storage::BitVector const& maybeStates, ValueType uniformizationRate,
                                                                             std::vector<ValueType> const& exitRates);
@@ -116,7 +116,7 @@ class SparseCtmcCslHelper {
      * @return The vector of transient probabilities.
      */
     template<typename ValueType, bool useMixedPoissonProbabilities = false>
-        requires storm::NumberTraits<ValueType>::SupportsExponential
+        requires storm::numbers::NumberTraits<ValueType>::SupportsExponential
     static std::vector<ValueType> computeTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix,
                                                                 std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate,
                                                                 std::vector<ValueType> values, ValueType epsilon);

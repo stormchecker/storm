@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm::dft {
@@ -116,15 +116,15 @@ class DFTExplorationHeuristicDepth : public DFTExplorationHeuristic<ValueType> {
 template<typename ValueType>
 class DFTExplorationHeuristicProbability : public DFTExplorationHeuristic<ValueType> {
    public:
-    DFTExplorationHeuristicProbability(size_t id) : DFTExplorationHeuristic<ValueType>(id), probability(storm::utility::one<ValueType>()) {}
+    DFTExplorationHeuristicProbability(size_t id) : DFTExplorationHeuristic<ValueType>(id), probability(storm::numbers::one<ValueType>()) {}
 
     DFTExplorationHeuristicProbability(size_t id, DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate)
-        : DFTExplorationHeuristic<ValueType>(id), probability(storm::utility::zero<ValueType>()) {
+        : DFTExplorationHeuristic<ValueType>(id), probability(storm::numbers::zero<ValueType>()) {
         this->updateHeuristicValues(predecessor, rate, exitRate);
     }
 
     bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) override {
-        STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(exitRate), "Exit rate is 0.");
+        STORM_LOG_ASSERT(!storm::numbers::isZero<ValueType>(exitRate), "Exit rate is 0.");
         probability += predecessor.getProbability() * rate / exitRate;
         return true;
     }

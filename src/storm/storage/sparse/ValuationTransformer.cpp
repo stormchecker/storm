@@ -3,11 +3,11 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
 #include "storm/storage/valuations/ValuationsStorage.h"
-#include "storm/utility/constants.h"
 
 namespace storm::storage::sparse {
 

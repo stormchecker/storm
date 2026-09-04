@@ -59,10 +59,10 @@ TYPED_TEST(SylvanDd, AddSharpenTest) {
         metaVariableToValueMap.emplace(x.first, 4);
 
         sharpened = dd.sharpenKwekMehlhorn(1);
-        ASSERT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("9/5")), sharpened.getValue(metaVariableToValueMap));
+        ASSERT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("9/5")), sharpened.getValue(metaVariableToValueMap));
 
         sharpened = dd.sharpenKwekMehlhorn(2);
-        ASSERT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("19/10")), sharpened.getValue(metaVariableToValueMap));
+        ASSERT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("19/10")), sharpened.getValue(metaVariableToValueMap));
     });
 }
 
@@ -73,7 +73,7 @@ TYPED_TEST(SylvanDd, AddRationalSharpenTest) {
         std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
 
         storm::dd::Add<DdType, storm::RationalNumber> dd = manager->template getAddOne<storm::RationalNumber>();
-        ASSERT_NO_THROW(dd.setValue(x.first, 4, storm::utility::convertNumber<storm::RationalNumber>(1.89999999)));
+        ASSERT_NO_THROW(dd.setValue(x.first, 4, storm::numbers::convert<storm::RationalNumber>(1.89999999)));
         ASSERT_EQ(2ul, dd.getLeafCount());
 
         storm::dd::Add<DdType, storm::RationalNumber> sharpened = dd.sharpenKwekMehlhorn(1);
@@ -82,10 +82,10 @@ TYPED_TEST(SylvanDd, AddRationalSharpenTest) {
         metaVariableToValueMap.emplace(x.first, 4);
 
         sharpened = dd.sharpenKwekMehlhorn(1);
-        ASSERT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("9/5")), sharpened.getValue(metaVariableToValueMap));
+        ASSERT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("9/5")), sharpened.getValue(metaVariableToValueMap));
 
         sharpened = dd.sharpenKwekMehlhorn(2);
-        ASSERT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("19/10")), sharpened.getValue(metaVariableToValueMap));
+        ASSERT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("19/10")), sharpened.getValue(metaVariableToValueMap));
     });
 }
 
@@ -104,7 +104,7 @@ TYPED_TEST(SylvanDd, AddToRationalTest) {
         std::map<storm::expressions::Variable, int_fast64_t> metaVariableToValueMap;
         metaVariableToValueMap.emplace(x.first, 4);
 
-        ASSERT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("3602879701896397/9007199254740992")),
+        ASSERT_EQ(storm::numbers::convert<storm::RationalNumber>(std::string("3602879701896397/9007199254740992")),
                   rationalDd.getValue(metaVariableToValueMap));
     });
 }

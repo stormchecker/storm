@@ -116,17 +116,17 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initialize
                 bool formulaUnbounded =
                     (!subformula.hasLowerBound(dim) && !subformula.hasUpperBound(dim)) ||
                     (subformula.hasLowerBound(dim) && !subformula.isLowerBoundStrict(dim) && !subformula.getLowerBound(dim).containsVariables() &&
-                     storm::utility::isZero(subformula.getLowerBound(dim).evaluateAsRational())) ||
+                     storm::numbers::isZero(subformula.getLowerBound(dim).evaluateAsRational())) ||
                     (subformula.hasUpperBound(dim) && subformula.getUpperBound(dim).isVariable() &&
                      infinityBoundVariables.count(subformula.getUpperBound(dim).getBaseExpression().asVariableExpression().getVariable()) > 0);
                 if (formulaUnbounded) {
                     dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getTransitionMatrix().getRowCount(), 0));
-                    dimension.scalingFactor = storm::utility::zero<ValueType>();
+                    dimension.scalingFactor = storm::numbers::zero<ValueType>();
                     dimension.boundType = DimensionBoundType::Unbounded;
                 } else {
                     if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
                         dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getTransitionMatrix().getRowCount(), 1));
-                        dimension.scalingFactor = storm::utility::one<ValueType>();
+                        dimension.scalingFactor = storm::numbers::one<ValueType>();
                     } else {
                         STORM_LOG_ASSERT(subformula.getTimeBoundReference(dim).isRewardBound(), "Unexpected type of time bound.");
                         STORM_LOG_ASSERT(subformula.getTimeBoundReference(dim).hasRewardModelName() || this->model.hasUniqueRewardModel(),
@@ -171,7 +171,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initialize
                 dimension.boundType = DimensionBoundType::UpperBound;
                 if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
                     dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getTransitionMatrix().getRowCount(), 1));
-                    dimension.scalingFactor = storm::utility::one<ValueType>();
+                    dimension.scalingFactor = storm::numbers::one<ValueType>();
                 } else {
                     STORM_LOG_ASSERT(subformula.getTimeBoundReference(dim).isRewardBound(), "Unexpected type of time bound.");
                     std::string const& rewardName = subformula.getTimeBoundReference(dim).getRewardName();
@@ -271,16 +271,16 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::computeMax
             // We always consider upper bounds to be non-strict and lower bounds to be strict.
             // Thus, >=N would become >N-1. However, note that the case N=0 is treated separately.
             if (dimensions[dim].boundType == DimensionBoundType::LowerBound || dimensions[dim].boundType == DimensionBoundType::UpperBound) {
-                ValueType discretizedBound = storm::utility::convertNumber<ValueType>(bound.evaluateAsRational());
+                ValueType discretizedBound = storm::numbers::convert<ValueType>(bound.evaluateAsRational());
                 discretizedBound /= dimensions[dim].scalingFactor;
-                if (storm::utility::isInteger(discretizedBound)) {
+                if (storm::numbers::isInteger(discretizedBound)) {
                     if (isStrict == (dimensions[dim].boundType == DimensionBoundType::UpperBound)) {
-                        discretizedBound -= storm::utility::one<ValueType>();
+                        discretizedBound -= storm::numbers::one<ValueType>();
                     }
                 } else {
-                    discretizedBound = storm::utility::floor(discretizedBound);
+                    discretizedBound = storm::numbers::floor(discretizedBound);
                 }
-                uint64_t dimensionValue = storm::utility::convertNumber<uint64_t>(discretizedBound);
+                uint64_t dimensionValue = storm::numbers::convert<uint64_t>(discretizedBound);
                 STORM_LOG_THROW(epochManager.isValidDimensionValue(dimensionValue), storm::exceptions::NotSupportedException,
                                 "The bound " << bound << " is too high for the considered number of dimensions.");
                 dimensions[dim].maxValue = dimensionValue;
@@ -448,7 +448,7 @@ EpochModel<ValueType, SingleObjectiveMode>& MultiDimensionalRewardUnfolding<Valu
         // a) there is an upper bounded subObjective that is __still_relevant__ but the corresponding reward bound is passed after taking the choice
         // b) there is a lower bounded subObjective and the corresponding reward bound is not passed yet.
         for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-            bool rewardEarned = !storm::utility::isZero(epochModel.objectiveRewards[objIndex][reducedChoice]);
+            bool rewardEarned = !storm::numbers::isZero(epochModel.objectiveRewards[objIndex][reducedChoice]);
             if (rewardEarned) {
                 for (auto dim : objectiveDimensions[objIndex]) {
                     if ((dimensions[dim].boundType == DimensionBoundType::UpperBound) == epochManager.isBottomDimension(successorEpoch, dim) &&
@@ -594,7 +594,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrent
         if (requiresZeroRewardState) {
             if (convertToEquationSystem) {
                 // add a diagonal entry
-                builder.addNextValue(zeroRewardInState, zeroRewardInState, storm::utility::zero<ValueType>());
+                builder.addNextValue(zeroRewardInState, zeroRewardInState, storm::numbers::zero<ValueType>());
             }
             epochModel.epochMatrix = builder.build(numEpochModelStates, numEpochModelStates);
         } else {
@@ -645,7 +645,7 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrent
         }
         // Check if the objective is violated in the current epoch
         if (!violatedLowerBoundedDimensions.isDisjointFrom(objectiveDimensions[objIndex])) {
-            storm::utility::vector::setVectorValues(reducedModelObjRewards, ~epochModel.stepChoices, storm::utility::zero<ValueType>());
+            storm::utility::vector::setVectorValues(reducedModelObjRewards, ~epochModel.stepChoices, storm::numbers::zero<ValueType>());
         }
         epochModel.objectiveRewards.push_back(std::move(reducedModelObjRewards));
     }
@@ -755,7 +755,7 @@ std::string MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::sol
 
 template<typename ValueType, bool SingleObjectiveMode>
 ValueType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getRequiredEpochModelPrecision(Epoch const& startEpoch, ValueType const& precision) {
-    return precision / storm::utility::convertNumber<ValueType>(epochManager.getSumOfDimensions(startEpoch) + 1);
+    return precision / storm::numbers::convert<ValueType>(epochManager.getSumOfDimensions(startEpoch) + 1);
 }
 
 template<typename ValueType, bool SingleObjectiveMode>
@@ -763,7 +763,7 @@ boost::optional<ValueType> MultiDimensionalRewardUnfolding<ValueType, SingleObje
     auto& objective = this->objectives[objectiveIndex];
     if (!objective.upperResultBound) {
         if (objective.formula->isProbabilityOperatorFormula()) {
-            objective.upperResultBound = storm::utility::one<ValueType>();
+            objective.upperResultBound = storm::numbers::one<ValueType>();
         } else if (objective.formula->isRewardOperatorFormula()) {
             auto const& rewModel = this->model.getRewardModel(objective.formula->asRewardOperatorFormula().getRewardModelName());
             auto actionRewards = rewModel.getTotalRewardVector(this->model.getTransitionMatrix());
@@ -777,11 +777,11 @@ boost::optional<ValueType> MultiDimensionalRewardUnfolding<ValueType, SingleObje
                         auto const& costModel = this->model.getRewardModel(cumulativeRewardFormula.getTimeBoundReference(objDim).getRewardName());
                         if (!costModel.hasTransitionRewards()) {
                             auto actionCosts = costModel.getTotalRewardVector(this->model.getTransitionMatrix());
-                            ValueType largestRewardPerCost = storm::utility::zero<ValueType>();
+                            ValueType largestRewardPerCost = storm::numbers::zero<ValueType>();
                             bool isFinite = true;
                             for (auto rewIt = actionRewards.begin(), costIt = actionCosts.begin(); rewIt != actionRewards.end(); ++rewIt, ++costIt) {
-                                if (!storm::utility::isZero(*rewIt)) {
-                                    if (storm::utility::isZero(*costIt)) {
+                                if (!storm::numbers::isZero(*rewIt)) {
+                                    if (storm::numbers::isZero(*costIt)) {
                                         isFinite = false;
                                         break;
                                     }
@@ -826,13 +826,13 @@ boost::optional<ValueType> MultiDimensionalRewardUnfolding<ValueType, SingleObje
                                 if (!expRewGreater0EStates.get(entry.getColumn())) {
                                     isOutChoice = true;
                                     outStates.set(state, true);
-                                    rew0StateProbs.push_back(storm::utility::one<ValueType>() - ecElimRes.matrix.getRowSum(choice));
-                                    STORM_LOG_ASSERT(!storm::utility::isZero(rew0StateProbs.back()), "Expected non-zero reward state probability.");
+                                    rew0StateProbs.push_back(storm::numbers::one<ValueType>() - ecElimRes.matrix.getRowSum(choice));
+                                    STORM_LOG_ASSERT(!storm::numbers::isZero(rew0StateProbs.back()), "Expected non-zero reward state probability.");
                                     break;
                                 }
                             }
                             if (!isOutChoice) {
-                                rew0StateProbs.push_back(storm::utility::zero<ValueType>());
+                                rew0StateProbs.push_back(storm::numbers::zero<ValueType>());
                             }
                         }
                     }
@@ -859,7 +859,7 @@ template<typename ValueType, bool SingleObjectiveMode>
 boost::optional<ValueType> MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getLowerObjectiveBound(uint64_t objectiveIndex) {
     auto& objective = this->objectives[objectiveIndex];
     if (!objective.lowerResultBound) {
-        objective.lowerResultBound = storm::utility::zero<ValueType>();
+        objective.lowerResultBound = storm::numbers::zero<ValueType>();
     }
     return objective.lowerResultBound;
 }
@@ -946,7 +946,7 @@ MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialState
                 STORM_LOG_ASSERT(dimensions[dim].boundType != DimensionBoundType::LowerBoundInfinity, "Unexpected bound type at this point.");
             }
             if (objectiveHolds) {
-                setSolutionEntry(result, objIndex, storm::utility::one<ValueType>());
+                setSolutionEntry(result, objIndex, storm::numbers::one<ValueType>());
             }
         }
     }

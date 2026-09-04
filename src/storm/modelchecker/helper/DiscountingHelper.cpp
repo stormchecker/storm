@@ -50,16 +50,16 @@ bool DiscountingHelper<ValueType, TrivialRowGrouping>::solveWithDiscountedValueI
     storm::solver::helper::DiscountedValueIterationHelper<ValueType, TrivialRowGrouping> viHelper(viOperator);
     uint64_t numIterations{0};
     auto viCallback = [&](solver::SolverStatus const& current) { return current; };
-    auto maximalAbsoluteReward = storm::utility::zero<ValueType>();
+    auto maximalAbsoluteReward = storm::numbers::zero<ValueType>();
     for (auto const& entry : b) {
-        if (storm::utility::abs(entry) > maximalAbsoluteReward) {
-            maximalAbsoluteReward = storm::utility::abs(entry);
+        if (storm::numbers::abs(entry) > maximalAbsoluteReward) {
+            maximalAbsoluteReward = storm::numbers::abs(entry);
         }
     }
     progressMeasurement->startNewMeasurement(0);
     auto status = viHelper.DiscountedVI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
-                                        storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), discountFactor, maximalAbsoluteReward,
-                                        dir, viCallback, env.solver().minMax().getMultiplicationStyle());
+                                        storm::numbers::convert<ValueType>(env.solver().minMax().getPrecision()), discountFactor, maximalAbsoluteReward, dir,
+                                        viCallback, env.solver().minMax().getMultiplicationStyle());
 
     // If requested, we store the scheduler for retrieval.
     if (this->isTrackSchedulerSet()) {

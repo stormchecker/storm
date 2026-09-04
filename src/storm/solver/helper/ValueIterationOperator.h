@@ -10,12 +10,12 @@
 
 #include "storm/adapters/IntervalForward.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/helper/SchedulerTrackingHelper.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -338,7 +338,7 @@ class ValueIterationOperator {
             return result;
         }
 
-        SolutionType remainingValue{storm::utility::one<SolutionType>()};
+        SolutionType remainingValue{storm::numbers::one<SolutionType>()};
         uint64_t orderCounter = 0;
         for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt, ++orderCounter) {
             SolutionType const lower = matrixValueIt->lower();
@@ -350,11 +350,11 @@ class ValueIterationOperator {
             }
             remainingValue -= lower;
             SolutionType const diameter = matrixValueIt->upper() - lower;
-            if (!storm::utility::isZero<SolutionType>(diameter)) {
+            if (!storm::numbers::isZero<SolutionType>(diameter)) {
                 applyCache.robustOrder.emplace_back(operand[*matrixColumnIt], std::make_pair(diameter, orderCounter));
             }
         }
-        if (storm::utility::isZero(remainingValue)) {
+        if (storm::numbers::isZero(remainingValue)) {
             return result;
         }
 
@@ -365,13 +365,13 @@ class ValueIterationOperator {
             SolutionType availableMass = std::min(pair.second.first, remainingValue);
             result += availableMass * pair.first;
             remainingValue -= availableMass;
-            if (storm::utility::isZero(remainingValue)) {
+            if (storm::numbers::isZero(remainingValue)) {
                 return result;
             }
         }
-        STORM_LOG_ASSERT(storm::utility::isAlmostZero(remainingValue) ||
+        STORM_LOG_ASSERT(storm::numbers::isAlmostZero(remainingValue) ||
                              // sad states allowed (they're having a bummer summer)
-                             (storm::utility::isOne(remainingValue) && applyCache.robustOrder.size() == 0),
+                             (storm::numbers::isOne(remainingValue) && applyCache.robustOrder.size() == 0),
                          "Remaining value should be zero (all prob mass taken) or it should be a sad state, but is " << remainingValue);
         return result;
     }

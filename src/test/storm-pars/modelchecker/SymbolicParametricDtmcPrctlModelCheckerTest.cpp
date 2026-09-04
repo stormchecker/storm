@@ -35,7 +35,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die_RationalFunction_Sylvan) {
     std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> instantiation;
     std::set<storm::RationalFunctionVariable> variables = model->getParameters();
     ASSERT_EQ(1ull, variables.size());
-    instantiation.emplace(*variables.begin(), storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("1/2")));
+    instantiation.emplace(*variables.begin(), storm::numbers::convert<storm::RationalFunctionCoefficient>(std::string("1/2")));
 
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>> dtmc =
         model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>();
@@ -50,7 +50,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die_RationalFunction_Sylvan) {
         result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>();
 
     EXPECT_EQ(storm::utility::parametric::evaluate<storm::RationalFunctionCoefficient>(quantitativeResult1.sum(), instantiation),
-              storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("1/6")));
+              storm::numbers::convert<storm::RationalFunctionCoefficient>(std::string("1/6")));
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"two\"]");
 
@@ -60,7 +60,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die_RationalFunction_Sylvan) {
         result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>();
 
     EXPECT_EQ(storm::utility::parametric::evaluate<storm::RationalFunctionCoefficient>(quantitativeResult2.sum(), instantiation),
-              storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("1/6")));
+              storm::numbers::convert<storm::RationalFunctionCoefficient>(std::string("1/6")));
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"three\"]");
 
@@ -70,7 +70,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die_RationalFunction_Sylvan) {
         result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>();
 
     EXPECT_EQ(storm::utility::parametric::evaluate<storm::RationalFunctionCoefficient>(quantitativeResult3.sum(), instantiation),
-              storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("1/6")));
+              storm::numbers::convert<storm::RationalFunctionCoefficient>(std::string("1/6")));
 
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"done\"]");
 
@@ -80,7 +80,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die_RationalFunction_Sylvan) {
         result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>();
 
     EXPECT_EQ(storm::utility::parametric::evaluate<storm::RationalFunctionCoefficient>(quantitativeResult4.sum(), instantiation),
-              storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("11/3")));
+              storm::numbers::convert<storm::RationalFunctionCoefficient>(std::string("11/3")));
 #else
     GTEST_SKIP() << "Library Sylvan not available.";
 #endif

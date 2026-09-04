@@ -39,9 +39,9 @@ TEST(LexicographicModelCheckingTest, prob_sched1) {
         auto result = checker.checkLexObjectiveFormula(env, tasks[0]);
         ASSERT_TRUE(result->isLexicographicCheckResult());
         auto& lexResult = result->asLexicographicCheckResult<double>().getInitialStateValue();
-        EXPECT_NEAR(1.0, lexResult[0], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
-        EXPECT_NEAR(0.5, lexResult[1], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
-        EXPECT_NEAR(0, lexResult[2], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
+        EXPECT_NEAR(1.0, lexResult[0], storm::numbers::convert<ValueType>(env.solver().minMax().getPrecision()));
+        EXPECT_NEAR(0.5, lexResult[1], storm::numbers::convert<ValueType>(env.solver().minMax().getPrecision()));
+        EXPECT_NEAR(0, lexResult[2], storm::numbers::convert<ValueType>(env.solver().minMax().getPrecision()));
     }
 }
 
@@ -75,8 +75,8 @@ TEST(LexicographicModelCheckingTest, prob_sched2) {
         auto result = checker.checkLexObjectiveFormula(env, tasks[0]);
         ASSERT_TRUE(result->isLexicographicCheckResult());
         auto const& lexResult = result->asLexicographicCheckResult<double>().getInitialStateValue();
-        EXPECT_NEAR(0.5, lexResult[0], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
-        EXPECT_NEAR(1, lexResult[1], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
-        EXPECT_NEAR(0, lexResult[2], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
+        EXPECT_NEAR(0.5, lexResult[0], storm::numbers::convert<ValueType>(env.solver().minMax().getPrecision()));
+        EXPECT_NEAR(1, lexResult[1], storm::numbers::convert<ValueType>(env.solver().minMax().getPrecision()));
+        EXPECT_NEAR(0, lexResult[2], storm::numbers::convert<ValueType>(env.solver().minMax().getPrecision()));
     }
 }

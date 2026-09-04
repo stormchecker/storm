@@ -65,7 +65,7 @@ std::vector<SolutionType> SparseStepBoundedHorizonHelper<ValueType, SolutionType
 
     // Catch trivial case where lowerBound exceeds the upperBound
     if (lowerBound > upperBound) {
-        return std::vector<SolutionType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
+        return std::vector<SolutionType>(transitionMatrix.getRowGroupCount(), storm::numbers::zero<SolutionType>());
     }
 
     storm::solver::OptimizationDirection const optimizationDirection =
@@ -96,15 +96,15 @@ std::vector<SolutionType> SparseStepBoundedHorizonHelper<ValueType, SolutionType
         // valid interval instantiations at predecessors of non-maybestates.
         // The result vector thus has one entry for each state.
         // We initialize the result with the probability of reaching psiStates in 0 steps.
-        storm::utility::vector::setAllValues(result, psiStates, storm::utility::one<SolutionType>(), storm::utility::zero<SolutionType>());
+        storm::utility::vector::setAllValues(result, psiStates, storm::numbers::one<SolutionType>(), storm::numbers::zero<SolutionType>());
         // Check if we actually need to do any iteration
         if (upperBound > lowerBound && firstPhaseMaybeStates.getNumberOfSetBits() > 0) {
             // For the iterations, we clear all outgoing transitions of non-maybe states.
             auto submatrix = transitionMatrix.filterEntries(transitionMatrix.getRowFilter(firstPhaseMaybeStates));
             // The `b` vector is used to set a constant value for the non-maybe states. That means it has to hold value 1 for all choices at psiStates.
             std::vector<ValueType> b;
-            storm::utility::vector::setAllValues(b, transitionMatrix.getRowFilter(psiStates), storm::utility::one<ValueType>(),
-                                                 storm::utility::zero<ValueType>());
+            storm::utility::vector::setAllValues(b, transitionMatrix.getRowFilter(psiStates), storm::numbers::one<ValueType>(),
+                                                 storm::numbers::zero<ValueType>());
             // Perform the iterations for the first phase
             auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, std::move(submatrix));
             multiplier->repeatedMultiplyAndReduce(env, optimizationDirection, result, &b, upperBound - lowerBound, goal.getUncertaintyResolutionMode());
@@ -112,7 +112,7 @@ std::vector<SolutionType> SparseStepBoundedHorizonHelper<ValueType, SolutionType
     } else {
         // For non-interval models, we can consider a proper subsystem consisting only of maybe states. That means, the solution vector only has entries for
         // each maybeState. Initially, (when doing 0 steps), all maybeStates have value 0
-        result.assign(firstPhaseMaybeStates.getNumberOfSetBits(), storm::utility::zero<SolutionType>());
+        result.assign(firstPhaseMaybeStates.getNumberOfSetBits(), storm::numbers::zero<SolutionType>());
         // Check if we actually need to do any iteration
         if (upperBound > lowerBound && firstPhaseMaybeStates.getNumberOfSetBits() > 0) {
             // Create the subsystem that only consists of maybe states.
@@ -143,7 +143,7 @@ std::vector<SolutionType> SparseStepBoundedHorizonHelper<ValueType, SolutionType
             // That means we have to enlarge our solution vector and insert probability 1 for those newly added states, as this is the value of those states
             // towards the end of the first phase.
             auto firstPhaseFilter = firstPhaseMaybeStates % secondPhaseMaybeStates;  // indicates those states that were already present before
-            storm::utility::vector::blowUpVectorInPlace(result, firstPhaseFilter, storm::utility::one<SolutionType>());
+            storm::utility::vector::blowUpVectorInPlace(result, firstPhaseFilter, storm::numbers::one<SolutionType>());
             // Create a submatrix that only consists of maybeStates for the second phase
             auto submatrix = transitionMatrix.getSubmatrix(true, secondPhaseMaybeStates, secondPhaseMaybeStates, false);
             // Perform the iterations for the second phase.
@@ -157,13 +157,13 @@ std::vector<SolutionType> SparseStepBoundedHorizonHelper<ValueType, SolutionType
             }
             multiplier->repeatedMultiplyAndReduce(env, optimizationDirection, result, nullptr, numIterations);
             // Finally, we blow up the solution vector once more to also incorporate values for the non-maybe states, which all have value zero.
-            storm::utility::vector::blowUpVectorInPlace(result, secondPhaseMaybeStates, storm::utility::zero<SolutionType>());
+            storm::utility::vector::blowUpVectorInPlace(result, secondPhaseMaybeStates, storm::numbers::zero<SolutionType>());
         }
     } else {
         // If there is no second phase, we still need to blow up the solution vector in case it refers to the reduced system
         if (!storm::IsIntervalType<ValueType>) {
-            storm::utility::vector::blowUpVectorInPlace(result, firstPhaseMaybeStates, storm::utility::zero<SolutionType>());
-            storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<SolutionType>());
+            storm::utility::vector::blowUpVectorInPlace(result, firstPhaseMaybeStates, storm::numbers::zero<SolutionType>());
+            storm::utility::vector::setVectorValues(result, psiStates, storm::numbers::one<SolutionType>());
         }
     }
 

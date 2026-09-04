@@ -6,10 +6,10 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -295,7 +295,7 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> parseCons
                     constantDefinitions[variable] = manager.integer(integerValue);
                 } else if (variable.hasRationalType()) {
                     try {
-                        storm::RationalNumber rationalValue = storm::utility::convertNumber<storm::RationalNumber>(value);
+                        storm::RationalNumber rationalValue = storm::numbers::convert<storm::RationalNumber>(value);
                         constantDefinitions[variable] = manager.rational(rationalValue);
                     } catch (std::exception& e) {
                         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,

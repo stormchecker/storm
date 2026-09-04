@@ -3,8 +3,8 @@
 #include <optional>
 
 #include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -53,7 +53,7 @@ boost::optional<std::vector<uint64_t>> computeTopologicalGroupOrdering(storm::st
             } else {
                 visited.set(current);
                 for (auto const& entry : matrix.getRowGroup(current)) {
-                    if (!processed.get(entry.getColumn()) && !storm::utility::isZero(entry.getValue())) {
+                    if (!processed.get(entry.getColumn()) && !storm::numbers::isZero(entry.getValue())) {
                         orderedMatrixRequired = true;
                         STORM_LOG_THROW(!visited.get(entry.getColumn()), storm::exceptions::UnmetRequirementException, "The model is not acyclic.");
                         stack.push_back(entry.getColumn());
@@ -98,16 +98,16 @@ storm::storage::SparseMatrix<ValueType> createReorderedMatrix(storm::storage::Sp
         }
         for (uint64_t origRow = matrix.getRowGroupIndices()[origRowGroup]; origRow < matrix.getRowGroupIndices()[origRowGroup + 1]; ++origRow) {
             for (auto const& entry : matrix.getRow(origRow)) {
-                if (storm::utility::isZero(entry.getValue())) {
+                if (storm::numbers::isZero(entry.getValue())) {
                     continue;
                 }
                 if (entry.getColumn() == origRowGroup) {
-                    if (storm::utility::isOne(entry.getValue())) {
+                    if (storm::numbers::isOne(entry.getValue())) {
                         // A one selfloop can only mean that there is never a non-zero value at the b vector for the current row.
                         // There is no factor to apply here; computing one would divide by zero.
                         bFactors.emplace_back(newRow, std::nullopt);
                     } else {
-                        ValueType factor = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - entry.getValue());
+                        ValueType factor = storm::numbers::one<ValueType>() / (storm::numbers::one<ValueType>() - entry.getValue());
                         bFactors.emplace_back(newRow, factor);
                     }
                 }
@@ -121,7 +121,7 @@ storm::storage::SparseMatrix<ValueType> createReorderedMatrix(storm::storage::Sp
     for (auto const& bFactor : bFactors) {
         if (!bFactor.second) {
             // A selfloop of probability one: the row is not scaled, but it may not contribute anything either.
-            STORM_LOG_ASSERT(storm::utility::isZero(result.getRowSum(bFactor.first)), "The input matrix does not seem to be probabilistic.");
+            STORM_LOG_ASSERT(storm::numbers::isZero(result.getRowSum(bFactor.first)), "The input matrix does not seem to be probabilistic.");
             continue;
         }
         for (auto& entry : result.getRow(bFactor.first)) {

@@ -2,17 +2,17 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
 
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 namespace storm {
 namespace expressions {
 RationalLiteralExpression::RationalLiteralExpression(ExpressionManager const& manager, double value)
-    : BaseExpression(manager, manager.getRationalType()), value(storm::utility::convertNumber<storm::RationalNumber>(value)) {
+    : BaseExpression(manager, manager.getRationalType()), value(storm::numbers::convert<storm::RationalNumber>(value)) {
     // Intentionally left empty.
 }
 
 RationalLiteralExpression::RationalLiteralExpression(ExpressionManager const& manager, std::string const& valueAsString)
-    : BaseExpression(manager, manager.getRationalType()), value(storm::utility::convertNumber<storm::RationalNumber>(valueAsString)) {
+    : BaseExpression(manager, manager.getRationalType()), value(storm::numbers::convert<storm::RationalNumber>(valueAsString)) {
     // Intentionally left empty.
 }
 
@@ -44,7 +44,7 @@ bool RationalLiteralExpression::isRationalLiteralExpression() const {
 }
 
 double RationalLiteralExpression::getValueAsDouble() const {
-    return storm::utility::convertNumber<double>(this->value);
+    return storm::numbers::convert<double>(this->value);
 }
 
 storm::RationalNumber RationalLiteralExpression::getValue() const {

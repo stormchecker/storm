@@ -4,10 +4,10 @@
 #include <utility>
 #include <vector>
 
-#include "storm/utility/NumberTraits.h"
+#include "storm/numbers/NumberTraits.h"
 
 namespace storm {
-namespace utility {
+namespace numbers {
 namespace kwek_mehlhorn {
 
 template<typename IntegerType>
@@ -31,5 +31,5 @@ template<typename RationalType, typename ImpreciseType>
 void sharpen(uint64_t precision, std::vector<ImpreciseType> const& input, std::vector<RationalType>& output);
 
 }  // namespace kwek_mehlhorn
-}  // namespace utility
+}  // namespace numbers
 }  // namespace storm

@@ -1,12 +1,12 @@
 #pragma once
 
 #include "storm/logic/Formulas.h"
+#include "storm/numbers/ConstantsComparator.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/StateBlock.h"
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/bisimulation/Partition.h"
-#include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
 namespace logic {
@@ -103,7 +103,7 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
         }
 
         ValueType getTolerance() const {
-            return storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : tolerance;
+            return storm::numbers::NumberTraits<ValueType>::IsExact ? storm::numbers::zero<ValueType>() : tolerance;
         }
 
         void setTolerance(ValueType value) {
@@ -295,7 +295,7 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
     storm::storage::bisimulation::Partition<BlockDataType> partition;
 
     // A comparator used for comparing the distances of constants.
-    storm::utility::ConstantsComparator<ValueType> comparator;
+    storm::numbers::ConstantsComparator<ValueType> comparator;
 
     // The quotient, if it was build. Otherwise a null pointer.
     std::shared_ptr<ModelType> quotient;

@@ -2,10 +2,10 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidTypeException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/expressions/BooleanLiteralExpression.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
 #include "storm/storage/expressions/OperatorType.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -80,12 +80,12 @@ std::shared_ptr<BaseExpression const> BinaryRelationExpression::simplify() const
         storm::RationalNumber secondOperandEvaluation;
 
         if (firstOperandSimplified->hasIntegerType()) {
-            firstOperandEvaluation = storm::utility::convertNumber<storm::RationalNumber>(firstOperandSimplified->evaluateAsInt());
+            firstOperandEvaluation = storm::numbers::convert<storm::RationalNumber>(firstOperandSimplified->evaluateAsInt());
         } else {
             firstOperandEvaluation = firstOperandSimplified->evaluateAsRational();
         }
         if (secondOperandSimplified->hasIntegerType()) {
-            secondOperandEvaluation = storm::utility::convertNumber<storm::RationalNumber>(secondOperandSimplified->evaluateAsInt());
+            secondOperandEvaluation = storm::numbers::convert<storm::RationalNumber>(secondOperandSimplified->evaluateAsInt());
         } else {
             secondOperandEvaluation = secondOperandSimplified->evaluateAsRational();
         }

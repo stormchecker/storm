@@ -120,7 +120,7 @@ bool EigenLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
             maxIter = env.solver().eigen().getMaximalNumberOfIterations();
         }
         uint64_t restartThreshold = env.solver().eigen().getRestartThreshold();
-        ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().eigen().getPrecision());
+        ValueType precision = storm::numbers::convert<ValueType>(env.solver().eigen().getPrecision());
         EigenLinearEquationSolverPreconditioner preconditioner = env.solver().eigen().getPreconditioner();
         if (solutionMethod == EigenLinearEquationSolverMethod::Bicgstab) {
             if (preconditioner == EigenLinearEquationSolverPreconditioner::Ilu) {

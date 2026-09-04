@@ -1,21 +1,20 @@
-
-#include "storm/utility/RationalApproximation.h"
+#include "RationalApproximation.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
-namespace storm::utility {
+namespace storm::numbers {
 
 storm::RationalNumber findRational(storm::RationalNumber const& lowerBound, bool lowerInclusive, storm::RationalNumber const& upperBound, bool upperInclusive) {
-    using Integer = typename storm::NumberTraits<storm::RationalNumber>::IntegerType;
+    using Integer = typename storm::numbers::NumberTraits<storm::RationalNumber>::IntegerType;
     STORM_LOG_ASSERT(lowerBound < upperBound || (lowerBound == upperBound && lowerInclusive && upperInclusive), "Invalid interval for rational approximation.");
 
     // Handle negative numbers
-    if (auto const zero = storm::utility::zero<storm::RationalNumber>(); lowerBound < zero) {
+    if (auto const zero = storm::numbers::zero<storm::RationalNumber>(); lowerBound < zero) {
         // check if zero is in the interval
         if (upperBound > zero || (upperBound == zero && upperInclusive)) {
-            return storm::utility::zero<storm::RationalNumber>();
+            return storm::numbers::zero<storm::RationalNumber>();
         } else {
             // all numbers in the interval are negative. We translate that to a positive problem and negate the result
             return -findRational(-upperBound, upperInclusive, -lowerBound, lowerInclusive);
@@ -33,27 +32,27 @@ storm::RationalNumber findRational(storm::RationalNumber const& lowerBound, bool
     auto l = lowerBound;
     auto u = upperBound;
     while (true) {
-        auto l_den = storm::utility::denominator(l);
-        auto u_den = storm::utility::denominator(u);
-        auto const [l_i, l_rem] = storm::utility::divide(storm::utility::numerator(l), l_den);
-        auto const [u_i, u_rem] = storm::utility::divide(storm::utility::numerator(u), u_den);
+        auto l_den = storm::numbers::denominator(l);
+        auto u_den = storm::numbers::denominator(u);
+        auto const [l_i, l_rem] = storm::numbers::divide(storm::numbers::numerator(l), l_den);
+        auto const [u_i, u_rem] = storm::numbers::divide(storm::numbers::numerator(u), u_den);
 
         path.push_back(std::min(l_i, u_i));  // insert tree traversal information
-        if (l_i == u_i && !storm::utility::isZero(l_rem) && !storm::utility::isZero(u_rem)) {
+        if (l_i == u_i && !storm::numbers::isZero(l_rem) && !storm::numbers::isZero(u_rem)) {
             // continue traversing the tree
-            l = storm::utility::convertNumber<storm::RationalNumber>(l_den) / l_rem;
-            u = storm::utility::convertNumber<storm::RationalNumber>(u_den) / u_rem;
+            l = storm::numbers::convert<storm::RationalNumber>(l_den) / l_rem;
+            u = storm::numbers::convert<storm::RationalNumber>(u_den) / u_rem;
             continue;
         }
         // Reaching this point means that we have found a node in the Stern-Brocot tree where the paths for lower and upper bound diverge.
         // If there still is a remainder, we need to add one to the last entry of the path so that it correctly encodes the node we are referring to.
-        if (l_i != u_i && !storm::utility::isZero(l_i < u_i ? l_rem : u_rem)) {
+        if (l_i != u_i && !storm::numbers::isZero(l_i < u_i ? l_rem : u_rem)) {
             path.back() += Integer(1);
         }
 
         // Find out if we hit an interval boundary and whether we need to adapt this due to open intervals
-        bool const needAdjustLower = !lowerInclusive && path.back() == l_i && storm::utility::isZero(l_rem);
-        bool const needAdjustUpper = !upperInclusive && path.back() == u_i && storm::utility::isZero(u_rem);
+        bool const needAdjustLower = !lowerInclusive && path.back() == l_i && storm::numbers::isZero(l_rem);
+        bool const needAdjustUpper = !upperInclusive && path.back() == u_i && storm::numbers::isZero(u_rem);
         if (needAdjustLower || needAdjustUpper) {
             // handle for values of the "other" bound that does not need adjustment
             auto const& o_i = needAdjustLower ? u_i : l_i;
@@ -72,10 +71,10 @@ storm::RationalNumber findRational(storm::RationalNumber const& lowerBound, bool
             // path.back() -= 1; path.emplace_back(2); extends the path to a child in the "counter direction"
             if (adjustInCurrentDirection) {
                 STORM_LOG_ASSERT(path.back() <= o_i, "Unexpected case when navigating the Stern-Brocot tree.");
-                if (path.back() + Integer(1) < o_i || (path.back() + Integer(1) == o_i && !storm::utility::isZero(o_rem))) {
+                if (path.back() + Integer(1) < o_i || (path.back() + Integer(1) == o_i && !storm::numbers::isZero(o_rem))) {
                     // In this case, the next child (in the current direction) is inside the interval, so we can just take that
                     path.back() += Integer(1);
-                } else if (path.back() + Integer(1) == o_i && storm::utility::isZero(o_rem)) {
+                } else if (path.back() + Integer(1) == o_i && storm::numbers::isZero(o_rem)) {
                     // In this case, the next child coincides with the other boundary
                     if (o_inclusive) {
                         path.back() += Integer(1);  // add next child
@@ -87,13 +86,13 @@ storm::RationalNumber findRational(storm::RationalNumber const& lowerBound, bool
                 } else {
                     // The following assertion holds because path.back() > o_i is not possible due to the way we constructed the path above
                     // and if there would be no remainder, the other boundary would be hit as well (i.e. we would have an empty interval (a,a).
-                    STORM_LOG_ASSERT(path.back() == o_i && !storm::utility::isZero(o_rem), "Unexpected case when navigating the Stern-Brocot tree.");
+                    STORM_LOG_ASSERT(path.back() == o_i && !storm::numbers::isZero(o_rem), "Unexpected case when navigating the Stern-Brocot tree.");
                     // In this case, we need to append one child in the current direction and multiple children in the counter direction based on the continued
                     // fraction representation of the other boundary
-                    auto const [o_i2, o_rem2] = storm::utility::divide(o_den, o_rem);
+                    auto const [o_i2, o_rem2] = storm::numbers::divide(o_den, o_rem);
                     // path.back() += 1; path.back() -= 1; // cancels out
                     path.push_back(o_i2);
-                    if (!storm::utility::isZero(o_rem2)) {
+                    if (!storm::numbers::isZero(o_rem2)) {
                         // If there still is a remainder, we add one to the last entry of the path so that it correctly encodes the node we are referring to.
                         path.back() += Integer(1);
                     } else if (!o_inclusive) {
@@ -105,13 +104,13 @@ storm::RationalNumber findRational(storm::RationalNumber const& lowerBound, bool
                 // Adjusting a bound in the counter direction can only happen if the other bound still has a remainder
                 // Otherwise, we would have also hit that bound
                 STORM_LOG_ASSERT(o_i == path.back() - Integer(1), "Unexpected case when navigating the Stern-Brocot tree.");
-                STORM_LOG_ASSERT(!storm::utility::isZero(o_rem), "Unexpected case when navigating the Stern-Brocot tree.");
-                auto const [o_i2, o_rem2] = storm::utility::divide(o_den, o_rem);
+                STORM_LOG_ASSERT(!storm::numbers::isZero(o_rem), "Unexpected case when navigating the Stern-Brocot tree.");
+                auto const [o_i2, o_rem2] = storm::numbers::divide(o_den, o_rem);
                 path.back() -= Integer(1);  // necessary in all cases
-                if (o_i2 > Integer(2) || (o_i2 == Integer(2) && !storm::utility::isZero(o_rem2))) {
+                if (o_i2 > Integer(2) || (o_i2 == Integer(2) && !storm::numbers::isZero(o_rem2))) {
                     // In this case, the next child (in the counter direction) is inside the interval, so we can just take that
                     path.emplace_back(2);
-                } else if (o_i2 == Integer(2) && storm::utility::isZero(o_rem2)) {
+                } else if (o_i2 == Integer(2) && storm::numbers::isZero(o_rem2)) {
                     // In this case, the next child in counter direction coincides with the other boundary
                     if (o_inclusive) {
                         path.emplace_back(2);
@@ -121,13 +120,13 @@ storm::RationalNumber findRational(storm::RationalNumber const& lowerBound, bool
                         path.emplace_back(2);
                     }
                 } else {
-                    STORM_LOG_ASSERT(o_i2 == Integer(1) && !storm::utility::isZero(o_rem2), "Unexpected case when navigating the Stern-Brocot tree.");
+                    STORM_LOG_ASSERT(o_i2 == Integer(1) && !storm::numbers::isZero(o_rem2), "Unexpected case when navigating the Stern-Brocot tree.");
                     // In this case, we need to append one child in the counter direction and multiple children in the current direction based on the continued
                     // fraction representation of the other boundary
-                    auto const [o_i3, o_rem3] = storm::utility::divide(o_rem, o_rem2);
+                    auto const [o_i3, o_rem3] = storm::numbers::divide(o_rem, o_rem2);
                     path.emplace_back(1);
                     path.push_back(o_i3);
-                    if (!storm::utility::isZero(o_rem3)) {
+                    if (!storm::numbers::isZero(o_rem3)) {
                         // If there still is a remainder, we add one to the last entry of the path so that it correctly encodes the node we are referring to.
                         path.back() += Integer(1);
                     } else if (!o_inclusive) {
@@ -142,9 +141,9 @@ storm::RationalNumber findRational(storm::RationalNumber const& lowerBound, bool
 
     // Now, construct the rational number from the path
     auto it = path.rbegin();
-    auto result = storm::utility::convertNumber<storm::RationalNumber>(*it);
+    auto result = storm::numbers::convert<storm::RationalNumber>(*it);
     for (++it; it != path.rend(); ++it) {
-        result = storm::utility::convertNumber<storm::RationalNumber>(*it) + storm::utility::one<storm::RationalNumber>() / result;
+        result = storm::numbers::convert<storm::RationalNumber>(*it) + storm::numbers::one<storm::RationalNumber>() / result;
     }
     return result;
 
@@ -153,4 +152,4 @@ storm::RationalNumber findRational(storm::RationalNumber const& lowerBound, bool
     return result;
 }
 
-}  // namespace storm::utility
+}  // namespace storm::numbers

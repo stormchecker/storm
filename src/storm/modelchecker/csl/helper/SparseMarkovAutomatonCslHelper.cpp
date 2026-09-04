@@ -11,6 +11,7 @@
 #include "storm/exceptions/UncheckedRequirementException.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/numbers/NumberTraits.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/multiplier/Multiplier.h"
@@ -19,7 +20,6 @@
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
-#include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -43,8 +43,8 @@ std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> setUpProba
         solver = factory.create(env, transitions);
         solver->setHasUniqueSolution(true);   // Assume non-zeno MA
         solver->setHasNoEndComponents(true);  // assume non-zeno MA
-        solver->setLowerBound(storm::utility::zero<ValueType>());
-        solver->setUpperBound(storm::utility::one<ValueType>());
+        solver->setLowerBound(storm::numbers::zero<ValueType>());
+        solver->setUpperBound(storm::numbers::one<ValueType>());
         solver->setCachingEnabled(true);
         solver->setRequirementsChecked(true);
         auto req = solver->getRequirements(env, dir);
@@ -113,11 +113,11 @@ class UnifPlusHelper {
         std::vector<ValueType> markovianExitRates = storm::utility::vector::filterVector(exitRateVector, markovianMaybeStates);
 
         // Obtain parameters of the algorithm
-        auto two = storm::utility::convertNumber<ValueType>(2.0);
+        auto two = storm::numbers::convert<ValueType>(2.0);
         // Truncation error
-        ValueType kappa = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getUnifPlusKappa());
+        ValueType kappa = storm::numbers::convert<ValueType>(env.solver().timeBounded().getUnifPlusKappa());
         // Precision to be achieved
-        ValueType epsilon = two * storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
+        ValueType epsilon = two * storm::numbers::convert<ValueType>(env.solver().timeBounded().getPrecision());
         bool relativePrecision = env.solver().timeBounded().getRelativeTerminationCriterion();
         // Uniformization rate
         ValueType lambda = *std::max_element(markovianExitRates.begin(), markovianExitRates.end());
@@ -147,9 +147,9 @@ class UnifPlusHelper {
         auto solver = setUpProbabilisticStatesSolver(solverEnv, dir, probabilisticToProbabilisticTransitions);
 
         // Allocate auxiliary memory that can be used during the iterations
-        std::vector<ValueType> maybeStatesValuesLower(maybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());          // should be zero initially
-        std::vector<ValueType> maybeStatesValuesWeightedUpper(maybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());  // should be zero initially
-        std::vector<ValueType> maybeStatesValuesUpper(maybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());          // should be zero initially
+        std::vector<ValueType> maybeStatesValuesLower(maybeStates.getNumberOfSetBits(), storm::numbers::zero<ValueType>());          // should be zero initially
+        std::vector<ValueType> maybeStatesValuesWeightedUpper(maybeStates.getNumberOfSetBits(), storm::numbers::zero<ValueType>());  // should be zero initially
+        std::vector<ValueType> maybeStatesValuesUpper(maybeStates.getNumberOfSetBits(), storm::numbers::zero<ValueType>());          // should be zero initially
         std::vector<ValueType> nextMarkovianStateValues = std::move(
             markovianExitRates);  // At this point, the markovianExitRates are no longer needed, so we 'move' them away instead of allocating new memory
         std::vector<ValueType> nextProbabilisticStateValues(probabilisticToProbabilisticTransitions.getRowGroupCount());
@@ -163,13 +163,12 @@ class UnifPlusHelper {
         bool abortedInnerIterations = false;
         while (!converged) {
             // Maximal step size
-            uint64_t N = storm::utility::ceil(lambda * *upperTimeBound * std::exp(2) - storm::utility::log(kappa * epsilon));
+            uint64_t N = storm::numbers::ceil(lambda * *upperTimeBound * std::exp(2) - storm::numbers::log(kappa * epsilon));
             // Compute poisson distribution.
             // The division by 8 is similar to what is done for CTMCs (probably to reduce numerical impacts?)
-            auto foxGlynnResult =
-                storm::utility::numerical::foxGlynn(lambda * *upperTimeBound, epsilon * kappa / storm::utility::convertNumber<ValueType>(8.0));
+            auto foxGlynnResult = storm::utility::numerical::foxGlynn(lambda * *upperTimeBound, epsilon * kappa / storm::numbers::convert<ValueType>(8.0));
             // Scale the weights so they sum to one.
-            // storm::utility::vector::scaleVectorInPlace(foxGlynnResult.weights, storm::utility::one<ValueType>() / foxGlynnResult.totalWeight);
+            // storm::utility::vector::scaleVectorInPlace(foxGlynnResult.weights, storm::numbers::one<ValueType>() / foxGlynnResult.totalWeight);
 
             // Set up multiplier
             auto markovianToMaybeMultiplier = storm::solver::MultiplierFactory<ValueType>().create(env, markovianToMaybeTransitions);
@@ -179,7 +178,7 @@ class UnifPlusHelper {
             STORM_LOG_ASSERT(!storm::utility::vector::hasNonZeroEntry(maybeStatesValuesUpper), "Current values need to be initialized with zero.");
             for (bool computeLowerBound : {false, true}) {
                 auto& maybeStatesValues = computeLowerBound ? maybeStatesValuesLower : maybeStatesValuesWeightedUpper;
-                ValueType targetValue = computeLowerBound ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>();
+                ValueType targetValue = computeLowerBound ? storm::numbers::zero<ValueType>() : storm::numbers::one<ValueType>();
                 storm::utility::ProgressMeasurement progressSteps("steps in iteration " + std::to_string(iteration) + " for " +
                                                                   std::string(computeLowerBound ? "lower" : "upper") + " bounds.");
                 progressSteps.setMaxCount(N);
@@ -210,7 +209,7 @@ class UnifPlusHelper {
                         // Reaching this point means that this is the very first relevant iteration.
                         // If we are in the very first relevant iteration, we know that all states from the previous iteration have value zero.
                         // It is therefore valid (and necessary) to just set the values of Markovian states to zero.
-                        std::fill(nextMarkovianStateValues.begin(), nextMarkovianStateValues.end(), storm::utility::zero<ValueType>());
+                        std::fill(nextMarkovianStateValues.begin(), nextMarkovianStateValues.end(), storm::numbers::zero<ValueType>());
                     } else {
                         // Compute the values at Markovian maybe states.
                         markovianToMaybeMultiplier->multiply(env, maybeStatesValues, nullptr, nextMarkovianStateValues);
@@ -261,9 +260,9 @@ class UnifPlusHelper {
                 }
 
                 if (computeLowerBound) {
-                    storm::utility::vector::scaleVectorInPlace(maybeStatesValuesLower, storm::utility::one<ValueType>() / foxGlynnResult.totalWeight);
+                    storm::utility::vector::scaleVectorInPlace(maybeStatesValuesLower, storm::numbers::one<ValueType>() / foxGlynnResult.totalWeight);
                 } else {
-                    storm::utility::vector::scaleVectorInPlace(maybeStatesValuesUpper, storm::utility::one<ValueType>() / foxGlynnResult.totalWeight);
+                    storm::utility::vector::scaleVectorInPlace(maybeStatesValuesUpper, storm::numbers::one<ValueType>() / foxGlynnResult.totalWeight);
                 }
 
                 if (abortedInnerIterations || storm::utility::resources::isTerminate()) {
@@ -303,7 +302,7 @@ class UnifPlusHelper {
                     } else {
                         minValue = *std::min_element(maybeStatesValuesUpper.begin(), maybeStatesValuesUpper.end());
                     }
-                    minValue *= storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getUnifPlusKappa());
+                    minValue *= storm::numbers::convert<ValueType>(env.solver().timeBounded().getUnifPlusKappa());
                     kappa = std::min(kappa, minValue);
                     STORM_LOG_DEBUG("Decreased kappa to " << kappa << ".");
                 }
@@ -312,7 +311,7 @@ class UnifPlusHelper {
                 uniformize(markovianToMaybeTransitions, markovianToPsiProbabilities, oldLambda, lambda, markovianStatesModMaybeStates);
 
                 // Reset the values of the maybe states to zero.
-                std::fill(maybeStatesValuesUpper.begin(), maybeStatesValuesUpper.end(), storm::utility::zero<ValueType>());
+                std::fill(maybeStatesValuesUpper.begin(), maybeStatesValuesUpper.end(), storm::numbers::zero<ValueType>());
             }
             progressIterations.updateProgress(++iteration);
             if (storm::utility::resources::isTerminate()) {
@@ -322,9 +321,9 @@ class UnifPlusHelper {
         }
 
         // Prepare the result vector
-        std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+        std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
         // Set values of target states to 1
-        storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<ValueType>());
+        storm::utility::vector::setVectorValues(result, psiStates, storm::numbers::one<ValueType>());
 
         if (abortedInnerIterations && iteration > 1 && relevantMaybeStates && relevantStates) {
             // We should take the stored solution instead of the current (probably more incorrect) lower/upper values
@@ -363,7 +362,7 @@ class UnifPlusHelper {
                           ValueType const& epsilon, bool relative, ValueType& kappa) {
         STORM_LOG_ASSERT(relevantValues.size() == lower.size(), "Relevant values size mismatch.");
         if (!relative) {
-            return storm::utility::vector::equalModuloPrecision(lower, upper, relevantValues, epsilon * (storm::utility::one<ValueType>() - kappa), false);
+            return storm::utility::vector::equalModuloPrecision(lower, upper, relevantValues, epsilon * (storm::numbers::one<ValueType>() - kappa), false);
         }
         ValueType truncationError = epsilon * kappa;
         for (uint64_t const i : relevantValues) {
@@ -378,7 +377,7 @@ class UnifPlusHelper {
             if (relDiff > epsilon) {
                 return false;
             }
-            STORM_LOG_ASSERT(absDiff > storm::utility::zero<ValueType>(), "Upper bound " << upper[i] << " is smaller than lower bound " << lower[i] << ".");
+            STORM_LOG_ASSERT(absDiff > storm::numbers::zero<ValueType>(), "Upper bound " << upper[i] << " is smaller than lower bound " << lower[i] << ".");
         }
         return true;
     }
@@ -494,7 +493,7 @@ class UnifPlusHelper {
         std::vector<std::pair<uint64_t, ValueType>> sparseResult;
         for (uint64_t i = 0; i < denseResult.size(); ++i) {
             auto const& val = denseResult[i];
-            if (!storm::utility::isZero(val)) {
+            if (!storm::numbers::isZero(val)) {
                 sparseResult.emplace_back(i, val);
             }
         }
@@ -536,9 +535,9 @@ void computeBoundedReachabilityProbabilitiesImca(Environment const& env, Optimiz
         for (auto& element : aMarkovian.getRow(rowIndex)) {
             ValueType eTerm = std::exp(-exitRates[state] * delta);
             if (element.getColumn() == rowIndex) {
-                element.setValue((storm::utility::one<ValueType>() - eTerm) * element.getValue() + eTerm);
+                element.setValue((storm::numbers::one<ValueType>() - eTerm) * element.getValue() + eTerm);
             } else {
-                element.setValue((storm::utility::one<ValueType>() - eTerm) * element.getValue());
+                element.setValue((storm::numbers::one<ValueType>() - eTerm) * element.getValue());
             }
         }
         ++rowIndex;
@@ -567,7 +566,7 @@ void computeBoundedReachabilityProbabilitiesImca(Environment const& env, Optimiz
     std::vector<ValueType> bMarkovianFixed;
     bMarkovianFixed.reserve(markovianNonGoalStates.getNumberOfSetBits());
     for (uint64_t state : markovianNonGoalStates) {
-        bMarkovianFixed.push_back(storm::utility::zero<ValueType>());
+        bMarkovianFixed.push_back(storm::numbers::zero<ValueType>());
 
         for (auto& element : transitionMatrix.getRowGroup(state)) {
             if (goalStates.get(element.getColumn())) {
@@ -651,7 +650,7 @@ std::vector<ValueType> computeBoundedUntilProbabilitiesImca(Environment const& e
     for (auto value : exitRateVector) {
         maxExitRate = std::max(maxExitRate, value);
     }
-    ValueType delta = (2.0 * storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision())) / (upperBound * maxExitRate * maxExitRate);
+    ValueType delta = (2.0 * storm::numbers::convert<ValueType>(env.solver().timeBounded().getPrecision())) / (upperBound * maxExitRate * maxExitRate);
 
     // (2) Compute the number of steps we need to make for the interval.
     uint64_t numberOfSteps = static_cast<uint64_t>(std::ceil((upperBound - lowerBound) / delta));
@@ -669,14 +668,14 @@ std::vector<ValueType> computeBoundedUntilProbabilitiesImca(Environment const& e
                                                 vMarkovian, vProbabilistic, delta, numberOfSteps);
 
     // (4) If the lower bound of interval was non-zero, we need to take the current values as the starting values for a subsequent value iteration.
-    if (lowerBound != storm::utility::zero<ValueType>()) {
+    if (lowerBound != storm::numbers::zero<ValueType>()) {
         std::vector<ValueType> vAllProbabilistic((~markovianStates).getNumberOfSetBits());
         std::vector<ValueType> vAllMarkovian(markovianStates.getNumberOfSetBits());
 
         // Create the starting value vectors for the next value iteration based on the results of the previous one.
-        storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, psiStates % ~markovianStates, storm::utility::one<ValueType>());
+        storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, psiStates % ~markovianStates, storm::numbers::one<ValueType>());
         storm::utility::vector::setVectorValues<ValueType>(vAllProbabilistic, ~psiStates % ~markovianStates, vProbabilistic);
-        storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, psiStates % markovianStates, storm::utility::one<ValueType>());
+        storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, psiStates % markovianStates, storm::numbers::one<ValueType>());
         storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, ~psiStates % markovianStates, vMarkovian);
 
         // Compute the number of steps to reach the target interval.
@@ -688,7 +687,7 @@ std::vector<ValueType> computeBoundedUntilProbabilitiesImca(Environment const& e
                                                     ~markovianStates, vAllMarkovian, vAllProbabilistic, delta, numberOfSteps);
 
         // Create the result vector out of vAllProbabilistic and vAllMarkovian and return it.
-        std::vector<ValueType> result(numberOfStates, storm::utility::zero<ValueType>());
+        std::vector<ValueType> result(numberOfStates, storm::numbers::zero<ValueType>());
         storm::utility::vector::setVectorValues(result, ~markovianStates, vAllProbabilistic);
         storm::utility::vector::setVectorValues(result, markovianStates, vAllMarkovian);
 
@@ -696,14 +695,14 @@ std::vector<ValueType> computeBoundedUntilProbabilitiesImca(Environment const& e
     } else {
         // Create the result vector out of 1_G, vProbabilistic and vMarkovian and return it.
         std::vector<ValueType> result(numberOfStates);
-        storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
+        storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::numbers::one<ValueType>());
         storm::utility::vector::setVectorValues(result, probabilisticNonGoalStates, vProbabilistic);
         storm::utility::vector::setVectorValues(result, markovianNonGoalStates, vMarkovian);
         return result;
     }
 }
 
-template<typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+template<typename ValueType, typename std::enable_if<storm::numbers::NumberTraits<ValueType>::SupportsExponential, int>::type>
 std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(
     Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& phiStates,
@@ -720,7 +719,7 @@ std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbab
         }
     } else {
         STORM_LOG_ASSERT(method == storm::solver::MaBoundedReachabilityMethod::UnifPlus, "Unknown solution method.");
-        if (!storm::utility::isZero(boundsPair.first)) {
+        if (!storm::numbers::isZero(boundsPair.first)) {
             STORM_LOG_WARN("Using IMCA method because Unif+ does not support a lower bound > 0.");
             method = storm::solver::MaBoundedReachabilityMethod::Imca;
         }
@@ -738,7 +737,7 @@ std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbab
     }
 }
 
-template<typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+template<typename ValueType, typename std::enable_if<!storm::numbers::NumberTraits<ValueType>::SupportsExponential, int>::type>
 std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const&, storm::solver::SolveGoal<ValueType>&&,
                                                                                         storm::storage::SparseMatrix<ValueType> const&,
                                                                                         std::vector<ValueType> const&, storm::storage::BitVector const&,
@@ -762,9 +761,9 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, RewardModelType const& rewardModel, bool produceScheduler) {
     // Get a reward model where the state rewards are scaled accordingly
-    std::vector<ValueType> stateRewardWeights(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+    std::vector<ValueType> stateRewardWeights(transitionMatrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
     for (uint64_t markovianState : markovianStates) {
-        stateRewardWeights[markovianState] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
+        stateRewardWeights[markovianState] = storm::numbers::one<ValueType>() / exitRateVector[markovianState];
     }
     std::vector<ValueType> totalRewardVector = rewardModel.getTotalActionRewardVector(transitionMatrix, stateRewardWeights);
     RewardModelType scaledRewardModel(std::nullopt, std::move(totalRewardVector));
@@ -778,9 +777,9 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, RewardModelType const& rewardModel, storm::storage::BitVector const& psiStates, bool produceScheduler) {
     // Get a reward model where the state rewards are scaled accordingly
-    std::vector<ValueType> stateRewardWeights(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+    std::vector<ValueType> stateRewardWeights(transitionMatrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
     for (uint64_t markovianState : markovianStates) {
-        stateRewardWeights[markovianState] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
+        stateRewardWeights[markovianState] = storm::numbers::one<ValueType>() / exitRateVector[markovianState];
     }
     std::vector<ValueType> totalRewardVector = rewardModel.getTotalActionRewardVector(transitionMatrix, stateRewardWeights);
     RewardModelType scaledRewardModel(std::nullopt, std::move(totalRewardVector));
@@ -795,9 +794,9 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, bool produceScheduler) {
     // Get a reward model representing expected sojourn times
-    std::vector<ValueType> rewardValues(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
+    std::vector<ValueType> rewardValues(transitionMatrix.getRowCount(), storm::numbers::zero<ValueType>());
     for (uint64_t markovianState : markovianStates) {
-        rewardValues[transitionMatrix.getRowGroupIndices()[markovianState]] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
+        rewardValues[transitionMatrix.getRowGroupIndices()[markovianState]] = storm::numbers::one<ValueType>() / exitRateVector[markovianState];
     }
     storm::models::sparse::StandardRewardModel<ValueType> rewardModel(std::nullopt, std::move(rewardValues));
 

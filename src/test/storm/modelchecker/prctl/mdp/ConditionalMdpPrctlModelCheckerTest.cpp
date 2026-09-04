@@ -22,7 +22,7 @@ class SparseDoubleRestartEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::Restart);
-        env.modelchecker().conditional().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10),
+        env.modelchecker().conditional().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10),
                                                       false);  // restart algorithm requires a higher precision
         return env;
     }
@@ -96,7 +96,7 @@ class SparseRationalNumberRestartEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.modelchecker().conditional().setAlgorithm(storm::ConditionalAlgorithmSetting::Restart);
-        env.modelchecker().conditional().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10),
+        env.modelchecker().conditional().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-10),
                                                       false);  // restart algorithm requires a higher precision
         return env;
     }
@@ -180,7 +180,7 @@ class ConditionalMdpPrctlModelCheckerTest : public ::testing::Test {
         return _environment;
     }
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
     ValueType precision() const {
         return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");

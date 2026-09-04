@@ -42,7 +42,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initializeModelTypeSp
         STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
         this->actionRewards[objIndex] = rewModel.hasStateActionRewards()
                                             ? rewModel.getStateActionRewardVector()
-                                            : std::vector<ValueType>(model.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
+                                            : std::vector<ValueType>(model.getTransitionMatrix().getRowCount(), storm::numbers::zero<ValueType>());
         if (formula.getSubformula().isTotalRewardFormula()) {
             if (rewModel.hasStateRewards()) {
                 // Note that state rewards are earned over time and thus play no role for probabilistic states
@@ -99,9 +99,9 @@ typename SparseMaModelType::ValueType StandardMaPcaaWeightVectorChecker<SparseMa
     if (!this->objectivesWithNoUpperTimeBound.full()) {
         // If there are time-bounded objectives, we allow most of the approximation error in the bounded phase.
         // This is because computing time-bounded objectives accurately is likely the largest bottle neck of the computation.
-        return storm::utility::convertNumber<ValueType>(0.99) * this->getWeightedPrecision();
+        return storm::numbers::convert<ValueType>(0.99) * this->getWeightedPrecision();
     }
-    return storm::utility::zero<ValueType>();
+    return storm::numbers::zero<ValueType>();
 }
 
 template<class SparseMaModelType>
@@ -217,7 +217,7 @@ typename StandardMaPcaaWeightVectorChecker<SparseMaModelType>::SubModel Standard
 }
 
 template<class SparseMaModelType>
-template<typename VT, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type>
+template<typename VT, typename std::enable_if<storm::numbers::NumberTraits<VT>::SupportsExponential, int>::type>
 VT StandardMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant(std::vector<ValueType> const& weightVector) const {
     STORM_LOG_DEBUG("Retrieving digitization constant");
     // We need to find a delta such that for each objective it holds that lowerbound/delta , upperbound/delta are natural numbers and
@@ -233,24 +233,24 @@ VT StandardMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant
     VT const maxRate = storm::utility::vector::max_if(exitRates, markovianStates);
     std::vector<VT> timeBounds;
     std::vector<VT> eToPowerOfMinusMaxRateTimesBound;
-    VT smallestNonZeroBound = storm::utility::zero<VT>();
+    VT smallestNonZeroBound = storm::numbers::zero<VT>();
     for (auto const& obj : this->objectives) {
         if (obj.formula->getSubformula().isCumulativeRewardFormula()) {
             timeBounds.push_back(obj.formula->getSubformula().asCumulativeRewardFormula().template getBound<VT>());
-            STORM_LOG_THROW(!storm::utility::isZero(timeBounds.back()), storm::exceptions::InvalidPropertyException,
+            STORM_LOG_THROW(!storm::numbers::isZero(timeBounds.back()), storm::exceptions::InvalidPropertyException,
                             "Got zero-valued upper time bound. This is not suppoted.");
             eToPowerOfMinusMaxRateTimesBound.push_back(std::exp(-maxRate * timeBounds.back()));
-            smallestNonZeroBound = storm::utility::isZero(smallestNonZeroBound) ? timeBounds.back() : std::min(smallestNonZeroBound, timeBounds.back());
+            smallestNonZeroBound = storm::numbers::isZero(smallestNonZeroBound) ? timeBounds.back() : std::min(smallestNonZeroBound, timeBounds.back());
         } else {
-            timeBounds.push_back(storm::utility::zero<VT>());
-            eToPowerOfMinusMaxRateTimesBound.push_back(storm::utility::zero<VT>());
+            timeBounds.push_back(storm::numbers::zero<VT>());
+            eToPowerOfMinusMaxRateTimesBound.push_back(storm::numbers::zero<VT>());
         }
     }
-    if (storm::utility::isZero(smallestNonZeroBound)) {
+    if (storm::numbers::isZero(smallestNonZeroBound)) {
         // There are no time bounds. In this case, one is a valid digitization constant.
-        return storm::utility::one<VT>();
+        return storm::numbers::one<VT>();
     }
-    VT weightedGoalPrecision = this->getWeightedPrecisionBoundedPhase() * storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
+    VT weightedGoalPrecision = this->getWeightedPrecisionBoundedPhase() * storm::numbers::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
 
     // We brute-force a delta, since a direct computation is apparently not easy.
     // Also note that the number of times this loop runs is a lower bound for the number of minMaxSolver invocations.
@@ -268,13 +268,13 @@ VT StandardMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant
             }
         }
         if (deltaValid) {
-            VT weightedPrecisionForCurrentDelta = storm::utility::zero<VT>();
+            VT weightedPrecisionForCurrentDelta = storm::numbers::zero<VT>();
             for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                VT precisionOfObj = storm::utility::zero<VT>();
+                VT precisionOfObj = storm::numbers::zero<VT>();
                 if (objectivesWithTimeBound.get(objIndex)) {
                     precisionOfObj +=
-                        storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[objIndex] *
-                                                     storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, timeBounds[objIndex] / delta));
+                        storm::numbers::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[objIndex] *
+                                                     storm::numbers::pow(storm::numbers::one<VT>() + maxRate * delta, timeBounds[objIndex] / delta));
                 }
                 weightedPrecisionForCurrentDelta += weightVector[objIndex] * precisionOfObj;
             }
@@ -292,36 +292,36 @@ VT StandardMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant
 }
 
 template<class SparseMaModelType>
-template<typename VT, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type>
+template<typename VT, typename std::enable_if<!storm::numbers::NumberTraits<VT>::SupportsExponential, int>::type>
 VT StandardMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant(std::vector<ValueType> const& /*weightVector*/) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded probabilities of MAs is unsupported for this value type.");
 }
 
 template<class SparseMaModelType>
-template<typename VT, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type>
+template<typename VT, typename std::enable_if<storm::numbers::NumberTraits<VT>::SupportsExponential, int>::type>
 void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::digitize(SubModel& MS, VT const& digitizationConstant) const {
     std::vector<VT> rateVector(MS.getNumberOfChoices());
     storm::utility::vector::selectVectorValues(rateVector, MS.states, exitRates);
     for (uint_fast64_t row = 0; row < rateVector.size(); ++row) {
         VT const eToMinusRateTimesDelta = std::exp(-rateVector[row] * digitizationConstant);
         for (auto& entry : MS.toMS.getRow(row)) {
-            entry.setValue((storm::utility::one<VT>() - eToMinusRateTimesDelta) * entry.getValue());
+            entry.setValue((storm::numbers::one<VT>() - eToMinusRateTimesDelta) * entry.getValue());
             if (entry.getColumn() == row) {
                 entry.setValue(entry.getValue() + eToMinusRateTimesDelta);
             }
         }
         for (auto& entry : MS.toPS.getRow(row)) {
-            entry.setValue((storm::utility::one<VT>() - eToMinusRateTimesDelta) * entry.getValue());
+            entry.setValue((storm::numbers::one<VT>() - eToMinusRateTimesDelta) * entry.getValue());
         }
-        MS.weightedRewardVector[row] *= storm::utility::one<VT>() - eToMinusRateTimesDelta;
+        MS.weightedRewardVector[row] *= storm::numbers::one<VT>() - eToMinusRateTimesDelta;
         for (auto& objVector : MS.objectiveRewardVectors) {
-            objVector[row] *= storm::utility::one<VT>() - eToMinusRateTimesDelta;
+            objVector[row] *= storm::numbers::one<VT>() - eToMinusRateTimesDelta;
         }
     }
 }
 
 template<class SparseMaModelType>
-template<typename VT, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type>
+template<typename VT, typename std::enable_if<!storm::numbers::NumberTraits<VT>::SupportsExponential, int>::type>
 void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::digitize(SubModel& /*subModel*/, VT const& /*digitizationConstant*/) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded probabilities of MAs is unsupported for this value type.");
 }
@@ -329,20 +329,20 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::digitize(SubModel& /*
 template<class SparseMaModelType>
 void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::digitizeTimeBounds(TimeBoundMap& upperTimeBounds, ValueType const& digitizationConstant,
                                                                               std::vector<ValueType> const& weightVector) {
-    if constexpr (storm::NumberTraits<ValueType>::SupportsExponential) {
+    if constexpr (storm::numbers::NumberTraits<ValueType>::SupportsExponential) {
         ValueType const maxRate = storm::utility::vector::max_if(exitRates, markovianStates);
         for (auto objIndex : ~this->objectivesWithNoUpperTimeBound) {
             auto const& obj = this->objectives[objIndex];
-            ValueType errorTowardsZero = storm::utility::zero<ValueType>();
-            ValueType errorAwayFromZero = storm::utility::zero<ValueType>();
+            ValueType errorTowardsZero = storm::numbers::zero<ValueType>();
+            ValueType errorAwayFromZero = storm::numbers::zero<ValueType>();
             if (obj.formula->getSubformula().isCumulativeRewardFormula()) {
                 ValueType timeBound = obj.formula->getSubformula().asCumulativeRewardFormula().template getBound<ValueType>();
-                uint_fast64_t digitizedBound = storm::utility::convertNumber<uint_fast64_t>(timeBound / digitizationConstant);
+                uint_fast64_t digitizedBound = storm::numbers::convert<uint_fast64_t>(timeBound / digitizationConstant);
                 auto timeBoundIt = upperTimeBounds.insert(std::make_pair(digitizedBound, storm::storage::BitVector(this->objectives.size(), false))).first;
                 timeBoundIt->second.set(objIndex);
-                ValueType digitizationError = storm::utility::one<ValueType>();
+                ValueType digitizationError = storm::numbers::one<ValueType>();
                 digitizationError -=
-                    std::exp(-maxRate * timeBound) * storm::utility::pow(storm::utility::one<ValueType>() + maxRate * digitizationConstant, digitizedBound);
+                    std::exp(-maxRate * timeBound) * storm::numbers::pow(storm::numbers::one<ValueType>() + maxRate * digitizationConstant, digitizedBound);
                 errorAwayFromZero += digitizationError;
             }
             if (storm::solver::maximize(obj.formula->getOptimalityType())) {
@@ -399,7 +399,7 @@ StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initMinMaxSolver(Environme
 }
 
 template<class SparseMaModelType>
-template<typename VT, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type>
+template<typename VT, typename std::enable_if<storm::numbers::NumberTraits<VT>::SupportsExponential, int>::type>
 std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<SparseMaModelType>::LinEqSolverData>
 StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver(Environment const& env, SubModel const& PS, bool acyclic) const {
     std::unique_ptr<LinEqSolverData> result(new LinEqSolverData());
@@ -415,7 +415,7 @@ StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver(Environmen
 }
 
 template<class SparseMaModelType>
-template<typename VT, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type>
+template<typename VT, typename std::enable_if<!storm::numbers::NumberTraits<VT>::SupportsExponential, int>::type>
 std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<SparseMaModelType>::LinEqSolverData>
 StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver(Environment const& /*env*/, SubModel const& /*PS*/, bool /*acyclic*/) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded probabilities of MAs is unsupported for this value type.");
@@ -450,12 +450,12 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::performPSStep(Environ
     // compute a choice vector for the probabilistic states that is optimal w.r.t. the weighted reward vector
     minMax.solver->solveEquations(*minMax.env, PS.weightedSolutionVector, minMax.b);
     auto const& newChoices = minMax.solver->getSchedulerChoices();
-    if (consideredObjectives.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*consideredObjectives.begin()])) {
+    if (consideredObjectives.getNumberOfSetBits() == 1 && storm::numbers::isOne(weightVector[*consideredObjectives.begin()])) {
         // In this case there is no need to perform the computation on the individual objectives
         optimalChoicesAtCurrentEpoch = newChoices;
         PS.objectiveSolutionVectors[*consideredObjectives.begin()] = PS.weightedSolutionVector;
         if (storm::solver::minimize(this->objectives[*consideredObjectives.begin()].formula->getOptimalityType())) {
-            storm::utility::vector::scaleVectorInPlace(PS.objectiveSolutionVectors[*consideredObjectives.begin()], -storm::utility::one<ValueType>());
+            storm::utility::vector::scaleVectorInPlace(PS.objectiveSolutionVectors[*consideredObjectives.begin()], -storm::numbers::one<ValueType>());
         }
     } else {
         // check whether the linEqSolver needs to be updated, i.e., whether the scheduler has changed
@@ -509,11 +509,11 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::performMSStep(Environ
     storm::utility::vector::addVectors(MS.weightedRewardVector, MS.auxChoiceValues, MS.weightedSolutionVector);
     MS.toPS.multiplyWithVector(PS.weightedSolutionVector, MS.auxChoiceValues);
     storm::utility::vector::addVectors(MS.weightedSolutionVector, MS.auxChoiceValues, MS.weightedSolutionVector);
-    if (consideredObjectives.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*consideredObjectives.begin()])) {
+    if (consideredObjectives.getNumberOfSetBits() == 1 && storm::numbers::isOne(weightVector[*consideredObjectives.begin()])) {
         // In this case there is no need to perform the computation on the individual objectives
         MS.objectiveSolutionVectors[*consideredObjectives.begin()] = MS.weightedSolutionVector;
         if (storm::solver::minimize(this->objectives[*consideredObjectives.begin()].formula->getOptimalityType())) {
-            storm::utility::vector::scaleVectorInPlace(MS.objectiveSolutionVectors[*consideredObjectives.begin()], -storm::utility::one<ValueType>());
+            storm::utility::vector::scaleVectorInPlace(MS.objectiveSolutionVectors[*consideredObjectives.begin()], -storm::numbers::one<ValueType>());
         }
     } else {
         for (uint64_t objIndex : consideredObjectives) {

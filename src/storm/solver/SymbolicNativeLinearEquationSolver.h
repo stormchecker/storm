@@ -4,7 +4,7 @@
 #include "storm/solver/SolverStatus.h"
 #include "storm/solver/SymbolicLinearEquationSolver.h"
 
-#include "storm/utility/NumberTraits.h"
+#include "storm/numbers/NumberTraits.h"
 
 namespace storm {
 namespace solver {
@@ -98,10 +98,12 @@ class SymbolicNativeLinearEquationSolver : public SymbolicLinearEquationSolver<D
                                                                             storm::dd::Add<DdType, ImpreciseType> const& x,
                                                                             storm::dd::Add<DdType, ImpreciseType> const& b) const;
     template<typename ImpreciseType>
-    typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type
+    typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && storm::numbers::NumberTraits<ValueType>::IsExact,
+                            storm::dd::Add<DdType, ValueType>>::type
     solveEquationsRationalSearchHelper(Environment const& env, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
     template<typename ImpreciseType>
-    typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type
+    typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !storm::numbers::NumberTraits<ValueType>::IsExact,
+                            storm::dd::Add<DdType, ValueType>>::type
     solveEquationsRationalSearchHelper(Environment const& env, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
     template<typename ImpreciseType>
     typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, storm::dd::Add<DdType, ValueType>>::type solveEquationsRationalSearchHelper(

@@ -6,8 +6,8 @@
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm/api/verification.h"
 
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/utility/constants.h"
 
 #include "storm-pars/api/region.h"
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
@@ -34,7 +34,7 @@ void printFeasibilityResult(bool success,
     }
     if (success) {
         STORM_PRINT_AND_LOG("Result at initial state: " << valueValuationPair.first << " ( approx. "
-                                                        << storm::utility::convertNumber<double>(valueValuationPair.first) << ") at [" << valuationStr.str()
+                                                        << storm::numbers::convert<double>(valueValuationPair.first) << ") at [" << valuationStr.str()
                                                         << "].\n");
     } else {
         STORM_PRINT_AND_LOG("No satisfying result found.\n");
@@ -69,7 +69,7 @@ std::shared_ptr<FeasibilitySynthesisTask const> createFeasibilitySynthesisTaskFr
                         "When a bound is given, the guarantee is that this bound will be satisfied by a solution.");
     } else {
         if (feasibilitySettings.hasOptimalValueGuaranteeBeenSet()) {
-            t.setMaximalAllowedGap(storm::utility::convertNumber<storm::RationalNumber>(feasibilitySettings.getOptimalValueGuarantee()));
+            t.setMaximalAllowedGap(storm::numbers::convert<storm::RationalNumber>(feasibilitySettings.getOptimalValueGuarantee()));
             t.setMaximalAllowedGapIsRelative(!feasibilitySettings.isAbsolutePrecisionSet());
         }
         STORM_LOG_THROW(feasibilitySettings.isParameterDirectionSet(), storm::exceptions::NotSupportedException,
@@ -159,7 +159,7 @@ void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType
         for (auto const& var : region->getVariables()) {
             auto lowerBound = region->getLowerBoundary(var);
             auto upperBound = region->getUpperBoundary(var);
-            if (storm::utility::isZero(lowerBound) || storm::utility::isOne(upperBound)) {
+            if (storm::numbers::isZero(lowerBound) || storm::numbers::isOne(upperBound)) {
                 hasZeroBound = true;
                 break;
             }
@@ -184,7 +184,7 @@ void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType
             if (startPoint) {
                 instantiationAndValue.first[param] = startPoint->at(param);
             } else {
-                instantiationAndValue.first[param] = utility::convertNumber<RationalFunction::CoeffType>(0.5);
+                instantiationAndValue.first[param] = storm::numbers::convert<RationalFunction::CoeffType>(0.5);
             }
         }
     }
@@ -229,7 +229,7 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
         storm::utility::Stopwatch watch(true);
         auto const& settings = storm::api::RefinementOptions<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
                                                                         engine, regionSplittingStrategy};
-        auto valueValuation = storm::api::computeExtremalValue<ValueType>(settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
+        auto valueValuation = storm::api::computeExtremalValue<ValueType>(settings, task->getRegion(), direction, storm::numbers::zero<ValueType>(),
                                                                           !task->isMaxGapRelative(), task->getBound().getInvertedBound());
         watch.stop();
 
@@ -238,11 +238,11 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
         STORM_LOG_THROW(task->getMaximalAllowedGap() != std::nullopt, storm::exceptions::NotSupportedException,
                         "Without a bound, PLA requires an explicit target in form of a guarantee.");
 
-        ValueType precision = storm::utility::convertNumber<ValueType>(task->getMaximalAllowedGap().value());
+        ValueType precision = storm::numbers::convert<ValueType>(task->getMaximalAllowedGap().value());
         storm::utility::Stopwatch watch(true);
         auto const& settings = storm::api::RefinementOptions<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
                                                                         engine, regionSplittingStrategy};
-        auto valueValuation = storm::api::computeExtremalValue<ValueType>(settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
+        auto valueValuation = storm::api::computeExtremalValue<ValueType>(settings, task->getRegion(), direction, storm::numbers::zero<ValueType>(),
                                                                           !task->isMaxGapRelative(), std::nullopt);
         watch.stop();
 

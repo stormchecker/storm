@@ -24,7 +24,7 @@ void IterationHelper<ValueType>::swipeWeights() {
     while (i > 0) {
         --i;
 
-        auto den = storm::utility::convertNumber<ValueType>(rowGroupIndices[i + 1] - rowGroupIndices[i]);
+        auto den = storm::numbers::convert<ValueType>(rowGroupIndices[i + 1] - rowGroupIndices[i]);
         auto weightOnGroup = weights[i] / den;
         weights[i] = 0;
 

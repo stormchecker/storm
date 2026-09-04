@@ -17,10 +17,10 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/StateLabeling.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/FlexibleSparseMatrix.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
@@ -115,7 +115,7 @@ Annotation Annotation::operator*(RationalFunctionCoefficient n) const {
 void Annotation::addAnnotationTimesConstant(Annotation const& other, RationalFunctionCoefficient timesConstant) {
     for (auto const& [info, constant] : other) {
         if (!this->count(info)) {
-            this->emplace(info, utility::zero<RationalFunctionCoefficient>());
+            this->emplace(info, storm::numbers::zero<RationalFunctionCoefficient>());
         }
         this->at(info) += constant * timesConstant;
     }
@@ -185,13 +185,13 @@ Interval Annotation::evaluateOnIntervalMidpointTheorem(Interval input, bool high
         return evaluate<Interval>(input);
     } else {
         Interval boundDerivative = derivativeOfThis->evaluateOnIntervalMidpointTheorem(input, higherOrderBounds);
-        double maxSlope = utility::max(utility::abs(boundDerivative.lower()), utility::abs(boundDerivative.upper()));
+        double maxSlope = storm::numbers::max(storm::numbers::abs(boundDerivative.lower()), storm::numbers::abs(boundDerivative.upper()));
         double fMid = evaluate<double>(input.center());
         double fMin = fMid - (input.diameter() / 2) * maxSlope;
         double fMax = fMid + (input.diameter() / 2) * maxSlope;
         if (higherOrderBounds) {
             Interval boundsHere = evaluate<Interval>(input);
-            return Interval(utility::max(fMin, boundsHere.lower()), utility::min(fMax, boundsHere.upper()));
+            return Interval(storm::numbers::max(fMin, boundsHere.lower()), storm::numbers::min(fMax, boundsHere.upper()));
         } else {
             return Interval(fMin, fMax);
         }
@@ -214,7 +214,7 @@ void Annotation::computeDerivative(uint64_t nth) {
                 continue;
             }
 
-            RationalFunctionCoefficient newConstant = constant * utility::convertNumber<RationalFunctionCoefficient>(info[i]);
+            RationalFunctionCoefficient newConstant = constant * storm::numbers::convert<RationalFunctionCoefficient>(info[i]);
 
             std::vector<uint64_t> insert(info);
             insert[i]--;
@@ -311,7 +311,7 @@ std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgra
 
             // First we find out whether the state is acyclic
             for (auto const& entry : transitionMatrix.getRow(state)) {
-                if (!storm::utility::isZero(entry.getValue())) {
+                if (!storm::numbers::isZero(entry.getValue())) {
                     if (subgraph.count(entry.getColumn()) && !acyclicStates.count(entry.getColumn()) && !bottomStates.count(entry.getColumn())) {
                         // The state has been visited before but is not known to be acyclic.
                         isAcyclic = false;
@@ -326,7 +326,7 @@ std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgra
             }
 
             for (auto const& entry : transitionMatrix.getRow(state)) {
-                if (!storm::utility::isZero(entry.getValue())) {
+                if (!storm::numbers::isZero(entry.getValue())) {
                     STORM_LOG_ASSERT(entry.getValue().isConstant() ||
                                          (entry.getValue().gatherVariables().size() == 1 && *entry.getValue().gatherVariables().begin() == parameter),
                                      "Called findSubgraph with incorrect parameter.");
@@ -345,7 +345,7 @@ std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgra
                         // Also continue searching if there is only a transition with a one coming up, we can skip that
                         // This is nice because we can possibly combine more transitions later
                         bool onlyHasOne = transitionMatrix.getRow(entry.getColumn()).size() == 1 &&
-                                          transitionMatrix.getRow(entry.getColumn()).begin()->getValue() == utility::one<RationalFunction>();
+                                          transitionMatrix.getRow(entry.getColumn()).begin()->getValue() == storm::numbers::one<RationalFunction>();
                         continueSearching |= onlyHasOne;
 
                         // Don't mess with rewards
@@ -383,7 +383,7 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
     models::sparse::Dtmc<RationalFunction> dtmc(model);
     storage::SparseMatrix<RationalFunction> transitionMatrix = dtmc.getTransitionMatrix();
 
-    STORM_LOG_ASSERT(transitionMatrix.isProbabilistic(storm::utility::zero<RationalFunction>()), "Gave big-step a nonprobabilistic transition matrix.");
+    STORM_LOG_ASSERT(transitionMatrix.isProbabilistic(storm::numbers::zero<RationalFunction>()), "Gave big-step a nonprobabilistic transition matrix.");
 
     uint64_t initialState = dtmc.getInitialStates().getNextSetIndex(0);
 
@@ -580,7 +580,7 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
                     }
                     // New states have zero reward
                     if (stateRewardVector) {
-                        stateRewardVector->push_back(storm::utility::zero<RationalFunction>());
+                        stateRewardVector->push_back(storm::numbers::zero<RationalFunction>());
                     }
                 }
                 updateTreeStates(treeStates, treeStatesNeedUpdate, flexibleMatrix, backwardsTransitions, allParameters, stateRewardVector,
@@ -647,7 +647,7 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
         newDTMC.addRewardModel(*stateRewardName, newRewardModel);
     }
 
-    STORM_LOG_ASSERT(newDTMC.getTransitionMatrix().isProbabilistic(storm::utility::zero<RationalFunction>()),
+    STORM_LOG_ASSERT(newDTMC.getTransitionMatrix().isProbabilistic(storm::numbers::zero<RationalFunction>()),
                      "Internal error: resulting matrix not probabilistic!");
 
     lastSavedAnnotations.clear();
@@ -680,7 +680,7 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
 
     annotations.emplace(start, Annotation(parameter, polynomialCache));
     // We go with probability one from the start to the start
-    annotations.at(start)[std::vector<uint64_t>()] = utility::one<RationalFunctionCoefficient>();
+    annotations.at(start)[std::vector<uint64_t>()] = storm::numbers::one<RationalFunctionCoefficient>();
 
     while (!activeStates.empty()) {
         auto state = activeStates.front();
@@ -832,7 +832,7 @@ std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(const std::map
 
             Annotation newAnnotation(parameter, polynomialCache);
 
-            RationalFunctionCoefficient constantPart = utility::zero<RationalFunctionCoefficient>();
+            RationalFunctionCoefficient constantPart = storm::numbers::zero<RationalFunctionCoefficient>();
             for (auto const& [state, transition] : transitions) {
                 constantPart += transition;
             }

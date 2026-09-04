@@ -267,11 +267,11 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
                                0.10981585085391998};
 
     for (uint_fast64_t i = 0; i < 41; i++) {
-        ASSERT_NEAR(storm::utility::convertNumber<double>(walk[i].position[badCVar]), badCValues[i], 1e-4);
-        ASSERT_NEAR(storm::utility::convertNumber<double>(walk[i].position[pfVar]), pfValues[i], 1e-4);
+        ASSERT_NEAR(storm::numbers::convert<double>(walk[i].position[badCVar]), badCValues[i], 1e-4);
+        ASSERT_NEAR(storm::numbers::convert<double>(walk[i].position[pfVar]), pfValues[i], 1e-4);
     }
 
-    ASSERT_NEAR(storm::utility::convertNumber<double>(doubleInstantiation.second), 0, 1e-6);
+    ASSERT_NEAR(storm::numbers::convert<double>(doubleInstantiation.second), 0, 1e-6);
 
     // Same thing with RAdam
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> radamChecker(
@@ -366,8 +366,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
                                     0.4618639349937439};
 
     for (uint_fast64_t i = 0; i < 41; i++) {
-        ASSERT_NEAR(storm::utility::convertNumber<double>(radamWalk[i].position[badCVar]), badCValuesRadam[i], 1e-5);
-        ASSERT_NEAR(storm::utility::convertNumber<double>(radamWalk[i].position[pfVar]), pfValuesRadam[i], 1e-5);
+        ASSERT_NEAR(storm::numbers::convert<double>(radamWalk[i].position[badCVar]), badCValuesRadam[i], 1e-5);
+        ASSERT_NEAR(storm::numbers::convert<double>(radamWalk[i].position[pfVar]), pfValuesRadam[i], 1e-5);
     }
 
     // Same thing with momentum
@@ -394,8 +394,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
         0.4438934028148651,  0.44143298268318176, 0.43907299637794495, 0.43684011697769165, 0.43475744128227234, 0.43284183740615845};
 
     for (uint_fast64_t i = 0; i < 41; i++) {
-        ASSERT_NEAR(storm::utility::convertNumber<double>(momentumWalk[i].position[badCVar]), badCValuesMomentum[i], 1e-5);
-        ASSERT_NEAR(storm::utility::convertNumber<double>(momentumWalk[i].position[pfVar]), pfValuesMomentum[i], 1e-5);
+        ASSERT_NEAR(storm::numbers::convert<double>(momentumWalk[i].position[badCVar]), badCValuesMomentum[i], 1e-5);
+        ASSERT_NEAR(storm::numbers::convert<double>(momentumWalk[i].position[pfVar]), pfValuesMomentum[i], 1e-5);
     }
 
     // Same thing with nesterov
@@ -422,7 +422,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
         0.440836101770401,   0.43864157795906067, 0.4366067945957184,  0.4347473978996277,  0.433069109916687,   0.43156614899635315};
 
     for (uint_fast64_t i = 0; i < 41; i++) {
-        ASSERT_NEAR(storm::utility::convertNumber<double>(nesterovWalk[i].position[badCVar]), badCValuesNesterov[i], 1e-5);
-        ASSERT_NEAR(storm::utility::convertNumber<double>(nesterovWalk[i].position[pfVar]), pfValuesNesterov[i], 1e-5);
+        ASSERT_NEAR(storm::numbers::convert<double>(nesterovWalk[i].position[badCVar]), badCValuesNesterov[i], 1e-5);
+        ASSERT_NEAR(storm::numbers::convert<double>(nesterovWalk[i].position[pfVar]), pfValuesNesterov[i], 1e-5);
     }
 }

@@ -138,7 +138,7 @@ void JaniGSPNBuilder::addEdges(storm::jani::Automaton& automaton, uint64_t locId
         lastPriorityGuard = lastPriorityGuard || guard;
     }
     for (auto const& trans : gspn.getTimedTransitions()) {
-        if (storm::utility::isZero(trans.getRate())) {
+        if (storm::numbers::isZero(trans.getRate())) {
             STORM_LOG_WARN("Transitions with rate zero are not allowed in JANI. Skipping this transition");
             continue;
         }

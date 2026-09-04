@@ -5,9 +5,9 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/transformer/SubsystemBuilder.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -128,7 +128,7 @@ void MarkovAutomaton<ValueType, RewardModelType>::close() {
                 keptChoices.set(this->getTransitionMatrix().getRowGroupIndices()[state], false);
                 // Afterwards, the state will no longer be Markovian.
                 this->markovianStates.set(state, false);
-                exitRates[state] = storm::utility::zero<ValueType>();
+                exitRates[state] = storm::numbers::zero<ValueType>();
             }
         }
 
@@ -166,10 +166,10 @@ void MarkovAutomaton<ValueType, RewardModelType>::turnRatesToProbabilities() {
             ++row;
         } else {
             if (assertRates) {
-                STORM_LOG_THROW(storm::utility::isZero(this->exitRates[state]), storm::exceptions::InvalidArgumentException,
+                STORM_LOG_THROW(storm::numbers::isZero(this->exitRates[state]), storm::exceptions::InvalidArgumentException,
                                 "The specified exit rate for (non-Markovian) choice should be 0.");
             } else {
-                this->exitRates.push_back(storm::utility::zero<ValueType>());
+                this->exitRates.push_back(storm::numbers::zero<ValueType>());
             }
         }
     }

@@ -55,16 +55,16 @@ std::unordered_map<uint32_t, std::vector<storm::RationalFunction>> ApplyFiniteSc
         auto it = res.find(observation);
         if (it == res.end()) {
             std::vector<storm::RationalFunction> weights;
-            storm::RationalFunction collected = storm::utility::one<storm::RationalFunction>();
-            storm::RationalFunction lastWeight = storm::utility::one<storm::RationalFunction>();
+            storm::RationalFunction collected = storm::numbers::one<storm::RationalFunction>();
+            storm::RationalFunction lastWeight = storm::numbers::one<storm::RationalFunction>();
             for (uint64_t a = 0; a < pomdp.getNumberOfChoices(state) - 1; ++a) {
                 std::string varName = "p" + std::to_string(observation) + "_" + std::to_string(a);
                 storm::RationalFunction var = ratFuncConstructor.translate(storm::createRFVariable(varName));
                 if (applicationMode == PomdpFscApplicationMode::SIMPLE_LINEAR) {
                     weights.push_back(collected * var);
-                    collected *= storm::utility::one<storm::RationalFunction>() - var;
+                    collected *= storm::numbers::one<storm::RationalFunction>() - var;
                 } else if (applicationMode == PomdpFscApplicationMode::SIMPLE_LINEAR_INVERSE) {
-                    weights.push_back(collected * (storm::utility::one<storm::RationalFunction>() - var));
+                    weights.push_back(collected * (storm::numbers::one<storm::RationalFunction>() - var));
                     collected *= var;
                 } else if (applicationMode == PomdpFscApplicationMode::STANDARD) {
                     weights.push_back(var);
@@ -94,16 +94,16 @@ std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> ApplyFini
         auto const& weights = observationChoiceWeights.at(pomdp.getObservation(state));
         std::map<uint64_t, storm::RationalFunction> weightedTransitions;
         for (uint64_t action = 0; action < pomdp.getNumberOfChoices(state); ++action) {
-            auto ratSum = storm::utility::zero<storm::RationalFunction>();
+            auto ratSum = storm::numbers::zero<storm::RationalFunction>();
             uint64_t nrEntries = pomdp.getTransitionMatrix().getRow(state, action).getNumberOfEntries();
             uint64_t currEntry = 1;
             for (auto const& entry : pomdp.getTransitionMatrix().getRow(state, action)) {
                 auto it = weightedTransitions.find(entry.getColumn());
-                auto entryVal = storm::utility::convertNumber<storm::RationalFunction>(entry.getValue());
+                auto entryVal = storm::numbers::convert<storm::RationalFunction>(entry.getValue());
                 ratSum += entryVal;
-                if (currEntry == nrEntries && storm::utility::one<storm::RationalFunction>() - ratSum != storm::utility::zero<storm::RationalFunction>()) {
+                if (currEntry == nrEntries && storm::numbers::one<storm::RationalFunction>() - ratSum != storm::numbers::zero<storm::RationalFunction>()) {
                     // In case there are numeric problems with the conversion, we simply add the lost mass to the last value
-                    entryVal += (storm::utility::one<storm::RationalFunction>() - ratSum);
+                    entryVal += (storm::numbers::one<storm::RationalFunction>() - ratSum);
                 }
                 if (it == weightedTransitions.end()) {
                     weightedTransitions[entry.getColumn()] = entryVal * weights[action];
@@ -125,7 +125,7 @@ std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> ApplyFini
         if (pomdpRewardModel.second.hasStateRewards()) {
             stateRewards = storm::utility::vector::convertNumericVector<storm::RationalFunction>(pomdpRewardModel.second.getStateRewardVector());
         } else {
-            stateRewards.resize(nrStates, storm::utility::zero<storm::RationalFunction>());
+            stateRewards.resize(nrStates, storm::numbers::zero<storm::RationalFunction>());
         }
         if (pomdpRewardModel.second.hasStateActionRewards()) {
             std::vector<ValueType> pomdpActionRewards = pomdpRewardModel.second.getStateActionRewardVector();
@@ -134,8 +134,8 @@ std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> ApplyFini
                 auto const& weights = observationChoiceWeights.at(pomdp.getObservation(state));
                 uint64_t offset = pomdp.getTransitionMatrix().getRowGroupIndices()[state];
                 for (uint64_t action = 0; action < pomdp.getNumberOfChoices(state); ++action) {
-                    if (!storm::utility::isZero(pomdpActionRewards[offset + action])) {
-                        stateReward += storm::utility::convertNumber<storm::RationalFunction>(pomdpActionRewards[offset + action]) * weights[action];
+                    if (!storm::numbers::isZero(pomdpActionRewards[offset + action])) {
+                        stateReward += storm::numbers::convert<storm::RationalFunction>(pomdpActionRewards[offset + action]) * weights[action];
                     }
                 }
             }

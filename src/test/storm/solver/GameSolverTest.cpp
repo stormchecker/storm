@@ -16,7 +16,7 @@ class DoubleViEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().game().setMethod(storm::solver::GameMethod::ValueIteration);
-        env.solver().game().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().game().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         return env;
     }
 };
@@ -28,7 +28,7 @@ class DoublePiEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().game().setMethod(storm::solver::GameMethod::PolicyIteration);
-        env.solver().game().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().game().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
         env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::Jacobi);
         env.solver().setLinearEquationSolverPrecision(env.solver().game().getPrecision());
@@ -59,7 +59,7 @@ class GameSolverTest : public ::testing::Test {
         return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");
     }
     ValueType parseNumber(std::string const& input) const {
-        return storm::utility::convertNumber<ValueType>(input);
+        return storm::numbers::convert<ValueType>(input);
     }
 
    private:

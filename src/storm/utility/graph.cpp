@@ -12,13 +12,13 @@
 #include "storm/models/symbolic/DeterministicModel.h"
 #include "storm/models/symbolic/NondeterministicModel.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/ExplicitGameStrategyPair.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -30,7 +30,7 @@ storm::storage::BitVector getReachableOneStep(storm::storage::SparseMatrix<T> co
     storm::storage::BitVector result{initialStates.size()};
     for (uint64_t currentState : initialStates) {
         for (auto const& successor : transitionMatrix.getRowGroup(currentState)) {
-            STORM_LOG_ASSERT(!storm::utility::isZero(successor.getValue()), "Matrix should not have zero entries.");
+            STORM_LOG_ASSERT(!storm::numbers::isZero(successor.getValue()), "Matrix should not have zero entries.");
             result.set(successor.getColumn());
         }
     }
@@ -90,7 +90,7 @@ storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> con
             for (auto const& successor : transitionMatrix.getRow(row)) {
                 // Only explore the state if the transition was actually there and the successor has not yet
                 // been visited.
-                if (!storm::utility::isZero(successor.getValue()) &&
+                if (!storm::numbers::isZero(successor.getValue()) &&
                     (!reachableStates.get(successor.getColumn()) || (useStepBound && remainingSteps[successor.getColumn()] < currentStepBound - 1))) {
                     // If the successor is one of the target states, we need to include it, but must not explore
                     // it further.
@@ -151,7 +151,7 @@ bool hasCycle(storm::storage::SparseMatrix<T> const& transitionMatrix, boost::op
             if (unexploredStates.get(state)) {
                 unexploredStates.set(state, false);
                 for (auto const& entry : transitionMatrix.getRowGroup(state)) {
-                    if (!storm::utility::isZero(entry.getValue())) {
+                    if (!storm::numbers::isZero(entry.getValue())) {
                         if (unexploredStates.get(entry.getColumn())) {
                             dfsStack.push_back(entry.getColumn());
                         } else {

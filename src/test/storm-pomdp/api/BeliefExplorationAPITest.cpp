@@ -16,12 +16,12 @@ class DefaultDoubleVIEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setPrecision(storm::numbers::convert<storm::RationalNumber>(1e-6));
         return env;
     }
     static bool const isExactModelChecking = false;
     static ValueType precision() {
-        return storm::utility::convertNumber<ValueType>(0.12);
+        return storm::numbers::convert<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
     static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */ }
 };
@@ -43,7 +43,7 @@ class BeliefExplorationAPITest : public ::testing::Test {
     }
 
     ValueType parseNumber(std::string const& str) {
-        return storm::utility::convertNumber<ValueType>(str);
+        return storm::numbers::convert<ValueType>(str);
     }
     struct Input {
         std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> model;
@@ -68,9 +68,9 @@ class BeliefExplorationAPITest : public ::testing::Test {
     }
     ValueType modelcheckingPrecision() const {
         if (TestType::isExactModelChecking) {
-            return storm::utility::zero<ValueType>();
+            return storm::numbers::zero<ValueType>();
         } else {
-            return storm::utility::convertNumber<ValueType>(1e-6);
+            return storm::numbers::convert<ValueType>(1e-6);
         }
     }
 
@@ -298,7 +298,7 @@ TYPED_TEST(BeliefExplorationAPITest, simple2_Rmax) {
 
     result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 10, additionalVals);
 
-    EXPECT_LE(result.lowerBound, storm::utility::one<ValueType>() + this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, storm::numbers::one<ValueType>() + this->modelcheckingPrecision());
 }
 
 TYPED_TEST(BeliefExplorationAPITest, noHeuristicValues) {
@@ -313,5 +313,5 @@ TYPED_TEST(BeliefExplorationAPITest, noHeuristicValues) {
 
     auto result = storm::pomdp::api::underapproximateWithoutHeuristicValues<ValueType>(data.model, task, 10, additionalVals);
 
-    EXPECT_LE(result.lowerBound, storm::utility::one<ValueType>() + this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, storm::numbers::one<ValueType>() + this->modelcheckingPrecision());
 }

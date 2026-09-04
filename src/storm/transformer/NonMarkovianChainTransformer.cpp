@@ -7,10 +7,10 @@
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
 #include "storm/storage/FlexibleSparseMatrix.h"
 #include "storm/storage/sparse/ModelComponents.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -43,7 +43,7 @@ std::shared_ptr<models::sparse::Model<ValueType, RewardModelType>> NonMarkovianC
     STORM_LOG_WARN_COND(!ma->hasChoiceOrigins(), "Choice origins are not preserved in chain elimination.");
 
     // Eliminate all probabilistic states by state elimination
-    auto actionRewards = std::vector<ValueType>(ma->getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
+    auto actionRewards = std::vector<ValueType>(ma->getTransitionMatrix().getRowCount(), storm::numbers::zero<ValueType>());
     storm::solver::stateelimination::NondeterministicModelStateEliminator<ValueType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions,
                                                                                                      actionRewards);
     storm::storage::BitVector keepStates(ma->getNumberOfStates(), true);

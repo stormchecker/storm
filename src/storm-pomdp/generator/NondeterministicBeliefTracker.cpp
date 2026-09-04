@@ -1,10 +1,10 @@
 
 #include "storm-pomdp/generator/NondeterministicBeliefTracker.h"
+#include "storm/numbers/ConstantsComparator.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/geometry/ReduceVertexCloud.h"
 #include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
-#include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/Stopwatch.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -80,7 +80,7 @@ template<typename ValueType>
 SparseBeliefState<ValueType>::SparseBeliefState(std::shared_ptr<BeliefStateManager<ValueType>> const& manager, uint64_t state)
     : manager(manager), belief(), id(0), prevId(0) {
     id = manager->getFreshId();
-    belief[state] = storm::utility::one<ValueType>();
+    belief[state] = storm::numbers::one<ValueType>();
     risk = manager->getRisk(state);
 }
 
@@ -136,7 +136,7 @@ bool operator==(SparseBeliefState<ValueType> const& lhs, SparseBeliefState<Value
     if (lhs.belief.size() != rhs.belief.size()) {
         return false;
     }
-    storm::utility::ConstantsComparator<ValueType> cmp(storm::utility::convertNumber<ValueType>(0.00001), true);
+    storm::numbers::ConstantsComparator<ValueType> cmp(storm::numbers::convert<ValueType>(0.00001), true);
     auto lhsIt = lhs.belief.begin();
     auto rhsIt = rhs.belief.begin();
     while (lhsIt != lhs.belief.end()) {
@@ -152,7 +152,7 @@ bool operator==(SparseBeliefState<ValueType> const& lhs, SparseBeliefState<Value
 
 template<typename ValueType>
 void SparseBeliefState<ValueType>::update(uint32_t newObservation, std::unordered_set<SparseBeliefState<ValueType>>& previousBeliefs) const {
-    updateHelper({{}}, {storm::utility::zero<ValueType>()}, belief.begin(), newObservation, previousBeliefs);
+    updateHelper({{}}, {storm::numbers::zero<ValueType>()}, belief.begin(), newObservation, previousBeliefs);
 }
 
 template<typename ValueType>
@@ -180,14 +180,14 @@ void SparseBeliefState<ValueType>::updateHelper(std::vector<std::map<uint64_t, V
         for (uint64_t i = 0; i < partialBeliefs.size(); ++i) {
             auto const& partialBelief = partialBeliefs[i];
             auto const& sum = sums[i];
-            if (storm::utility::isZero(sum)) {
+            if (storm::numbers::isZero(sum)) {
                 continue;
             }
             std::size_t newHash = 0;
-            ValueType risk = storm::utility::zero<ValueType>();
+            ValueType risk = storm::numbers::zero<ValueType>();
             std::map<uint64_t, ValueType> finalBelief;
             for (auto& entry : partialBelief) {
-                STORM_LOG_ASSERT(!storm::utility::isZero(sum), "Expected non-zero sum.");
+                STORM_LOG_ASSERT(!storm::numbers::isZero(sum), "Expected non-zero sum.");
                 finalBelief[entry.first] = entry.second / sum;
                 // boost::hash_combine(newHash, std::hash<ValueType>()(entry.second));
                 boost::hash_combine(newHash, entry.first);

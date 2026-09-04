@@ -37,7 +37,7 @@ std::shared_ptr<storm::models::sparse::Dtmc<ValueType, RewardModelType>> Continu
         std::vector<ValueType> timeRewardVector;
         timeRewardVector.reserve(exitRates.size());
         for (auto const& r : exitRates) {
-            timeRewardVector.push_back(storm::utility::one<ValueType>() / r);
+            timeRewardVector.push_back(storm::numbers::one<ValueType>() / r);
         }
         RewardModelType timeRewards(std::move(timeRewardVector));
         auto insertRes = dtmcComponents.rewardModels.insert(std::make_pair(*timeRewardModelName, std::move(timeRewards)));
@@ -72,7 +72,7 @@ std::shared_ptr<storm::models::sparse::Dtmc<ValueType, RewardModelType>> Continu
     if (timeRewardModelName) {
         // Invert the exit rate vector in place
         storm::utility::vector::applyPointwise<ValueType, ValueType>(exitRates, exitRates,
-                                                                     [&](ValueType const& r) -> ValueType { return storm::utility::one<ValueType>() / r; });
+                                                                     [&](ValueType const& r) -> ValueType { return storm::numbers::one<ValueType>() / r; });
         RewardModelType timeRewards(std::move(exitRates));
         auto insertRes = dtmcComponents.rewardModels.insert(std::make_pair(*timeRewardModelName, std::move(timeRewards)));
         STORM_LOG_THROW(insertRes.second, storm::exceptions::InvalidArgumentException,
@@ -137,7 +137,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType, RewardModelType>> Continuo
                 if (ma.getMarkovianStates().get(state)) {
                     stateRewards[state] /= exitRates[state];
                 } else {
-                    stateRewards[state] = storm::utility::zero<ValueType>();
+                    stateRewards[state] = storm::numbers::zero<ValueType>();
                 }
             }
         }
@@ -145,9 +145,9 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType, RewardModelType>> Continuo
 
     if (timeRewardModelName) {
         // Invert the exit rate vector. Avoid division by zero at probabilistic states
-        std::vector<ValueType> timeRewardVector(exitRates.size(), storm::utility::zero<ValueType>());
+        std::vector<ValueType> timeRewardVector(exitRates.size(), storm::numbers::zero<ValueType>());
         for (auto state : ma.getMarkovianStates()) {
-            timeRewardVector[state] = storm::utility::one<ValueType>() / exitRates[state];
+            timeRewardVector[state] = storm::numbers::one<ValueType>() / exitRates[state];
         }
         RewardModelType timeRewards(std::move(timeRewardVector));
         auto insertRes = mdpComponents.rewardModels.insert(std::make_pair(*timeRewardModelName, std::move(timeRewards)));
@@ -181,7 +181,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType, RewardModelType>> Continuo
                 if (ma.getMarkovianStates().get(state)) {
                     stateRewards[state] /= exitRates[state];
                 } else {
-                    stateRewards[state] = storm::utility::zero<ValueType>();
+                    stateRewards[state] = storm::numbers::zero<ValueType>();
                 }
             }
         }
@@ -189,9 +189,9 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType, RewardModelType>> Continuo
 
     if (timeRewardModelName) {
         // Invert the exit rate vector. Avoid division by zero at probabilistic states
-        std::vector<ValueType> timeRewardVector(exitRates.size(), storm::utility::zero<ValueType>());
+        std::vector<ValueType> timeRewardVector(exitRates.size(), storm::numbers::zero<ValueType>());
         for (auto state : ma.getMarkovianStates()) {
-            timeRewardVector[state] = storm::utility::one<ValueType>() / exitRates[state];
+            timeRewardVector[state] = storm::numbers::one<ValueType>() / exitRates[state];
         }
         RewardModelType timeRewards(std::move(timeRewardVector));
         auto insertRes = mdpComponents.rewardModels.insert(std::make_pair(*timeRewardModelName, std::move(timeRewards)));

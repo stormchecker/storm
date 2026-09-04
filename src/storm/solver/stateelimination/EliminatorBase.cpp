@@ -2,8 +2,8 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidStateException.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/stateelimination/StateEliminationUtility.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -24,7 +24,7 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
 
     // Start by finding the entry in the given column.
     bool hasEntryInColumn = false;
-    ValueType columnValue = storm::utility::zero<ValueType>();
+    ValueType columnValue = storm::numbers::zero<ValueType>();
     FlexibleRowType& entriesInRow = matrix.getRow(row);
     for (auto entryIt = entriesInRow.begin(), entryIte = entriesInRow.end(); entryIt != entryIte; ++entryIt) {
         if (entryIt->getColumn() >= column) {
@@ -47,19 +47,19 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
     STORM_LOG_TRACE((hasEntryInColumn ? "State has entry in column." : "State does not have entry in column."));
     if (Mode == ScalingMode::Divide) {
         STORM_LOG_ASSERT(hasEntryInColumn, "The scaling mode 'divide' requires an element in the given column.");
-        STORM_LOG_ASSERT(storm::utility::isZero(columnValue), "The scaling mode 'divide' requires a non-zero element in the given column.");
-        columnValue = storm::utility::one<ValueType>() / columnValue;
+        STORM_LOG_ASSERT(storm::numbers::isZero(columnValue), "The scaling mode 'divide' requires a non-zero element in the given column.");
+        columnValue = storm::numbers::one<ValueType>() / columnValue;
     } else if (Mode == ScalingMode::DivideOneMinus) {
         if (hasEntryInColumn) {
-            if (storm::utility::isOne(columnValue)) {
+            if (storm::numbers::isOne(columnValue)) {
                 // The state is absorbing, i.e., it has a self-loop with probability one. In this case, the
                 // solution for this state is zero (least fixed point), and it does not contribute anything to
                 // its predecessors. Record this by setting the scaling factor to zero.
                 STORM_LOG_TRACE("State is absorbing, its value will be zero.");
-                columnValue = storm::utility::zero<ValueType>();
+                columnValue = storm::numbers::zero<ValueType>();
             } else {
-                columnValue = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - columnValue);
-                columnValue = storm::utility::simplify(columnValue);
+                columnValue = storm::numbers::one<ValueType>() / (storm::numbers::one<ValueType>() - columnValue);
+                columnValue = storm::numbers::simplify(columnValue);
             }
         }
     }
@@ -68,7 +68,7 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
         for (auto entryIt = entriesInRow.begin(), entryIte = entriesInRow.end(); entryIt != entryIte; ++entryIt) {
             // Only scale the entries in a different column.
             if (entryIt->getColumn() != column) {
-                entryIt->setValue(storm::utility::simplify((ValueType)(entryIt->getValue() * columnValue)));
+                entryIt->setValue(storm::numbers::simplify((ValueType)(entryIt->getValue() * columnValue)));
             }
         }
         updateValue(row, columnValue);
@@ -118,7 +118,7 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
         STORM_LOG_THROW(multiplyElement != predecessorForwardTransitions.end(), storm::exceptions::InvalidStateException,
                         "No probability for successor found.");
         ValueType multiplyFactor = multiplyElement->getValue();
-        multiplyElement->setValue(storm::utility::zero<ValueType>());
+        multiplyElement->setValue(storm::numbers::zero<ValueType>());
 
         // At this point, we need to update the (forward) transitions of the predecessor.
         FlexibleRowIterator first1 = predecessorForwardTransitions.begin();
@@ -149,7 +149,7 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
                 break;
             }
             if (first2->getColumn() < first1->getColumn()) {
-                ValueType successorValue = storm::utility::simplify<ValueType>((first2->getValue() * multiplyFactor));
+                ValueType successorValue = storm::numbers::simplify<ValueType>((first2->getValue() * multiplyFactor));
                 *result = MatrixEntry(first2->getColumn(), successorValue);
                 newBackwardEntries[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, successorValue);
                 ++first2;
@@ -159,8 +159,8 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
                 ++first1;
             } else {
                 ValueType sprod = multiplyFactor * first2->getValue();
-                ValueType sum = first1->getValue() + storm::utility::simplify(sprod);
-                auto probability = storm::utility::simplify(sum);
+                ValueType sum = first1->getValue() + storm::numbers::simplify(sprod);
+                auto probability = storm::numbers::simplify(sum);
                 *result = MatrixEntry(first1->getColumn(), probability);
                 newBackwardEntries[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, probability);
                 ++first1;
@@ -170,7 +170,7 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
         }
         for (; first2 != last2; ++first2) {
             if (first2->getColumn() != column) {
-                ValueType probability = storm::utility::simplify<ValueType>(first2->getValue() * multiplyFactor);
+                ValueType probability = storm::numbers::simplify<ValueType>(first2->getValue() * multiplyFactor);
                 *result = MatrixEntry(first2->getColumn(), probability);
                 newBackwardEntries[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, probability);
                 ++successorOffsetInNewBackwardTransitions;
@@ -268,7 +268,7 @@ template<typename ValueType, ScalingMode Mode>
 void EliminatorBase<ValueType, Mode>::eliminateLoop(uint64_t state) {
     // Start by finding value of the selfloop.
     bool hasEntryInColumn = false;
-    ValueType columnValue = storm::utility::zero<ValueType>();
+    ValueType columnValue = storm::numbers::zero<ValueType>();
     FlexibleRowType& entriesInRow = matrix.getRow(state);
     for (auto entryIt = entriesInRow.begin(), entryIte = entriesInRow.end(); entryIt != entryIte; ++entryIt) {
         if (entryIt->getColumn() == state) {
@@ -282,18 +282,18 @@ void EliminatorBase<ValueType, Mode>::eliminateLoop(uint64_t state) {
     STORM_LOG_TRACE((hasEntryInColumn ? "State has entry in column." : "State does not have entry in column."));
     if (Mode == ScalingMode::Divide) {
         STORM_LOG_ASSERT(hasEntryInColumn, "The scaling mode 'divide' requires an element in the given column.");
-        STORM_LOG_ASSERT(storm::utility::isZero(columnValue), "The scaling mode 'divide' requires a non-zero element in the given column.");
-        columnValue = storm::utility::one<ValueType>() / columnValue;
+        STORM_LOG_ASSERT(storm::numbers::isZero(columnValue), "The scaling mode 'divide' requires a non-zero element in the given column.");
+        columnValue = storm::numbers::one<ValueType>() / columnValue;
     } else if (Mode == ScalingMode::DivideOneMinus) {
         if (hasEntryInColumn) {
-            if (storm::utility::isOne(columnValue)) {
+            if (storm::numbers::isOne(columnValue)) {
                 // The state is absorbing, i.e., it has a self-loop with probability one. Its value is zero
                 // (least fixed point) and it does not contribute anything to its predecessors.
                 STORM_LOG_TRACE("State is absorbing, its value will be zero.");
-                columnValue = storm::utility::zero<ValueType>();
+                columnValue = storm::numbers::zero<ValueType>();
             } else {
-                columnValue = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - columnValue);
-                columnValue = storm::utility::simplify(columnValue);
+                columnValue = storm::numbers::one<ValueType>() / (storm::numbers::one<ValueType>() - columnValue);
+                columnValue = storm::numbers::simplify(columnValue);
             }
         }
     }
@@ -302,9 +302,9 @@ void EliminatorBase<ValueType, Mode>::eliminateLoop(uint64_t state) {
         for (auto entryIt = entriesInRow.begin(), entryIte = entriesInRow.end(); entryIt != entryIte; ++entryIt) {
             // Scale the entries in a different column, set state transition probability to 0.
             if (entryIt->getColumn() != state) {
-                entryIt->setValue(storm::utility::simplify((ValueType)(entryIt->getValue() * columnValue)));
+                entryIt->setValue(storm::numbers::simplify((ValueType)(entryIt->getValue() * columnValue)));
             } else {
-                entryIt->setValue(storm::utility::zero<ValueType>());
+                entryIt->setValue(storm::numbers::zero<ValueType>());
             }
         }
     }

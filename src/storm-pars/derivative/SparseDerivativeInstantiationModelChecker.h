@@ -93,10 +93,10 @@ class SignedGradientDescentTerminationCondition : public solver::TerminationCond
     SignedGradientDescentTerminationCondition(uint64_t initialState) : initialState(initialState) {}
 
     bool terminateNow(std::function<ValueType(uint64_t const&)> const& valueGetter, solver::SolverGuarantee const& guarantee) const {
-        if (guarantee == solver::SolverGuarantee::GreaterOrEqual && valueGetter(initialState) > utility::convertNumber<ValueType>(1e-6)) {
+        if (guarantee == solver::SolverGuarantee::GreaterOrEqual && valueGetter(initialState) > storm::numbers::convert<ValueType>(1e-6)) {
             return true;
         }
-        if (guarantee == solver::SolverGuarantee::LessOrEqual && valueGetter(initialState) < utility::convertNumber<ValueType>(-1e-6)) {
+        if (guarantee == solver::SolverGuarantee::LessOrEqual && valueGetter(initialState) < storm::numbers::convert<ValueType>(-1e-6)) {
             return true;
         }
         return false;

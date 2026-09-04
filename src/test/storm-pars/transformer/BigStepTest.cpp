@@ -20,10 +20,10 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Model.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/prism/Program.h"
-#include "storm/utility/constants.h"
 
 void testModel(std::string programFile, std::string formulaAsString, std::string constantsAsString) {
     storm::prism::Program program = storm::api::parseProgram(programFile);
@@ -56,10 +56,10 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     for (auto const& param : parameters) {
         std::vector<std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient>> newInstantiations;
         for (auto point : testInstantiations) {
-            for (storm::RationalNumber x = storm::utility::convertNumber<storm::RationalNumber>(1e-5); x <= 1;
-                 x += (1 - storm::utility::convertNumber<storm::RationalNumber>(1e-5)) / 10) {
+            for (storm::RationalNumber x = storm::numbers::convert<storm::RationalNumber>(1e-5); x <= 1;
+                 x += (1 - storm::numbers::convert<storm::RationalNumber>(1e-5)) / 10) {
                 std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> newMap(point);
-                newMap[param] = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(x);
+                newMap[param] = storm::numbers::convert<storm::RationalFunctionCoefficient>(x);
                 newInstantiations.push_back(newMap);
             }
         }
@@ -76,7 +76,7 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
 
         storm::RationalNumber resA = result[*modelChecker.getOriginalModel().getInitialStates().begin()];
         storm::RationalNumber resB = resultTT[*modelCheckerTT.getOriginalModel().getInitialStates().begin()];
-        ASSERT_NEAR(resA, resB, storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        ASSERT_NEAR(resA, resB, storm::numbers::convert<storm::RationalNumber>(1e-6));
     }
 
     auto region = storm::api::createRegion<storm::RationalFunction>("0.4", *dtmc);

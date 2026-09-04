@@ -21,7 +21,7 @@ TEST(ExplicitDtmcPrctlModelCheckerTest, Die) {
     storm::Environment env;
     double const precision = 1e-6;
     // Increase precision a little to get more accurate results
-    env.solver().setLinearEquationSolverPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+    env.solver().setLinearEquationSolverPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
 
     // A parser that we use for conveniently constructing the formulas.
 
@@ -70,7 +70,7 @@ TEST(ExplicitDtmcPrctlModelCheckerTest, Crowds) {
     storm::Environment env;
     double const precision = 1e-6;
     // Increase precision a little to get more accurate results
-    env.solver().setLinearEquationSolverPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+    env.solver().setLinearEquationSolverPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
 
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel =
         storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/crowds5_5.tra", STORM_TEST_RESOURCES_DIR "/lab/crowds5_5.lab", "", "");
@@ -115,7 +115,7 @@ TEST(ExplicitDtmcPrctlModelCheckerTest, SynchronousLeader) {
     storm::Environment env;
     double const precision = 1e-6;
     // Increase precision a little to get more accurate results
-    env.solver().setLinearEquationSolverPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+    env.solver().setLinearEquationSolverPrecision(storm::numbers::convert<storm::RationalNumber>(1e-8));
 
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel =
         storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/leader4_8.tra", STORM_TEST_RESOURCES_DIR "/lab/leader4_8.lab", "",

@@ -286,7 +286,7 @@ storm::logic::OperatorInformation getOperatorInformation(storm::logic::OperatorF
         opInfo.bound = formula.getBound();
         // Invert the bound (if necessary)
         if (considerComplementaryEvent) {
-            opInfo.bound->threshold = opInfo.bound->threshold.getManager().rational(storm::utility::one<storm::RationalNumber>()) - opInfo.bound->threshold;
+            opInfo.bound->threshold = opInfo.bound->threshold.getManager().rational(storm::numbers::one<storm::RationalNumber>()) - opInfo.bound->threshold;
             switch (opInfo.bound->comparisonType) {
                 case storm::logic::ComparisonType::Greater:
                     opInfo.bound->comparisonType = storm::logic::ComparisonType::Less;
@@ -352,8 +352,8 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessProbabilityOpe
                                                                                              storm::logic::OperatorInformation const& opInfo,
                                                                                              PreprocessorData& data) {
     // Probabilities are between zero and one
-    data.objectives.back()->lowerResultBound = storm::utility::zero<ValueType>();
-    data.objectives.back()->upperResultBound = storm::utility::one<ValueType>();
+    data.objectives.back()->lowerResultBound = storm::numbers::zero<ValueType>();
+    data.objectives.back()->upperResultBound = storm::numbers::one<ValueType>();
 
     if (formula.getSubformula().isUntilFormula()) {
         preprocessUntilFormula(formula.getSubformula().asUntilFormula(), opInfo, data);
@@ -414,7 +414,7 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessRewardOperator
 template<typename SparseModelType>
 void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessTimeOperatorFormula(storm::logic::TimeOperatorFormula const& formula,
                                                                                       storm::logic::OperatorInformation const& opInfo, PreprocessorData& data) {
-    data.objectives.back()->lowerResultBound = storm::utility::zero<ValueType>();
+    data.objectives.back()->lowerResultBound = storm::numbers::zero<ValueType>();
 
     if (formula.getSubformula().isEventuallyFormula()) {
         preprocessEventuallyFormula(formula.getSubformula().asEventuallyFormula(), opInfo, data);
@@ -427,8 +427,8 @@ template<typename SparseModelType>
 void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessLongRunAverageOperatorFormula(storm::logic::LongRunAverageOperatorFormula const& formula,
                                                                                                 storm::logic::OperatorInformation const& opInfo,
                                                                                                 PreprocessorData& data) {
-    data.objectives.back()->lowerResultBound = storm::utility::zero<ValueType>();
-    data.objectives.back()->upperResultBound = storm::utility::one<ValueType>();
+    data.objectives.back()->lowerResultBound = storm::numbers::zero<ValueType>();
+    data.objectives.back()->upperResultBound = storm::numbers::one<ValueType>();
 
     // Convert to a long run average reward formula
     // Create and add the new formula
@@ -440,8 +440,8 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessLongRunAverage
     storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(*data.model);
     storm::storage::BitVector subFormulaResult =
         mc.check(formula.getSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
-    std::vector<typename SparseModelType::ValueType> lraRewards(data.model->getNumberOfStates(), storm::utility::zero<typename SparseModelType::ValueType>());
-    storm::utility::vector::setVectorValues(lraRewards, subFormulaResult, storm::utility::one<typename SparseModelType::ValueType>());
+    std::vector<typename SparseModelType::ValueType> lraRewards(data.model->getNumberOfStates(), storm::numbers::zero<typename SparseModelType::ValueType>());
+    storm::utility::vector::setVectorValues(lraRewards, subFormulaResult, storm::numbers::one<typename SparseModelType::ValueType>());
     data.model->addRewardModel(rewardModelName, typename SparseModelType::RewardModelType(std::move(lraRewards)));
 }
 
@@ -484,7 +484,7 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessUntilFormula(s
         // build stateAction reward vector that gives (one*transitionProbability) reward whenever a transition leads from a reachableFromInit state to a
         // goalState
         std::vector<typename SparseModelType::ValueType> objectiveRewards(data.model->getTransitionMatrix().getRowCount(),
-                                                                          storm::utility::zero<typename SparseModelType::ValueType>());
+                                                                          storm::numbers::zero<typename SparseModelType::ValueType>());
         for (uint64_t state : reachableFromInit) {
             for (uint_fast64_t row = data.model->getTransitionMatrix().getRowGroupIndices()[state];
                  row < data.model->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++row) {
@@ -510,7 +510,7 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessBoundedUntilFo
     if (formula.isMultiDimensional() || formula.getTimeBoundReference().isRewardBound()) {
         // multidimensional and/or reward-bounded formulas are kept as they are. No preprocessing is done for them.
         data.objectives.back()->formula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(formula.asSharedPointer(), opInfo);
-    } else if (!formula.hasLowerBound() || (!formula.isLowerBoundStrict() && storm::utility::isZero(formula.template getLowerBound<storm::RationalNumber>()))) {
+    } else if (!formula.hasLowerBound() || (!formula.isLowerBoundStrict() && storm::numbers::isZero(formula.template getLowerBound<storm::RationalNumber>()))) {
         std::shared_ptr<storm::logic::Formula const> subformula;
         if (!formula.hasUpperBound()) {
             // The formula is actually unbounded
@@ -586,13 +586,13 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessEventuallyForm
             // clear state-rewards
             if (objectiveRewards.hasStateRewards()) {
                 storm::utility::vector::setVectorValues(objectiveRewards.getStateRewardVector(), reachableFromGoal,
-                                                        storm::utility::zero<typename SparseModelType::ValueType>());
+                                                        storm::numbers::zero<typename SparseModelType::ValueType>());
             }
             // clear state-action rewards
             if (objectiveRewards.hasStateActionRewards()) {
                 for (uint64_t state : reachableFromGoal) {
                     std::fill_n(objectiveRewards.getStateActionRewardVector().begin() + data.model->getTransitionMatrix().getRowGroupIndices()[state],
-                                data.model->getTransitionMatrix().getRowGroupSize(state), storm::utility::zero<typename SparseModelType::ValueType>());
+                                data.model->getTransitionMatrix().getRowGroupSize(state), storm::numbers::zero<typename SparseModelType::ValueType>());
                 }
             }
             // add the new reward model
@@ -600,15 +600,15 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessEventuallyForm
         } else if (formula.isReachabilityTimeFormula()) {
             // build state reward vector that only gives reward for relevant states
             std::vector<typename SparseModelType::ValueType> timeRewards(data.model->getNumberOfStates(),
-                                                                         storm::utility::zero<typename SparseModelType::ValueType>());
+                                                                         storm::numbers::zero<typename SparseModelType::ValueType>());
             if (data.model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                 storm::utility::vector::setVectorValues(
                     timeRewards,
                     dynamic_cast<storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType> const&>(*data.model).getMarkovianStates() &
                         reachableFromInit,
-                    storm::utility::one<typename SparseModelType::ValueType>());
+                    storm::numbers::one<typename SparseModelType::ValueType>());
             } else {
-                storm::utility::vector::setVectorValues(timeRewards, reachableFromInit, storm::utility::one<typename SparseModelType::ValueType>());
+                storm::utility::vector::setVectorValues(timeRewards, reachableFromInit, storm::numbers::one<typename SparseModelType::ValueType>());
             }
             data.model->addRewardModel(rewardModelName, typename SparseModelType::RewardModelType(std::move(timeRewards)));
         } else {
@@ -656,13 +656,13 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessEventuallyForm
             data.objectives.back()->formula = std::make_shared<storm::logic::RewardOperatorFormula>(newFormula, rewardModelName, opInfo);
             std::vector<typename SparseModelType::ValueType> timeRewards;
             if (data.model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                timeRewards.assign(data.model->getNumberOfStates(), storm::utility::zero<typename SparseModelType::ValueType>());
+                timeRewards.assign(data.model->getNumberOfStates(), storm::numbers::zero<typename SparseModelType::ValueType>());
                 storm::utility::vector::setVectorValues(
                     timeRewards,
                     dynamic_cast<storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType> const&>(*data.model).getMarkovianStates(),
-                    storm::utility::one<typename SparseModelType::ValueType>());
+                    storm::numbers::one<typename SparseModelType::ValueType>());
             } else {
-                timeRewards.assign(data.model->getNumberOfStates(), storm::utility::one<typename SparseModelType::ValueType>());
+                timeRewards.assign(data.model->getNumberOfStates(), storm::numbers::one<typename SparseModelType::ValueType>());
             }
             data.model->addRewardModel(rewardModelName, typename SparseModelType::RewardModelType(std::move(timeRewards)));
         } else {

@@ -258,7 +258,7 @@ class GradientDescentInstantiationSearcher {
         const std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType>& gradient, uint_fast64_t stepNum);
     ConstantType constantTypeSqrt(ConstantType input) {
         if (std::is_same<ConstantType, double>::value) {
-            return utility::sqrt(input);
+            return storm::numbers::sqrt(input);
         } else {
             return carl::sqrt(input);
         }

@@ -2,7 +2,7 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -23,14 +23,14 @@ NondeterministicModelStateEliminator<ValueType>::NondeterministicModelStateElimi
 
 template<typename ValueType>
 void NondeterministicModelStateEliminator<ValueType>::updateValue(storm::storage::sparse::state_type const& row, ValueType const& loopProbability) {
-    rowValues[row] = storm::utility::simplify((ValueType)(loopProbability * rowValues[row]));
+    rowValues[row] = storm::numbers::simplify((ValueType)(loopProbability * rowValues[row]));
 }
 
 template<typename ValueType>
 void NondeterministicModelStateEliminator<ValueType>::updatePredecessor(storm::storage::sparse::state_type const& predecessorRow, ValueType const& probability,
                                                                         storm::storage::sparse::state_type const& row) {
     rowValues[predecessorRow] =
-        storm::utility::simplify((ValueType)(rowValues[predecessorRow] + storm::utility::simplify((ValueType)(probability * rowValues[row]))));
+        storm::numbers::simplify((ValueType)(rowValues[predecessorRow] + storm::numbers::simplify((ValueType)(probability * rowValues[row]))));
 }
 
 template class NondeterministicModelStateEliminator<double>;

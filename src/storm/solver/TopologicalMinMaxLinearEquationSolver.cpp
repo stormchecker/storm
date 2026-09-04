@@ -7,10 +7,10 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -42,7 +42,7 @@ storm::Environment TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType
     if (adaptPrecision) {
         STORM_LOG_ASSERT(this->longestSccChainSize, "Did not compute the longest SCC chain size although it is needed.");
         storm::RationalNumber subEnvPrec =
-            subEnv.solver().minMax().getPrecision() / storm::utility::convertNumber<storm::RationalNumber>(this->longestSccChainSize.get());
+            subEnv.solver().minMax().getPrecision() / storm::numbers::convert<storm::RationalNumber>(this->longestSccChainSize.get());
         subEnv.solver().minMax().setPrecision(subEnvPrec);
     }
     return subEnv;
@@ -182,16 +182,16 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveTrivia
         for (auto const& entry : this->A->getRow(row)) {
             if (entry.getColumn() == sccState) {
                 hasDiagonalEntry = true;
-                denominator = storm::utility::one<ValueType>() - entry.getValue();
+                denominator = storm::numbers::one<ValueType>() - entry.getValue();
             } else {
                 rowValue += entry.getValue() * globalX[entry.getColumn()];
             }
         }
         if (hasDiagonalEntry) {
             STORM_LOG_WARN_COND_DEBUG(
-                storm::NumberTraits<ValueType>::IsExact || !storm::utility::isAlmostZero(denominator) || storm::utility::isZero(denominator),
+                storm::numbers::NumberTraits<ValueType>::IsExact || !storm::numbers::isAlmostZero(denominator) || storm::numbers::isZero(denominator),
                 "State " << sccState << " has a selfloop with probability '1-(" << denominator << ")'. This could be an indication for numerical issues.");
-            if (storm::utility::isZero(denominator)) {
+            if (storm::numbers::isZero(denominator)) {
                 // In this case we have a selfloop on this state. This can never an optimal choice:
                 // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
                 // When maximizing, this choice reflects probability zero (non-optimal) or reward infinity (should already be handled during preprocessing).
@@ -210,16 +210,16 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveTrivia
             for (auto const& entry : this->A->getRow(row)) {
                 if (entry.getColumn() == sccState) {
                     hasDiagonalEntry = true;
-                    denominator = storm::utility::one<ValueType>() - entry.getValue();
+                    denominator = storm::numbers::one<ValueType>() - entry.getValue();
                 } else {
                     rowValue += entry.getValue() * globalX[entry.getColumn()];
                 }
             }
             if (hasDiagonalEntry) {
                 STORM_LOG_WARN_COND_DEBUG(
-                    storm::NumberTraits<ValueType>::IsExact || !storm::utility::isAlmostZero(denominator) || storm::utility::isZero(denominator),
+                    storm::numbers::NumberTraits<ValueType>::IsExact || !storm::numbers::isAlmostZero(denominator) || storm::numbers::isZero(denominator),
                     "State " << sccState << " has a selfloop with probability '1-(" << denominator << ")'. This could be an indication for numerical issues.");
-                if (storm::utility::isZero(denominator)) {
+                if (storm::numbers::isZero(denominator)) {
                     // In this case we have a selfloop on this state. This can never be an optimal choice:
                     // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
                     // When maximizing, this choice reflects probability zero (non-optimal) or reward infinity (should already be handled during preprocessing).

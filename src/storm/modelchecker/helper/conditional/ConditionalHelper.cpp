@@ -12,6 +12,9 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/numbers/NumberTraits.h"
+#include "storm/numbers/RationalApproximation.h"
+#include "storm/numbers/constants.h"
 #include "storm/solver/SolveGoal.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
@@ -19,11 +22,8 @@
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/Extremum.h"
-#include "storm/utility/NumberTraits.h"
 #include "storm/utility/OptionalRef.h"
-#include "storm/utility/RationalApproximation.h"
 #include "storm/utility/SignalHandler.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
@@ -67,7 +67,7 @@ std::optional<typename storm::transformer::EndComponentEliminator<ValueType>::En
         }
         rowValues = std::move(newRowValues);
         STORM_LOG_ASSERT(
-            std::all_of(ecElimResult.sinkRows.begin(), ecElimResult.sinkRows.end(), [&rowValues](auto i) { return storm::utility::isZero(rowValues[i]); }),
+            std::all_of(ecElimResult.sinkRows.begin(), ecElimResult.sinkRows.end(), [&rowValues](auto i) { return storm::numbers::isZero(rowValues[i]); }),
             "Sink rows are expected to have zero value");
     };
     updateRowValue(rowValues1);
@@ -95,7 +95,7 @@ SolutionType solveMinMaxEquationSystem(storm::Environment const& env, storm::sto
                                        storm::solver::SolveGoal<ValueType, SolutionType> const& goal, uint64_t const initialState,
                                        std::optional<std::vector<uint64_t>>& schedulerOutput) {
     // Initialize the solution vector.
-    std::vector<SolutionType> x(matrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+    std::vector<SolutionType> x(matrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
 
     // Set up the solver.
     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType> factory;
@@ -115,8 +115,8 @@ SolutionType solveMinMaxEquationSystem(storm::Environment const& env, storm::sto
     solver->setRequirementsChecked();
     solver->setHasUniqueSolution(true);
     solver->setHasNoEndComponents(true);
-    solver->setLowerBound(storm::utility::zero<ValueType>());
-    solver->setUpperBound(storm::utility::one<ValueType>());
+    solver->setLowerBound(storm::numbers::zero<ValueType>());
+    solver->setUpperBound(storm::numbers::one<ValueType>());
     solver->setTrackScheduler(schedulerOutput.has_value());
 
     // Solve the corresponding system of equations.
@@ -165,7 +165,7 @@ std::unique_ptr<storm::storage::Scheduler<ValueType>> computeReachabilityProbabi
     auto origInitIt = initialStates.begin();
     for (auto subInit : subInits) {
         auto const& val = subResult.values[subInit];
-        if (!storm::utility::isZero(val)) {
+        if (!storm::numbers::isZero(val)) {
             nonZeroResults.emplace(*origInitIt, val);
         }
         ++origInitIt;
@@ -209,14 +209,14 @@ struct NormalFormData {
     ValueType getTargetValue(uint64_t state) const {
         STORM_LOG_ASSERT(terminalStates.get(state), "Tried to get target value for non-terminal state.");
         auto const it = nonZeroTargetStateValues.find(state);
-        return it == nonZeroTargetStateValues.end() ? storm::utility::zero<ValueType>() : it->second;
+        return it == nonZeroTargetStateValues.end() ? storm::numbers::zero<ValueType>() : it->second;
     }
 
     ValueType failProbability(uint64_t state) const {
         STORM_LOG_ASSERT(terminalStates.get(state), "Tried to get fail probability for non-terminal state.");
         STORM_LOG_ASSERT(!conditionStates.get(state), "Tried to get fail probability for a condition state.");
         // condition states have fail probability zero
-        return storm::utility::one<ValueType>() - getTargetValue(state);
+        return storm::numbers::one<ValueType>() - getTargetValue(state);
     }
 };
 
@@ -462,8 +462,8 @@ typename internal::ResultReturnType<ValueType> computeViaRestartMethod(Environme
             // We make two passes over the successors. First, we find out the reset probabilities and target probabilities
             // Then, we insert the matrix entries in the correct order
             // This two-phase approach is to avoid a costly out-of-order insertion into the matrix
-            ValueType targetProbability = storm::utility::zero<ValueType>();
-            ValueType restartProbability = storm::utility::zero<ValueType>();
+            ValueType targetProbability = storm::numbers::zero<ValueType>();
+            ValueType restartProbability = storm::numbers::zero<ValueType>();
             bool rowSumIsLess1 = false;
             for (auto const& entry : transitionMatrix.getRow(origRowIndex)) {
                 if (normalForm.terminalStates.get(entry.getColumn())) {
@@ -472,7 +472,7 @@ typename internal::ResultReturnType<ValueType> computeViaRestartMethod(Environme
                     if (normalForm.conditionStates.get(entry.getColumn())) {
                         rowSumIsLess1 = true;
                     } else {
-                        if (!storm::utility::isZero(targetValue)) {
+                        if (!storm::numbers::isZero(targetValue)) {
                             rowSumIsLess1 = true;
                         }
                         restartProbability += entry.getValue() * normalForm.failProbability(entry.getColumn());
@@ -483,7 +483,7 @@ typename internal::ResultReturnType<ValueType> computeViaRestartMethod(Environme
                 rowsWithSum1.set(currentRow, false);
             }
             rowValues.push_back(targetProbability);
-            bool addRestartTransition = !storm::utility::isZero(restartProbability);
+            bool addRestartTransition = !storm::numbers::isZero(restartProbability);
             for (auto const& entry : transitionMatrix.getRow(origRowIndex)) {
                 // Insert backloop probability if we haven't done so yet and are past the initial state index
                 // This is to avoid a costly out-of-order insertion into the matrix
@@ -704,12 +704,12 @@ class WeightedReachabilityHelper {
             // Put the row processing into a lambda for avoiding code duplications
             auto processRow = [&](uint64_t origRowIndex) {
                 // insert the submatrix entries and find out the target and condition probabilities for this row
-                ValueType targetProbability = storm::utility::zero<ValueType>();
-                ValueType conditionProbability = storm::utility::zero<ValueType>();
+                ValueType targetProbability = storm::numbers::zero<ValueType>();
+                ValueType conditionProbability = storm::numbers::zero<ValueType>();
                 bool rowSumIsLess1 = false;
                 for (auto const& entry : transitionMatrix.getRow(origRowIndex)) {
                     if (normalForm.terminalStates.get(entry.getColumn())) {
-                        STORM_LOG_ASSERT(!storm::utility::isZero(entry.getValue()), "Transition probability must be non-zero.");
+                        STORM_LOG_ASSERT(!storm::numbers::isZero(entry.getValue()), "Transition probability must be non-zero.");
                         rowSumIsLess1 = true;
                         ValueType const scaledTargetValue = normalForm.getTargetValue(entry.getColumn()) * entry.getValue();
                         targetProbability += scaledTargetValue;
@@ -805,8 +805,8 @@ class WeightedReachabilityHelper {
             cachedSolver->setRequirementsChecked();
             cachedSolver->setHasUniqueSolution(true);
             cachedSolver->setHasNoEndComponents(true);
-            cachedSolver->setLowerBound(-storm::utility::one<ValueType>());
-            cachedSolver->setUpperBound(storm::utility::one<ValueType>());
+            cachedSolver->setLowerBound(-storm::numbers::one<ValueType>());
+            cachedSolver->setUpperBound(storm::numbers::one<ValueType>());
         }
         cachedSolver->setTrackScheduler(schedulerOutput.has_value());
         cachedSolver->setOptimizationDirection(dir);
@@ -815,7 +815,7 @@ class WeightedReachabilityHelper {
         createScaledVector(cachedB, targetWeight, targetRowValues, conditionWeight, conditionRowValues);
 
         // Initialize the solution vector.
-        cachedX.assign(submatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+        cachedX.assign(submatrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
 
         cachedSolver->solveEquations(env, cachedX, cachedB);
         if (schedulerOutput) {
@@ -834,10 +834,10 @@ class WeightedReachabilityHelper {
             scheduler.resize(submatrix.getRowGroupCount(), 0);
         }
         if (targetResults.empty()) {
-            targetResults.resize(submatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+            targetResults.resize(submatrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
         }
         if (conditionResults.empty()) {
-            conditionResults.resize(submatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+            conditionResults.resize(submatrix.getRowGroupCount(), storm::numbers::zero<ValueType>());
         }
         auto solver = getScheduledSolver(env, scheduler);
 
@@ -949,7 +949,7 @@ class WeightedReachabilityHelper {
             scheduledMatrix.convertToEquationSystem();
         }
         auto solver = factory.create(env, std::move(scheduledMatrix));
-        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+        solver->setBounds(storm::numbers::zero<ValueType>(), storm::numbers::one<ValueType>());
         solver->setCachingEnabled(true);
         return solver;
     }
@@ -983,20 +983,20 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
                         "Bisection method does not adequately handle propagation of errors. Result is not necessarily sound.");
 
     bool const relative = env.modelchecker().conditional().isRelativePrecision();
-    auto const precision = storm::utility::convertNumber<SolutionType>(env.modelchecker().conditional().getPrecision());
+    auto const precision = storm::numbers::convert<SolutionType>(env.modelchecker().conditional().getPrecision());
 
     WeightedReachabilityHelper<ValueType, SolutionType> wrh(initialState, transitionMatrix, normalForm, computeScheduler);
-    SolutionType pMin{storm::utility::zero<SolutionType>()};
-    SolutionType pMax{storm::utility::one<SolutionType>()};
+    SolutionType pMin{storm::numbers::zero<SolutionType>()};
+    SolutionType pMax{storm::numbers::one<SolutionType>()};
 
     if (useAdvancedBounds) {
-        pMin = wrh.computeWeightedDiff(env, storm::OptimizationDirection::Minimize, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
-        pMax = wrh.computeWeightedDiff(env, storm::OptimizationDirection::Maximize, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
-        STORM_LOG_TRACE("Conditioning event bounds:\n\t Lower bound: " << storm::utility::convertNumber<double>(pMin)
-                                                                       << ",\n\t Upper bound: " << storm::utility::convertNumber<double>(pMax));
+        pMin = wrh.computeWeightedDiff(env, storm::OptimizationDirection::Minimize, storm::numbers::zero<ValueType>(), storm::numbers::one<ValueType>());
+        pMax = wrh.computeWeightedDiff(env, storm::OptimizationDirection::Maximize, storm::numbers::zero<ValueType>(), storm::numbers::one<ValueType>());
+        STORM_LOG_TRACE("Conditioning event bounds:\n\t Lower bound: " << storm::numbers::convert<double>(pMin)
+                                                                       << ",\n\t Upper bound: " << storm::numbers::convert<double>(pMax));
     }
-    storm::utility::Maximum<SolutionType> lowerBound = storm::utility::zero<ValueType>();
-    storm::utility::Minimum<SolutionType> upperBound = storm::utility::one<ValueType>();
+    storm::utility::Maximum<SolutionType> lowerBound = storm::numbers::zero<ValueType>();
+    storm::utility::Minimum<SolutionType> upperBound = storm::numbers::one<ValueType>();
 
     std::optional<std::vector<uint64_t>> lowerScheduler, upperScheduler, middleScheduler;
     storm::OptionalRef<std::vector<uint64_t>> middleSchedulerRef;
@@ -1014,29 +1014,29 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
     bool terminatedThroughPolicyTracking = false;
     for (uint64_t iterationCount = 1; true; ++iterationCount) {
         // evaluate the current middle
-        SolutionType const middleValue = wrh.computeWeightedDiff(env, goal.direction(), storm::utility::one<ValueType>(), -middle, middleSchedulerRef);
+        SolutionType const middleValue = wrh.computeWeightedDiff(env, goal.direction(), storm::numbers::one<ValueType>(), -middle, middleSchedulerRef);
         checkedMiddleValues.insert(middle);
         // update the bounds and new middle value according to the bisection method
         if (!useAdvancedBounds) {
-            if (middleValue >= storm::utility::zero<ValueType>()) {
+            if (middleValue >= storm::numbers::zero<ValueType>()) {
                 if (lowerBound &= middle) {
                     lowerScheduler.swap(middleScheduler);
                 }
             }
-            if (middleValue <= storm::utility::zero<ValueType>()) {
+            if (middleValue <= storm::numbers::zero<ValueType>()) {
                 if (upperBound &= middle) {
                     upperScheduler.swap(middleScheduler);
                 }
             }
             middle = (*lowerBound + *upperBound) / 2;  // update middle to the average of the bounds
         } else {
-            if (middleValue >= storm::utility::zero<ValueType>()) {
+            if (middleValue >= storm::numbers::zero<ValueType>()) {
                 if (lowerBound &= middle + (middleValue / pMax)) {
                     lowerScheduler.swap(middleScheduler);
                 }
                 upperBound &= middle + (middleValue / pMin);
             }
-            if (middleValue <= storm::utility::zero<ValueType>()) {
+            if (middleValue <= storm::numbers::zero<ValueType>()) {
                 lowerBound &= middle + (middleValue / pMin);
                 if (upperBound &= middle + (middleValue / pMax)) {
                     upperScheduler.swap(middleScheduler);
@@ -1046,9 +1046,9 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
             // If middleValue is close to -1, we use a value close to lowerBound
             // If middleValue is close to 0, we use a value close to the avg(lowerBound, upperBound)
             // If middleValue is close to +1, we use a value close to upperBound
-            middle = *lowerBound + (storm::utility::one<SolutionType>() + middleValue) * (*upperBound - *lowerBound) / 2;
+            middle = *lowerBound + (storm::numbers::one<SolutionType>() + middleValue) * (*upperBound - *lowerBound) / 2;
 
-            if (!storm::NumberTraits<SolutionType>::IsExact && storm::utility::isAlmostZero(*upperBound - *lowerBound)) {
+            if (!storm::numbers::NumberTraits<SolutionType>::IsExact && storm::numbers::isAlmostZero(*upperBound - *lowerBound)) {
                 if (*lowerBound > *upperBound) {
                     std::swap(*lowerBound, *upperBound);
                 }
@@ -1062,14 +1062,14 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
                                       << ",\n\t Difference:       " << boundDiff << ",\n\t Middle val:       " << middleValue
                                       << ",\n\t Difference bound: " << (relative ? (precision * *lowerBound) : precision) << ".");
         if (goal.isBounded()) {
-            STORM_LOG_TRACE("Using threshold " << storm::utility::convertNumber<double>(goal.thresholdValue()) << " with comparison "
+            STORM_LOG_TRACE("Using threshold " << storm::numbers::convert<double>(goal.thresholdValue()) << " with comparison "
                                                << (goal.boundIsALowerBound() ? (goal.boundIsStrict() ? ">" : ">=") : (goal.boundIsStrict() ? "<" : "<="))
                                                << ".");
         }
         if (boundDiff <= (relative ? (precision * *lowerBound) : precision)) {
             STORM_LOG_INFO("Bisection method converged after " << iterationCount << " iterations. Difference is "
                                                                << std::setprecision(std::numeric_limits<double>::digits10)
-                                                               << storm::utility::convertNumber<double>(boundDiff) << ".");
+                                                               << storm::numbers::convert<double>(boundDiff) << ".");
             break;
         } else if (usePolicyTracking && lowerScheduler && upperScheduler && (*lowerScheduler == *upperScheduler)) {
             STORM_LOG_INFO("Bisection method converged after " << iterationCount << " iterations due to identical schedulers for lower and upper bound.");
@@ -1081,26 +1081,26 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
         }
         // Check if bounds are fully below or above threshold
         if (goal.isBounded() && (*upperBound <= goal.thresholdValue() || (*lowerBound >= goal.thresholdValue()))) {
-            STORM_LOG_INFO("Bisection method determined result after " << iterationCount << " iterations. Found bounds are ["
-                                                                       << storm::utility::convertNumber<double>(*lowerBound) << ", "
-                                                                       << storm::utility::convertNumber<double>(*upperBound) << "], threshold is "
-                                                                       << storm::utility::convertNumber<double>(goal.thresholdValue()) << ".");
+            STORM_LOG_INFO("Bisection method determined result after "
+                           << iterationCount << " iterations. Found bounds are [" << storm::numbers::convert<double>(*lowerBound) << ", "
+                           << storm::numbers::convert<double>(*upperBound) << "], threshold is " << storm::numbers::convert<double>(goal.thresholdValue())
+                           << ".");
             break;
         }
-        if (!storm::NumberTraits<SolutionType>::IsExact && storm::utility::isAlmostZero(boundDiff)) {
+        if (!storm::numbers::NumberTraits<SolutionType>::IsExact && storm::numbers::isAlmostZero(boundDiff)) {
             STORM_LOG_WARN("Precision of non-exact type exceeded: Bisection method has not terminated, but the difference between upper and lower bound is "
                            << boundDiff << ".");
         }
         // check for early termination
         if (storm::utility::resources::isTerminate()) {
             STORM_LOG_WARN("Bisection solver aborted after " << iterationCount << "iterations. Bound difference is "
-                                                             << storm::utility::convertNumber<double>(boundDiff) << ".");
+                                                             << storm::numbers::convert<double>(boundDiff) << ".");
             break;
         }
         // process the middle value for the next iteration
         // This sets the middle value to a rational number with the smallest enumerator/denominator that is still within the bounds
         // With close bounds this can lead to the middle being set to exactly the lower or upper bound, thus allowing for an exact answer.
-        if constexpr (storm::NumberTraits<SolutionType>::IsExact) {
+        if constexpr (storm::numbers::NumberTraits<SolutionType>::IsExact) {
             // Check if the rationalCandidate has been within the bounds for four iterations.
             // If yes, we take that as our next "middle".
             // Otherwise, we set a new rationalCandidate.
@@ -1113,7 +1113,7 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
                 // find a rational number with a concise representation within our current bounds
                 bool const includeLower = !checkedMiddleValues.contains(*lowerBound);
                 bool const includeUpper = !checkedMiddleValues.contains(*upperBound);
-                auto newRationalCandiate = storm::utility::findRational(*lowerBound, includeLower, *upperBound, includeUpper);
+                auto newRationalCandiate = storm::numbers::findRational(*lowerBound, includeLower, *upperBound, includeUpper);
                 if (rationalCandiate == newRationalCandiate) {
                     ++rationalCandidateCount;
                 } else {
@@ -1121,17 +1121,16 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
                     rationalCandidateCount = 0;
                 }
                 // Also simplify the middle value
-                SolutionType delta =
-                    std::min<SolutionType>(*upperBound - middle, middle - *lowerBound) / storm::utility::convertNumber<SolutionType, uint64_t>(16);
-                middle = storm::utility::findRational(middle - delta, true, middle + delta, true);
+                SolutionType delta = std::min<SolutionType>(*upperBound - middle, middle - *lowerBound) / storm::numbers::convert<SolutionType, uint64_t>(16);
+                middle = storm::numbers::findRational(middle - delta, true, middle + delta, true);
             }
         }
         // Since above code might never set 'middle' to exactly zero or one, we check if that could be necessary after a couple of iterations
         if (iterationCount == 8) {  // 8 is just a heuristic value, it could be any number
-            if (storm::utility::isZero(*lowerBound) && !checkedMiddleValues.contains(storm::utility::zero<SolutionType>())) {
-                middle = storm::utility::zero<SolutionType>();
-            } else if (storm::utility::isOne(*upperBound) && !checkedMiddleValues.contains(storm::utility::one<SolutionType>())) {
-                middle = storm::utility::one<SolutionType>();
+            if (storm::numbers::isZero(*lowerBound) && !checkedMiddleValues.contains(storm::numbers::zero<SolutionType>())) {
+                middle = storm::numbers::zero<SolutionType>();
+            } else if (storm::numbers::isOne(*upperBound) && !checkedMiddleValues.contains(storm::numbers::one<SolutionType>())) {
+                middle = storm::numbers::one<SolutionType>();
             }
         }
     }
@@ -1149,7 +1148,7 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
         reducedSchedulerChoices = std::move(*lowerScheduler);
     } else {
         // Compute a scheduler on the middle result by performing one more iteration
-        wrh.computeWeightedDiff(env, goal.direction(), storm::utility::one<ValueType>(), -finalResult.initialStateValue, reducedSchedulerChoices);
+        wrh.computeWeightedDiff(env, goal.direction(), storm::numbers::one<ValueType>(), -finalResult.initialStateValue, reducedSchedulerChoices);
     }
     finalResult.scheduler = wrh.constructSchedulerForInputModel(reducedSchedulerChoices, transitionMatrix, backwardTransitions, normalForm);
     return finalResult;
@@ -1187,14 +1186,14 @@ typename internal::ResultReturnType<ValueType> decideThreshold(Environment const
         schedulerRef.reset(*scheduler);
     }
 
-    SolutionType val = wrh.computeWeightedDiff(env, direction, storm::utility::one<ValueType>(), -threshold, schedulerRef);
+    SolutionType val = wrh.computeWeightedDiff(env, direction, storm::numbers::one<ValueType>(), -threshold, schedulerRef);
     SolutionType outputProbability;
-    if (val > storm::utility::zero<SolutionType>()) {
+    if (val > storm::numbers::zero<SolutionType>()) {
         // if val is positive, the conditional probability is (strictly) greater than threshold
-        outputProbability = storm::utility::one<SolutionType>();
-    } else if (val < storm::utility::zero<SolutionType>()) {
+        outputProbability = storm::numbers::one<SolutionType>();
+    } else if (val < storm::numbers::zero<SolutionType>()) {
         // if val is negative, the conditional probability is (strictly) smaller than threshold
-        outputProbability = storm::utility::zero<SolutionType>();
+        outputProbability = storm::numbers::zero<SolutionType>();
     } else {
         // if val is zero, the conditional probability equals the threshold
         outputProbability = threshold;
@@ -1222,11 +1221,10 @@ internal::ResultReturnType<SolutionType> computeViaPolicyIteration(Environment c
         STORM_LOG_WARN_COND(
             targetResults[wrh.getInternalInitialState()] <= conditionResults[wrh.getInternalInitialState()],
             "Potential numerical issues: the probability to reach the target is greater than the probability to reach the condition. Difference is "
-                << (storm::utility::convertNumber<double, ValueType>(targetResults[wrh.getInternalInitialState()] -
-                                                                     conditionResults[wrh.getInternalInitialState()]))
+                << (storm::numbers::convert<double, ValueType>(targetResults[wrh.getInternalInitialState()] - conditionResults[wrh.getInternalInitialState()]))
                 << ".");
-        ValueType const lambda = storm::utility::isZero(conditionResults[wrh.getInternalInitialState()])
-                                     ? storm::utility::zero<ValueType>()
+        ValueType const lambda = storm::numbers::isZero(conditionResults[wrh.getInternalInitialState()])
+                                     ? storm::numbers::zero<ValueType>()
                                      : ValueType(targetResults[wrh.getInternalInitialState()] / conditionResults[wrh.getInternalInitialState()]);
         bool schedulerChanged{false};
         if (storm::solver::minimize(dir)) {
@@ -1256,12 +1254,12 @@ std::optional<SolutionType> handleTrivialCases(uint64_t const initialState, Norm
                             "Trying to compute undefined conditional probability: the condition has probability 0 under all policies.");
             // The last case for a terminal initial state is that it is already target and the condition is reachable with non-zero probability.
             // In this case, all schedulers induce a conditional probability of 1 (or do not reach the condition, i.e., have undefined value)
-            return storm::utility::one<SolutionType>();
+            return storm::numbers::one<SolutionType>();
         }
     } else {
         // Catch the case where all terminal states have value zero
         if (normalForm.nonZeroTargetStateValues.empty()) {
-            return storm::utility::zero<SolutionType>();
+            return storm::numbers::zero<SolutionType>();
         }
     }
     return std::nullopt;  // No trivial case applies, we need to compute the value.
@@ -1275,9 +1273,9 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
                                                              storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                              storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates) {
     auto precision = env.modelchecker().conditional().getPrecision();
-    if (storm::NumberTraits<SolutionType>::IsExact && env.modelchecker().conditional().isPrecisionSetFromDefault()) {
+    if (storm::numbers::NumberTraits<SolutionType>::IsExact && env.modelchecker().conditional().isPrecisionSetFromDefault()) {
         STORM_LOG_INFO("Setting the conditional precision to 0 since the value type is exact and the precision was not explicitly set by the user.");
-        precision = storm::utility::zero<storm::RationalNumber>();
+        precision = storm::numbers::zero<storm::RationalNumber>();
     }
 
     // We might require adapting the precision of the solver to counter error propagation (e.g. when computing the normal form).
@@ -1286,9 +1284,9 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
     if (env.solver().isForceSoundness()) {
         // We intuitively have to divide the precision into two parts, one for computations when constructing the normal form and one for the actual analysis.
         // As the former is usually less numerically challenging, we use a factor of 1/10 for the normal form construction and 9/10 for the analysis.
-        auto const normalFormPrecisionFactor = storm::utility::convertNumber<storm::RationalNumber, std::string>("1/10");
+        auto const normalFormPrecisionFactor = storm::numbers::convert<storm::RationalNumber, std::string>("1/10");
         normalFormConstructionEnv.modelchecker().conditional().setPrecision(precision * normalFormPrecisionFactor, false);
-        analysisEnv.modelchecker().conditional().setPrecision(precision * (storm::utility::one<storm::RationalNumber>() - normalFormPrecisionFactor), false);
+        analysisEnv.modelchecker().conditional().setPrecision(precision * (storm::numbers::one<storm::RationalNumber>() - normalFormPrecisionFactor), false);
     } else {
         normalFormConstructionEnv.modelchecker().conditional().setPrecision(precision, false);
         analysisEnv.modelchecker().conditional().setPrecision(precision, false);
@@ -1306,11 +1304,11 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
                                                      goal.relevantValues(), targetStates, conditionStates);
     // Then, we solve the induced problem using the selected algorithm
     auto const initialState = *goal.relevantValues().begin();
-    ValueType initialStateValue = -storm::utility::one<ValueType>();
+    ValueType initialStateValue = -storm::numbers::one<ValueType>();
     std::unique_ptr<storm::storage::Scheduler<SolutionType>> scheduler = nullptr;
     if (auto trivialValue = internal::handleTrivialCases<ValueType, SolutionType>(initialState, normalFormData); trivialValue.has_value()) {
         initialStateValue = *trivialValue;
-        if (initialStateValue == storm::utility::zero<ValueType>() && !normalFormData.terminalStates.get(initialState) && produceSchedulers) {
+        if (initialStateValue == storm::numbers::zero<ValueType>() && !normalFormData.terminalStates.get(initialState) && produceSchedulers) {
             // we need to compute a scheduler that at least reaches the condition with non-zero probability
             auto initialStateBitVector = storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
             initialStateBitVector.set(initialState, true);
@@ -1337,7 +1335,7 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
         }
 
         STORM_LOG_INFO("Analyzing normal form with " << normalFormData.maybeStates.getNumberOfSetBits() << " maybe states using algorithm '" << alg << ".");
-        internal::ResultReturnType<SolutionType> result{storm::utility::zero<SolutionType>()};
+        internal::ResultReturnType<SolutionType> result{storm::numbers::zero<SolutionType>()};
         switch (alg) {
             case ConditionalAlgorithmSetting::Restart: {
                 auto restartEnv = analysisEnv;

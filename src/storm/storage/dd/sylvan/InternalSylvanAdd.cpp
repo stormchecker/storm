@@ -4,12 +4,12 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/numbers/constants.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 #include "storm/storage/dd/sylvan/SylvanAddIterator.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -1257,12 +1257,12 @@ MTBDD InternalAdd<DdType::Sylvan, ValueType>::fromVectorRec(uint_fast64_t& curre
         if (odd.getThenOffset() > 0) {
             return getLeaf(values[currentOffset++]);
         } else {
-            return getLeaf(storm::utility::zero<ValueType>());
+            return getLeaf(storm::numbers::zero<ValueType>());
         }
     } else {
         // If the total offset is zero, we can just return the constant zero DD.
         if (odd.getThenOffset() + odd.getElseOffset() == 0) {
-            return getLeaf(storm::utility::zero<ValueType>());
+            return getLeaf(storm::numbers::zero<ValueType>());
         }
 
         // Determine the new else-successor.
@@ -1270,7 +1270,7 @@ MTBDD InternalAdd<DdType::Sylvan, ValueType>::fromVectorRec(uint_fast64_t& curre
         if (odd.getElseOffset() > 0) {
             elseSuccessor = fromVectorRec(currentOffset, currentLevel + 1, maxLevel, values, odd.getElseSuccessor(), ddVariableIndices);
         } else {
-            elseSuccessor = getLeaf(storm::utility::zero<ValueType>());
+            elseSuccessor = getLeaf(storm::numbers::zero<ValueType>());
         }
         mtbdd_refs_push(elseSuccessor);
 
@@ -1279,7 +1279,7 @@ MTBDD InternalAdd<DdType::Sylvan, ValueType>::fromVectorRec(uint_fast64_t& curre
         if (odd.getThenOffset() > 0) {
             thenSuccessor = fromVectorRec(currentOffset, currentLevel + 1, maxLevel, values, odd.getThenSuccessor(), ddVariableIndices);
         } else {
-            thenSuccessor = getLeaf(storm::utility::zero<ValueType>());
+            thenSuccessor = getLeaf(storm::numbers::zero<ValueType>());
         }
         mtbdd_refs_push(thenSuccessor);
 

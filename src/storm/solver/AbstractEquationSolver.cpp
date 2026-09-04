@@ -3,10 +3,10 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidStateException.h"
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/SignalHandler.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -250,7 +250,7 @@ void AbstractEquationSolver<ValueType>::createLowerBoundsVector(std::vector<Valu
     if (this->hasLowerBound(BoundType::Local)) {
         lowerBoundsVector = this->getLowerBounds();
     } else {
-        ValueType lowerBound = this->hasLowerBound(BoundType::Global) ? this->getLowerBound() : storm::utility::zero<ValueType>();
+        ValueType lowerBound = this->hasLowerBound(BoundType::Global) ? this->getLowerBound() : storm::numbers::zero<ValueType>();
         for (auto& e : lowerBoundsVector) {
             e = lowerBound;
         }

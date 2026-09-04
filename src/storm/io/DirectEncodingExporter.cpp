@@ -13,7 +13,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -258,7 +258,7 @@ std::unordered_map<ValueType, std::string> generatePlaceholders(std::shared_ptr<
  */
 
 void createPlaceholder(std::unordered_map<storm::RationalFunction, std::string>& placeholders, storm::RationalFunction const& value, size_t& i) {
-    if (!storm::utility::isConstant(value)) {
+    if (!storm::numbers::isConstant(value)) {
         auto ret = placeholders.insert(std::make_pair(value, std::to_string(i)));
         if (ret.second) {
             // New element was inserted
@@ -302,7 +302,7 @@ std::unordered_map<storm::RationalFunction, std::string> generatePlaceholders(
 
 template<typename ValueType>
 void writeValue(std::ostream& os, ValueType value, std::unordered_map<ValueType, std::string> const& placeholders) {
-    if (storm::utility::isConstant(value)) {
+    if (storm::numbers::isConstant(value)) {
         os << value;
         return;
     }

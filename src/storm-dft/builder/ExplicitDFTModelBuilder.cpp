@@ -8,12 +8,12 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/numbers/constants.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/transformer/NonMarkovianChainTransformer.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/bitoperations.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
 namespace storm::dft {
@@ -156,7 +156,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(size_t iteration,
             STORM_LOG_ASSERT(behavior.begin()->size() == 1, "Wrong number of transitions for failed state.");
             std::pair<StateType, ValueType> stateProbabilityPair = *(behavior.begin()->begin());
             STORM_LOG_ASSERT(stateProbabilityPair.first == 0, "No self loop for failed state.");
-            STORM_LOG_ASSERT(storm::utility::isOne<ValueType>(stateProbabilityPair.second), "Probability for failed state != 1.");
+            STORM_LOG_ASSERT(storm::numbers::isOne<ValueType>(stateProbabilityPair.second), "Probability for failed state != 1.");
             matrixBuilder.addTransition(stateProbabilityPair.first, stateProbabilityPair.second);
             matrixBuilder.finishRow();
         }
@@ -407,7 +407,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double app
             // Add transition to target state with temporary value 0
             // TODO: what to do when there is no unique target state?
             // STORM_LOG_ASSERT(this->uniqueFailedState, "Approximation only works with unique failed state.");
-            matrixBuilder.addTransition(0, storm::utility::zero<ValueType>());
+            matrixBuilder.addTransition(0, storm::numbers::zero<ValueType>());
             // Remember skipped state
             skippedStates[matrixBuilder.getCurrentRowGroup() - 1] = std::make_pair(currentState, currentExplorationHeuristic);
             matrixBuilder.finishRow();
@@ -423,7 +423,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double app
             for (auto const& choice : behavior) {
                 // Add the probabilistic behavior to the matrix.
                 for (auto const& stateProbabilityPair : choice) {
-                    STORM_LOG_ASSERT(!storm::utility::isZero(stateProbabilityPair.second), "Probability zero.");
+                    STORM_LOG_ASSERT(!storm::numbers::isZero(stateProbabilityPair.second), "Probability zero.");
                     // Set transition to state id + offset. This helps in only remapping all previously skipped states.
                     matrixBuilder.addTransition(matrixBuilder.mappingOffset + stateProbabilityPair.first, stateProbabilityPair.second);
                     // Set heuristic values for reached states
@@ -636,7 +636,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder
                 auto matrixEntry = matrix.getRow(it->first, 0).begin();
                 STORM_LOG_ASSERT(matrixEntry->getColumn() == 0, "Transition has wrong target state.");
                 STORM_LOG_ASSERT(!it->second.first->isPseudoState(), "State is still pseudo state.");
-                matrixEntry->setValue(storm::utility::one<ValueType>());
+                matrixEntry->setValue(storm::numbers::one<ValueType>());
                 matrixEntry->setColumn(it->first);
             }
         } else {
@@ -661,7 +661,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder
                 if (modelComponents.markovianStates[stateIndex]) {
                     modelComponents.exitRates[stateIndex] = matrix.getRowSum(indices[stateIndex]);
                 } else {
-                    modelComponents.exitRates[stateIndex] = storm::utility::zero<ValueType>();
+                    modelComponents.exitRates[stateIndex] = storm::numbers::zero<ValueType>();
                 }
             }
             STORM_LOG_TRACE("Exit rates: " << modelComponents.exitRates);
@@ -712,7 +712,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder
             if (modelComponents.markovianStates[stateIndex]) {
                 modelComponents.exitRates[stateIndex] = modelComponents.transitionMatrix.getRowSum(indices[stateIndex]);
             } else {
-                modelComponents.exitRates[stateIndex] = storm::utility::zero<ValueType>();
+                modelComponents.exitRates[stateIndex] = storm::numbers::zero<ValueType>();
             }
         }
         STORM_LOG_TRACE("Exit rates: " << modelComponents.exitRates);
@@ -770,7 +770,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::changeMatrixBound(storm::sto
 template<typename ValueType, typename StateType>
 ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getLowerBound(DFTStatePointer const& state) const {
     // Get the lower bound by considering the failure of all possible BEs
-    ValueType lowerBound = storm::utility::zero<ValueType>();
+    ValueType lowerBound = storm::numbers::zero<ValueType>();
     STORM_LOG_ASSERT(!state->getFailableElements().hasDependencies(), "Lower bound should only be computed if dependencies were already handled.");
     for (auto it = state->getFailableElements().begin(); it != state->getFailableElements().end(); ++it) {
         lowerBound += state->getBERate(*it);
@@ -782,12 +782,12 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getLowerBound(DFTStateP
 template<typename ValueType, typename StateType>
 ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getUpperBound(DFTStatePointer const& state) const {
     if (state->hasFailed(dft.getTopLevelIndex())) {
-        return storm::utility::zero<ValueType>();
+        return storm::numbers::zero<ValueType>();
     }
 
     // Get the upper bound by considering the failure of all BEs
-    ValueType upperBound = storm::utility::one<ValueType>();
-    ValueType rateSum = storm::utility::zero<ValueType>();
+    ValueType upperBound = storm::numbers::one<ValueType>();
+    ValueType rateSum = storm::numbers::zero<ValueType>();
 
     // Compute for each independent subtree
     for (std::vector<size_t> const& subtree : subtreeBEs) {
@@ -806,11 +806,11 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getUpperBound(DFTStateP
                     case storm::dft::storage::elements::BEType::EXPONENTIAL: {
                         // Get BE rate
                         ValueType rate = state->getBERate(id);
-                        if (storm::utility::isZero<ValueType>(rate)) {
+                        if (storm::numbers::isZero<ValueType>(rate)) {
                             // Get active failure rate for cold BE
                             auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                             rate = beExp->activeFailureRate();
-                            STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(rate), "Failure rate should not be zero.");
+                            STORM_LOG_ASSERT(!storm::numbers::isZero<ValueType>(rate), "Failure rate should not be zero.");
                             // Mark BE as cold
                             coldBEs.set(i, true);
                         }
@@ -851,14 +851,14 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getUpperBound(DFTStateP
     }
 
     STORM_LOG_TRACE("Upper bound is " << (rateSum / upperBound) << " for state " << state->getId());
-    STORM_LOG_ASSERT(!storm::utility::isZero(upperBound), "Upper bound is 0.");
-    STORM_LOG_ASSERT(!storm::utility::isZero(rateSum), "State is absorbing.");
+    STORM_LOG_ASSERT(!storm::numbers::isZero(upperBound), "Upper bound is 0.");
+    STORM_LOG_ASSERT(!storm::numbers::isZero(rateSum), "State is absorbing.");
     return rateSum / upperBound;
 }
 
 template<typename ValueType, typename StateType>
 ValueType ExplicitDFTModelBuilder<ValueType, StateType>::computeMTTFAnd(std::vector<ValueType> const& rates, size_t size) const {
-    ValueType result = storm::utility::zero<ValueType>();
+    ValueType result = storm::numbers::zero<ValueType>();
     if (size == 0) {
         return result;
     }
@@ -867,9 +867,9 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::computeMTTFAnd(std::vec
     // WARNING: this code produces wrong results for more than 32 BEs
     /*for (size_t i = 1; i < 4 && i <= rates.size(); ++i) {
         size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(i));
-        ValueType sum = storm::utility::zero<ValueType>();
+        ValueType sum = storm::numbers::zero<ValueType>();
         do {
-            ValueType permResult = storm::utility::zero<ValueType>();
+            ValueType permResult = storm::numbers::zero<ValueType>();
             for(size_t j = 0; j < rates.size(); ++j) {
                 if(permutation & static_cast<size_t>(1 << static_cast<size_t>(j))) {
                     // WARNING: if the first bit is set, it also recognizes the 32nd bit as set
@@ -878,8 +878,8 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::computeMTTFAnd(std::vec
                 }
             }
             permutation = nextBitPermutation(permutation);
-            STORM_LOG_ASSERT(!storm::utility::isZero(permResult), "PermResult is 0.");
-            sum += storm::utility::one<ValueType>() / permResult;
+            STORM_LOG_ASSERT(!storm::numbers::isZero(permResult), "PermResult is 0.");
+            sum += storm::numbers::one<ValueType>() / permResult;
         } while(permutation < (static_cast<size_t>(1) << rates.size()) && permutation != 0);
         if (i % 2 == 0) {
             result -= sum;
@@ -889,7 +889,7 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::computeMTTFAnd(std::vec
     }*/
 
     // Compute result with permutations of size <= 3
-    ValueType one = storm::utility::one<ValueType>();
+    ValueType one = storm::numbers::one<ValueType>();
     for (size_t i1 = 0; i1 < size; ++i1) {
         // + 1/a
         ValueType sum = rates[i1];
@@ -905,7 +905,7 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::computeMTTFAnd(std::vec
         }
     }
 
-    STORM_LOG_ASSERT(!storm::utility::isZero(result), "UpperBound is 0.");
+    STORM_LOG_ASSERT(!storm::numbers::isZero(result), "UpperBound is 0.");
     return result;
 }
 

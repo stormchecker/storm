@@ -19,7 +19,7 @@
 #include "storm/api/bisimulation.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
-#include "storm/utility/constants.h"
+#include "storm/numbers/constants.h"
 
 class MonotonicityHelperTest : public ::testing::Test {
    protected:
@@ -68,17 +68,17 @@ TEST_F(MonotonicityHelperTest, Derivative_checker) {
     storm::utility::parametric::Valuation<storm::RationalFunction> upperBoundaries2;
     for (auto var : varsP) {
         typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType lb =
-            storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(0 + 0.000001);
+            storm::numbers::convert<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(0 + 0.000001);
         typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType ub =
-            storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(1 - 0.000001);
+            storm::numbers::convert<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(1 - 0.000001);
         lowerBoundaries2.emplace(std::make_pair(var, lb));
         upperBoundaries2.emplace(std::make_pair(var, ub));
     }
     for (auto var : varsQ) {
         typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType lb =
-            storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(0 + 0.000001);
+            storm::numbers::convert<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(0 + 0.000001);
         typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType ub =
-            storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(1 - 0.000001);
+            storm::numbers::convert<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(1 - 0.000001);
         lowerBoundaries2.emplace(std::make_pair(var, lb));
         upperBoundaries2.emplace(std::make_pair(var, ub));
     }

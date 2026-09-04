@@ -62,7 +62,7 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::initializeQuotie
             // If the block is marked as absorbing, we need to create the corresponding distributions.
             for (auto stateIt = this->partition.begin(*block), stateIte = this->partition.end(*block); stateIt != stateIte; ++stateIt) {
                 for (uint_fast64_t choice = nondeterministicChoiceIndices[*stateIt]; choice < nondeterministicChoiceIndices[*stateIt + 1]; ++choice) {
-                    this->quotientDistributions[choice].addProbability(block->getId(), storm::utility::one<ValueType>());
+                    this->quotientDistributions[choice].addProbability(block->getId(), storm::numbers::one<ValueType>());
                     orderedQuotientDistributions[choice] = &this->quotientDistributions[choice];
                 }
             }
@@ -149,7 +149,7 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() 
 
         // If the block is absorbing, we simply add a self-loop.
         if (oldBlock.data().absorbing()) {
-            builder.addNextValue(currentRow, blockIndex, storm::utility::one<ValueType>());
+            builder.addNextValue(currentRow, blockIndex, storm::numbers::one<ValueType>());
             ++currentRow;
 
             // If the block has a special representative state, we retrieve it now.
@@ -159,7 +159,7 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() 
 
             // Give the choice a reward of zero as we artificially introduced that the block is absorbing.
             if (this->options.getKeepRewards() && this->model.hasRewardModel() && this->model.getUniqueRewardModel().hasStateActionRewards()) {
-                stateActionRewards.value().push_back(storm::utility::zero<ValueType>());
+                stateActionRewards.value().push_back(storm::numbers::zero<ValueType>());
             }
 
             // Add all of the selected atomic propositions that hold in the representative state to the state

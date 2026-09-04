@@ -115,7 +115,7 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateE
             children.push_back(std::to_string(child->id()));
         }
         nodeData["children"] = children;
-        if (storm::utility::isOne<ValueType>(dependency->probability())) {
+        if (storm::numbers::isOne<ValueType>(dependency->probability())) {
             nodeData["type"] = "fdep";
         } else {
             std::stringstream stream;

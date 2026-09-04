@@ -9,7 +9,7 @@
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/solver/multiplier/NativeMultiplier.h"
 
-#include "storm/utility/NumberTraits.h"
+#include "storm/numbers/NumberTraits.h"
 
 namespace storm {
 

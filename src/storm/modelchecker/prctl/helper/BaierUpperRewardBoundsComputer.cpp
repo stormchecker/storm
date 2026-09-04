@@ -82,7 +82,7 @@ std::vector<ValueType> BaierUpperRewardBoundsComputer<ValueType>::computeUpperBo
     }
 
     // Vector that holds the result.
-    std::vector<ValueType> result(numStates, storm::utility::one<ValueType>());
+    std::vector<ValueType> result(numStates, storm::numbers::one<ValueType>());
     // The states that we already have assigned a value for.
     storm::storage::BitVector processedStates(numStates, false);
 
@@ -169,7 +169,7 @@ std::vector<ValueType> BaierUpperRewardBoundsComputer<ValueType>::computeUpperBo
     }
 
     // Transform the d_t to an upper bound for zeta(t) (i.e. the expected number of visits of t
-    storm::utility::vector::applyPointwise(result, result, [](ValueType const& r) -> ValueType { return storm::utility::one<ValueType>() / r; });
+    storm::utility::vector::applyPointwise(result, result, [](ValueType const& r) -> ValueType { return storm::numbers::one<ValueType>() / r; });
     return result;
 }
 
@@ -199,14 +199,14 @@ typename BaierUpperRewardBoundsComputer<ValueType>::Bounds BaierUpperRewardBound
 
     auto expVisits = computeUpperBoundOnExpectedVisitingTimes(transitionMatrix, backwardTransRef, oneStepTargetProbabilities, stateToSccFct);
 
-    Bounds result{.lower = storm::utility::zero<ValueType>(), .upper = storm::utility::zero<ValueType>()};
+    Bounds result{.lower = storm::numbers::zero<ValueType>(), .upper = storm::numbers::zero<ValueType>()};
     for (uint64_t state = 0; state < expVisits.size(); ++state) {
         // Get the maximum / minimum reward that can be collected in the state.
         // We distinguish between choices that surely exit the current SCC and those that do not.
         // The former can only be taken at most once so we do not have to multiply with the upper bound on the expected visits.
         auto const currScc = stateToSccFct(state);
-        storm::utility::Maximum<ValueType> maxReward(storm::utility::zero<ValueType>()), maxRewardStay;
-        storm::utility::Minimum<ValueType> minReward(storm::utility::zero<ValueType>()), minRewardStay;
+        storm::utility::Maximum<ValueType> maxReward(storm::numbers::zero<ValueType>()), maxRewardStay;
+        storm::utility::Minimum<ValueType> minReward(storm::numbers::zero<ValueType>()), minRewardStay;
         // By starting the maxRewards with zero, negative rewards are essentially ignored which is necessary to provide a valid upper bound
         for (auto rowIndex : transitionMatrix.getRowGroupIndices(state)) {
             auto const row = transitionMatrix.getRow(rowIndex);
