@@ -49,7 +49,6 @@ void testGoalStateMerger(std::string const& prismModelFile, std::string const& f
                         << " (dropUnreachableFromInit=" << dropUnreachableFromInit << ").";
     }
 }
-}
 
 TEST_F(GoalStateMergerTest, BrpUntilTest) {
     testGoalStateMerger(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ true U \"target\"]");
