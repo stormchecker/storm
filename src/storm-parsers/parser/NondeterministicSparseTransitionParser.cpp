@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/NondeterministicSparseTransitionParser.h"
+#include "NondeterministicSparseTransitionParser.h"
 
 #include <string>
 

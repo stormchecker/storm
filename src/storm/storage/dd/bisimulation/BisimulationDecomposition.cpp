@@ -1,4 +1,4 @@
-#include "storm/storage/dd/bisimulation/BisimulationDecomposition.h"
+#include "BisimulationDecomposition.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"

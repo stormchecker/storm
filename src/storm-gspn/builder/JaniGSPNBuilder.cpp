@@ -3,9 +3,9 @@
 #include <memory>
 #include <optional>
 
+#include "storm/exceptions/InvalidModelException.h"
 #include "storm/logic/Formulas.h"
 
-#include "storm/exceptions/InvalidModelException.h"
 namespace storm {
 namespace builder {
 

@@ -1,7 +1,6 @@
-#include "storm/solver/AcyclicMinMaxLinearEquationSolver.h"
+#include "AcyclicMinMaxLinearEquationSolver.h"
 
 #include "storm/solver/helper/AcyclicSolverHelper.h"
-
 #include "storm/utility/vector.h"
 
 namespace storm {

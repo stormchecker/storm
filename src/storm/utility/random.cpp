@@ -1,4 +1,4 @@
-#include "storm/utility/random.h"
+#include "random.h"
 
 #include <limits>
 

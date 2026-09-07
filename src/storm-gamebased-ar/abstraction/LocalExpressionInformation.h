@@ -5,10 +5,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "storm/storage/dd/DdType.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
-
-#include "storm/storage/dd/DdType.h"
 
 namespace storm::gbar {
 namespace abstraction {

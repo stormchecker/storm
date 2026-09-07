@@ -10,13 +10,12 @@
 #include <utility>
 #include <vector>
 
+#include "storm/exceptions/IllegalArgumentTypeException.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBase.h"
 #include "storm/settings/ArgumentType.h"
 #include "storm/settings/ArgumentValidators.h"
-
-#include "storm/exceptions/IllegalArgumentTypeException.h"
-#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

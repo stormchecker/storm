@@ -1,4 +1,4 @@
-#include "storm/storage/jani/expressions/ArrayExpression.h"
+#include "ArrayExpression.h"
 
 namespace storm {
 namespace expressions {

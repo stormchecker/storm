@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResult.h"
-
 #include "storm/solver/OptimizationDirection.h"
 
 namespace storm::gbar {

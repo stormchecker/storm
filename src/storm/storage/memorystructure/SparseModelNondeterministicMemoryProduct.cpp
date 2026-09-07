@@ -1,4 +1,4 @@
-#include "storm/storage/memorystructure/SparseModelNondeterministicMemoryProduct.h"
+#include "SparseModelNondeterministicMemoryProduct.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"

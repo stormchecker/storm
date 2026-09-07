@@ -1,10 +1,9 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <cstdint>
 #include <map>
 #include <set>
-
-#include <boost/optional.hpp>
 
 #include "storm/storage/jani/visitor/CompositionVisitor.h"
 

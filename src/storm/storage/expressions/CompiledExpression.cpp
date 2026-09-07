@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/CompiledExpression.h"
+#include "CompiledExpression.h"
 
 #include "storm/storage/expressions/ExprtkCompiledExpression.h"
 

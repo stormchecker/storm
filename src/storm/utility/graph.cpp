@@ -1,4 +1,4 @@
-#include "storm/utility/graph.h"
+#include "graph.h"
 
 #include <algorithm>
 

@@ -1,9 +1,8 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <cstdint>
 #include <vector>
-
-#include <boost/optional.hpp>
 
 #include "storm/storage/expressions/Expression.h"
 

@@ -1,4 +1,4 @@
-#include "storm/settings/modules/ResourceSettings.h"
+#include "ResourceSettings.h"
 
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"

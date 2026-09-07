@@ -1,5 +1,8 @@
 #pragma once
 
+#include <boost/optional.hpp>
+#include <exception>
+
 #include "cpphoafparser/consumer/hoa_consumer.hh"
 #include "cpphoafparser/util/implicit_edge_helper.hh"
 #include "storm/automata/APSet.h"
@@ -10,9 +13,6 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/macros.h"
-
-#include <boost/optional.hpp>
-#include <exception>
 
 namespace storm {
 namespace automata {

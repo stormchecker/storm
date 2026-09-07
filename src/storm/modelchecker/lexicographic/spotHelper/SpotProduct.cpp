@@ -1,4 +1,4 @@
-#include "storm/modelchecker/lexicographic/spotHelper/SpotProduct.h"
+#include "SpotProduct.h"
 
 #include <deque>
 

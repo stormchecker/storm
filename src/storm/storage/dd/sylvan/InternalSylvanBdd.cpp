@@ -1,4 +1,4 @@
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#include "InternalSylvanBdd.h"
 
 #include <boost/functional/hash.hpp>
 

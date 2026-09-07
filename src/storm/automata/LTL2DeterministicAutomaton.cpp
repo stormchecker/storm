@@ -1,14 +1,14 @@
-#include "storm/automata/LTL2DeterministicAutomaton.h"
+#include "LTL2DeterministicAutomaton.h"
+
+#include <sys/wait.h>
+
 #include "storm/adapters/SpotAdapter.h"
 #include "storm/automata/DeterministicAutomaton.h"
-
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/logic/Formula.h"
 #include "storm/utility/macros.h"
-
-#include <sys/wait.h>
 
 namespace storm {
 namespace automata {

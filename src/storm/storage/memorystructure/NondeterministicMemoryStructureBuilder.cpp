@@ -1,7 +1,7 @@
-#include "storm/storage/memorystructure/NondeterministicMemoryStructureBuilder.h"
-#include "storm/storage/memorystructure/NondeterministicMemoryStructure.h"
+#include "NondeterministicMemoryStructureBuilder.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/memorystructure/NondeterministicMemoryStructure.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

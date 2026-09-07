@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/CheckIfThenElseGuardVisitor.h"
+#include "CheckIfThenElseGuardVisitor.h"
 
 #include "storm/storage/expressions/Expressions.h"
 

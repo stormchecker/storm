@@ -1,4 +1,5 @@
-#include "storm/logic/LabelSubstitutionVisitor.h"
+#include "LabelSubstitutionVisitor.h"
+
 #include <boost/any.hpp>
 
 #include "storm/logic/Formulas.h"

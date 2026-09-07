@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/ExpressionEvaluatorBase.h"
+#include "ExpressionEvaluatorBase.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/expressions/ExpressionManager.h"

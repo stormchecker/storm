@@ -1,4 +1,5 @@
-#include "storm/storage/prism/Module.h"
+#include "Module.h"
+
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"

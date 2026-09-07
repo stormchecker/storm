@@ -1,14 +1,13 @@
-#include "storm/storage/jani/VariablesToConstantsTransformer.h"
-
-#include "storm/storage/jani/Constant.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/Variable.h"
-#include "storm/storage/jani/traverser/AssignmentsFinder.h"
+#include "VariablesToConstantsTransformer.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/jani/Constant.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Variable.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
+#include "storm/storage/jani/traverser/AssignmentsFinder.h"
 
 namespace storm {
 

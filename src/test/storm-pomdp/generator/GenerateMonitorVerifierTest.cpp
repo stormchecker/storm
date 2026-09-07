@@ -1,9 +1,8 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm/adapters/RationalNumberAdapter.h"
-
 #include "storm-pomdp/generator/GenerateMonitorVerifier.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StateLabeling.h"

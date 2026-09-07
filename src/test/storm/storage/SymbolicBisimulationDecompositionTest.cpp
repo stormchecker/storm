@@ -1,10 +1,8 @@
 #include "storm-config.h"
-#include "storm/environment/Environment.h"
-#include "test/storm_gtest.h"
-
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdPrismModelBuilder.h"
+#include "storm/environment/Environment.h"
 #include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 #include "storm/modelchecker/results/CheckResult.h"
@@ -17,6 +15,7 @@
 #include "storm/solver/SymbolicLinearEquationSolver.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/dd/bisimulation/BisimulationDecomposition.h"
+#include "test/storm_gtest.h"
 
 class Cudd {
    public:

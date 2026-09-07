@@ -1,3 +1,5 @@
+#include "Expression.h"
+
 #include <map>
 #include <unordered_map>
 
@@ -6,7 +8,6 @@
 #include "storm/storage/expressions/ChangeManagerVisitor.h"
 #include "storm/storage/expressions/CheckIfThenElseGuardVisitor.h"
 #include "storm/storage/expressions/CompiledExpression.h"
-#include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/LinearityCheckVisitor.h"

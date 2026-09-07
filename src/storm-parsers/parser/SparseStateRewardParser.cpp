@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/SparseStateRewardParser.h"
+#include "SparseStateRewardParser.h"
 
 #include <iostream>
 

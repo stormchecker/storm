@@ -7,7 +7,6 @@
 #include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsObjectiveHelper.h"
 #include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
-
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/storage/expressions/ExpressionManager.h"

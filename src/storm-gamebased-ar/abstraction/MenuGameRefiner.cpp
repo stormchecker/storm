@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/MenuGameRefiner.h"
+#include "MenuGameRefiner.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm-gamebased-ar/abstraction/ExplicitQualitativeGameResultMinMax.h"

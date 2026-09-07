@@ -1,13 +1,11 @@
-#include "storm/storage/jani/JaniLocationExpander.h"
-
-#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
+#include "JaniLocationExpander.h"
 
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
-
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {
 namespace jani {

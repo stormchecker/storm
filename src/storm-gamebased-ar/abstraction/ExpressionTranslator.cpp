@@ -1,13 +1,10 @@
-#include "storm-gamebased-ar/abstraction/ExpressionTranslator.h"
+#include "ExpressionTranslator.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
-
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-
 #include "storm/storage/expressions/Expression.h"
-
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm::gbar {

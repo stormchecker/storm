@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm/settings/modules/ModuleSettings.h"
-
 #include "storm/storage/dd/bisimulation/InitialPartitionMode.h"
 #include "storm/storage/dd/bisimulation/QuotientFormat.h"
 #include "storm/storage/dd/bisimulation/RefinementMode.h"

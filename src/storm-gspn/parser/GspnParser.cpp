@@ -1,14 +1,13 @@
 #include "GspnParser.h"
+
 #include "storm-config.h"
 #include "storm-gspn/adapters/XercesAdapter.h"
-
+#include "storm-gspn/parser/GreatSpnEditorProjectParser.h"
+#include "storm-gspn/parser/PnmlParser.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
-
-#include "GreatSpnEditorProjectParser.h"
-#include "PnmlParser.h"
 
 namespace storm {
 namespace parser {

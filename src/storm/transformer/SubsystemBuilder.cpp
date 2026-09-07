@@ -1,4 +1,4 @@
-#include "storm/transformer/SubsystemBuilder.h"
+#include "SubsystemBuilder.h"
 
 #include <boost/optional.hpp>
 

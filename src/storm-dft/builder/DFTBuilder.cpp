@@ -1,4 +1,4 @@
-#include "storm-dft/builder/DFTBuilder.h"
+#include "DFTBuilder.h"
 
 #include <algorithm>
 

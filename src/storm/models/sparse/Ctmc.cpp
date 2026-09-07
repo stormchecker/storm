@@ -1,4 +1,4 @@
-#include "storm/models/sparse/Ctmc.h"
+#include "Ctmc.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

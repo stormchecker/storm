@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm-parsers/parser/SpiritParserDefinitions.h"
-
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
 

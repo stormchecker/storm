@@ -1,7 +1,7 @@
-#include "storm/io/file.h"
+#include "OneShotPolicySearch.h"
 
-#include "storm-pomdp/analysis/OneShotPolicySearch.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/io/file.h"
 
 namespace storm {
 namespace pomdp {

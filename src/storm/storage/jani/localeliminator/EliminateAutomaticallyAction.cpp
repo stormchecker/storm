@@ -1,7 +1,7 @@
 #include "EliminateAutomaticallyAction.h"
-#include "EliminateAction.h"
 
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/storage/jani/localeliminator/EliminateAction.h"
 
 namespace storm {
 namespace jani {

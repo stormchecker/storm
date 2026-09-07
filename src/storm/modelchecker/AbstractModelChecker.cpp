@@ -1,4 +1,4 @@
-#include "storm/modelchecker/AbstractModelChecker.h"
+#include "AbstractModelChecker.h"
 
 #include <boost/core/typeinfo.hpp>
 

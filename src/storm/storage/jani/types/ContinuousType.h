@@ -1,6 +1,6 @@
 #pragma once
 
-#include "JaniType.h"
+#include "storm/storage/jani/types/JaniType.h"
 
 namespace storm {
 namespace jani {

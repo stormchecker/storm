@@ -1,4 +1,4 @@
-#include "storm/adapters/GmmxxAdapter.h"
+#include "GmmxxAdapter.h"
 
 #include <algorithm>
 

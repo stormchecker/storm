@@ -1,10 +1,9 @@
-#include "storm/storage/jani/expressions/FunctionCallExpression.h"
-
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
+#include "FunctionCallExpression.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
 
 namespace storm {
 namespace expressions {

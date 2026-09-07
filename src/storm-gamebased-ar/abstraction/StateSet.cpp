@@ -1,4 +1,5 @@
-#include "storm-gamebased-ar/abstraction/StateSet.h"
+#include "StateSet.h"
+
 #include "storm-gamebased-ar/abstraction/SymbolicStateSet.h"
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 

@@ -1,4 +1,4 @@
-#include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
+#include "DsMpiUpperRewardBoundsComputer.h"
 
 #include "storm-config.h"
 #include "storm/adapters/RationalNumberAdapter.h"

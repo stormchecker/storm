@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/UnaryExpression.h"
+#include "UnaryExpression.h"
 
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/utility/macros.h"

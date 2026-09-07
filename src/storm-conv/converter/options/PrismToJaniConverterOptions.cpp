@@ -1,4 +1,4 @@
-#include "storm-conv/converter/options/PrismToJaniConverterOptions.h"
+#include "PrismToJaniConverterOptions.h"
 
 namespace storm {
 namespace converter {

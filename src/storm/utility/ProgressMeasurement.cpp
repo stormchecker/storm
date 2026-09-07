@@ -1,4 +1,4 @@
-#include "storm/utility/ProgressMeasurement.h"
+#include "ProgressMeasurement.h"
 
 #include <limits>
 #include <sstream>

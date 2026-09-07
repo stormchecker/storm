@@ -1,8 +1,8 @@
-#include "storm/solver/stateelimination/PrioritizedStateEliminator.h"
+#include "PrioritizedStateEliminator.h"
 
-#include "StaticStatePriorityQueue.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/solver/stateelimination/StatePriorityQueue.h"
+#include "storm/solver/stateelimination/StaticStatePriorityQueue.h"
 #include "storm/utility/constants.h"
 
 namespace storm {

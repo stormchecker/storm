@@ -1,4 +1,4 @@
-#include "storm/storage/umb/Umb.h"
+#include "Umb.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/umb/export/SparseModelToUmb.h"

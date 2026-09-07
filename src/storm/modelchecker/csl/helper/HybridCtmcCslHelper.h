@@ -1,15 +1,11 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 
-#include <memory>
-
-#include "storm/models/symbolic/Ctmc.h"
-
 #include "storm/modelchecker/results/CheckResult.h"
-
+#include "storm/models/symbolic/Ctmc.h"
 #include "storm/solver/LinearEquationSolver.h"
-
 #include "storm/utility/NumberTraits.h"
 
 namespace storm {

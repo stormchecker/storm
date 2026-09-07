@@ -1,4 +1,5 @@
-#include "storm-gamebased-ar/abstraction/BottomStateResult.h"
+#include "BottomStateResult.h"
+
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm::gbar {

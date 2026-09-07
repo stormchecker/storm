@@ -1,4 +1,5 @@
-#include "storm/logic/GameFormula.h"
+#include "GameFormula.h"
+
 #include <boost/any.hpp>
 #include <ostream>
 

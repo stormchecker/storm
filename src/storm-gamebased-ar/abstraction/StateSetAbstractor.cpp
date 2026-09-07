@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/StateSetAbstractor.h"
+#include "StateSetAbstractor.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm/adapters/RationalNumberAdapter.h"

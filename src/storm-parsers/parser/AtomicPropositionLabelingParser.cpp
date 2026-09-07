@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/AtomicPropositionLabelingParser.h"
+#include "AtomicPropositionLabelingParser.h"
 
 #include <cstring>
 #include <iostream>

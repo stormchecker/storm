@@ -1,10 +1,10 @@
-#include "storm/logic/ToPrefixStringVisitor.h"
-#include <boost/any.hpp>
+#include "ToPrefixStringVisitor.h"
 
-#include "storm/logic/Formulas.h"
+#include <boost/any.hpp>
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/logic/Formulas.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

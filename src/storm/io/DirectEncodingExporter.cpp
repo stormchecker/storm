@@ -1,4 +1,4 @@
-#include "storm/io/DirectEncodingExporter.h"
+#include "DirectEncodingExporter.h"
 
 #include <sstream>
 

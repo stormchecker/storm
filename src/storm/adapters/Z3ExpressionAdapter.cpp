@@ -1,4 +1,4 @@
-#include "storm/adapters/Z3ExpressionAdapter.h"
+#include "Z3ExpressionAdapter.h"
 
 #include <cstdint>
 

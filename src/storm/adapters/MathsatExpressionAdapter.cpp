@@ -1,4 +1,4 @@
-#include "storm/adapters/MathsatExpressionAdapter.h"
+#include "MathsatExpressionAdapter.h"
 
 #ifdef STORM_HAVE_MATHSAT
 bool operator==(msat_decl decl1, msat_decl decl2) {

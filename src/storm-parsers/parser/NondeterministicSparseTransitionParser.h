@@ -1,9 +1,9 @@
 #pragma once
 
+#include <vector>
+
 #include "storm-parsers/parser/ExplicitModelParserOptions.h"
 #include "storm/storage/SparseMatrix.h"
-
-#include <vector>
 
 namespace storm {
 namespace parser {

@@ -1,8 +1,7 @@
 #include "GspnBuilder.h"
 
+#include "storm-gspn/storage/gspn/Place.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
-
-#include "Place.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"
 

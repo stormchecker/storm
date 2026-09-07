@@ -1,4 +1,4 @@
-#include "storm/transformer/NonMarkovianChainTransformer.h"
+#include "NonMarkovianChainTransformer.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

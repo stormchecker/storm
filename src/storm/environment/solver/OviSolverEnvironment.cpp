@@ -1,4 +1,4 @@
-#include "storm/environment/solver/OviSolverEnvironment.h"
+#include "OviSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/OviSolverSettings.h"

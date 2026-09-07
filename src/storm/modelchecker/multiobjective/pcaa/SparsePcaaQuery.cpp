@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuery.h"
+#include "SparsePcaaQuery.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"

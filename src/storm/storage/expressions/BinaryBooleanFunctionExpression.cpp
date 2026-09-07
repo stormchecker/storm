@@ -1,9 +1,10 @@
-#include "storm/storage/expressions/BinaryBooleanFunctionExpression.h"
-#include "Expressions.h"
+#include "BinaryBooleanFunctionExpression.h"
+
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/storage/expressions/BooleanLiteralExpression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/OperatorType.h"
 #include "storm/utility/macros.h"
 

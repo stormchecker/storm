@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolverProblemFormat.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"

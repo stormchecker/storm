@@ -1,10 +1,10 @@
-
-#include "storm/automata/APSet.h"
-#include "storm/exceptions/UnexpectedException.h"
-#include "storm/utility/macros.h"
+#include "APSet.h"
 
 #include <exception>
 #include <string>
+
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace automata {

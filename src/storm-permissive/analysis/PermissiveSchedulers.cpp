@@ -1,5 +1,4 @@
-
-#include "storm-permissive/analysis/PermissiveSchedulers.h"
+#include "PermissiveSchedulers.h"
 
 #include "storm-permissive/analysis/MILPPermissiveSchedulers.h"
 #include "storm-permissive/analysis/SmtBasedPermissiveSchedulers.h"

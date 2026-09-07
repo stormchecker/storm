@@ -1,4 +1,4 @@
-#include "storm-dft/generator/DftNextStateGenerator.h"
+#include "DftNextStateGenerator.h"
 
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

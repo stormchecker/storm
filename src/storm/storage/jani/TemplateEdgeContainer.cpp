@@ -1,4 +1,5 @@
-#include "storm/storage/jani/TemplateEdgeContainer.h"
+#include "TemplateEdgeContainer.h"
+
 #include "storm/storage/jani/TemplateEdge.h"
 
 namespace storm {

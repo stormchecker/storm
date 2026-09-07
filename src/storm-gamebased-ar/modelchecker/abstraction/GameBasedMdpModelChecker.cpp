@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/modelchecker/abstraction/GameBasedMdpModelChecker.h"
+#include "GameBasedMdpModelChecker.h"
 
 #include <sstream>
 

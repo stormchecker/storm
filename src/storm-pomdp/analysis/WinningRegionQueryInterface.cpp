@@ -1,4 +1,4 @@
-#include "storm-pomdp/analysis/WinningRegionQueryInterface.h"
+#include "WinningRegionQueryInterface.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/UnexpectedException.h"

@@ -2,7 +2,6 @@
 
 #include "storm/generator/NextStateGenerator.h"
 #include "storm/generator/TransientVariableInformation.h"
-
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/OrderedAssignments.h"

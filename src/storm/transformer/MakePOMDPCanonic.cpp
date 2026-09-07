@@ -1,4 +1,4 @@
-#include "storm/transformer/MakePOMDPCanonic.h"
+#include "MakePOMDPCanonic.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

@@ -1,16 +1,14 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <memory>
 
-#include <boost/optional.hpp>
-
 #include "storm/logic/ComparisonType.h"
+#include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/storage/BitVector.h"
-
-#include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
 namespace storage {

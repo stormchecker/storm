@@ -1,7 +1,7 @@
-#include "storm/storage/expressions/IfThenElseExpression.h"
+#include "IfThenElseExpression.h"
 
-#include "ExpressionVisitor.h"
 #include "storm/exceptions/InvalidAccessException.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
 #include "storm/storage/expressions/OperatorType.h"
 #include "storm/utility/macros.h"
 

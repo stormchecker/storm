@@ -1,4 +1,4 @@
-#include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
+#include "NondeterministicModelBisimulationDecomposition.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"

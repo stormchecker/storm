@@ -2,6 +2,7 @@
 
 #include <boost/optional.hpp>
 #include <vector>
+
 #include "storm/storage/jani/localeliminator/FinishAction.h"
 #include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
 #include "storm/storage/jani/localeliminator/UnfoldDependencyGraph.h"

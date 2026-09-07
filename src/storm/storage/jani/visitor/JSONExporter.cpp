@@ -5,15 +5,13 @@
 #include <vector>
 
 #include "storm/exceptions/FileIoException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/io/file.h"
-#include "storm/utility/macros.h"
-
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidJaniException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
-
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/io/file.h"
+#include "storm/logic/Formulas.h"
 #include "storm/storage/expressions/BinaryBooleanFunctionExpression.h"
 #include "storm/storage/expressions/BinaryNumericalFunctionExpression.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
@@ -26,9 +24,6 @@
 #include "storm/storage/expressions/UnaryBooleanFunctionExpression.h"
 #include "storm/storage/expressions/UnaryNumericalFunctionExpression.h"
 #include "storm/storage/expressions/VariableExpression.h"
-
-#include "storm/logic/Formulas.h"
-
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/Property.h"
@@ -37,6 +32,7 @@
 #include "storm/storage/jani/types/ArrayType.h"
 #include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/storage/jani/visitor/JaniReduceNestingExpressionVisitor.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace jani {

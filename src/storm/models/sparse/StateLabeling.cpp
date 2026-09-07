@@ -1,4 +1,4 @@
-#include "storm/models/sparse/StateLabeling.h"
+#include "StateLabeling.h"
 
 namespace storm {
 namespace models {

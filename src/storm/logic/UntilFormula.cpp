@@ -1,4 +1,5 @@
-#include "storm/logic/UntilFormula.h"
+#include "UntilFormula.h"
+
 #include <boost/any.hpp>
 #include <ostream>
 

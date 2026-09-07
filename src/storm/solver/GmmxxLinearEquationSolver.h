@@ -3,7 +3,6 @@
 #include <ostream>
 
 #include "storm/adapters/gmm.h"
-
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/SolverSelectionOptions.h"
 

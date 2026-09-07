@@ -1,4 +1,4 @@
-#include "storm-dft/parser/DFTJsonParser.h"
+#include "DFTJsonParser.h"
 
 #include <boost/algorithm/string.hpp>
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm/logic/CumulativeRewardFormula.h"
-
 #include "storm/logic/TimeBound.h"
 #include "storm/logic/TimeBoundType.h"
 

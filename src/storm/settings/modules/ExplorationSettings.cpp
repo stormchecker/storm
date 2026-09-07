@@ -1,12 +1,12 @@
-#include "storm/settings/modules/ExplorationSettings.h"
+#include "ExplorationSettings.h"
+
+#include "storm/exceptions/IllegalArgumentValueException.h"
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
-
-#include "storm/exceptions/IllegalArgumentValueException.h"
 #include "storm/utility/Engine.h"
 #include "storm/utility/macros.h"
 

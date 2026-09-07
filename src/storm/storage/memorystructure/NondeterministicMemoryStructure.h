@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+
 #include "storm/storage/BitVector.h"
 
 namespace storm {

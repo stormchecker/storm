@@ -5,18 +5,17 @@
 #include <stack>
 #include <unordered_set>
 
+#include "storm-dft/builder/DftExplorationHeuristic.h"
+#include "storm-dft/generator/DftNextStateGenerator.h"
+#include "storm-dft/storage/BucketPriorityQueue.h"
+#include "storm-dft/storage/DFT.h"
+#include "storm-dft/storage/DftSymmetries.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/StateStorage.h"
-
-#include "storm-dft/builder/DftExplorationHeuristic.h"
-#include "storm-dft/generator/DftNextStateGenerator.h"
-#include "storm-dft/storage/BucketPriorityQueue.h"
-#include "storm-dft/storage/DFT.h"
-#include "storm-dft/storage/DftSymmetries.h"
 
 namespace storm::dft {
 namespace builder {

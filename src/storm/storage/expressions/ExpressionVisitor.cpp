@@ -1,4 +1,5 @@
-#include "storm/storage/expressions/ExpressionVisitor.h"
+#include "ExpressionVisitor.h"
+
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"
 

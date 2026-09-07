@@ -1,9 +1,9 @@
 #pragma once
 
+#include <string>
+
 #include "storm-parsers/parser/ExplicitModelParserOptions.h"
 #include "storm/models/sparse/Model.h"
-
-#include <string>
 
 namespace storm {
 

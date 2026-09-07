@@ -1,4 +1,4 @@
-#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "SparseDtmcPrctlModelChecker.h"
 
 #include <memory>
 #include <vector>

@@ -1,4 +1,4 @@
-#include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
+#include "BaierUpperRewardBoundsComputer.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"

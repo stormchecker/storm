@@ -1,4 +1,4 @@
-#include "storm/modelchecker/rpatl/SparseSmgRpatlModelChecker.h"
+#include "SparseSmgRpatlModelChecker.h"
 
 #include <memory>
 

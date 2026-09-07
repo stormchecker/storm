@@ -1,4 +1,4 @@
-#include "storm/adapters/AddExpressionAdapter.h"
+#include "AddExpressionAdapter.h"
 
 #include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

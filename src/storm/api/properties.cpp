@@ -1,4 +1,4 @@
-#include "storm/api/properties.h"
+#include "properties.h"
 
 #include <boost/algorithm/string.hpp>
 

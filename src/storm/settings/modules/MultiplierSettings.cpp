@@ -1,10 +1,9 @@
-#include "storm/settings/modules/MultiplierSettings.h"
+#include "MultiplierSettings.h"
 
+#include "storm/exceptions/IllegalArgumentValueException.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-
-#include "storm/exceptions/IllegalArgumentValueException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

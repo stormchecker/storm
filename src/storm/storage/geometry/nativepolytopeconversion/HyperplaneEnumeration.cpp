@@ -1,4 +1,4 @@
-#include "storm/storage/geometry/nativepolytopeconversion/HyperplaneEnumeration.h"
+#include "HyperplaneEnumeration.h"
 
 #include "storm/storage/geometry/nativepolytopeconversion/HyperplaneCollector.h"
 #include "storm/storage/geometry/nativepolytopeconversion/SubsetEnumerator.h"

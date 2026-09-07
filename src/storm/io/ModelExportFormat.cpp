@@ -1,4 +1,4 @@
-#include "storm/io/ModelExportFormat.h"
+#include "ModelExportFormat.h"
 
 #include <filesystem>
 

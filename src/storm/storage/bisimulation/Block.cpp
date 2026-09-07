@@ -1,4 +1,4 @@
-#include "storm/storage/bisimulation/Block.h"
+#include "Block.h"
 
 #include <iostream>
 

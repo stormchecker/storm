@@ -1,4 +1,4 @@
-#include "storm-pars/settings/ParsSettings.h"
+#include "ParsSettings.h"
 
 #include "storm-pars/settings/modules/DerivativeSettings.h"
 #include "storm-pars/settings/modules/FeasibilitySettings.h"

@@ -1,4 +1,4 @@
-#include "storm/utility/numerical.h"
+#include "numerical.h"
 
 #include <boost/math/constants/constants.hpp>
 #include <cmath>

@@ -1,4 +1,4 @@
-#include "storm/modelchecker/helper/infinitehorizon/SparseInfiniteHorizonHelper.h"
+#include "SparseInfiniteHorizonHelper.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"

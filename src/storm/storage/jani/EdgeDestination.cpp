@@ -1,9 +1,8 @@
-#include "storm/storage/jani/EdgeDestination.h"
-
-#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
-#include "storm/utility/macros.h"
+#include "EdgeDestination.h"
 
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace jani {

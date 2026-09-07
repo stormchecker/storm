@@ -1,4 +1,4 @@
-#include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
+#include "DeterministicModelBisimulationDecomposition.h"
 
 #include <algorithm>
 #include <chrono>

@@ -1,4 +1,4 @@
-#include "storm/storage/dd/cudd/InternalCuddBdd.h"
+#include "InternalCuddBdd.h"
 
 #include <boost/functional/hash.hpp>
 

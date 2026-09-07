@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/modelchecker/abstraction/AbstractAbstractionRefinementModelChecker.h"
+#include "AbstractAbstractionRefinementModelChecker.h"
 
 #include "storm-gamebased-ar/abstraction/QualitativeResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/StateSet.h"

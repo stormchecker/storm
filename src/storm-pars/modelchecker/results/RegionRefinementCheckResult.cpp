@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
+#include "RegionRefinementCheckResult.h"
 
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

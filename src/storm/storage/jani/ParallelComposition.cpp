@@ -1,8 +1,7 @@
-#include "storm/storage/jani/ParallelComposition.h"
-
-#include <sstream>
+#include "ParallelComposition.h"
 
 #include <boost/algorithm/string/join.hpp>
+#include <sstream>
 
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/jani/Model.h"

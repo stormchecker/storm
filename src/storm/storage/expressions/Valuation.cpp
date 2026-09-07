@@ -1,4 +1,5 @@
-#include "storm/storage/expressions/Valuation.h"
+#include "Valuation.h"
+
 #include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {

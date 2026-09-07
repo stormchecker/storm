@@ -1,4 +1,4 @@
-#include "storm-pomdp/analysis/FormulaInformation.h"
+#include "FormulaInformation.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"

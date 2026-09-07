@@ -1,4 +1,4 @@
-#include "storm/modelchecker/exploration/Statistics.h"
+#include "Statistics.h"
 
 #include "storm/modelchecker/exploration/ExplorationInformation.h"
 

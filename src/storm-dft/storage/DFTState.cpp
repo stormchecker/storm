@@ -1,4 +1,4 @@
-#include "storm-dft/storage/DFTState.h"
+#include "DFTState.h"
 
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/elements/DFTElements.h"

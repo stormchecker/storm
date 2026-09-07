@@ -1,14 +1,12 @@
-#include "storm/storage/expressions/SimpleValuation.h"
+#include "SimpleValuation.h"
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/functional/hash.hpp>
 
 #include "storm/adapters/JsonAdapter.h"
-
+#include "storm/exceptions/InvalidTypeException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Variable.h"
-
-#include "storm/exceptions/InvalidTypeException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

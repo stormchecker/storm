@@ -1,7 +1,7 @@
-#include "storm/modelchecker/exploration/StateGeneration.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "StateGeneration.h"
 
 #include "storm/modelchecker/exploration/ExplorationInformation.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 
 namespace storm {
 namespace modelchecker {

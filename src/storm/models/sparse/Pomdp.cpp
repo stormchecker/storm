@@ -1,4 +1,4 @@
-#include "storm/models/sparse/Pomdp.h"
+#include "Pomdp.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

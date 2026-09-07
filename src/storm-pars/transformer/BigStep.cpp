@@ -1,4 +1,4 @@
-#include "storm-pars/transformer/BigStep.h"
+#include "BigStep.h"
 
 #include <algorithm>
 #include <functional>

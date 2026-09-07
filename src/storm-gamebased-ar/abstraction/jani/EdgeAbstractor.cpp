@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/jani/EdgeAbstractor.h"
+#include "EdgeAbstractor.h"
 
 #include <boost/iterator/transform_iterator.hpp>
 #include <chrono>

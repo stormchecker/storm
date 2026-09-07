@@ -1,4 +1,4 @@
-#include "storm/logic/DiscountedTotalRewardFormula.h"
+#include "DiscountedTotalRewardFormula.h"
 
 #include <boost/any.hpp>
 #include <ostream>

@@ -1,10 +1,10 @@
-#include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
+#include "ExtractMaximalStateFormulasVisitor.h"
+
 #include <boost/any.hpp>
 #include <optional>
 
-#include "storm/logic/Formulas.h"
-
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/logic/Formulas.h"
 
 namespace storm {
 namespace logic {

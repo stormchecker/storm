@@ -1,8 +1,8 @@
 #pragma once
 
-#include "SolverSelectionOptions.h"
 #include "storm/solver/GameSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/SolverStatus.h"
 #include "storm/solver/multiplier/Multiplier.h"
 

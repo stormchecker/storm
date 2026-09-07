@@ -1,4 +1,4 @@
-#include "storm/models/sparse/ItemLabeling.h"
+#include "ItemLabeling.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"

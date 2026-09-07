@@ -1,7 +1,8 @@
-#include "storm/logic/TimeOperatorFormula.h"
+#include "TimeOperatorFormula.h"
 
 #include <boost/any.hpp>
 #include <ostream>
+
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/EventuallyFormula.h"
 #include "storm/logic/FormulaVisitor.h"

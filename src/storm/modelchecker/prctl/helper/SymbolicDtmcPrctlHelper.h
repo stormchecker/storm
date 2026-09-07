@@ -1,11 +1,9 @@
 #pragma once
 
 #include "storm/models/symbolic/Model.h"
-
+#include "storm/solver/SymbolicLinearEquationSolver.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
-
-#include "storm/solver/SymbolicLinearEquationSolver.h"
 
 namespace storm {
 

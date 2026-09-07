@@ -1,4 +1,4 @@
-#include "storm/solver/helper/IntervalterationHelper.h"
+#include "IntervalterationHelper.h"
 
 #include <type_traits>
 

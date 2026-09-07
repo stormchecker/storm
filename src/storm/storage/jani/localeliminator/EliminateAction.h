@@ -1,6 +1,6 @@
 #pragma once
 
-#include "JaniLocalEliminator.h"
+#include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
 
 // EliminateAction removes the given location from the model. For this, the location must not be initial, satisfy the property, or have a loop. This action
 // assumes that these properties already hold.

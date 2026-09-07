@@ -1,4 +1,4 @@
-#include "storm/settings/ArgumentType.h"
+#include "ArgumentType.h"
 
 namespace storm {
 namespace settings {

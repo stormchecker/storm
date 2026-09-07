@@ -1,4 +1,5 @@
-#include "storm/logic/FormulaInformationVisitor.h"
+#include "FormulaInformationVisitor.h"
+
 #include <boost/any.hpp>
 
 #include "storm/logic/Formulas.h"

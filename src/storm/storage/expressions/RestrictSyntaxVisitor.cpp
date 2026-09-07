@@ -1,3 +1,5 @@
+#include "RestrictSyntaxVisitor.h"
+
 #include <map>
 #include <string>
 #include <unordered_map>
@@ -5,7 +7,6 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/PredicateExpression.h"
-#include "storm/storage/expressions/RestrictSyntaxVisitor.h"
 
 namespace storm {
 namespace expressions {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm/generator/NextStateGenerator.h"
-
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/prism/Program.h"
 

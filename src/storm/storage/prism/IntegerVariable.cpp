@@ -1,4 +1,4 @@
-#include "storm/storage/prism/IntegerVariable.h"
+#include "IntegerVariable.h"
 
 #include "storm/storage/expressions/ExpressionManager.h"
 

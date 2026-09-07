@@ -1,4 +1,5 @@
-#include "storm/logic/LongRunAverageRewardFormula.h"
+#include "LongRunAverageRewardFormula.h"
+
 #include <boost/any.hpp>
 #include <ostream>
 

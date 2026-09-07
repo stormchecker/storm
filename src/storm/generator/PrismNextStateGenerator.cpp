@@ -1,4 +1,4 @@
-#include "storm/generator/PrismNextStateGenerator.h"
+#include "PrismNextStateGenerator.h"
 
 #include <boost/any.hpp>
 

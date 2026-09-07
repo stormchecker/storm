@@ -1,4 +1,4 @@
-#include "storm/solver/EigenLinearEquationSolver.h"
+#include "EigenLinearEquationSolver.h"
 
 #include "storm/adapters/EigenAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

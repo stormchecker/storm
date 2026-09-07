@@ -1,4 +1,4 @@
-#include "storm/storage/jani/LValue.h"
+#include "LValue.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/expressions/ExpressionManager.h"

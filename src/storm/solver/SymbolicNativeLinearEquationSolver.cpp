@@ -1,4 +1,4 @@
-#include "storm/solver/SymbolicNativeLinearEquationSolver.h"
+#include "SymbolicNativeLinearEquationSolver.h"
 
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/exceptions/NotSupportedException.h"

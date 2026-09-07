@@ -2,11 +2,9 @@
 
 #include <memory>
 
-#include "storm/storage/dd/DdType.h"
-
 #include "storm/models/sparse/Model.h"
 #include "storm/models/symbolic/Model.h"
-
+#include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/bisimulation/BisimulationOptions.h"
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/PreservationInformation.h"

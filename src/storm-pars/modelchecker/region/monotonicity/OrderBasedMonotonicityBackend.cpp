@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/monotonicity/OrderBasedMonotonicityBackend.h"
+#include "OrderBasedMonotonicityBackend.h"
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

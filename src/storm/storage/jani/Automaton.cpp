@@ -1,16 +1,15 @@
-#include "storm/storage/jani/Automaton.h"
+#include "Automaton.h"
 
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/types/AllJaniTypes.h"
 #include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidTypeException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

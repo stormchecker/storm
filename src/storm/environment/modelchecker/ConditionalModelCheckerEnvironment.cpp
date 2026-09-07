@@ -1,4 +1,4 @@
-#include "storm/environment/modelchecker/ConditionalModelCheckerEnvironment.h"
+#include "ConditionalModelCheckerEnvironment.h"
 
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/settings/SettingsManager.h"

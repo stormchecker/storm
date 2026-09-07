@@ -1,4 +1,4 @@
-#include "storm-pars/parser/ParameterRegionParser.h"
+#include "ParameterRegionParser.h"
 
 #include <boost/algorithm/string.hpp>
 

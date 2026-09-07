@@ -1,4 +1,4 @@
-#include "storm/solver/SmtSolver.h"
+#include "SmtSolver.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"

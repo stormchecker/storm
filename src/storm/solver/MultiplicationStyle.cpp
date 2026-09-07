@@ -1,4 +1,4 @@
-#include "storm/solver/MultiplicationStyle.h"
+#include "MultiplicationStyle.h"
 
 namespace storm {
 namespace solver {

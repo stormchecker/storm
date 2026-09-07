@@ -1,4 +1,4 @@
-#include "storm-dft/transformations/DftInstantiator.h"
+#include "DftInstantiator.h"
 
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

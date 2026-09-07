@@ -1,4 +1,4 @@
-#include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
+#include "SymbolicMdpPrctlModelChecker.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"

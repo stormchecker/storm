@@ -1,4 +1,4 @@
-#include "storm/builder/DdJaniModelBuilder.h"
+#include "DdJaniModelBuilder.h"
 
 #include <boost/algorithm/string/join.hpp>
 #include <sstream>

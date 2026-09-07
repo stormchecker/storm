@@ -1,4 +1,4 @@
-#include "storm/solver/LinearEquationSolverRequirements.h"
+#include "LinearEquationSolverRequirements.h"
 
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/utility/macros.h"

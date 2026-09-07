@@ -3,7 +3,6 @@
 #include <cstdint>
 
 #include "storm/storage/expressions/Expression.h"
-
 #include "storm/storage/jani/TemplateEdgeDestination.h"
 
 namespace storm {

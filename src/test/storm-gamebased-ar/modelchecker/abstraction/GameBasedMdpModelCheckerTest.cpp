@@ -1,11 +1,9 @@
 #include "storm-config.h"
-#include "storm/environment/Environment.h"
-#include "test/storm_gtest.h"
-
 #include "storm-gamebased-ar/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/api/storm.h"
+#include "storm/environment/Environment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Model.h"
@@ -13,6 +11,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
+#include "test/storm_gtest.h"
 
 class Cudd {
    public:

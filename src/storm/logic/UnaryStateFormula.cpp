@@ -1,4 +1,4 @@
-#include "storm/logic/UnaryStateFormula.h"
+#include "UnaryStateFormula.h"
 
 #include "storm/logic/FormulaVisitor.h"
 

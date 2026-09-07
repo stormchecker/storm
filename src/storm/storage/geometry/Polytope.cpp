@@ -1,4 +1,4 @@
-#include "storm/storage/geometry/Polytope.h"
+#include "Polytope.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"

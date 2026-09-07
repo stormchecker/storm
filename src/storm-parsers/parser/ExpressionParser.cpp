@@ -1,13 +1,12 @@
-#include "storm-parsers/parser/ExpressionParser.h"
+#include "ExpressionParser.h"
+
+#include "storm-parsers/parser/ExpressionCreator.h"
+#include "storm-parsers/parser/SpiritErrorHandler.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/WrongFormatException.h"
-
-#include "storm-parsers/parser/ExpressionCreator.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/utility/constants.h"
-
-#include "storm-parsers/parser/SpiritErrorHandler.h"
 
 namespace boost {
 namespace spirit {

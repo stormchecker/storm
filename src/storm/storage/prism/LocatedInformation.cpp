@@ -1,4 +1,4 @@
-#include "storm/storage/prism/LocatedInformation.h"
+#include "LocatedInformation.h"
 
 namespace storm {
 namespace prism {

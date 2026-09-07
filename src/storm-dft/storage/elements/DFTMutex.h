@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DFTRestriction.h"
+#include "storm-dft/storage/elements/DFTRestriction.h"
 
 namespace storm::dft {
 namespace storage {

@@ -1,4 +1,4 @@
-#include "storm/environment/solver/EliminationSolverEnvironment.h"
+#include "EliminationSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/EliminationSettings.h"

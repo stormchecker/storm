@@ -1,4 +1,5 @@
-#include "storm/logic/PlayerCoalition.h"
+#include "PlayerCoalition.h"
+
 #include <ostream>
 
 namespace storm {

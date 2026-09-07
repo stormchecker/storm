@@ -1,11 +1,9 @@
-#include "storm/storage/jani/Assignment.h"
-
-#include "storm/storage/jani/LValue.h"
-#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
-
-#include "storm/storage/expressions/LinearityCheckVisitor.h"
+#include "Assignment.h"
 
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/storage/expressions/LinearityCheckVisitor.h"
+#include "storm/storage/jani/LValue.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

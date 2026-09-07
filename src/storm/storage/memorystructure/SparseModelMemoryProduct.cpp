@@ -1,4 +1,4 @@
-#include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
+#include "SparseModelMemoryProduct.h"
 
 #include <boost/optional.hpp>
 

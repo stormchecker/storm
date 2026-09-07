@@ -1,4 +1,4 @@
-#include "storm/solver/SoplexLpSolver.h"
+#include "SoplexLpSolver.h"
 
 #include <numeric>
 

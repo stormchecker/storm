@@ -1,4 +1,4 @@
-#include "storm/storage/jani/traverser/JaniTraverser.h"
+#include "JaniTraverser.h"
 
 namespace storm {
 namespace jani {

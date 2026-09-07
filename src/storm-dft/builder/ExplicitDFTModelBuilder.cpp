@@ -1,4 +1,4 @@
-#include "storm-dft/builder/ExplicitDFTModelBuilder.h"
+#include "ExplicitDFTModelBuilder.h"
 
 #include <map>
 

@@ -1,12 +1,11 @@
 #pragma once
 
-#include "storm-config.h"
-
 #include <functional>
 #include <memory>
 #include <set>
 #include <unordered_map>
 
+#include "storm-config.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalAdd.h"

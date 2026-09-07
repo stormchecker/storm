@@ -1,4 +1,4 @@
-#include "storm/storage/FlexibleSparseMatrix.h"
+#include "FlexibleSparseMatrix.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"

@@ -1,4 +1,4 @@
-#include "storm-pomdp/analysis/UniqueObservationStates.h"
+#include "UniqueObservationStates.h"
 
 namespace storm {
 namespace analysis {

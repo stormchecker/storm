@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "GSPN.h"
+#include "storm-gspn/storage/gspn/GSPN.h"
 
 namespace storm {
 namespace gspn {

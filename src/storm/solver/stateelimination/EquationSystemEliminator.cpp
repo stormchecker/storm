@@ -1,4 +1,4 @@
-#include "storm/solver/stateelimination/EquationSystemEliminator.h"
+#include "EquationSystemEliminator.h"
 
 namespace storm {
 namespace solver {

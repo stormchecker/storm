@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/monotonicity/MonotonicityChecker.h"
+#include "MonotonicityChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/solver/Z3SmtSolver.h"

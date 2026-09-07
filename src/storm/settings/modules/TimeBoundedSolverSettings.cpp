@@ -1,9 +1,8 @@
-#include "storm/settings/modules/TimeBoundedSolverSettings.h"
+#include "TimeBoundedSolverSettings.h"
 
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-
 #include "storm/utility/macros.h"
 
 namespace storm {

@@ -1,4 +1,4 @@
-#include "storm/environment/solver/GurobiSolverEnvironment.h"
+#include "GurobiSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GurobiSettings.h"

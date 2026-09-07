@@ -1,4 +1,4 @@
-#include "storm/utility/threads.h"
+#include "threads.h"
 
 #include <algorithm>
 #include <cmath>

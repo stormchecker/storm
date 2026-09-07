@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/BinaryRelationExpression.h"
+#include "BinaryRelationExpression.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidTypeException.h"

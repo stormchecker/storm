@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/ToExprtkStringVisitor.h"
+#include "ToExprtkStringVisitor.h"
 
 #include "storm/utility/constants.h"
 

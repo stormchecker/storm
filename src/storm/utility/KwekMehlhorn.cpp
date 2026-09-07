@@ -1,4 +1,4 @@
-#include "storm/utility/KwekMehlhorn.h"
+#include "KwekMehlhorn.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/PrecisionExceededException.h"

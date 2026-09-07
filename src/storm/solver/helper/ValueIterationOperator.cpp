@@ -1,4 +1,4 @@
-#include "storm/solver/helper/ValueIterationOperator.h"
+#include "ValueIterationOperator.h"
 
 #include <optional>
 

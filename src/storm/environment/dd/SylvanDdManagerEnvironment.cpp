@@ -1,4 +1,4 @@
-#include "storm/environment/dd/SylvanDdManagerEnvironment.h"
+#include "SylvanDdManagerEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/SylvanSettings.h"

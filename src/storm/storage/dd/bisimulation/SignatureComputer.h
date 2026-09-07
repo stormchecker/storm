@@ -2,13 +2,11 @@
 
 #include <boost/optional.hpp>
 
+#include "storm/models/symbolic/Model.h"
 #include "storm/storage/dd/DdType.h"
-
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/Signature.h"
 #include "storm/storage/dd/bisimulation/SignatureMode.h"
-
-#include "storm/models/symbolic/Model.h"
 
 namespace storm {
 namespace dd {

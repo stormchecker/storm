@@ -1,10 +1,8 @@
 #include "storm-config.h"
-#include "storm/environment/Environment.h"
-#include "test/storm_gtest.h"
-
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/environment/Environment.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -16,6 +14,7 @@
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/utility/graph.h"
+#include "test/storm_gtest.h"
 
 class Cudd {
    public:

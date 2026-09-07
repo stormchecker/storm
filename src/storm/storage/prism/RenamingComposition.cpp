@@ -1,4 +1,4 @@
-#include "storm/storage/prism/RenamingComposition.h"
+#include "RenamingComposition.h"
 
 #include <boost/algorithm/string/join.hpp>
 #include <sstream>

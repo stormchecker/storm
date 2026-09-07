@@ -1,4 +1,4 @@
-#include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
+#include "SingleValueModelCheckerHelper.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 

@@ -1,4 +1,4 @@
-#include "storm-pars/storage/ParameterRegion.h"
+#include "ParameterRegion.h"
 
 #include <limits>
 

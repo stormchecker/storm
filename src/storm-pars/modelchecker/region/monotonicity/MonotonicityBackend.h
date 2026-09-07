@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityKind.h"
 #include "storm-pars/utility/parametric.h"
 

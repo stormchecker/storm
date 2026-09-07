@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm-gamebased-ar/abstraction/StateSet.h"
-
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdType.h"
 

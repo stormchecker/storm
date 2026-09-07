@@ -1,4 +1,4 @@
-#include "storm/environment/solver/EigenSolverEnvironment.h"
+#include "EigenSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/EigenEquationSolverSettings.h"

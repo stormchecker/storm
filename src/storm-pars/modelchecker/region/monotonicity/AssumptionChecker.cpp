@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/monotonicity/AssumptionChecker.h"
+#include "AssumptionChecker.h"
 
 #include "storm-pars/utility/ModelInstantiator.h"
 #include "storm/exceptions/NotSupportedException.h"

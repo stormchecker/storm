@@ -1,4 +1,4 @@
-#include "storm-pars-cli/solutionFunctions.h"
+#include "solutionFunctions.h"
 
 #include "storm-cli-utilities/model-handling.h"
 #include "storm-pars-cli/print.h"

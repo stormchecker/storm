@@ -1,4 +1,4 @@
-#include "storm/environment/exploration/ExplorationEnvironment.h"
+#include "ExplorationEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/ExplorationSettings.h"

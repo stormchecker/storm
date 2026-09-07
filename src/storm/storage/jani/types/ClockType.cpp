@@ -1,4 +1,5 @@
-#include "storm/storage/jani/types/ClockType.h"
+#include "ClockType.h"
+
 #include <string>
 
 namespace storm {

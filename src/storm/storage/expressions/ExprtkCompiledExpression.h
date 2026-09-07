@@ -1,8 +1,7 @@
 #pragma once
 
-#include "storm/storage/expressions/CompiledExpression.h"
-
 #include "storm/adapters/ExprttkAdapter.h"
+#include "storm/storage/expressions/CompiledExpression.h"
 
 namespace storm {
 namespace expressions {

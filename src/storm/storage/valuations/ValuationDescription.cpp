@@ -1,4 +1,4 @@
-#include "storm/storage/valuations/ValuationDescription.h"
+#include "ValuationDescription.h"
 
 namespace storm::storage::sparse {
 uint64_t ValuationClassDescription::sizeInBits() const {

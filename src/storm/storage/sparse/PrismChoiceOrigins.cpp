@@ -1,12 +1,10 @@
-#include "storm/storage/sparse/PrismChoiceOrigins.h"
+#include "PrismChoiceOrigins.h"
 
 #include "storm/adapters/JsonAdapter.h"
-
-#include "storm/utility/macros.h"
-#include "storm/utility/vector.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace storage {

@@ -1,19 +1,16 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <vector>
 
-#include <boost/optional.hpp>
-
+#include "storm/logic/OperatorFormula.h"
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/logic/OperatorFormula.h"
-#include "storm/storage/BitVector.h"
-#include "storm/storage/SparseMatrix.h"
-
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/SolveGoal.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/SparseMatrix.h"
 #include "storm/utility/ExtendedNumber.h"
 
 namespace storm {

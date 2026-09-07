@@ -1,4 +1,4 @@
-#include "storm-dft/parser/DFTGalileoParser.h"
+#include "DFTGalileoParser.h"
 
 #include <boost/algorithm/string.hpp>
 #include <optional>

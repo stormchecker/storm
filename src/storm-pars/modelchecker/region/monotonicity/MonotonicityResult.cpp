@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
+#include "MonotonicityResult.h"
 
 #include <sstream>
 

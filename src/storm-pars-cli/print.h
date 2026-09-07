@@ -1,8 +1,7 @@
 #pragma once
+#include "storm-pars/utility/parametric.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/utility/Stopwatch.h"
-
-#include "storm-pars/utility/parametric.h"
 
 namespace storm::pars {
 template<typename ValueType>

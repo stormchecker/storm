@@ -2,13 +2,10 @@
 
 #include <random>
 
-#include "storm/modelchecker/AbstractModelChecker.h"
-
-#include "storm/storage/prism/Program.h"
-
 #include "storm/generator/CompressedState.h"
 #include "storm/generator/VariableInformation.h"
-
+#include "storm/modelchecker/AbstractModelChecker.h"
+#include "storm/storage/prism/Program.h"
 #include "storm/utility/ConstantsComparator.h"
 
 namespace storm {

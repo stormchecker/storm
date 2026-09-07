@@ -1,4 +1,4 @@
-#include "storm-dft/modelchecker/SFTBDDChecker.h"
+#include "SFTBDDChecker.h"
 
 #include <memory>
 #include <vector>

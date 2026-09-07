@@ -5,7 +5,8 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include "OptimizationDirection.h"
+
+#include "storm/solver/OptimizationDirection.h"
 
 namespace storm {
 namespace expressions {

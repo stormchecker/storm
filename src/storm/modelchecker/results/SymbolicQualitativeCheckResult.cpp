@@ -1,11 +1,9 @@
-#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "SymbolicQualitativeCheckResult.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
-#include "storm/utility/macros.h"
-
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
-
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {

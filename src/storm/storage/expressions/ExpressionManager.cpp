@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "ExpressionManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"

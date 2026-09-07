@@ -1,4 +1,4 @@
-#include "storm-pars/transformer/RobustParameterLifter.h"
+#include "RobustParameterLifter.h"
 
 #include <carl/core/rootfinder/RootFinder.h>
 #include <algorithm>

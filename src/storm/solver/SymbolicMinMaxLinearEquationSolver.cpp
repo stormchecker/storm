@@ -1,17 +1,13 @@
-#include "storm/solver/SymbolicMinMaxLinearEquationSolver.h"
-
-#include "storm/storage/dd/DdManager.h"
-
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-
-#include "storm/utility/constants.h"
+#include "SymbolicMinMaxLinearEquationSolver.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
-
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/SignalHandler.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
 

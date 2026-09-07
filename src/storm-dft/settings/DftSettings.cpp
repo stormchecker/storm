@@ -1,10 +1,9 @@
-#include "storm-dft/settings/DftSettings.h"
+#include "DftSettings.h"
 
+#include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
-
-#include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-gspn/settings/modules/GSPNExportSettings.h"
 #include "storm-gspn/settings/modules/GSPNSettings.h"
 #include "storm/settings/SettingsManager.h"

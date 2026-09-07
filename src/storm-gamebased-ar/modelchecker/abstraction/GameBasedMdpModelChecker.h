@@ -1,30 +1,22 @@
 #pragma once
 
-#include "storm/modelchecker/AbstractModelChecker.h"
-
 #include <boost/algorithm/string.hpp>
-
-#include "storm/storage/prism/Program.h"
-
-#include "storm/storage/dd/DdType.h"
-#include "storm/storage/dd/Odd.h"
-
-#include "storm/storage/SymbolicModelDescription.h"
 
 #include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResult.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeGameResult.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeGameResultMinMax.h"
-
-#include "storm/logic/Bound.h"
-
-#include "storm/settings/modules/AbstractionSettings.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/utility/macros.h"
-
+#include "storm/logic/Bound.h"
+#include "storm/modelchecker/AbstractModelChecker.h"
+#include "storm/settings/modules/AbstractionSettings.h"
+#include "storm/storage/SymbolicModelDescription.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/Odd.h"
+#include "storm/storage/prism/Program.h"
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/graph.h"
+#include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
 
 namespace storm::gbar {

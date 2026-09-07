@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+
 #include "storm/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {

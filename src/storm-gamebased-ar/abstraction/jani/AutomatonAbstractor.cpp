@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/jani/AutomatonAbstractor.h"
+#include "AutomatonAbstractor.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm-gamebased-ar/abstraction/BottomStateResult.h"

@@ -1,4 +1,4 @@
-#include "storm/storage/jani/Action.h"
+#include "Action.h"
 
 namespace storm {
 namespace jani {

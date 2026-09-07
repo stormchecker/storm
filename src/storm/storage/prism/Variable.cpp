@@ -1,7 +1,8 @@
+#include "Variable.h"
+
 #include <map>
 
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/prism/Variable.h"
 
 namespace storm {
 namespace prism {

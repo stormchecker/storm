@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/instantiation/SparseCtmcInstantiationModelChecker.h"
+#include "SparseCtmcInstantiationModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidStateException.h"

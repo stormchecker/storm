@@ -1,13 +1,14 @@
-#include "storm/storage/expressions/BaseExpression.h"
+#include "BaseExpression.h"
+
 #include <boost/any.hpp>
+
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/utility/macros.h"
-
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/ReduceNestingVisitor.h"
 #include "storm/storage/expressions/ToRationalNumberVisitor.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace expressions {

@@ -1,4 +1,4 @@
-#include "storm/solver/GlpkLpSolver.h"
+#include "GlpkLpSolver.h"
 
 #include <cmath>
 

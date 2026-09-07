@@ -1,4 +1,4 @@
-#include "storm/storage/jani/traverser/FunctionCallExpressionFinder.h"
+#include "FunctionCallExpressionFinder.h"
 
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"

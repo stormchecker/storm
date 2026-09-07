@@ -1,4 +1,4 @@
-#include "storm/generator/StateBehavior.h"
+#include "StateBehavior.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

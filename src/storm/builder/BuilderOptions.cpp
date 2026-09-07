@@ -1,11 +1,9 @@
-#include "storm/builder/BuilderOptions.h"
+#include "BuilderOptions.h"
 
 #include "storm/builder/TerminalStatesGetter.h"
-
+#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/LiftableTransitionRewardsVisitor.h"
-
-#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

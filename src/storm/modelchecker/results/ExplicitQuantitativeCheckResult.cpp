@@ -1,9 +1,8 @@
-#include "storm/adapters/RationalNumberAdapter.h"  // Must come first. TODO: fix
-
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "ExplicitQuantitativeCheckResult.h"
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"

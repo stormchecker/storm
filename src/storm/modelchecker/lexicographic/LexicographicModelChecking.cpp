@@ -1,4 +1,4 @@
-#include "storm/modelchecker/lexicographic/LexicographicModelChecking.h"
+#include "LexicographicModelChecking.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/Environment.h"

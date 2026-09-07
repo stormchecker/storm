@@ -1,4 +1,4 @@
-#include "storm/solver/SymbolicEquationSolver.h"
+#include "SymbolicEquationSolver.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/UnmetRequirementException.h"

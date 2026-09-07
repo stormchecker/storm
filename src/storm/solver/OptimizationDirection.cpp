@@ -1,5 +1,7 @@
 #include "OptimizationDirection.h"
+
 #include <iostream>
+
 #include "storm/utility/macros.h"
 
 namespace storm {

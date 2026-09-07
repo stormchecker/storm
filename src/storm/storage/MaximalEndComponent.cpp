@@ -1,4 +1,5 @@
-#include "storm/storage/MaximalEndComponent.h"
+#include "MaximalEndComponent.h"
+
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/macros.h"

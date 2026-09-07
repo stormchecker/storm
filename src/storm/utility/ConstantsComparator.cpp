@@ -1,4 +1,4 @@
-#include "storm/utility/ConstantsComparator.h"
+#include "ConstantsComparator.h"
 
 #include <type_traits>
 

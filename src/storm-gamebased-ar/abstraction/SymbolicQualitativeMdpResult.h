@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeResult.h"
-
 #include "storm/storage/dd/Bdd.h"
 
 namespace storm::gbar {

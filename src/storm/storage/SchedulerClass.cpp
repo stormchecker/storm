@@ -1,4 +1,4 @@
-#include "storm/storage/SchedulerClass.h"
+#include "SchedulerClass.h"
 
 #include "storm/utility/macros.h"
 

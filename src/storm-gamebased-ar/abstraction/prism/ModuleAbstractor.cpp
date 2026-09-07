@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/prism/ModuleAbstractor.h"
+#include "ModuleAbstractor.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm-gamebased-ar/abstraction/BottomStateResult.h"

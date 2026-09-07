@@ -1,4 +1,4 @@
-#include "storm/storage/dd/bisimulation/NondeterministicModelPartitionRefiner.h"
+#include "NondeterministicModelPartitionRefiner.h"
 
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"

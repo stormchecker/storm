@@ -1,18 +1,16 @@
-#include "storm/modelchecker/prctl/helper/rewardbounded/ProductModel.h"
+#include "ProductModel.h"
 
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/CloneVisitor.h"
 #include "storm/logic/Formulas.h"
-#include "storm/storage/memorystructure/MemoryStructureBuilder.h"
-#include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
-#include "storm/utility/macros.h"
-
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
+#include "storm/storage/memorystructure/MemoryStructureBuilder.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {

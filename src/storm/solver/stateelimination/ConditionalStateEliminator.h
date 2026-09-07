@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm/solver/stateelimination/StateEliminator.h"
-
 #include "storm/storage/BitVector.h"
 
 namespace storm {

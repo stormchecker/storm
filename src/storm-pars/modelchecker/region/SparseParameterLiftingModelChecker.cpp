@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
+#include "SparseParameterLiftingModelChecker.h"
 
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"

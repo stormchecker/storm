@@ -1,8 +1,7 @@
 #pragma once
 
-#include "storm/solver/OptimizationDirection.h"
-
 #include "storm-gamebased-ar/abstraction/QualitativeResultMinMax.h"
+#include "storm/solver/OptimizationDirection.h"
 
 namespace storm::gbar {
 namespace abstraction {

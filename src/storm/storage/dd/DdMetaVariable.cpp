@@ -1,4 +1,4 @@
-#include "storm/storage/dd/DdMetaVariable.h"
+#include "DdMetaVariable.h"
 
 #include "storm/utility/macros.h"
 

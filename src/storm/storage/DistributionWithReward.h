@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm/storage/Distribution.h"
-
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/constants.h"
 

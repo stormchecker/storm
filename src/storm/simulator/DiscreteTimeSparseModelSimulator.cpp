@@ -1,4 +1,5 @@
-#include "storm/simulator/DiscreteTimeSparseModelSimulator.h"
+#include "DiscreteTimeSparseModelSimulator.h"
+
 #include "storm/models/sparse/Model.h"
 
 namespace storm {

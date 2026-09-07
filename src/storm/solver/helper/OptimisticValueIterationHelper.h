@@ -8,7 +8,6 @@
 
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolverStatus.h"
-
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
 
 namespace storm::solver::helper {

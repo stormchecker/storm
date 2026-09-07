@@ -1,4 +1,5 @@
-#include "storm/storage/prism/TransitionReward.h"
+#include "TransitionReward.h"
+
 #include "storm/storage/expressions/Variable.h"
 
 namespace storm {

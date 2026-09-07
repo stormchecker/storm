@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/prism/CommandAbstractor.h"
+#include "CommandAbstractor.h"
 
 #include <boost/iterator/transform_iterator.hpp>
 #include <chrono>

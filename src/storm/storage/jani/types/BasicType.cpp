@@ -1,4 +1,4 @@
-#include "storm/storage/jani/types/BasicType.h"
+#include "BasicType.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/utility/macros.h"

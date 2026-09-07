@@ -1,4 +1,4 @@
-#include "storm/modelchecker/helper/infinitehorizon/HybridInfiniteHorizonHelper.h"
+#include "HybridInfiniteHorizonHelper.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"

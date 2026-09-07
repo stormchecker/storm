@@ -1,7 +1,8 @@
+#include "ReduceNestingVisitor.h"
+
 #include <string>
 
 #include "storm/storage/expressions/Expressions.h"
-#include "storm/storage/expressions/ReduceNestingVisitor.h"
 
 namespace storm {
 namespace expressions {

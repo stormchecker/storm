@@ -2,16 +2,13 @@
 
 #include <optional>
 
-#include "storm/storage/BitVector.h"
-
 #include "storm/logic/OperatorFormula.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/SolveGoal.h"
-#include "storm/utility/ExtendedNumber.h"
-
-#include "storm/utility/NumberTraits.h"
-
+#include "storm/storage/BitVector.h"
 #include "storm/storage/sparse/StateType.h"
+#include "storm/utility/ExtendedNumber.h"
+#include "storm/utility/NumberTraits.h"
 
 namespace storm {
 

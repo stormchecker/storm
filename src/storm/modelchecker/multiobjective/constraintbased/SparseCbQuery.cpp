@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/constraintbased/SparseCbQuery.h"
+#include "SparseCbQuery.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"

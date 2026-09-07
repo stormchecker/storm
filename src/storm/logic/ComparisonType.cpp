@@ -1,4 +1,4 @@
-#include "storm/logic/ComparisonType.h"
+#include "ComparisonType.h"
 
 #include <ostream>
 

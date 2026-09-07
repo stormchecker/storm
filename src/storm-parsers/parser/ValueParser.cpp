@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/ValueParser.h"
+#include "ValueParser.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>

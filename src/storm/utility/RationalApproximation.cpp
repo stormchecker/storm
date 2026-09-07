@@ -1,5 +1,4 @@
-
-#include "storm/utility/RationalApproximation.h"
+#include "RationalApproximation.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/constants.h"

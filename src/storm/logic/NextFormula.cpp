@@ -1,4 +1,5 @@
-#include "storm/logic/NextFormula.h"
+#include "NextFormula.h"
+
 #include <boost/any.hpp>
 #include <ostream>
 

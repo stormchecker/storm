@@ -1,4 +1,4 @@
-#include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
+#include "HybridMarkovAutomatonCslModelChecker.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"

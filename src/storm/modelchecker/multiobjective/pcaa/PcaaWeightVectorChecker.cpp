@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
+#include "PcaaWeightVectorChecker.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"

@@ -1,4 +1,4 @@
-#include "storm/utility/builder.h"
+#include "builder.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

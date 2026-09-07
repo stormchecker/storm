@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResult.h"
+#include "ExplicitQuantitativeResult.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"

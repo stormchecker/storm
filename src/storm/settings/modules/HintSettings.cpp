@@ -1,4 +1,4 @@
-#include "storm/settings/modules/HintSettings.h"
+#include "HintSettings.h"
 
 #include "storm/exceptions/IllegalArgumentValueException.h"
 #include "storm/exceptions/InvalidSettingsException.h"

@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/ValidatingSparseParameterLiftingModelChecker.h"
+#include "ValidatingSparseParameterLiftingModelChecker.h"
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"

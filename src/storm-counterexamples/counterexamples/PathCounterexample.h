@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm-counterexamples/counterexamples/Counterexample.h"
-
 #include "storm/models/sparse/Model.h"
 
 namespace storm {

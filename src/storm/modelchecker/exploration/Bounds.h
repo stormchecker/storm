@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "storm/solver/OptimizationDirection.h"
-
 #include "storm/utility/constants.h"
 
 namespace storm {

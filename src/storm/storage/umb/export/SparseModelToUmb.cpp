@@ -1,8 +1,4 @@
-#include "storm/storage/umb/export/SparseModelToUmb.h"
-
-#include "storm/storage/SparseMatrix.h"
-#include "storm/storage/umb/model/StringEncoding.h"
-#include "storm/storage/umb/model/UmbModel.h"
+#include "SparseModelToUmb.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
@@ -14,7 +10,10 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/Smg.h"
+#include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
+#include "storm/storage/umb/model/StringEncoding.h"
+#include "storm/storage/umb/model/UmbModel.h"
 #include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/transformer/MakePOMDPCanonic.h"
 #include "storm/utility/macros.h"

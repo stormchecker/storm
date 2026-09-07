@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/optional.hpp>
+
 #include "storm/logic/PathFormula.h"
 #include "storm/logic/RewardAccumulation.h"
 

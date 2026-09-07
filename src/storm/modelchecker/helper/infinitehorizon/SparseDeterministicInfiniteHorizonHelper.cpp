@@ -1,4 +1,4 @@
-#include "storm/modelchecker/helper/infinitehorizon/SparseDeterministicInfiniteHorizonHelper.h"
+#include "SparseDeterministicInfiniteHorizonHelper.h"
 
 #include <numeric>
 

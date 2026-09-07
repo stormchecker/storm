@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+
 #include "storm/storage/valuations/ValuationDescription.h"
 #include "storm/utility/NumberTraits.h"
 

@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/MappedFile.h"
+#include "MappedFile.h"
 
 #include <fcntl.h>
 #include <sys/mman.h>

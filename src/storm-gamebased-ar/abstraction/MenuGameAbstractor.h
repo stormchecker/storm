@@ -3,11 +3,9 @@
 #include <map>
 #include <vector>
 
-#include "storm/storage/dd/DdType.h"
-
 #include "storm-gamebased-ar/abstraction/MenuGame.h"
 #include "storm-gamebased-ar/abstraction/RefinementCommand.h"
-
+#include "storm/storage/dd/DdType.h"
 #include "storm/storage/expressions/Expression.h"
 
 namespace storm {

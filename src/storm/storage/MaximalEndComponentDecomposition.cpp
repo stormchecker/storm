@@ -1,4 +1,4 @@
-#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "MaximalEndComponentDecomposition.h"
 
 #include <algorithm>
 #include <span>

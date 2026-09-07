@@ -1,4 +1,4 @@
-#include "storm-pars/transformer/BinaryDtmcTransformer.h"
+#include "BinaryDtmcTransformer.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wthread-safety-negative"

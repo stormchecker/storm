@@ -1,4 +1,4 @@
-#include "storm/modelchecker/csl/helper/HybridCtmcCslHelper.h"
+#include "HybridCtmcCslHelper.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/solver/TimeBoundedSolverEnvironment.h"

@@ -1,4 +1,4 @@
-#include "storm-pomdp/storage/BeliefManager.h"
+#include "BeliefManager.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/models/sparse/Pomdp.h"

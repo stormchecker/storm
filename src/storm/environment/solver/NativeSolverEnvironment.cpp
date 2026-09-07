@@ -1,4 +1,4 @@
-#include "storm/environment/solver/NativeSolverEnvironment.h"
+#include "NativeSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"

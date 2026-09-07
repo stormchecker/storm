@@ -1,4 +1,4 @@
-#include "storm/solver/Z3SmtSolver.h"
+#include "Z3SmtSolver.h"
 
 #include <memory>
 

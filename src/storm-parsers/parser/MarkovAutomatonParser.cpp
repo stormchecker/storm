@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/MarkovAutomatonParser.h"
+#include "MarkovAutomatonParser.h"
 
 #include "storm-parsers/parser/NondeterministicSparseTransitionParser.h"
 #include "storm-parsers/parser/SparseItemLabelingParser.h"

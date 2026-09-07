@@ -6,7 +6,6 @@
 #include "storm/logic/UnaryStateFormula.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/expressions/Expression.h"
-
 #include "storm/utility/constants.h"
 
 namespace storm {

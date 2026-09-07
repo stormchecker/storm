@@ -1,4 +1,4 @@
-#include "storm/settings/modules/GurobiSettings.h"
+#include "GurobiSettings.h"
 
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"

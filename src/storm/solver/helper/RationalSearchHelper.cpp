@@ -1,4 +1,4 @@
-#include "storm/solver/helper/RationalSearchHelper.h"
+#include "RationalSearchHelper.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"

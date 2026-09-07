@@ -1,4 +1,5 @@
-#include "storm/storage/expressions/ToDiceStringVisitor.h"
+#include "ToDiceStringVisitor.h"
+
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/expressions/Expressions.h"
 

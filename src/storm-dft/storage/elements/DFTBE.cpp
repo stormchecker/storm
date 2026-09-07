@@ -1,4 +1,4 @@
-#include "storm-dft/storage/elements/DFTBE.h"
+#include "DFTBE.h"
 
 #include "storm-dft/storage/elements/DFTDependency.h"
 #include "storm-dft/storage/elements/DFTGate.h"

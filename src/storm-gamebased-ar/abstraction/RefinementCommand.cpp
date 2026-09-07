@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/RefinementCommand.h"
+#include "RefinementCommand.h"
 
 namespace storm::gbar {
 namespace abstraction {

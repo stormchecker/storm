@@ -1,4 +1,4 @@
-#include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
+#include "QualitativeAnalysisOnGraphs.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"

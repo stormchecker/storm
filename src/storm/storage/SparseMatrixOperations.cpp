@@ -1,4 +1,4 @@
-#include "storm/storage/SparseMatrixOperations.h"
+#include "SparseMatrixOperations.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 

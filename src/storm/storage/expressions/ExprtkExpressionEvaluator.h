@@ -5,10 +5,8 @@
 #include <vector>
 
 #include "storm/storage/expressions/ExpressionEvaluatorBase.h"
-
-#include "storm/storage/expressions/ToExprtkStringVisitor.h"
-
 #include "storm/storage/expressions/ExprtkCompiledExpression.h"
+#include "storm/storage/expressions/ToExprtkStringVisitor.h"
 
 namespace storm {
 namespace expressions {

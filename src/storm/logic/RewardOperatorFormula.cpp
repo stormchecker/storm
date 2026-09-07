@@ -1,4 +1,5 @@
-#include "storm/logic/RewardOperatorFormula.h"
+#include "RewardOperatorFormula.h"
+
 #include <boost/any.hpp>
 #include <ostream>
 

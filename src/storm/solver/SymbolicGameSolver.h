@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "storm/solver/OptimizationDirection.h"
-
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/expressions/Variable.h"

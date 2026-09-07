@@ -1,9 +1,9 @@
-#include "storm/storage/jani/Constant.h"
-#include "storm/solver/SmtSolver.h"
-#include "storm/utility/solver.h"
+#include "Constant.h"
 
 #include "storm/exceptions/InvalidJaniException.h"
+#include "storm/solver/SmtSolver.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
 
 namespace storm {
 namespace jani {

@@ -7,15 +7,13 @@
 
 #include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/SolverStatus.h"
 #include "storm/solver/SymbolicEquationSolver.h"
 #include "storm/solver/SymbolicLinearEquationSolver.h"
-
-#include "storm/utility/NumberTraits.h"
-
-#include "SolverSelectionOptions.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/expressions/Variable.h"
+#include "storm/utility/NumberTraits.h"
 
 namespace storm {
 

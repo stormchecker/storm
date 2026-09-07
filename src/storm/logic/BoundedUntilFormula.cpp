@@ -1,4 +1,4 @@
-#include "storm/logic/BoundedUntilFormula.h"
+#include "BoundedUntilFormula.h"
 
 #include <boost/any.hpp>
 #include <ostream>

@@ -1,4 +1,4 @@
-#include "storm/storage/RobustMaximalEndComponentDecomposition.h"
+#include "RobustMaximalEndComponentDecomposition.h"
 
 #include <numeric>
 

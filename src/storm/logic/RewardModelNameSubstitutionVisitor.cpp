@@ -1,13 +1,13 @@
-#include "storm/logic/RewardModelNameSubstitutionVisitor.h"
+#include "RewardModelNameSubstitutionVisitor.h"
+
 #include <boost/any.hpp>
 #include <optional>
-#include "storm/logic/Formulas.h"
-
-#include "storm/storage/jani/Model.h"
-#include "storm/utility/macros.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/logic/Formulas.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace logic {

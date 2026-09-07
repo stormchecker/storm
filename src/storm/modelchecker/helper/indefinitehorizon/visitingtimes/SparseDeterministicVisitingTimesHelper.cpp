@@ -1,4 +1,4 @@
-#include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
+#include "SparseDeterministicVisitingTimesHelper.h"
 
 #include <algorithm>
 

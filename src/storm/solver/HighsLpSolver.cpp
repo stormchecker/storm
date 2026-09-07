@@ -1,4 +1,4 @@
-#include "storm/solver/HighsLpSolver.h"
+#include "HighsLpSolver.h"
 
 #include <cmath>
 #include <limits>

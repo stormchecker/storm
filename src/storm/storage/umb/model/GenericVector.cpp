@@ -1,4 +1,4 @@
-#include "storm/storage/umb/model/GenericVector.h"
+#include "GenericVector.h"
 
 #include "storm/storage/umb/model/ValueEncoding.h"
 

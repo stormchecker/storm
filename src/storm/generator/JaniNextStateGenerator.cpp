@@ -1,4 +1,4 @@
-#include "storm/generator/JaniNextStateGenerator.h"
+#include "JaniNextStateGenerator.h"
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

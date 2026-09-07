@@ -1,8 +1,7 @@
 #pragma once
 
-#include "ModelCheckerHelper.h"
-
 #include "storm/logic/ComparisonType.h"
+#include "storm/modelchecker/helper/ModelCheckerHelper.h"
 #include "storm/solver/OptimizationDirection.h"
 
 namespace storm {

@@ -1,11 +1,10 @@
-#include "storm-pars/settings/modules/PartitionSettings.h"
+#include "PartitionSettings.h"
 
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm::settings::modules {
 

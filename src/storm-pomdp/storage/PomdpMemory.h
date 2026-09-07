@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/BitVector.h"
 

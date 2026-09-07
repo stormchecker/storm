@@ -1,12 +1,11 @@
 #pragma once
 
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/transformer/ContinuousToDiscreteTimeModelTransformer.h"
 #include "storm/transformer/NonMarkovianChainTransformer.h"
 #include "storm/transformer/StatePermuter.h"
 #include "storm/transformer/SymbolicToSparseTransformer.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/builder.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/permutation.h"

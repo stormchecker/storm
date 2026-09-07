@@ -1,8 +1,7 @@
 #pragma once
 
-#include <type_traits>
-
 #include <boost/iterator/transform_iterator.hpp>
+#include <type_traits>
 
 namespace storm {
 namespace adapters {

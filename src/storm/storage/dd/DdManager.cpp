@@ -1,4 +1,4 @@
-#include "storm/storage/dd/DdManager.h"
+#include "DdManager.h"
 
 #include <cmath>
 

@@ -1,7 +1,9 @@
 #pragma once
 
 #include <vector>
+
 #include "storm/storage/Scheduler.h"
+
 namespace storm {
 namespace pomdp {
 namespace storage {

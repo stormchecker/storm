@@ -4,13 +4,12 @@
 #include <memory>
 #include <vector>
 
+#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/solver/AbstractEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
 

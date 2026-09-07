@@ -1,4 +1,4 @@
-#include "storm/solver/MathsatSmtSolver.h"
+#include "MathsatSmtSolver.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"

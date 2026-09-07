@@ -1,4 +1,4 @@
-#include "storm/modelchecker/results/SymbolicParetoCurveCheckResult.h"
+#include "SymbolicParetoCurveCheckResult.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"

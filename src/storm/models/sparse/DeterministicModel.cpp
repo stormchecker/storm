@@ -1,4 +1,4 @@
-#include "storm/models/sparse/DeterministicModel.h"
+#include "DeterministicModel.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

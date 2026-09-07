@@ -1,4 +1,4 @@
-#include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
+#include "IterativeMinMaxLinearEquationSolver.h"
 
 #include <functional>
 #include <type_traits>

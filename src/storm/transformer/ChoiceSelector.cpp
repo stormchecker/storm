@@ -1,4 +1,4 @@
-#include "storm/transformer/ChoiceSelector.h"
+#include "ChoiceSelector.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/UnexpectedException.h"

@@ -1,4 +1,4 @@
-#include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
+#include "InternalSylvanDdManager.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/sylvan.h"

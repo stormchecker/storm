@@ -1,4 +1,4 @@
-#include "storm/storage/jani/OrderedAssignments.h"
+#include "OrderedAssignments.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/jani/VariableSet.h"

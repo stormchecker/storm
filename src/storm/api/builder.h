@@ -1,9 +1,13 @@
 #pragma once
 
+#include "storm/builder/BuilderType.h"
+#include "storm/builder/DdJaniModelBuilder.h"
+#include "storm/builder/DdPrismModelBuilder.h"
+#include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/environment/Environment.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/ModelFeatures.h"
-
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/generator/JaniNextStateGenerator.h"
+#include "storm/generator/PrismNextStateGenerator.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -12,18 +16,9 @@
 #include "storm/models/sparse/Smg.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/StochasticTwoPlayerGame.h"
+#include "storm/storage/SymbolicModelDescription.h"
+#include "storm/storage/jani/ModelFeatures.h"
 #include "storm/storage/sparse/ModelComponents.h"
-
-#include "storm/builder/BuilderType.h"
-#include "storm/builder/DdJaniModelBuilder.h"
-#include "storm/builder/DdPrismModelBuilder.h"
-
-#include "storm/generator/JaniNextStateGenerator.h"
-#include "storm/generator/PrismNextStateGenerator.h"
-
-#include "storm/builder/ExplicitModelBuilder.h"
-
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

@@ -8,12 +8,11 @@
 #include <unordered_set>
 #include <vector>
 
+#include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/settings/ArgumentBase.h"
 #include "storm/settings/ArgumentType.h"
 #include "storm/settings/Option.h"
-
-#include "storm/exceptions/IllegalArgumentException.h"
-#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

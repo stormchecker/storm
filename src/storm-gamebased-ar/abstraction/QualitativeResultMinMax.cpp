@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/QualitativeResultMinMax.h"
+#include "QualitativeResultMinMax.h"
 
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeResultMinMax.h"
 

@@ -1,4 +1,5 @@
-#include "storm/logic/AtomicExpressionFormula.h"
+#include "AtomicExpressionFormula.h"
+
 #include <boost/any.hpp>
 #include <ostream>
 

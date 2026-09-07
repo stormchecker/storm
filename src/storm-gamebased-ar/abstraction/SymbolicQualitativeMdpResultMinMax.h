@@ -1,9 +1,8 @@
 #pragma once
 
-#include "storm/storage/dd/DdType.h"
-
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeMdpResult.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeResultMinMax.h"
+#include "storm/storage/dd/DdType.h"
 
 namespace storm::gbar {
 namespace abstraction {

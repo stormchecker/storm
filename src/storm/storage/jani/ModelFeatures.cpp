@@ -1,4 +1,4 @@
-#include "storm/storage/jani/ModelFeatures.h"
+#include "ModelFeatures.h"
 
 #include "storm/utility/macros.h"
 

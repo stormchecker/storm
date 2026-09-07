@@ -1,10 +1,8 @@
 #pragma once
 
-#include "storm/solver/OptimizationDirection.h"
-
-#include "storm/storage/dd/DdType.h"
-
 #include "storm-gamebased-ar/abstraction/QualitativeResultMinMax.h"
+#include "storm/solver/OptimizationDirection.h"
+#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 namespace dd {

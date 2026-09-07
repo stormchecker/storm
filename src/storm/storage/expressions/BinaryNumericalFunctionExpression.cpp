@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/BinaryNumericalFunctionExpression.h"
+#include "BinaryNumericalFunctionExpression.h"
 
 #include <algorithm>
 #include <cmath>

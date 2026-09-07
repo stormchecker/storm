@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/MenuGame.h"
+#include "MenuGame.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"

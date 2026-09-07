@@ -2,7 +2,6 @@
 
 // Very ugly, but currently we would like to have the symbol table here.
 #include "storm-parsers/parser/SpiritParserDefinitions.h"
-
 #include "storm/adapters/RationalNumberAdapter.h"  // TODO: use forward header
 
 namespace storm {

@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/jani/JaniMenuGameAbstractor.h"
+#include "JaniMenuGameAbstractor.h"
 
 #include "storm-gamebased-ar/abstraction/BottomStateResult.h"
 #include "storm-gamebased-ar/abstraction/ExpressionTranslator.h"

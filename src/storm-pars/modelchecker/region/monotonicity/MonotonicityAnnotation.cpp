@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/monotonicity/MonotonicityAnnotation.h"
+#include "MonotonicityAnnotation.h"
 
 #include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
 #include "storm-pars/modelchecker/region/monotonicity/Order.h"

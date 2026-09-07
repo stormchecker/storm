@@ -1,6 +1,8 @@
-#include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsObjectiveHelper.h"
+#include "DeterministicSchedsObjectiveHelper.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/VisitingTimesHelper.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
@@ -20,9 +22,6 @@
 #include "storm/utility/FilteredRewardModel.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/UncheckedRequirementException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm::modelchecker::multiobjective {
 

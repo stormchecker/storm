@@ -1,38 +1,29 @@
-#include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
+#include "SparseExplorationModelChecker.h"
 
 #include <sstream>
 
 #include "storm/environment/Environment.h"
 #include "storm/environment/exploration/ExplorationEnvironment.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/generator/CompressedState.h"
+#include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/exploration/Bounds.h"
 #include "storm/modelchecker/exploration/ExplorationInformation.h"
 #include "storm/modelchecker/exploration/StateGeneration.h"
 #include "storm/modelchecker/exploration/Statistics.h"
-
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-
-#include "storm/generator/CompressedState.h"
-
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/SparseMatrix.h"
-
-#include "storm/storage/prism/Program.h"
-
-#include "storm/logic/FragmentSpecification.h"
-
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-
+#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/storage/prism/Program.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
 namespace modelchecker {

@@ -1,4 +1,5 @@
-#include "storm/environment/Environment.h"
+#include "Environment.h"
+
 #include "storm/environment/SubEnvironment.h"
 #include "storm/environment/dd/DdEnvironment.h"
 #include "storm/environment/exploration/ExplorationEnvironment.h"

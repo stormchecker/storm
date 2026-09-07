@@ -1,16 +1,14 @@
-#include "storm/settings/modules/CoreSettings.h"
+#include "CoreSettings.h"
 
+#include "storm/exceptions/IllegalArgumentValueException.h"
+#include "storm/exceptions/InvalidOptionException.h"
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/solver/SolverSelectionOptions.h"
-
 #include "storm/storage/dd/DdType.h"
-
-#include "storm/exceptions/IllegalArgumentValueException.h"
-#include "storm/exceptions/InvalidOptionException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

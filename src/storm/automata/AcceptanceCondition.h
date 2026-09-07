@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
+
 #include "cpphoafparser/consumer/hoa_consumer.hh"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/StateBlock.h"

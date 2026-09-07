@@ -1,4 +1,4 @@
-#include "storm-pomdp/generator/BeliefSupportTracker.h"
+#include "BeliefSupportTracker.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 

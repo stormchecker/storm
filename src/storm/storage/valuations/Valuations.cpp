@@ -1,4 +1,4 @@
-#include "storm/storage/valuations/Valuations.h"
+#include "Valuations.h"
 
 #include <boost/algorithm/string/join.hpp>
 

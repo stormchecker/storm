@@ -1,13 +1,12 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <cstdint>
 #include <iosfwd>
 #include <iterator>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
-#include <boost/optional.hpp>
 
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/storage/expressions/Expression.h"

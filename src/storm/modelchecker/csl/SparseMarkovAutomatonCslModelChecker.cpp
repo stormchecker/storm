@@ -1,4 +1,4 @@
-#include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
+#include "SparseMarkovAutomatonCslModelChecker.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"

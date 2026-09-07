@@ -1,4 +1,4 @@
-#include "storm-counterexamples/counterexamples/PathCounterexample.h"
+#include "PathCounterexample.h"
 
 #include "storm/io/export.h"
 

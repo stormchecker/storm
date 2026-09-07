@@ -1,4 +1,4 @@
-#include "storm-conv/settings/modules/ConversionGeneralSettings.h"
+#include "ConversionGeneralSettings.h"
 
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"

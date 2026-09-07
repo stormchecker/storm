@@ -1,4 +1,5 @@
-#include "storm/logic/MultiObjectiveFormula.h"
+#include "MultiObjectiveFormula.h"
+
 #include <algorithm>
 #include <boost/any.hpp>
 #include <ostream>

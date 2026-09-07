@@ -1,5 +1,6 @@
-#include "storm/settings/modules/NativeEquationSolverSettings.h"
+#include "NativeEquationSolverSettings.h"
 
+#include "storm/exceptions/IllegalArgumentValueException.h"
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
@@ -7,8 +8,6 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/SolverSelectionOptions.h"
-
-#include "storm/exceptions/IllegalArgumentValueException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

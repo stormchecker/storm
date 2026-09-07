@@ -1,4 +1,5 @@
-#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
+#include "SparseParametricModelSimplifier.h"
+
 #include <memory>
 
 #include "storm/adapters/RationalFunctionAdapter.h"

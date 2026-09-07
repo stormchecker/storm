@@ -1,4 +1,4 @@
-#include "storm/solver/TopologicalLinearEquationSolver.h"
+#include "TopologicalLinearEquationSolver.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"

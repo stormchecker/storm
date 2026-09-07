@@ -8,13 +8,10 @@
 #include "storm-gamebased-ar/abstraction/GameBddResult.h"
 #include "storm-gamebased-ar/abstraction/LocalExpressionInformation.h"
 #include "storm-gamebased-ar/abstraction/StateSetAbstractor.h"
-
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-
+#include "storm/solver/SmtSolver.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/expressions/Expression.h"
-
-#include "storm/solver/SmtSolver.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 
 namespace storm {
 namespace utility {

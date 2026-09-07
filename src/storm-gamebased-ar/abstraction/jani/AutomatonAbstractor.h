@@ -1,13 +1,9 @@
 #pragma once
 
-#include "storm/storage/dd/DdType.h"
-
 #include "storm-gamebased-ar/abstraction/jani/EdgeAbstractor.h"
-
 #include "storm/settings/modules/AbstractionSettings.h"
-
+#include "storm/storage/dd/DdType.h"
 #include "storm/storage/expressions/Expression.h"
-
 #include "storm/utility/solver.h"
 
 namespace storm {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm/modelchecker/AbstractModelChecker.h"
-
 #include "storm/storage/dd/DdType.h"
 
 namespace storm {

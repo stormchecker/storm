@@ -1,14 +1,13 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <cstdint>
 #include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
-#include <boost/optional.hpp>
-
-#include "Composition.h"
+#include "storm/storage/jani/Composition.h"
 
 namespace storm {
 namespace jani {

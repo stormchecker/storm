@@ -1,8 +1,7 @@
 #pragma once
 
-#include "storm/models/sparse/Pomdp.h"
-
 #include "storm/logic/Formulas.h"
+#include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 

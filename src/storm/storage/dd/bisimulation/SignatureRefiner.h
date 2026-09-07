@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "storm/storage/dd/DdType.h"
-
 #include "storm/storage/dd/bisimulation/BisimulationOptions.h"
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/Signature.h"

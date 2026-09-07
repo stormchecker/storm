@@ -1,6 +1,6 @@
 #pragma once
 
-#include "JaniLocalEliminator.h"
+#include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
 
 // RebuildWithoutUnreachable constructs a new model that is equivalent to the old model, but does not contain edges with guard "false" and unreachable
 // locations. Removing unsatisfiable edges is necessary because elimination actions only set guards to "false" instead of removing edges.

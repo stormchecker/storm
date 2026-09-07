@@ -1,4 +1,4 @@
-#include "storm/storage/jani/traverser/ArrayExpressionFinder.h"
+#include "ArrayExpressionFinder.h"
 
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"

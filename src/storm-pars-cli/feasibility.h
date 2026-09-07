@@ -1,9 +1,8 @@
 #pragma once
 
+#include "storm-pars/api/region.h"
 #include "storm-pars/settings/modules/FeasibilitySettings.h"
 #include "storm/models/sparse/Model.h"
-
-#include "storm-pars/api/region.h"
 
 namespace storm::pars {
 

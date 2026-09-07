@@ -1,4 +1,4 @@
-#include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
+#include "SparseNondeterministicInfiniteHorizonHelper.h"
 
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"

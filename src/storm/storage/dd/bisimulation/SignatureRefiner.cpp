@@ -1,4 +1,4 @@
-#include "storm/storage/dd/bisimulation/SignatureRefiner.h"
+#include "SignatureRefiner.h"
 
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/bisimulation/InternalCuddSignatureRefiner.h"

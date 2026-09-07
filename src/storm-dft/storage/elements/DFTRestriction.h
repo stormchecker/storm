@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DFTChildren.h"
+#include "storm-dft/storage/elements/DFTChildren.h"
 
 namespace storm::dft {
 namespace storage {

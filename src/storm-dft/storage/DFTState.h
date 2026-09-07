@@ -2,11 +2,10 @@
 
 #include <memory>
 
-#include "storm/storage/BitVector.h"
-
 #include "storm-dft/builder/DftExplorationHeuristic.h"
 #include "storm-dft/storage/DFTElementState.h"
 #include "storm-dft/storage/FailableElements.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm::dft {
 namespace storage {

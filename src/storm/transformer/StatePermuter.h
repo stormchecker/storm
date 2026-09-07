@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+
 #include "storm/models/sparse/Model.h"
 
 namespace storm::transformer {

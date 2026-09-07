@@ -1,4 +1,4 @@
-#include "storm/storage/BitVector.h"
+#include "BitVector.h"
 
 #include <algorithm>
 #include <bit>

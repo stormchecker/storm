@@ -1,5 +1,6 @@
 #pragma once
 #include <optional>
+
 #include "storm/modelchecker/helper/infinitehorizon/SparseInfiniteHorizonHelper.h"
 
 namespace storm {

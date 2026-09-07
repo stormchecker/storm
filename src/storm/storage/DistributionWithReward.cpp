@@ -1,4 +1,4 @@
-#include "storm/storage/DistributionWithReward.h"
+#include "DistributionWithReward.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/ConstantsComparator.h"

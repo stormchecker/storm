@@ -1,18 +1,15 @@
-#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/NotSupportedException.h"
-
-#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
-#include "storm/modelchecker/results/CheckResult.h"
-#include "storm/models/ModelType.h"
-#include "storm/utility/Stopwatch.h"
-
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "MonotonicityHelper.h"
 
 #include "storm-pars/modelchecker/region/monotonicity/AssumptionChecker.h"
 #include "storm-pars/utility/ModelInstantiator.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/models/ModelType.h"
+#include "storm/utility/Stopwatch.h"
 
 namespace storm {
 namespace analysis {

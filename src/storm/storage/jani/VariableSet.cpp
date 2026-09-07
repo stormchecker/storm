@@ -1,4 +1,4 @@
-#include "storm/storage/jani/VariableSet.h"
+#include "VariableSet.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"

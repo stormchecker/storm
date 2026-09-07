@@ -1,4 +1,5 @@
-#include "storm/storage/jani/Variable.h"
+#include "Variable.h"
+
 #include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {

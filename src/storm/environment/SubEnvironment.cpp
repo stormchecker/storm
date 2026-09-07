@@ -1,7 +1,8 @@
+#include "SubEnvironment.h"
+
 #include <memory>
 
 #include "storm/environment/Environment.h"
-
 #include "storm/environment/dd/AllDdEnvironments.h"
 #include "storm/environment/exploration/ExplorationEnvironment.h"
 #include "storm/environment/modelchecker/AllModelCheckerEnvironments.h"

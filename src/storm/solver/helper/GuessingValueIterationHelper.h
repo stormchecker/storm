@@ -2,10 +2,9 @@
 
 #include <vector>
 
-#include "storm/solver/helper/ValueIterationOperator.h"
-
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolverStatus.h"
+#include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/storage/BitVector.h"
 
 namespace storm::solver::helper {

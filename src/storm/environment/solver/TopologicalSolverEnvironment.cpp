@@ -1,10 +1,9 @@
-#include "storm/environment/solver/TopologicalSolverEnvironment.h"
+#include "TopologicalSolverEnvironment.h"
 
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/TopologicalEquationSolverSettings.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
 

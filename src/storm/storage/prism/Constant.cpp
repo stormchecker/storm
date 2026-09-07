@@ -1,4 +1,5 @@
-#include "storm/storage/prism/Constant.h"
+#include "Constant.h"
+
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/utility/macros.h"
 

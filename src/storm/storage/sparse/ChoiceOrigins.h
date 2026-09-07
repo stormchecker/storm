@@ -2,11 +2,11 @@
 
 #include <string>
 #include <vector>
-#include "storm/models/sparse/ChoiceLabeling.h"
-#include "storm/storage/BitVector.h"
 
 #include "storm/adapters/JsonForward.h"
 #include "storm/adapters/RationalNumberForward.h"
+#include "storm/models/sparse/ChoiceLabeling.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
 namespace storage {

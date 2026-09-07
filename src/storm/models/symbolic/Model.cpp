@@ -1,4 +1,4 @@
-#include "storm/models/symbolic/Model.h"
+#include "Model.h"
 
 #include <boost/algorithm/string/join.hpp>
 

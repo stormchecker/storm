@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "SmtConstraint.h"
+#include "storm-dft/modelchecker/SmtConstraint.h"
 #include "storm-dft/storage/DFT.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/utility/solver.h"

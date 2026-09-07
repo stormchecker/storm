@@ -1,4 +1,4 @@
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
+#include "LongRunAverageSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/LongRunAverageSolverSettings.h"

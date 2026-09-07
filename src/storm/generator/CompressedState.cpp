@@ -1,4 +1,4 @@
-#include "storm/generator/CompressedState.h"
+#include "CompressedState.h"
 
 #include <boost/algorithm/string/join.hpp>
 

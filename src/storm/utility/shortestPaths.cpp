@@ -1,4 +1,4 @@
-#include "storm/utility/shortestPaths.h"
+#include "shortestPaths.h"
 
 #include <ostream>
 #include <queue>

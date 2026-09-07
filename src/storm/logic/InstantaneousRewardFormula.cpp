@@ -1,11 +1,11 @@
-#include "storm/logic/InstantaneousRewardFormula.h"
+#include "InstantaneousRewardFormula.h"
+
 #include <boost/any.hpp>
 #include <ostream>
 
-#include "storm/logic/FormulaVisitor.h"
-
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/logic/FormulaVisitor.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

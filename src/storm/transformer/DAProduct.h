@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+
 #include "storm/automata/AcceptanceCondition.h"
 #include "storm/transformer/Product.h"
 

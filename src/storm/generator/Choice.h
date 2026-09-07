@@ -1,11 +1,10 @@
 #pragma once
 
+#include <boost/any.hpp>
+#include <boost/optional.hpp>
 #include <cstdint>
 #include <functional>
 #include <set>
-
-#include <boost/any.hpp>
-#include <boost/optional.hpp>
 
 #include "storm/storage/Distribution.h"
 #include "storm/storage/PlayerIndex.h"

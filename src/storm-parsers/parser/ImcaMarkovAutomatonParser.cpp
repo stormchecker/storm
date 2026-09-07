@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/ImcaMarkovAutomatonParser.h"
+#include "ImcaMarkovAutomatonParser.h"
 
 #include <fstream>
 #include <memory>

@@ -1,8 +1,7 @@
 #pragma once
 
-#include <ostream>
-
 #include <boost/container/container_fwd.hpp>
+#include <ostream>
 
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/sparse/StateType.h"

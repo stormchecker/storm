@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/prism/PrismMenuGameAbstractor.h"
+#include "PrismMenuGameAbstractor.h"
 
 #include "storm-gamebased-ar/abstraction/BottomStateResult.h"
 #include "storm-gamebased-ar/abstraction/ExpressionTranslator.h"

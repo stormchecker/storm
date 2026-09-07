@@ -1,4 +1,5 @@
-#include "storm-dft/utility/MTTFHelper.h"
+#include "MTTFHelper.h"
+
 #include "storm-dft/modelchecker/DftModularizationChecker.h"
 
 namespace {

@@ -1,4 +1,4 @@
-#include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
+#include "QuickHull.h"
 
 #include <algorithm>
 #include <unordered_map>

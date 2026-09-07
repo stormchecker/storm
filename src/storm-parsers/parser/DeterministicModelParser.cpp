@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/DeterministicModelParser.h"
+#include "DeterministicModelParser.h"
 
 #include <string>
 #include <vector>

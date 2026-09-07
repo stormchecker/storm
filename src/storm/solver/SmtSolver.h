@@ -1,16 +1,15 @@
 #pragma once
 
 #include <cstdint>
-
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Expressions.h"
-#include "storm/storage/expressions/SimpleValuation.h"
-
 #include <functional>
 #include <initializer_list>
 #include <set>
 #include <unordered_set>
 #include <vector>
+
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/SimpleValuation.h"
 
 namespace storm {
 namespace solver {

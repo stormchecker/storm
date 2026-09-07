@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "storm-config.h"
-
 #include "storm/utility/macros.h"
 
 namespace storm {

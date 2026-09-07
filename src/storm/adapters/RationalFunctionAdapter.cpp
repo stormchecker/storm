@@ -1,4 +1,4 @@
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "RationalFunctionAdapter.h"
 
 namespace storm {
 RationalFunctionVariable createRFVariable(std::string const& name) {

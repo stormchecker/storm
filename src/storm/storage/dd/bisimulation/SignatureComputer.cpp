@@ -1,11 +1,9 @@
-#include "storm/storage/dd/bisimulation/SignatureComputer.h"
-
-#include "storm/storage/dd/DdManager.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
+#include "SignatureComputer.h"
 
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

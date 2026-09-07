@@ -1,4 +1,4 @@
-#include "storm/adapters/EigenAdapter.h"
+#include "EigenAdapter.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 

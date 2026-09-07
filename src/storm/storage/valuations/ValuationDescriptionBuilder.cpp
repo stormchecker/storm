@@ -1,6 +1,7 @@
-#include "storm/storage/valuations/ValuationDescriptionBuilder.h"
+#include "ValuationDescriptionBuilder.h"
 
 #include <sstream>
+
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/expressions/ExpressionManager.h"

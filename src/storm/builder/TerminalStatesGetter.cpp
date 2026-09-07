@@ -1,4 +1,4 @@
-#include "storm/builder/TerminalStatesGetter.h"
+#include "TerminalStatesGetter.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/Formulas.h"

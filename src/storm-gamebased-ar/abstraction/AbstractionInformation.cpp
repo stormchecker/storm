@@ -1,14 +1,12 @@
-#include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
+#include "AbstractionInformation.h"
 
 #include "storm/environment/Environment.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/dd/DdManager.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/utility/macros.h"
-
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/utility/macros.h"
 
 namespace storm::gbar {
 namespace abstraction {

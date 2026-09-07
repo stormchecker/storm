@@ -2,10 +2,10 @@
 
 #include <memory>
 
-#include "Composition.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/jani/Action.h"
 #include "storm/storage/jani/Automaton.h"
+#include "storm/storage/jani/Composition.h"
 #include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/FunctionDefinition.h"

@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResultMinMax.h"
+#include "ExplicitQuantitativeResultMinMax.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 

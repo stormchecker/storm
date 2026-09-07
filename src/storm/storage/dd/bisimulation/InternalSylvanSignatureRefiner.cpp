@@ -1,4 +1,4 @@
-#include "storm/storage/dd/bisimulation/InternalSylvanSignatureRefiner.h"
+#include "InternalSylvanSignatureRefiner.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/dd/DdManager.h"

@@ -3,7 +3,6 @@
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/SolverStatus.h"
 #include "storm/solver/SymbolicLinearEquationSolver.h"
-
 #include "storm/utility/NumberTraits.h"
 
 namespace storm {

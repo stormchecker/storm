@@ -4,21 +4,18 @@
 
 #include "storm-pomdp/analysis/FiniteBeliefMdpDetection.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
+#include "storm-pomdp/builder/BeliefMdpExplorer.h"
+#include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
 #include "storm-pomdp/transformer/MakeStateSetObservationClosed.h"
-
+#include "storm/environment/Environment.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/NumberTraits.h"
-
-#include "storm-pomdp/builder/BeliefMdpExplorer.h"
-#include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
-#include "storm/utility/vector.h"
-
-#include "storm/environment/Environment.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace pomdp {

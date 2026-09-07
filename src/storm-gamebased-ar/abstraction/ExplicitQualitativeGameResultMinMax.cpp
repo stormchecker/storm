@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/ExplicitQualitativeGameResultMinMax.h"
+#include "ExplicitQualitativeGameResultMinMax.h"
 
 namespace storm::gbar {
 namespace abstraction {

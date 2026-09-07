@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/MultiObjectiveModelCheckingMethod.h"
+#include "MultiObjectiveModelCheckingMethod.h"
 
 namespace storm {
 namespace modelchecker {

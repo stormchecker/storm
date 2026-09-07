@@ -1,4 +1,4 @@
-#include "storm/storage/prism/Formula.h"
+#include "Formula.h"
 
 namespace storm {
 namespace prism {

@@ -1,7 +1,6 @@
-#include "storm/storage/expressions/EquivalenceChecker.h"
+#include "EquivalenceChecker.h"
 
 #include "storm/solver/SmtSolver.h"
-
 #include "storm/storage/expressions/Expression.h"
 
 namespace storm {

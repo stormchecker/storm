@@ -1,9 +1,11 @@
+#include "Formula.h"
+
 #include <boost/any.hpp>
 #include <sstream>
-#include "storm/logic/Formulas.h"
 
 #include "storm/logic/ExpressionSubstitutionVisitor.h"
 #include "storm/logic/FormulaInformationVisitor.h"
+#include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentChecker.h"
 #include "storm/logic/LabelSubstitutionVisitor.h"
 #include "storm/logic/RewardModelNameSubstitutionVisitor.h"

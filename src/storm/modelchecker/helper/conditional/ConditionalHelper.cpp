@@ -1,4 +1,4 @@
-#include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
+#include "ConditionalHelper.h"
 
 #include <algorithm>
 #include <stack>

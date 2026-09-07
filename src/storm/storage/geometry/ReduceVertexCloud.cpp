@@ -1,4 +1,5 @@
-#include "storm/storage/geometry/ReduceVertexCloud.h"
+#include "ReduceVertexCloud.h"
+
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/constants.h"
 #undef _DEBUG_REDUCE_VERTEX_CLOUD

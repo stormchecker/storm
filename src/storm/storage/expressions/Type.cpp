@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/Type.h"
+#include "Type.h"
 
 #include <cmath>
 #include <sstream>

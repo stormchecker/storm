@@ -1,27 +1,22 @@
-
 #include "storm-conv/api/storm-conv.h"
-
+#include "storm-cli-utilities/cli.h"
+#include "storm-cli-utilities/print.h"
 #include "storm-conv/settings/ConvSettings.h"
 #include "storm-conv/settings/modules/ConversionGeneralSettings.h"
 #include "storm-conv/settings/modules/ConversionInputSettings.h"
 #include "storm-conv/settings/modules/ConversionOutputSettings.h"
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-conv/settings/modules/PrismExportSettings.h"
-#include "storm/settings/SettingsManager.h"
-
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/api/storm.h"
-#include "storm/utility/Stopwatch.h"
-#include "storm/utility/initialize.h"
-#include "storm/utility/macros.h"
-
+#include "storm/exceptions/OptionParserException.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
-
-#include "storm-cli-utilities/cli.h"
-#include "storm-cli-utilities/print.h"
-#include "storm/exceptions/OptionParserException.h"
+#include "storm/utility/Stopwatch.h"
+#include "storm/utility/initialize.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace conv {

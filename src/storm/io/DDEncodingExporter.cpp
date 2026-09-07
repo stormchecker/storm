@@ -1,4 +1,4 @@
-#include "storm/io/DDEncodingExporter.h"
+#include "DDEncodingExporter.h"
 
 #include "storm/io/file.h"
 #include "storm/models/symbolic/StandardRewardModel.h"

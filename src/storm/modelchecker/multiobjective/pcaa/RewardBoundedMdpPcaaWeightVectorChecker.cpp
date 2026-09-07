@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/pcaa/RewardBoundedMdpPcaaWeightVectorChecker.h"
+#include "RewardBoundedMdpPcaaWeightVectorChecker.h"
 
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"

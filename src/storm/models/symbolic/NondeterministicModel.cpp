@@ -1,4 +1,4 @@
-#include "storm/models/symbolic/NondeterministicModel.h"
+#include "NondeterministicModel.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/symbolic/StandardRewardModel.h"

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "storm/adapters/RationalFunctionForward.h"
-
 #include <map>
 #include <set>
+
+#include "storm/adapters/RationalFunctionForward.h"
 
 namespace storm {
 namespace utility {

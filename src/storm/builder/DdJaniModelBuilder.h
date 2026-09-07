@@ -2,13 +2,12 @@
 
 #include <boost/optional.hpp>
 
+#include "storm/builder/TerminalStatesGetter.h"
+#include "storm/logic/Formula.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/utility/OptionalRef.h"
-
-#include "storm/builder/TerminalStatesGetter.h"
-#include "storm/logic/Formula.h"
 
 namespace storm {
 class Environment;

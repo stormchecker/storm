@@ -1,4 +1,4 @@
-#include "storm/storage/Decomposition.h"
+#include "Decomposition.h"
 
 #include <vector>
 

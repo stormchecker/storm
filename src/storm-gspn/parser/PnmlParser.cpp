@@ -1,5 +1,5 @@
+#include "PnmlParser.h"
 
-#include "storm-gspn/parser/PnmlParser.h"
 #ifdef STORM_HAVE_XERCES
 #include <iostream>
 

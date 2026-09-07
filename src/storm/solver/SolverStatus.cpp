@@ -1,4 +1,4 @@
-#include "storm/solver/SolverStatus.h"
+#include "SolverStatus.h"
 
 namespace storm {
 namespace solver {

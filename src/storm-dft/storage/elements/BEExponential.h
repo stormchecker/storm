@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DFTBE.h"
+#include "storm-dft/storage/elements/DFTBE.h"
 
 namespace storm::dft {
 namespace storage {

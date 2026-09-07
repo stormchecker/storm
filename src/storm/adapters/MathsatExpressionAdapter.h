@@ -1,8 +1,8 @@
 #pragma once
 
-#include "storm-config.h"
-
 #include <stack>
+
+#include "storm-config.h"
 
 #ifdef STORM_HAVE_MATHSAT
 #include <mathsat.h>

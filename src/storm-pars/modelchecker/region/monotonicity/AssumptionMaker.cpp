@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/monotonicity/AssumptionMaker.h"
+#include "AssumptionMaker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 

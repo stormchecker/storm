@@ -1,11 +1,11 @@
-#include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "MultiObjectiveModelCheckerEnvironment.h"
 
+#include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
-#include "storm/exceptions/IllegalArgumentException.h"
 namespace storm {
 
 MultiObjectiveModelCheckerEnvironment::MultiObjectiveModelCheckerEnvironment() {

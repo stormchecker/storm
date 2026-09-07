@@ -1,4 +1,4 @@
-#include "storm-dft/storage/BucketPriorityQueue.h"
+#include "BucketPriorityQueue.h"
 
 #include <cmath>
 

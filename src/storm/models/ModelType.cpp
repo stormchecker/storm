@@ -1,4 +1,4 @@
-#include "storm/models/ModelType.h"
+#include "ModelType.h"
 
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/utility/macros.h"

@@ -1,14 +1,11 @@
 #include "GuessingValueIterationHelper.h"
 
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/SparseMatrix.h"
-
 #include "storm/utility/Extremum.h"
 #include "storm/utility/ProgressMeasurement.h"
-#include "storm/utility/vector.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-
 #include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 namespace storm::solver::helper {
 

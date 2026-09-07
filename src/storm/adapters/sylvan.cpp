@@ -1,4 +1,4 @@
-#include "storm/adapters/sylvan.h"
+#include "storm/adapters/sylvan.h"  // Needs full path to distinguish from "sylvan.h" in Sylvan library
 
 #ifdef STORM_HAVE_SYLVAN
 namespace storm {

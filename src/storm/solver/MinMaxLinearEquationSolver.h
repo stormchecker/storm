@@ -1,19 +1,17 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <cstdint>
 #include <memory>
 #include <vector>
 
-#include <boost/optional.hpp>
-
+#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/solver/AbstractEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/storage/sparse/StateType.h"
-
-#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

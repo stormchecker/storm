@@ -1,4 +1,4 @@
-#include "storm/modelchecker/exploration/Bounds.h"
+#include "Bounds.h"
 
 #include "storm/modelchecker/exploration/ExplorationInformation.h"
 

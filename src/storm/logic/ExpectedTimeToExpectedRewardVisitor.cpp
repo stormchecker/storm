@@ -1,10 +1,10 @@
-#include "storm/logic/ExpectedTimeToExpectedRewardVisitor.h"
-#include <boost/any.hpp>
-#include "storm/logic/Formulas.h"
+#include "ExpectedTimeToExpectedRewardVisitor.h"
 
-#include "storm/utility/macros.h"
+#include <boost/any.hpp>
 
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/logic/Formulas.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace logic {

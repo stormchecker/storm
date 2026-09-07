@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+
 #include "storm/models/sparse/StateLabeling.h"
 
 namespace storm {

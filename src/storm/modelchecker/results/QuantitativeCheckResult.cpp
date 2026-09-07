@@ -1,4 +1,4 @@
-#include "storm/modelchecker/results/QuantitativeCheckResult.h"
+#include "QuantitativeCheckResult.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"

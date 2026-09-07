@@ -1,4 +1,4 @@
-#include "storm/storage/umb/model/UmbModel.h"
+#include "UmbModel.h"
 
 #include <boost/algorithm/string/join.hpp>
 #include <sstream>

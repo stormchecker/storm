@@ -1,4 +1,4 @@
-#include "storm-pars/utility/ModelInstantiator.h"
+#include "ModelInstantiator.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/StandardRewardModel.h"

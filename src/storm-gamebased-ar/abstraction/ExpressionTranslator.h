@@ -2,11 +2,10 @@
 
 #include <set>
 
+#include "storm/solver/SmtSolver.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/expressions/EquivalenceChecker.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
-
-#include "storm/solver/SmtSolver.h"
 
 namespace storm {
 namespace dd {

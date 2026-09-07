@@ -1,4 +1,4 @@
-#include "storm-conv/api/storm-conv.h"
+#include "storm-conv.h"
 
 #include "storm/api/properties.h"
 #include "storm/io/file.h"

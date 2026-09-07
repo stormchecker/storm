@@ -1,4 +1,4 @@
-#include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
+#include "PomdpMemoryUnfolder.h"
 
 #include <limits>
 

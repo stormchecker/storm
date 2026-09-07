@@ -1,28 +1,23 @@
 #pragma once
 
 #include <map>
-#include "AssumptionMaker.h"
-#include "LocalMonotonicityResult.h"
-#include "MonotonicityResult.h"
-#include "Order.h"
-#include "OrderExtender.h"
 
+#include "storm-pars/api/region.h"
+#include "storm-pars/modelchecker/region/monotonicity/AssumptionMaker.h"
+#include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
+#include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
 #include "storm/logic/Formula.h"
-
 #include "storm/models/ModelBase.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-
 #include "storm/solver/Z3SmtSolver.h"
-
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
-
 #include "storm/utility/constants.h"
-
-#include "storm-pars/api/region.h"
 
 namespace storm {
 namespace analysis {

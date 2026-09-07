@@ -2,10 +2,9 @@
 
 #include "storm/storage/dd/bisimulation/BisimulationOptions.h"
 #include "storm/storage/dd/bisimulation/Partition.h"
-#include "storm/storage/dd/bisimulation/Status.h"
-
 #include "storm/storage/dd/bisimulation/SignatureComputer.h"
 #include "storm/storage/dd/bisimulation/SignatureRefiner.h"
+#include "storm/storage/dd/bisimulation/Status.h"
 
 namespace storm {
 namespace models {

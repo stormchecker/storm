@@ -4,13 +4,12 @@
 #include <memory>
 #include <vector>
 
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
-
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace modelchecker {

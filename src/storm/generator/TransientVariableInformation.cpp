@@ -1,21 +1,19 @@
-#include "storm/generator/TransientVariableInformation.h"
+#include "TransientVariableInformation.h"
 
-#include "storm/storage/jani/Model.h"
+#include <cmath>
 
+#include "storm/exceptions/OutOfRangeException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/AutomatonComposition.h"
+#include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/eliminator/ArrayEliminator.h"
 #include "storm/storage/valuations/ValuationsStorage.h"
-
-#include "storm/exceptions/OutOfRangeException.h"
-#include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
-#include <cmath>
 
 namespace storm {
 namespace generator {

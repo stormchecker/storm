@@ -4,7 +4,6 @@
 #include <map>
 
 #include "storm/logic/CloneVisitor.h"
-
 #include "storm/storage/expressions/Expression.h"
 
 namespace storm {

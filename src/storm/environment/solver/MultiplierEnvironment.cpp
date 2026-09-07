@@ -1,4 +1,4 @@
-#include "storm/environment/solver/MultiplierEnvironment.h"
+#include "MultiplierEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MultiplierSettings.h"

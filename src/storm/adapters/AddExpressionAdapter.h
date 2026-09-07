@@ -2,13 +2,12 @@
 
 #include <memory>
 
-#include "storm/storage/expressions/ExpressionVisitor.h"
-#include "storm/storage/expressions/Expressions.h"
-#include "storm/storage/expressions/Variable.h"
-
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace adapters {

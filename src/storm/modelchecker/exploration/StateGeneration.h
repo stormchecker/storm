@@ -2,7 +2,6 @@
 
 #include "storm/generator/CompressedState.h"
 #include "storm/generator/PrismNextStateGenerator.h"
-
 #include "storm/storage/sparse/StateStorage.h"
 
 namespace storm {

@@ -1,4 +1,4 @@
-#include "storm/models/sparse/StochasticTwoPlayerGame.h"
+#include "StochasticTwoPlayerGame.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

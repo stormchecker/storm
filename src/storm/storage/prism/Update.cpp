@@ -1,4 +1,4 @@
-#include "storm/storage/prism/Update.h"
+#include "Update.h"
 
 #include <algorithm>
 #include <boost/algorithm/string/join.hpp>

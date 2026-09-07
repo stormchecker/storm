@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
+#include "RegionSplittingStrategy.h"
 
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"

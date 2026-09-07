@@ -1,9 +1,8 @@
 #pragma once
 
-#include <memory>
-
 #include <boost/optional.hpp>
 #include <iostream>
+#include <memory>
 
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/jani/EdgeDestination.h"

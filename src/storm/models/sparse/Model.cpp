@@ -1,4 +1,4 @@
-#include "storm/models/sparse/Model.h"
+#include "Model.h"
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/split.hpp>

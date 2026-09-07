@@ -2,9 +2,8 @@
 
 #include <optional>
 
-#include "storm/solver/StandardMinMaxLinearEquationSolver.h"
-
 #include "storm/solver/SolverSelectionOptions.h"
+#include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
 namespace storm {

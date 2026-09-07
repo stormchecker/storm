@@ -2,12 +2,11 @@
 #include "test/storm_gtest.h"
 
 #include "storm-gamebased-ar/abstraction/MenuGameRefiner.h"
-#include "storm/environment/Environment.h"
-
 #include "storm-gamebased-ar/abstraction/prism/PrismMenuGameAbstractor.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/environment/Environment.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"

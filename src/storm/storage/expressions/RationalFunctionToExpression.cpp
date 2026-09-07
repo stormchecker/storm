@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/RationalFunctionToExpression.h"
+#include "RationalFunctionToExpression.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"

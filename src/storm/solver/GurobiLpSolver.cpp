@@ -1,4 +1,4 @@
-#include "storm/solver/GurobiLpSolver.h"
+#include "GurobiLpSolver.h"
 
 #include <numeric>
 

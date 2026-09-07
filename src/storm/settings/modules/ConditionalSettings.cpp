@@ -1,4 +1,4 @@
-#include "storm/settings/modules/ConditionalSettings.h"
+#include "ConditionalSettings.h"
 
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"

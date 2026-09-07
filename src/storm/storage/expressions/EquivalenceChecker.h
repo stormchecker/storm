@@ -1,8 +1,7 @@
 #pragma once
 
-#include <memory>
-
 #include <boost/optional.hpp>
+#include <memory>
 
 #include "storm/solver/SmtSolver.h"
 

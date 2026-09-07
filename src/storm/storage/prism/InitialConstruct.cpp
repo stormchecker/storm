@@ -1,4 +1,5 @@
-#include "storm/storage/prism/InitialConstruct.h"
+#include "InitialConstruct.h"
+
 #include "storm/storage/expressions/Variable.h"
 
 namespace storm {

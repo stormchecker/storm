@@ -1,8 +1,7 @@
-#include "storm/modelchecker/prctl/helper/rewardbounded/EpochManager.h"
-
-#include "storm/utility/macros.h"
+#include "EpochManager.h"
 
 #include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {

@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/ExplicitQualitativeGameResult.h"
+#include "ExplicitQualitativeGameResult.h"
 
 namespace storm::gbar {
 namespace abstraction {

@@ -1,4 +1,4 @@
-#include "storm-pomdp/transformer/BinaryPomdpTransformer.h"
+#include "BinaryPomdpTransformer.h"
 
 #include <queue>
 

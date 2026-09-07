@@ -1,4 +1,4 @@
-#include "storm/storage/prism/ClockVariable.h"
+#include "ClockVariable.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/expressions/ExpressionManager.h"

@@ -1,4 +1,4 @@
-#include "storm/storage/prism/BooleanVariable.h"
+#include "BooleanVariable.h"
 
 #include "storm/storage/expressions/ExpressionManager.h"
 

@@ -1,12 +1,9 @@
-#include "storm/storage/dd/bisimulation/PreservationInformation.h"
-
-#include "storm/logic/Formulas.h"
-
-#include "storm/models/symbolic/Model.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
+#include "PreservationInformation.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/logic/Formulas.h"
+#include "storm/models/symbolic/Model.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

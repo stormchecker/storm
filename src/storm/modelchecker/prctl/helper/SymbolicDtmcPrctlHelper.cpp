@@ -1,4 +1,4 @@
-#include "storm/modelchecker/prctl/helper/SymbolicDtmcPrctlHelper.h"
+#include "SymbolicDtmcPrctlHelper.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"

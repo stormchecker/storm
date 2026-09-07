@@ -1,4 +1,5 @@
-#include "storm/storage/jani/EdgeContainer.h"
+#include "EdgeContainer.h"
+
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/TemplateEdge.h"

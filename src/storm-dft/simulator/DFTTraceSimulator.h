@@ -4,7 +4,6 @@
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/DFTState.h"
 #include "storm-dft/storage/FailableElements.h"
-
 #include "storm/utility/random.h"
 
 namespace storm::dft {

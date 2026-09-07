@@ -1,4 +1,5 @@
-#include "storm-gamebased-ar/abstraction/SymbolicStateSet.h"
+#include "SymbolicStateSet.h"
+
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm::gbar {

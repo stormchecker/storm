@@ -1,5 +1,6 @@
-#include "storm/settings/modules/BuildSettings.h"
+#include "BuildSettings.h"
 
+#include "storm/exceptions/IllegalArgumentValueException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/parser/CSVParser.h"
 #include "storm/settings/Argument.h"
@@ -7,8 +8,6 @@
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/SettingsManager.h"
-
-#include "storm/exceptions/IllegalArgumentValueException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

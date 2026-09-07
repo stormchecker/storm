@@ -1,11 +1,10 @@
 #pragma once
 
+#include <boost/optional.hpp>
+#include <boost/variant.hpp>
 #include <set>
 #include <string>
 #include <vector>
-
-#include <boost/optional.hpp>
-#include <boost/variant.hpp>
 
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/expressions/Expression.h"

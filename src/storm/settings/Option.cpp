@@ -1,13 +1,13 @@
-#include "storm/settings/Option.h"
+#include "Option.h"
 
 #include <algorithm>
 #include <iomanip>
 #include <string>
-#include "Argument.h"
-#include "ArgumentBase.h"
 
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/OptionUnificationException.h"
+#include "storm/settings/Argument.h"
+#include "storm/settings/ArgumentBase.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

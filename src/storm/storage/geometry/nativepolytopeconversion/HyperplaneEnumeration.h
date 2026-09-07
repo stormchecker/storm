@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+
 #include "storm/adapters/EigenAdapter.h"
 
 namespace storm {

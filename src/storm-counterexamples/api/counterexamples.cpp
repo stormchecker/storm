@@ -1,4 +1,4 @@
-#include "storm-counterexamples/api/counterexamples.h"
+#include "counterexamples.h"
 
 #include "storm/environment/Environment.h"
 #include "storm/utility/shortestPaths.h"

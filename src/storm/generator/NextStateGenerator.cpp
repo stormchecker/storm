@@ -1,4 +1,4 @@
-#include "storm/generator/NextStateGenerator.h"
+#include "NextStateGenerator.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/JsonAdapter.h"

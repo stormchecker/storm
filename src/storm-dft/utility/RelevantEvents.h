@@ -1,15 +1,15 @@
 #pragma once
 
 #include <boost/algorithm/string.hpp>
+#include <initializer_list>
+#include <memory>
+
+#include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/logic/AtomicLabelFormula.h"
 #include "storm/logic/Formula.h"
 #include "storm/settings/SettingsManager.h"
-
-#include <initializer_list>
-#include <memory>
-#include "storm-dft/settings/modules/FaultTreeSettings.h"
-#include "storm-dft/storage/DFT.h"
 
 namespace storm::dft {
 namespace utility {

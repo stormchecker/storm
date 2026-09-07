@@ -1,24 +1,18 @@
-#include "storm/modelchecker/prctl/helper/SymbolicMdpPrctlHelper.h"
-
-#include "storm/solver/SymbolicMinMaxLinearEquationSolver.h"
-
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
+#include "SymbolicMdpPrctlHelper.h"
 
 #include "storm/environment/Environment.h"
-
-#include "storm/utility/constants.h"
-#include "storm/utility/graph.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/solver/SymbolicMinMaxLinearEquationSolver.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/graph.h"
 
 namespace storm {
 namespace modelchecker {

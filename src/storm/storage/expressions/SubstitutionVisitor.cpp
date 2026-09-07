@@ -1,9 +1,10 @@
+#include "SubstitutionVisitor.h"
+
 #include <map>
 #include <string>
 #include <unordered_map>
 
 #include "storm/storage/expressions/Expressions.h"
-#include "storm/storage/expressions/SubstitutionVisitor.h"
 
 namespace storm {
 namespace expressions {

@@ -1,4 +1,4 @@
-#include "storm/solver/SolverGuarantee.h"
+#include "SolverGuarantee.h"
 
 namespace storm {
 namespace solver {

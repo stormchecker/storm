@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+
 #include "storm/storage/prism/Program.h"
 
 namespace storm::parser {

@@ -1,4 +1,4 @@
-#include "storm/logic/TimeBound.h"
+#include "TimeBound.h"
 
 namespace storm {
 namespace logic {

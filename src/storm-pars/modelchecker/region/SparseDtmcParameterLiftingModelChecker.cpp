@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
+#include "SparseDtmcParameterLiftingModelChecker.h"
 
 #include <memory>
 #include <vector>

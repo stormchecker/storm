@@ -1,4 +1,4 @@
-#include "storm/storage/jani/traverser/RewardModelInformation.h"
+#include "RewardModelInformation.h"
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"

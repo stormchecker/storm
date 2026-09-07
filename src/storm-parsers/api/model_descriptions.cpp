@@ -2,13 +2,10 @@
 
 #include "storm-parsers/parser/JaniParser.h"
 #include "storm-parsers/parser/PrismParser.h"
-
 #include "storm/api/properties.h"
-
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
-
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

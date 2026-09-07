@@ -1,4 +1,4 @@
-#include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
+#include "SparseLTLHelper.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/automata/DeterministicAutomaton.h"

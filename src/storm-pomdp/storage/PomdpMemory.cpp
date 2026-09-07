@@ -1,4 +1,4 @@
-#include "storm-pomdp/storage/PomdpMemory.h"
+#include "PomdpMemory.h"
 
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidArgumentException.h"

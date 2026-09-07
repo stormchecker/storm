@@ -1,4 +1,4 @@
-#include "storm/environment/dd/DdEnvironment.h"
+#include "DdEnvironment.h"
 
 #include "storm/environment/dd/CuddDdManagerEnvironment.h"
 #include "storm/environment/dd/SylvanDdManagerEnvironment.h"

@@ -1,4 +1,5 @@
 #include "DiscountingHelper.h"
+
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/solver/helper/DiscountedValueIterationHelper.h"

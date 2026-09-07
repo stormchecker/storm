@@ -1,4 +1,4 @@
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "MinMaxSolverEnvironment.h"
 
 #include "storm/environment/solver/MinMaxLpSolverEnvironment.h"
 #include "storm/settings/SettingsManager.h"

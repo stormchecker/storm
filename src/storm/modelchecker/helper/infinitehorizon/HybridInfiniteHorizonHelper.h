@@ -1,11 +1,8 @@
 #pragma once
 #include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
-
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
-
 #include "storm/models/symbolic/Model.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"

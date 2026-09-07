@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/RegionRefinementChecker.h"
+#include "RegionRefinementChecker.h"
 
 #include <functional>
 #include <iterator>

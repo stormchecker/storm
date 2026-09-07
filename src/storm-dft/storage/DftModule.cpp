@@ -1,4 +1,4 @@
-#include "storm-dft/storage/DftModule.h"
+#include "DftModule.h"
 
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/storage/DFT.h"

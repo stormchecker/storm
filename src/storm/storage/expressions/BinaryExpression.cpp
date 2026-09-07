@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/BinaryExpression.h"
+#include "BinaryExpression.h"
 
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/utility/macros.h"

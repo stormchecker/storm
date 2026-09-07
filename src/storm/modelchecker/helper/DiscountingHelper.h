@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SingleValueModelCheckerHelper.h"
+#include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/utility/ProgressMeasurement.h"

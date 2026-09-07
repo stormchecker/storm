@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DFTGate.h"
+#include "storm-dft/storage/elements/DFTGate.h"
 
 namespace storm::dft {
 namespace storage {

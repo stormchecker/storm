@@ -1,4 +1,4 @@
-#include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
+#include "SparseCtmcCslModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"

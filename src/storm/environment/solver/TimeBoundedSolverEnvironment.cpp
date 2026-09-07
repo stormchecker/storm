@@ -1,4 +1,4 @@
-#include "storm/environment/solver/TimeBoundedSolverEnvironment.h"
+#include "TimeBoundedSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/TimeBoundedSolverSettings.h"

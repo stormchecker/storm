@@ -1,4 +1,4 @@
-#include "storm/storage/geometry/nativepolytopeconversion/HyperplaneCollector.h"
+#include "HyperplaneCollector.h"
 
 namespace storm {
 namespace storage {

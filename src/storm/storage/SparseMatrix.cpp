@@ -1,4 +1,4 @@
-#include "storm/storage/SparseMatrix.h"
+#include "SparseMatrix.h"
 
 #include <iterator>
 

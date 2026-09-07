@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/AnnotatedRegion.h"
+#include "AnnotatedRegion.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 

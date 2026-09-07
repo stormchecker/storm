@@ -1,16 +1,14 @@
-#include "storm/environment/solver/SolverEnvironment.h"
+#include "SolverEnvironment.h"
 
 #include "storm/environment/solver/AllSolverEnvironments.h"
-
+#include "storm/exceptions/InvalidEnvironmentException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidEnvironmentException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 

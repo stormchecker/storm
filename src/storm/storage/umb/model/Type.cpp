@@ -1,4 +1,4 @@
-#include "storm/storage/umb/model/Type.h"
+#include "Type.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/utility/macros.h"

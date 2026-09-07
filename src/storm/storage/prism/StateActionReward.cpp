@@ -1,4 +1,5 @@
-#include "storm/storage/prism/StateActionReward.h"
+#include "StateActionReward.h"
+
 #include "storm/storage/expressions/Variable.h"
 
 namespace storm {

@@ -2,7 +2,6 @@
 
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
-
 #include "storm/solver/SolverSelectionOptions.h"
 
 namespace storm {

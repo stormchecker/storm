@@ -1,4 +1,5 @@
-#include "storm/storage/expressions/Variable.h"
+#include "Variable.h"
+
 #include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {

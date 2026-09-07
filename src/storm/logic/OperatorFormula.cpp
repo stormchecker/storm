@@ -1,4 +1,4 @@
-#include "storm/logic/OperatorFormula.h"
+#include "OperatorFormula.h"
 
 #include <ostream>
 

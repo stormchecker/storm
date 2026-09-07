@@ -4,9 +4,8 @@
 #include <type_traits>
 
 #include "storm/models/ModelRepresentation.h"
-#include "storm/storage/dd/Bdd.h"
-
 #include "storm/storage/BitVector.h"
+#include "storm/storage/dd/Bdd.h"
 
 namespace storm {
 namespace modelchecker {

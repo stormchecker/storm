@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
+#include "LocalMonotonicityResult.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"

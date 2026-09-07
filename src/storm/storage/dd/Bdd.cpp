@@ -1,4 +1,4 @@
-#include "storm/storage/dd/Bdd.h"
+#include "Bdd.h"
 
 #include <algorithm>
 

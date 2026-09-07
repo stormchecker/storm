@@ -1,4 +1,4 @@
-#include "storm/storage/Distribution.h"
+#include "Distribution.h"
 
 #include <algorithm>
 #include <iostream>

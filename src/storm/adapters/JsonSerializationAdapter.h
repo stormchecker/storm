@@ -1,10 +1,10 @@
 #pragma once
 
-#include "storm/adapters/JsonForward.h"
-
 #include <boost/pfr.hpp>
 #include <ostream>
 #include <variant>
+
+#include "storm/adapters/JsonForward.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
 

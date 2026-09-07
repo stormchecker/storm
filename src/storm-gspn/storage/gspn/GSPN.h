@@ -6,14 +6,13 @@
 #include <unordered_map>
 #include <vector>
 
-#include "storm/storage/expressions/ExpressionManager.h"
-
 #include "storm-gspn/storage/gspn/ImmediateTransition.h"
 #include "storm-gspn/storage/gspn/Marking.h"
 #include "storm-gspn/storage/gspn/Place.h"
 #include "storm-gspn/storage/gspn/PlacementInfo.h"
 #include "storm-gspn/storage/gspn/TimedTransition.h"
 #include "storm-gspn/storage/gspn/TransitionPartition.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace gspn {

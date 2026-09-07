@@ -1,4 +1,4 @@
-#include "storm/settings/modules/MultiObjectiveSettings.h"
+#include "MultiObjectiveSettings.h"
 
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"

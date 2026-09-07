@@ -1,4 +1,4 @@
-#include "storm/storage/dd/Odd.h"
+#include "Odd.h"
 
 #include <boost/algorithm/string/join.hpp>
 #include <fstream>

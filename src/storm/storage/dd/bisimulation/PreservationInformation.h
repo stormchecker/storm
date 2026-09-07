@@ -5,11 +5,9 @@
 #include <string>
 #include <vector>
 
+#include "storm/logic/Formula.h"
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/dd/DdType.h"
-
-#include "storm/logic/Formula.h"
-
 #include "storm/storage/expressions/Expression.h"
 
 namespace storm {

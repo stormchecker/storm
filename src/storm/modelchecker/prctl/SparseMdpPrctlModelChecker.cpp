@@ -1,4 +1,4 @@
-#include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "SparseMdpPrctlModelChecker.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

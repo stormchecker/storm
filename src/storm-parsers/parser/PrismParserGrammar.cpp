@@ -1,20 +1,18 @@
-#include "storm-parsers/parser/PrismParserGrammar.h"
+#include "PrismParserGrammar.h"
 
 #include <unordered_set>
-#include "storm/storage/prism/Compositions.h"
 
+#include "storm-parsers/parser/ExpressionParser.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
-#include "storm/utility/macros.h"
-
 #include "storm/storage/BitVector.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/VariableExpression.h"
-
-#include "storm-parsers/parser/ExpressionParser.h"
+#include "storm/storage/prism/Compositions.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace parser {

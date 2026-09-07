@@ -1,4 +1,4 @@
-#include "storm/storage/prism/HidingComposition.h"
+#include "HidingComposition.h"
 
 #include <boost/algorithm/string/join.hpp>
 

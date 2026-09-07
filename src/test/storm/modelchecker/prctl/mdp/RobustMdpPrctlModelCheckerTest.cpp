@@ -1,22 +1,21 @@
 #include "storm-config.h"
-#include "storm/adapters/RationalNumberForward.h"
-#include "storm/exceptions/NotImplementedException.h"
-#include "test/storm_gtest.h"
-
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/DirectEncodingParser.h"
 #include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
 #include "storm/api/verification.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/transformer/AddUncertainty.h"
+#include "test/storm_gtest.h"
 
 std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> const& model) {

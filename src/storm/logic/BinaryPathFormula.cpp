@@ -1,4 +1,4 @@
-#include "storm/logic/BinaryPathFormula.h"
+#include "BinaryPathFormula.h"
 
 namespace storm {
 namespace logic {

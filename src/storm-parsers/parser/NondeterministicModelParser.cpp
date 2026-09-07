@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/NondeterministicModelParser.h"
+#include "NondeterministicModelParser.h"
 
 #include <string>
 #include <vector>

@@ -1,4 +1,4 @@
-#include "storm-dft/storage/FailableElements.h"
+#include "FailableElements.h"
 
 #include <sstream>
 

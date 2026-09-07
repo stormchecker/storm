@@ -1,6 +1,7 @@
-#include "storm/logic/FragmentSpecification.h"
+#include "FragmentSpecification.h"
 
 #include <iostream>
+
 #include "storm/logic/RewardAccumulation.h"
 
 namespace storm {

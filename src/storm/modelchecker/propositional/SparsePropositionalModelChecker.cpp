@@ -1,4 +1,4 @@
-#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "SparsePropositionalModelChecker.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

@@ -1,4 +1,4 @@
-#include "storm/storage/sparse/ValuationTransformer.h"
+#include "ValuationTransformer.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"

@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/MultiObjectivePostprocessing.h"
+#include "MultiObjectivePostprocessing.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 

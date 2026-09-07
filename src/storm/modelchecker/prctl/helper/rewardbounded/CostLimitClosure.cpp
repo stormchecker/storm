@@ -1,4 +1,5 @@
-#include "storm/modelchecker/prctl/helper/rewardbounded/CostLimitClosure.h"
+#include "CostLimitClosure.h"
+
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/utility/macros.h"

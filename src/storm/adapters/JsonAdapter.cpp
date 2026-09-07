@@ -1,4 +1,4 @@
-#include "storm/adapters/JsonAdapter.h"
+#include "JsonAdapter.h"
 
 #include <sstream>
 

@@ -1,4 +1,4 @@
-#include "storm/transformer/GoalStateMerger.h"
+#include "GoalStateMerger.h"
 
 #include <limits>
 #include <memory>

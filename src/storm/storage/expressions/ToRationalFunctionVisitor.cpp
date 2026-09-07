@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/ToRationalFunctionVisitor.h"
+#include "ToRationalFunctionVisitor.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/expressions/OperatorType.h"

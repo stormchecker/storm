@@ -1,8 +1,7 @@
 #pragma once
 
-#include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
-
 #include "storm/logic/Formulas.h"
+#include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
 #include "storm/modelchecker/prctl/helper/MDPModelCheckingHelperReturnType.h"
 #include "storm/models/ModelRepresentation.h"
 #include "storm/models/sparse/Mdp.h"

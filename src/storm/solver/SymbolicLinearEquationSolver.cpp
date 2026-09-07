@@ -1,4 +1,4 @@
-#include "storm/solver/SymbolicLinearEquationSolver.h"
+#include "SymbolicLinearEquationSolver.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/solver/SolverEnvironment.h"

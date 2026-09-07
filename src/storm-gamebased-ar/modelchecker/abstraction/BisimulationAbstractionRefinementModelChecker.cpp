@@ -1,18 +1,14 @@
-#include "storm-gamebased-ar/modelchecker/abstraction/BisimulationAbstractionRefinementModelChecker.h"
+#include "BisimulationAbstractionRefinementModelChecker.h"
 
+#include "storm-gamebased-ar/abstraction/SymbolicStateSet.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-
-#include "storm-gamebased-ar/abstraction/SymbolicStateSet.h"
-
 #include "storm/storage/dd/bisimulation/BisimulationDecomposition.h"
-
-#include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
-#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm::gbar {

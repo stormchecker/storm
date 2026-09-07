@@ -1,4 +1,4 @@
-#include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
+#include "HybridMdpPrctlModelChecker.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"

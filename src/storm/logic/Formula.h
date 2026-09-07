@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/any.hpp>
 #include <functional>
 #include <iosfwd>
 #include <map>
@@ -7,7 +8,6 @@
 #include <set>
 #include <vector>
 
-#include <boost/any.hpp>
 #include "storm/logic/FormulasForwardDeclarations.h"
 
 namespace storm {

@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/UnaryNumericalFunctionExpression.h"
+#include "UnaryNumericalFunctionExpression.h"
 
 #include <cmath>
 

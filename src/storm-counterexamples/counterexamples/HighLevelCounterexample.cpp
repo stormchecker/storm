@@ -1,4 +1,4 @@
-#include "storm-counterexamples/counterexamples/HighLevelCounterexample.h"
+#include "HighLevelCounterexample.h"
 
 namespace storm {
 namespace counterexamples {

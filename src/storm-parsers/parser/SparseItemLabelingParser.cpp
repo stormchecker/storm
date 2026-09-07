@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/SparseItemLabelingParser.h"
+#include "SparseItemLabelingParser.h"
 
 #include <cstring>
 #include <iostream>
@@ -6,7 +6,6 @@
 
 #include "storm-parsers/parser/MappedFile.h"
 #include "storm-parsers/util/cstring.h"
-
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"

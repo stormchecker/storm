@@ -1,4 +1,4 @@
-#include "storm/builder/RewardModelInformation.h"
+#include "RewardModelInformation.h"
 
 namespace storm {
 namespace builder {

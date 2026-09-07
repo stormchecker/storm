@@ -1,4 +1,5 @@
-#include "storm/logic/QuantileFormula.h"
+#include "QuantileFormula.h"
+
 #include <boost/any.hpp>
 #include <ostream>
 

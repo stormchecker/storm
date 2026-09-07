@@ -1,4 +1,4 @@
-#include "storm/storage/BitVectorHashMap.h"
+#include "BitVectorHashMap.h"
 
 #include <algorithm>
 #include <iostream>

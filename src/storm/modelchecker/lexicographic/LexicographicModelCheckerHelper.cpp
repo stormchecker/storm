@@ -1,4 +1,4 @@
-#include "storm/modelchecker/lexicographic/LexicographicModelCheckerHelper.h"
+#include "LexicographicModelCheckerHelper.h"
 
 #include "storm//modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/automata/APSet.h"

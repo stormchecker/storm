@@ -1,8 +1,7 @@
 #pragma once
 
-#include <string>
-
 #include <boost/optional.hpp>
+#include <string>
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"

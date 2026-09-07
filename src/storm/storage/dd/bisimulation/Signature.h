@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm/storage/dd/DdType.h"
-
 #include "storm/storage/dd/bisimulation/Partition.h"
 
 namespace storm {

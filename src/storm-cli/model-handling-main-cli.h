@@ -4,7 +4,6 @@
 #include <sstream>
 
 #include "storm-cli-utilities/model-handling.h"
-
 #include "storm-counterexamples/api/counterexamples.h"
 #include "storm-gamebased-ar/api/verification.h"
 #include "storm-parsers/parser/ExpressionParser.h"

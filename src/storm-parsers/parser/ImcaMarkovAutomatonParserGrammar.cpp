@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/ImcaMarkovAutomatonParserGrammar.h"
+#include "ImcaMarkovAutomatonParserGrammar.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/io/file.h"

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+
 #include "storm/storage/geometry/Polytope.h"
 
 namespace storm {

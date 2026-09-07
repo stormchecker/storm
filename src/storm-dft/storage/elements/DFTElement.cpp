@@ -1,4 +1,4 @@
-#include "storm-dft/storage/elements/DFTElement.h"
+#include "DFTElement.h"
 
 #include <set>
 

@@ -1,11 +1,10 @@
-#include "storm-conv/settings/ConvSettings.h"
+#include "ConvSettings.h"
 
 #include "storm-conv/settings/modules/ConversionGeneralSettings.h"
 #include "storm-conv/settings/modules/ConversionInputSettings.h"
 #include "storm-conv/settings/modules/ConversionOutputSettings.h"
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-conv/settings/modules/PrismExportSettings.h"
-
 #include "storm/settings/SettingsManager.h"
 
 namespace storm {

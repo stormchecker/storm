@@ -1,4 +1,4 @@
-#include "storm-pars/settings/modules/SamplingSettings.h"
+#include "SamplingSettings.h"
 
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"

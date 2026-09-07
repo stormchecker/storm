@@ -1,4 +1,4 @@
-#include "storm/storage/dd/bisimulation/QuotientExtractor.h"
+#include "QuotientExtractor.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wcomma"

@@ -1,4 +1,4 @@
-#include "storm/utility/solver.h"
+#include "solver.h"
 
 #include <type_traits>
 

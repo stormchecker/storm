@@ -1,4 +1,4 @@
-#include "storm/models/sparse/StandardRewardModel.h"
+#include "StandardRewardModel.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

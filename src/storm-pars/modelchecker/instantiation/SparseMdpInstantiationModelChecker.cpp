@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/instantiation/SparseMdpInstantiationModelChecker.h"
+#include "SparseMdpInstantiationModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/Environment.h"

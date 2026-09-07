@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
+#include "SparseMultiObjectiveRewardAnalysis.h"
 
 #include <algorithm>
 

@@ -1,23 +1,22 @@
+#include "DeterministicSchedsParetoExplorer.h"
+
 #include <algorithm>
 #include <sstream>
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/io/export.h"
 #include "storm/modelchecker/multiobjective/MultiObjectivePostprocessing.h"
-#include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsParetoExplorer.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/geometry/coordinates.h"
-
-#include "storm/io/export.h"
 #include "storm/utility/solver.h"
-
-#include "storm/exceptions/IllegalArgumentException.h"
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace modelchecker {

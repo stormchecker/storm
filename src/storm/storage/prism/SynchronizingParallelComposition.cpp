@@ -1,4 +1,4 @@
-#include "storm/storage/prism/SynchronizingParallelComposition.h"
+#include "SynchronizingParallelComposition.h"
 
 namespace storm {
 namespace prism {

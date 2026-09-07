@@ -2,22 +2,20 @@
 
 #include <unordered_map>
 
-#include "storm/storage/expressions/ExpressionVisitor.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/Property.h"
-#include "storm/storage/jani/Variable.h"
-#include "storm/storage/jani/traverser/ArrayExpressionFinder.h"
-#include "storm/storage/jani/traverser/JaniTraverser.h"
-#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
-
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Expressions.h"
-#include "storm/storage/jani/expressions/JaniExpressions.h"
-
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Property.h"
+#include "storm/storage/jani/Variable.h"
+#include "storm/storage/jani/expressions/JaniExpressions.h"
+#include "storm/storage/jani/traverser/ArrayExpressionFinder.h"
+#include "storm/storage/jani/traverser/JaniTraverser.h"
+#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
 
 namespace storm {
 namespace jani {

@@ -1,4 +1,4 @@
-#include "storm/storage/jani/TemplateEdgeDestination.h"
+#include "TemplateEdgeDestination.h"
 
 namespace storm {
 namespace jani {

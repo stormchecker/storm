@@ -1,4 +1,4 @@
-#include "storm/logic/HOAPathFormula.h"
+#include "HOAPathFormula.h"
 
 #include <boost/any.hpp>
 #include <ostream>

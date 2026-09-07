@@ -1,4 +1,4 @@
-#include "storm-pars/utility/parametric.h"
+#include "parametric.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"

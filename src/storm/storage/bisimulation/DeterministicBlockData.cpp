@@ -1,4 +1,4 @@
-#include "storm/storage/bisimulation/DeterministicBlockData.h"
+#include "DeterministicBlockData.h"
 
 #include <iostream>
 

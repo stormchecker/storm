@@ -1,4 +1,4 @@
-#include "storm/solver/LinearEquationSolverProblemFormat.h"
+#include "LinearEquationSolverProblemFormat.h"
 
 namespace storm {
 namespace solver {

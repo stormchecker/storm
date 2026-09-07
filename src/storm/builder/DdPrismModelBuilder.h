@@ -4,14 +4,11 @@
 #include <boost/variant.hpp>
 #include <map>
 
-#include "storm/storage/prism/Program.h"
-
 #include "storm/builder/TerminalStatesGetter.h"
-
 #include "storm/logic/Formulas.h"
-#include "storm/utility/macros.h"
-
 #include "storm/storage/dd/DdType.h"
+#include "storm/storage/prism/Program.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 class Environment;

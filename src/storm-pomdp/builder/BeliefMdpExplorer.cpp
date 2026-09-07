@@ -1,9 +1,8 @@
-#include "storm-pomdp/builder/BeliefMdpExplorer.h"
+#include "BeliefMdpExplorer.h"
 
 #include "storm-parsers/api/properties.h"
 #include "storm/api/properties.h"
 #include "storm/api/verification.h"
-
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"

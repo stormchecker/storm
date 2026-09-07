@@ -1,8 +1,8 @@
 #pragma once
 
-#include "JaniExpressionVisitor.h"
 #include "storm/storage/expressions/SubstitutionVisitor.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
+#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
 
 namespace storm {
 

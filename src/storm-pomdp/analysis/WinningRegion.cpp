@@ -1,4 +1,4 @@
-#include "storm-pomdp/analysis/WinningRegion.h"
+#include "WinningRegion.h"
 
 #include <boost/algorithm/string.hpp>
 #include <iostream>

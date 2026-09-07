@@ -1,4 +1,4 @@
-#include "storm-pars/transformer/IntervalEndComponentPreserver.h"
+#include "IntervalEndComponentPreserver.h"
 
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/IntervalAdapter.h"

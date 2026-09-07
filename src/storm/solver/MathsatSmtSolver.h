@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/container/flat_map.hpp>
+
 #include "storm-config.h"
 #include "storm/adapters/MathsatExpressionAdapter.h"
 #include "storm/solver/SmtSolver.h"

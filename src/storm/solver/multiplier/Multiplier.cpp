@@ -1,4 +1,5 @@
-#include "storm/solver/multiplier/Multiplier.h"
+#include "Multiplier.h"
+
 #include <type_traits>
 
 #include "storm/adapters/IntervalAdapter.h"

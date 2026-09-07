@@ -1,4 +1,4 @@
-#include "storm/settings/modules/OviSolverSettings.h"
+#include "OviSolverSettings.h"
 
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"

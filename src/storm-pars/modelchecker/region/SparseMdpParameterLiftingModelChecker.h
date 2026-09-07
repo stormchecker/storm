@@ -7,7 +7,6 @@
 #include "storm-pars/modelchecker/instantiation/SparseMdpInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 #include "storm-pars/transformer/ParameterLifter.h"
-
 #include "storm/solver/GameSolver.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/Scheduler.h"

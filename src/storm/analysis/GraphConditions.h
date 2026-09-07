@@ -1,8 +1,5 @@
 #pragma once
 
-#include <type_traits>
-#include <unordered_set>
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmacro-redefined"  // clash for likely() macro between Ginac and Sylvan
 #pragma clang diagnostic ignored "-Wthread-safety-negative"
@@ -10,6 +7,8 @@
 #pragma clang diagnostic ignored "-Wunused-template"
 #include <carl/formula/Formula.h>
 #pragma clang diagnostic pop
+#include <type_traits>
+#include <unordered_set>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Dtmc.h"

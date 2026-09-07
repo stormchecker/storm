@@ -1,4 +1,4 @@
-#include "storm/modelchecker/results/QualitativeCheckResult.h"
+#include "QualitativeCheckResult.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"

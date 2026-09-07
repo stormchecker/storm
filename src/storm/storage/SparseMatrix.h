@@ -1,19 +1,17 @@
 #pragma once
 
 #include <algorithm>
+#include <boost/functional/hash.hpp>
+#include <boost/optional.hpp>
+#include <boost/range/irange.hpp>
 #include <cstdint>
 #include <iosfwd>
 #include <iterator>
 #include <vector>
 
-#include <boost/functional/hash.hpp>
-#include <boost/optional.hpp>
-#include <boost/range/irange.hpp>
-
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/sparse/StateType.h"
-
 #include "storm/utility/OptionalRef.h"
 #include "storm/utility/constants.h"
 

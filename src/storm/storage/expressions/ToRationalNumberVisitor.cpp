@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/ToRationalNumberVisitor.h"
+#include "ToRationalNumberVisitor.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"

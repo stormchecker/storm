@@ -1,9 +1,8 @@
 #pragma once
 
 #include "storm-config.h"
-#include "storm/settings/modules/ModuleSettings.h"
-
 #include "storm/builder/ExplorationOrder.h"
+#include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
 namespace settings {

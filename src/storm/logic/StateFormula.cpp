@@ -1,4 +1,4 @@
-#include "storm/logic/StateFormula.h"
+#include "StateFormula.h"
 
 namespace storm {
 namespace logic {

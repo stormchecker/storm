@@ -1,4 +1,4 @@
-#include "storm/modelchecker/results/CheckResult.h"
+#include "CheckResult.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

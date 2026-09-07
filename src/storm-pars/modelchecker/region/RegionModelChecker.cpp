@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/RegionModelChecker.h"
+#include "RegionModelChecker.h"
 
 #include <vector>
 

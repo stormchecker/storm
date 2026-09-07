@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/SparseChoiceLabelingParser.h"
+#include "SparseChoiceLabelingParser.h"
 
 #include "storm-parsers/parser/MappedFile.h"
 #include "storm-parsers/util/cstring.h"

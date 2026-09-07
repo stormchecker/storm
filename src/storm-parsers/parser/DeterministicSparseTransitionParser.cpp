@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/DeterministicSparseTransitionParser.h"
+#include "DeterministicSparseTransitionParser.h"
 
 #include <clocale>
 #include <string>

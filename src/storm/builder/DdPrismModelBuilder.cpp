@@ -1,4 +1,4 @@
-#include "storm/builder/DdPrismModelBuilder.h"
+#include "DdPrismModelBuilder.h"
 
 #include <boost/algorithm/string/join.hpp>
 

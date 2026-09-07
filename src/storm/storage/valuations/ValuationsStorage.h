@@ -10,16 +10,15 @@
 #include <sstream>
 #include <typeinfo>
 
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/OutOfRangeException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/umb/model/StringEncoding.h"
 #include "storm/storage/umb/model/UmbModel.h"
 #include "storm/storage/valuations/ValuationDescription.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/OutOfRangeException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm::expressions {
 template<typename T>

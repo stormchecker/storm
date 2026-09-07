@@ -1,8 +1,8 @@
 #pragma once
 
-#include "storm/utility/logging.h"
-
 #include <cassert>
+
+#include "storm/utility/logging.h"
 
 // Define STORM_LOG_ASSERT which is only checked when NDEBUG is not set.
 #ifndef NDEBUG

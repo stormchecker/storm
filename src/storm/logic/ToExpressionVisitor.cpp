@@ -1,11 +1,10 @@
-#include "storm/logic/ToExpressionVisitor.h"
+#include "ToExpressionVisitor.h"
+
 #include <boost/any.hpp>
 
-#include "storm/logic/Formulas.h"
-
-#include "storm/storage/expressions/ExpressionManager.h"
-
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/logic/Formulas.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

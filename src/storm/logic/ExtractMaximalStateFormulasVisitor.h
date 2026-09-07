@@ -2,6 +2,7 @@
 
 #include <map>
 #include <vector>
+
 #include "storm/logic/CloneVisitor.h"
 
 namespace storm {

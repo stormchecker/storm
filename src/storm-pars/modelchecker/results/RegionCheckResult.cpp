@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/results/RegionCheckResult.h"
+#include "RegionCheckResult.h"
 
 #include <map>
 

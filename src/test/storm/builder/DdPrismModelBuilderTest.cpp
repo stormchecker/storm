@@ -1,9 +1,7 @@
 #include "storm-config.h"
-#include "storm/environment/Environment.h"
-#include "test/storm_gtest.h"
-
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdPrismModelBuilder.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
@@ -12,6 +10,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/storage/SymbolicModelDescription.h"
+#include "test/storm_gtest.h"
 
 class Cudd {
    public:

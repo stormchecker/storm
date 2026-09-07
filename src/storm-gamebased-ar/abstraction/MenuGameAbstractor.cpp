@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/MenuGameAbstractor.h"
+#include "MenuGameAbstractor.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm/adapters/RationalNumberAdapter.h"

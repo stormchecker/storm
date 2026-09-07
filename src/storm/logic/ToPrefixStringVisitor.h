@@ -1,8 +1,8 @@
 #pragma once
 
-#include "storm/logic/FormulaVisitor.h"
-
 #include <string>
+
+#include "storm/logic/FormulaVisitor.h"
 
 namespace storm {
 namespace logic {

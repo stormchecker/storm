@@ -1,6 +1,6 @@
 #pragma once
 
-#include "JaniLocalEliminator.h"
+#include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
 
 // UnfoldAction unfolds a variable into state space. For example, if a model has locations l1 and l2 and we unfold a variable x with domain {1, 2, 3}, the new
 // model will have locations l1_x_1, l1_x_2, …, l_2_x_3. The new locations will have a transient assignment that indicates the value of the unfolded variable.

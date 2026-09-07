@@ -1,9 +1,9 @@
-#include "storm/settings/modules/GlpkSettings.h"
+#include "GlpkSettings.h"
+
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/SolverSelectionOptions.h"

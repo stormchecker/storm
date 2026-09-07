@@ -1,19 +1,16 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <limits>
 #include <unordered_map>
 #include <vector>
 
-#include <boost/optional.hpp>
-
-#include "storm/solver/OptimizationDirection.h"
-
 #include "storm/generator/CompressedState.h"
-
+#include "storm/modelchecker/exploration/ExplorationTypes.h"
+#include "storm/settings/modules/ExplorationSettings.h"
+#include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/SparseMatrix.h"
-
-#include "storm/modelchecker/exploration/ExplorationTypes.h"
 
 namespace storm {
 

@@ -1,4 +1,4 @@
-#include "storm-cli-utilities/print.h"
+#include "print.h"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <ctime>

@@ -1,4 +1,4 @@
-#include "storm/solver/stateelimination/MultiValueStateEliminator.h"
+#include "MultiValueStateEliminator.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"

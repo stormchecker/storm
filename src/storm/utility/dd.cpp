@@ -1,4 +1,4 @@
-#include "storm/utility/dd.h"
+#include "dd.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/dd/Add.h"

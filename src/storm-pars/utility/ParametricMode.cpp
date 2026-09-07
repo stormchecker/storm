@@ -1,4 +1,5 @@
-#include "storm-pars/utility/ParametricMode.h"
+#include "ParametricMode.h"
+
 #include <string>
 
 namespace storm::pars::utility {

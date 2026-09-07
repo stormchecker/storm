@@ -1,12 +1,12 @@
-#include "storm/settings/modules/BisimulationSettings.h"
+#include "BisimulationSettings.h"
+
+#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-
-#include "storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
 namespace settings {

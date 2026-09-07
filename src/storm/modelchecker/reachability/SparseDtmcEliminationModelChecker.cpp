@@ -1,4 +1,4 @@
-#include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+#include "SparseDtmcEliminationModelChecker.h"
 
 #include <algorithm>
 #include <chrono>

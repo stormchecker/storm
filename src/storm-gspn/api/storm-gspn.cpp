@@ -1,6 +1,7 @@
-#include "storm-gspn/api/storm-gspn.h"
+#include "storm-gspn.h"
 
 #include <boost/algorithm/string.hpp>
+
 #include "storm-conv/api/storm-conv.h"
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-gspn/settings/modules/GSPNExportSettings.h"

@@ -1,4 +1,4 @@
-#include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
+#include "SparseMarkovAutomatonCslHelper.h"
 
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"

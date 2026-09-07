@@ -1,11 +1,11 @@
 #pragma once
 
-#include "storm/storage/jani/expressions/ArrayExpression.h"
-
 #include <memory>
 #include <string>
 #include <vector>
+
 #include "storm/storage/expressions/BaseExpression.h"
+#include "storm/storage/jani/expressions/ArrayExpression.h"
 
 namespace storm {
 namespace expressions {

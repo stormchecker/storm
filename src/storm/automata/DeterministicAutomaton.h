@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <memory>
+
 #include "storm/automata/APSet.h"
 
 namespace storm {

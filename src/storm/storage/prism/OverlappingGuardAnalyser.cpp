@@ -1,4 +1,5 @@
-#include "storm/storage/prism/OverlappingGuardAnalyser.h"
+#include "OverlappingGuardAnalyser.h"
+
 #include "storm/solver/SmtSolver.h"
 #include "storm/storage/prism/Program.h"
 

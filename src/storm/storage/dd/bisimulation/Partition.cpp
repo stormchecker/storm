@@ -1,4 +1,4 @@
-#include "storm/storage/dd/bisimulation/Partition.h"
+#include "Partition.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"

@@ -1,4 +1,4 @@
-#include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
+#include "ExplicitModelCheckerHint.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

@@ -1,4 +1,4 @@
-#include "storm/solver/helper/ValueIterationHelper.h"
+#include "ValueIterationHelper.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"

@@ -1,7 +1,10 @@
-#include "storm-pomdp-cli/settings/PomdpSettings.h"
+#include "PomdpSettings.h"
 
+#include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
+#include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
+#include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
+#include "storm-pomdp-cli/settings/modules/ToParametricSettings.h"
 #include "storm/settings/SettingsManager.h"
-
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
@@ -27,11 +30,6 @@
 #include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/TopologicalEquationSolverSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
-
-#include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
-#include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
-#include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
-#include "storm-pomdp-cli/settings/modules/ToParametricSettings.h"
 
 namespace storm {
 namespace settings {

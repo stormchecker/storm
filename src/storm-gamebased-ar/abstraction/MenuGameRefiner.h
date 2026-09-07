@@ -1,23 +1,18 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <functional>
 #include <memory>
 #include <vector>
 
-#include <boost/optional.hpp>
-
 #include "storm-gamebased-ar/abstraction/RefinementCommand.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeGameResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQuantitativeGameResultMinMax.h"
-
+#include "storm/settings/modules/AbstractionSettings.h"
+#include "storm/storage/dd/DdType.h"
 #include "storm/storage/expressions/EquivalenceChecker.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/FullPredicateSplitter.h"
-
-#include "storm/storage/dd/DdType.h"
-
-#include "storm/settings/modules/AbstractionSettings.h"
-
 #include "storm/utility/solver.h"
 
 namespace storm {

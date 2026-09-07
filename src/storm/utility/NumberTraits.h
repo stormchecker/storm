@@ -1,10 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 #include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/adapters/RationalNumberForward.h"
-
-#include <cstdint>
 
 namespace storm {
 template<typename ValueType>

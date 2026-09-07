@@ -1,11 +1,10 @@
-#include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
+#include "POMDPSettings.h"
 
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/SettingsManager.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
 namespace settings {

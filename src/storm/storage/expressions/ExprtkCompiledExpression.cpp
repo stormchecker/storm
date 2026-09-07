@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/ExprtkCompiledExpression.h"
+#include "ExprtkCompiledExpression.h"
 
 namespace storm {
 namespace expressions {

@@ -1,4 +1,5 @@
 #include "SparseDerivativeInstantiationModelChecker.h"
+
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 #include "storm/analysis/GraphConditions.h"
 #include "storm/environment/Environment.h"

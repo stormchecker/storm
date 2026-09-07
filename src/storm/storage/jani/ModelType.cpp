@@ -1,4 +1,4 @@
-#include "storm/storage/jani/ModelType.h"
+#include "ModelType.h"
 
 namespace storm {
 namespace jani {

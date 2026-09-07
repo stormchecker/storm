@@ -1,4 +1,4 @@
-#include "storm/solver/stateelimination/StateEliminationUtility.h"
+#include "StateEliminationUtility.h"
 
 #include <random>
 

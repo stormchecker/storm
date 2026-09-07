@@ -1,10 +1,10 @@
 #pragma once
 
 #include <map>
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/solver/LpSolver.h"
 
 #include "storm-config.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/solver/LpSolver.h"
 
 #ifdef STORM_HAVE_GLPK
 #include <glpk.h>

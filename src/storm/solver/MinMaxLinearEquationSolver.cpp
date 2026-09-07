@@ -1,4 +1,4 @@
-#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "MinMaxLinearEquationSolver.h"
 
 #include <memory>
 

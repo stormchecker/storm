@@ -1,4 +1,4 @@
-#include "storm/solver/helper/SoundValueIterationHelper.h"
+#include "SoundValueIterationHelper.h"
 
 #include <type_traits>
 

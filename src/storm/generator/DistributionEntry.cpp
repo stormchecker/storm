@@ -1,4 +1,5 @@
-#include "storm/generator/DistributionEntry.h"
+#include "DistributionEntry.h"
+
 #include <cstdint>
 
 #include "storm/adapters/IntervalAdapter.h"

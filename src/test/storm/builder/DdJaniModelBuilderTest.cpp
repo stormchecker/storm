@@ -1,11 +1,9 @@
 #include "storm-config.h"
-#include "storm/environment/Environment.h"
-#include "test/storm_gtest.h"
-
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/parser/JaniParser.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdJaniModelBuilder.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
@@ -15,6 +13,7 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/jani/Compositions.h"
+#include "test/storm_gtest.h"
 
 namespace {
 

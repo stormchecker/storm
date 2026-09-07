@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/deterministicScheds/VisitingTimesHelper.h"
+#include "VisitingTimesHelper.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"

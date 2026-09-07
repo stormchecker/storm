@@ -1,4 +1,4 @@
-#include "storm/solver/LpMinMaxLinearEquationSolver.h"
+#include "LpMinMaxLinearEquationSolver.h"
 
 #include "storm/environment/solver/MinMaxLpSolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"

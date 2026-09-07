@@ -1,4 +1,5 @@
-#include "storm-gamebased-ar/abstraction/SymbolicQuantitativeGameResult.h"
+#include "SymbolicQuantitativeGameResult.h"
+
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm::gbar {

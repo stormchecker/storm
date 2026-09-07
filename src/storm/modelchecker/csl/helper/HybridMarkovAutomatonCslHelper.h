@@ -1,13 +1,10 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 
-#include <memory>
-
-#include "storm/models/symbolic/MarkovAutomaton.h"
-
 #include "storm/modelchecker/results/CheckResult.h"
-
+#include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/utility/NumberTraits.h"
 

@@ -1,4 +1,4 @@
-#include "storm-pomdp/transformer/GlobalPOMDPSelfLoopEliminator.h"
+#include "GlobalPOMDPSelfLoopEliminator.h"
 
 #include <vector>
 

@@ -1,4 +1,4 @@
-#include "storm/storage/dd/bisimulation/InternalCuddSignatureRefiner.h"
+#include "InternalCuddSignatureRefiner.h"
 
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/storage/dd/DdManager.h"

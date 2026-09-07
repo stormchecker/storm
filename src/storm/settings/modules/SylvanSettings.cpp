@@ -1,12 +1,11 @@
-#include "storm/settings/modules/SylvanSettings.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/utility/OsDetection.h"
+#include "SylvanSettings.h"
 
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/utility/OsDetection.h"
 #include "storm/utility/threads.h"
 
 namespace storm {

@@ -1,10 +1,8 @@
-#include "storm/storage/dd/bisimulation/PartitionRefiner.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/storage/dd/DdManager.h"
+#include "PartitionRefiner.h"
 
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

@@ -1,4 +1,4 @@
-#include "storm-pars/parser/MonotonicityParser.h"
+#include "MonotonicityParser.h"
 
 #include <boost/algorithm/string.hpp>
 

@@ -1,4 +1,4 @@
-#include "storm/storage/jani/Location.h"
+#include "Location.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidJaniException.h"

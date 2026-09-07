@@ -1,4 +1,4 @@
-#include "storm/storage/jani/traverser/AssignmentLevelFinder.h"
+#include "AssignmentLevelFinder.h"
 
 namespace storm {
 namespace jani {

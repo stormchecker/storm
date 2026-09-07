@@ -1,8 +1,7 @@
-#include "storm/storage/expressions/VariableSetPredicateSplitter.h"
-
-#include "storm/storage/expressions/Expressions.h"
+#include "VariableSetPredicateSplitter.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/expressions/Expressions.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

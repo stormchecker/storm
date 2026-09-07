@@ -1,4 +1,4 @@
-#include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
+#include "GradientDescentInstantiationSearcher.h"
 
 #include <cmath>
 #include <iostream>

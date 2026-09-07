@@ -1,4 +1,4 @@
-#include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
+#include "SymbolicPropositionalModelChecker.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/FragmentSpecification.h"

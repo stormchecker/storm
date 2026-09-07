@@ -1,8 +1,7 @@
-#include "storm/settings/ArgumentValidators.h"
-
-#include <boost/algorithm/string/join.hpp>
+#include "ArgumentValidators.h"
 
 #include <sys/stat.h>
+#include <boost/algorithm/string/join.hpp>
 
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalArgumentValueException.h"

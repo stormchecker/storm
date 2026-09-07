@@ -1,8 +1,7 @@
-#include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
+#include "TopologicalMinMaxLinearEquationSolver.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
-
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"

@@ -1,4 +1,4 @@
-#include "storm/utility/Extremum.h"
+#include "Extremum.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/ExtendedNumber.h"

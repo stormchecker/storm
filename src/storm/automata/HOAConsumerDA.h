@@ -1,5 +1,10 @@
 #pragma once
 
+#include <boost/optional.hpp>
+#include <exception>
+
+#include "cpphoafparser/consumer/hoa_consumer.hh"
+#include "cpphoafparser/util/implicit_edge_helper.hh"
 #include "storm/automata/APSet.h"
 #include "storm/automata/DeterministicAutomaton.h"
 #include "storm/automata/HOAConsumerDAHeader.h"
@@ -13,12 +18,6 @@
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/solver.h"
-
-#include "cpphoafparser/consumer/hoa_consumer.hh"
-#include "cpphoafparser/util/implicit_edge_helper.hh"
-
-#include <boost/optional.hpp>
-#include <exception>
 
 namespace storm {
 namespace automata {

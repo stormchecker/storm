@@ -1,4 +1,5 @@
-#include "storm/logic/RewardAccumulation.h"
+#include "RewardAccumulation.h"
+
 #include <ostream>
 
 namespace storm {

@@ -1,4 +1,4 @@
-#include "storm-gamebased-ar/abstraction/QualitativeResult.h"
+#include "QualitativeResult.h"
 
 #include "storm-gamebased-ar/abstraction/ExplicitQualitativeResult.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeResult.h"

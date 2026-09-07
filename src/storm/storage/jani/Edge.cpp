@@ -1,12 +1,10 @@
-#include "storm/storage/jani/Edge.h"
-
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
+#include "Edge.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/utility/macros.h"
-
+#include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/TemplateEdge.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace jani {

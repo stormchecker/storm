@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/SyntacticalEqualityCheckVisitor.h"
+#include "SyntacticalEqualityCheckVisitor.h"
 
 #include "storm/storage/expressions/Expressions.h"
 

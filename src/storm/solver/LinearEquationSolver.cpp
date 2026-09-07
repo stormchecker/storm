@@ -1,4 +1,4 @@
-#include "storm/solver/LinearEquationSolver.h"
+#include "LinearEquationSolver.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/solver/SolverEnvironment.h"

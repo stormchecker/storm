@@ -1,4 +1,4 @@
-#include "storm/environment/solver/GlpkSolverEnvironment.h"
+#include "GlpkSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GlpkSettings.h"

@@ -1,4 +1,4 @@
-#include "storm/storage/jani/JaniScopeChanger.h"
+#include "JaniScopeChanger.h"
 
 #include <boost/any.hpp>
 #include <map>

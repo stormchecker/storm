@@ -1,9 +1,8 @@
 #pragma once
 #include <memory>
 
-#include "Multiplier.h"
-
 #include "storm/solver/helper/ValueIterationOperator.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 namespace storm {
 

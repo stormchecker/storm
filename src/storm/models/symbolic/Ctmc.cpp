@@ -1,4 +1,4 @@
-#include "storm/models/symbolic/Ctmc.h"
+#include "Ctmc.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/symbolic/StandardRewardModel.h"

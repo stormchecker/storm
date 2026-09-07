@@ -1,4 +1,5 @@
-#include "storm-parsers/parser/PrismParser.h"
+#include "PrismParser.h"
+
 #include "storm-parsers/parser/PrismParserGrammar.h"
 
 namespace storm::parser {

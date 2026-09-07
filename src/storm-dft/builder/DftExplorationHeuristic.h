@@ -1,8 +1,7 @@
 #pragma once
 
-#include <optional>
-
 #include <memory>
+#include <optional>
 
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/constants.h"

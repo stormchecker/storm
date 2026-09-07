@@ -1,4 +1,4 @@
-#include "storm/solver/NativeLinearEquationSolver.h"
+#include "NativeLinearEquationSolver.h"
 
 #include <limits>
 

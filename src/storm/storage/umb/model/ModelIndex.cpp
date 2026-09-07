@@ -1,4 +1,4 @@
-#include "storm/storage/umb/model/ModelIndex.h"
+#include "ModelIndex.h"
 
 #include <algorithm>
 #include <ctime>

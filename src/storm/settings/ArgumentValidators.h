@@ -1,11 +1,10 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <boost/optional.hpp>
 
 namespace storm {
 namespace settings {

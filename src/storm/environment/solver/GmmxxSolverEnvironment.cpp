@@ -1,4 +1,4 @@
-#include "storm/environment/solver/GmmxxSolverEnvironment.h"
+#include "GmmxxSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"

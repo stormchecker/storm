@@ -4,6 +4,7 @@
 
 #include "storm/adapters/JsonForward.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/io/DDEncodingExporter.h"
 #include "storm/io/DirectEncodingExporter.h"
 #include "storm/io/file.h"
@@ -13,8 +14,6 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/umb/Umb.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 

@@ -1,8 +1,6 @@
 #include <memory>
 
 #include "storm-config.h"
-#include "test/storm_gtest.h"
-
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm-pomdp/transformer/ObservationTraceUnfolder.h"
@@ -10,6 +8,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/constants.h"
+#include "test/storm_gtest.h"
 
 TEST(ObservationTraceUnfolder, Simple) {
 #ifndef STORM_HAVE_Z3

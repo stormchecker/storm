@@ -1,10 +1,9 @@
-#include "test/storm_gtest.h"
-
 #include "storm/exceptions/OptionParserException.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/ModuleSettings.h"
+#include "test/storm_gtest.h"
 
 namespace {
 

@@ -1,4 +1,4 @@
-#include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
+#include "JaniBeliefSupportMdpGenerator.h"
 
 #include "storm-parsers/api/properties.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

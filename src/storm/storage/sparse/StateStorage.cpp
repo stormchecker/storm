@@ -1,4 +1,4 @@
-#include "storm/storage/sparse/StateStorage.h"
+#include "StateStorage.h"
 
 namespace storm {
 namespace storage {

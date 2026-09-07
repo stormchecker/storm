@@ -1,4 +1,4 @@
-#include "storm/solver/AcyclicLinearEquationSolver.h"
+#include "AcyclicLinearEquationSolver.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/solver/helper/AcyclicSolverHelper.h"

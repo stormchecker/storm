@@ -1,4 +1,4 @@
-#include "storm/models/symbolic/Dtmc.h"
+#include "Dtmc.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/symbolic/StandardRewardModel.h"

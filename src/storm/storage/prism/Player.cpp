@@ -1,4 +1,5 @@
-#include "storm/storage/prism/Player.h"
+#include "Player.h"
+
 #include <ostream>
 
 namespace storm {

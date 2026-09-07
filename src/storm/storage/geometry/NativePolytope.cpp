@@ -1,4 +1,4 @@
-#include "storm/storage/geometry/NativePolytope.h"
+#include "NativePolytope.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"

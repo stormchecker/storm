@@ -3,16 +3,14 @@
 #include <boost/optional.hpp>
 #include <memory>
 
-#include "storm/logic/Formulas.h"
-#include "storm/utility/constants.h"
-
 #include "storm/adapters/IntervalForward.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/logic/ComparisonType.h"
+#include "storm/logic/Formulas.h"
 #include "storm/logic/PlayerCoalition.h"
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
 #include "storm/solver/UncertaintyResolutionMode.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
 namespace logic {

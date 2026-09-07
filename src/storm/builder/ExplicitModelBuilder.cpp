@@ -1,4 +1,4 @@
-#include "storm/builder/ExplicitModelBuilder.h"
+#include "ExplicitModelBuilder.h"
 
 #include <map>
 

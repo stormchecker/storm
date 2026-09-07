@@ -1,4 +1,4 @@
-#include "storm/builder/ParallelCompositionBuilder.h"
+#include "ParallelCompositionBuilder.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 

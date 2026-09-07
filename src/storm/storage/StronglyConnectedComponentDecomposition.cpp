@@ -1,4 +1,4 @@
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "StronglyConnectedComponentDecomposition.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

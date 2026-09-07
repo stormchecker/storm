@@ -1,4 +1,4 @@
-#include "storm/settings/SettingsManager.h"
+#include "SettingsManager.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/io/ios_state.hpp>

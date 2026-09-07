@@ -1,4 +1,4 @@
-#include "storm/builder/StateAndChoiceInformationBuilder.h"
+#include "StateAndChoiceInformationBuilder.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 

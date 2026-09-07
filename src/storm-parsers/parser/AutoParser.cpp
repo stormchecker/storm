@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/AutoParser.h"
+#include "AutoParser.h"
 
 #include "storm-parsers/parser/DeterministicModelParser.h"
 #include "storm-parsers/parser/MappedFile.h"

@@ -1,4 +1,4 @@
-#include "storm/storage/dd/cudd/InternalCuddAdd.h"
+#include "InternalCuddAdd.h"
 
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotSupportedException.h"

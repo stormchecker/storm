@@ -1,12 +1,12 @@
 #pragma once
 
+#include <vector>
+
 #include "storm/automata/DeterministicAutomaton.h"
 #include "storm/storage/BitVector.h"
 #include "storm/transformer/DAProduct.h"
 #include "storm/transformer/Product.h"
 #include "storm/transformer/ProductBuilder.h"
-
-#include <vector>
 
 namespace storm {
 namespace transformer {

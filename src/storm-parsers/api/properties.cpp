@@ -1,4 +1,4 @@
-#include "storm-parsers/api/properties.h"
+#include "properties.h"
 
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/api/properties.h"

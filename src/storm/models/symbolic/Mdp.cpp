@@ -1,4 +1,4 @@
-#include "storm/models/symbolic/Mdp.h"
+#include "Mdp.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/symbolic/StandardRewardModel.h"

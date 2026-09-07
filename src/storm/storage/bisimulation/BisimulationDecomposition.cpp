@@ -1,4 +1,4 @@
-#include "storm/storage/bisimulation/BisimulationDecomposition.h"
+#include "BisimulationDecomposition.h"
 
 #include <chrono>
 

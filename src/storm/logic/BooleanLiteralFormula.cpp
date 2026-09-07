@@ -1,4 +1,5 @@
-#include "storm/logic/BooleanLiteralFormula.h"
+#include "BooleanLiteralFormula.h"
+
 #include <boost/any.hpp>
 #include <ostream>
 

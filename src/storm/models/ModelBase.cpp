@@ -1,4 +1,4 @@
-#include "storm/models/ModelBase.h"
+#include "ModelBase.h"
 
 #include <initializer_list>
 

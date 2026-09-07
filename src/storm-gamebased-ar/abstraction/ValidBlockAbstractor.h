@@ -5,12 +5,10 @@
 #include <memory>
 #include <vector>
 
+#include "storm-gamebased-ar/abstraction/LocalExpressionInformation.h"
+#include "storm/solver/SmtSolver.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdType.h"
-
-#include "storm-gamebased-ar/abstraction/LocalExpressionInformation.h"
-
-#include "storm/solver/SmtSolver.h"
 
 namespace storm {
 namespace utility {

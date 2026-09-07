@@ -1,4 +1,5 @@
-#include "storm-pomdp/transformer/ObservationTraceUnfolder.h"
+#include "ObservationTraceUnfolder.h"
+
 #include <algorithm>
 
 #include "storm/adapters/IntervalForward.h"

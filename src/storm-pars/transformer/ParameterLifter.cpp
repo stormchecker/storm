@@ -1,4 +1,4 @@
-#include "storm-pars/transformer/ParameterLifter.h"
+#include "ParameterLifter.h"
 
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm/exceptions/UnexpectedException.h"

@@ -1,4 +1,4 @@
-#include "storm/solver/stateelimination/StatePriorityQueue.h"
+#include "StatePriorityQueue.h"
 
 namespace storm {
 namespace solver {

@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/pcaa/StandardPcaaWeightVectorChecker.h"
+#include "StandardPcaaWeightVectorChecker.h"
 
 #include <map>
 #include <set>

@@ -5,13 +5,12 @@
 #include <set>
 #include <vector>
 
-#include "storm/solver/OptimizationDirection.h"
-#include "storm/utility/OptionalRef.h"
-
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityChecker.h"
 #include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
 #include "storm-pars/transformer/ParameterLifter.h"
+#include "storm/solver/OptimizationDirection.h"
+#include "storm/utility/OptionalRef.h"
 
 namespace storm::transformer {
 template<typename ParametricType, typename ConstantType>

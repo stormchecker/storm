@@ -1,4 +1,4 @@
-#include "storm/storage/expressions/ChangeManagerVisitor.h"
+#include "ChangeManagerVisitor.h"
 
 #include "storm/storage/expressions/Expressions.h"
 

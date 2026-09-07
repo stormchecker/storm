@@ -1,12 +1,10 @@
-#include "storm/solver/SymbolicGameSolver.h"
+#include "SymbolicGameSolver.h"
 
+#include "storm/environment/solver/GameSolverEnvironment.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-
-#include "storm/environment/solver/GameSolverEnvironment.h"
-
-#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/models/ModelType.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -15,8 +16,6 @@
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/valuations/Valuations.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

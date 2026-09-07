@@ -1,4 +1,4 @@
-#include "storm/storage/jani/Model.h"
+#include "Model.h"
 
 #include <algorithm>
 
@@ -17,7 +17,6 @@
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/EdgeDestination.h"
 #include "storm/storage/jani/Location.h"
-#include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/VariablesToConstantsTransformer.h"

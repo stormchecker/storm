@@ -1,8 +1,7 @@
 #pragma once
 
-#include "AssumptionChecker.h"
-#include "Order.h"
-
+#include "storm-pars/modelchecker/region/monotonicity/AssumptionChecker.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/ExpressionManager.h"

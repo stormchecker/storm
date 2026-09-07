@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+
 #include "storm/solver/SolverSelectionOptions.h"
 
 namespace storm {

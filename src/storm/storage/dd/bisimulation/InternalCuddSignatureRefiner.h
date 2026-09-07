@@ -1,7 +1,5 @@
 #pragma once
 
-#include "storm-config.h"
-
 #include <boost/optional.hpp>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wcomma"
@@ -9,6 +7,7 @@
 #pragma clang diagnostic pop
 #include <set>
 
+#include "storm-config.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/bisimulation/InternalSignatureRefiner.h"
 #include "storm/storage/dd/cudd/utility.h"

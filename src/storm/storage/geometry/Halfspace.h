@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <iostream>
+
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/utility/constants.h"

@@ -1,19 +1,17 @@
-#include "storm/storage/valuations/ValuationsStorage.h"
+#include "ValuationsStorage.h"
 
 #include <bitset>
+#include <boost/functional/hash.hpp>
 #include <cstring>
 #include <ranges>
-
-#include <boost/functional/hash.hpp>
-
-#include "storm/storage/BitVector.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/storage/umb/model/ValueEncoding.h"
-#include "storm/utility/bitoperations.h"
 
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/OutOfRangeException.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/storage/umb/model/ValueEncoding.h"
+#include "storm/utility/bitoperations.h"
 
 namespace storm::storage::sparse {
 namespace detail {

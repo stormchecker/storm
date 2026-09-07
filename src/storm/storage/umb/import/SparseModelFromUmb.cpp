@@ -1,4 +1,4 @@
-#include "storm/storage/umb/import/SparseModelFromUmb.h"
+#include "SparseModelFromUmb.h"
 
 #include <ranges>
 #include <utility>

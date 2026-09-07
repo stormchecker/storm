@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "storm/adapters/DereferenceIteratorAdapter.h"
-
 #include "storm/storage/jani/Variable.h"
 
 namespace storm {

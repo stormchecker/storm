@@ -1,5 +1,19 @@
 #include "JaniParser.h"
 
+#include <algorithm>  // std::iter_swap
+#include <boost/lexical_cast.hpp>
+#include <fstream>
+#include <iostream>
+#include <optional>
+#include <sstream>
+
+#include "storm/exceptions/FileIoException.h"
+#include "storm/exceptions/InvalidJaniException.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/io/file.h"
+#include "storm/logic/RewardAccumulationEliminationVisitor.h"
+#include "storm/modelchecker/results/FilterType.h"
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/Edge.h"
@@ -11,32 +25,13 @@
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
-#include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
-#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
-
 #include "storm/storage/jani/types/ArrayType.h"
 #include "storm/storage/jani/types/BasicType.h"
 #include "storm/storage/jani/types/ClockType.h"
 #include "storm/storage/jani/types/ContinuousType.h"
 #include "storm/storage/jani/types/JaniType.h"
-
-#include "storm/logic/RewardAccumulationEliminationVisitor.h"
-
-#include "storm/exceptions/FileIoException.h"
-#include "storm/exceptions/InvalidJaniException.h"
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/exceptions/NotSupportedException.h"
-
-#include "storm/modelchecker/results/FilterType.h"
-
-#include <algorithm>  // std::iter_swap
-#include <boost/lexical_cast.hpp>
-#include <fstream>
-#include <iostream>
-#include <optional>
-#include <sstream>
-
-#include "storm/io/file.h"
+#include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

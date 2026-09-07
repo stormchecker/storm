@@ -1,7 +1,7 @@
 #include "RebuildWithoutUnreachableAction.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace jani {

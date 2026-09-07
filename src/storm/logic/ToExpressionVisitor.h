@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm/logic/FormulaVisitor.h"
-
 #include "storm/storage/expressions/Expression.h"
 
 namespace storm {

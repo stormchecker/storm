@@ -1,4 +1,4 @@
-#include "storm/io/ArchiveWriter.h"
+#include "ArchiveWriter.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/BitVector.h"

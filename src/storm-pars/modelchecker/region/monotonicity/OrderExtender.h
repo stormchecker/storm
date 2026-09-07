@@ -1,17 +1,17 @@
 #pragma once
 
 #include <boost/container/flat_set.hpp>
-#include "storm/logic/Formula.h"
-#include "storm/models/sparse/Model.h"
-#include "storm/storage/expressions/BinaryRelationExpression.h"
-#include "storm/storage/expressions/VariableExpression.h"
-#include "storm/utility/Stopwatch.h"
 
 #include "storm-pars/modelchecker/region/monotonicity/AssumptionMaker.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityChecker.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm-pars/modelchecker/region/monotonicity/Order.h"
 #include "storm-pars/storage/ParameterRegion.h"
+#include "storm/logic/Formula.h"
+#include "storm/models/sparse/Model.h"
+#include "storm/storage/expressions/BinaryRelationExpression.h"
+#include "storm/storage/expressions/VariableExpression.h"
+#include "storm/utility/Stopwatch.h"
 
 namespace storm {
 namespace analysis {

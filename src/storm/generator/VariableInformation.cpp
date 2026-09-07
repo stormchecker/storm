@@ -1,21 +1,19 @@
-#include "storm/generator/VariableInformation.h"
+#include "VariableInformation.h"
 
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/prism/Program.h"
-
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/AutomatonComposition.h"
-#include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/eliminator/ArrayEliminator.h"
+#include <cmath>
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/jani/Automaton.h"
+#include "storm/storage/jani/AutomatonComposition.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/ParallelComposition.h"
+#include "storm/storage/jani/eliminator/ArrayEliminator.h"
+#include "storm/storage/prism/Program.h"
 #include "storm/utility/macros.h"
-
-#include <cmath>
 
 namespace storm {
 namespace generator {

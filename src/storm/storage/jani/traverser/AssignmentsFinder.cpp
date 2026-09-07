@@ -1,4 +1,4 @@
-#include "storm/storage/jani/traverser/AssignmentsFinder.h"
+#include "AssignmentsFinder.h"
 
 #include "storm/storage/expressions/Variable.h"
 

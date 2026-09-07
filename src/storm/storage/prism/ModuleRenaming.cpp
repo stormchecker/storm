@@ -1,4 +1,4 @@
-#include "storm/storage/prism/ModuleRenaming.h"
+#include "ModuleRenaming.h"
 
 namespace storm {
 namespace prism {

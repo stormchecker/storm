@@ -1,4 +1,4 @@
-#include "storm/solver/stateelimination/StateEliminator.h"
+#include "StateEliminator.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"

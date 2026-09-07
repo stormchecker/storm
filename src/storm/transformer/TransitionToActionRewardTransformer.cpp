@@ -1,4 +1,4 @@
-#include "storm/transformer/TransitionToActionRewardTransformer.h"
+#include "TransitionToActionRewardTransformer.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

@@ -1,4 +1,4 @@
-#include "storm/solver/GameSolver.h"
+#include "GameSolver.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"

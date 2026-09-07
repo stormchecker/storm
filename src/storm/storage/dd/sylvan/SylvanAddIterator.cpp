@@ -1,4 +1,4 @@
-#include "storm/storage/dd/sylvan/SylvanAddIterator.h"
+#include "SylvanAddIterator.h"
 
 #include <cmath>
 

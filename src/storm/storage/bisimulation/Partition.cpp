@@ -1,4 +1,4 @@
-#include "storm/storage/bisimulation/Partition.h"
+#include "Partition.h"
 
 #include <iostream>
 

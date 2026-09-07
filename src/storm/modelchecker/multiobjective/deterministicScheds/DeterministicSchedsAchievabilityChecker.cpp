@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsAchievabilityChecker.h"
+#include "DeterministicSchedsAchievabilityChecker.h"
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsLpChecker.h"

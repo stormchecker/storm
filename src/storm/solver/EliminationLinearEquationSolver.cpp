@@ -1,4 +1,4 @@
-#include "storm/solver/EliminationLinearEquationSolver.h"
+#include "EliminationLinearEquationSolver.h"
 
 #include <numeric>
 

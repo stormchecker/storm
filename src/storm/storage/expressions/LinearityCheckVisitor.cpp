@@ -1,9 +1,8 @@
-#include "storm/storage/expressions/LinearityCheckVisitor.h"
-
-#include "storm/storage/expressions/Expressions.h"
+#include "LinearityCheckVisitor.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidTypeException.h"
+#include "storm/storage/expressions/Expressions.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

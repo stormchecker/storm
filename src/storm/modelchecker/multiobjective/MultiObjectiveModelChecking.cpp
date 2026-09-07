@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/MultiObjectiveModelChecking.h"
+#include "MultiObjectiveModelChecking.h"
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"

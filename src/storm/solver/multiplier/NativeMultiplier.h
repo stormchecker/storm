@@ -2,9 +2,8 @@
 
 #include <cstdint>
 
-#include "storm/solver/multiplier/Multiplier.h"
-
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 namespace storm {
 namespace storage {

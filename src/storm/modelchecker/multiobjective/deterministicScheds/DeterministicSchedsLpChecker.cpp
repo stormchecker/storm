@@ -1,7 +1,9 @@
-#include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsLpChecker.h"
+#include "DeterministicSchedsLpChecker.h"
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/VisitingTimesHelper.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -10,9 +12,6 @@
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/solver.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm::modelchecker::multiobjective {
 

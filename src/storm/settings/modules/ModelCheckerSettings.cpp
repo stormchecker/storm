@@ -1,4 +1,4 @@
-#include "storm/settings/modules/ModelCheckerSettings.h"
+#include "ModelCheckerSettings.h"
 
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"

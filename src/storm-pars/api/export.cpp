@@ -1,4 +1,4 @@
-#include "storm-pars/api/export.h"
+#include "export.h"
 
 #include <algorithm>
 #include <fstream>

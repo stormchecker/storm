@@ -1,4 +1,4 @@
-#include "storm/utility/permutation.h"
+#include "permutation.h"
 
 #include <algorithm>
 #include <deque>

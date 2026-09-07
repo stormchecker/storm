@@ -1,5 +1,7 @@
 #include "UnfoldAction.h"
+
 #include <boost/format.hpp>
+
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/JaniLocationExpander.h"
 

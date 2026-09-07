@@ -1,4 +1,4 @@
-#include "storm-pomdp/transformer/GlobalPomdpMecChoiceEliminator.h"
+#include "GlobalPomdpMecChoiceEliminator.h"
 
 #include <vector>
 

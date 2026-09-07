@@ -1,7 +1,7 @@
-#include "storm/storage/prism/ToJaniConverter.h"
+#include "ToJaniConverter.h"
 
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/TemplateEdge.h"
@@ -10,8 +10,6 @@
 #include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/storage/prism/CompositionToJaniVisitor.h"
 #include "storm/storage/prism/Program.h"
-
-#include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

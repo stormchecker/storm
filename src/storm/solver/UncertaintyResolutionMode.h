@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/utility/macros.h"

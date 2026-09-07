@@ -1,4 +1,4 @@
-#include "storm/models/sparse/ChoiceLabeling.h"
+#include "ChoiceLabeling.h"
 
 namespace storm {
 namespace models {

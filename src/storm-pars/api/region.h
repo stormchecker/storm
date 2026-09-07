@@ -1,12 +1,11 @@
 #pragma once
 
+#include <boost/algorithm/string.hpp>
 #include <memory>
 #include <optional>
 #include <set>
 #include <string>
 #include <vector>
-
-#include <boost/algorithm/string.hpp>
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
@@ -25,10 +24,8 @@
 #include "storm-pars/parser/ParameterRegionParser.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/utility/parameterlifting.h"
-
-#include "storm/environment/Environment.h"
-
 #include "storm/api/transformation.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"

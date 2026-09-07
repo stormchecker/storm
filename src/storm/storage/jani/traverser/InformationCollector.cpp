@@ -1,4 +1,5 @@
-#include "storm/storage/jani/traverser/InformationCollector.h"
+#include "InformationCollector.h"
+
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/traverser/JaniTraverser.h"
 #include "storm/utility/constants.h"

@@ -1,4 +1,4 @@
-#include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
+#include "BeliefExplorationSettings.h"
 
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm/adapters/RationalNumberAdapter.h"

@@ -1,4 +1,4 @@
-#include "storm/solver/TerminationCondition.h"
+#include "TerminationCondition.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

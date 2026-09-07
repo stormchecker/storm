@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+
 #include "storm/logic/PlayerCoalition.h"
 #include "storm/logic/UnaryStateFormula.h"
 

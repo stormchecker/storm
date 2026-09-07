@@ -1,4 +1,4 @@
-#include "storm-pomdp/transformer/MakeStateSetObservationClosed.h"
+#include "MakeStateSetObservationClosed.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 

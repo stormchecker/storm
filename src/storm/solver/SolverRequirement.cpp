@@ -1,4 +1,4 @@
-#include "storm/solver/SolverRequirement.h"
+#include "SolverRequirement.h"
 
 #include <vector>
 

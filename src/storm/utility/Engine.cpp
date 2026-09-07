@@ -1,4 +1,4 @@
-#include "storm/utility/Engine.h"
+#include "Engine.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"

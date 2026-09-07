@@ -1,4 +1,5 @@
-#include "storm/storage/expressions/OperatorType.h"
+#include "OperatorType.h"
+
 #include <ostream>
 
 namespace storm {

@@ -1,8 +1,7 @@
 #pragma once
 
-#include <optional>
-
 #include <memory>
+#include <optional>
 
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 #include "storm/solver/multiplier/Multiplier.h"

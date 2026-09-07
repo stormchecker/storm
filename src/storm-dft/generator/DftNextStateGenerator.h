@@ -1,9 +1,8 @@
 #pragma once
 
+#include "storm-dft/storage/DFT.h"
 #include "storm/generator/NextStateGenerator.h"
 #include "storm/utility/ConstantsComparator.h"
-
-#include "storm-dft/storage/DFT.h"
 
 namespace storm::dft {
 namespace generator {

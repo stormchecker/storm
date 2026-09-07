@@ -1,5 +1,5 @@
+#include "NondeterministicBeliefTracker.h"
 
-#include "storm-pomdp/generator/NondeterministicBeliefTracker.h"
 #include "storm/storage/geometry/ReduceVertexCloud.h"
 #include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
 #include "storm/utility/ConstantsComparator.h"

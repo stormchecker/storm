@@ -8,23 +8,21 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include "storm/models/sparse/StandardRewardModel.h"
 
+#include "storm/builder/ExplorationOrder.h"
+#include "storm/generator/CompressedState.h"
+#include "storm/generator/NextStateGenerator.h"
+#include "storm/generator/VariableInformation.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
 #include "storm/models/sparse/Model.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/BitVectorHashMap.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/storage/sparse/StateStorage.h"
-
-#include "storm/builder/ExplorationOrder.h"
-
-#include "storm/generator/CompressedState.h"
-#include "storm/generator/NextStateGenerator.h"
-#include "storm/generator/VariableInformation.h"
 
 namespace storm {
 

@@ -1,4 +1,4 @@
-#include "storm/settings/modules/ModuleSettings.h"
+#include "ModuleSettings.h"
 
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/settings/Option.h"

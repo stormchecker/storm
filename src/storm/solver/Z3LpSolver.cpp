@@ -1,4 +1,4 @@
-#include "storm/solver/Z3LpSolver.h"
+#include "Z3LpSolver.h"
 
 #include <memory>
 #include <numeric>

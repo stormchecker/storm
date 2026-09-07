@@ -1,4 +1,4 @@
-#include "storm/logic/PathFormula.h"
+#include "PathFormula.h"
 
 namespace storm {
 namespace logic {

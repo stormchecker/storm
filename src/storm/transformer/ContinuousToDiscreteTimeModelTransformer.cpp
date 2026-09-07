@@ -1,4 +1,4 @@
-#include "storm/transformer/ContinuousToDiscreteTimeModelTransformer.h"
+#include "ContinuousToDiscreteTimeModelTransformer.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"

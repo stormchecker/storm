@@ -3,7 +3,6 @@
 #include <optional>
 
 #include "storm/logic/BinaryPathFormula.h"
-
 #include "storm/logic/TimeBound.h"
 #include "storm/logic/TimeBoundType.h"
 

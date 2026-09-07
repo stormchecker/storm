@@ -1,4 +1,4 @@
-#include "storm/storage/SymbolicModelDescription.h"
+#include "SymbolicModelDescription.h"
 
 #include <boost/algorithm/string.hpp>
 

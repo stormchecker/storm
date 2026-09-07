@@ -1,4 +1,4 @@
-#include "storm/storage/prism/RewardModel.h"
+#include "RewardModel.h"
 
 #include "storm/utility/macros.h"
 

@@ -3,12 +3,11 @@
 #include <fstream>
 #include <memory>
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
+#include "storm-parsers/parser/SpiritErrorHandler.h"
 #include "storm/generator/StateBehavior.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/storage/sparse/ModelComponents.h"
-
-#include "storm-parsers/parser/ExplicitModelParserOptions.h"
-#include "storm-parsers/parser/SpiritErrorHandler.h"
 
 namespace storm {
 namespace parser {

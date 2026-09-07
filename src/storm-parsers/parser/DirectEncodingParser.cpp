@@ -1,4 +1,4 @@
-#include "storm-parsers/parser/DirectEncodingParser.h"
+#include "DirectEncodingParser.h"
 
 #include <boost/algorithm/string.hpp>
 #include <iostream>

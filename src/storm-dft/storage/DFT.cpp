@@ -1,4 +1,4 @@
-#include "storm-dft/storage/DFT.h"
+#include "DFT.h"
 
 #include <map>
 

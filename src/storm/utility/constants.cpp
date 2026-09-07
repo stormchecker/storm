@@ -1,4 +1,4 @@
-#include "storm/utility/constants.h"
+#include "constants.h"
 
 #include <cmath>
 

@@ -1,9 +1,8 @@
 #pragma once
 
-#include "storm/storage/dd/DdType.h"
-
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 namespace solver {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm/solver/LinearEquationSolver.h"
-
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/multiplier/NativeMultiplier.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"

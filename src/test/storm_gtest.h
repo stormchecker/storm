@@ -4,10 +4,8 @@
 #pragma clang diagnostic ignored "-Wundef"
 #include <gtest/gtest.h>
 #pragma clang diagnostic pop
-
-#include <type_traits>
-
 #include <boost/optional/optional_io.hpp>
+#include <type_traits>
 
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/utility/constants.h"

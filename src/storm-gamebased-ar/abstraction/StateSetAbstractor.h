@@ -4,12 +4,10 @@
 #include <memory>
 #include <set>
 
-#include "storm/storage/dd/DdType.h"
-
-#include "storm/solver/SmtSolver.h"
-#include "storm/utility/solver.h"
-
 #include "storm-gamebased-ar/abstraction/LocalExpressionInformation.h"
+#include "storm/solver/SmtSolver.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/utility/solver.h"
 
 namespace storm {
 namespace utility {

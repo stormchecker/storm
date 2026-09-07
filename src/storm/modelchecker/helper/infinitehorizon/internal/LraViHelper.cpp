@@ -1,20 +1,16 @@
 #include "LraViHelper.h"
 
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/modelchecker/helper/infinitehorizon/internal/ComponentUtility.h"
-
 #include "storm/storage/MaximalEndComponent.h"
 #include "storm/storage/StronglyConnectedComponent.h"
-
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-#include "storm/environment/solver/SolverEnvironment.h"
-
-#include "storm/exceptions/UnmetRequirementException.h"
 
 namespace storm {
 namespace modelchecker {

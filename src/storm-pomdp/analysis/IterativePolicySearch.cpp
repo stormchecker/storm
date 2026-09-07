@@ -1,9 +1,9 @@
-#include "storm-pomdp/analysis/IterativePolicySearch.h"
-#include "storm/io/file.h"
+#include "IterativePolicySearch.h"
 
 #include "storm-pomdp/analysis/OneShotPolicySearch.h"
 #include "storm-pomdp/analysis/QualitativeAnalysis.h"
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
+#include "storm/io/file.h"
 
 namespace storm::pomdp {
 namespace detail {

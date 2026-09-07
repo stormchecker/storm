@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm/adapters/DereferenceIteratorAdapter.h"
-
 #include "storm/storage/jani/Assignment.h"
 
 namespace storm {

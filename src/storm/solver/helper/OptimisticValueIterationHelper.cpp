@@ -1,4 +1,4 @@
-#include "storm/solver/helper/OptimisticValueIterationHelper.h"
+#include "OptimisticValueIterationHelper.h"
 
 #include <type_traits>
 

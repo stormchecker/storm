@@ -1,14 +1,12 @@
-#include "storm/storage/umb/import/UmbImport.h"
-
-#include "storm/storage/umb/model/UmbModel.h"
+#include "UmbImport.h"
 
 #include "storm/adapters/JsonAdapter.h"
-#include "storm/io/ArchiveReader.h"
-#include "storm/utility/macros.h"
-
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/io/ArchiveReader.h"
+#include "storm/storage/umb/model/UmbModel.h"
+#include "storm/utility/macros.h"
 
 namespace storm::umb {
 

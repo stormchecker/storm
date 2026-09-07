@@ -1,4 +1,5 @@
-#include "storm/logic/CloneVisitor.h"
+#include "CloneVisitor.h"
+
 #include <boost/any.hpp>
 #include <optional>
 

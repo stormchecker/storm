@@ -1,4 +1,4 @@
-#include "test/storm_gtest.h"
+#include "storm_gtest.h"
 
 #ifdef STORM_HAVE_Z3
 #include <z3.h>

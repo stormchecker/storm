@@ -1,4 +1,4 @@
-#include "storm-pars/modelchecker/region/RegionCheckEngine.h"
+#include "RegionCheckEngine.h"
 
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"

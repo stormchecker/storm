@@ -1,6 +1,5 @@
 #pragma once
 #include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
-
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/MaximalEndComponent.h"
 #include "storm/storage/SparseMatrix.h"

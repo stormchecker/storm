@@ -1,4 +1,4 @@
-#include "storm/models/sparse/Smg.h"
+#include "Smg.h"
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

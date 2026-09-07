@@ -1,4 +1,4 @@
-#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
+#include "SparseParametricMdpSimplifier.h"
 
 #include <optional>
 

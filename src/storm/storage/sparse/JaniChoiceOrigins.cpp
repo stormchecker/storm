@@ -1,9 +1,8 @@
-#include "storm/storage/sparse/JaniChoiceOrigins.h"
-
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/visitor/JSONExporter.h"
+#include "JaniChoiceOrigins.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/visitor/JSONExporter.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

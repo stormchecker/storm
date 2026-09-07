@@ -1,4 +1,4 @@
-#include "storm/storage/jani/localeliminator/FinishAction.h"
+#include "FinishAction.h"
 
 namespace storm {
 namespace jani {

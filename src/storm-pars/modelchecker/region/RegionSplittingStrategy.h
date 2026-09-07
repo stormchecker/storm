@@ -5,7 +5,7 @@
 #include <limits>
 #include <optional>
 
-#include "RegionSplitEstimateKind.h"
+#include "storm-pars/modelchecker/region/RegionSplitEstimateKind.h"
 
 namespace storm::modelchecker {
 struct RegionSplittingStrategy {
