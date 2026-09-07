@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
@@ -41,11 +43,12 @@ void testGoalStateMerger(std::string const& prismModelFile, std::string const& f
 
         // The original (unmodified) formula must still be valid on the merged model and induce the same value at the initial state.
         auto const mergedVal = computeValue(mergerResult->model);
-        EXPECT_LE(std::abs(mergedVal - modelVal) / modelVal, 1e-6)
-            << "Relative difference between original model result (" << modelVal << ") and merged model result (" << mergedVal
-            << ") is too high.\nFailed for model " << prismModelFile << " and formula " << *formulas.front()
-            << " (dropUnreachableFromInit=" << dropUnreachableFromInit << ").";
+        bool const ok = modelVal == 0.0 ? mergedVal == 0 : std::abs((mergedVal - modelVal) / modelVal) <= 1e-6;
+        EXPECT_TRUE(ok) << "Relative difference between original model result (" << modelVal << ") and merged model result (" << mergedVal
+                        << ") is too high.\nFailed for model " << prismModelFile << " and formula " << *formulas.front()
+                        << " (dropUnreachableFromInit=" << dropUnreachableFromInit << ").";
     }
+}
 }
 
 TEST_F(GoalStateMergerTest, BrpUntilTest) {

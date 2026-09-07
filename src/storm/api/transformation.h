@@ -1,5 +1,7 @@
 #pragma once
 
+#include <type_traits>
+
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/transformer/ContinuousToDiscreteTimeModelTransformer.h"
 #include "storm/transformer/GoalStateMerger.h"

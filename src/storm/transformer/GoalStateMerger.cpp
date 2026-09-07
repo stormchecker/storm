@@ -31,8 +31,13 @@ namespace transformer {
 
 namespace {
 // Whether the given operator formula asks for the minimizing (as opposed to maximizing) value.
+// Am exception is thrown if the optimization direction cannot be derived.
 bool isMinimizing(storm::logic::OperatorFormula const& formula) {
-    return formula.hasOptimalityType() ? storm::solver::minimize(formula.getOptimalityType()) : storm::logic::isLowerBound(formula.getBound().comparisonType);
+    if (formula.hasOptimalityType()) {
+        return storm::solver::minimize(formula.getOptimalityType());
+    }
+    STORM_LOG_THROW(formula.hasBound(), storm::exceptions::UnexpectedException, "Expected an optimization direction for formula " << formula << ".");
+    return storm::logic::isLowerBound(formula.getBound().comparisonType);
 }
 
 // Checks the given (propositional) subformula and returns the truth values vector, or std::nullopt if the subformula is not propositional.
@@ -98,7 +103,7 @@ typename GoalStateMerger<ValueType>::ReturnType GoalStateMerger<ValueType>::merg
 
     // Reapply state valuations, choice labeling, choice origins if available
     if (originalModel.hasStateValuations()) {
-        std::vector<uint64_t> newToOldStateIndices = maybeStates.getNumberOfSetBitsBeforeIndices();
+        std::vector<uint64_t> newToOldStateIndices(maybeStates.begin(), maybeStates.end());
         if (result.first.targetState.has_value()) {
             STORM_LOG_ASSERT(result.first.targetState.value() == newToOldStateIndices.size(), "unexpected position of target state.");
             newToOldStateIndices.push_back(representativeTargetState.value_or(*targetStates.begin()));
@@ -112,13 +117,13 @@ typename GoalStateMerger<ValueType>::ReturnType GoalStateMerger<ValueType>::merg
     if (originalModel.hasChoiceLabeling()) {
         modelComponents.choiceLabeling.emplace(newChoiceCount);
         for (auto const& label : originalModel.getChoiceLabeling().getLabels()) {
-            storm::storage::BitVector choiceLabes = originalModel.getChoiceLabeling().getChoices(label) % result.first.keptChoices;
-            choiceLabes.resize(newChoiceCount, false);  // no label for the choice at target/sink states
-            modelComponents.choiceLabeling->addLabel(label, std::move(choiceLabes));
+            storm::storage::BitVector choiceLabels = originalModel.getChoiceLabeling().getChoices(label) % result.first.keptChoices;
+            choiceLabels.resize(newChoiceCount, false);  // no label for the choice at target/sink states
+            modelComponents.choiceLabeling->addLabel(label, std::move(choiceLabels));
         }
     }
     if (originalModel.hasChoiceOrigins()) {
-        std::vector<uint64_t> newToOldChoiceIndices = maybeStates.getNumberOfSetBitsBeforeIndices();
+        std::vector<uint64_t> newToOldChoiceIndices(result.first.keptChoices.begin(), result.first.keptChoices.end());
         newToOldChoiceIndices.resize(newChoiceCount, std::numeric_limits<uint64_t>::max());  // target/sink choices will not have an origin
         modelComponents.choiceOrigins = originalModel.getChoiceOrigins()->selectChoices(newToOldChoiceIndices);
     }
@@ -582,12 +587,14 @@ std::unordered_map<std::string, models::sparse::StandardRewardModel<ValueType>> 
         std::optional<storm::storage::SparseMatrix<ValueType>> transitionRewards;
         if (origRewardModel.hasTransitionRewards()) {
             storm::storage::SparseMatrixBuilder<ValueType> builder(choiceCount, stateCount, 0, true);
+            // The kept choices are visited in increasing order, which is exactly the order in which the rows of the new matrix are built.
+            uint64_t currRow = 0;
             for (auto row : resultData.keptChoices) {
                 std::optional<ValueType> targetValue, sinkValue;
                 for (auto const& entry : origRewardModel.getTransitionRewardMatrix().getRow(row)) {
                     uint64_t const& newColumn = resultData.oldToNewStateIndexMapping[entry.getColumn()];
                     if (newColumn < maybeStateCount) {
-                        builder.addNextValue(row, newColumn, entry.getValue());
+                        builder.addNextValue(currRow, newColumn, entry.getValue());
                     } else if (resultData.targetState && newColumn == resultData.targetState.value()) {
                         targetValue = targetValue.has_value() ? *targetValue + entry.getValue() : entry.getValue();
                     } else if (resultData.sinkState && newColumn == resultData.sinkState.value()) {
@@ -598,11 +605,12 @@ std::unordered_map<std::string, models::sparse::StandardRewardModel<ValueType>> 
                     }
                 }
                 if (targetValue) {
-                    builder.addNextValue(row, *resultData.targetState, storm::utility::simplify(*targetValue));
+                    builder.addNextValue(currRow, *resultData.targetState, storm::utility::simplify(*targetValue));
                 }
                 if (sinkValue) {
-                    builder.addNextValue(row, *resultData.sinkState, storm::utility::simplify(*sinkValue));
+                    builder.addNextValue(currRow, *resultData.sinkState, storm::utility::simplify(*sinkValue));
                 }
+                ++currRow;
             }
             transitionRewards = builder.build();
         }
