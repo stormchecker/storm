@@ -580,10 +580,30 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
 
         } else if (opString == "W") {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for weak until.");
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Weak until is not supported.");
+            std::vector<std::shared_ptr<storm::logic::Formula const>> args =
+                parseBinaryFormulaArguments(model, propertyStructure, formulaContext, opString, scope);
+            STORM_LOG_ASSERT(args.size() == 2, "Expected two arguments for weak until.");
+            if (propertyStructure.count("step-bounds") > 0) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weak until and step-bounds are not supported.");
+            } else if (propertyStructure.count("time-bounds") > 0) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weak until and time bounds are not supported.");
+            } else if (propertyStructure.count("reward-bounds") > 0) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weak until and reward bounded properties are not supported.");
+            }
+            return std::make_shared<storm::logic::WeakUntilFormula const>(args[0], args[1]);
         } else if (opString == "R") {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for release.");
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Release is not supported.");
+            std::vector<std::shared_ptr<storm::logic::Formula const>> args =
+                parseBinaryFormulaArguments(model, propertyStructure, formulaContext, opString, scope);
+            STORM_LOG_ASSERT(args.size() == 2, "Expected two arguments for release.");
+            if (propertyStructure.count("step-bounds") > 0) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Release and step-bounds are not supported.");
+            } else if (propertyStructure.count("time-bounds") > 0) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Release and time bounds are not supported.");
+            } else if (propertyStructure.count("reward-bounds") > 0) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Release and reward bounded properties are not supported.");
+            }
+            return std::make_shared<storm::logic::ReleaseFormula const>(args[0], args[1]);
         } else if (opString == "∧" || opString == "∨") {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for conjunction/disjunction.");
             std::vector<std::shared_ptr<storm::logic::Formula const>> args =

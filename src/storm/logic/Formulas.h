@@ -27,6 +27,7 @@
 #include "storm/logic/PathFormula.h"
 #include "storm/logic/ProbabilityOperatorFormula.h"
 #include "storm/logic/QuantileFormula.h"
+#include "storm/logic/ReleaseFormula.h"
 #include "storm/logic/RewardOperatorFormula.h"
 #include "storm/logic/StateFormula.h"
 #include "storm/logic/TimeOperatorFormula.h"
@@ -36,3 +37,4 @@
 #include "storm/logic/UnaryPathFormula.h"
 #include "storm/logic/UnaryStateFormula.h"
 #include "storm/logic/UntilFormula.h"
+#include "storm/logic/WeakUntilFormula.h"

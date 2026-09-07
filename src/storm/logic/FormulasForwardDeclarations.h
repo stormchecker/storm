@@ -36,6 +36,8 @@ class UnaryBooleanPathFormula;
 class UnaryPathFormula;
 class UnaryStateFormula;
 class UntilFormula;
+class WeakUntilFormula;
+class ReleaseFormula;
 class HOAPathFormula;
 class DiscountedCumulativeRewardFormula;
 class DiscountedTotalRewardFormula;

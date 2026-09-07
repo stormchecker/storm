@@ -332,6 +332,30 @@ boost::any FragmentChecker::visit(UntilFormula const& f, boost::any const& data)
     return result;
 }
 
+boost::any FragmentChecker::visit(WeakUntilFormula const& f, boost::any const& data) const {
+    InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+    bool result = inherited.getSpecification().areWeakUntilFormulasAllowed();
+    if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
+        result = result && !f.getLeftSubformula().isPathFormula();
+        result = result && !f.getRightSubformula().isPathFormula();
+    }
+    result = result && boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data));
+    result = result && boost::any_cast<bool>(f.getRightSubformula().accept(*this, data));
+    return result;
+}
+
+boost::any FragmentChecker::visit(ReleaseFormula const& f, boost::any const& data) const {
+    InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+    bool result = inherited.getSpecification().areReleaseFormulasAllowed();
+    if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
+        result = result && !f.getLeftSubformula().isPathFormula();
+        result = result && !f.getRightSubformula().isPathFormula();
+    }
+    result = result && boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data));
+    result = result && boost::any_cast<bool>(f.getRightSubformula().accept(*this, data));
+    return result;
+}
+
 boost::any FragmentChecker::visit(HOAPathFormula const& f, boost::any const& data) const {
     InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
     bool result = inherited.getSpecification().areHOAPathFormulasAllowed();

@@ -649,6 +649,22 @@ boost::any FormulaToJaniJson::visit(storm::logic::UntilFormula const& f, boost::
     return opDecl;
 }
 
+boost::any FormulaToJaniJson::visit(storm::logic::WeakUntilFormula const& f, boost::any const& data) const {
+    ExportJsonType opDecl;
+    opDecl["op"] = "W";
+    opDecl["left"] = anyToJson(f.getLeftSubformula().accept(*this, data));
+    opDecl["right"] = anyToJson(f.getRightSubformula().accept(*this, data));
+    return opDecl;
+}
+
+boost::any FormulaToJaniJson::visit(storm::logic::ReleaseFormula const& f, boost::any const& data) const {
+    ExportJsonType opDecl;
+    opDecl["op"] = "R";
+    opDecl["left"] = anyToJson(f.getLeftSubformula().accept(*this, data));
+    opDecl["right"] = anyToJson(f.getRightSubformula().accept(*this, data));
+    return opDecl;
+}
+
 boost::any FormulaToJaniJson::visit(storm::logic::HOAPathFormula const&, boost::any const&) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani currently does not support HOA path formulae.");
 }

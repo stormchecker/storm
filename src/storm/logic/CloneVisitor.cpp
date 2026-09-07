@@ -162,6 +162,18 @@ boost::any CloneVisitor::visit(UntilFormula const& f, boost::any const& data) co
     return std::static_pointer_cast<Formula>(std::make_shared<UntilFormula>(left, right));
 }
 
+boost::any CloneVisitor::visit(WeakUntilFormula const& f, boost::any const& data) const {
+    std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
+    std::shared_ptr<Formula> right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
+    return std::static_pointer_cast<Formula>(std::make_shared<WeakUntilFormula>(left, right));
+}
+
+boost::any CloneVisitor::visit(ReleaseFormula const& f, boost::any const& data) const {
+    std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
+    std::shared_ptr<Formula> right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
+    return std::static_pointer_cast<Formula>(std::make_shared<ReleaseFormula>(left, right));
+}
+
 boost::any CloneVisitor::visit(HOAPathFormula const& f, boost::any const& data) const {
     std::shared_ptr<HOAPathFormula> result = std::make_shared<HOAPathFormula>(f.getAutomatonFile());
     for (auto& mapped : f.getAPMapping()) {
