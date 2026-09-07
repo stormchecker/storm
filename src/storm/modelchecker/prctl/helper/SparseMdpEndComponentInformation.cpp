@@ -7,6 +7,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/Scheduler.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/graph.h"
 
 namespace storm {
@@ -353,8 +354,9 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
 }
 
 template<typename ValueType>
-void SparseMdpEndComponentInformation<ValueType>::setValues(std::vector<ValueType>& result, storm::storage::BitVector const& maybeStates,
-                                                            std::vector<ValueType> const& fromResult) {
+template<typename SolutionType>
+void SparseMdpEndComponentInformation<ValueType>::setValues(std::vector<SolutionType>& result, storm::storage::BitVector const& maybeStates,
+                                                            std::vector<SolutionType> const& fromResult) {
     // The following assumes that row groups associated to EC states are at the very end.
     auto notInEcResultIt = fromResult.begin();
     for (uint64_t state : maybeStates) {
@@ -422,6 +424,17 @@ template class SparseMdpEndComponentInformation<double>;
 template class SparseMdpEndComponentInformation<storm::RationalNumber>;
 template class SparseMdpEndComponentInformation<storm::Interval>;
 template class SparseMdpEndComponentInformation<storm::RationalInterval>;
+
+template void SparseMdpEndComponentInformation<double>::setValues(std::vector<double>& result, storm::storage::BitVector const& maybeStates,
+                                                                  std::vector<double> const& fromResult);
+
+template void SparseMdpEndComponentInformation<storm::RationalNumber>::setValues(std::vector<storm::RationalNumber>& result,
+                                                                                 storm::storage::BitVector const& maybeStates,
+                                                                                 std::vector<storm::RationalNumber> const& fromResult);
+
+template void SparseMdpEndComponentInformation<storm::RationalNumber>::setValues(std::vector<storm::ExtendedRationalNumber>& result,
+                                                                                 storm::storage::BitVector const& maybeStates,
+                                                                                 std::vector<storm::ExtendedRationalNumber> const& fromResult);
 
 template void SparseMdpEndComponentInformation<double>::setScheduler(storm::storage::Scheduler<double>& scheduler, storm::storage::BitVector const& maybeStates,
                                                                      storm::storage::SparseMatrix<double> const& transitionMatrix,

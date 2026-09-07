@@ -15,7 +15,7 @@ SymbolicParetoCurveCheckResult<Type, ValueType>::SymbolicParetoCurveCheckResult(
 
 template<storm::dd::DdType Type, typename ValueType>
 SymbolicParetoCurveCheckResult<Type, ValueType>::SymbolicParetoCurveCheckResult(
-    storm::dd::Bdd<Type> const& state, std::vector<typename ParetoCurveCheckResult<ValueType>::point_type> const& points,
+    storm::dd::Bdd<Type> const& state, std::vector<typename ParetoCurveCheckResult<ValueType>::ExtendedPointType> const& points,
     typename ParetoCurveCheckResult<ValueType>::polytope_type const& underApproximation,
     typename ParetoCurveCheckResult<ValueType>::polytope_type const& overApproximation)
     : ParetoCurveCheckResult<ValueType>(points, underApproximation, overApproximation), state(state) {
@@ -24,10 +24,10 @@ SymbolicParetoCurveCheckResult<Type, ValueType>::SymbolicParetoCurveCheckResult(
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-SymbolicParetoCurveCheckResult<Type, ValueType>::SymbolicParetoCurveCheckResult(storm::dd::Bdd<Type> const& state,
-                                                                                std::vector<typename ParetoCurveCheckResult<ValueType>::point_type>&& points,
-                                                                                typename ParetoCurveCheckResult<ValueType>::polytope_type&& underApproximation,
-                                                                                typename ParetoCurveCheckResult<ValueType>::polytope_type&& overApproximation)
+SymbolicParetoCurveCheckResult<Type, ValueType>::SymbolicParetoCurveCheckResult(
+    storm::dd::Bdd<Type> const& state, std::vector<typename ParetoCurveCheckResult<ValueType>::ExtendedPointType>&& points,
+    typename ParetoCurveCheckResult<ValueType>::polytope_type&& underApproximation,
+    typename ParetoCurveCheckResult<ValueType>::polytope_type&& overApproximation)
     : ParetoCurveCheckResult<ValueType>(points, underApproximation, overApproximation), state(state) {
     STORM_LOG_THROW(this->state.getNonZeroCount() == 1, storm::exceptions::InvalidOperationException,
                     "ParetoCheckResults are only relevant for a single state.");

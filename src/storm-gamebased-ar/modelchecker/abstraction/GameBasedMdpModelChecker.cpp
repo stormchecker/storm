@@ -351,7 +351,7 @@ std::unique_ptr<storm::modelchecker::CheckResult> checkForResultAfterQuantitativ
     // If the lower and upper bounds are close enough, we can return the result.
     if (comparator.isEqual(minValue, maxValue)) {
         result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                   (minValue + maxValue) / ValueType(2));
+                                                                                                   ValueType((minValue + maxValue) / ValueType(2)));
     }
 
     return result;

@@ -78,7 +78,7 @@ uint64_t AnnotatedRegion<ParametricType>::getMaxDepthOfSubRegions() const {
 }
 
 template<typename ParametricType>
-bool AnnotatedRegion<ParametricType>::updateValueBound(CoefficientType const& newValue, storm::OptimizationDirection dir) {
+bool AnnotatedRegion<ParametricType>::updateValueBound(ExtendedCoefficientType const& newValue, storm::OptimizationDirection dir) {
     if (minimize(dir)) {
         return knownLowerValueBound &= newValue;
     } else {

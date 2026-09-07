@@ -40,7 +40,7 @@ std::unique_ptr<modelchecker::ExplicitQuantitativeCheckResult<ConstantType>> Spa
         storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<FunctionType>, ConstantType> instantiationModelChecker(env, model);
         instantiationModelChecker.specifyFormula(*currentCheckTask);
         std::unique_ptr<storm::modelchecker::CheckResult> result = instantiationModelChecker.check(env, valuation);
-        reachabilityProbabilities = result->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+        reachabilityProbabilities = result->asExplicitQuantitativeCheckResult<ConstantType>().getFiniteValueVector();
     } else {
         STORM_LOG_ASSERT(valueVector->size() == model.getNumberOfStates(), "Size of reachability probability vector must be equal to the size of the model.");
         reachabilityProbabilities = *valueVector;

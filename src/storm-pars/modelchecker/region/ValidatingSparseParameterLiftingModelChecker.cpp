@@ -108,14 +108,14 @@ RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, Impre
 }
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
-typename ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::CoefficientType
+typename ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::ExtendedCoefficientType
 ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::getBoundAtInitState(
     Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
     return preciseChecker.getBoundAtInitState(env, region, dirForParameters);
 }
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
-std::pair<typename ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::CoefficientType,
+std::pair<typename ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::ExtendedCoefficientType,
           typename ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::Valuation>
 ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::getAndEvaluateGoodPoint(
     Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {

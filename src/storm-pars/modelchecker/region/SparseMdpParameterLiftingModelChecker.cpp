@@ -122,7 +122,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     maybeStates &= ~psiStates;
 
     // set the result for all non-maybe states
-    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
+    resultsForNonMaybeStates = std::vector<ExtendedConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
     storm::utility::vector::setVectorValues(resultsForNonMaybeStates, psiStates, storm::utility::one<ConstantType>());
 
     // if there are maybestates, create the parameterLifter
@@ -170,7 +170,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     maybeStates = ~(statesWithProbability01.first | statesWithProbability01.second);
 
     // set the result for all non-maybe states
-    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
+    resultsForNonMaybeStates = std::vector<ExtendedConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
     storm::utility::vector::setVectorValues(resultsForNonMaybeStates, statesWithProbability01.second, storm::utility::one<ConstantType>());
 
     // if there are maybestates, create the parameterLifter
@@ -221,8 +221,8 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     maybeStates = ~(targetStates | infinityStates);
 
     // set the result for all the non-maybe states
-    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
-    storm::utility::vector::setVectorValues(resultsForNonMaybeStates, infinityStates, storm::utility::infinity<ConstantType>());
+    resultsForNonMaybeStates = std::vector<ExtendedConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
+    storm::utility::vector::setVectorValues(resultsForNonMaybeStates, infinityStates, storm::utility::positiveInfinity<ConstantType>());
 
     // if there are maybestates, create the parameterLifter
     if (!maybeStates.empty()) {
@@ -272,7 +272,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
 
     // Every state is a maybeState
     maybeStates = storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getColumnCount(), true);
-    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates());
+    resultsForNonMaybeStates = std::vector<ExtendedConstantType>(this->parametricModel->getNumberOfStates());
 
     // Create the reward vector
     STORM_LOG_THROW((checkTask.isRewardModelSet() && this->parametricModel->hasRewardModel(checkTask.getRewardModel())) ||
@@ -314,8 +314,9 @@ bool SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::isMon
 }
 
 template<typename SparseModelType, typename ConstantType>
-std::vector<ConstantType> SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(
-    Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
+std::vector<typename SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::ExtendedConstantType>
+SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
+                                                                                                storm::solver::OptimizationDirection const& dirForParameters) {
     if (maybeStates.empty()) {
         this->updateKnownValueBoundInRegion(region, dirForParameters, resultsForNonMaybeStates);
         return resultsForNonMaybeStates;
@@ -378,7 +379,7 @@ std::vector<ConstantType> SparseMdpParameterLiftingModelChecker<SparseModelType,
     }
 
     // Get the result for the complete model (including maybestates)
-    std::vector<ConstantType> result = resultsForNonMaybeStates;
+    std::vector<ExtendedConstantType> result = resultsForNonMaybeStates;
     auto maybeStateResIt = x.begin();
     for (uint64_t maybeState : maybeStates) {
         result[maybeState] = *maybeStateResIt;

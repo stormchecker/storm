@@ -587,7 +587,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         }
     }
 
-    std::vector<ValueType> result(maybeStates.size());
+    std::vector<storm::utility::ExtendedValueType<ValueType>> result(maybeStates.size());
     if (furtherComputationNeeded) {
         // If we compute the results for the initial states only, we can cut off all maybe state that are not
         // reachable from them.
@@ -612,12 +612,12 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         std::vector<ValueType> subresult =
             computeReachabilityValues(env, submatrix, stateRewardValues, submatrixTransposed, newInitialStates, computeForInitialStatesOnly,
                                       probabilityMatrix.getConstrainedRowSumVector(maybeStates, targetStates));
-        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, subresult);
+        storm::utility::vector::setVectorValues(result, maybeStates, subresult);
     }
 
     // Construct full result.
-    storm::utility::vector::setVectorValues<ValueType>(result, infinityStates, storm::utility::infinity<ValueType>());
-    storm::utility::vector::setVectorValues<ValueType>(result, targetStates, storm::utility::zero<ValueType>());
+    storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::positiveInfinity<ValueType>());
+    storm::utility::vector::setVectorValues(result, targetStates, storm::utility::zero<ValueType>());
     if (computeForInitialStatesOnly) {
         // If we computed the results for the initial (and inf) states only, we need to filter the result to
         // only communicate these results.
@@ -848,7 +848,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         }
     }
 
-    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, numerator / denominator));
+    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, ValueType(numerator / denominator)));
 }
 
 template<typename SparseDtmcModelType>

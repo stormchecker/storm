@@ -10,6 +10,7 @@
 #include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/storage/MaximalEndComponent.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/utility/ExtendedNumber.h"
 
 namespace storm {
 
@@ -34,6 +35,9 @@ namespace helper {
 template<typename ValueType, typename SolutionType = ValueType>
 class SparseMdpPrctlHelper {
    public:
+    using ExtendedSolutionType = storm::utility::ExtendedValueType<SolutionType>;
+    using ExtendedReturnType = MDPSparseModelCheckingHelperReturnType<SolutionType, ExtendedSolutionType>;
+
     static std::map<storm::storage::sparse::state_type, SolutionType> computeRewardBoundedValues(
         Environment const& env, OptimizationDirection dir, rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding,
         storm::storage::BitVector const& initialStates);
@@ -66,40 +70,41 @@ class SparseMdpPrctlHelper {
                                                               RewardModelType const& rewardModel, uint_fast64_t stepBound);
 
     template<typename RewardModelType>
-    static MDPSparseModelCheckingHelperReturnType<SolutionType> computeTotalRewards(Environment const& env,
-                                                                                    storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                    storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                                    RewardModelType const& rewardModel, bool qualitative, bool produceScheduler,
-                                                                                    ModelCheckerHint const& hint = ModelCheckerHint());
+    static ExtendedReturnType computeTotalRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                  storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                  storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel,
+                                                  bool qualitative, bool produceScheduler, ModelCheckerHint const& hint = ModelCheckerHint());
     template<typename RewardModelType>
     static std::vector<SolutionType> computeDiscountedCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                         storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                         RewardModelType const& rewardModel, uint_fast64_t stepBound, ValueType discountFactor);
 
     template<typename RewardModelType>
-    static MDPSparseModelCheckingHelperReturnType<SolutionType> computeDiscountedTotalRewards(
-        Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-        storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, bool qualitative, bool produceScheduler,
-        ValueType discountFactor, ModelCheckerHint const& hint = ModelCheckerHint());
+    static ExtendedReturnType computeDiscountedTotalRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                            storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                            storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                            RewardModelType const& rewardModel, bool qualitative, bool produceScheduler,
+                                                            ValueType discountFactor, ModelCheckerHint const& hint = ModelCheckerHint());
 
     template<typename RewardModelType>
-    static MDPSparseModelCheckingHelperReturnType<SolutionType> computeReachabilityRewards(
-        Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-        storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates,
-        bool qualitative, bool produceScheduler, ModelCheckerHint const& hint = ModelCheckerHint());
+    static ExtendedReturnType computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                         storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                         storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel,
+                                                         storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler,
+                                                         ModelCheckerHint const& hint = ModelCheckerHint());
 
-    static MDPSparseModelCheckingHelperReturnType<SolutionType> computeReachabilityTimes(
-        Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-        storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, bool qualitative,
-        bool produceScheduler, ModelCheckerHint const& hint = ModelCheckerHint());
+    static ExtendedReturnType computeReachabilityTimes(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                       storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                       storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                       storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler,
+                                                       ModelCheckerHint const& hint = ModelCheckerHint());
 
     template<typename IntervalRewardType>
-    static std::vector<SolutionType> computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                                storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                storm::models::sparse::StandardRewardModel<IntervalRewardType> const& intervalRewardModel,
-                                                                bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative);
+    static std::vector<ExtendedSolutionType> computeReachabilityRewards(
+        Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+        storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+        storm::models::sparse::StandardRewardModel<IntervalRewardType> const& intervalRewardModel, bool lowerBoundOfIntervals,
+        storm::storage::BitVector const& targetStates, bool qualitative);
 
     static std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                         storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
@@ -108,7 +113,7 @@ class SparseMdpPrctlHelper {
                                                                         storm::storage::BitVector const& conditionStates);
 
    private:
-    static MDPSparseModelCheckingHelperReturnType<SolutionType> computeReachabilityRewardsHelper(
+    static ExtendedReturnType computeReachabilityRewardsHelper(
         Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
         storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
         std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const&

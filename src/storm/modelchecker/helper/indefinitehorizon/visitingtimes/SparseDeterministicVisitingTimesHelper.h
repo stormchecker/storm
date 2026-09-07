@@ -5,6 +5,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/OptionalRef.h"
 
 namespace storm {
@@ -25,6 +26,8 @@ class SparseDeterministicVisitingTimesHelper : public SingleValueModelCheckerHel
      * Function mapping from indices to values
      */
     typedef std::function<ValueType(uint64_t)> ValueGetter;
+
+    using ExtendedValueType = storm::utility::ExtendedValueType<ValueType>;
 
     /*!
      * Initializes the helper for a DTMC
@@ -61,21 +64,21 @@ class SparseDeterministicVisitingTimesHelper : public SingleValueModelCheckerHel
      *
      * @return a value for each state
      */
-    std::vector<ValueType> computeExpectedVisitingTimes(Environment const& env, storm::storage::BitVector const& initialStates);
+    std::vector<ExtendedValueType> computeExpectedVisitingTimes(Environment const& env, storm::storage::BitVector const& initialStates);
 
     /*!
      * Computes for each state the expected number of times we are visiting that state assuming the given initial state.
      *
      * @return a value for each state
      */
-    std::vector<ValueType> computeExpectedVisitingTimes(Environment const& env, uint64_t initialState);
+    std::vector<ExtendedValueType> computeExpectedVisitingTimes(Environment const& env, uint64_t initialState);
 
     /*!
      * Computes for each state the expected number of times we are visiting that state assuming the given initial state probabilities
      * @param initialStateValueGetter function that returns for each state the initial value (probability) for that state.
      * The values can actually sum up to something different than 1 but should be non-negative.
      */
-    std::vector<ValueType> computeExpectedVisitingTimes(Environment const& env, ValueGetter const& initialStateValueGetter);
+    std::vector<ExtendedValueType> computeExpectedVisitingTimes(Environment const& env, ValueGetter const& initialStateValueGetter);
 
     /*!
      * Computes for each state the expected number of times we are visiting that state assuming the given initial state(s).
@@ -83,7 +86,7 @@ class SparseDeterministicVisitingTimesHelper : public SingleValueModelCheckerHel
      * The values can actually sum up to something different than 1 but should be non-negative.
      * @post parameter stateValues contains the desired values
      */
-    void computeExpectedVisitingTimes(Environment const& env, std::vector<ValueType>& stateValues);
+    void computeExpectedVisitingTimes(Environment const& env, std::vector<ExtendedValueType>& stateValues);
 
     /*!
      * Computes for each selected state the expected number of times we are visiting that state assuming the given initial state probabilities
@@ -146,14 +149,15 @@ class SparseDeterministicVisitingTimesHelper : public SingleValueModelCheckerHel
     /*!
      * Processes (bottom or non-bottom SCCs consisting of a single state). The resulting value is directly inserted into stateValues
      */
-    void processSingletonScc(uint64_t sccState, std::vector<ValueType>& stateValues) const;
+    void processSingletonScc(uint64_t sccState, std::vector<ExtendedValueType>& stateValues) const;
 
     /*!
      * Solves the equation system for non-singleton (subs)sets of the chain's non-bottom states.
+     * @pre none of the given state values is infinite
      * @return for each state of the given set the expected number of times that state is visited.
      */
     std::vector<ValueType> computeValueForStateSet(storm::Environment const& env, storm::storage::BitVector const& stateSetAsBitVector,
-                                                   std::vector<ValueType> const& stateValues) const;
+                                                   std::vector<ExtendedValueType> const& stateValues) const;
 
     storm::storage::SparseMatrix<ValueType> const& transitionMatrix;
     storm::OptionalRef<std::vector<ValueType> const> exitRates;

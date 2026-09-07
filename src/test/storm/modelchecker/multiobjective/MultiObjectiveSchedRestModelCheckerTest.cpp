@@ -142,7 +142,7 @@ class MultiObjectiveSchedRestModelCheckerTest : public ::testing::Test {
         return env;
     }
 
-    typedef std::vector<storm::RationalNumber> Point;
+    typedef std::vector<storm::ExtendedRationalNumber> Point;
 
     ValueType parseNumber(std::string const& input) const {
         return storm::utility::convertNumber<ValueType>(input);

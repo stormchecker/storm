@@ -4,6 +4,7 @@
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm-pomdp/storage/BeliefManager.h"
 #include "storm/storage/jani/Property.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/Stopwatch.h"
 
 namespace storm {
@@ -72,10 +73,12 @@ class BeliefExplorationPomdpModelChecker {
      * Struct used to store the results of the model checker
      */
     struct Result {
-        Result(ValueType lower, ValueType upper);
-        ValueType lowerBound;
-        ValueType upperBound;
-        ValueType diff(bool relative = false) const;
+        using ExtendedValueType = storm::utility::ExtendedValueType<ValueType>;
+
+        Result(ExtendedValueType lower, ExtendedValueType upper);
+        ExtendedValueType lowerBound;
+        ExtendedValueType upperBound;
+        ExtendedValueType diff(bool relative = false) const;
         bool updateLowerBound(ValueType const& value);
         bool updateUpperBound(ValueType const& value);
         std::shared_ptr<storm::models::sparse::Model<ValueType>> schedulerAsMarkovChain;
@@ -367,7 +370,7 @@ class BeliefExplorationPomdpModelChecker {
 
     Status unfoldingStatus;
     UnfoldingControl unfoldingControl;
-    Result interactiveResult = Result(-storm::utility::infinity<ValueType>(), storm::utility::infinity<ValueType>());
+    Result interactiveResult = Result(storm::utility::negativeInfinity<ValueType>(), storm::utility::positiveInfinity<ValueType>());
 };
 
 }  // namespace modelchecker

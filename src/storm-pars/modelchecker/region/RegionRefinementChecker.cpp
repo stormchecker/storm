@@ -210,11 +210,11 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
 }
 
 template<typename ParametricType>
-std::pair<typename storm::storage::ParameterRegion<ParametricType>::CoefficientType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>
-RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
-                                                                    storm::solver::OptimizationDirection const& dir,
-                                                                    std::function<bool(CoefficientType, CoefficientType)> acceptGlobalBound,
-                                                                    std::function<bool(CoefficientType)> rejectInstance) {
+std::pair<typename RegionRefinementChecker<ParametricType>::ExtendedCoefficientType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>
+RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(
+    Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir,
+    std::function<bool(ExtendedCoefficientType const&, ExtendedCoefficientType const&)> acceptGlobalBound,
+    std::function<bool(ExtendedCoefficientType const&)> rejectInstance) {
     auto progress = PartitioningProgress<CoefficientType>(region.area(), env.solver().getShowProgressDelay());
 
     // Holds the initial region as well as all considered (sub)-regions and their annotations as a tree
@@ -222,9 +222,10 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
 
     // Priority Queue storing the regions that still need to be processed. Regions with a "good" bound are processed first
     auto cmp = storm::solver::minimize(dir) ? [](AnnotatedRegion<ParametricType> const& lhs,
-                                                 AnnotatedRegion<ParametricType> const& rhs) { return *lhs.knownLowerValueBound > *rhs.knownLowerValueBound; }
+                                                 AnnotatedRegion<ParametricType> const&
+                                                     rhs) { return lhs.knownLowerValueBound.getExtendedValue() > rhs.knownLowerValueBound.getExtendedValue(); }
                                             : [](AnnotatedRegion<ParametricType> const& lhs, AnnotatedRegion<ParametricType> const& rhs) {
-                                                  return *lhs.knownUpperValueBound < *rhs.knownUpperValueBound;
+                                                  return lhs.knownUpperValueBound.getExtendedValue() < rhs.knownUpperValueBound.getExtendedValue();
                                               };
     std::priority_queue<std::reference_wrapper<AnnotatedRegion<ParametricType>>, std::vector<std::reference_wrapper<AnnotatedRegion<ParametricType>>>,
                         decltype(cmp)>
@@ -249,8 +250,8 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
     uint64_t numOfAnalyzedRegions{0u};
     while (!unprocessedRegions.empty()) {
         auto& currentRegion = unprocessedRegions.top().get();
-        auto currentBound =
-            storm::solver::minimize(dir) ? currentRegion.knownLowerValueBound.getOptionalValue() : currentRegion.knownUpperValueBound.getOptionalValue();
+        ExtendedCoefficientType currentBound =
+            storm::solver::minimize(dir) ? currentRegion.knownLowerValueBound.getExtendedValue() : currentRegion.knownUpperValueBound.getExtendedValue();
         STORM_LOG_TRACE("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentRegion.refinementDepth << "; "
                                              << progress.getUndiscoveredPercentage() << "% still unknown; " << unprocessedRegions.size()
                                              << " regions unprocessed). Best known value: " << value << ".");
@@ -260,18 +261,18 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
         monotonicityBackend->updateMonotonicity(env, currentRegion);
 
         // Compute the bound for this region (unless the known bound is already too weak)
-        if (!currentBound || !acceptGlobalBound(value, currentBound.value())) {
+        if (!acceptGlobalBound(value, currentBound)) {
             // Improve over-approximation of extremal value (within this region)
             currentBound = regionChecker->getBoundAtInitState(env, currentRegion, dir);
             if (storm::solver::minimize(dir)) {
-                currentRegion.knownLowerValueBound &= *currentBound;
+                currentRegion.knownLowerValueBound &= currentBound;
             } else {
-                currentRegion.knownUpperValueBound &= *currentBound;
+                currentRegion.knownUpperValueBound &= currentBound;
             }
         }
 
         // Process the region if the bound is promising
-        if (!acceptGlobalBound(value, currentBound.value())) {
+        if (!acceptGlobalBound(value, currentBound)) {
             // Improve (global) under-approximation of extremal value
             // Check whether this region contains a new 'good' value and set this value if that is the case
             auto [currValue, currValuation] = regionChecker->getAndEvaluateGoodPoint(env, currentRegion, dir);
@@ -285,7 +286,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
         }
 
         // Trigger region-splitting if over- and under-approximation are still too far apart
-        if (!acceptGlobalBound(value, currentBound.value())) {
+        if (!acceptGlobalBound(value, currentBound)) {
             monotonicityBackend->updateMonotonicityBeforeSplitting(env, currentRegion);
             auto splittingVariables = getSplittingVariables(currentRegion, Context::ExtremalValue);
             STORM_LOG_INFO("Splitting on variables " << splittingVariables);
@@ -304,7 +305,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
 }
 
 template<typename ParametricType>
-std::pair<typename storm::storage::ParameterRegion<ParametricType>::CoefficientType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>
+std::pair<typename RegionRefinementChecker<ParametricType>::ExtendedCoefficientType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>
 RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
                                                               storm::solver::OptimizationDirection const& dir, ParametricType const& precision,
                                                               bool absolutePrecision, std::optional<storm::logic::Bound> const& boundInvariant) {
@@ -313,12 +314,15 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
                     "Precision must be a constant value. Got " << precision << " instead.");
     CoefficientType convertedPrecision = storm::utility::convertNumber<CoefficientType>(precision);
 
-    auto acceptGlobalBound = [&](CoefficientType value, CoefficientType newValue) {
-        CoefficientType const usedPrecision = convertedPrecision * (absolutePrecision ? storm::utility::one<CoefficientType>() : value);
+    auto acceptGlobalBound = [&](ExtendedCoefficientType const& value, ExtendedCoefficientType const& newValue) {
+        if (!storm::utility::isFinite(value)) {
+            return newValue == value;
+        }
+        ExtendedCoefficientType const usedPrecision = convertedPrecision * (absolutePrecision ? storm::utility::one<ExtendedCoefficientType>() : value);
         return storm::solver::minimize(dir) ? newValue >= value - usedPrecision : newValue <= value + usedPrecision;
     };
 
-    auto rejectInstance = [&](CoefficientType currentValue) { return boundInvariant && !boundInvariant->isSatisfied(currentValue); };
+    auto rejectInstance = [&](ExtendedCoefficientType const& currentValue) { return boundInvariant && !boundInvariant->isSatisfied(currentValue); };
 
     return computeExtremalValueHelper(env, region, dir, acceptGlobalBound, rejectInstance);
 }
@@ -332,9 +336,9 @@ bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environm
     storm::solver::OptimizationDirection dir =
         isLowerBound(bound.comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
     // We pass the bound as an invariant; as soon as it is obtained, we can stop the search.
-    auto acceptGlobalBound = [&](CoefficientType value, CoefficientType newValue) { return bound.isSatisfied(newValue); };
+    auto acceptGlobalBound = [&](ExtendedCoefficientType const&, ExtendedCoefficientType const& newValue) { return bound.isSatisfied(newValue); };
 
-    auto rejectInstance = [&](CoefficientType currentValue) { return !bound.isSatisfied(currentValue); };
+    auto rejectInstance = [&](ExtendedCoefficientType const& currentValue) { return !bound.isSatisfied(currentValue); };
 
     auto res = computeExtremalValueHelper(env, region, dir, acceptGlobalBound, rejectInstance).first;
     STORM_LOG_INFO("Extremal value: " << res);

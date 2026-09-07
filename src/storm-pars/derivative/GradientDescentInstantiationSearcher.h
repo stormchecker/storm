@@ -13,6 +13,7 @@
 #include "storm/environment/Environment.h"
 #include "storm/logic/Formula.h"
 #include "storm/models/sparse/Dtmc.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/macros.h"
 
@@ -21,6 +22,8 @@ namespace derivative {
 template<typename FunctionType, typename ConstantType>
 class GradientDescentInstantiationSearcher {
    public:
+    using ExtendedConstantType = storm::utility::ExtendedValueType<ConstantType>;
+
     /**
      * The GradientDescentInstantiationSearcher can find extrema and feasible instantiations in pMCs,
      * for either rewards or probabilities.
@@ -168,7 +171,7 @@ class GradientDescentInstantiationSearcher {
      * Perform Gradient Descent.
      */
     std::pair<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>,
-              ConstantType>
+              ExtendedConstantType>
     gradientDescent();
 
     /**
@@ -181,7 +184,7 @@ class GradientDescentInstantiationSearcher {
      */
     struct VisualizationPoint {
         std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type> position;
-        ConstantType value;
+        ExtendedConstantType value;
     };
     /**
      * Get the visualization walk that is recorded if recordRun is set to true in the constructor (false by default).
@@ -253,7 +256,7 @@ class GradientDescentInstantiationSearcher {
 
     ConstantType logarithmicBarrierTerm;
 
-    ConstantType stochasticGradientDescent(
+    ExtendedConstantType stochasticGradientDescent(
         std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>& position);
     ConstantType doStep(
         typename utility::parametric::VariableType<FunctionType>::type steppingParameter,

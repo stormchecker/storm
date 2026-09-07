@@ -118,7 +118,7 @@ void verifyPropertiesAtSamplePointsDerivative(ModelType const& model, cli::Symbo
 
                 boost::optional<std::vector<SolveValueType>> valueVector = boost::none;
                 if (originalResult) {
-                    valueVector = originalResult->template asExplicitQuantitativeCheckResult<SolveValueType>().getValueVector();
+                    valueVector = originalResult->template asExplicitQuantitativeCheckResult<SolveValueType>().getFiniteValueVector();
                     originalResult->filter(storm::modelchecker::ExplicitQualitativeCheckResult<SolveValueType>(model.getInitialStates()));
                 }
                 STORM_PRINT_AND_LOG("Model checking result:\n");

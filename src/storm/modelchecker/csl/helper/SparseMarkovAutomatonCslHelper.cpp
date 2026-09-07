@@ -758,7 +758,7 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
 }
 
 template<typename ValueType, typename RewardModelType>
-MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper::computeTotalRewards(
+MDPSparseModelCheckingHelperReturnType<ValueType, storm::utility::ExtendedValueType<ValueType>> SparseMarkovAutomatonCslHelper::computeTotalRewards(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, RewardModelType const& rewardModel, bool produceScheduler) {
@@ -774,7 +774,7 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
 }
 
 template<typename ValueType, typename RewardModelType>
-MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper::computeReachabilityRewards(
+MDPSparseModelCheckingHelperReturnType<ValueType, storm::utility::ExtendedValueType<ValueType>> SparseMarkovAutomatonCslHelper::computeReachabilityRewards(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, RewardModelType const& rewardModel, storm::storage::BitVector const& psiStates, bool produceScheduler) {
@@ -791,7 +791,7 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
 }
 
 template<typename ValueType>
-MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(
+MDPSparseModelCheckingHelperReturnType<ValueType, storm::utility::ExtendedValueType<ValueType>> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, bool produceScheduler) {
@@ -816,18 +816,18 @@ template MDPSparseModelCheckingHelperReturnType<double> SparseMarkovAutomatonCsl
     storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
     bool qualitative, bool produceScheduler);
 
-template MDPSparseModelCheckingHelperReturnType<double> SparseMarkovAutomatonCslHelper::computeReachabilityRewards(
+template MDPSparseModelCheckingHelperReturnType<double, storm::utility::ExtendedValueType<double>> SparseMarkovAutomatonCslHelper::computeReachabilityRewards(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix,
     storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, storm::models::sparse::StandardRewardModel<double> const& rewardModel,
     storm::storage::BitVector const& psiStates, bool produceScheduler);
 
-template MDPSparseModelCheckingHelperReturnType<double> SparseMarkovAutomatonCslHelper::computeTotalRewards(
+template MDPSparseModelCheckingHelperReturnType<double, storm::utility::ExtendedValueType<double>> SparseMarkovAutomatonCslHelper::computeTotalRewards(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix,
     storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, storm::models::sparse::StandardRewardModel<double> const& rewardModel, bool produceScheduler);
 
-template MDPSparseModelCheckingHelperReturnType<double> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(
+template MDPSparseModelCheckingHelperReturnType<double, storm::utility::ExtendedValueType<double>> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix,
     storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, bool produceScheduler);
@@ -842,19 +842,22 @@ template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMar
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates,
     storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler);
 
-template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMarkovAutomatonCslHelper::computeReachabilityRewards(
-    Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
-    storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector,
-    storm::storage::BitVector const& markovianStates, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel,
-    storm::storage::BitVector const& psiStates, bool produceScheduler);
+template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber, storm::ExtendedRationalNumber>
+SparseMarkovAutomatonCslHelper::computeReachabilityRewards(Environment const& env, OptimizationDirection dir,
+                                                           storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
+                                                           storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions,
+                                                           std::vector<storm::RationalNumber> const& exitRateVector,
+                                                           storm::storage::BitVector const& markovianStates,
+                                                           storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel,
+                                                           storm::storage::BitVector const& psiStates, bool produceScheduler);
 
-template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMarkovAutomatonCslHelper::computeTotalRewards(
+template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber, storm::ExtendedRationalNumber> SparseMarkovAutomatonCslHelper::computeTotalRewards(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel,
     bool produceScheduler);
 
-template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(
+template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber, storm::ExtendedRationalNumber> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, bool produceScheduler);

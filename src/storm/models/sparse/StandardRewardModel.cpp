@@ -339,7 +339,7 @@ std::vector<ValueType> StandardRewardModel<ValueType>::getTotalActionRewardVecto
 template<typename ValueType>
 template<typename MatrixValueType>
 storm::storage::BitVector StandardRewardModel<ValueType>::getStatesWithZeroReward(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const {
-    return getStatesWithFilter(transitionMatrix, storm::utility::isZero<ValueType>);
+    return getStatesWithFilter(transitionMatrix, [](ValueType const& value) { return storm::utility::isZero(value); });
 }
 
 template<typename ValueType>
@@ -375,7 +375,7 @@ template<typename ValueType>
 template<typename MatrixValueType>
 storm::storage::BitVector StandardRewardModel<ValueType>::getChoicesWithZeroReward(
     storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const {
-    return getChoicesWithFilter(transitionMatrix, storm::utility::isZero<ValueType>);
+    return getChoicesWithFilter(transitionMatrix, [](ValueType const& value) { return storm::utility::isZero(value); });
 }
 
 template<typename ValueType>
