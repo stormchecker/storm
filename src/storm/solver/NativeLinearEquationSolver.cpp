@@ -379,9 +379,13 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsPower(Environment cons
         return this->updateStatus(current, x, guarantee, numIterations, env.solver().native().getMaximalNumberOfIterations());
     };
     this->startMeasureProgress();
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
     auto status = viHelper.VI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(),
                               storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()), {}, viCallback,
-                              env.solver().native().getPowerMethodMultiplicationStyle());
+                              env.solver().native().getPowerMethodMultiplicationStyle(), UncertaintyResolutionMode::Unset, &solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
 
     this->reportStatus(status, numIterations);
 

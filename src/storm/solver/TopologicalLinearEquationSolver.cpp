@@ -1,6 +1,7 @@
 #include "storm/solver/TopologicalLinearEquationSolver.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
@@ -84,6 +85,7 @@ bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environm
 
     // Handle the case where there is just one large SCC
     bool returnValue = true;
+    bool aborted = false;
     if (this->sortedSccDecomposition->size() == 1) {
         if (auto const& scc = *this->sortedSccDecomposition->begin(); scc.size() == 1) {
             // Catch the trivial case where the whole system is just a single state.
@@ -127,9 +129,14 @@ bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environm
             progress.updateProgress(sccIndex);
             if (storm::utility::resources::isTerminate()) {
                 STORM_LOG_WARN("Topological solver aborted after analyzing " << sccIndex << "/" << this->sortedSccDecomposition->size() << " SCCs.");
+                aborted = true;
                 break;
             }
         }
+    }
+
+    if (returnValue && !aborted) {
+        trySetSolutionBoundsFromPrecision(env, x);
     }
 
     if (!this->isCachingEnabled()) {
@@ -137,6 +144,30 @@ bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environm
     }
 
     return returnValue;
+}
+
+template<typename ValueType>
+void TopologicalLinearEquationSolver<ValueType>::trySetSolutionBoundsFromPrecision(Environment const& env, std::vector<ValueType> const& x) const {
+    if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+        // Precisions are meaningless for rational functions.
+        return;
+    } else {
+        // Only a sound solve gives us anything to work with: it hands every SCC a precision of eps divided by the
+        // length of the longest SCC chain, and the deviation an SCC inherits from its predecessors enters its own
+        // solution as a convex combination of the values at the exits, i.e. without amplification. The per-SCC
+        // deviations therefore add up to at most eps along any chain, so eps bounds the error of the overall
+        // solution. An unsound underlying solver instead only reports that its iteration stopped moving, which is
+        // no statement about the distance to the solution at all, so nothing is claimed in that case.
+        if (!env.solver().isForceSoundness()) {
+            return;
+        }
+        // Sound solving picks the native solver unless the user insisted on one of the exact ones, and the native
+        // precision is kept in sync with the one of whichever solver type is configured (see
+        // SolverEnvironment::setLinearEquationSolverPrecision), so this is the precision that was actually enforced
+        // in the SCCs. For an exact underlying solver it merely is a loose bound rather than a wrong one.
+        this->setSolutionBoundsFromPrecision(x, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
+                                             env.solver().native().getRelativeTerminationCriterion());
+    }
 }
 
 template<typename ValueType>

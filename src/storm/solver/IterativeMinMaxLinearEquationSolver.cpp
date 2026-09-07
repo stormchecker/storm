@@ -733,13 +733,21 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         return this->updateStatus(current, x, guarantee, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
     };
     this->startMeasureProgress();
+    // The bound that value iteration carries on its own is only sound if the equation system has a unique
+    // fixed point; otherwise an iteration that moves in one direction only bounds the greatest (resp. least)
+    // fixed point, which need not be the solution we are after.
+    storm::solver::SolutionBounds<SolutionType> solutionBounds;
+    auto* solutionBoundsPtr = this->hasUniqueSolution() ? &solutionBounds : nullptr;
     // This code duplication is necessary because the helper class is different for the two cases.
     if (this->A->hasTrivialRowGrouping()) {
         storm::solver::helper::ValueIterationHelper<ValueType, true, SolutionType> viHelper(viOperatorTriv);
 
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                   storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode());
+                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode(), solutionBoundsPtr);
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.
@@ -757,7 +765,10 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                   storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode());
+                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode(), solutionBoundsPtr);
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.

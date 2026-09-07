@@ -270,6 +270,35 @@ void AbstractEquationSolver<ValueType>::setSolutionBounds(SolutionBounds<ValueTy
 }
 
 template<typename ValueType>
+void AbstractEquationSolver<ValueType>::setSolutionBoundsFromPrecision(std::vector<ValueType> const& x, ValueType const& precision, bool relative) const {
+    if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot derive solution bounds from a precision for rational functions.");
+    } else {
+        STORM_LOG_ASSERT(!relative || precision < storm::utility::one<ValueType>(), "A relative precision of one or more carries no information.");
+        SolutionBounds<ValueType> bounds;
+        std::vector<ValueType>& lower = bounds.lower.emplace(x.size());
+        std::vector<ValueType>& upper = bounds.upper.emplace(x.size());
+        bool const tightenFromBelow = this->hasLowerBound();
+        bool const tightenFromAbove = this->hasUpperBound();
+        for (uint64_t i = 0; i < x.size(); ++i) {
+            // For the relative criterion the guarantee reads |x_i - s_i| <= precision * |s_i| for the exact solution s.
+            // That gives |s_i| <= |x_i| / (1 - precision) and hence the deviation below, which does not refer to s.
+            ValueType const deviation =
+                relative ? precision * storm::utility::abs<ValueType>(x[i]) / (storm::utility::one<ValueType>() - precision) : precision;
+            lower[i] = x[i] - deviation;
+            upper[i] = x[i] + deviation;
+            if (tightenFromBelow) {
+                lower[i] = std::max(lower[i], this->getLowerBound(i));
+            }
+            if (tightenFromAbove) {
+                upper[i] = std::min(upper[i], this->getUpperBound(i));
+            }
+        }
+        this->setSolutionBounds(std::move(bounds));
+    }
+}
+
+template<typename ValueType>
 void AbstractEquationSolver<ValueType>::clearSolutionBounds() const {
     solutionBounds.clear();
 }

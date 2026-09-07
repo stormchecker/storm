@@ -240,6 +240,17 @@ class AbstractEquationSolver {
      */
     void clearSolutionBounds() const;
 
+    /*!
+     * Turns a precision that the solving procedure is known to have achieved into sound bounds on the solution,
+     * i.e. stores [x_i - d_i, x_i + d_i] where d_i is the largest deviation from x_i that is still compatible with
+     * that precision. Any a priori bounds known to this solver are used to tighten the result.
+     *
+     * @param x The computed solution.
+     * @param precision The precision that the computation is guaranteed to have achieved.
+     * @param relative Whether that precision is to be read relative to the solution instead of as an absolute value.
+     */
+    void setSolutionBoundsFromPrecision(std::vector<ValueType> const& x, ValueType const& precision, bool relative) const;
+
     void createUpperBoundsVector(std::vector<ValueType>& upperBoundsVector) const;
     void createUpperBoundsVector(std::unique_ptr<std::vector<ValueType>>& upperBoundsVector, uint64_t length) const;
     void createLowerBoundsVector(std::vector<ValueType>& lowerBoundsVector) const;

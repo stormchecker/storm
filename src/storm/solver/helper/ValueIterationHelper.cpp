@@ -17,6 +17,8 @@ class VIOperatorBackend {
 
     void startNewIteration() {
         isConverged = true;
+        isNonDecreasing = true;
+        isNonIncreasing = true;
     }
 
     void firstRow(ValueType&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
@@ -35,6 +37,14 @@ class VIOperatorBackend {
                 isConverged = storm::utility::abs<ValueType>(currValue - *best) <= precision;
             }
         }
+        // Record in which direction this iteration moves the operand, so that a sound bound on the solution can
+        // be derived once the iteration is over. See the comment in ValueIterationHelper::VI.
+        if (isNonDecreasing && *best < currValue) {
+            isNonDecreasing = false;
+        }
+        if (isNonIncreasing && currValue < *best) {
+            isNonIncreasing = false;
+        }
         currValue = std::move(*best);
     }
 
@@ -46,6 +56,17 @@ class VIOperatorBackend {
         return isConverged;
     }
 
+    /*!
+     * Retrieves whether the last iteration did not decrease resp. increase any entry of the operand.
+     */
+    bool nonDecreasing() const {
+        return isNonDecreasing;
+    }
+
+    bool nonIncreasing() const {
+        return isNonIncreasing;
+    }
+
     bool constexpr abort() const {
         return false;
     }
@@ -54,6 +75,8 @@ class VIOperatorBackend {
     storm::utility::Extremum<Dir, ValueType> best;
     ValueType const precision;
     bool isConverged{true};
+    bool isNonDecreasing{true};
+    bool isNonIncreasing{true};
 };
 
 template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
@@ -68,7 +91,8 @@ template<storm::OptimizationDirection Dir, bool Relative, storm::OptimizationDir
 SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets,
                                                                                    uint64_t& numIterations, SolutionType const& precision,
                                                                                    std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
-                                                                                   MultiplicationStyle mult) const {
+                                                                                   MultiplicationStyle mult,
+                                                                                   SolutionBounds<SolutionType>* solutionBounds) const {
     VIOperatorBackend<SolutionType, Dir, Relative> backend{precision};
     std::vector<SolutionType>* operand1{&operand};
     std::vector<SolutionType>* operand2{&operand};
@@ -97,6 +121,25 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
         }
         viOperator->freeAuxiliaryVector();
     }
+    if (solutionBounds != nullptr) {
+        /*
+         * Value iteration itself carries a sound bound on the solution whenever an entire iteration moved the
+         * operand in a single direction. Writing T for the (Gauss-Seidel or regular) update operator, an
+         * iteration that decreased nothing means x_old <= T(x_old), so x_old is a post-fixpoint and therefore
+         * below the greatest fixpoint; since x = T(x_old) and T is monotone, x is below it as well. The
+         * equation systems handed to this helper have a unique fixpoint, so that is the solution and x is a
+         * lower bound on it. The dual argument applies to an iteration that increased nothing.
+         *
+         * Note that this reasoning does not depend on the iteration having converged, nor on the operand having
+         * been initialized below (resp. above) the solution: it is a property of the last completed iteration
+         * alone, which is exactly what the backend records.
+         */
+        if (backend.nonDecreasing()) {
+            solutionBounds->lower = operand;
+        } else if (backend.nonIncreasing()) {
+            solutionBounds->upper = operand;
+        }
+    }
     return status;
 }
 
@@ -106,26 +149,25 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
                                                                                    uint64_t& numIterations, SolutionType const& precision,
                                                                                    const std::function<SolverStatus(const SolverStatus&)>& iterationCallback,
                                                                                    MultiplicationStyle mult,
-                                                                                   UncertaintyResolutionMode const& uncertaintyResolutionMode) const {
+                                                                                   UncertaintyResolutionMode const& uncertaintyResolutionMode,
+                                                                                   SolutionBounds<SolutionType>* solutionBounds) const {
     bool robustUncertainty = false;
     if constexpr (storm::IsIntervalType<ValueType>) {
         robustUncertainty = isUncertaintyResolvedRobust(uncertaintyResolutionMode, Dir);
     }
 
     if (robustUncertainty) {
-        return VI<Dir, Relative, invert(Dir)>(operand, offsets, numIterations, precision, iterationCallback, mult);
+        return VI<Dir, Relative, invert(Dir)>(operand, offsets, numIterations, precision, iterationCallback, mult, solutionBounds);
     } else {
-        return VI<Dir, Relative, Dir>(operand, offsets, numIterations, precision, iterationCallback, mult);
+        return VI<Dir, Relative, Dir>(operand, offsets, numIterations, precision, iterationCallback, mult, solutionBounds);
     }
 }
 
 template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
-SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets,
-                                                                                   uint64_t& numIterations, bool relative, SolutionType const& precision,
-                                                                                   std::optional<storm::OptimizationDirection> const& dir,
-                                                                                   std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
-                                                                                   MultiplicationStyle mult,
-                                                                                   UncertaintyResolutionMode const& uncertaintyResolutionMode) const {
+SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(
+    std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative, SolutionType const& precision,
+    std::optional<storm::OptimizationDirection> const& dir, std::function<SolverStatus(SolverStatus const&)> const& iterationCallback, MultiplicationStyle mult,
+    UncertaintyResolutionMode const& uncertaintyResolutionMode, SolutionBounds<SolutionType>* solutionBounds) const {
     if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(uncertaintyResolutionMode != UncertaintyResolutionMode::Unset, storm::exceptions::IllegalFunctionCallException,
                         "Uncertainty resolution mode must be set for uncertain (interval) models.");
@@ -139,31 +181,29 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
     if (!dir.has_value() || maximize(*dir)) {
         if (relative) {
             return VI<storm::OptimizationDirection::Maximize, true>(operand, offsets, numIterations, precision, iterationCallback, mult,
-                                                                    uncertaintyResolutionMode);
+                                                                    uncertaintyResolutionMode, solutionBounds);
         } else {
             return VI<storm::OptimizationDirection::Maximize, false>(operand, offsets, numIterations, precision, iterationCallback, mult,
-                                                                     uncertaintyResolutionMode);
+                                                                     uncertaintyResolutionMode, solutionBounds);
         }
     } else {
         if (relative) {
             return VI<storm::OptimizationDirection::Minimize, true>(operand, offsets, numIterations, precision, iterationCallback, mult,
-                                                                    uncertaintyResolutionMode);
+                                                                    uncertaintyResolutionMode, solutionBounds);
         } else {
             return VI<storm::OptimizationDirection::Minimize, false>(operand, offsets, numIterations, precision, iterationCallback, mult,
-                                                                     uncertaintyResolutionMode);
+                                                                     uncertaintyResolutionMode, solutionBounds);
         }
     }
 }
 
 template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
-SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets,
-                                                                                   bool relative, SolutionType const& precision,
-                                                                                   std::optional<storm::OptimizationDirection> const& dir,
-                                                                                   std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
-                                                                                   MultiplicationStyle mult,
-                                                                                   UncertaintyResolutionMode const& uncertaintyResolutionMode) const {
+SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(
+    std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, bool relative, SolutionType const& precision,
+    std::optional<storm::OptimizationDirection> const& dir, std::function<SolverStatus(SolverStatus const&)> const& iterationCallback, MultiplicationStyle mult,
+    UncertaintyResolutionMode const& uncertaintyResolutionMode, SolutionBounds<SolutionType>* solutionBounds) const {
     uint64_t numIterations = 0;
-    return VI(operand, offsets, numIterations, relative, precision, dir, iterationCallback, mult, uncertaintyResolutionMode);
+    return VI(operand, offsets, numIterations, relative, precision, dir, iterationCallback, mult, uncertaintyResolutionMode, solutionBounds);
 }
 
 template class ValueIterationHelper<double, true>;
