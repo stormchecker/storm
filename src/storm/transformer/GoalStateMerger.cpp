@@ -31,19 +31,21 @@ namespace transformer {
 
 namespace {
 // Whether the given operator formula asks for the minimizing (as opposed to maximizing) value.
-// Am exception is thrown if the optimization direction cannot be derived.
-bool isMinimizing(storm::logic::OperatorFormula const& formula) {
+// Returns std::nullopt if the optimization direction cannot be derived from the formula.
+std::optional<bool> isMinimizing(storm::logic::OperatorFormula const& formula) {
     if (formula.hasOptimalityType()) {
         return storm::solver::minimize(formula.getOptimalityType());
     }
-    STORM_LOG_THROW(formula.hasBound(), storm::exceptions::UnexpectedException, "Expected an optimization direction for formula " << formula << ".");
-    return storm::logic::isLowerBound(formula.getBound().comparisonType);
+    if (formula.hasBound()) {
+        return storm::logic::isLowerBound(formula.getBound().comparisonType);
+    }
+    return std::nullopt;
 }
 
 // Checks the given (propositional) subformula and returns the truth values vector, or std::nullopt if the subformula is not propositional.
 template<typename SparseModelType>
-std::optional<storm::storage::BitVector> const checkPropositional(storm::modelchecker::SparsePropositionalModelChecker<SparseModelType>& checker,
-                                                                  storm::logic::Formula const& subformula) {
+std::optional<storm::storage::BitVector> checkPropositional(storm::modelchecker::SparsePropositionalModelChecker<SparseModelType>& checker,
+                                                            storm::logic::Formula const& subformula) {
     if (!checker.canHandle(subformula)) {
         return std::nullopt;
     }
@@ -150,7 +152,7 @@ std::optional<typename GoalStateMerger<ValueType>::ReturnType> GoalStateMerger<V
         if (rewardOperatorFormula.getSubformula().isReachabilityRewardFormula()) {
             return mergeForReachabilityRewards(rewardOperatorFormula, dropUnreachableFromInit);
         } else if (rewardOperatorFormula.getSubformula().isCumulativeRewardFormula()) {
-            return mergeForCumulativeRewards(rewardOperatorFormula);
+            return mergeForCumulativeRewards(rewardOperatorFormula, dropUnreachableFromInit);
         }
     }
     return std::nullopt;
@@ -167,7 +169,7 @@ std::optional<typename GoalStateMerger<ValueType>::ReturnType> GoalStateMerger<V
         psiStates = checkPropositional(propositionalChecker, untilFormula.getRightSubformula());
     } else {
         STORM_LOG_ASSERT(formula.getSubformula().isEventuallyFormula(), "Unexpected formula type: " << formula.getSubformula());
-        auto const eventuallyFormula = formula.getSubformula().asEventuallyFormula();
+        auto const& eventuallyFormula = formula.getSubformula().asEventuallyFormula();
         STORM_LOG_ASSERT(eventuallyFormula.isReachabilityProbabilityFormula(), "Unexpected formula context");
         storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> propositionalChecker(originalModel);
         phiStates.emplace(originalModel.getNumberOfStates(), true);
@@ -180,13 +182,16 @@ std::optional<typename GoalStateMerger<ValueType>::ReturnType> GoalStateMerger<V
     auto const& transitions = originalModel.getTransitionMatrix();
     storm::storage::SparseMatrix<ValueType> const backwardTransitions = originalModel.getBackwardTransitions();
     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01;
-    if (originalModel.isNondeterministicModel()) {
-        statesWithProbability01 =
-            isMinimizing(formula)
-                ? storm::utility::graph::performProb01Min(transitions, transitions.getRowGroupIndices(), backwardTransitions, *phiStates, *psiStates)
-                : storm::utility::graph::performProb01Max(transitions, transitions.getRowGroupIndices(), backwardTransitions, *phiStates, *psiStates);
-    } else {
+    if (!originalModel.isNondeterministicModel()) {
         statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, *phiStates, *psiStates);
+    } else if (std::optional<bool> const minimizing = isMinimizing(formula); !minimizing.has_value()) {
+        return std::nullopt;  // No optimization direction given.
+    } else if (*minimizing) {
+        statesWithProbability01 =
+            storm::utility::graph::performProb01Min(transitions, transitions.getRowGroupIndices(), backwardTransitions, *phiStates, *psiStates);
+    } else {
+        statesWithProbability01 =
+            storm::utility::graph::performProb01Max(transitions, transitions.getRowGroupIndices(), backwardTransitions, *phiStates, *psiStates);
     }
 
     storm::storage::BitVector maybeStates;
@@ -241,15 +246,17 @@ std::optional<typename GoalStateMerger<ValueType>::ReturnType> GoalStateMerger<V
     auto const& transitions = originalModel.getTransitionMatrix();
     storm::storage::SparseMatrix<ValueType> const backwardTransitions = originalModel.getBackwardTransitions();
     storm::storage::BitVector probGreater0States;
-    if (originalModel.isNondeterministicModel()) {
-        probGreater0States = isMinimizing(formula)
-                                 ? storm::utility::graph::performProbGreater0A(transitions, transitions.getRowGroupIndices(), backwardTransitions, *phiStates,
-                                                                               *psiStates, upperStepBound.has_value(), upperStepBound.value_or(0))
-                                 : storm::utility::graph::performProbGreater0E(backwardTransitions, *phiStates, *psiStates, upperStepBound.has_value(),
-                                                                               upperStepBound.value_or(0));
-    } else {
+    if (!originalModel.isNondeterministicModel()) {
         probGreater0States =
             storm::utility::graph::performProbGreater0(backwardTransitions, *phiStates, *psiStates, upperStepBound.has_value(), upperStepBound.value_or(0));
+    } else if (std::optional<bool> const minimizing = isMinimizing(formula); !minimizing.has_value()) {
+        return std::nullopt;  // No optimization direction given.
+    } else if (*minimizing) {
+        probGreater0States = storm::utility::graph::performProbGreater0A(transitions, transitions.getRowGroupIndices(), backwardTransitions, *phiStates,
+                                                                         *psiStates, upperStepBound.has_value(), upperStepBound.value_or(0));
+    } else {
+        probGreater0States =
+            storm::utility::graph::performProbGreater0E(backwardTransitions, *phiStates, *psiStates, upperStepBound.has_value(), upperStepBound.value_or(0));
     }
 
     storm::storage::BitVector maybeStates;
@@ -304,24 +311,20 @@ std::optional<typename GoalStateMerger<ValueType>::ReturnType> GoalStateMerger<V
     auto const& transitions = originalModel.getTransitionMatrix();
     auto const backwardTransitions = originalModel.getBackwardTransitions();
     storm::storage::BitVector statesWithProb1;
-    if (originalModel.isNondeterministicModel()) {
-        // The set of target states can be extended by the states that reach target with probability 1 without collecting any reward
-        targetStates =
-            isMinimizing(formula)
-                ? storm::utility::graph::performProb1E(transitions, transitions.getRowGroupIndices(), backwardTransitions,
-                                                       originalRewardModel.getStatesWithZeroReward(originalModel.getTransitionMatrix()), targetStates)
-                : storm::utility::graph::performProb1A(transitions, transitions.getRowGroupIndices(), backwardTransitions,
-                                                       originalRewardModel.getStatesWithZeroReward(originalModel.getTransitionMatrix()), targetStates);
-        statesWithProb1 = isMinimizing(formula)
-                              ? storm::utility::graph::performProb1E(transitions, transitions.getRowGroupIndices(), backwardTransitions,
-                                                                     storm::storage::BitVector(originalModel.getNumberOfStates(), true), targetStates)
-                              : storm::utility::graph::performProb1A(transitions, transitions.getRowGroupIndices(), backwardTransitions,
-                                                                     storm::storage::BitVector(originalModel.getNumberOfStates(), true), targetStates);
+    // The set of target states can be extended by the states that reach target with probability 1 without collecting any reward
+    auto const zeroRewardStates = originalRewardModel.getStatesWithZeroReward(originalModel.getTransitionMatrix());
+    storm::storage::BitVector const allStates(originalModel.getNumberOfStates(), true);
+    if (!originalModel.isNondeterministicModel()) {
+        targetStates = storm::utility::graph::performProb1(backwardTransitions, zeroRewardStates, targetStates);
+        statesWithProb1 = storm::utility::graph::performProb1(backwardTransitions, allStates, targetStates);
+    } else if (std::optional<bool> const minimizing = isMinimizing(formula); !minimizing.has_value()) {
+        return std::nullopt;  // No optimization direction given.
+    } else if (*minimizing) {
+        targetStates = storm::utility::graph::performProb1E(transitions, transitions.getRowGroupIndices(), backwardTransitions, zeroRewardStates, targetStates);
+        statesWithProb1 = storm::utility::graph::performProb1E(transitions, transitions.getRowGroupIndices(), backwardTransitions, allStates, targetStates);
     } else {
-        targetStates = storm::utility::graph::performProb1(backwardTransitions,
-                                                           originalRewardModel.getStatesWithZeroReward(originalModel.getTransitionMatrix()), targetStates);
-        statesWithProb1 =
-            storm::utility::graph::performProb1(backwardTransitions, storm::storage::BitVector(originalModel.getNumberOfStates(), true), targetStates);
+        targetStates = storm::utility::graph::performProb1A(transitions, transitions.getRowGroupIndices(), backwardTransitions, zeroRewardStates, targetStates);
+        statesWithProb1 = storm::utility::graph::performProb1A(transitions, transitions.getRowGroupIndices(), backwardTransitions, allStates, targetStates);
     }
     storm::storage::BitVector infinityStates = ~statesWithProb1;
     storm::storage::BitVector maybeStates;
@@ -343,7 +346,7 @@ std::optional<typename GoalStateMerger<ValueType>::ReturnType> GoalStateMerger<V
 
 template<typename ValueType>
 std::optional<typename GoalStateMerger<ValueType>::ReturnType> GoalStateMerger<ValueType>::mergeForCumulativeRewards(
-    storm::logic::RewardOperatorFormula const& formula) const {
+    storm::logic::RewardOperatorFormula const& formula, bool const dropUnreachableFromInit) const {
     auto const& cumulativeRewardFormula = formula.getSubformula().asCumulativeRewardFormula();
     if (cumulativeRewardFormula.isMultiDimensional()) {
         return std::nullopt;  // we don't handle those more sophisticated formulas here.
@@ -370,21 +373,32 @@ std::optional<typename GoalStateMerger<ValueType>::ReturnType> GoalStateMerger<V
     storm::storage::BitVector maybeStates;
     storm::storage::BitVector const statesWithNonZeroRewards = ~originalRewardModel.getStatesWithZeroReward(transitions);
     storm::storage::BitVector const allStates(originalModel.getNumberOfStates(), true);
-    if (originalModel.isNondeterministicModel()) {
-        maybeStates = isMinimizing(formula)
-                          ? storm::utility::graph::performProbGreater0A(transitions, transitions.getRowGroupIndices(), backwardTransitions, allStates,
-                                                                        statesWithNonZeroRewards, stepBound.has_value(), stepBound.value_or(0))
-                          : storm::utility::graph::performProbGreater0E(backwardTransitions, allStates, statesWithNonZeroRewards, stepBound.has_value(),
-                                                                        stepBound.value_or(0));
-    } else {
+    if (!originalModel.isNondeterministicModel()) {
         maybeStates =
             storm::utility::graph::performProbGreater0(backwardTransitions, allStates, statesWithNonZeroRewards, stepBound.has_value(), stepBound.value_or(0));
+    } else if (std::optional<bool> const minimizing = isMinimizing(formula); !minimizing.has_value()) {
+        return std::nullopt;  // No optimization direction given.
+    } else if (*minimizing) {
+        maybeStates = storm::utility::graph::performProbGreater0A(transitions, transitions.getRowGroupIndices(), backwardTransitions, allStates,
+                                                                  statesWithNonZeroRewards, stepBound.has_value(), stepBound.value_or(0));
+    } else {
+        maybeStates =
+            storm::utility::graph::performProbGreater0E(backwardTransitions, allStates, statesWithNonZeroRewards, stepBound.has_value(), stepBound.value_or(0));
+    }
+    auto const noStates = ~allStates;
+    if (dropUnreachableFromInit) {
+        // Only consider the maybestates that are reachable from an initial state.
+        maybeStates = storm::utility::graph::getReachableStates(transitions, originalModel.getInitialStates() & maybeStates, maybeStates, noStates);
     }
     auto const zeroExpectedRewardStates = ~maybeStates;
-    auto const noStates = ~allStates;
 
     auto rewardModels = formula.getReferencedRewardModels();
-    if (originalModel.hasUniqueRewardModel()) {
+    // An unnamed reward operator is reported as the empty name, which we resolve to the actual name of the unique reward model.
+    if (auto unnamedIt = rewardModels.find(""); unnamedIt != rewardModels.end()) {
+        if (!originalModel.hasUniqueRewardModel()) {
+            return std::nullopt;
+        }
+        rewardModels.erase(unnamedIt);
         rewardModels.emplace(originalModel.getUniqueRewardModelName());
     }
     std::vector<std::string> rewardModelNameAsVector(rewardModels.begin(), rewardModels.end());

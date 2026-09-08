@@ -165,6 +165,10 @@ bool SparseParametricModelSimplifier<SparseModelType>::simplify(storm::logic::Fo
     simplifiedFormula = nullptr;
 
     // Go through various cases for the formula, simplify if possible, and decide if state elimination and end component elimination preserves the formula.
+    if (!formula.isProbabilityOperatorFormula() && !formula.isRewardOperatorFormula()) {
+        STORM_LOG_DEBUG("Simplification not possible because the formula is not supported. Formula: " << formula);
+        return false;
+    }
     auto const& operatorFormula = formula.asOperatorFormula();
     STORM_LOG_THROW(!originalModel.isNondeterministicModel() || operatorFormula.hasOptimalityType() || operatorFormula.hasBound(),
                     storm::exceptions::InvalidPropertyException,

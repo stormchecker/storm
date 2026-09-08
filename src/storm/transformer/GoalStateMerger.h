@@ -82,7 +82,7 @@ class GoalStateMerger {
     std::optional<ReturnType> mergeForBoundedUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula,
                                                                 bool const dropUnreachableFromInit) const;
     std::optional<ReturnType> mergeForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula, bool const dropUnreachableFromInit) const;
-    std::optional<ReturnType> mergeForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula) const;
+    std::optional<ReturnType> mergeForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula, bool const dropUnreachableFromInit) const;
 
     storm::models::sparse::Model<ValueType> const& originalModel;
 
