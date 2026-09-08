@@ -5,7 +5,10 @@
 #include <vector>
 
 #include "storm/models/sparse/ModelForward.h"
+#include "storm/storage/BitVector.h"
+#include "storm/utility/OptionalRef.h"
 #include "storm/transformer/bisimulation/Partition.h"
+#include "storm/transformer/bisimulation/WeakBisimulationData.h"
 
 namespace storm::bisimulation {
 
@@ -16,9 +19,11 @@ template<typename ValueType>
 struct QuotientData {
     /*!
      * Computes the state index mappings between the given model and the quotient described by the given partition.
+     * @param preferredRepresentatives if given, the representative of a block is picked among these states whenever the block contains such a state.
      * @note does not compute any choice mappings, cf. below.
      */
-    QuotientData(storm::models::sparse::Model<ValueType> const& model, storm::bisimulation::Partition const& partition);
+    QuotientData(storm::models::sparse::Model<ValueType> const& model, storm::bisimulation::Partition const& partition,
+                 storm::OptionalRef<storm::storage::BitVector const> preferredRepresentatives = storm::NullRef);
 
     std::vector<uint64_t> toQuotientState;        // assigns to each input model state the corresponding quotient state
     std::vector<uint64_t> toRepresentativeState;  // assigns to each quotient state the corresponding representative state in the input model
@@ -37,6 +42,9 @@ struct QuotientData {
         // quotientChoiceGroupIndices->back() == toRepresentativeChoice->size() == quotientChoiceSignatures->size().
     };
     std::optional<SignatureData> signatureData;
+
+    // The state-level information that weak bisimulation works with. Set iff weak bisimulation was computed.
+    std::optional<WeakBisimulationData> weakData;
 };
 
 }  // namespace storm::bisimulation

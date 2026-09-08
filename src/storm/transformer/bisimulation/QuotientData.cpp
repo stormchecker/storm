@@ -12,7 +12,8 @@
 namespace storm::bisimulation {
 
 template<typename ValueType>
-QuotientData<ValueType>::QuotientData(storm::models::sparse::Model<ValueType> const& model, storm::bisimulation::Partition const& partition) {
+QuotientData<ValueType>::QuotientData(storm::models::sparse::Model<ValueType> const& model, storm::bisimulation::Partition const& partition,
+                                      storm::OptionalRef<storm::storage::BitVector const> preferredRepresentatives) {
     uint64_t const undef = std::numeric_limits<uint64_t>::max();
     toQuotientState.assign(model.getNumberOfStates(), undef);
     toRepresentativeState.reserve(partition.getNumberOfBlocks());
@@ -21,7 +22,15 @@ QuotientData<ValueType>::QuotientData(storm::models::sparse::Model<ValueType> co
         for (auto const s : block) {
             toQuotientState[s] = quotientState;
         }
-        toRepresentativeState.push_back(block.front());
+        uint64_t representativeState = block.front();
+        if (preferredRepresentatives) {
+            if (auto const it =
+                    std::find_if(block.begin(), block.end(), [&preferredRepresentatives](auto const s) { return preferredRepresentatives->get(s); });
+                it != block.end()) {
+                representativeState = *it;
+            }
+        }
+        toRepresentativeState.push_back(representativeState);
         ++quotientState;
     });
     STORM_LOG_ASSERT(std::none_of(toQuotientState.begin(), toQuotientState.end(), [&undef](auto const& s) { return s == undef; }),

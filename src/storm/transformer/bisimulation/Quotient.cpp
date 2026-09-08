@@ -4,10 +4,11 @@
 #include <optional>
 
 #include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -24,8 +25,9 @@ template<typename ValueType>
 auto Quotient<ValueType>::buildFromPartition(storm::models::sparse::Model<ValueType> const& model, storm::bisimulation::Options const& options,
                                              storm::bisimulation::PreservationInformation const& preservationInformation,
                                              QuotientData<ValueType> const& quotientData) -> std::shared_ptr<storm::models::sparse::Model<ValueType>> {
-    STORM_LOG_THROW(options.bisimulationType == Options::BisimulationType::Strong, storm::exceptions::NotImplementedException,
-                    "Weak bisimulation is not implemented.");
+    auto const& weakData = quotientData.weakData;
+    bool const isWeak = options.bisimulationType == Options::BisimulationType::Weak;
+    STORM_LOG_ASSERT(isWeak == weakData.has_value(), "Weak bisimulation data must be given for (and only for) weak bisimulation.");
     bool const useSignature = quotientData.signatureData.has_value();
     bool const isNondeterministic = model.isNondeterministicModel();
     STORM_LOG_ASSERT(useSignature || !isNondeterministic, "Signature data is required for nondeterministic models.");
@@ -43,19 +45,53 @@ auto Quotient<ValueType>::buildFromPartition(storm::models::sparse::Model<ValueT
     // Build the transition matrix
     {
         // Helper function to get the distribution over successor quotient states for a given quotient choice.
-        auto getQuotientRow = [&model, &useSignature, &quotientData, &toRepresentativeChoice,
-                               &toQuotientState](uint64_t const quotientChoice) -> std::map<uint64_t, ValueType> {
+        auto getQuotientRow = [&model, &useSignature, &quotientData, &toRepresentativeChoice, &toQuotientState, &isWeak,
+                               &weakData](uint64_t const quotientChoice) -> std::map<uint64_t, ValueType> {
             if (useSignature) {
                 return quotientData.signatureData->quotientChoiceDistributions[quotientChoice];
-            } else {
-                std::map<uint64_t, ValueType> quotientRow;
-                for (auto const& entry : model.getTransitionMatrix().getRow(toRepresentativeChoice[quotientChoice])) {
-                    if (auto const ret = quotientRow.emplace(toQuotientState[entry.getColumn()], entry.getValue()); !ret.second) {
-                        ret.first->second += entry.getValue();
+            }
+            uint64_t const representative = toRepresentativeChoice[quotientChoice];
+            uint64_t const ownQuotientState = toQuotientState[representative];
+            if (isWeak) {
+             if (weakData->divergentStates.get(representative)) {
+                     // The states of this block can never leave it, so the quotient state is absorbing. For a CTMC the rate of the self-loop is irrelevant.
+                     return {{ownQuotientState, storm::utility::one<ValueType>()}};
+                 }
+                // Non-divergent, representative states must not be silent because we have to represent the probability of exiting a block.
+                // It is ruled out by the caller passing the non-silent states as the preferred representatives in the constructor of QuotientData.
+                STORM_LOG_ASSERT(!weakData->silentStates.get(representative), "Weak bisimulation quotient: The representative of a non-divergent block is silent.");
+             }
+            std::map<uint64_t, ValueType> quotientRow;
+            for (auto const& entry : model.getTransitionMatrix().getRow(representative)) {
+                if (auto const ret = quotientRow.emplace(toQuotientState[entry.getColumn()], entry.getValue()); !ret.second) {
+                    ret.first->second += entry.getValue();
+                }
+            }
+            if constexpr (!storm::IsIntervalType<ValueType>) {
+                if (isWeak && !weakData->stepSensitiveStates.get(representative)) {
+                    // Moves within the own block are unobservable, so they are dropped.
+                    if (auto const ownBlockIt = quotientRow.find(ownQuotientState); ownBlockIt != quotientRow.end()) {
+                        quotientRow.erase(ownBlockIt);
+                        // If the quotientRow is now empty, it means that the representative state of this non-divergent block is silent.
+                        // We already ruled that out above but check here again for consistency.
+                        STORM_LOG_THROW(!quotientRow.empty(), storm::exceptions::UnexpectedException,
+                                        "Weak bisimulation quotient: the representative of a non-divergent block cannot leave its block.");
+                        if (model.isDiscreteTimeModel()) {
+                            // For a discrete-time model the remaining probabilities have to be renormalized.
+                            // Note that we deliberately renormalize by the sum of the remaining entries rather than by 1 - ownBlockIt->second
+                            // to avoid numerical issues if the two values are not exactly equal.
+                            ValueType escapeValue = storm::utility::zero<ValueType>();
+                            for (auto const& [_, value] : quotientRow) {
+                                escapeValue += value;
+                            }
+                            for (auto& [_, value] : quotientRow) {
+                                value /= escapeValue;
+                            }
+                        }
                     }
                 }
-                return quotientRow;
             }
+            return quotientRow;
         };
 
         storm::storage::SparseMatrixBuilder<ValueType> builder(numberOfQuotientChoices, numberOfQuotientStates, 0, true, isNondeterministic,

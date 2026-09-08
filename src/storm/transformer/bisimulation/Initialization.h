@@ -9,9 +9,11 @@
 #include "storm/logic/FormulasForwardDeclarations.h"
 #include "storm/models/sparse/ModelForward.h"
 #include "storm/storage/BitVector.h"
+#include "storm/storage/SparseMatrix.h"
 #include "storm/transformer/bisimulation/Options.h"
 #include "storm/transformer/bisimulation/Partition.h"
 #include "storm/transformer/bisimulation/PreservationInformation.h"
+#include "storm/transformer/bisimulation/WeakBisimulationData.h"
 
 namespace storm::bisimulation {
 
@@ -26,6 +28,19 @@ class Initialization {
     std::optional<std::vector<uint64_t>> getChoiceClasses() const;
 
     Partition getInitialStatePartition(std::optional<std::vector<uint64_t>> const& choiceClasses = {}) const;
+
+    /*!
+     * Computes the state-level information that weak bisimulation requires on top of the partition, and refines the given (initial) partition so that it
+     * becomes homogeneous with respect to that information.
+     *
+     * @param partition the initial partition, which already has to respect the preserved annotations. Is split so that no block contains both divergent and
+     * non-divergent states.
+     * @param backwardTransitions the transposed transition matrix of the model.
+     * @param preservationInformation what the minimization has to preserve, cf. getPreservationInformation.
+     * @note only applicable to deterministic models and if weak bisimulation was requested.
+     */
+    WeakBisimulationData getWeakBisimulationData(Partition& partition, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                 PreservationInformation const& preservationInformation) const;
 
    private:
     storm::models::sparse::Model<ValueType> const& model;

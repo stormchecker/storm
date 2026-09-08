@@ -78,6 +78,18 @@ bool Partition::isSubBlockOf(Block const& subblock, Block const& superblock) con
     return subblock.data() >= superblock.data() && (subblock.data() + subblock.size()) <= (superblock.data() + superblock.size());
 }
 
+bool Partition::isEqualBlock(Block const& lhs, Block const& rhs) const {
+    STORM_LOG_ASSERT(checkBlockValidity(lhs), "Invalid block.");
+    STORM_LOG_ASSERT(checkBlockValidity(rhs), "Invalid block.");
+    return lhs.data() == rhs.data() && lhs.size() == rhs.size();
+}
+
+bool Partition::isSameBlock(ElementIndex const& element1, ElementIndex const& element2) const {
+    STORM_LOG_ASSERT(element1 < elementToBlockIndex.size() && element2 < elementToBlockIndex.size(), "Element index out of bounds");
+    // Each block is identified by the index at which it starts, so the elements are in the same block iff their (finest) blocks start at the same index.
+    return elementToBlockIndex[element1] == elementToBlockIndex[element2];
+}
+
 bool Partition::isBlockOfElement(Block const& block, ElementIndex const& element) const {
     Block const eBlock = getBlockOfElement(element);
     return eBlock.data() == block.data() && eBlock.size() == block.size();

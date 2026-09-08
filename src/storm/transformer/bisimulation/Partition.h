@@ -148,6 +148,18 @@ class Partition {
     bool isSubBlockOf(Block const& subblock, Block const& superblock) const;
 
     /*!
+     * @return true iff the two given blocks are the same block of this partition.
+     * @note this has constant runtime, i.e., is preferable over comparing the contents of the blocks
+     */
+    bool isEqualBlock(Block const& lhs, Block const& rhs) const;
+
+    /*!
+     * @return true iff the two given elements are in the same block.
+     * @note this has constant runtime and does not have to look up the blocks themselves
+     */
+    bool isSameBlock(ElementIndex const& element1, ElementIndex const& element2) const;
+
+    /*!
      * @return true iff the (smallest known) block of the given element coincides with the given block.
      */
     bool isBlockOfElement(Block const& block, ElementIndex const& element) const;
