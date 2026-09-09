@@ -70,7 +70,12 @@ To update, you can follow these steps:
 
 ## Spot
 
-To update (shipped version of Spot), just change the `SPOT_SHIPPED_VERSION` in `$STORM_DIR/resources/3rdparty/include_spot.cmake`.
+To update the shipped version of Spot, change `SPOT_SHIPPED_VERSION` in `$STORM_DIR/resources/3rdparty/include_spot.cmake`.
+
+A version change also requires removing the previously built tree in your build directory:
+```
+rm -rf <build-dir>/resources/3rdparty/spot_src <build-dir>/resources/3rdparty/spot
+```
 
 
 ## Sylvan & Lace
