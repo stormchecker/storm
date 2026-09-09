@@ -270,6 +270,14 @@ void AbstractEquationSolver<ValueType>::setSolutionBounds(SolutionBounds<ValueTy
 }
 
 template<typename ValueType>
+void AbstractEquationSolver<ValueType>::setSolutionBoundsExact(std::vector<ValueType> const& x) const {
+    SolutionBounds<ValueType> bounds;
+    bounds.lower = x;
+    bounds.upper = x;
+    this->setSolutionBounds(std::move(bounds));
+}
+
+template<typename ValueType>
 void AbstractEquationSolver<ValueType>::setSolutionBoundsFromPrecision(std::vector<ValueType> const& x, ValueType const& precision, bool relative) const {
     if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot derive solution bounds from a precision for rational functions.");

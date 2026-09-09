@@ -424,6 +424,23 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::performPolicy
 
         STORM_LOG_INFO("Number of iterations: " << iterations);
 
+        // Once the scheduler stops improving, x is what the last solve of the induced equation system produced,
+        // so whatever that solver established about its solution carries over to ours. Note that this is the
+        // only statement policy iteration can make: its own termination says the scheduler is optimal, not how
+        // accurately the values under it were computed.
+        if (status == SolverStatus::Converged) {
+            storm::solver::SolutionBounds<SolutionType> solutionBounds;
+            if (solver->hasSolutionLowerBounds()) {
+                solutionBounds.lower = solver->getSolutionLowerBounds();
+            }
+            if (solver->hasSolutionUpperBounds()) {
+                solutionBounds.upper = solver->getSolutionUpperBounds();
+            }
+            if (solutionBounds.hasAny()) {
+                this->setSolutionBounds(std::move(solutionBounds));
+            }
+        }
+
         this->reportStatus(status, iterations);
 
         // If requested, we store the scheduler for retrieval.
@@ -988,6 +1005,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         };
         this->startMeasureProgress();
         auto status = rsHelper.RS(x, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), dir, rsCallback);
+
+        // Rational search reports convergence only once it has verified a sharpened candidate to be an exact fixed
+        // point of the equation system, so on convergence the result is the solution rather than an approximation of it.
+        if (status == SolverStatus::Converged) {
+            this->setSolutionBoundsExact(x);
+        }
 
         this->reportStatus(status, numIterations);
 

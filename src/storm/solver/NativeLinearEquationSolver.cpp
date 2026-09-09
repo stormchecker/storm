@@ -626,6 +626,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsRationalSearch(Environ
     this->startMeasureProgress();
     auto status = rsHelper.RS(x, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()), {}, rsCallback);
 
+    // Rational search reports convergence only once it has verified a sharpened candidate to be an exact fixed
+    // point of the equation system, so on convergence the result is the solution rather than an approximation of it.
+    if (status == SolverStatus::Converged) {
+        this->setSolutionBoundsExact(x);
+    }
+
     this->reportStatus(status, numIterations);
 
     if (!this->isCachingEnabled()) {

@@ -251,6 +251,16 @@ class AbstractEquationSolver {
      */
     void setSolutionBoundsFromPrecision(std::vector<ValueType> const& x, ValueType const& precision, bool relative) const;
 
+    /*!
+     * Reports the given solution as an exact one, i.e. stores it as both the lower and the upper bound. Only for
+     * procedures that end up at the solution itself rather than approaching it, such as the direct methods and
+     * the ones that verify an exact fixed point. Reading this as exact is subject to the same rounding as every
+     * other bound: for an inexact value type it means the procedure is exact up to its arithmetic.
+     *
+     * @param x The computed solution.
+     */
+    void setSolutionBoundsExact(std::vector<ValueType> const& x) const;
+
     void createUpperBoundsVector(std::vector<ValueType>& upperBoundsVector) const;
     void createUpperBoundsVector(std::unique_ptr<std::vector<ValueType>>& upperBoundsVector, uint64_t length) const;
     void createLowerBoundsVector(std::vector<ValueType>& lowerBoundsVector) const;
