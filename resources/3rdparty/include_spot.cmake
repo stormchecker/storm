@@ -55,9 +55,9 @@ if(NOT STORM_DISABLE_SPOT)
             set(BDDX_RPATH_FIX_COMMAND2 "true") #no op
         endif()
 
-        # download and install shipped Spot as shared libraries.
-        # set Spot version
-        set(SPOT_SHIPPED_VERSION 2.15.1)
+        # Download and install shipped Spot as shared libraries.
+        # Set Spot version
+        set(SPOT_SHIPPED_VERSION 2.16)
         set(STORM_SPOT_CC  "${STORM_RESOURCES_C_COMPILER}")
         set(STORM_SPOT_CXX "${STORM_RESOURCES_CXX_COMPILER}")
         # Clang reports an unused argument -pthread. Using -Qunused-arguments silences this warning.
