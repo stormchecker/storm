@@ -1002,9 +1002,21 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
                     return newChoicesWithoutReward;
                 });
 
-            std::vector<ExtendedSolutionType> resultInEcQuotient = std::move(result.values);
-            result.values.resize(ecElimResult.oldToNewStateMapping.size());
-            storm::utility::vector::selectVectorValues(result.values, ecElimResult.oldToNewStateMapping, resultInEcQuotient);
+            // Map the values, and any bounds on them, from the quotient back to the original states. All states of
+            // an eliminated end component share the value of the quotient state, so a bound on the latter bounds
+            // each of them.
+            auto liftFromEcQuotient = [&ecElimResult](std::vector<ExtendedSolutionType>& valuesInEcQuotient) {
+                std::vector<ExtendedSolutionType> lifted(ecElimResult.oldToNewStateMapping.size());
+                storm::utility::vector::selectVectorValues(lifted, ecElimResult.oldToNewStateMapping, valuesInEcQuotient);
+                return lifted;
+            };
+            if (result.solutionBounds.hasLower()) {
+                result.solutionBounds.lower = liftFromEcQuotient(*result.solutionBounds.lower);
+            }
+            if (result.solutionBounds.hasUpper()) {
+                result.solutionBounds.upper = liftFromEcQuotient(*result.solutionBounds.upper);
+            }
+            result.values = liftFromEcQuotient(result.values);
             return result;
         }
     }
@@ -1393,6 +1405,7 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
     ModelCheckerHint const& hint) {
     // Prepare resulting vector.
     std::vector<ExtendedSolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ExtendedSolutionType>());
+    storm::solver::SolutionBounds<ExtendedSolutionType> resultBounds;
 
     // Determine which states have a reward that is infinity or less than infinity.
     QualitativeStateSetsReachabilityRewards qualitativeStateSets = getQualitativeStateSetsReachabilityRewards(
@@ -1490,6 +1503,20 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
                     }
                 }
             } else {
+                // We only operated on the maybe states, and we must recover the qualitative values for the other
+                // states. Outside of the maybe states the reward is exactly zero or exactly infinity, so the
+                // entries that result already holds bound those states from both sides.
+                auto embedBound = [&result, &qualitativeStateSets](std::vector<SolutionType> const& boundForMaybeStates) {
+                    std::vector<ExtendedSolutionType> bound(result);
+                    storm::utility::vector::setVectorValues(bound, qualitativeStateSets.maybeStates, boundForMaybeStates);
+                    return bound;
+                };
+                if (resultForMaybeStates.solutionBounds.hasLower()) {
+                    resultBounds.lower = embedBound(*resultForMaybeStates.solutionBounds.lower);
+                }
+                if (resultForMaybeStates.solutionBounds.hasUpper()) {
+                    resultBounds.upper = embedBound(*resultForMaybeStates.solutionBounds.upper);
+                }
                 // Set values of resulting vector according to result.
                 storm::utility::vector::setVectorValues(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                 if (produceScheduler) {
@@ -1512,9 +1539,13 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
 
     if constexpr (storm::IsIntervalType<ValueType>) {
-        return ExtendedReturnType(std::move(result));
+        ExtendedReturnType returnValue(std::move(result));
+        returnValue.solutionBounds = std::move(resultBounds);
+        return returnValue;
     } else {
-        return ExtendedReturnType(std::move(result), std::move(scheduler));
+        ExtendedReturnType returnValue(std::move(result), std::move(scheduler));
+        returnValue.solutionBounds = std::move(resultBounds);
+        return returnValue;
     }
 }
 
