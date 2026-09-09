@@ -1679,8 +1679,10 @@ class SMTMinimalLabelSetGenerator {
             } else {
                 for (auto const& rewName : rewardName.get()) {
                     results.push_back(storm::utility::zero<T>());
-                    allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeReachabilityRewards(
-                        env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), model.getRewardModel(rewName), psiStates, false);
+                    allStatesResult =
+                        storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeReachabilityRewards(
+                            env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), model.getRewardModel(rewName), psiStates, false)
+                            .values;
                     for (auto state : model.getInitialStates()) {
                         results.back() = std::max(results.back(), allStatesResult[state]);
                     }
