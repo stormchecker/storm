@@ -423,6 +423,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::performPolicy
         } while (status == SolverStatus::InProgress);
 
         STORM_LOG_INFO("Number of iterations: " << iterations);
+
         this->reportStatus(status, iterations);
 
         // If requested, we store the scheduler for retrieval.
@@ -647,6 +648,15 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         this->startMeasureProgress();
         auto statusIters = helper.solveEquations(lowerX, *upperX, b, numIterations,
                                                  storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), dir, gviCallback);
+        // Read the enclosure out before the point estimate below overwrites x, which the lower bound aliases, with
+        // the average of the two sides. Guessing value iteration only ever writes back a guess it has verified, so
+        // the two vectors enclose the solution in every iteration and both sides hold even if it was aborted before
+        // converging.
+        storm::solver::SolutionBounds<SolutionType> solutionBounds;
+        solutionBounds.lower = lowerX;
+        solutionBounds.upper = *upperX;
+        this->setSolutionBounds(std::move(solutionBounds));
+
         auto two = storm::utility::convertNumber<ValueType>(2.0);
         storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
             lowerX, *upperX, x, [&two](ValueType const& first, ValueType const& second) -> ValueType { return (first + second) / two; });
@@ -877,8 +887,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         if (this->hasRelevantValues()) {
             optionalRelevantValues = this->getRelevantValues();
         }
+        storm::solver::SolutionBounds<ValueType> solutionBounds;
         auto status = sviHelper.SVI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(), precision, dir, lowerBound, upperBound,
-                                    sviCallback, optionalRelevantValues);
+                                    sviCallback, optionalRelevantValues, &solutionBounds);
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {

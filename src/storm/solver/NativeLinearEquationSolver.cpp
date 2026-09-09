@@ -490,8 +490,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(En
     }
     this->startMeasureProgress();
     helper::SoundValueIterationHelper<ValueType, true> sviHelper(viOperator);
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
     auto status = sviHelper.SVI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(), precision, {}, lowerBound, upperBound,
-                                sviCallback, optionalRelevantValues);
+                                sviCallback, optionalRelevantValues, &solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
 
     this->reportStatus(status, numIterations);
 
@@ -575,6 +579,15 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsGuessingValueIteration
     auto status = helper.solveEquations(*lowerX, *upperX, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
                                         {},  // No optimization dir
                                         gviCallback);
+    // Read the enclosure out before the point estimate below overwrites x, which the lower bound aliases, with
+    // the average of the two sides. Guessing value iteration only ever writes back a guess it has verified, so
+    // the two vectors enclose the solution in every iteration and both sides hold even if it was aborted before
+    // converging.
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
+    solutionBounds.lower = *lowerX;
+    solutionBounds.upper = *upperX;
+    this->setSolutionBounds(std::move(solutionBounds));
+
     auto two = storm::utility::convertNumber<ValueType>(2.0);
     storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
         *lowerX, *upperX, x, [&two](ValueType const& first, ValueType const& second) -> ValueType { return (first + second) / two; });
