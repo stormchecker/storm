@@ -864,35 +864,39 @@ SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeConditio
     if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support computing conditional probabilities with interval models.");
     } else {
+        // The conditional value is only defined for states that reach the condition with positive probability.
+        storm::storage::BitVector const conditionProbGreater0States =
+            storm::utility::graph::performProbGreater0(backwardTransitions, storm::storage::BitVector(conditionStates.size(), true), conditionStates);
+        STORM_LOG_THROW(goal.hasRelevantValues() ? goal.relevantValues().isSubsetOf(conditionProbGreater0States) : !conditionProbGreater0States.empty(),
+                        storm::exceptions::InvalidPropertyException, "Trying to compute an undefined conditional value: the condition is not reachable.");
+
         // Prepare result vector.
         std::vector<ExtendedSolutionType> result(transitionMatrix.getRowCount(), storm::utility::positiveInfinity<SolutionType>());
 
-        if (!conditionStates.empty()) {
-            BaierTransformedModel transformedModel =
-                computeBaierTransformation(env, transitionMatrix, backwardTransitions, targetStates, conditionStates, boost::none);
+        BaierTransformedModel transformedModel =
+            computeBaierTransformation(env, transitionMatrix, backwardTransitions, targetStates, conditionStates, boost::none);
 
-            if (transformedModel.noTargetStates) {
-                storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, storm::utility::zero<ValueType>());
+        if (transformedModel.noTargetStates) {
+            storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, storm::utility::zero<ValueType>());
+        } else {
+            // At this point, we do not need to check whether there are 'before' states, since the condition
+            // states were non-empty so there is at least one state with a positive probability of satisfying
+            // the condition.
+
+            // Now compute reachability probabilities in the transformed model.
+            storm::storage::SparseMatrix<ValueType> const& newTransitionMatrix = transformedModel.transitionMatrix.get();
+            storm::storage::BitVector newRelevantValues;
+            if (goal.hasRelevantValues()) {
+                newRelevantValues = transformedModel.getNewRelevantStates(goal.relevantValues());
             } else {
-                // At this point, we do not need to check whether there are 'before' states, since the condition
-                // states were non-empty so there is at least one state with a positive probability of satisfying
-                // the condition.
-
-                // Now compute reachability probabilities in the transformed model.
-                storm::storage::SparseMatrix<ValueType> const& newTransitionMatrix = transformedModel.transitionMatrix.get();
-                storm::storage::BitVector newRelevantValues;
-                if (goal.hasRelevantValues()) {
-                    newRelevantValues = transformedModel.getNewRelevantStates(goal.relevantValues());
-                } else {
-                    newRelevantValues = transformedModel.getNewRelevantStates();
-                }
-                goal.setRelevantValues(std::move(newRelevantValues));
-                std::vector<ValueType> conditionalProbabilities = computeUntilProbabilities(
-                    env, std::move(goal), newTransitionMatrix, newTransitionMatrix.transpose(),
-                    storm::storage::BitVector(newTransitionMatrix.getRowCount(), true), transformedModel.targetStates.get(), qualitative);
-
-                storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, conditionalProbabilities);
+                newRelevantValues = transformedModel.getNewRelevantStates();
             }
+            goal.setRelevantValues(std::move(newRelevantValues));
+            std::vector<ValueType> conditionalProbabilities =
+                computeUntilProbabilities(env, std::move(goal), newTransitionMatrix, newTransitionMatrix.transpose(),
+                                          storm::storage::BitVector(newTransitionMatrix.getRowCount(), true), transformedModel.targetStates.get(), qualitative);
+
+            storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, conditionalProbabilities);
         }
 
         return result;
@@ -908,34 +912,38 @@ SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeConditio
     if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support computing conditional rewards with interval models.");
     } else {
+        // The conditional value is only defined for states that reach the condition with positive probability.
+        storm::storage::BitVector const conditionProbGreater0States =
+            storm::utility::graph::performProbGreater0(backwardTransitions, storm::storage::BitVector(conditionStates.size(), true), conditionStates);
+        STORM_LOG_THROW(goal.hasRelevantValues() ? goal.relevantValues().isSubsetOf(conditionProbGreater0States) : !conditionProbGreater0States.empty(),
+                        storm::exceptions::InvalidPropertyException, "Trying to compute an undefined conditional value: the condition is not reachable.");
+
         // Prepare result vector.
         std::vector<ExtendedSolutionType> result(transitionMatrix.getRowCount(), storm::utility::positiveInfinity<SolutionType>());
 
-        if (!conditionStates.empty()) {
-            BaierTransformedModel transformedModel = computeBaierTransformation(env, transitionMatrix, backwardTransitions, targetStates, conditionStates,
-                                                                                rewardModel.getTotalRewardVector(transitionMatrix));
+        BaierTransformedModel transformedModel = computeBaierTransformation(env, transitionMatrix, backwardTransitions, targetStates, conditionStates,
+                                                                            rewardModel.getTotalRewardVector(transitionMatrix));
 
-            if (transformedModel.noTargetStates) {
-                storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, storm::utility::zero<ValueType>());
+        if (transformedModel.noTargetStates) {
+            storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, storm::utility::zero<ValueType>());
+        } else {
+            // At this point, we do not need to check whether there are 'before' states, since the condition
+            // states were non-empty so there is at least one state with a positive probability of satisfying
+            // the condition.
+
+            // Now compute reachability probabilities in the transformed model.
+            storm::storage::SparseMatrix<ValueType> const& newTransitionMatrix = transformedModel.transitionMatrix.get();
+            storm::storage::BitVector newRelevantValues;
+            if (goal.hasRelevantValues()) {
+                newRelevantValues = transformedModel.getNewRelevantStates(goal.relevantValues());
             } else {
-                // At this point, we do not need to check whether there are 'before' states, since the condition
-                // states were non-empty so there is at least one state with a positive probability of satisfying
-                // the condition.
-
-                // Now compute reachability probabilities in the transformed model.
-                storm::storage::SparseMatrix<ValueType> const& newTransitionMatrix = transformedModel.transitionMatrix.get();
-                storm::storage::BitVector newRelevantValues;
-                if (goal.hasRelevantValues()) {
-                    newRelevantValues = transformedModel.getNewRelevantStates(goal.relevantValues());
-                } else {
-                    newRelevantValues = transformedModel.getNewRelevantStates();
-                }
-                goal.setRelevantValues(std::move(newRelevantValues));
-                std::vector<ExtendedSolutionType> conditionalRewards =
-                    computeReachabilityRewards(env, std::move(goal), newTransitionMatrix, newTransitionMatrix.transpose(), transformedModel.stateRewards.get(),
-                                               transformedModel.targetStates.get(), qualitative);
-                storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, conditionalRewards);
+                newRelevantValues = transformedModel.getNewRelevantStates();
             }
+            goal.setRelevantValues(std::move(newRelevantValues));
+            std::vector<ExtendedSolutionType> conditionalRewards =
+                computeReachabilityRewards(env, std::move(goal), newTransitionMatrix, newTransitionMatrix.transpose(), transformedModel.stateRewards.get(),
+                                           transformedModel.targetStates.get(), qualitative);
+            storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, conditionalRewards);
         }
 
         return result;
