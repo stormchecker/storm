@@ -121,18 +121,26 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
         }
         viOperator->freeAuxiliaryVector();
     }
-    if (solutionBounds != nullptr) {
+    if (solutionBounds != nullptr && mult == MultiplicationStyle::GaussSeidel) {
         /*
          * Value iteration itself carries a sound bound on the solution whenever an entire iteration moved the
-         * operand in a single direction. Writing T for the (Gauss-Seidel or regular) update operator, an
-         * iteration that decreased nothing means x_old <= T(x_old), so x_old is a post-fixpoint and therefore
-         * below the greatest fixpoint; since x = T(x_old) and T is monotone, x is below it as well. The
-         * equation systems handed to this helper have a unique fixpoint, so that is the solution and x is a
-         * lower bound on it. The dual argument applies to an iteration that increased nothing.
+         * operand in a single direction. Writing T for the update operator and x for the operand at the end of
+         * the last iteration, an iteration that decreased nothing means x >= x_old, and every entry of x was
+         * computed from entries that are at most the corresponding ones of x, so monotonicity of T gives
+         * x <= T(x). Iterating T from there yields an increasing sequence that converges to a fixpoint, and the
+         * equation systems handed to this helper have only one, so that is the solution and x lies below it.
+         * The dual argument applies to an iteration that increased nothing.
          *
          * Note that this reasoning does not depend on the iteration having converged, nor on the operand having
          * been initialized below (resp. above) the solution: it is a property of the last completed iteration
          * alone, which is exactly what the backend records.
+         *
+         * It does depend on the operand being updated in place: the backend learns the direction by comparing
+         * the new value of an entry against the one it overwrites, which is the previous iterate only for
+         * Gauss-Seidel. With a regular multiplication the two operands alternate, so the entry being overwritten
+         * holds the iterate from two steps ago (and, in the very first iteration, whatever the auxiliary vector
+         * happened to contain), which says nothing about the direction of the last step. Nothing is claimed
+         * there rather than claiming something unsound.
          */
         if (backend.nonDecreasing()) {
             solutionBounds->lower = operand;
