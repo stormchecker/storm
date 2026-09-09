@@ -129,7 +129,9 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
          * computed from entries that are at most the corresponding ones of x, so monotonicity of T gives
          * x <= T(x). Iterating T from there yields an increasing sequence that converges to a fixpoint, and the
          * equation systems handed to this helper have only one, so that is the solution and x lies below it.
-         * The dual argument applies to an iteration that increased nothing.
+         * The dual argument applies to an iteration that increased nothing. Both apply at once to an iteration
+         * that moved nothing at all: the operator reproduced its operand, so x is the fixed point and bounds
+         * itself from either side.
          *
          * Note that this reasoning does not depend on the iteration having converged, nor on the operand having
          * been initialized below (resp. above) the solution: it is a property of the last completed iteration
@@ -144,7 +146,8 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
          */
         if (backend.nonDecreasing()) {
             solutionBounds->lower = operand;
-        } else if (backend.nonIncreasing()) {
+        }
+        if (backend.nonIncreasing()) {
             solutionBounds->upper = operand;
         }
     }
