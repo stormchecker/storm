@@ -66,7 +66,7 @@ Partition::Block Partition::getBlockOfElement(ElementIndex element) const {
     return getBlockFromIndex(elementToBlockIndex[element]);
 }
 
-bool Partition::contains(ElementIndex element, Block const& block) const {
+bool Partition::contains(Block const& block, ElementIndex element) const {
     // We use the fact that each pair of blocks is either disjoint or one is a subset of the other.
     return isSubBlockOf(getBlockOfElement(element), block);
 }

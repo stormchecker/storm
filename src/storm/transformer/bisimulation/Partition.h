@@ -136,10 +136,10 @@ class Partition {
     Block getBlockOfElement(ElementIndex element) const;
 
     /*!
-     * @return true iff the given element is contained in the given block.
+     * @return true iff the given block contains the given element.
      * @note this has constant runtime, i.e., is preferable over a linear search over the block
      */
-    bool contains(ElementIndex element, Block const& block) const;
+    bool contains(Block const& block, ElementIndex element) const;
 
     /*!
      * @return true iff all elements of the given subblock are contained in the given superblock.
@@ -161,6 +161,7 @@ class Partition {
 
     /*!
      * @return true iff the (smallest known) block of the given element coincides with the given block.
+     * @note isBlockOfElement(b,e) implies contains(b,e), but the converse is not true as the former only holds if b is the smallest known block containing e.
      */
     bool isBlockOfElement(Block const& block, ElementIndex const& element) const;
 
@@ -404,8 +405,9 @@ class Partition {
      * @return a pair containing first the sub-block that is not in the range and then the sub-block in the range. One of them can be empty.
      */
     template<typename SplitRange>
-        requires std::ranges::input_range<SplitRange> && std::same_as<std::ranges::range_value_t<SplitRange>, ElementIndex>
-    std::pair<Block, Block> splitBlockByRange(Block const& block, SplitRange const& r) {
+        requires std::ranges::input_range<std::remove_reference_t<SplitRange>> &&
+                 std::same_as<std::ranges::range_value_t<std::remove_reference_t<SplitRange>>, ElementIndex>
+    std::pair<Block, Block> splitBlockByRange(Block const& block, SplitRange&& r) {
         STORM_LOG_ASSERT(!isProperSuperBlock(block), "Tried to split a block that consists of multiple sub-blocks.");
         STORM_LOG_ASSERT(!block.empty(), "Tried to split an empty block");
 

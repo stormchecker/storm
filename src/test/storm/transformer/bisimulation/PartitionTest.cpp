@@ -32,7 +32,7 @@ bool equalBlocks(storm::bisimulation::Partition const& partition, std::initializ
 
     // Also test the contains method
     for (auto const& e : expected) {
-        EXPECT_TRUE(partition.contains(e, actual)) << "Element " << e << " not in block " << blockToString(actual);
+        EXPECT_TRUE(partition.contains(actual, e)) << "Element " << e << " not in block " << blockToString(actual);
     }
 
     return expectedContainsActual && actualContainsExpected;
@@ -71,13 +71,13 @@ TEST(PartitionTest, Basic) {
     uint64_t seenSubBlocks = 0;  // very "smart" (aka lazy) encoding of the seen subsets
     partition.forEachSubBlock(oddBlock, [&partition, &seenSubBlocks](auto const& block) {
         ASSERT_TRUE(partition.checkBlockValidity(block)) << "Block " << blockToString(block) << " is not valid.";
-        if (partition.contains(1, block)) {
+        if (partition.contains(block, 1)) {
             EXPECT_TRUE(equalBlocks(partition, {1, 7}, block));
             seenSubBlocks += 1;
-        } else if (partition.contains(3, block)) {
+        } else if (partition.contains(block, 3)) {
             EXPECT_TRUE(equalBlocks(partition, {3, 9}, block));
             seenSubBlocks += 10;
-        } else if (partition.contains(5, block)) {
+        } else if (partition.contains(block, 5)) {
             EXPECT_TRUE(equalBlocks(partition, {5}, block));
             seenSubBlocks += 100;
         } else {
@@ -89,8 +89,8 @@ TEST(PartitionTest, Basic) {
 
     // Check if the contains method works as expected
     for (auto i = 0ul; i < 10; ++i) {
-        EXPECT_EQ(partition.contains(i, evenBlock), i % 2 == 0) << "Element " << i << " not in block " << blockToString(i % 2 == 0 ? evenBlock : oddBlock);
-        EXPECT_EQ(partition.contains(i, oddBlock), i % 2 != 0) << "Element " << i << " in block " << blockToString(i % 2 != 0 ? oddBlock : evenBlock);
+        EXPECT_EQ(partition.contains(evenBlock, i), i % 2 == 0) << "Element " << i << " not in block " << blockToString(i % 2 == 0 ? evenBlock : oddBlock);
+        EXPECT_EQ(partition.contains(oddBlock, i), i % 2 != 0) << "Element " << i << " in block " << blockToString(i % 2 != 0 ? oddBlock : evenBlock);
     }
 
     EXPECT_TRUE(partition.isProperSuperBlock(oddBlock));
@@ -167,11 +167,11 @@ TEST(PartitionTest, SplitByClustering) {
     EXPECT_EQ(3ul, partition.getNumberOfBlocks());
     partition.forEachBlock([&partition](auto const& block) {
         ASSERT_TRUE(partition.checkBlockValidity(block)) << "Block " << blockToString(block) << " is not valid.";
-        if (partition.contains(0, block)) {
+        if (partition.contains(block, 0)) {
             EXPECT_TRUE(equalBlocks(partition, {0, 2, 4}, block));
-        } else if (partition.contains(1, block)) {
+        } else if (partition.contains(block, 1)) {
             EXPECT_TRUE(equalBlocks(partition, {1, 3}, block));
-        } else if (partition.contains(5, block)) {
+        } else if (partition.contains(block, 5)) {
             EXPECT_TRUE(equalBlocks(partition, {5}, block));
         } else {
             FAIL() << "Block " << blockToString(block) << " does not contain any expected elements.";
@@ -297,7 +297,7 @@ TEST(PartitionTest, NonSuperBlockSet) {
     auto b0 = nonSuperBlockSet.pop();
     auto b1 = nonSuperBlockSet.pop();
     EXPECT_TRUE(nonSuperBlockSet.empty());
-    if (partition.contains(1, b0)) {
+    if (partition.contains(b0, 1)) {
         EXPECT_TRUE(equalBlocks(partition, {1, 3, 5}, b0));
         EXPECT_TRUE(equalBlocks(partition, {0, 2, 4}, b1));
     } else {

@@ -1,6 +1,8 @@
 #include "storm/transformer/bisimulation/Refinement.h"
 
 #include <algorithm>
+#include <limits>
+#include <queue>
 #include <ranges>
 #include <type_traits>
 
@@ -103,7 +105,9 @@ struct SplitterRefinementContext {
     /*!
      * @return true iff the number of steps the given state takes within its own block is observable, i.e., iff it has to be treated as in strong bisimulation.
      */
-    bool isStepSensitive(uint64_t const state) const requires isWeak {
+    bool isStepSensitive(uint64_t const state) const
+        requires isWeak
+    {
         if constexpr (isWeakDiscreteTime) {
             return weakData->stepSensitiveStates.get(state);
         } else {
@@ -123,8 +127,7 @@ struct SplitterRefinementContext {
 
     /// The scratch space every mode needs.
     struct DefaultCache {
-        explicit DefaultCache(Partition const& partition)
-            : predecessorToSplitterProbabilities(partition.getNumberOfElements()), predecessorBlocks(partition) {}
+        explicit DefaultCache(Partition const& partition) : predecessorToSplitterProbabilities(partition.getNumberOfElements()), predecessorBlocks(partition) {}
         StateMapping<ValueType> predecessorToSplitterProbabilities;
         Partition::NonSuperBlockSet predecessorBlocks;
     };
@@ -133,15 +136,14 @@ struct SplitterRefinementContext {
     struct WeakDiscreteTimeCache : public DefaultCache {
         explicit WeakDiscreteTimeCache(Partition const& partition)
             : DefaultCache(partition),
-              weakLabels(partition.getNumberOfElements()),
-              conditionalValues(partition.getNumberOfElements(), storm::utility::zero<ValueType>()) {}
-        StateMapping<std::set<uint64_t>> weakLabels;  // for each state, the set of conditional-probability classes it can reach silently
-        // for each state of the block being refined, its probability of moving to the splitter conditioned on leaving the own block. Only meaningful for the
-        // non-silent states of that block.
-        std::vector<ValueType> conditionalValues;
-        std::vector<uint64_t> nonSilentStates;    // the non-silent states of the block currently being refined, sorted by their conditional probability
-        std::vector<uint64_t> classStarts;        // indices into nonSilentStates at which a new conditional-probability class starts (plus a sentinel)
-        std::vector<uint64_t> stateStack;  // work list of the backward search that computes weakLabels
+              conditionalValues(partition.getNumberOfElements(), storm::utility::zero<ValueType>()),
+              temporaryStateClasses(partition.getNumberOfElements(), std::numeric_limits<uint64_t>::max()) {}
+
+        std::vector<ValueType> conditionalValues; // stores the 1-step probability of leaving the block for each state, conditioned on leaving the block at all
+        std::vector<uint64_t> frontierStates;  // the non-silent states of the block currently being refined
+        std::vector<uint64_t> temporaryStateClasses; // temporarily classifies the states of the block currently being refined
+        std::deque<uint64_t> bfsQueue;       // work list of the backward search that computes temporaryStateClasses
+        std::vector<uint64_t> nonSilentCandidates; // collects candidates of states that might become non-silent after refinement
     };
 
     /// Picks the scratch space that this mode actually uses, so that accessing the wrong one is a compile error.
@@ -150,56 +152,16 @@ struct SplitterRefinementContext {
 };
 
 /*!
- * Updates the silent states after the given block has been split into sub-blocks.
- *
- * A state can only ever lose its silence, and it does so exactly if one of its successors ended up in a different sub-block than itself. Rather than
- * re-examining the transitions of every state of the block, we therefore only traverse the sub-blocks other than the largest one: a state of such a
- * sub-block is checked directly (forward), and a state of the largest sub-block is caught through the backward transitions of the states of the smaller
- * ones.
- */
-template<typename ValueType, SplitterRefinementMode Mode>
-void updateSilentStates(SplitterRefinementContext<ValueType, Mode>& context, storm::bisimulation::Partition::Block const& splitBlock) requires (Mode == SplitterRefinementMode::WeakDiscreteTime) {
-    auto& silentStates = context.weakData->silentStates;
-
-    Partition::Block largestSubBlock;  // default-constructed, i.e. empty, so that the first sub-block always wins
-    context.partition.forEachSubBlock(splitBlock, [&largestSubBlock](auto const& subBlock) {
-        if (subBlock.size() > largestSubBlock.size()) {
-            largestSubBlock = subBlock;
-        }
-    });
-
-    context.partition.forEachSubBlock(splitBlock, [&context, &silentStates, &largestSubBlock](auto const& subBlock) {
-        if (context.partition.isEqualBlock(subBlock, largestSubBlock)) {
-            return;
-        }
-        for (uint64_t const state : subBlock) {
-            // Forward: a state of this sub-block that is still silent loses its silence if any of its successors now lies outside of the sub-block.
-            if (silentStates.get(state)) {
-                auto const row = context.model.getTransitionMatrix().getRow(state);
-                silentStates.set(state, std::all_of(row.begin(), row.end(), [&context, &state](auto const& entry) {
-                                     return storm::utility::isZero(entry.getValue()) || context.partition.isSameBlock(state, entry.getColumn());
-                                 }));
-            }
-            // Backward: a still silent predecessor that ended up in a different sub-block has a successor outside of its own block and thus is not silent.
-            for (auto const& predecessorEntry : context.backwardTransitions.getRow(state)) {
-                uint64_t const predecessor = predecessorEntry.getColumn();
-                if (silentStates.get(predecessor) && !context.partition.isSameBlock(state, predecessor)) {
-                    silentStates.set(predecessor, false);
-                }
-            }
-        }
-    });
-}
-
-/*!
  * Recomputes the silent states of every block of the partition from scratch.
  */
 template<typename ValueType, SplitterRefinementMode Mode>
-void recomputeSilentStates(SplitterRefinementContext<ValueType, Mode>& context) requires (Mode != SplitterRefinementMode::Strong) {
+void recomputeSilentStates(SplitterRefinementContext<ValueType, Mode>& context, auto const& candidates)
+    requires(Mode != SplitterRefinementMode::Strong)
+{
     auto& silentStates = context.weakData->silentStates;
 
     // A state can only ever go from silent to non-silent.
-    for (uint64_t const state : silentStates) {
+    for (uint64_t const state : candidates) {
         auto const row = context.model.getTransitionMatrix().getRow(state);
         silentStates.set(state, std::all_of(row.begin(), row.end(), [&context, &state](auto const& entry) {
                              return storm::utility::isZero(entry.getValue()) || context.partition.isSameBlock(state, entry.getColumn());
@@ -211,7 +173,9 @@ void recomputeSilentStates(SplitterRefinementContext<ValueType, Mode>& context) 
  * Checks that the recorded silent states match the current partition. Useful for sanity checks (e.g. via assertions). Does not assert itself.
  */
 template<typename ValueType, SplitterRefinementMode Mode>
-bool checkSilentStates(SplitterRefinementContext<ValueType, Mode> const& context) requires (Mode != SplitterRefinementMode::Strong) {
+bool checkSilentStates(SplitterRefinementContext<ValueType, Mode> const& context)
+    requires(Mode != SplitterRefinementMode::Strong)
+{
     bool result = true;
     context.partition.forEachBlock([&context, &result](auto const& block) {
         for (uint64_t const state : block) {
@@ -239,9 +203,9 @@ void refineBlockStrong(SplitterRefinementContext<ValueType, Mode>& context, stor
     auto [noPredecessors, predecessors] =
         predecessorToSplitterProbabilities.getNonDefaultStates().size() < predecessorBlockToSplit.size()
             ? context.partition.splitBlockByRange(predecessorBlockToSplit, predecessorToSplitterProbabilities.getNonDefaultStates())
-            : context.partition.splitBlockByPredicate(predecessorBlockToSplit, [&predecessorToSplitterProbabilities](auto const& state) {
-                  return !storm::utility::isZero(predecessorToSplitterProbabilities.getValues()[state]);
-              });
+            : context.partition.splitBlockByPredicate(
+                  predecessorBlockToSplit, [&predecessorToSplitterProbabilities](
+                                               auto const& state) { return !storm::utility::isZero(predecessorToSplitterProbabilities.getValues()[state]); });
 
     STORM_LOG_ASSERT(!predecessors.empty(), "The predecessor block should contain at least one predecessor state.");
     bool wasSplit = noPredecessors.size() > 0;
@@ -271,142 +235,163 @@ void refineBlockStrong(SplitterRefinementContext<ValueType, Mode>& context, stor
         // Add all remaining blocks that were split to splitter queue.
         context.queue.erase(predecessorBlockToSplit);
         context.partition.forEachSubBlock(predecessors, [&context](auto const& block) { context.queue.insert(block); });
-        if constexpr (Mode == SplitterRefinementMode::WeakDiscreteTime) {
-            // In the weak mode, we also refresh the silent states.
-            // Only the discrete-time mode reads the silent states during the refinement (cf. refineBlockWeak);
-            // The continuous-time mode determines them once at the end.
-            updateSilentStates(context, predecessorBlockToSplit);
-        }
     }
 }
 
 /*!
- * Refines the given predecessor block of the current splitter with respect to weak bisimulation on a discrete-time model.
- *
- * The observable behavior of a non-silent state is its distribution over the *other* blocks, conditioned on leaving its own block. We therefore group the
- * non-silent states of the block by their conditional probability of moving to the splitter. A silent state, in turn, behaves like a convex combination of
- * the non-silent states it can reach without leaving the block, so we label every state with the set of groups it can reach that way and split by that
- * label. This is sound because every state that is reachable from a silent state without leaving the block is weakly bisimilar to it (a state that is
- * silent with respect to the block is in particular silent with respect to its - possibly much smaller - weak bisimulation class, so all its successors are
- * weakly bisimilar to it), and it is complete because, once no block can be split any further, the non-silent states of a block agree on their conditional
- * distributions, which is exactly the definition of weak bisimulation.
+ * Refines the given predecessor block of the current splitter with respect to the probability of moving to the splitter, conditioned on leaving the own block.
+ * The non-silent states are classified by their conditional probabilities. The silent states are classified by the set of different non-silent states they
+ * can reach. Specifically, the given block is split into
+ * - several blocks of states that can only reach exactly one class of non-silent state (one such block per distinct conditional probability), and
+ * - a block of states that can reach multiple different classes of non-silent states.
  */
 template<typename ValueType>
-void refineBlockWeak(SplitterRefinementContext<ValueType, SplitterRefinementMode::WeakDiscreteTime>& context, storm::bisimulation::Partition::Block const block,
-                     storm::bisimulation::Partition::Block const splitterBlock) {
-    auto const& silentStates = context.weakData->silentStates;
-    auto const& toSplitterProbs = context.cache.predecessorToSplitterProbabilities.getValues();
-    auto& conditionalValues = context.cache.conditionalValues;
-    auto& nonSilentStates = context.cache.nonSilentStates;
-    auto& classStarts = context.cache.classStarts;
-    auto& weakLabels = context.cache.weakLabels;
+void refineBlockWeak(SplitterRefinementContext<ValueType, SplitterRefinementMode::WeakDiscreteTime>& context,
+                      storm::bisimulation::Partition::Block const block, storm::bisimulation::Partition::Block const splitterBlock) {
+    STORM_LOG_ASSERT(!context.weakData->isDivergent(block), "Assumed a non-divergent block as a predecessor block of the splitter.");
 
-    // Step 1: collect the non-silent states and compute their probability of moving to the splitter, conditioned on leaving the own block.
-    //
-    // The two extremal values are determined on the transition structure rather than on the computed value, because getting them exactly right is what decides
-    // whether weakly bisimilar states stay together: the conditional probability is zero iff the state has no transition into the splitter at all, and it is
-    // one iff every transition that leaves the block enters the splitter. A floating point division of two accumulated sums generally misses those exact
-    // values by a few ulps (in particular when the two sums are accumulated in a different order), which would split states that are weakly bisimilar.
-    nonSilentStates.clear();
-    for (uint64_t const state : block) {
-        if (silentStates.get(state)) {
-            continue;  // A silent state cannot leave its block, so it has no conditional distribution of its own.
+    // Step 1: Gather the non-silent states of the given block. If the block is large, it is usually faster to iterate over the non-silent states
+    auto& frontierStates = context.cache.frontierStates;
+    auto const& silentStates = context.weakData->silentStates;
+    frontierStates.clear();
+    if (block.size() * 64 > silentStates.size()) {
+        for (uint64_t nonSilentState = silentStates.getNextUnsetIndex(0); nonSilentState < silentStates.size();
+             nonSilentState = silentStates.getNextUnsetIndex(nonSilentState + 1)) {
+            if (context.partition.contains(block, nonSilentState)) {
+                frontierStates.push_back(nonSilentState);
+            }
         }
-        nonSilentStates.push_back(state);
+    } else {
+        for (uint64_t const state : block) {
+            if (!silentStates.get(state)) {
+                frontierStates.push_back(state);
+            }
+        }
+    }
+
+    // Step 2: Compute conditional escape probability at frontier states
+    auto& conditionalValues = context.cache.conditionalValues;
+    auto const& toSplitterProbs = context.cache.predecessorToSplitterProbabilities.getValues();
+    for (uint64_t const state : frontierStates) {
         if (storm::utility::isZero(toSplitterProbs[state])) {
             conditionalValues[state] = storm::utility::zero<ValueType>();  // the state has no transition into the splitter
             continue;
         }
+        auto const row = context.model.getTransitionMatrix().getRow(state);
+        STORM_LOG_ASSERT(std::any_of(row.begin(), row.end(),
+                             [&context, &splitterBlock](auto const& entry) {
+                                 return !storm::utility::isZero(entry.getValue()) && context.partition.contains(splitterBlock, entry.getColumn());
+                             }), "Expected a transition into a splitter, but none was found.");
         ValueType escapeValue = storm::utility::zero<ValueType>();
-        ValueType toSplitterValue = storm::utility::zero<ValueType>();
         bool leavesOnlyToSplitter = true;
-        for (auto const& entry : context.model.getTransitionMatrix().getRow(state)) {
-            if (storm::utility::isZero(entry.getValue())) {
-                continue;
-            }
-            if (context.partition.isSameBlock(state, entry.getColumn())) {
+        for (auto const& entry : row) {
+            if (storm::utility::isZero(entry.getValue()) || context.partition.isSameBlock(state, entry.getColumn())) {
                 continue;  // moves within the own block are unobservable
             }
             escapeValue += entry.getValue();
-            // Note that the splitter may itself have been split since this round started (which happens if it is step sensitive and its own predecessor), so
-            // we ask whether the successor is among the states the splitter had back then rather than compare the blocks. Those are exactly the states
-            // that the probabilities gathered by the predecessor scan refer to.
-            if (context.partition.contains(entry.getColumn(), splitterBlock)) {
-                toSplitterValue += entry.getValue();
-            } else {
-                leavesOnlyToSplitter = false;
-            }
+            leavesOnlyToSplitter = leavesOnlyToSplitter && context.partition.contains(splitterBlock, entry.getColumn());
         }
         STORM_LOG_ASSERT(!storm::utility::isZero(escapeValue), "A non-silent state must be able to leave its block.");
-        // We only get here for states that the predecessor scan found to have a transition into the splitter, so the scan above has to find one as well.
-        // This would break if the membership test did not account for the splitter having been split in the meantime.
-        STORM_LOG_ASSERT(!storm::utility::isZero(toSplitterValue), "The transitions into the splitter disagree with the predecessor scan.");
-        conditionalValues[state] = leavesOnlyToSplitter ? storm::utility::one<ValueType>() : toSplitterValue / escapeValue;
+
+        // If there are only transitions to the splitter, we set the conditional probability to 1 explicitly.
+        // This avoids numerical issues where toSplitterProbs[state] and escapeValue do not match exactly.
+        conditionalValues[state] = leavesOnlyToSplitter ? storm::utility::one<ValueType>() : toSplitterProbs[state] / escapeValue;
     }
     // Every state of a non-divergent block can leave the block; the first state that is non-silent on such a path witnesses this.
-    STORM_LOG_ASSERT(!nonSilentStates.empty(), "A non-divergent block must contain a non-silent state.");
+    STORM_LOG_ASSERT(!frontierStates.empty(), "A non-divergent block must contain a non-silent state.");
 
-    // Step 2: group the non-silent states into classes of (approximately) equal conditional probability. We do not split the partition here: the actual
-    // split has to consider the silent states as well, and the new Partition does not allow undoing a split.
-    std::sort(nonSilentStates.begin(), nonSilentStates.end(),
+    // Step 3: Divide the frontier states into equivalence classes based on their conditional values
+    auto& stateClasses = context.cache.temporaryStateClasses;
+    uint64_t constexpr Unclassified = std::numeric_limits<uint64_t>::max(); // Indicates that no class has been assigned to a state
+    uint64_t constexpr MultipleFrontiers =
+        std::numeric_limits<uint64_t>::max() - 1;  // Indicates that multiple frontier states with different conditional values can be reached
+
+    std::sort(frontierStates.begin(), frontierStates.end(),
               [&conditionalValues](uint64_t const state1, uint64_t const state2) { return conditionalValues[state1] < conditionalValues[state2]; });
-    auto const startsNewClass = [&conditionalValues, &context](uint64_t const classStart, uint64_t const state) {
-        if (storm::utility::isZero(context.tolerance)) {
-            return conditionalValues[classStart] < conditionalValues[state];
+    {
+        // true if state1 and state2 should be in different classes. Assumes conditionalValues[state1] <= conditionalValues[state2].
+        auto const haveDifferentClass = [&conditionalValues, &context](uint64_t const state1, uint64_t const state2) {
+            if (storm::utility::isZero(context.tolerance)) {
+                return conditionalValues[state1] != conditionalValues[state2];
+            }
+            return conditionalValues[state1] + context.tolerance < conditionalValues[state2];
+        };
+
+        uint64_t currClassRepresentative = frontierStates.front();
+        stateClasses[currClassRepresentative] = currClassRepresentative;
+        for (uint64_t const state : frontierStates | std::views::drop(1)) {
+            if (haveDifferentClass(currClassRepresentative, state)) {
+                currClassRepresentative = state;
+            }
+            stateClasses[state] = currClassRepresentative;
         }
-        return conditionalValues[classStart] + context.tolerance < conditionalValues[state];
-    };
-    classStarts.assign(1, 0u);
-    weakLabels.addValue(nonSilentStates.front(), 0u);
-    for (uint64_t i = 1; i < nonSilentStates.size(); ++i) {
-        if (startsNewClass(nonSilentStates[classStarts.back()], nonSilentStates[i])) {
-            classStarts.push_back(i);
-        }
-        weakLabels.addValue(nonSilentStates[i], classStarts.size() - 1);
     }
 
-    // If all non-silent states agree, the block is already stable with respect to this splitter: as argued above, every silent state reaches a non-silent
-    // one, so it would end up with the very same (singleton) label.
-    if (classStarts.size() == 1) {
-        weakLabels.clear();
+    // Step 4: Catch the trivial case where all states have the same class
+    if (stateClasses[frontierStates.front()] == stateClasses[frontierStates.back()]) {
+        // Just a single class, nothing to split.
+        // Clean-up the touched classes before return.
+        for (uint64_t const state : frontierStates) {
+            stateClasses[state] = Unclassified;
+        }
         return;
     }
-    classStarts.push_back(nonSilentStates.size());  // sentinel
 
-    // Step 3: label every silent state with the set of classes it can reach without leaving the block. We search backwards from the states of each class,
-    // only traversing silent states: a non-silent state is already fully described by its own class.
-    auto& stateStack = context.cache.stateStack;
-    for (uint64_t classIndex = 0; classIndex + 1 < classStarts.size(); ++classIndex) {
-        stateStack.assign(nonSilentStates.begin() + classStarts[classIndex], nonSilentStates.begin() + classStarts[classIndex + 1]);
-        while (!stateStack.empty()) {
-            uint64_t const currentState = stateStack.back();
-            stateStack.pop_back();
-            for (auto const& predecessorEntry : context.backwardTransitions.getRow(currentState)) {
-                uint64_t const predecessor = predecessorEntry.getColumn();
-                if (silentStates.get(predecessor) && context.partition.isBlockOfElement(block, predecessor) &&
-                    !weakLabels.getValues()[predecessor].contains(classIndex)) {
-                    weakLabels.addValue(predecessor, classIndex);
-                    stateStack.push_back(predecessor);
+    // Step 5: Classify the remaining states. Two states state1 and state2 are in the same class iff
+    // - a) all frontier states reachable from state1 or from state2 are in the same class, or
+    // - b) both, state1 and state2 each reach multiple frontier states with distinct classes.
+    // We do a backwards search from the frontier states, propagating their class labels to their predecessors.
+    // A BFS is used (rather than a DFS) to detect case b) more quickly.
+    auto& bfsQueue = context.cache.bfsQueue;
+    bfsQueue.clear();
+    for (auto const state : frontierStates) {
+        bfsQueue.push_back(state);
+    }
+    // We also collect candidates of states that might lose their silence after refinement: the states for which case b) applies that have a case a) successor.
+    std::vector<uint64_t>& nonSilentCandidates = context.cache.nonSilentCandidates;
+    nonSilentCandidates.clear();
+    while (!bfsQueue.empty()) {
+        uint64_t const currentState = bfsQueue.front();
+        bfsQueue.pop_front();
+        uint64_t const currentClass = stateClasses[currentState];
+        STORM_LOG_ASSERT(currentClass != Unclassified, "The current state must have a class assigned.");
+        for (auto const& predecessorEntry : context.backwardTransitions.getRow(currentState)) {
+            uint64_t const predecessor = predecessorEntry.getColumn();
+            uint64_t& predecessorClass = stateClasses[predecessor];
+            if (predecessorClass == Unclassified) {
+                // Ignore predecessors outside of the block.
+                if (context.partition.isBlockOfElement(block, predecessor)) {
+                    STORM_LOG_ASSERT(silentStates.get(predecessor), "An unclassified state must be silent.");
+                    predecessorClass = currentClass; // propagate the current class
+                    bfsQueue.push_back(predecessor);
                 }
+            } else if (predecessorClass == currentClass) {
+                // The class of predecessor does not change. Nothing to do.
+            } else if (predecessorClass == MultipleFrontiers) {
+                // case b) applies for the predecessor, but case a) potentially applies for the current state.
+                nonSilentCandidates.push_back(predecessor);
+            } else if (silentStates.get(predecessor)) {
+                // So far, we assumed that case a) applies for the predecessor, but we have now found a successor in a different class. Hence, Case b) applies.
+                predecessorClass = MultipleFrontiers;
+                bfsQueue.push_back(predecessor);
+                nonSilentCandidates.push_back(predecessor);
+            } else {
+                // The last case only applies for a non-silent (i.e. frontier) predecessor. Hence, the class of the predecessor does not change. Nothing to do.
             }
         }
     }
 
-    // Step 4: perform the actual split.
-    auto const& labels = weakLabels.getValues();
-    STORM_LOG_ASSERT(std::all_of(block.begin(), block.end(), [&labels](uint64_t const state) { return !labels[state].empty(); }),
-                     "Every state of a non-divergent block must be able to reach a non-silent state without leaving the block.");
-    bool const wasSplit = context.partition.splitBlockByOrder(
-        block, [&labels](uint64_t const state1, uint64_t const state2) { return labels[state1] < labels[state2]; });
-    weakLabels.clear();
+    // Step 6: Split the block by the computed classes and enqueue the subblocks
+    context.partition.splitBlockByOrder(
+        block, [&stateClasses](uint64_t const state1, uint64_t const state2) { return stateClasses[state1] < stateClasses[state2]; });
+    STORM_LOG_ASSERT(context.partition.isProperSuperBlock(block), "As there are multiple different frontier states, the block must be split.");
+    context.queue.erase(block);
+    context.partition.forEachSubBlock(block, [&context](auto const& subBlock) { context.queue.insert(subBlock); });
 
-    if (wasSplit) {
-        context.queue.erase(block);
-        // Note that we have to enqueue all sub-blocks (rather than all but the largest): the conditional probabilities of the states of a sub-block change
-        // when their block shrinks, and it is precisely the stability with respect to the sibling blocks that re-establishes stability with respect to the
-        // earlier splitters.
-        context.partition.forEachSubBlock(block, [&context](auto const& subBlock) { context.queue.insert(subBlock); });
-        updateSilentStates(context, block);
+    // Step 7: update silent states and clear cached data.
+    recomputeSilentStates(context, nonSilentCandidates);
+    for (uint64_t const state : block) {
+        stateClasses[state] = Unclassified;
     }
 }
 
@@ -572,9 +557,8 @@ void refinePartitionBasedOnSignature(SignatureRefinementContext<ValueType, Signa
 }  // namespace detail
 
 template<typename ValueType, SplitterRefinementMode Mode>
-void performSplitterBasedRefinement(storm::models::sparse::Model<ValueType> const& model,
-                                    storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::bisimulation::Partition& partition,
-                                    ValueType const tolerance, storm::OptionalRef<WeakBisimulationData> weakData) {
+void performSplitterBasedRefinement(storm::models::sparse::Model<ValueType> const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                    storm::bisimulation::Partition& partition, ValueType const tolerance, storm::OptionalRef<WeakBisimulationData> weakData) {
     static_assert(!storm::IsIntervalType<ValueType>, "Interval types are not supported for splitter-based refinement.");
     // Refinement for interval models requires limiting signatures to feasible intervals. This is rather difficult in a splitter-based setting.
     STORM_LOG_THROW(!model.isNondeterministicModel(), storm::exceptions::InvalidArgumentException,
@@ -599,10 +583,13 @@ void performSplitterBasedRefinement(storm::models::sparse::Model<ValueType> cons
         detail::refinePartitionBasedOnSplitter(context, splitterBlock);
     }
 
-    if constexpr (Mode == SplitterRefinementMode::WeakContinuousTime) {
-        detail::recomputeSilentStates(context);
-    }
     if constexpr (Mode != SplitterRefinementMode::Strong) {
+        // The refinement itself only keeps the silent states of the blocks refined through refineBlockWeak up to date.
+        if (Mode == SplitterRefinementMode::WeakDiscreteTime) {
+            detail::recomputeSilentStates(context, context.weakData->stepSensitiveStates);
+        } else {
+            detail::recomputeSilentStates(context, context.weakData->silentStates);
+        }
         STORM_LOG_ASSERT(detail::checkSilentStates(context), "The silent states do not match the final partition.");
     }
 }
