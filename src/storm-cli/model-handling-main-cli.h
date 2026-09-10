@@ -141,19 +141,20 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
                 }
             };
             printValue(aggregate.value);
-            // An aggregate of an enclosure encloses the aggregate, so report it in the same shape as the values do.
+            // An aggregate of an enclosure encloses the aggregate, so report it in the same shape as the values do,
+            // a dash included for a side that is not known.
             if (aggregate.hasLower() || aggregate.hasUpper()) {
                 STORM_PRINT(" [");
                 if (aggregate.hasLower()) {
                     printValue(*aggregate.lower);
                 } else {
-                    STORM_PRINT("-inf");
+                    STORM_PRINT("-");
                 }
                 STORM_PRINT(", ");
                 if (aggregate.hasUpper()) {
                     printValue(*aggregate.upper);
                 } else {
-                    STORM_PRINT("inf");
+                    STORM_PRINT("-");
                 }
                 STORM_PRINT("]");
             }
