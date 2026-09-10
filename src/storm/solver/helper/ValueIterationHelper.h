@@ -12,6 +12,7 @@
 #include "storm/solver/SolverStatus.h"
 #include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
+#include "storm/utility/OptionalRef.h"
 
 namespace storm::solver::helper {
 
@@ -23,25 +24,25 @@ class ValueIterationHelper {
     template<storm::OptimizationDirection Dir, bool Relative, storm::OptimizationDirection RobustDir>
     SolverStatus VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, SolutionType const& precision,
                     std::function<SolverStatus(SolverStatus const&)> const& iterationCallback = {}, MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
-                    SolutionBounds<SolutionType>* solutionBounds = nullptr) const;
+                    storm::OptionalRef<SolutionBounds<SolutionType>> solutionBounds = storm::NullRef) const;
 
     template<storm::OptimizationDirection Dir, bool Relative>
     SolverStatus VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, SolutionType const& precision,
                     const std::function<SolverStatus(const SolverStatus&)>& iterationCallback = {}, MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
                     UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset,
-                    SolutionBounds<SolutionType>* solutionBounds = nullptr) const;
+                    storm::OptionalRef<SolutionBounds<SolutionType>> solutionBounds = storm::NullRef) const;
 
     SolverStatus VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative,
                     SolutionType const& precision, std::optional<storm::OptimizationDirection> const& dir = {},
                     std::function<SolverStatus(SolverStatus const&)> const& iterationCallback = {}, MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
                     UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset,
-                    SolutionBounds<SolutionType>* solutionBounds = nullptr) const;
+                    storm::OptionalRef<SolutionBounds<SolutionType>> solutionBounds = storm::NullRef) const;
 
     SolverStatus VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, bool relative, SolutionType const& precision,
                     std::optional<storm::OptimizationDirection> const& dir = {}, std::function<SolverStatus(SolverStatus const&)> const& iterationCallback = {},
                     MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
                     UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset,
-                    SolutionBounds<SolutionType>* solutionBounds = nullptr) const;
+                    storm::OptionalRef<SolutionBounds<SolutionType>> solutionBounds = storm::NullRef) const;
 
    private:
     std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator;

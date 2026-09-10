@@ -401,7 +401,7 @@ SolverStatus SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVI(
     std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative, ValueType const& precision,
     std::optional<storm::OptimizationDirection> const& dir, std::optional<ValueType> const& lowerBound, std::optional<ValueType> const& upperBound,
     std::function<SolverStatus(SVIData const&)> const& iterationCallback, std::optional<storm::storage::BitVector> const& relevantValues,
-    SolutionBounds<ValueType>* solutionBounds) const {
+    storm::OptionalRef<SolutionBounds<ValueType>> solutionBounds) const {
     // Create two vectors x and y using the given operand plus an auxiliary vector.
     std::pair<std::vector<ValueType>, std::vector<ValueType>> xy;
     auto& auxVector = viOperator->allocateAuxiliaryVector(operand.size());
@@ -412,7 +412,7 @@ SolverStatus SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVI(
         doublePrec -= precision * 1e-6;  // be slightly more precise to avoid a good chunk of floating point issues
     }
     auto res = SVI(xy, offsets, numIterations, relative, doublePrec, dir, lowerBound, upperBound, iterationCallback, relevantValues);
-    if (solutionBounds != nullptr) {
+    if (solutionBounds.has_value()) {
         // Read the enclosure out before the point estimate below overwrites x with the average of its two sides.
         // Sound value iteration keeps the solution enclosed in every iteration, so both sides hold even if the
         // iteration was aborted before converging. They are only expressible once both scaling factors are known.
@@ -435,7 +435,7 @@ SolverStatus SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVI(
     std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, bool relative, ValueType const& precision,
     std::optional<storm::OptimizationDirection> const& dir, std::optional<ValueType> const& lowerBound, std::optional<ValueType> const& upperBound,
     std::function<SolverStatus(SVIData const&)> const& iterationCallback, std::optional<storm::storage::BitVector> const& relevantValues,
-    SolutionBounds<ValueType>* solutionBounds) const {
+    storm::OptionalRef<SolutionBounds<ValueType>> solutionBounds) const {
     uint64_t numIterations = 0;
     return SVI(operand, offsets, numIterations, relative, precision, dir, lowerBound, upperBound, iterationCallback, relevantValues, solutionBounds);
 }

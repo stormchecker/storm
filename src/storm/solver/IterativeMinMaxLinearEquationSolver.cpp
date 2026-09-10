@@ -21,6 +21,7 @@
 #include "storm/solver/helper/SoundValueIterationHelper.h"
 #include "storm/solver/helper/ValueIterationHelper.h"
 #include "storm/utility/NumberTraits.h"
+#include "storm/utility/OptionalRef.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
@@ -764,14 +765,17 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
     // fixed point; otherwise an iteration that moves in one direction only bounds the greatest (resp. least)
     // fixed point, which need not be the solution we are after.
     storm::solver::SolutionBounds<SolutionType> solutionBounds;
-    auto* solutionBoundsPtr = this->hasUniqueSolution() ? &solutionBounds : nullptr;
+    storm::OptionalRef<storm::solver::SolutionBounds<SolutionType>> solutionBoundsRef;
+    if (this->hasUniqueSolution()) {
+        solutionBoundsRef.reset(solutionBounds);
+    }
     // This code duplication is necessary because the helper class is different for the two cases.
     if (this->A->hasTrivialRowGrouping()) {
         storm::solver::helper::ValueIterationHelper<ValueType, true, SolutionType> viHelper(viOperatorTriv);
 
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                   storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode(), solutionBoundsPtr);
+                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode(), solutionBoundsRef);
         if (solutionBounds.hasAny()) {
             this->setSolutionBounds(std::move(solutionBounds));
         }
@@ -792,7 +796,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                   storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode(), solutionBoundsPtr);
+                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode(), solutionBoundsRef);
         if (solutionBounds.hasAny()) {
             this->setSolutionBounds(std::move(solutionBounds));
         }
@@ -906,7 +910,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         }
         storm::solver::SolutionBounds<ValueType> solutionBounds;
         auto status = sviHelper.SVI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(), precision, dir, lowerBound, upperBound,
-                                    sviCallback, optionalRelevantValues, &solutionBounds);
+                                    sviCallback, optionalRelevantValues, solutionBounds);
         if (solutionBounds.hasAny()) {
             this->setSolutionBounds(std::move(solutionBounds));
         }

@@ -92,7 +92,7 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
                                                                                    uint64_t& numIterations, SolutionType const& precision,
                                                                                    std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
                                                                                    MultiplicationStyle mult,
-                                                                                   SolutionBounds<SolutionType>* solutionBounds) const {
+                                                                                   storm::OptionalRef<SolutionBounds<SolutionType>> solutionBounds) const {
     VIOperatorBackend<SolutionType, Dir, Relative> backend{precision};
     std::vector<SolutionType>* operand1{&operand};
     std::vector<SolutionType>* operand2{&operand};
@@ -121,7 +121,7 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
         }
         viOperator->freeAuxiliaryVector();
     }
-    if (solutionBounds != nullptr && mult == MultiplicationStyle::GaussSeidel) {
+    if (solutionBounds.has_value() && mult == MultiplicationStyle::GaussSeidel) {
         /*
          * Value iteration itself carries a sound bound on the solution whenever an entire iteration moved the
          * operand in a single direction. Writing T for the update operator and x for the operand at the end of
@@ -161,7 +161,7 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
                                                                                    const std::function<SolverStatus(const SolverStatus&)>& iterationCallback,
                                                                                    MultiplicationStyle mult,
                                                                                    UncertaintyResolutionMode const& uncertaintyResolutionMode,
-                                                                                   SolutionBounds<SolutionType>* solutionBounds) const {
+                                                                                   storm::OptionalRef<SolutionBounds<SolutionType>> solutionBounds) const {
     bool robustUncertainty = false;
     if constexpr (storm::IsIntervalType<ValueType>) {
         robustUncertainty = isUncertaintyResolvedRobust(uncertaintyResolutionMode, Dir);
@@ -178,7 +178,7 @@ template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
 SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(
     std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative, SolutionType const& precision,
     std::optional<storm::OptimizationDirection> const& dir, std::function<SolverStatus(SolverStatus const&)> const& iterationCallback, MultiplicationStyle mult,
-    UncertaintyResolutionMode const& uncertaintyResolutionMode, SolutionBounds<SolutionType>* solutionBounds) const {
+    UncertaintyResolutionMode const& uncertaintyResolutionMode, storm::OptionalRef<SolutionBounds<SolutionType>> solutionBounds) const {
     if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(uncertaintyResolutionMode != UncertaintyResolutionMode::Unset, storm::exceptions::IllegalFunctionCallException,
                         "Uncertainty resolution mode must be set for uncertain (interval) models.");
@@ -212,7 +212,7 @@ template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
 SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(
     std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, bool relative, SolutionType const& precision,
     std::optional<storm::OptimizationDirection> const& dir, std::function<SolverStatus(SolverStatus const&)> const& iterationCallback, MultiplicationStyle mult,
-    UncertaintyResolutionMode const& uncertaintyResolutionMode, SolutionBounds<SolutionType>* solutionBounds) const {
+    UncertaintyResolutionMode const& uncertaintyResolutionMode, storm::OptionalRef<SolutionBounds<SolutionType>> solutionBounds) const {
     uint64_t numIterations = 0;
     return VI(operand, offsets, numIterations, relative, precision, dir, iterationCallback, mult, uncertaintyResolutionMode, solutionBounds);
 }

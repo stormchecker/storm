@@ -382,7 +382,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsPower(Environment cons
     storm::solver::SolutionBounds<ValueType> solutionBounds;
     auto status = viHelper.VI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(),
                               storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()), {}, viCallback,
-                              env.solver().native().getPowerMethodMultiplicationStyle(), UncertaintyResolutionMode::Unset, &solutionBounds);
+                              env.solver().native().getPowerMethodMultiplicationStyle(), UncertaintyResolutionMode::Unset, solutionBounds);
     if (solutionBounds.hasAny()) {
         this->setSolutionBounds(std::move(solutionBounds));
     }
@@ -492,7 +492,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(En
     helper::SoundValueIterationHelper<ValueType, true> sviHelper(viOperator);
     storm::solver::SolutionBounds<ValueType> solutionBounds;
     auto status = sviHelper.SVI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(), precision, {}, lowerBound, upperBound,
-                                sviCallback, optionalRelevantValues, &solutionBounds);
+                                sviCallback, optionalRelevantValues, solutionBounds);
     if (solutionBounds.hasAny()) {
         this->setSolutionBounds(std::move(solutionBounds));
     }
