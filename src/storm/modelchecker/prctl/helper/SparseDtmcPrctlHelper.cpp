@@ -133,7 +133,7 @@ std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, Solu
 template<typename ValueType, typename SolutionType>
 std::vector<SolutionType> computeRobustValuesForMaybeStates(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                             storm::storage::SparseMatrix<ValueType>&& submatrix, std::vector<ValueType> const& b,
-                                                            bool computeReward) {
+                                                            bool computeReward, storm::solver::SolutionBounds<SolutionType>& solutionBounds) {
     // Initialize the solution vector.
     std::vector<SolutionType> x = std::vector<SolutionType>(submatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
 
@@ -162,6 +162,15 @@ std::vector<SolutionType> computeRobustValuesForMaybeStates(Environment const& e
 
     // Solve the corresponding system of equations.
     solver->solveEquations(env, x, b);
+
+    // This goes through the same MinMax solvers the MDP helper uses, so it gets the same bounds out of them. Note
+    // that the solver may well know only one of the two, e.g. value iteration that certified a single direction.
+    if (solver->hasSolutionLowerBounds()) {
+        solutionBounds.lower = solver->getSolutionLowerBounds();
+    }
+    if (solver->hasSolutionUpperBounds()) {
+        solutionBounds.upper = solver->getSolutionUpperBounds();
+    }
 
     return x;
 }
@@ -235,7 +244,8 @@ DeterministicSparseModelCheckingHelperReturnType<SolutionType> SparseDtmcPrctlHe
                 // the accumulated probability of going from state i to some state that has probability 1.
                 storm::utility::vector::setAllValues(b, transitionMatrix.getRowFilter(statesWithProbability1));
 
-                std::vector<SolutionType> resultForMaybeStates = computeRobustValuesForMaybeStates(env, std::move(goal), std::move(submatrix), b, false);
+                std::vector<SolutionType> resultForMaybeStates =
+                    computeRobustValuesForMaybeStates(env, std::move(goal), std::move(submatrix), b, false, solutionBounds);
 
                 // For interval models, the result for maybe states indeed also holds values for all qualitative states.
                 STORM_LOG_ASSERT(resultForMaybeStates.size() == transitionMatrix.getColumnCount(), "Dimensions do not match.");
@@ -675,7 +685,22 @@ SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeReachabi
                 std::vector<ValueType> b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, maybeStates);
 
                 // Compute values for maybe states.
-                std::vector<SolutionType> x = computeRobustValuesForMaybeStates(env, std::move(goal), std::move(submatrix), b, true);
+                storm::solver::SolutionBounds<SolutionType> boundsForMaybeStates;
+                std::vector<SolutionType> x = computeRobustValuesForMaybeStates(env, std::move(goal), std::move(submatrix), b, true, boundsForMaybeStates);
+
+                // Outside of the maybe states the reward is exactly zero or exactly infinity, so the entries that
+                // result already holds bound those states from both sides.
+                auto embedBound = [&result, &maybeStates](std::vector<SolutionType> const& boundForMaybeStates) {
+                    std::vector<ExtendedSolutionType> bound(result);
+                    storm::utility::vector::setVectorValues(bound, maybeStates, boundForMaybeStates);
+                    return bound;
+                };
+                if (boundsForMaybeStates.hasLower()) {
+                    solutionBounds.lower = embedBound(*boundsForMaybeStates.lower);
+                }
+                if (boundsForMaybeStates.hasUpper()) {
+                    solutionBounds.upper = embedBound(*boundsForMaybeStates.upper);
+                }
 
                 // Set values of resulting vector according to result.
                 storm::utility::vector::setVectorValues(result, maybeStates, x);
