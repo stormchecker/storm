@@ -172,6 +172,8 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
     virtual ExtendedValueType average() const override;
     virtual ExtendedValueType sum() const override;
 
+    virtual AggregatedValue<ExtendedValueType> aggregate(FilterType filter) const override;
+
     virtual bool hasScheduler() const override;
     void setScheduler(std::unique_ptr<storm::storage::Scheduler<ValueType>>&& scheduler);
     storm::storage::Scheduler<ValueType> const& getScheduler() const;
@@ -184,6 +186,13 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
     bool hasValueType(std::type_info const& t) const override {
         return t == typeid(ValueType);
     }
+
+    /*!
+     * Aggregates a single vector of this result, i.e. the values or one of the bounds on them. Unlike sum() and
+     * average(), which are for the values and reject an infinity, this tolerates one: an infinite bound on a value
+     * is a legitimate statement, and it carries over to the aggregate.
+     */
+    static ExtendedValueType aggregateVector(vector_type const& vector, FilterType filter);
 
     /*!
      * Retrieves the index at which the value of the given state is stored.

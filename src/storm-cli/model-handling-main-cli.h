@@ -114,19 +114,11 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
         if (ft == storm::modelchecker::FilterType::VALUES) {
             STORM_PRINT(*result);
         } else {
-            storm::utility::ExtendedValueType<ValueType> resultValue;
             switch (ft) {
                 case storm::modelchecker::FilterType::SUM:
-                    resultValue = result->asQuantitativeCheckResult<ValueType>().sum();
-                    break;
                 case storm::modelchecker::FilterType::AVG:
-                    resultValue = result->asQuantitativeCheckResult<ValueType>().average();
-                    break;
                 case storm::modelchecker::FilterType::MIN:
-                    resultValue = result->asQuantitativeCheckResult<ValueType>().getMin();
-                    break;
                 case storm::modelchecker::FilterType::MAX:
-                    resultValue = result->asQuantitativeCheckResult<ValueType>().getMax();
                     break;
                 case storm::modelchecker::FilterType::ARGMIN:
                 case storm::modelchecker::FilterType::ARGMAX:
@@ -138,10 +130,32 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unhandled filter type.");
             }
-            if (storm::NumberTraits<ValueType>::IsExact && storm::utility::isConstant(resultValue)) {
-                STORM_PRINT(resultValue << " (approx. " << storm::utility::convertNumber<double>(resultValue) << ")");
-            } else {
-                STORM_PRINT(resultValue);
+            auto const aggregate = result->asQuantitativeCheckResult<ValueType>().aggregate(ft);
+            auto printValue = [](storm::utility::ExtendedValueType<ValueType> const& value) {
+                if (storm::utility::isInfinity(value)) {
+                    STORM_PRINT("inf");
+                } else if (storm::NumberTraits<ValueType>::IsExact && storm::utility::isConstant(value)) {
+                    STORM_PRINT(value << " (approx. " << storm::utility::convertNumber<double>(value) << ")");
+                } else {
+                    STORM_PRINT(value);
+                }
+            };
+            printValue(aggregate.value);
+            // An aggregate of an enclosure encloses the aggregate, so report it in the same shape as the values do.
+            if (aggregate.hasLower() || aggregate.hasUpper()) {
+                STORM_PRINT(" [");
+                if (aggregate.hasLower()) {
+                    printValue(*aggregate.lower);
+                } else {
+                    STORM_PRINT("-inf");
+                }
+                STORM_PRINT(", ");
+                if (aggregate.hasUpper()) {
+                    printValue(*aggregate.upper);
+                } else {
+                    STORM_PRINT("inf");
+                }
+                STORM_PRINT("]");
             }
         }
     } else {

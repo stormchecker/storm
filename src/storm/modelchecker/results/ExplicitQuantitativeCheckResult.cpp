@@ -2,8 +2,6 @@
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include <algorithm>
-
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -274,15 +272,43 @@ typename ExplicitQuantitativeCheckResult<ValueType>::ExtendedValueType ExplicitQ
 
 template<typename ValueType>
 typename ExplicitQuantitativeCheckResult<ValueType>::ExtendedValueType ExplicitQuantitativeCheckResult<ValueType>::average() const {
-    STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Average of empty set is not defined.");
+    return this->sum() / storm::utility::convertNumber<ExtendedValueType, uint64_t>(values.size());
+}
 
-    ExtendedValueType sum = storm::utility::zero<ExtendedValueType>();
-    for (auto const& element : values) {
-        STORM_LOG_THROW(!storm::utility::isInfinity(element), storm::exceptions::InvalidOperationException,
-                        "Cannot compute the average of values containing infinity.");
-        sum += element;
+template<typename ValueType>
+typename ExplicitQuantitativeCheckResult<ValueType>::ExtendedValueType ExplicitQuantitativeCheckResult<ValueType>::aggregateVector(vector_type const& vector,
+                                                                                                                                   FilterType filter) {
+    // A bound has the same shape as the values, so aggregating one is exactly what the methods above do, applied
+    // to a different vector. Wrapping it in a result of its own reuses them rather than repeating them, and keeps
+    // the two kinds of aggregate in step should any of them ever change.
+    ExplicitQuantitativeCheckResult<ValueType> const asResult{vector};
+    switch (filter) {
+        case FilterType::MIN:
+            return asResult.getMin();
+        case FilterType::MAX:
+            return asResult.getMax();
+        case FilterType::SUM:
+            return asResult.sum();
+        case FilterType::AVG:
+            return asResult.average();
+        default:
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "The filter " << toString(filter) << " does not aggregate values.");
     }
-    return sum / storm::utility::convertNumber<ExtendedValueType, uint64_t>(values.size());
+}
+
+template<typename ValueType>
+AggregatedValue<typename ExplicitQuantitativeCheckResult<ValueType>::ExtendedValueType> ExplicitQuantitativeCheckResult<ValueType>::aggregate(
+    FilterType filter) const {
+    // The values go through the base implementation, i.e. through getMin(), sum() and friends, so that the
+    // aggregations keep whatever those promise about them.
+    AggregatedValue<ExtendedValueType> result = QuantitativeCheckResult<ValueType>::aggregate(filter);
+    if (this->hasLowerBounds()) {
+        result.lower = aggregateVector(*bounds.lower, filter);
+    }
+    if (this->hasUpperBounds()) {
+        result.upper = aggregateVector(*bounds.upper, filter);
+    }
+    return result;
 }
 
 template<typename ValueType>
