@@ -23,13 +23,13 @@
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/SylvanSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/storage/Qvbs.h"
 #include "storm/storage/SymbolicModelDescription.h"
@@ -709,10 +709,9 @@ template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseModelBisimulation(
     std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input,
     storm::settings::modules::BisimulationSettings const& bisimulationSettings, bool graphPreserving = true) {
-
     storm::bisimulation::Options options;
-    options.bisimulationType =
-        bisimulationSettings.isWeakBisimulationSet() ? storm::bisimulation::Options::BisimulationType::Weak : storm::bisimulation::Options::BisimulationType::Strong;
+    options.bisimulationType = bisimulationSettings.isWeakBisimulationSet() ? storm::bisimulation::Options::BisimulationType::Weak
+                                                                            : storm::bisimulation::Options::BisimulationType::Strong;
     if (bisimulationSettings.isToleranceSet() || !storm::NumberTraits<ValueType>::IsExact) {
         options.tolerance = storm::utility::convertNumber<storm::RationalNumber>(bisimulationSettings.getTolerance());
     } else {

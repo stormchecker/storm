@@ -330,8 +330,8 @@ storm::storage::BitVector computeSilentStates(storm::storage::SparseMatrix<Value
 
 template<typename ValueType>
 WeakBisimulationData Initialization<ValueType>::getWeakBisimulationData(Partition& partition,
-                                                                       storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                       PreservationInformation const& preservationInformation) const {
+                                                                        storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                        PreservationInformation const& preservationInformation) const {
     STORM_LOG_ASSERT(options.bisimulationType == Options::BisimulationType::Weak, "Weak bisimulation data requested for a non-weak bisimulation.");
     STORM_LOG_ASSERT(!model.isNondeterministicModel(), "Weak bisimulation is only supported for deterministic models.");
     uint64_t const numberOfStates = model.getNumberOfStates();
@@ -344,8 +344,8 @@ WeakBisimulationData Initialization<ValueType>::getWeakBisimulationData(Partitio
             stepSensitiveStates |= ~model.getRewardModel(rewardModelName).getStatesWithZeroReward(model.getTransitionMatrix());
         }
     } else {
-        // This step does not apply to CTMC: The state rewards of a CTMC are rate rewards. We have already excluded non-state rewards for weak bisimulation above.
-        // Weak bisimulation preserves the distribution of the time spent within a block and thus the accumulated (state) reward.
+        // This step does not apply to CTMC: The state rewards of a CTMC are rate rewards. We have already excluded non-state rewards for weak bisimulation
+        // above. Weak bisimulation preserves the distribution of the time spent within a block and thus the accumulated (state) reward.
         STORM_LOG_ASSERT(std::all_of(preservationInformation.preservedRewardModels.begin(), preservationInformation.preservedRewardModels.end(),
                                      [this](std::string const& rewardModelName) {
                                          auto const& rewardModel = model.getRewardModel(rewardModelName);
@@ -367,7 +367,8 @@ WeakBisimulationData Initialization<ValueType>::getWeakBisimulationData(Partitio
         });
     }
 
-    WeakBisimulationData result(std::move(divergentStates), std::move(stepSensitiveStates), detail::computeSilentStates(model.getTransitionMatrix(), partition));
+    WeakBisimulationData result(std::move(divergentStates), std::move(stepSensitiveStates),
+                                detail::computeSilentStates(model.getTransitionMatrix(), partition));
     STORM_LOG_ASSERT(result.checkBlockHomogeneity(partition), "Partition is not homogeneous with respect to the weak bisimulation data.");
     return result;
 }

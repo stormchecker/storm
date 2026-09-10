@@ -53,14 +53,15 @@ auto Quotient<ValueType>::buildFromPartition(storm::models::sparse::Model<ValueT
             uint64_t const representative = toRepresentativeChoice[quotientChoice];
             uint64_t const ownQuotientState = toQuotientState[representative];
             if (isWeak) {
-             if (weakData->divergentStates.get(representative)) {
-                     // The states of this block can never leave it, so the quotient state is absorbing. For a CTMC the rate of the self-loop is irrelevant.
-                     return {{ownQuotientState, storm::utility::one<ValueType>()}};
-                 }
+                if (weakData->divergentStates.get(representative)) {
+                    // The states of this block can never leave it, so the quotient state is absorbing. For a CTMC the rate of the self-loop is irrelevant.
+                    return {{ownQuotientState, storm::utility::one<ValueType>()}};
+                }
                 // Non-divergent, representative states must not be silent because we have to represent the probability of exiting a block.
                 // It is ruled out by the caller passing the non-silent states as the preferred representatives in the constructor of QuotientData.
-                STORM_LOG_ASSERT(!weakData->silentStates.get(representative), "Weak bisimulation quotient: The representative of a non-divergent block is silent.");
-             }
+                STORM_LOG_ASSERT(!weakData->silentStates.get(representative),
+                                 "Weak bisimulation quotient: The representative of a non-divergent block is silent.");
+            }
             std::map<uint64_t, ValueType> quotientRow;
             for (auto const& entry : model.getTransitionMatrix().getRow(representative)) {
                 if (auto const ret = quotientRow.emplace(toQuotientState[entry.getColumn()], entry.getValue()); !ret.second) {

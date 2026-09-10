@@ -15,8 +15,8 @@ namespace api {
 
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> performBisimulationMinimization(
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
-    std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas = {}, storm::bisimulation::Options const& options = {}) {
+    std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas = {},
+    storm::bisimulation::Options const& options = {}) {
     return storm::bisimulation::performBisimulationMinimization<ValueType>(*model, formulas, options).quotient;
 }
 

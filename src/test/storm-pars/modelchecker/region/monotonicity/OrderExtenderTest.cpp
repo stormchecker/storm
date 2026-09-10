@@ -48,8 +48,7 @@ TEST_F(OrderExtenderTest, Brp_with_bisimulation_on_model) {
     model = simplifier.getSimplifiedModel();
 
     // Apply bisimulation
-    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)
-                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     ASSERT_EQ(99ul, model->getNumberOfStates());
     ASSERT_EQ(195ul, model->getNumberOfTransitions());
@@ -126,8 +125,7 @@ TEST_F(OrderExtenderTest, Brp_with_bisimulation_on_matrix) {
     model = simplifier.getSimplifiedModel();
 
     // Apply bisimulation
-    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)
-                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     ASSERT_EQ(99ul, model->getNumberOfStates());
     ASSERT_EQ(195ul, model->getNumberOfTransitions());

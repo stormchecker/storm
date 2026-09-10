@@ -25,9 +25,9 @@ enum class SplitterRefinementMode {
  * partition; the other members are only read.
  */
 template<typename ValueType, SplitterRefinementMode Mode = SplitterRefinementMode::Strong>
-void performSplitterBasedRefinement(storm::models::sparse::Model<ValueType> const& model,
-                                    storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::bisimulation::Partition& partition,
-                                    ValueType const tolerance, storm::OptionalRef<WeakBisimulationData> weakData = storm::NullRef);
+void performSplitterBasedRefinement(storm::models::sparse::Model<ValueType> const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                    storm::bisimulation::Partition& partition, ValueType const tolerance,
+                                    storm::OptionalRef<WeakBisimulationData> weakData = storm::NullRef);
 
 /*!
  * Performs signature-based partition refinement.

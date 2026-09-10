@@ -104,8 +104,9 @@ auto Signatures<ValueType, Mode>::StateSignature::find(ChoiceSignature const& si
     if (choices.empty()) {
         return std::make_pair(choices.end(), false);
     }
-    auto it = std::lower_bound(choices.begin(), choices.end(), signature,
-                               [](ChoiceSignature const& choice1, ChoiceSignature const& choice2) { return choice1.compare(choice2) == ChoiceSignature::ComparisonResult::less; });
+    auto it = std::lower_bound(choices.begin(), choices.end(), signature, [](ChoiceSignature const& choice1, ChoiceSignature const& choice2) {
+        return choice1.compare(choice2) == ChoiceSignature::ComparisonResult::less;
+    });
     if constexpr (Mode == SignatureMode::Exact) {
         return std::make_pair(it, it != choices.end() && it->compare(signature) == std::strong_ordering::equal);
     } else {
@@ -118,19 +119,16 @@ auto Signatures<ValueType, Mode>::StateSignature::find(ChoiceSignature const& si
 }
 
 template<typename ValueType, SignatureMode Mode>
-auto Signatures<ValueType, Mode>::StateSignature::findWithHint(ChoiceSignatureIterator hint, ChoiceSignature const& signature,
-                                                                     ValueType const tolerance) const -> std::pair<ChoiceSignatureIterator, bool>
+auto Signatures<ValueType, Mode>::StateSignature::findWithHint(ChoiceSignatureIterator hint, ChoiceSignature const& signature, ValueType const tolerance) const
+    -> std::pair<ChoiceSignatureIterator, bool>
     requires(Mode == SignatureMode::Approximative)
 {
     STORM_LOG_ASSERT(hint >= choices.begin() && hint < choices.end(), "Hint iterator must be within the range of choices.");
-    STORM_LOG_ASSERT(!signature.distr.empty(), "Distributions must not be empty."); // Don't deal with this special case here.
+    STORM_LOG_ASSERT(!signature.distr.empty(), "Distributions must not be empty.");  // Don't deal with this special case here.
 
-    auto const near = [&tolerance](ValueType const& value1, ValueType const& value2) {
-        return storm::utility::abs<ValueType>(value1 - value2) <= tolerance;
-    };
-    auto const inWindow = [&near,&signature](ChoiceSignature const& choice) {
-        return choice.compareStructure(signature) == std::strong_ordering::equal &&
-               near(choice.distr.front().second, signature.distr.front().second);
+    auto const near = [&tolerance](ValueType const& value1, ValueType const& value2) { return storm::utility::abs<ValueType>(value1 - value2) <= tolerance; };
+    auto const inWindow = [&near, &signature](ChoiceSignature const& choice) {
+        return choice.compareStructure(signature) == std::strong_ordering::equal && near(choice.distr.front().second, signature.distr.front().second);
     };
     auto const found = [&signature, &near](ChoiceSignature const& choice) {
         // The first entry is already assumed to be near, so we check the others.
@@ -288,7 +286,9 @@ auto Signatures<ValueType, Mode>::getApproximateSplitCondition() const -> SplitC
 }
 
 template<typename ValueType, SignatureMode Mode>
-bool Signatures<ValueType, Mode>::SplitCondition::operator()(uint64_t const state1, uint64_t const state2) const requires(Mode == SignatureMode::Approximative) {
+bool Signatures<ValueType, Mode>::SplitCondition::operator()(uint64_t const state1, uint64_t const state2) const
+    requires(Mode == SignatureMode::Approximative)
+{
     auto const& sig1 = signatures[state1];
     auto const& sig2 = signatures[state2];
     // We can assume that sig1.choices and sig2.choices have the same pointwise structure (compareStructure-equivalent) as this comparison is only called after

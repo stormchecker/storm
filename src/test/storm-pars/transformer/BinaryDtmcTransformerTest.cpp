@@ -34,8 +34,8 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     uint64_t initialStateModel = dtmc->getStates("init").getNextSetIndex(0);
 
-    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(
-               dtmc, formulas, {.bisimulationType = storm::bisimulation::Options::BisimulationType::Weak})
+    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas,
+                                                                                {.bisimulationType = storm::bisimulation::Options::BisimulationType::Weak})
                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     storm::transformer::BinaryDtmcTransformer binaryDtmcTransformer;

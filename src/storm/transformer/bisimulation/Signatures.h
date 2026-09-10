@@ -76,7 +76,8 @@ class Signatures {
      */
     struct SplitCondition {
         SplitCondition(std::vector<StateSignature> const& signatures, ValueType const& tolerance) : signatures(signatures), tolerance(tolerance) {}
-        bool operator()(uint64_t const state1, uint64_t const state2) const requires(Mode == SignatureMode::Approximative);
+        bool operator()(uint64_t const state1, uint64_t const state2) const
+            requires(Mode == SignatureMode::Approximative);
 
        private:
         std::vector<StateSignature> const& signatures;
@@ -143,7 +144,7 @@ class Signatures {
          * @note returns {hint, false} if signature is not found.
          */
         std::pair<ChoiceSignatureIterator, bool> findWithHint(ChoiceSignatureIterator const hint, ChoiceSignature const& signature,
-                                                                    ValueType const tolerance) const
+                                                              ValueType const tolerance) const
             requires(Mode == SignatureMode::Approximative);
 
         void insert(ChoiceSignature const& signature, ValueType const tolerance);

@@ -94,21 +94,21 @@ BisimulationSettings::BisimulationSettings() : ModuleSettings(moduleName) {
                                          .build())
                         .build());
 
-    this->addOption(
-        storm::settings::OptionBuilder(moduleName, toleranceOptionName, true,
-                                       "Sets the tolerance to use for bisimulation minimization (only for sparse bisimulation).")
-            .setIsAdvanced()
-            .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The tolerance. Defaults to 0 in exact mode.")
-                             .setDefaultValueDouble(1e-9)
-                             .addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
-                             .build())
-            .build());
-
-    this->addOption(storm::settings::OptionBuilder(moduleName, actionSensitiveOptionName, true,
-                                                   "Sets whether choices are only lumped together if they belong to the same state-local action index (only for "
-                                                   "sparse bisimulation).")
+    this->addOption(storm::settings::OptionBuilder(moduleName, toleranceOptionName, true,
+                                                   "Sets the tolerance to use for bisimulation minimization (only for sparse bisimulation).")
                         .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The tolerance. Defaults to 0 in exact mode.")
+                                         .setDefaultValueDouble(1e-9)
+                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
+                                         .build())
                         .build());
+
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, actionSensitiveOptionName, true,
+                                       "Sets whether choices are only lumped together if they belong to the same state-local action index (only for "
+                                       "sparse bisimulation).")
+            .setIsAdvanced()
+            .build());
 }
 
 bool BisimulationSettings::isStrongBisimulationSet() const {

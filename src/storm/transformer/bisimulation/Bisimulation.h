@@ -27,7 +27,7 @@ struct ReturnType {
  */
 template<typename ValueType>
 ReturnType<ValueType> performBisimulationMinimization(storm::models::sparse::Model<ValueType> const& model,
-                                                    std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas = {},
-                                                    Options const& options = {});
+                                                      std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas = {},
+                                                      Options const& options = {});
 
 }  // namespace storm::bisimulation
