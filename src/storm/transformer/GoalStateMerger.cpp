@@ -52,9 +52,13 @@ std::optional<storm::storage::BitVector> checkPropositional(storm::modelchecker:
     return std::move(checker.check(subformula)->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>().getTruthValuesVector());
 }
 
+/*!
+ * @return the first set bit of the given bitvector, or std::nullopt if there is no set bit.
+ */
 std::optional<uint64_t> representative(storm::storage::BitVector const& b) {
-    if (auto it = b.begin(); it != b.end()) {
-        return *it;
+    uint64_t const result = b.getNextSetIndex(0);
+    if (result < b.size()) {
+        return result;
     }
     return std::nullopt;
 }
@@ -107,11 +111,11 @@ typename GoalStateMerger<ValueType>::ReturnType GoalStateMerger<ValueType>::merg
     if (originalModel.hasStateValuations()) {
         std::vector<uint64_t> newToOldStateIndices(maybeStates.begin(), maybeStates.end());
         if (result.first.targetState.has_value()) {
-            STORM_LOG_ASSERT(result.first.targetState.value() == newToOldStateIndices.size(), "unexpected position of target state.");
+            STORM_LOG_ASSERT(result.first.targetState.value() == newToOldStateIndices.size(), "Unexpected position of target state.");
             newToOldStateIndices.push_back(representativeTargetState.value_or(*targetStates.begin()));
         }
         if (result.first.sinkState.has_value()) {
-            STORM_LOG_ASSERT(result.first.sinkState.value() == newToOldStateIndices.size(), "unexpected position of sink state.");
+            STORM_LOG_ASSERT(result.first.sinkState.value() == newToOldStateIndices.size(), "Unexpected position of sink state.");
             newToOldStateIndices.push_back(representativeSinkState.value_or(*sinkStates.begin()));
         }
         modelComponents.stateValuations = originalModel.getStateValuations().selectEntities(newToOldStateIndices);

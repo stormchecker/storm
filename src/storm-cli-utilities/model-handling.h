@@ -737,16 +737,24 @@ std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessModel(std::
 
     // Merging of states should be done before applying bisimulation as this order leads to the smallest quotient
     if (transformationSettings.isMergeEquivalentStatesSet()) {
-        auto formulas = createFormulasToRespect(input.properties);
-        if (formulas.size() != 1) {
-            STORM_LOG_WARN("Skipping merging of equivalent states as it requires exactly one input property. " << formulas.size()
-                                                                                                               << " properties given instead.");
-        } else if (auto mergedModel = storm::api::mergeEquivalentStatesForFormula<ValueType>(result.first, *formulas.front())) {
-            STORM_LOG_INFO("Merged target/sink states relevant for the considered property '" << *formulas.front() << "'.");
-            result.first = mergedModel;
-            result.second = true;
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Merging equivalent states not supported for interval models.");
         } else {
-            STORM_LOG_INFO("Merging equivalent states is not applicable for the considered property '" << *formulas.front() << "'.");
+            auto formulas = createFormulasToRespect(input.properties);
+            if (formulas.size() == 1) {
+                auto mergedModel = storm::api::mergeEquivalentStatesForFormula<ValueType>(result.first, *formulas.front());
+                if (mergedModel) {
+                    STORM_LOG_INFO("Merged equivalent states for the considered property '" << *formulas.front() << "'.");
+                    result.first = mergedModel;
+                    result.second = true;
+                } else {
+                    STORM_LOG_WARN("Merging equivalent states is not supported for the considered " << result.first->getType() << " model and property '"
+                                                                                                    << *formulas.front() << "'.");
+                }
+            } else {
+                STORM_LOG_WARN("Skipping merging of equivalent states as it requires exactly one input property. " << formulas.size()
+                                                                                                                   << " properties given instead.");
+            }
         }
     }
 

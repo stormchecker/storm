@@ -1,5 +1,6 @@
 #include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 #include <memory>
+#include <type_traits>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -18,10 +19,10 @@ namespace transformer {
 namespace {
 
 /*!
- * Eliminates all states that satisfy
+ * Eliminates all states that satisfy all of the following conditions:
+ * * the state is in consideredStates,
  * * there is only one enabled action (i.e., there is no nondeterministic choice at the state),
- * * all outgoing transitions are constant,
- * * there is no statelabel defined, and
+ * * all outgoing transitions are constant, and
  * * (if rewardModelName is given) the reward collected at the state is constant.
  *
  * The resulting model will only have the rewardModel with the provided name (or no reward model at all if no name was given).
@@ -105,8 +106,7 @@ std::shared_ptr<SparseModelType> eliminateNeutralEndComponents(SparseModelType c
     // Get the actions that can be part of an EC
     storm::storage::BitVector possibleECActions(model.getNumberOfChoices(), true);
     for (auto state : ignoredStates) {
-        for (uint_fast64_t actionIndex = model.getTransitionMatrix().getRowGroupIndices()[state];
-             actionIndex < model.getTransitionMatrix().getRowGroupIndices()[state + 1]; ++actionIndex) {
+        for (uint64_t const actionIndex : model.getTransitionMatrix().getRowGroupIndices(state)) {
             possibleECActions.set(actionIndex, false);
         }
     }
@@ -115,7 +115,7 @@ std::shared_ptr<SparseModelType> eliminateNeutralEndComponents(SparseModelType c
     std::vector<typename SparseModelType::ValueType> actionRewards;
     if (rewardModelName) {
         actionRewards = model.getRewardModel(*rewardModelName).getTotalRewardVector(model.getTransitionMatrix());
-        uint_fast64_t actionIndex = 0;
+        uint64_t actionIndex = 0;
         for (auto const& actionReward : actionRewards) {
             if (!storm::utility::isZero(actionReward)) {
                 possibleECActions.set(actionIndex, false);
@@ -160,6 +160,9 @@ SparseParametricModelSimplifier<SparseModelType>::SparseParametricModelSimplifie
 
 template<typename SparseModelType>
 bool SparseParametricModelSimplifier<SparseModelType>::simplify(storm::logic::Formula const& formula) {
+    static_assert(std::is_same_v<SparseModelType, storm::models::sparse::Dtmc<storm::RationalFunction>> ||
+                      std::is_same_v<SparseModelType, storm::models::sparse::Mdp<storm::RationalFunction>>,
+                  "SparseParametricModelSimplifier is only implemented for parametric DTMCs and MDPs.");
     // Make sure that there is no old result from a previous call
     simplifiedModel = nullptr;
     simplifiedFormula = nullptr;
@@ -192,9 +195,9 @@ bool SparseParametricModelSimplifier<SparseModelType>::simplify(storm::logic::Fo
             enableStateElimination = true;
             enableEndComponentElimination = originalModel.isNondeterministicModel() && !minimizing;  // end components can only exist for Pmax queries.
         } else if (operatorFormula.getSubformula().isBoundedUntilFormula()) {
+            auto const& boundedUntilFormula = operatorFormula.getSubformula().asBoundedUntilFormula();
             // multidimensional or reward bounded until formulas are not considered in this simplifier.
-            if (auto const& boundedUntilFormula = operatorFormula.getSubformula().asBoundedUntilFormula();
-                !boundedUntilFormula.isMultiDimensional() && !boundedUntilFormula.getTimeBoundReference().isRewardBound()) {
+            if (!boundedUntilFormula.isMultiDimensional() && !boundedUntilFormula.getTimeBoundReference().isRewardBound()) {
                 // Since we have a discrete-time model, we may assume a step bound.
                 // Similar to (unbounded) until above, we can also drop the left subformula.
                 auto newBoundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula const>(
