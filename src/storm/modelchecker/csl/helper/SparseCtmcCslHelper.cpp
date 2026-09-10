@@ -65,7 +65,9 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
 
     // If the time bounds are [0, inf], we rather call untimed reachability.
     if (storm::utility::isZero(lowerBound) && !upperBound) {
-        return computeUntilProbabilities(env, std::move(goal), rateMatrix, backwardTransitions, exitRates, phiStates, psiStates, qualitative);
+        // Bounded until does not report bounds on its values, so only the values are taken here. Note that the
+        // remaining cases go through uniformization, which does not produce any.
+        return computeUntilProbabilities(env, std::move(goal), rateMatrix, backwardTransitions, exitRates, phiStates, psiStates, qualitative).values;
     }
 
     // From this point on, we know that we have to solve a more complicated problem [t, t'] with either t != 0
@@ -137,7 +139,8 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
                     // Start by computing the (unbounded) reachability probabilities of reaching psi states while
                     // staying in phi states.
                     result = computeUntilProbabilities(env, storm::solver::SolveGoal<ValueType>(), rateMatrix, backwardTransitions, exitRates, phiStates,
-                                                       psiStates, qualitative);
+                                                       psiStates, qualitative)
+                                 .values;
 
                     // Determine the set of states that must be considered further.
                     storm::storage::BitVector relevantStates = statesWithProbabilityGreater0 & phiStates;
@@ -253,15 +256,12 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
 }
 
 template<typename ValueType>
-std::vector<ValueType> SparseCtmcCslHelper::computeUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
-                                                                      storm::storage::SparseMatrix<ValueType> const& rateMatrix,
-                                                                      storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                      std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& phiStates,
-                                                                      storm::storage::BitVector const& psiStates, bool qualitative) {
-    // The CTMC helper does not expose bounds to its callers yet.
-    return std::move(SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(env, std::move(goal), computeProbabilityMatrix(rateMatrix, exitRateVector),
-                                                                                 backwardTransitions, phiStates, psiStates, qualitative)
-                         .values);
+DeterministicSparseModelCheckingHelperReturnType<ValueType> SparseCtmcCslHelper::computeUntilProbabilities(
+    Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& rateMatrix,
+    storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
+    storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative) {
+    return SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(env, std::move(goal), computeProbabilityMatrix(rateMatrix, exitRateVector),
+                                                                       backwardTransitions, phiStates, psiStates, qualitative);
 }
 
 template<typename ValueType>
@@ -411,7 +411,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment
 }
 
 template<typename ValueType>
-std::vector<storm::utility::ExtendedValueType<ValueType>> SparseCtmcCslHelper::computeReachabilityTimes(
+DeterministicSparseModelCheckingHelperReturnType<storm::utility::ExtendedValueType<ValueType>> SparseCtmcCslHelper::computeReachabilityTimes(
     Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& rateMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
     storm::storage::BitVector const& targetStates, bool qualitative) {
@@ -430,15 +430,12 @@ std::vector<storm::utility::ExtendedValueType<ValueType>> SparseCtmcCslHelper::c
         }
     }
 
-    // TODO: the DTMC helper also reports sound bounds on these values; carrying them through the CTMC helpers
-    // would let reward queries on CTMCs report an enclosure as well.
     return storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(
-               env, std::move(goal), probabilityMatrix, backwardTransitions, totalRewardVector, targetStates, qualitative)
-        .values;
+        env, std::move(goal), probabilityMatrix, backwardTransitions, totalRewardVector, targetStates, qualitative);
 }
 
 template<typename ValueType, typename RewardModelType>
-std::vector<storm::utility::ExtendedValueType<ValueType>> SparseCtmcCslHelper::computeReachabilityRewards(
+DeterministicSparseModelCheckingHelperReturnType<storm::utility::ExtendedValueType<ValueType>> SparseCtmcCslHelper::computeReachabilityRewards(
     Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& rateMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel,
     storm::storage::BitVector const& targetStates, bool qualitative) {
@@ -469,15 +466,12 @@ std::vector<storm::utility::ExtendedValueType<ValueType>> SparseCtmcCslHelper::c
         totalRewardVector = rewardModel.getStateActionRewardVector();
     }
 
-    // TODO: the DTMC helper also reports sound bounds on these values; carrying them through the CTMC helpers
-    // would let reward queries on CTMCs report an enclosure as well.
     return storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(
-               env, std::move(goal), probabilityMatrix, backwardTransitions, totalRewardVector, targetStates, qualitative)
-        .values;
+        env, std::move(goal), probabilityMatrix, backwardTransitions, totalRewardVector, targetStates, qualitative);
 }
 
 template<typename ValueType, typename RewardModelType>
-std::vector<storm::utility::ExtendedValueType<ValueType>> SparseCtmcCslHelper::computeTotalRewards(
+DeterministicSparseModelCheckingHelperReturnType<storm::utility::ExtendedValueType<ValueType>> SparseCtmcCslHelper::computeTotalRewards(
     Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& rateMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel,
     bool qualitative) {
@@ -510,8 +504,7 @@ std::vector<storm::utility::ExtendedValueType<ValueType>> SparseCtmcCslHelper::c
 
     RewardModelType dtmcRewardModel(std::move(totalRewardVector));
     return storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeTotalRewards(env, std::move(goal), probabilityMatrix, backwardTransitions,
-                                                                                              dtmcRewardModel, qualitative)
-        .values;
+                                                                                              dtmcRewardModel, qualitative);
 }
 
 template<typename ValueType>
@@ -761,12 +754,10 @@ template std::vector<double> SparseCtmcCslHelper::computeBoundedUntilProbabiliti
     storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
     std::vector<double> const& exitRates, bool qualitative, double lowerBound, std::optional<double> const& upperBound);
 
-template std::vector<double> SparseCtmcCslHelper::computeUntilProbabilities(Environment const& env, storm::solver::SolveGoal<double>&& goal,
-                                                                            storm::storage::SparseMatrix<double> const& rateMatrix,
-                                                                            storm::storage::SparseMatrix<double> const& backwardTransitions,
-                                                                            std::vector<double> const& exitRateVector,
-                                                                            storm::storage::BitVector const& phiStates,
-                                                                            storm::storage::BitVector const& psiStates, bool qualitative);
+template DeterministicSparseModelCheckingHelperReturnType<double> SparseCtmcCslHelper::computeUntilProbabilities(
+    Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& rateMatrix,
+    storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector, storm::storage::BitVector const& phiStates,
+    storm::storage::BitVector const& psiStates, bool qualitative);
 
 template std::vector<double> SparseCtmcCslHelper::computeAllUntilProbabilities(Environment const& env, storm::solver::SolveGoal<double>&& goal,
                                                                                storm::storage::SparseMatrix<double> const& rateMatrix,
@@ -785,17 +776,17 @@ template std::vector<double> SparseCtmcCslHelper::computeInstantaneousRewards(En
                                                                               storm::models::sparse::StandardRewardModel<double> const& rewardModel,
                                                                               double timeBound);
 
-template std::vector<storm::utility::ExtendedValueType<double>> SparseCtmcCslHelper::computeReachabilityTimes(
+template DeterministicSparseModelCheckingHelperReturnType<storm::utility::ExtendedValueType<double>> SparseCtmcCslHelper::computeReachabilityTimes(
     Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& rateMatrix,
     storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector, storm::storage::BitVector const& targetStates,
     bool qualitative);
 
-template std::vector<storm::utility::ExtendedValueType<double>> SparseCtmcCslHelper::computeReachabilityRewards(
+template DeterministicSparseModelCheckingHelperReturnType<storm::utility::ExtendedValueType<double>> SparseCtmcCslHelper::computeReachabilityRewards(
     Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& rateMatrix,
     storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector,
     storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative);
 
-template std::vector<storm::utility::ExtendedValueType<double>> SparseCtmcCslHelper::computeTotalRewards(
+template DeterministicSparseModelCheckingHelperReturnType<storm::utility::ExtendedValueType<double>> SparseCtmcCslHelper::computeTotalRewards(
     Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& rateMatrix,
     storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector,
     storm::models::sparse::StandardRewardModel<double> const& rewardModel, bool qualitative);
@@ -819,11 +810,11 @@ template std::vector<double> SparseCtmcCslHelper::computeTransientProbabilities(
                                                                                 std::vector<double> const* addVector, double timeBound,
                                                                                 double uniformizationRate, std::vector<double> values, double epsilon);
 
-template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeUntilProbabilities(
+template DeterministicSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseCtmcCslHelper::computeUntilProbabilities(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector,
     storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative);
-template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeUntilProbabilities(
+template DeterministicSparseModelCheckingHelperReturnType<storm::RationalFunction> SparseCtmcCslHelper::computeUntilProbabilities(
     Environment const& env, storm::solver::SolveGoal<storm::RationalFunction>&& goal, storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix,
     storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction> const& exitRateVector,
     storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative);
@@ -845,29 +836,29 @@ template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeNextPr
     Environment const& env, storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, std::vector<storm::RationalFunction> const& exitRateVector,
     storm::storage::BitVector const& nextStates);
 
-template std::vector<storm::ExtendedRationalNumber> SparseCtmcCslHelper::computeReachabilityTimes(
+template DeterministicSparseModelCheckingHelperReturnType<storm::ExtendedRationalNumber> SparseCtmcCslHelper::computeReachabilityTimes(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector,
     storm::storage::BitVector const& targetStates, bool qualitative);
-template std::vector<storm::ExtendedRationalFunction> SparseCtmcCslHelper::computeReachabilityTimes(
+template DeterministicSparseModelCheckingHelperReturnType<storm::ExtendedRationalFunction> SparseCtmcCslHelper::computeReachabilityTimes(
     Environment const& env, storm::solver::SolveGoal<storm::RationalFunction>&& goal, storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix,
     storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction> const& exitRateVector,
     storm::storage::BitVector const& targetStates, bool qualitative);
 
-template std::vector<storm::ExtendedRationalNumber> SparseCtmcCslHelper::computeReachabilityRewards(
+template DeterministicSparseModelCheckingHelperReturnType<storm::ExtendedRationalNumber> SparseCtmcCslHelper::computeReachabilityRewards(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector,
     storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative);
-template std::vector<storm::ExtendedRationalFunction> SparseCtmcCslHelper::computeReachabilityRewards(
+template DeterministicSparseModelCheckingHelperReturnType<storm::ExtendedRationalFunction> SparseCtmcCslHelper::computeReachabilityRewards(
     Environment const& env, storm::solver::SolveGoal<storm::RationalFunction>&& goal, storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix,
     storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction> const& exitRateVector,
     storm::models::sparse::StandardRewardModel<storm::RationalFunction> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative);
 
-template std::vector<storm::ExtendedRationalNumber> SparseCtmcCslHelper::computeTotalRewards(
+template DeterministicSparseModelCheckingHelperReturnType<storm::ExtendedRationalNumber> SparseCtmcCslHelper::computeTotalRewards(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector,
     storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, bool qualitative);
-template std::vector<storm::ExtendedRationalFunction> SparseCtmcCslHelper::computeTotalRewards(
+template DeterministicSparseModelCheckingHelperReturnType<storm::ExtendedRationalFunction> SparseCtmcCslHelper::computeTotalRewards(
     Environment const& env, storm::solver::SolveGoal<storm::RationalFunction>&& goal, storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix,
     storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction> const& exitRateVector,
     storm::models::sparse::StandardRewardModel<storm::RationalFunction> const& rewardModel, bool qualitative);
