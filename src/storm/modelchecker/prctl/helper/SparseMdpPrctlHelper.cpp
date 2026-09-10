@@ -818,6 +818,13 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler.");
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
 
+    // Where the graph analysis settled every state there was no equation system to solve, so the values are
+    // exactly the ones it determined and each of them bounds itself from either side.
+    if (qualitativeStateSets.maybeStates.empty()) {
+        resultBounds.lower = result;
+        resultBounds.upper = result;
+    }
+
     // Return result.
     MDPSparseModelCheckingHelperReturnType<SolutionType> returnValue(std::move(result), std::move(scheduler));
     returnValue.solutionBounds = std::move(resultBounds);
@@ -1537,6 +1544,13 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || !scheduler->isPartialScheduler(), "Expected a fully defined scheduler.");
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler.");
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
+
+    // Where the graph analysis settled every state there was no equation system to solve, so the values are
+    // exactly the ones it determined and each of them bounds itself from either side.
+    if (qualitativeStateSets.maybeStates.empty()) {
+        resultBounds.lower = result;
+        resultBounds.upper = result;
+    }
 
     if constexpr (storm::IsIntervalType<ValueType>) {
         ExtendedReturnType returnValue(std::move(result));
