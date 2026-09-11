@@ -123,7 +123,9 @@ auto Signatures<ValueType, Mode>::StateSignature::findWithHint(ChoiceSignatureIt
     -> std::pair<ChoiceSignatureIterator, bool>
     requires(Mode == SignatureMode::Approximative)
 {
-    STORM_LOG_ASSERT(hint >= choices.begin() && hint < choices.end(), "Hint iterator must be within the range of choices.");
+    // The hint may be the insertion point choices.end(), cf. the contract in the header: the forward scan below then does not run and the backward scan
+    // starts at the last entry.
+    STORM_LOG_ASSERT(hint >= choices.begin() && hint <= choices.end(), "Hint iterator must be within the range of choices.");
     STORM_LOG_ASSERT(!signature.distr.empty(), "Distributions must not be empty.");  // Don't deal with this special case here.
 
     auto const near = [&tolerance](ValueType const& value1, ValueType const& value2) { return storm::utility::abs<ValueType>(value1 - value2) <= tolerance; };
