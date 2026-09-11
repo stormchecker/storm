@@ -210,7 +210,7 @@ std::optional<std::vector<uint64_t>> Initialization<ValueType>::getChoiceClasses
     if (options.actionSensitive && model.isNondeterministicModel()) {
         auxVector.reserve(model.getNumberOfChoices());
         // fill the auxVector with the local choice indices and treat it as any other annotation.
-        for (uint64_t state = 0; state < model.getNumberOfChoices(); ++state) {
+        for (uint64_t state = 0; state < model.getNumberOfStates(); ++state) {
             for (uint64_t act = 0; act < model.getTransitionMatrix().getRowGroupSize(state); ++act) {
                 auxVector.push_back(act);
             }
