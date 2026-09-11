@@ -456,7 +456,7 @@ TEST(WeakBisimulationTest, RandomCtmcs) {
  * are preserved.
  */
 void testAgainstOriginal(std::string const& prismFile, std::string const& formulaString, uint64_t expectedModelStates, uint64_t expectedStrongStates,
-                         uint64_t expectedWeakStates, uint64_t expectedWeakTransitions, BuildOptions const& buildOptions = {}) {
+                         uint64_t expectedWeakStates, uint64_t expectedWeakTransitions, BuildOptions const& buildOptions = {}, double const tolerance = 0.0) {
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
 #endif
@@ -465,6 +465,8 @@ void testAgainstOriginal(std::string const& prismFile, std::string const& formul
 
     auto strong = strongOptions();
     auto weak = weakOptions();
+    strong.tolerance = storm::utility::convertNumber<storm::RationalNumber>(tolerance);
+    weak.tolerance = strong.tolerance;
     if (buildOptions.allLabels) {
         strong.preserveAllStateLabels = true;
         weak.preserveAllStateLabels = true;
@@ -502,13 +504,15 @@ TEST(WeakBisimulationTest, CrowdsAllLabels) {
 
 /*!
  * A CTMC, checked against a time-bounded formula (which weak bisimulation does preserve on continuous-time models).
+ * The rates of this model are not exactly representable as doubles. With tolerance zero, the strong quotient therefore depends on how the platform rounds,
+ * so we use the tolerance of the command line, with which the strong quotient coincides with the exact one.
  */
 TEST(WeakBisimulationTest, CtmcEmbedded) {
-    testAgainstOriginal(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "P=? [F<=10000 \"down\"]", 2076ull, 634ull, 158ull, 898ull);
+    testAgainstOriginal(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "P=? [F<=10000 \"down\"]", 2076ull, 310ull, 158ull, 898ull, {}, 1e-9);
 }
 
 TEST(WeakBisimulationTest, CtmcEmbeddedAllLabels) {
-    testAgainstOriginal(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "P=? [F<=10000 \"down\"]", 3478ull, 1395ull, 659ull, 3392ull, {.allLabels = true});
+    testAgainstOriginal(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "P=? [F<=10000 \"down\"]", 3478ull, 1127ull, 659ull, 3392ull, {.allLabels = true}, 1e-9);
 }
 
 /*!

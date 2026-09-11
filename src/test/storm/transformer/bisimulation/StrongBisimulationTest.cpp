@@ -69,7 +69,7 @@ Options allLabelOptions() {
 }
 
 /*!
- * @return options with the tolerance that the command line uses for inexact value types. Besides grouping almost-equal values, a positive tolerance also
+ * @return options with a default tolerance used for inexact value types. Besides grouping almost-equal values, a positive tolerance also
  * switches signature-based refinement from exact to approximative signatures.
  */
 Options approximateOptions() {
@@ -376,7 +376,7 @@ TEST(StrongBisimulationTest, CrowdsAllLabels) {
 }
 
 TEST(StrongBisimulationTest, CtmcEmbedded) {
-    testQuotient(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "P=? [F<=10000 \"down\"]", 2076ull, 634ull, 3576ull, 634ull);
+    testQuotient(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "P=? [F<=10000 \"down\"]", 2076ull, 310ull, 1752ull, 310ull, approximateOptions());
 }
 
 TEST(StrongBisimulationTest, CtmcCluster) {
