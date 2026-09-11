@@ -1,4 +1,4 @@
-name: Check code format
+name: Check code style
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  clang-format:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,3 +20,11 @@ jobs:
         source: './src'
         clangFormatVersion: ${{ steps.clang-versions.outputs.FORMAT_VERSION }}
         style: file
+
+  code-style:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Check code style
+      run: python3 resources/scripts/check_style.py --checks=include-order,pragma-once,raw-throw

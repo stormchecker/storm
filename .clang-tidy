@@ -26,6 +26,7 @@ Checks: >-
   modernize-make-unique,
   modernize-use-bool-literals,
   modernize-use-nullptr,
+  performance-avoid-endl,
   readability-braces-around-statements,
   readability-redundant-smartptr-get,
   readability-redundant-string-cstr,

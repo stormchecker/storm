@@ -64,6 +64,9 @@ Important CMake options:
 
 
 ## Coding conventions
+Some of the following coding conventions are enforced by the CI.
+They can be locally checked with the script `resources/scripts/check_style.py`.
+Exceptions for specific files are listed in `.check-style-ignore` under the corresponding section.
 
 ### Templates and `ValueType`
 New functionality should typically be templated on `ValueType`. Add explicit instantiations at the bottom of each `.cpp` file:
@@ -149,7 +152,7 @@ Code that requires optional dependencies (CUDD, GLPK, Z3, …) must be guarded w
   ```
 - Includes should follow the following order:
   ```
-  #include "storm/header.h"  // If cpp file
+  #include "header.h"  // If cpp file
   
   #include <external_library1>
   #include <external_library2>
@@ -159,8 +162,9 @@ Code that requires optional dependencies (CUDD, GLPK, Z3, …) must be guarded w
   #include "storm/additional/headerfile2.h"
   ...
   ```
-  There should only be empty lines between the header file and the external libraries and between the external libraries and the additional header files.
-  Clang-format will then automatically sort the includes in alphabetical order.
+- In a cpp file, the header file should be included without the full path.
+  Every other include -- external library or additional header -- must use its full path from `src/`.
+- Clang-format automatically sorts the includes in alphabetical order.
 - Tests follow the same order as before but typically start by including two helper files:
   ```
   #include "storm-config.h"
@@ -172,8 +176,10 @@ Code that requires optional dependencies (CUDD, GLPK, Z3, …) must be guarded w
 ### Output
 - We provide custom macros for output and logging.
   The use of `std::cout` should be avoided and instead, macros such as `STORM_LOG_DEBUG`, `STORM_LOG_INFO` or `STORM_PRINT_AND_LOG` should be used.
+  In particular, library code should not write directly to stdout, so that downstream consumers (e.g. Python bindings) can control output purely through logging.
 - For line breaks, we use `'\n'` instead of `std::endl` to avoid unnecessary flushing.
   See [PR 178](https://github.com/stormchecker/storm/pull/178) for details.
+  This is checked by clang-tidy's `performance-avoid-endl`.
 
 
 ## CI / Continuous Integration

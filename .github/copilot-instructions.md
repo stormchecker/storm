@@ -22,7 +22,7 @@ The sections below cover agent-specific context that complements that document.
 1. Identify the affected library under `src/storm-xyz/` and its test directory `src/test/storm-xyz/`.
 2. Build only what you changed: `make storm-xyz` (faster than `make -j$(nproc)`).
 3. Run the relevant test binary: `./bin/test-storm-xyz --gtest_filter='Suite.Test'`.
-4. Run `make format` before committing — `formatcheck.yml` runs on every push and will fail otherwise.
+4. Run `make format` before committing — `style-check.yml` runs on every push and will fail otherwise.
 
 ### Logging macros (never use `std::cout`)
 
@@ -41,7 +41,8 @@ All macros are defined in `src/storm/utility/macros.h`.
 
 ### Investigating CI failures
 Use the GitHub Actions MCP tools to read job logs directly. Common causes:
-- **Format failure** (`formatcheck.yml`): run `make format` locally and push.
+- **Format failure** (`style-check.yml`): run `make format` locally and push.
+- **Coding style failure** (`style-check.yml`): run `resources/scripts/check_style.py` locally and fix all indicated issues. See the Coding conventions in `doc/developers.md`.
 - **Build/test failure** (`buildtest.yml`): usually a missing template instantiation for one `ValueType` variant, or a preprocessor-guarded optional dependency being used unconditionally.
 
 ---
