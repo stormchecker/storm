@@ -512,11 +512,9 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     if (computeForInitialStatesOnly) {
         // If we computed the results for the initial (and prob 0 and prob1) states only, we need to filter the
         // result to only communicate these results.
-        std::unique_ptr<ExplicitQuantitativeCheckResult<ValueType>> checkResult = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>();
-        for (uint64_t state : ~maybeStates | initialStates) {
-            (*checkResult)[state] = result[state];
-        }
-        return std::move(checkResult);  // move() required by, e.g., clang 3.8
+        storm::storage::BitVector relevantStates = ~maybeStates | initialStates;
+        std::vector<ValueType> relevantValues = storm::utility::vector::filterVector(result, relevantStates);
+        return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(relevantStates), std::move(relevantValues));
     }
     return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
 }
@@ -621,11 +619,9 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     if (computeForInitialStatesOnly) {
         // If we computed the results for the initial (and inf) states only, we need to filter the result to
         // only communicate these results.
-        std::unique_ptr<ExplicitQuantitativeCheckResult<ValueType>> checkResult = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>();
-        for (uint64_t state : ~maybeStates | initialStates) {
-            (*checkResult)[state] = result[state];
-        }
-        return std::move(checkResult);  // move() required by, e.g., clang 3.8
+        storm::storage::BitVector relevantStates = ~maybeStates | initialStates;
+        auto relevantValues = storm::utility::vector::filterVector(result, relevantStates);
+        return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(relevantStates), std::move(relevantValues));
     }
     return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
 }

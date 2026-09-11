@@ -79,6 +79,7 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
     }
 
     bool returnValue = true;
+    bool aborted = false;
     if (this->sortedSccDecomposition->size() == 1 && (!this->choiceFixedForRowGroup || this->choiceFixedForRowGroup.get().empty())) {
         // Handle the case where there is just one large SCC, as there are no fixed choices for states, we solve it like this
         if (auto const& scc = *this->sortedSccDecomposition->begin(); scc.size() == 1) {
@@ -146,9 +147,14 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
             progress.updateProgress(sccIndex);
             if (storm::utility::resources::isTerminate()) {
                 STORM_LOG_WARN("Topological solver aborted after analyzing " << sccIndex << "/" << this->sortedSccDecomposition->size() << " SCCs.");
+                aborted = true;
                 break;
             }
         }
+    }
+
+    if (returnValue && !aborted) {
+        trySetSolutionBoundsFromPrecision(env, x);
     }
 
     if (!this->isCachingEnabled()) {
@@ -156,6 +162,21 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
     }
 
     return returnValue;
+}
+
+template<typename ValueType, typename SolutionType>
+void TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::trySetSolutionBoundsFromPrecision(Environment const& env,
+                                                                                                       std::vector<SolutionType> const& x) const {
+    // A sound solve hands every SCC a precision of eps divided by the length of the longest SCC chain, and the
+    // deviation an SCC inherits from its predecessors enters its own solution as a convex combination of the values
+    // at the exits, without amplification. The per-SCC deviations therefore add up to at most eps along any chain.
+    // An unsound solve only reports that its iteration stopped moving, which says nothing about the distance to the
+    // solution.
+    if (!env.solver().isForceSoundness()) {
+        return;
+    }
+    this->setSolutionBoundsFromPrecision(x, storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()),
+                                         env.solver().minMax().getRelativeTerminationCriterion());
 }
 
 template<typename ValueType, typename SolutionType>

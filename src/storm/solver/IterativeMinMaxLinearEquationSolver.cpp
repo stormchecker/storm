@@ -21,6 +21,7 @@
 #include "storm/solver/helper/SoundValueIterationHelper.h"
 #include "storm/solver/helper/ValueIterationHelper.h"
 #include "storm/utility/NumberTraits.h"
+#include "storm/utility/OptionalRef.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
@@ -423,6 +424,22 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::performPolicy
         } while (status == SolverStatus::InProgress);
 
         STORM_LOG_INFO("Number of iterations: " << iterations);
+
+        // Policy iteration's own termination says the scheduler is optimal, not how accurately the values under
+        // it were computed, so the only statement to make is the one the inner solver made.
+        if (status == SolverStatus::Converged) {
+            storm::solver::SolutionBounds<SolutionType> solutionBounds;
+            if (solver->hasSolutionLowerBounds()) {
+                solutionBounds.lower = solver->getSolutionLowerBounds();
+            }
+            if (solver->hasSolutionUpperBounds()) {
+                solutionBounds.upper = solver->getSolutionUpperBounds();
+            }
+            if (solutionBounds.hasAny()) {
+                this->setSolutionBounds(std::move(solutionBounds));
+            }
+        }
+
         this->reportStatus(status, iterations);
 
         // If requested, we store the scheduler for retrieval.
@@ -596,8 +613,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
             guessingFactor = storm::utility::convertNumber<ValueType>(*env.solver().ovi().getUpperBoundGuessingFactor());
         }
         this->startMeasureProgress();
+        storm::solver::SolutionBounds<ValueType> solutionBounds;
         auto status = oviHelper.OVI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(), prec, dir, guessingFactor, lowerBound,
-                                    upperBound, oviCallback);
+                                    upperBound, oviCallback, solutionBounds);
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.
@@ -643,6 +664,13 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         this->startMeasureProgress();
         auto statusIters = helper.solveEquations(lowerX, *upperX, b, numIterations,
                                                  storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), dir, gviCallback);
+        // Guessing value iteration only writes back a guess it has verified, so the two vectors enclose the
+        // solution in every iteration, aborted or not. Read them out before x is overwritten with the average.
+        storm::solver::SolutionBounds<SolutionType> solutionBounds;
+        solutionBounds.lower = lowerX;
+        solutionBounds.upper = *upperX;
+        this->setSolutionBounds(std::move(solutionBounds));
+
         auto two = storm::utility::convertNumber<ValueType>(2.0);
         storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
             lowerX, *upperX, x, [&two](ValueType const& first, ValueType const& second) -> ValueType { return (first + second) / two; });
@@ -729,13 +757,23 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         return this->updateStatus(current, x, guarantee, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
     };
     this->startMeasureProgress();
+    // Without a unique fixed point a monotone iteration only bounds the greatest resp. least one, which need
+    // not be the solution we are after.
+    storm::solver::SolutionBounds<SolutionType> solutionBounds;
+    storm::OptionalRef<storm::solver::SolutionBounds<SolutionType>> solutionBoundsRef;
+    if (this->hasUniqueSolution()) {
+        solutionBoundsRef.reset(solutionBounds);
+    }
     // This code duplication is necessary because the helper class is different for the two cases.
     if (this->A->hasTrivialRowGrouping()) {
         storm::solver::helper::ValueIterationHelper<ValueType, true, SolutionType> viHelper(viOperatorTriv);
 
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                   storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode());
+                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode(), solutionBoundsRef);
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.
@@ -753,7 +791,10 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                   storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode());
+                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode(), solutionBoundsRef);
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.
@@ -806,8 +847,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
             optionalRelevantValues = this->getRelevantValues();
         }
         this->startMeasureProgress();
+        storm::solver::SolutionBounds<ValueType> solutionBounds;
         auto status = iiHelper.II(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(), prec, lowerBoundsCallback, upperBoundsCallback,
-                                  dir, iiCallback, optionalRelevantValues);
+                                  dir, iiCallback, optionalRelevantValues, solutionBounds);
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.
@@ -858,8 +903,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         if (this->hasRelevantValues()) {
             optionalRelevantValues = this->getRelevantValues();
         }
+        storm::solver::SolutionBounds<ValueType> solutionBounds;
         auto status = sviHelper.SVI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(), precision, dir, lowerBound, upperBound,
-                                    sviCallback, optionalRelevantValues);
+                                    sviCallback, optionalRelevantValues, solutionBounds);
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
@@ -955,6 +1004,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         };
         this->startMeasureProgress();
         auto status = rsHelper.RS(x, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), dir, rsCallback);
+
+        // Rational search reports convergence only once it has verified a sharpened candidate to be an exact fixed
+        // point, so the result is the solution rather than an approximation.
+        if (status == SolverStatus::Converged) {
+            this->setSolutionBoundsExact(x);
+        }
 
         this->reportStatus(status, numIterations);
 

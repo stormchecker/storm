@@ -379,9 +379,13 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsPower(Environment cons
         return this->updateStatus(current, x, guarantee, numIterations, env.solver().native().getMaximalNumberOfIterations());
     };
     this->startMeasureProgress();
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
     auto status = viHelper.VI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(),
                               storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()), {}, viCallback,
-                              env.solver().native().getPowerMethodMultiplicationStyle());
+                              env.solver().native().getPowerMethodMultiplicationStyle(), UncertaintyResolutionMode::Unset, solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
 
     this->reportStatus(status, numIterations);
 
@@ -441,8 +445,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsIntervalIteration(Envi
         optionalRelevantValues = this->getRelevantValues();
     }
     this->startMeasureProgress();
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
     auto status = iiHelper.II(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(), prec, lowerBoundsCallback, upperBoundsCallback, {},
-                              iiCallback, optionalRelevantValues);
+                              iiCallback, optionalRelevantValues, solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
     this->reportStatus(status, numIterations);
 
     if (!this->isCachingEnabled()) {
@@ -482,8 +490,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(En
     }
     this->startMeasureProgress();
     helper::SoundValueIterationHelper<ValueType, true> sviHelper(viOperator);
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
     auto status = sviHelper.SVI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(), precision, {}, lowerBound, upperBound,
-                                sviCallback, optionalRelevantValues);
+                                sviCallback, optionalRelevantValues, solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
 
     this->reportStatus(status, numIterations);
 
@@ -525,7 +537,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIterati
         guessingFactor = storm::utility::convertNumber<ValueType>(*env.solver().ovi().getUpperBoundGuessingFactor());
     }
     this->startMeasureProgress();
-    auto status = oviHelper.OVI(x, b, env.solver().native().getRelativeTerminationCriterion(), prec, {}, guessingFactor, lowerBound, upperBound, oviCallback);
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
+    auto status = oviHelper.OVI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(), prec, {}, guessingFactor, lowerBound, upperBound,
+                                oviCallback, solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
     this->reportStatus(status, numIterations);
 
     if (!this->isCachingEnabled()) {
@@ -562,6 +579,13 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsGuessingValueIteration
     auto status = helper.solveEquations(*lowerX, *upperX, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
                                         {},  // No optimization dir
                                         gviCallback);
+    // Guessing value iteration only writes back a guess it has verified, so the two vectors enclose the
+    // solution in every iteration, aborted or not. Read them out before x is overwritten with the average.
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
+    solutionBounds.lower = *lowerX;
+    solutionBounds.upper = *upperX;
+    this->setSolutionBounds(std::move(solutionBounds));
+
     auto two = storm::utility::convertNumber<ValueType>(2.0);
     storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
         *lowerX, *upperX, x, [&two](ValueType const& first, ValueType const& second) -> ValueType { return (first + second) / two; });
@@ -599,6 +623,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsRationalSearch(Environ
     };
     this->startMeasureProgress();
     auto status = rsHelper.RS(x, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()), {}, rsCallback);
+
+    // Rational search reports convergence only once it has verified a sharpened candidate to be an exact fixed
+    // point, so the result is the solution rather than an approximation.
+    if (status == SolverStatus::Converged) {
+        this->setSolutionBoundsExact(x);
+    }
 
     this->reportStatus(status, numIterations);
 
