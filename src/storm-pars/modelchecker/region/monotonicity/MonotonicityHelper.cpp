@@ -324,8 +324,8 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
                 STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula.");
             }
 
-            auto quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<ConstantType>();
-            std::vector<ConstantType> values = quantitativeResult.getValueVector();
+            auto const& quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<ConstantType>();
+            std::vector<ConstantType> values = quantitativeResult.getFiniteValueVector();
             auto initialStates = model->getInitialStates();
             ConstantType initial = 0;
             // Get total probability from initial states

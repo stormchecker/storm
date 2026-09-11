@@ -8,6 +8,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/utility/ExtendedNumber.h"
 
 namespace storm {
 namespace modelchecker {
@@ -26,6 +27,8 @@ class SparseMdpInstantiationModelChecker : public SparseInstantiationModelChecke
     virtual bool isWellDefined(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
 
    protected:
+    typedef storm::utility::ExtendedValueType<ConstantType> ExtendedConstantType;
+
     // Optimizations for the different formula types
     std::unique_ptr<CheckResult> checkReachabilityProbabilityFormula(
         Environment const& env, storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker,

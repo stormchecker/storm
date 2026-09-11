@@ -18,7 +18,7 @@ RegionResult RegionModelChecker<ParametricType>::analyzeRegion(Environment const
 }
 
 template<typename ParametricType>
-typename RegionModelChecker<ParametricType>::CoefficientType RegionModelChecker<ParametricType>::getBoundAtInitState(
+typename RegionModelChecker<ParametricType>::ExtendedCoefficientType RegionModelChecker<ParametricType>::getBoundAtInitState(
     Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
     AnnotatedRegion<ParametricType> annotatedRegion{region};
     monotonicityBackend->initializeMonotonicity(env, annotatedRegion);

@@ -73,8 +73,8 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
         auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
         auto resultTT = modelCheckerTT.check(env, instantiation)->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
 
-        storm::RationalNumber resA = result[*modelChecker.getOriginalModel().getInitialStates().begin()];
-        storm::RationalNumber resB = resultTT[*modelCheckerTT.getOriginalModel().getInitialStates().begin()];
+        auto const resA = result[*modelChecker.getOriginalModel().getInitialStates().begin()];
+        auto const resB = resultTT[*modelCheckerTT.getOriginalModel().getInitialStates().begin()];
         ASSERT_NEAR(resA, resB, storm::utility::convertNumber<storm::RationalNumber>(1e-6));
     }
 

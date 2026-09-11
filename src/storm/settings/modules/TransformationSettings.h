@@ -49,6 +49,11 @@ class TransformationSettings : public ModuleSettings {
     bool isToDiscreteTimeModelSet() const;
 
     /*!
+     * Retrieves whether the target/sink states relevant for the considered properties should be merged into single states before model checking.
+     */
+    bool isMergeEquivalentStatesSet() const;
+
+    /*!
      * If the returned value is not empty, the model should be permuted according to the given order.
      */
     std::optional<storm::utility::permutation::OrderKind> getModelPermutation() const;
@@ -71,6 +76,7 @@ class TransformationSettings : public ModuleSettings {
     static const std::string labelBehaviorOptionName;
     static const std::string toNondetOptionName;
     static const std::string toDiscreteTimeOptionName;
+    static const std::string mergeEquivalentStatesOptionName;
     static const std::string permuteModelOptionName;
 };
 

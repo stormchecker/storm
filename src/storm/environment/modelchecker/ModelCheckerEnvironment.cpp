@@ -41,20 +41,20 @@ ConditionalModelCheckerEnvironment const& ModelCheckerEnvironment::conditional()
     return conditionalModelCheckerEnvironment.get();
 }
 
-SteadyStateDistributionAlgorithm ModelCheckerEnvironment::getSteadyStateDistributionAlgorithm() const {
-    return steadyStateDistributionAlgorithm;
-}
-
-void ModelCheckerEnvironment::setSteadyStateDistributionAlgorithm(SteadyStateDistributionAlgorithm value) {
-    steadyStateDistributionAlgorithm = value;
-}
-
 MultiObjectiveModelCheckerEnvironment& ModelCheckerEnvironment::multi() {
     return multiObjectiveModelCheckerEnvironment.get();
 }
 
 MultiObjectiveModelCheckerEnvironment const& ModelCheckerEnvironment::multi() const {
     return multiObjectiveModelCheckerEnvironment.get();
+}
+
+SteadyStateDistributionAlgorithm ModelCheckerEnvironment::getSteadyStateDistributionAlgorithm() const {
+    return steadyStateDistributionAlgorithm;
+}
+
+void ModelCheckerEnvironment::setSteadyStateDistributionAlgorithm(SteadyStateDistributionAlgorithm value) {
+    steadyStateDistributionAlgorithm = value;
 }
 
 bool ModelCheckerEnvironment::isLtl2daToolSet() const {

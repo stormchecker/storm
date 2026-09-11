@@ -74,6 +74,41 @@ template class MyClass<storm::RationalFunction>;
 ```
 New numerical code must be tested under both CLN and GMP configurations (`STORM_USE_CLN_EA` on/off, `STORM_USE_CLN_RF` on/off) since their arithmetic differs in edge cases.
 
+### Infinity
+`storm::utility::infinity<ValueType>()` returns a true infinity only for `double`.
+For the exact types it returns the literal `100000000000`; it is deprecated and must not be used in new code.
+
+A value that can be infinite is held in `storm::utility::ExtendedValueType<ValueType>`.
+This is `ValueType` itself for types that bring their own infinity (`double`, reported by `NumberTraits<ValueType>::HasInfinity`) and `storm::utility::ExtendedNumber<ValueType>` for the rest.
+`storm::ExtendedRationalNumber` and `storm::ExtendedRationalFunction` are the aliases for `RationalNumber` and `RationalFunction`.
+
+Use it at the boundaries of a computation: check results, value vectors handed to a caller, bounds passed around as scalars.
+Do not use it in hot loops as the extra wrapper can cause unnecessary slowdowns. Often it is possible to filter out any value which would become or are infinte. To detect or set infinities use the following functions:
+```cpp
+using Extended = storm::utility::ExtendedValueType<ValueType>;
+Extended value = storm::utility::positiveInfinity<ValueType>();  // and negativeInfinity<ValueType>()
+storm::utility::isFinite(value);            // false
+storm::utility::isInfinity(value);          // true; +infinity only, as for double
+storm::utility::isNegativeInfinity(value);  // false
+storm::utility::getFinite(value);           // throws unless the value is finite
+```
+
+The arithmetic follows the extended reals.
+`infinity - infinity`, `0 * infinity` and `infinity / infinity` throw an `InvalidOperationException` instead of yielding a NaN, which the exact types have no representation for.
+A finite `ValueType` converts implicitly, so mixed expressions need no explicit wrapping.
+
+Converting between the plain and the extended type:
+```cpp
+storm::utility::widen(std::move(values));                             // vector<ValueType> -> vector<Extended>
+storm::utility::narrowFinite<ValueType>(std::move(values));           // throws on an infinite entry
+storm::utility::narrowFinite<ValueType>(std::move(values), fallback); // substitutes it instead
+storm::utility::narrow<ValueType>(value);                             // one value, throws if it is infinite
+```
+`storm::utility::convertNumber` takes and returns extended values, so an infinity survives a change of value type.
+
+`fromSentinel` and `toSentinel` bridge the parts of Storm that still produce the `100000000000` literal, mainly the DD leaves.
+They cannot tell that literal apart from a genuine value of the same magnitude, and they are removed together with the sentinel, so do not build on them.
+
 ### Exception handling
 Use `STORM_LOG_THROW` rather than throwing exceptions directly:
 ```cpp

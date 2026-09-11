@@ -181,7 +181,8 @@ std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<ModelType>::checkMultiOb
                 this->getModel().getReachableStates(), this->getModel().getInitialStates(), this->getModel().getManager().getBddZero()));
         }
     } else if (explicitResult->isExplicitQuantitativeCheckResult()) {
-        ValueType const& res = explicitResult->template asExplicitQuantitativeCheckResult<ValueType>()[*sparseModel->getInitialStates().begin()];
+        ValueType const res = storm::utility::toSentinel<ValueType>(
+            explicitResult->template asExplicitQuantitativeCheckResult<ValueType>()[*sparseModel->getInitialStates().begin()]);
         return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(
             this->getModel().getReachableStates(), this->getModel().getInitialStates(), this->getModel().getManager().template getConstant<ValueType>(res)));
     } else if (explicitResult->isExplicitParetoCurveCheckResult()) {

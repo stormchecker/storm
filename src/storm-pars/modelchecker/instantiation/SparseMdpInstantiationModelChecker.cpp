@@ -78,24 +78,23 @@ std::unique_ptr<CheckResult> SparseMdpInstantiationModelChecker<SparseModelType,
 
     if (this->getInstantiationsAreGraphPreserving() && !hint.hasMaybeStates()) {
         // Perform purely qualitative analysis once
-        std::vector<ConstantType> qualitativeResult;
+        std::vector<ExtendedConstantType> qualitativeResult;
         if (this->currentCheckTask->getFormula().asOperatorFormula().hasQuantitativeResult()) {
             auto newCheckTask = *this->currentCheckTask;
             newCheckTask.setQualitative(true);
             newCheckTask.setOnlyInitialStatesRelevant(false);
             newCheckTask.setProduceSchedulers(false);
-            qualitativeResult = modelChecker.check(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+            qualitativeResult = std::move(modelChecker.check(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
         } else {
             auto newCheckTask = this->currentCheckTask->substituteFormula(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula());
             newCheckTask.setQualitative(true);
             newCheckTask.setOnlyInitialStatesRelevant(false);
             newCheckTask.setProduceSchedulers(false);
             qualitativeResult =
-                modelChecker.computeProbabilities(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                std::move(modelChecker.computeProbabilities(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
         }
-        storm::storage::BitVector maybeStates = storm::utility::vector::filter<ConstantType>(qualitativeResult, [](ConstantType const& value) -> bool {
-            return !(storm::utility::isZero<ConstantType>(value) || storm::utility::isOne<ConstantType>(value));
-        });
+        storm::storage::BitVector maybeStates = storm::utility::vector::filter<ExtendedConstantType>(
+            qualitativeResult, [](ExtendedConstantType const& value) -> bool { return !(storm::utility::isZero(value) || storm::utility::isOne(value)); });
         hint.setMaybeStates(std::move(maybeStates));
         hint.setResultHint(std::move(qualitativeResult));
         hint.setComputeOnlyMaybeStates(true);
@@ -149,23 +148,23 @@ std::unique_ptr<CheckResult> SparseMdpInstantiationModelChecker<SparseModelType,
 
     if (this->getInstantiationsAreGraphPreserving() && !hint.hasMaybeStates()) {
         // Perform purely qualitative analysis once
-        std::vector<ConstantType> qualitativeResult;
+        std::vector<ExtendedConstantType> qualitativeResult;
         if (this->currentCheckTask->getFormula().asOperatorFormula().hasQuantitativeResult()) {
             auto newCheckTask = *this->currentCheckTask;
             newCheckTask.setQualitative(true);
             newCheckTask.setOnlyInitialStatesRelevant(false);
             newCheckTask.setProduceSchedulers(false);
-            qualitativeResult = modelChecker.check(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+            qualitativeResult = std::move(modelChecker.check(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
         } else {
             auto newCheckTask = this->currentCheckTask->substituteFormula(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula());
             newCheckTask.setQualitative(true);
             newCheckTask.setOnlyInitialStatesRelevant(false);
             newCheckTask.setProduceSchedulers(false);
-            qualitativeResult = modelChecker.computeRewards(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+            qualitativeResult =
+                std::move(modelChecker.computeRewards(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
         }
-        storm::storage::BitVector maybeStates = storm::utility::vector::filter<ConstantType>(qualitativeResult, [](ConstantType const& value) -> bool {
-            return !(storm::utility::isZero<ConstantType>(value) || storm::utility::isInfinity<ConstantType>(value));
-        });
+        storm::storage::BitVector maybeStates = storm::utility::vector::filter<ExtendedConstantType>(
+            qualitativeResult, [](ExtendedConstantType const& value) -> bool { return !(storm::utility::isZero(value) || storm::utility::isInfinity(value)); });
         hint.setMaybeStates(std::move(maybeStates));
         hint.setResultHint(std::move(qualitativeResult));
         hint.setComputeOnlyMaybeStates(true);

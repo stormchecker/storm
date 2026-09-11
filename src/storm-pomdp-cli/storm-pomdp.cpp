@@ -83,7 +83,7 @@ void printResult(ValueType const& lowerBound, ValueType const& upperBound) {
         } else {
             STORM_PRINT_AND_LOG(lowerBound);
         }
-    } else if (storm::utility::isInfinity<ValueType>(-lowerBound)) {
+    } else if (storm::utility::isInfinity(ValueType(-lowerBound))) {
         if (storm::utility::isInfinity(upperBound)) {
             STORM_PRINT_AND_LOG("[-inf, inf] (width=inf)");
         } else {
@@ -97,10 +97,8 @@ void printResult(ValueType const& lowerBound, ValueType const& upperBound) {
     }
     if (storm::NumberTraits<ValueType>::IsExact) {
         STORM_PRINT_AND_LOG(" (approx. ");
-        double roundedLowerBound =
-            storm::utility::isInfinity<ValueType>(-lowerBound) ? -storm::utility::infinity<double>() : storm::utility::convertNumber<double>(lowerBound);
-        double roundedUpperBound =
-            storm::utility::isInfinity(upperBound) ? storm::utility::infinity<double>() : storm::utility::convertNumber<double>(upperBound);
+        double roundedLowerBound = storm::utility::convertNumber<double>(lowerBound);
+        double roundedUpperBound = storm::utility::convertNumber<double>(upperBound);
         printResult(roundedLowerBound, roundedUpperBound);
         STORM_PRINT_AND_LOG(")");
     }

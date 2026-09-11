@@ -6,6 +6,7 @@
 #include "storm-dft/utility/RelevantEvents.h"
 #include "storm/logic/Formula.h"
 #include "storm/transformer/NonMarkovianChainTransformer.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/Stopwatch.h"
 
 namespace storm::dft {
@@ -17,17 +18,18 @@ namespace modelchecker {
 template<typename ValueType>
 class DFTModelChecker {
    public:
-    typedef std::pair<ValueType, ValueType> approximation_result;
-    typedef std::vector<boost::variant<ValueType, approximation_result>> dft_results;
+    typedef storm::utility::ExtendedValueType<ValueType> ExtendedValueType;
+    typedef std::pair<ExtendedValueType, ExtendedValueType> approximation_result;
+    typedef std::vector<boost::variant<ExtendedValueType, approximation_result>> dft_results;
     typedef std::vector<std::shared_ptr<storm::logic::Formula const>> property_vector;
 
     class ResultOutputVisitor : public boost::static_visitor<> {
        public:
-        void operator()(ValueType result, std::ostream& os) const {
+        void operator()(ExtendedValueType const& result, std::ostream& os) const {
             os << result;
         }
 
-        void operator()(std::pair<ValueType, ValueType> const& result, std::ostream& os) const {
+        void operator()(approximation_result const& result, std::ostream& os) const {
             os << "(" << result.first << ", " << result.second << ")";
         }
     };
@@ -150,7 +152,7 @@ class DFTModelChecker {
      *
      * @return Model checking result
      */
-    std::vector<ValueType> checkModel(std::shared_ptr<storm::models::sparse::Model<ValueType>>& model, property_vector const& properties);
+    std::vector<ExtendedValueType> checkModel(std::shared_ptr<storm::models::sparse::Model<ValueType>>& model, property_vector const& properties);
 
     /*!
      * Checks if the computed approximation is sufficient, i.e.

@@ -209,14 +209,14 @@ storm::expressions::Variable const& QuantileHelper<ModelType>::getVariableForDim
 }
 
 template<typename ModelType>
-std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType>::computeQuantile(Environment const& env) {
+std::vector<std::vector<storm::utility::ExtendedValueType<typename ModelType::ValueType>>> QuantileHelper<ModelType>::computeQuantile(Environment const& env) {
     numCheckedEpochs = 0;
     numPrecisionRefinements = 0;
     swEpochAnalysis.reset();
     swExploration.reset();
     cachedSubQueryResults.clear();
 
-    std::vector<std::vector<ValueType>> result;
+    std::vector<std::vector<storm::utility::ExtendedValueType<ValueType>>> result;
     Environment envCpy = env;  // It might be necessary to increase the precision during the computation
     // Call the internal recursive function
     auto internalResult = computeQuantile(envCpy, getOpenDimensions(), false);
@@ -235,11 +235,12 @@ std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType
     }
     STORM_LOG_ASSERT(permutation.size() == getOpenDimensions().getNumberOfSetBits(), "Permutation size mismatch.");
     for (auto const& costLimits : internalResult.first.getGenerator()) {
-        std::vector<ValueType> resultPoint;
+        std::vector<storm::utility::ExtendedValueType<ValueType>> resultPoint;
         for (auto const& dim : permutation) {
             CostLimit const& cl = costLimits[dim];
-            resultPoint.push_back(cl.isInfinity() ? storm::utility::infinity<ValueType>()
-                                                  : storm::utility::convertNumber<ValueType>(cl.get()) * internalResult.second[dim]);
+            resultPoint.push_back(cl.isInfinity() ? storm::utility::positiveInfinity<ValueType>()
+                                                  : storm::utility::ExtendedValueType<ValueType>(storm::utility::convertNumber<ValueType>(cl.get()) *
+                                                                                                 internalResult.second[dim]));
         }
         result.push_back(resultPoint);
     }

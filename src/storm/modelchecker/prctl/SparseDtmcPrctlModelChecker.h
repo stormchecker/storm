@@ -3,6 +3,7 @@
 #include "storm/adapters/IntervalForward.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/models/sparse/Dtmc.h"
+#include "storm/utility/ExtendedNumber.h"
 
 namespace storm {
 namespace modelchecker {
@@ -13,6 +14,7 @@ class SparseDtmcPrctlModelChecker : public SparsePropositionalModelChecker<Spars
     typedef typename SparseDtmcModelType::ValueType ValueType;
     typedef typename SparseDtmcModelType::RewardModelType RewardModelType;
     using SolutionType = storm::IntervalBaseType<ValueType>;
+    using ExtendedSolutionType = storm::utility::ExtendedValueType<SolutionType>;
 
     explicit SparseDtmcPrctlModelChecker(SparseDtmcModelType const& model);
 

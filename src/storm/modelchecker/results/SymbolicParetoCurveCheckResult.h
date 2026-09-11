@@ -12,10 +12,10 @@ template<storm::dd::DdType Type, typename ValueType = double>
 class SymbolicParetoCurveCheckResult : public ParetoCurveCheckResult<ValueType> {
    public:
     SymbolicParetoCurveCheckResult();
-    SymbolicParetoCurveCheckResult(storm::dd::Bdd<Type> const& state, std::vector<typename ParetoCurveCheckResult<ValueType>::point_type> const& points,
+    SymbolicParetoCurveCheckResult(storm::dd::Bdd<Type> const& state, std::vector<typename ParetoCurveCheckResult<ValueType>::ExtendedPointType> const& points,
                                    typename ParetoCurveCheckResult<ValueType>::polytope_type const& underApproximation,
                                    typename ParetoCurveCheckResult<ValueType>::polytope_type const& overApproximation);
-    SymbolicParetoCurveCheckResult(storm::dd::Bdd<Type> const& state, std::vector<typename ParetoCurveCheckResult<ValueType>::point_type>&& points,
+    SymbolicParetoCurveCheckResult(storm::dd::Bdd<Type> const& state, std::vector<typename ParetoCurveCheckResult<ValueType>::ExtendedPointType>&& points,
                                    typename ParetoCurveCheckResult<ValueType>::polytope_type&& underApproximation,
                                    typename ParetoCurveCheckResult<ValueType>::polytope_type&& overApproximation);
 

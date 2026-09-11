@@ -329,14 +329,14 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> che
  * @return A pair consisting of the extremal value and a parameter valuation achieving this value
  */
 template<typename ValueType>
-std::pair<storm::RationalNumber, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(
+std::pair<storm::ExtendedRationalNumber, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(
     RefinementOptions<ValueType> settings, storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dir,
     std::optional<ValueType> const& precision, bool absolutePrecision, std::optional<storm::logic::Bound> const& boundInvariant) {
     Environment env;
     auto refinementChecker = initializeRegionRefinementChecker(env, settings);
     auto res =
         refinementChecker->computeExtremalValue(env, region, dir, precision.value_or(storm::utility::zero<ValueType>()), absolutePrecision, boundInvariant);
-    return {storm::utility::convertNumber<storm::RationalNumber>(res.first), std::move(res.second)};
+    return {storm::utility::convertNumber<storm::ExtendedRationalNumber>(res.first), std::move(res.second)};
 }
 
 /*!

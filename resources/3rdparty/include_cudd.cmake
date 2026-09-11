@@ -39,7 +39,7 @@ ExternalProject_Add(
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/storm-cudd
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/storm-cudd
         PATCH_COMMAND ${CMAKE_COMMAND} -E env ${CUDD_AUTOTOOLS_LOCATIONS} ${AUTORECONF}
-        CONFIGURE_COMMAND ${STORM_3RDPARTY_SOURCE_DIR}/storm-cudd/configure --enable-obj --with-pic=yes --prefix=${STORM_3RDPARTY_BINARY_DIR}/storm-cudd --libdir=${CUDD_LIB_DIR} CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} ${CUDD_INCLUDE_FLAGS}
+        CONFIGURE_COMMAND ${STORM_3RDPARTY_SOURCE_DIR}/storm-cudd/configure --enable-obj --with-pic=yes --prefix=${STORM_3RDPARTY_BINARY_DIR}/storm-cudd --libdir=${CUDD_LIB_DIR} "CC=${STORM_RESOURCES_C_COMPILER}" "CXX=${STORM_RESOURCES_CXX_COMPILER}" ${CUDD_INCLUDE_FLAGS}
 	# Multi-threaded compilation could lead to compile issues
         BUILD_COMMAND make -j1 ${STORM_CUDD_FLAGS} ${CUDD_AUTOTOOLS_LOCATIONS}
         INSTALL_COMMAND make install -j1 ${CUDD_AUTOTOOLS_LOCATIONS}

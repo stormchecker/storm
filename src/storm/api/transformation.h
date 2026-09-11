@@ -147,6 +147,16 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> transformToNondetermini
 }
 
 /*!
+ * Identifies states of the given model that are equivalent  w.r.t. to the given formula and merges them into a single state, yielding a (potentially smaller)
+ * model on which the given formula can still be checked.
+ * @note depending on the formula, this merges, e.g., states with probability 0/1 or reward 0/infty based on graph-based analysis.
+ * @return the resulting model, or nullptr if merging is not applicable (e.g. because the model type or the formula is not supported).
+ */
+template<typename ValueType>
+std::shared_ptr<storm::models::sparse::Model<ValueType>> mergeEquivalentStatesForFormula(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                                                                         storm::logic::Formula const& formula);
+
+/*!
  * Permutes the order of the states of the model according to the given order.
  * The order of the available choices at a state (of a nondeterministic model) is not changed.
  * A seed can be given which will be respected if a random permutation is requested.

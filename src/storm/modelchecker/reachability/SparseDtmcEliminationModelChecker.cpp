@@ -587,7 +587,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         }
     }
 
-    std::vector<ValueType> result(maybeStates.size());
+    std::vector<storm::utility::ExtendedValueType<ValueType>> result(maybeStates.size());
     if (furtherComputationNeeded) {
         // If we compute the results for the initial states only, we can cut off all maybe state that are not
         // reachable from them.
@@ -612,12 +612,12 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         std::vector<ValueType> subresult =
             computeReachabilityValues(env, submatrix, stateRewardValues, submatrixTransposed, newInitialStates, computeForInitialStatesOnly,
                                       probabilityMatrix.getConstrainedRowSumVector(maybeStates, targetStates));
-        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, subresult);
+        storm::utility::vector::setVectorValues(result, maybeStates, subresult);
     }
 
     // Construct full result.
-    storm::utility::vector::setVectorValues<ValueType>(result, infinityStates, storm::utility::infinity<ValueType>());
-    storm::utility::vector::setVectorValues<ValueType>(result, targetStates, storm::utility::zero<ValueType>());
+    storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::positiveInfinity<ValueType>());
+    storm::utility::vector::setVectorValues(result, targetStates, storm::utility::zero<ValueType>());
     if (computeForInitialStatesOnly) {
         // If we computed the results for the initial (and inf) states only, we need to filter the result to
         // only communicate these results.
@@ -630,6 +630,12 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
 }
 
+// GCC 15 raises a false positive -Wfree-nonheap-object when compiling SparseDtmcEliminationModelChecker
+// with GMP rational functions (STORM_USE_CLN_RF=OFF) in Release mode: the inlined std::vector destructor
+// for MatrixEntry<..., RationalFunction<..., GMP>> is incorrectly flagged. Not a real memory error.
+// See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108846
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(
     Environment const& env, CheckTask<storm::logic::ConditionalFormula, SolutionType> const& checkTask) {
@@ -848,7 +854,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         }
     }
 
-    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, numerator / denominator));
+    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, ValueType(numerator / denominator)));
 }
 
 template<typename SparseDtmcModelType>
@@ -867,6 +873,7 @@ void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performPrioritizedS
         }
     }
 }
+#pragma GCC diagnostic pop
 
 template<typename SparseDtmcModelType>
 void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performOrdinaryStateElimination(
