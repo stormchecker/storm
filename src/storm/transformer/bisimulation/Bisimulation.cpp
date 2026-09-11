@@ -11,7 +11,7 @@
 #include "storm/transformer/bisimulation/Partition.h"
 #include "storm/transformer/bisimulation/Quotient.h"
 #include "storm/transformer/bisimulation/QuotientData.h"
-#include "storm/transformer/bisimulation/SignatureRefinement.h"
+#include "storm/transformer/bisimulation/SignatureBasedRefinement.h"
 #include "storm/transformer/bisimulation/Signatures.h"
 #include "storm/transformer/bisimulation/SplitterBasedRefinement.h"
 #include "storm/transformer/bisimulation/WeakBisimulationData.h"

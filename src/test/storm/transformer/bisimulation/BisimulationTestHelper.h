@@ -30,7 +30,7 @@
 #include "storm/utility/constants.h"
 
 /*!
- * Shared helpers for the bisimulation tests, cf. StrongBisimulationTest.cpp, WeakBisimulationTest.cpp and BisimulationIssueTest.cpp.
+ * Shared helpers for the bisimulation tests, cf. StrongBisimulationTest.cpp and WeakBisimulationTest.cpp.
  */
 namespace storm::test::bisimulation {
 
@@ -121,22 +121,30 @@ struct PrismInput {
 };
 
 /*!
- * @param buildAllLabels if set, the full state space is built together with all labels of the program. Otherwise, the formulas may restrict the exploration,
- * e.g. by making the target states of a reachability formula absorbing.
+ * What to build from a PRISM program in addition to what the formulas require.
  */
+struct BuildOptions {
+    bool allLabels = false;      // If set, the full state space is built with all labels of the program. Otherwise, the formulas may restrict the
+                                 // exploration, e.g. by making the target states of a reachability formula absorbing.
+    bool choiceLabels = false;   // If set, the choice labeling is built.
+    bool choiceOrigins = false;  // If set, the choice origins are built.
+};
+
 template<typename ValueType>
-PrismInput<ValueType> buildFromPrism(std::string const& prismFile, std::string const& formulaString, bool const buildAllLabels = false) {
+PrismInput<ValueType> buildFromPrism(std::string const& prismFile, std::string const& formulaString, BuildOptions const& buildOptions = {}) {
     // Preprocessing substitutes the constants. This is also where the declared type of a constant is taken into account, e.g. `const double x = 1/500;` only
     // becomes 0.002 instead of the integer division 0 after preprocessing.
     auto const program = storm::parser::PrismParser::parse(prismFile, true).preprocess();
     PrismInput<ValueType> result;
     result.formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaString, program));
-    if (buildAllLabels) {
-        storm::builder::BuilderOptions const builderOptions(false, true);
-        result.model = storm::api::buildSparseModel<ValueType>(program, builderOptions);
-    } else {
-        result.model = storm::api::buildSparseModel<ValueType>(program, result.formulas);
+    auto builderOptions = buildOptions.allLabels ? storm::builder::BuilderOptions(false, true) : storm::builder::BuilderOptions(result.formulas, program);
+    if (buildOptions.choiceLabels) {
+        builderOptions.setBuildChoiceLabels();
     }
+    if (buildOptions.choiceOrigins) {
+        builderOptions.setBuildChoiceOrigins();
+    }
+    result.model = storm::api::buildSparseModel<ValueType>(program, builderOptions);
     return result;
 }
 

@@ -2,9 +2,7 @@
 
 #include <compare>
 #include <cstdint>
-#include <map>
 #include <optional>
-#include <set>
 #include <span>
 #include <utility>
 #include <vector>
@@ -137,9 +135,10 @@ class Signatures {
         std::pair<ChoiceSignatureIterator, bool> find(ChoiceSignature const& signature, ValueType const tolerance) const;
 
         /*!
-         * Like find(), but starts scanning at `hint` instead of locating the compare()-tie window via lower_bound.
-         * @param hint any iterator in [l, r], where [l, r) is the window of entries compareStructure-equal to signature and within tolerance of its first
-         * entry (r itself may lie outside that window, e.g. as an insertion point).
+         * Like find(), but starts searching at `hint` instead of locating the window of candidates via lower_bound. The window consists of the entries that are
+         * compareStructure-equal to signature and whose first entry is within tolerance of the first entry of signature.
+         * @param hint any iterator into choices, including choices.end(). The search moves linearly from hint to the window, so it is fast if hint is close to
+         * it.
          * @note requires !signature.distr.empty().
          * @note returns {hint, false} if signature is not found.
          */

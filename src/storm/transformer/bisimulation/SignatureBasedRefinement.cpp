@@ -1,4 +1,4 @@
-#include "storm/transformer/bisimulation/SignatureRefinement.h"
+#include "storm/transformer/bisimulation/SignatureBasedRefinement.h"
 
 #include <algorithm>
 #include <cstdint>

@@ -11,6 +11,7 @@ namespace {
 
 using storm::test::bisimulation::buildFromPrism;
 using storm::test::bisimulation::buildModel;
+using storm::test::bisimulation::BuildOptions;
 using storm::test::bisimulation::checkFormula;
 using storm::test::bisimulation::Options;
 using storm::test::bisimulation::strongOptions;
@@ -450,21 +451,21 @@ TEST(WeakBisimulationTest, RandomCtmcs) {
 /*!
  * Checks on a real model that the weak quotient is at most as large as the strong one and that both preserve the value of the given formula.
  *
- * If `preserveAllLabels` is set, the full state space is built with all labels of the program and the quotient has to preserve all of them. Otherwise, the
+ * If `buildOptions.allLabels` is set, the full state space is built with all labels of the program and the quotient has to preserve all of them. Otherwise, the
  * formula may restrict the exploration, e.g. by making the target states of a reachability formula absorbing, and only the labels occurring in the formula
  * are preserved.
  */
 void testAgainstOriginal(std::string const& prismFile, std::string const& formulaString, uint64_t expectedModelStates, uint64_t expectedStrongStates,
-                         uint64_t expectedWeakStates, uint64_t expectedWeakTransitions, bool const preserveAllLabels = false) {
+                         uint64_t expectedWeakStates, uint64_t expectedWeakTransitions, BuildOptions const& buildOptions = {}) {
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
 #endif
-    auto const [model, formulas] = buildFromPrism<ValueType>(prismFile, formulaString, preserveAllLabels);
+    auto const [model, formulas] = buildFromPrism<ValueType>(prismFile, formulaString, buildOptions);
     ASSERT_EQ(expectedModelStates, model->getNumberOfStates());
 
     auto strong = strongOptions();
     auto weak = weakOptions();
-    if (preserveAllLabels) {
+    if (buildOptions.allLabels) {
         strong.preserveAllStateLabels = true;
         weak.preserveAllStateLabels = true;
     }
@@ -487,7 +488,7 @@ TEST(WeakBisimulationTest, Die) {
 }
 
 TEST(WeakBisimulationTest, DieAllLabels) {
-    testAgainstOriginal(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm", "P=? [F \"one\"]", 13ull, 11ull, 9ull, 13ull, true);
+    testAgainstOriginal(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm", "P=? [F \"one\"]", 13ull, 11ull, 9ull, 13ull, {.allLabels = true});
 }
 
 TEST(WeakBisimulationTest, Crowds) {
@@ -496,7 +497,7 @@ TEST(WeakBisimulationTest, Crowds) {
 
 TEST(WeakBisimulationTest, CrowdsAllLabels) {
     // The model is larger than above because the target states of the formula are no longer made absorbing.
-    testAgainstOriginal(STORM_TEST_RESOURCES_DIR "/dtmc/crowds5_5.pm", "P=? [F \"observe0Greater1\"]", 8607ull, 2149ull, 1556ull, 3287ull, true);
+    testAgainstOriginal(STORM_TEST_RESOURCES_DIR "/dtmc/crowds5_5.pm", "P=? [F \"observe0Greater1\"]", 8607ull, 2149ull, 1556ull, 3287ull, {.allLabels = true});
 }
 
 /*!
@@ -507,6 +508,20 @@ TEST(WeakBisimulationTest, CtmcEmbedded) {
 }
 
 TEST(WeakBisimulationTest, CtmcEmbeddedAllLabels) {
-    testAgainstOriginal(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "P=? [F<=10000 \"down\"]", 3478ull, 1395ull, 659ull, 3392ull, true);
+    testAgainstOriginal(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "P=? [F<=10000 \"down\"]", 3478ull, 1395ull, 659ull, 3392ull, {.allLabels = true});
+}
+
+/*!
+ * The choice labels and choice origins of a PRISM program are preserved, too. For cluster2 this rules out any reduction, since the actions of the left and the
+ * right cluster have different names and stem from different modules.
+ */
+TEST(WeakBisimulationTest, CtmcClusterChoiceLabelsAndOrigins) {
+    testAgainstOriginal(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", "P=? [F<=100 !\"minimum\"]", 276ull, 276ull, 276ull, 1120ull,
+                        {.choiceLabels = true, .choiceOrigins = true});
+}
+
+TEST(WeakBisimulationTest, DtmcBrpChoiceLabelsAndOrigins) {
+    testAgainstOriginal(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [F \"target\"]", 613ull, 412ull, 412ull, 572ull,
+                        {.choiceLabels = true, .choiceOrigins = true});
 }
 }  // namespace

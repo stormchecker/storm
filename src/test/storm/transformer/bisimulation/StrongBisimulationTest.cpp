@@ -1,14 +1,20 @@
 #include "BisimulationTestHelper.h"
 
+#include <algorithm>
 #include <cstdint>
+#include <numeric>
 #include <random>
+#include <set>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/transformer/StatePermuter.h"
 
 namespace {
 
 using storm::test::bisimulation::buildFromPrism;
+using storm::test::bisimulation::buildMarkovAutomaton;
 using storm::test::bisimulation::buildModel;
+using storm::test::bisimulation::BuildOptions;
 using storm::test::bisimulation::checkFormula;
 using storm::test::bisimulation::Options;
 using storm::test::bisimulation::strongOptions;
@@ -23,11 +29,14 @@ using ValueType = double;
  * exploration, e.g. by making the target states of a reachability formula absorbing.
  */
 void testQuotient(std::string const& prismFile, std::string const& formulaString, uint64_t expectedModelStates, uint64_t expectedStates,
-                  uint64_t expectedTransitions, uint64_t expectedChoices, Options const options = strongOptions()) {
+                  uint64_t expectedTransitions, uint64_t expectedChoices, Options const options = strongOptions(), BuildOptions buildOptions = {}) {
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
 #endif
-    auto const input = buildFromPrism<ValueType>(prismFile, formulaString, options.preserveAllStateLabels.value_or(false));
+    if (options.preserveAllStateLabels.value_or(false)) {
+        buildOptions.allLabels = true;
+    }
+    auto const input = buildFromPrism<ValueType>(prismFile, formulaString, buildOptions);
     ASSERT_EQ(expectedModelStates, input.model->getNumberOfStates());
 
     auto const quotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*input.model, input.formulas, options).quotient;
@@ -35,6 +44,17 @@ void testQuotient(std::string const& prismFile, std::string const& formulaString
     EXPECT_EQ(expectedStates, quotient->getNumberOfStates());
     EXPECT_EQ(expectedTransitions, quotient->getNumberOfTransitions());
     EXPECT_EQ(expectedChoices, quotient->getNumberOfChoices());
+    // The quotient keeps the choice labels and the choice origins of the model (but not necessarily an empty choice labeling).
+    auto const choiceLabels = [](auto const& model) {
+        std::set<std::string> result;
+        if (model->hasChoiceLabeling()) {
+            auto const labels = model->getChoiceLabeling().getLabels();
+            result.insert(labels.begin(), labels.end());
+        }
+        return result;
+    };
+    EXPECT_EQ(choiceLabels(input.model), choiceLabels(quotient));
+    EXPECT_EQ(input.model->hasChoiceOrigins(), quotient->hasChoiceOrigins());
 
     EXPECT_NEAR(checkFormula<ValueType>(quotient, formulaString), checkFormula<ValueType>(input.model, formulaString), 1e-9);
 }
@@ -166,6 +186,108 @@ TEST(StrongBisimulationTest, ChoiceSetsAreCompared) {
 }
 
 /*!
+ * If the bisimulation is action-sensitive, the i-th choice of a state can only be matched with the i-th choice of another state, so the order of the choices
+ * matters.
+ */
+TEST(StrongBisimulationTest, ChoiceOrderMattersIfActionSensitive) {
+    // States 0 and 1 offer the same two distributions over {2} and {3}, but in a different order.
+    storm::storage::SparseMatrixBuilder<ValueType> builder(6, 4, 0, false, true, 4);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 2, 1.0);  // state 0, choice 0
+    builder.addNextValue(1, 2, 0.5);  // state 0, choice 1
+    builder.addNextValue(1, 3, 0.5);
+    builder.newRowGroup(2);
+    builder.addNextValue(2, 2, 0.5);  // state 1, choice 0
+    builder.addNextValue(2, 3, 0.5);
+    builder.addNextValue(3, 2, 1.0);  // state 1, choice 1
+    builder.newRowGroup(4);
+    builder.addNextValue(4, 2, 1.0);  // state 2, absorbing and labeled "goal"
+    builder.newRowGroup(5);
+    builder.addNextValue(5, 3, 1.0);  // state 3, absorbing
+    auto const model = buildModel<storm::models::sparse::Mdp<ValueType>>(builder.build(), {{"goal", {2}}});
+
+    EXPECT_EQ(3ull, storm::bisimulation::performBisimulationMinimization<ValueType>(*model, {}, strongOptions()).quotient->getNumberOfStates());
+
+    Options options = strongOptions();
+    options.actionSensitive = true;
+    auto const quotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, {}, options).quotient;
+    EXPECT_EQ(4ull, quotient->getNumberOfStates());
+    EXPECT_EQ(6ull, quotient->getNumberOfChoices());
+}
+
+/*!
+ * With a positive tolerance, two states are bisimilar if every choice of one has an approximately equal choice in the other. That partner does not need to be
+ * at the same position of the (sorted) signature.
+ */
+TEST(StrongBisimulationTest, ApproximateChoicePartnersAtDifferentPositions) {
+    // States 0 and 1 have three choices each over "goal" (2) and "sink" (3). Every choice has a partner within 0.01 in the other state, but the middle
+    // choices are 0.011 apart.
+    storm::storage::SparseMatrixBuilder<ValueType> builder(8, 4, 0, false, true, 4);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 2, 0.001);
+    builder.addNextValue(0, 3, 0.999);
+    builder.addNextValue(1, 2, 0.019);
+    builder.addNextValue(1, 3, 0.981);
+    builder.addNextValue(2, 2, 0.039);
+    builder.addNextValue(2, 3, 0.961);
+    builder.newRowGroup(3);
+    builder.addNextValue(3, 2, 0.010);
+    builder.addNextValue(3, 3, 0.990);
+    builder.addNextValue(4, 2, 0.030);
+    builder.addNextValue(4, 3, 0.970);
+    builder.addNextValue(5, 2, 0.048);
+    builder.addNextValue(5, 3, 0.952);
+    builder.newRowGroup(6);
+    builder.addNextValue(6, 2, 1.0);
+    builder.newRowGroup(7);
+    builder.addNextValue(7, 3, 1.0);
+    auto const model = buildModel<storm::models::sparse::Mdp<ValueType>>(builder.build(), {{"goal", {2}}, {"sink", {3}}});
+
+    EXPECT_EQ(4ull, storm::bisimulation::performBisimulationMinimization<ValueType>(*model, {}, strongOptions()).quotient->getNumberOfStates());
+    Options options = strongOptions();
+    options.tolerance = storm::utility::convertNumber<storm::RationalNumber>(0.02);  // i.e., halfTolerance 0.01
+    EXPECT_EQ(3ull, storm::bisimulation::performBisimulationMinimization<ValueType>(*model, {}, options).quotient->getNumberOfStates());
+}
+
+/*!
+ * Regression test for https://github.com/stormchecker/storm/issues/91: `storm --prism wlan1.nm --prop "Pmax=? [F col=COL]" -const "COL=1" -bisim` returned a
+ * quotient with two states in which one state carried both the label "init" and the label "col=COL", although no state of the original model carried both.
+ *
+ * The cause was the measure-driven initial partition of the old implementation, which starts from the states that reach the target with probability zero
+ * resp. one. That partition is only sound for the one property it was derived from; it is not a bisimulation, which is why it collapsed states carrying
+ * different labels. The quotient has to preserve all of PCTL rather than just one reachability probability.
+ */
+TEST(StrongBisimulationTest, MdpQuotientIsNotMeasureDriven) {
+    // A chain 0 -> 1 -> 2 -> 2 in which the goal is reached with probability one, plus a second choice in state 0 that takes a detour through state 3.
+    storm::storage::SparseMatrixBuilder<ValueType> builder(5, 4, 0, false, true, 4);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 1, 1.0);  // state 0, choice 0
+    builder.addNextValue(1, 3, 1.0);  // state 0, choice 1
+    builder.newRowGroup(2);
+    builder.addNextValue(2, 2, 1.0);  // state 1
+    builder.newRowGroup(3);
+    builder.addNextValue(3, 2, 1.0);  // state 2, absorbing and labeled "goal"
+    builder.newRowGroup(4);
+    builder.addNextValue(4, 1, 1.0);  // state 3
+    auto const model = buildModel<storm::models::sparse::Mdp<ValueType>>(builder.build(), {{"goal", {2}}});
+
+    storm::parser::FormulaParser formulaParser;
+    std::vector<std::shared_ptr<storm::logic::Formula const>> const formulas{formulaParser.parseSingleFormulaFromString("Pmax=? [F \"goal\"]")};
+    auto const quotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, formulas, strongOptions()).quotient;
+
+    // Every state reaches the goal with probability one, so a measure-driven initial partition would have merged all four states into a single one.
+    EXPECT_EQ(4ull, quotient->getNumberOfStates());
+    // No quotient state may carry both "init" and "goal", because no state of the original model does.
+    auto const& labeling = quotient->getStateLabeling();
+    ASSERT_TRUE(labeling.containsLabel("init"));
+    ASSERT_TRUE(labeling.containsLabel("goal"));
+    EXPECT_TRUE(labeling.getStates("init").isDisjointFrom(labeling.getStates("goal")));
+    // A step-bounded property distinguishes the states that a measure-driven partition would have merged.
+    EXPECT_NEAR(checkFormula<ValueType>(quotient, "Pmax=? [F<=1 \"goal\"]"), checkFormula<ValueType>(model, "Pmax=? [F<=1 \"goal\"]"), 1e-12);
+    EXPECT_NEAR(checkFormula<ValueType>(quotient, "Pmax=? [F<=2 \"goal\"]"), checkFormula<ValueType>(model, "Pmax=? [F<=2 \"goal\"]"), 1e-12);
+}
+
+/*!
  * Markov automata mix Markovian and probabilistic states. The Markovian flag and the exit rates are part of the initial partition, so the two kinds of state
  * are never merged.
  */
@@ -188,6 +310,41 @@ TEST(StrongBisimulationTest, MarkovAutomaton) {
     }
     EXPECT_NEAR(checkFormula<ValueType>(quotient, "Tmin=? [F \"all_jobs_finished\"]"), checkFormula<ValueType>(model, "Tmin=? [F \"all_jobs_finished\"]"),
                 1e-9);
+    // Expected times are preserved in both optimization directions, cf. https://github.com/stormchecker/storm/issues/498.
+    EXPECT_NEAR(checkFormula<ValueType>(quotient, "Tmax=? [F \"all_jobs_finished\"]"), checkFormula<ValueType>(model, "Tmax=? [F \"all_jobs_finished\"]"),
+                1e-9);
+}
+
+/*!
+ * Regression test for https://github.com/stormchecker/storm/issues/498, where `Tmin=? [F "done"]` on a Markov automaton evaluated to 4.74 instead of 11.01
+ * after minimization. The report concerns the symbolic (hybrid) engine and the model in question is not public, so this test pins the property that was
+ * violated there: the value of an expected-time property is only preserved if states with different exit rates are kept apart, since the time spent in a
+ * Markovian state is exponentially distributed with its exit rate.
+ */
+TEST(StrongBisimulationTest, MarkovAutomatonExpectedTime) {
+    // The probabilistic state 0 chooses between the Markovian states 1 and 2, which both move on to the "done" state 3 but at different rates.
+    storm::storage::SparseMatrixBuilder<ValueType> builder(5, 4, 0, false, true, 4);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 1, 1.0);  // state 0 is probabilistic, so its rows hold probabilities: choice 0
+    builder.addNextValue(1, 2, 1.0);  // state 0, choice 1
+    builder.newRowGroup(2);
+    builder.addNextValue(2, 3, 1.0);  // state 1, Markovian with exit rate 1
+    builder.newRowGroup(3);
+    builder.addNextValue(3, 3, 2.0);  // state 2, Markovian with exit rate 2
+    builder.newRowGroup(4);
+    builder.addNextValue(4, 3, 1.0);  // state 3, Markovian, absorbing and labeled "done"
+    auto const model = buildMarkovAutomaton<ValueType>(builder.build(), storm::storage::BitVector(4, {1, 2, 3}), {{"done", {3}}});
+    ASSERT_NEAR(0.5, checkFormula<ValueType>(model, "Tmin=? [F \"done\"]"), 1e-12);
+    ASSERT_NEAR(1.0, checkFormula<ValueType>(model, "Tmax=? [F \"done\"]"), 1e-12);
+
+    storm::parser::FormulaParser formulaParser;
+    std::vector<std::shared_ptr<storm::logic::Formula const>> const formulas{formulaParser.parseSingleFormulaFromString("Tmin=? [F \"done\"]")};
+    auto const quotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, formulas, strongOptions()).quotient;
+
+    // States 1 and 2 have the same distribution over the blocks, so only their exit rates keep them apart.
+    EXPECT_EQ(4ull, quotient->getNumberOfStates());
+    EXPECT_NEAR(0.5, checkFormula<ValueType>(quotient, "Tmin=? [F \"done\"]"), 1e-12);
+    EXPECT_NEAR(1.0, checkFormula<ValueType>(quotient, "Tmax=? [F \"done\"]"), 1e-12);
 }
 
 // ------------------------------------------------------------
@@ -226,6 +383,69 @@ TEST(StrongBisimulationTest, CtmcCluster) {
     testQuotient(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", "P=? [F<=100 !\"minimum\"]", 276ull, 147ull, 569ull, 147ull);
 }
 
+TEST(StrongBisimulationTest, CtmcClusterChoiceLabelsAndOrigins) {
+    // The actions of the left and the right cluster have different names and stem from different modules, which rules out any reduction.
+    testQuotient(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", "P=? [F<=100 !\"minimum\"]", 276ull, 276ull, 1120ull, 276ull, strongOptions(),
+                 {.choiceLabels = true, .choiceOrigins = true});
+}
+
+TEST(StrongBisimulationTest, DtmcBrpChoiceLabelsAndOrigins) {
+    testQuotient(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [F \"target\"]", 613ull, 412ull, 572ull, 412ull, strongOptions(),
+                 {.choiceLabels = true, .choiceOrigins = true});
+}
+
+/*!
+ * Regression test for https://github.com/stormchecker/storm/issues/833: the quotient of this CTMC had a different size on Linux than on macOS, and exporting
+ * the model to a DRN file and reading it back in changed the size again - even in exact arithmetic, where no rounding can be involved. In other words, the
+ * computed partition depended on the order in which the states happened to be stored, cf. the PermutationInvariance tests.
+ */
+TEST(StrongBisimulationTest, CtmcEmbeddedExact) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+    std::string const formulaString = "P=? [F<=10000 \"down\"]";
+    auto const exactInput = buildFromPrism<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", formulaString, {.allLabels = true});
+    ASSERT_EQ(3478ull, exactInput.model->getNumberOfStates());
+    ASSERT_EQ(14639ull, exactInput.model->getNumberOfTransitions());
+
+    Options options = strongOptions();
+    options.preserveAllStateLabels = true;
+    auto const labeledQuotient =
+        storm::bisimulation::performBisimulationMinimization<storm::RationalNumber>(*exactInput.model, exactInput.formulas, options).quotient;
+    EXPECT_EQ(1127ull, labeledQuotient->getNumberOfStates());
+    EXPECT_EQ(5730ull, labeledQuotient->getNumberOfTransitions());
+
+    // Without the labels the quotient is much coarser. This is the configuration in which the reported sizes differed the most (136 on macOS vs 180 on
+    // Linux), since the initial partition consists of a single block there.
+    options.preserveAllStateLabels = false;
+    auto const unlabeledQuotient = storm::bisimulation::performBisimulationMinimization<storm::RationalNumber>(*exactInput.model, {}, options).quotient;
+    EXPECT_EQ(98ull, unlabeledQuotient->getNumberOfStates());
+    EXPECT_EQ(539ull, unlabeledQuotient->getNumberOfTransitions());
+}
+
+/*!
+ * The same model in floating point arithmetic. The rates of this model are not exactly representable as doubles, so the comparison needs a tolerance; with
+ * the one that the command line uses by default, the quotient coincides with the exact one computed in CtmcEmbeddedExact.
+ */
+TEST(StrongBisimulationTest, CtmcEmbeddedWithTolerance) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+    std::string const formulaString = "P=? [F<=10000 \"down\"]";
+    auto const input = buildFromPrism<double>(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", formulaString, {.allLabels = true});
+
+    Options options = approximateOptions();
+    options.preserveAllStateLabels = true;
+    auto const labeledQuotient = storm::bisimulation::performBisimulationMinimization<double>(*input.model, input.formulas, options).quotient;
+    EXPECT_EQ(1127ull, labeledQuotient->getNumberOfStates());
+    EXPECT_EQ(5730ull, labeledQuotient->getNumberOfTransitions());
+
+    options.preserveAllStateLabels = false;
+    auto const unlabeledQuotient = storm::bisimulation::performBisimulationMinimization<double>(*input.model, {}, options).quotient;
+    EXPECT_EQ(98ull, unlabeledQuotient->getNumberOfStates());
+    EXPECT_EQ(539ull, unlabeledQuotient->getNumberOfTransitions());
+}
+
 TEST(StrongBisimulationTest, MdpTwoDice) {
     testQuotient(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm", "Pmin=? [F \"two\"]", 169ull, 11ull, 26ull, 14ull);
 }
@@ -236,6 +456,47 @@ TEST(StrongBisimulationTest, MdpTwoDiceAllLabels) {
 
 TEST(StrongBisimulationTest, MdpCoin) {
     testQuotient(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmin=? [F \"finished\"]", 272ull, 55ull, 96ull, 78ull);
+}
+
+/*!
+ * Like MdpQuotientIsNotMeasureDriven on a benchmark model: `Pmax=? [F "finished"]` is one in every state of coin2-2, so a measure-driven partition would
+ * collapse the model.
+ */
+TEST(StrongBisimulationTest, MdpCoinQuotientIsNotMeasureDriven) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+    std::string const formulaString = "Pmax=? [F \"finished\"]";
+    auto const input = buildFromPrism<ValueType>(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", formulaString);
+    ASSERT_NEAR(1.0, checkFormula<ValueType>(input.model, formulaString), 1e-9);
+
+    auto const quotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*input.model, input.formulas, strongOptions()).quotient;
+    EXPECT_EQ(55ull, quotient->getNumberOfStates());
+    EXPECT_NEAR(checkFormula<ValueType>(quotient, formulaString), 1.0, 1e-9);
+    // The quotient preserves all of PCTL, in particular the step-bounded variant of the formula it was built for.
+    EXPECT_NEAR(checkFormula<ValueType>(quotient, "Pmax=? [F<=10 \"finished\"]"), checkFormula<ValueType>(input.model, "Pmax=? [F<=10 \"finished\"]"), 1e-9);
+}
+
+TEST(StrongBisimulationTest, MdpTwoDiceActionSensitive) {
+    Options options = strongOptions();
+    options.actionSensitive = true;
+    testQuotient(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm", "Pmin=? [F \"two\"]", 169ull, 33ull, 97ull, 58ull, options);
+}
+
+TEST(StrongBisimulationTest, MdpCoinChoiceOrigins) {
+    testQuotient(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmin=? [F \"finished\"]", 272ull, 195ull, 399ull, 321ull, strongOptions(),
+                 {.choiceOrigins = true});
+}
+
+TEST(StrongBisimulationTest, MdpLeaderChoiceLabels) {
+    testQuotient(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm", "Pmin=? [F \"elected\"]", 364ull, 169ull, 325ull, 262ull, strongOptions(), {.choiceLabels = true});
+}
+
+TEST(StrongBisimulationTest, MdpLeaderChoiceLabelsAndOriginsActionSensitive) {
+    Options options = strongOptions();
+    options.actionSensitive = true;
+    testQuotient(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm", "Pmin=? [F \"elected\"]", 364ull, 169ull, 325ull, 262ull, options,
+                 {.choiceLabels = true, .choiceOrigins = true});
 }
 
 /*!
@@ -285,7 +546,7 @@ TEST(StrongBisimulationTest, RefinementStrategiesAgreeOnCrowds) {
 
 /*!
  * With doubles the two strategies do not agree on this model: the values are accumulated sums, the two strategies accumulate them in a different order, and
- * rounding alone then decides some of the splits. In exact arithmetic that effect is gone, cf. BisimulationIssueTest.Issue833EmbeddedCtmcQuotient.
+ * rounding alone then decides some of the splits. In exact arithmetic that effect is gone, cf. CtmcEmbeddedExact.
  */
 TEST(StrongBisimulationTest, RefinementStrategiesAgreeOnCtmc) {
     testRefinementStrategiesAgree<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "P=? [F<=10000 \"down\"]");
@@ -316,6 +577,44 @@ TEST(StrongBisimulationTest, ExactAgreesWithApproximateOnDie) {
 
 TEST(StrongBisimulationTest, ExactAgreesWithApproximateOnTwoDice) {
     testExactAgreesWithApproximate(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm", "Pmin=? [F \"two\"]");
+}
+
+/*!
+ * Renaming the states of a model must not change the size of its quotient, cf. https://github.com/stormchecker/storm/issues/833 and CtmcEmbeddedExact. In exact
+ * arithmetic this is a mathematical property of the coarsest bisimulation, so a violation always indicates a bug in the refinement. The check is run with all
+ * labels preserved, which makes the initial partition (and hence the quotient) as fine as possible.
+ */
+template<typename VT>
+void testPermutationInvariance(std::string const& prismFile, std::string const& formulaString, uint64_t const numSeeds, Options options = strongOptions()) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+    options.preserveAllStateLabels = true;
+    auto const input = buildFromPrism<VT>(prismFile, formulaString, {.allLabels = true});
+    auto const quotient = storm::bisimulation::performBisimulationMinimization<VT>(*input.model, input.formulas, options).quotient;
+
+    std::vector<uint64_t> permutation(input.model->getNumberOfStates());
+    std::iota(permutation.begin(), permutation.end(), 0ull);
+    for (uint64_t seed = 0; seed < numSeeds; ++seed) {
+        std::mt19937_64 rng(seed);
+        std::shuffle(permutation.begin(), permutation.end(), rng);
+        auto const permutedModel = storm::transformer::permuteStates(*input.model, permutation);
+        auto const permutedQuotient = storm::bisimulation::performBisimulationMinimization<VT>(*permutedModel, input.formulas, options).quotient;
+        EXPECT_EQ(quotient->getNumberOfStates(), permutedQuotient->getNumberOfStates()) << "Seed " << seed << ".";
+        EXPECT_EQ(quotient->getNumberOfTransitions(), permutedQuotient->getNumberOfTransitions()) << "Seed " << seed << ".";
+    }
+}
+
+TEST(StrongBisimulationTest, PermutationInvarianceExactCtmc) {
+    testPermutationInvariance<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "P=? [F<=10000 \"down\"]", 3ull);
+}
+
+TEST(StrongBisimulationTest, PermutationInvarianceCtmc) {
+    testPermutationInvariance<double>(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "P=? [F<=10000 \"down\"]", 3ull, approximateOptions());
+}
+
+TEST(StrongBisimulationTest, PermutationInvarianceMdp) {
+    testPermutationInvariance<double>(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm", "Pmin=? [F \"two\"]", 3ull, approximateOptions());
 }
 
 // ------------------------------------------------------------

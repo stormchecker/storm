@@ -71,11 +71,11 @@ struct SplitterRefinementContext {
               conditionalValues(partition.getNumberOfElements(), storm::utility::zero<ValueType>()),
               temporaryStateClasses(partition.getNumberOfElements(), std::numeric_limits<uint64_t>::max()) {}
 
-        std::vector<ValueType> conditionalValues; // stores the 1-step probability of leaving the block for each state, conditioned on leaving the block at all
-        std::vector<uint64_t> frontierStates;  // the non-silent states of the block currently being refined
-        std::vector<uint64_t> temporaryStateClasses; // temporarily classifies the states of the block currently being refined
-        std::deque<uint64_t> bfsQueue;       // work list of the backward search that computes temporaryStateClasses
-        std::vector<uint64_t> nonSilentCandidates; // collects candidates of states that might become non-silent after refinement
+        std::vector<ValueType> conditionalValues;  // stores the 1-step probability of leaving the block for each state, conditioned on leaving the block at all
+        std::vector<uint64_t> frontierStates;      // the non-silent states of the block currently being refined
+        std::vector<uint64_t> temporaryStateClasses;  // temporarily classifies the states of the block currently being refined
+        std::deque<uint64_t> bfsQueue;                // work list of the backward search that computes temporaryStateClasses
+        std::vector<uint64_t> nonSilentCandidates;    // collects candidates of states that might become non-silent after refinement
     };
 
     /// Picks the scratch space that this mode actually uses, so that accessing the wrong one is a compile error.
@@ -185,8 +185,8 @@ void refineBlockStrong(SplitterRefinementContext<ValueType, Mode>& context, stor
  * - a block of states that can reach multiple different classes of non-silent states.
  */
 template<typename ValueType>
-void refineBlockWeak(SplitterRefinementContext<ValueType, SplitterRefinementMode::WeakDiscreteTime>& context,
-                      storm::bisimulation::Partition::Block const block, storm::bisimulation::Partition::Block const splitterBlock) {
+void refineBlockWeak(SplitterRefinementContext<ValueType, SplitterRefinementMode::WeakDiscreteTime>& context, storm::bisimulation::Partition::Block const block,
+                     storm::bisimulation::Partition::Block const splitterBlock) {
     STORM_LOG_ASSERT(!context.weakData->isDivergent(block), "Assumed a non-divergent block as a predecessor block of the splitter.");
 
     // Step 1: Gather the non-silent states of the given block. If the block is large, it is usually faster to iterate over the non-silent states
@@ -218,9 +218,10 @@ void refineBlockWeak(SplitterRefinementContext<ValueType, SplitterRefinementMode
         }
         auto const row = context.model.getTransitionMatrix().getRow(state);
         STORM_LOG_ASSERT(std::any_of(row.begin(), row.end(),
-                             [&context, &splitterBlock](auto const& entry) {
-                                 return !storm::utility::isZero(entry.getValue()) && context.partition.contains(splitterBlock, entry.getColumn());
-                             }), "Expected a transition into a splitter, but none was found.");
+                                     [&context, &splitterBlock](auto const& entry) {
+                                         return !storm::utility::isZero(entry.getValue()) && context.partition.contains(splitterBlock, entry.getColumn());
+                                     }),
+                         "Expected a transition into a splitter, but none was found.");
         ValueType escapeValue = storm::utility::zero<ValueType>();
         bool leavesOnlyToSplitter = true;
         for (auto const& entry : row) {
@@ -241,7 +242,7 @@ void refineBlockWeak(SplitterRefinementContext<ValueType, SplitterRefinementMode
 
     // Step 3: Divide the frontier states into equivalence classes based on their conditional values
     auto& stateClasses = context.cache.temporaryStateClasses;
-    uint64_t constexpr Unclassified = std::numeric_limits<uint64_t>::max(); // Indicates that no class has been assigned to a state
+    uint64_t constexpr Unclassified = std::numeric_limits<uint64_t>::max();  // Indicates that no class has been assigned to a state
     uint64_t constexpr MultipleFrontiers =
         std::numeric_limits<uint64_t>::max() - 1;  // Indicates that multiple frontier states with different conditional values can be reached
 
@@ -303,7 +304,7 @@ void refineBlockWeak(SplitterRefinementContext<ValueType, SplitterRefinementMode
                 // Ignore predecessors outside of the block.
                 if (context.partition.isBlockOfElement(block, predecessor)) {
                     STORM_LOG_ASSERT(silentStates.get(predecessor), "An unclassified state must be silent.");
-                    predecessorClass = currentClass; // propagate the current class
+                    predecessorClass = currentClass;  // propagate the current class
                     bfsQueue.push_back(predecessor);
                 }
             } else if (predecessorClass == currentClass) {
@@ -323,8 +324,8 @@ void refineBlockWeak(SplitterRefinementContext<ValueType, SplitterRefinementMode
     }
 
     // Step 6: Split the block by the computed classes and enqueue the subblocks
-    context.partition.splitBlockByOrder(
-        block, [&stateClasses](uint64_t const state1, uint64_t const state2) { return stateClasses[state1] < stateClasses[state2]; });
+    context.partition.splitBlockByOrder(block,
+                                        [&stateClasses](uint64_t const state1, uint64_t const state2) { return stateClasses[state1] < stateClasses[state2]; });
     STORM_LOG_ASSERT(context.partition.isProperSuperBlock(block), "As there are multiple different frontier states, the block must be split.");
     enqueueSubBlocks(context, block);
 

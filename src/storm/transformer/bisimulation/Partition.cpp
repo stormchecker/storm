@@ -2,6 +2,19 @@
 
 namespace storm::bisimulation {
 
+namespace {
+
+/*!
+ * @return the number of blocks of the given partition, counted by visiting all of them. Used to check the cached number of blocks.
+ */
+[[maybe_unused]] std::size_t countBlocks(Partition const& partition) {
+    std::size_t result = 0;
+    partition.forEachBlock([&result](Partition::Block const&) { ++result; });
+    return result;
+}
+
+}  // namespace
+
 Partition::NonSuperBlockSet::NonSuperBlockSet(Partition const& partition) : partition(partition), blockIndices(partition.getNumberOfElements(), false) {}
 
 std::size_t Partition::NonSuperBlockSet::size() const {
@@ -43,13 +56,7 @@ Partition::Partition(ElementIndex numElements) : numBlocks(1) {
 }
 
 std::size_t Partition::getNumberOfBlocks() const {
-    STORM_LOG_ASSERT(
-        [this]() {
-            std::size_t blocksCount = 0;
-            forEachBlock([&blocksCount](const Block& block) { ++blocksCount; });
-            return blocksCount;
-        }() == numBlocks,
-        "The cached number of blocks is inconsistent with the actual number of blocks");
+    STORM_LOG_ASSERT(countBlocks(*this) == numBlocks, "The cached number of blocks is inconsistent with the actual number of blocks");
     return numBlocks;
 }
 
@@ -123,40 +130,47 @@ Partition::Block Partition::registerNewBlock(BlockIndex const start, BlockIndex 
 
 bool Partition::checkBlockValidity(Block const& block) const {
     // block must not be empty
-    if (block.empty())
+    if (block.empty()) {
         return false;
+    }
     // the block refers to this partition
-    if (block.data() < blockContents.data() || block.data() + block.size() > blockContents.data() + blockContents.size())
+    if (block.data() < blockContents.data() || block.data() + block.size() > blockContents.data() + blockContents.size()) {
         return false;
+    }
 
     BlockIndex const blockIndex = std::distance(blockContents.data(), block.data());
     BlockIndex const blockEndIndex = blockIndex + block.size();
 
     // the block has a stored size and is either the last block or ends where another block starts
-    if (!(blockSizes[blockIndex] > 0 && (blockEndIndex == blockContents.size() || blockSizes[blockEndIndex] != 0)))
+    if (!(blockSizes[blockIndex] > 0 && (blockEndIndex == blockContents.size() || blockSizes[blockEndIndex] != 0))) {
         return false;
+    }
 
     // The index of the first element must always match this block index (even if the element belongs to a subblock, it must have the same index)
-    if (elementToBlockIndex[block[0]] != blockIndex)
+    if (elementToBlockIndex[block[0]] != blockIndex) {
         return false;
+    }
 
     // Check if the inverse mapping is consistent for the first and the last element (must actually be true for all elements but checking that is too costly)
-    if (&blockContents[blockContentsInverse[block.front()]] != &block.front() || &blockContents[blockContentsInverse[block.back()]] != &block.back())
+    if (&blockContents[blockContentsInverse[block.front()]] != &block.front() || &blockContents[blockContentsInverse[block.back()]] != &block.back()) {
         return false;
+    }
 
     if (isBlockOfElement(block, block[0])) {
         // this block has no proper sub-block
         // The stored sizes should coincide
-        if (blockSizes[blockIndex] != block.size())
+        if (blockSizes[blockIndex] != block.size()) {
             return false;
+        }
         // all elements should point to this blockIndex
         // we only check this for the first and last element.
         return (elementToBlockIndex[block.front()] == blockIndex) && (elementToBlockIndex[block.back()] == blockIndex);
     } else {
         // this block has proper sub-blocks.
         // The stored size should be strictly smaller
-        if (blockSizes[blockIndex] >= block.size())
+        if (blockSizes[blockIndex] >= block.size()) {
             return false;
+        }
         // The block index of all elements should be within the range of this block.
         return std::all_of(block.begin(), block.end(), [this, blockIndex, blockEndIndex](ElementIndex const& e) {
             // e's block index should be in the range of this block
@@ -176,8 +190,9 @@ std::ostream& operator<<(std::ostream& os, const Partition& partition) {
     partition.forEachBlock([&os](Partition::Block const& block) {
         os << "\t{";
         for (bool first = true; typename Partition::ElementIndex const e : block) {
-            if (!first)
+            if (!first) {
                 os << ", ";
+            }
             first = false;
             os << e;
         }

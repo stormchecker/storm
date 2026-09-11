@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/models/sparse/Model.h"
+#include "storm/models/sparse/ModelForward.h"
 #include "storm/transformer/bisimulation/Partition.h"
 #include "storm/transformer/bisimulation/Signatures.h"
 

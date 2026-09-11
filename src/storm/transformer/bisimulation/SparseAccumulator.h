@@ -3,11 +3,7 @@
 #include <cstdint>
 #include <set>
 #include <type_traits>
-#include <utility>
 #include <vector>
-
-#include "storm/utility/constants.h"
-#include "storm/utility/macros.h"
 
 namespace storm::bisimulation {
 
@@ -20,61 +16,33 @@ namespace storm::bisimulation {
 template<typename ValueType>
 class SparseAccumulator {
    public:
-    explicit SparseAccumulator(uint64_t const numStates) : values(numStates, defaultValue()) {}
+    /// The type of the values that can be added: numbers for numeric value types, elements for sets.
+    using AddedValueType = std::conditional_t<std::is_same_v<ValueType, std::set<uint64_t>>, uint64_t, ValueType>;
+
+    explicit SparseAccumulator(uint64_t const numStates);
 
     /*!
      * @return the currently stored values
      */
-    std::vector<ValueType> const& getValues() const {
-        return values;
-    }
+    std::vector<ValueType> const& getValues() const;
 
     /*!
      * @return the list of states currently holding a non-default value
      */
-    std::vector<uint64_t> const& getNonDefaultStates() const {
-        return nonDefaultStates;
-    }
+    std::vector<uint64_t> const& getNonDefaultStates() const;
 
     /*!
      * Adds value to the currently mapped value of the given state
      */
-    template<typename T>
-    void addValue(uint64_t const state, T value) {
-        if constexpr (std::is_same_v<ValueType, std::set<uint64_t>>) {
-            if (values[state].empty()) {
-                nonDefaultStates.push_back(state);
-            }
-            values[state].insert(value);
-        } else {
-            STORM_LOG_ASSERT(!storm::utility::isZero(value), "Did not expect adding 0 probability");
-            if (storm::utility::isZero(values[state])) {
-                nonDefaultStates.push_back(state);
-                values[state] = std::move(value);
-            } else {
-                values[state] += std::move(value);
-            }
-        }
-    }
+    void addValue(uint64_t const state, AddedValueType value);
 
     /*!
      * Clears the set, i.e., writes the default value for all states.
      */
-    void clear() {
-        for (auto const& state : nonDefaultStates) {
-            values[state] = defaultValue();
-        }
-        nonDefaultStates.clear();
-    }
+    void clear();
 
    private:
-    static ValueType defaultValue() {
-        if constexpr (std::is_same_v<ValueType, std::set<uint64_t>>) {
-            return {};  // empty set
-        } else {
-            return storm::utility::zero<ValueType>();
-        }
-    }
+    static ValueType defaultValue();
 
     std::vector<ValueType> values;           // stores the value for each state
     std::vector<uint64_t> nonDefaultStates;  // stores those states with a non-default value

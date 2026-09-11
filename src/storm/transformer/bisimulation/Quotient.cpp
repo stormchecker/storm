@@ -14,7 +14,6 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/ModelComponents.h"
-#include "storm/transformer/bisimulation/Partition.h"
 #include "storm/utility/builder.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"

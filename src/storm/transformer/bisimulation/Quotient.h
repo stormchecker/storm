@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <optional>
 
 #include "storm/models/sparse/ModelForward.h"
 #include "storm/transformer/bisimulation/Options.h"

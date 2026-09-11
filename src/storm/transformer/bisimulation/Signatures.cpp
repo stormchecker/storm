@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <limits>
 
-#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/models/sparse/Model.h"
@@ -123,15 +122,33 @@ auto Signatures<ValueType, Mode>::StateSignature::findWithHint(ChoiceSignatureIt
     -> std::pair<ChoiceSignatureIterator, bool>
     requires(Mode == SignatureMode::Approximative)
 {
-    // The hint may be the insertion point choices.end(), cf. the contract in the header: the forward scan below then does not run and the backward scan
-    // starts at the last entry.
+    // The input signature defines a (potentially empty) window inside the choices vector. That window is given by the entries that are compareStructure-equal
+    // to signature and whose first entry is within tolerance of the first entry of signature.
+    // As the choices are sorted by compare(), they can be devided into three consecutive, potentially empty segments:
+    // the entries before the window, the window itself, and the entries after the window.
+
     STORM_LOG_ASSERT(hint >= choices.begin() && hint <= choices.end(), "Hint iterator must be within the range of choices.");
     STORM_LOG_ASSERT(!signature.distr.empty(), "Distributions must not be empty.");  // Don't deal with this special case here.
 
     auto const near = [&tolerance](ValueType const& value1, ValueType const& value2) { return storm::utility::abs<ValueType>(value1 - value2) <= tolerance; };
-    auto const inWindow = [&near, &signature](ChoiceSignature const& choice) {
-        return choice.compareStructure(signature) == std::strong_ordering::equal && near(choice.distr.front().second, signature.distr.front().second);
+    enum class Location { BeforeWindow, InWindow, AfterWindow };
+    // Locate in which segment of the choices vector the given choice is.
+    auto const locate = [this, &signature, &near](ChoiceSignatureIterator choiceIt) {
+        if (choiceIt == choices.end()) {
+            return Location::AfterWindow;
+        }
+        auto const& choice = *choiceIt;
+        if (auto const cmp = choice.compareStructure(signature); cmp != 0) {
+            return cmp < 0 ? Location::BeforeWindow : Location::AfterWindow;
+        }
+        auto const& value = choice.distr.front().second;
+        auto const& signatureValue = signature.distr.front().second;
+        if (near(value, signatureValue)) {
+            return Location::InWindow;
+        }
+        return value < signatureValue ? Location::BeforeWindow : Location::AfterWindow;
     };
+    // Returns true iff the choice is considered equivalent to the signature. Assumes that the given choice is in the window.
     auto const found = [&signature, &near](ChoiceSignature const& choice) {
         // The first entry is already assumed to be near, so we check the others.
         auto it1 = choice.distr.begin() + 1;
@@ -144,19 +161,65 @@ auto Signatures<ValueType, Mode>::StateSignature::findWithHint(ChoiceSignatureIt
         return true;
     };
 
-    // Scan the window in both directions to find an approxEqual entry, if any.
-    for (ChoiceSignatureIterator scan = hint; scan != choices.end() && inWindow(*scan); ++scan) {
-        if (found(*scan)) {
-            return std::make_pair(scan, true);
+    // Assumes an iterator that points inside the window and scans all window contents to the right (it excluded)
+    auto const scanToRightBoundary = [&](ChoiceSignatureIterator it) {
+        ++it;
+        while (locate(it) == Location::InWindow) {
+            if (found(*it)) {
+                return std::make_pair(it, true);
+            }
+            ++it;
         }
-    }
-    for (ChoiceSignatureIterator scan = hint; scan != choices.begin();) {
-        --scan;
-        if (!inWindow(*scan)) {
-            break;
+        return std::make_pair(it, false);
+    };
+    // Assumes an iterator that points inside the window and scans all window contents to the left (it excluded)
+    auto const scanToLeftBoundary = [&](ChoiceSignatureIterator it) {
+        while (it != choices.begin()) {
+            --it;
+            if (locate(it) != Location::InWindow) {
+                break;
+            }
+            if (found(*it)) {
+                return std::make_pair(it, true);
+            }
         }
-        if (found(*scan)) {
-            return std::make_pair(scan, true);
+        return std::make_pair(it, false);
+    };
+
+    // Callers usually pass a hint that lies in the window or is close to it. There are three cases for the hint:
+    // a) inside, b) before, or c) after the window.
+    auto const hintLocation = locate(hint);
+    if (hintLocation == Location::InWindow) {  // case a), so we might need to scan in both directions
+        if (found(*hint)) {
+            return std::make_pair(hint, true);
+        }
+        if (auto resRight = scanToRightBoundary(hint); resRight.second) {
+            return resRight;
+        }
+        if (auto resLeft = scanToLeftBoundary(hint); resLeft.second) {
+            return resLeft;
+        }
+    } else {
+        auto start = hint;
+        auto startLocation = hintLocation;
+        if (hintLocation == Location::BeforeWindow) {  // case b), find right boundary of window of the window
+            while (startLocation == Location::BeforeWindow) {
+                ++start;
+                startLocation = locate(start);
+            }
+        } else {  // case c), find left boundary of the window
+            while (startLocation == Location::AfterWindow && start != choices.begin()) {
+                --start;
+                startLocation = locate(start);
+            }
+        }
+        if (startLocation == Location::InWindow) {
+            if (found(*start)) {
+                return std::make_pair(start, true);
+            }
+            if (auto result = hintLocation == Location::BeforeWindow ? scanToRightBoundary(start) : scanToLeftBoundary(start); result.second) {
+                return result;
+            }
         }
     }
     return std::make_pair(hint, false);
@@ -174,10 +237,10 @@ template<typename ValueType, SignatureMode Mode>
 Signatures<ValueType, Mode>::Signatures(storm::models::sparse::Model<ValueType> const& model, std::optional<std::vector<uint64_t>> const& choiceClasses,
                                         storm::bisimulation::Partition const& partition)
     requires(Mode == SignatureMode::Exact)
-    : model(model),
+    : choiceSignatureCache(partition.getNumberOfElements()),
+      model(model),
       partition(partition),
       choiceClasses(choiceClasses),
-      choiceSignatureCache(partition.getNumberOfElements()),
       choiceDistributionStorage(model.getTransitionMatrix().getEntryCount()),
       halfTolerance(storm::utility::zero<ValueType>()),
       stateSignatureCache(model.getNumberOfStates()) {}
@@ -186,10 +249,10 @@ template<typename ValueType, SignatureMode Mode>
 Signatures<ValueType, Mode>::Signatures(storm::models::sparse::Model<ValueType> const& model, std::optional<std::vector<uint64_t>> const& choiceClasses,
                                         storm::bisimulation::Partition const& partition, ValueType const& tolerance)
     requires(Mode == SignatureMode::Approximative)
-    : model(model),
+    : choiceSignatureCache(partition.getNumberOfElements()),
+      model(model),
       partition(partition),
       choiceClasses(choiceClasses),
-      choiceSignatureCache(partition.getNumberOfElements()),
       choiceDistributionStorage(model.getTransitionMatrix().getEntryCount()),
       halfTolerance(tolerance / storm::utility::convertNumber<ValueType, uint64_t>(2)),
       stateSignatureCache(model.getNumberOfStates()) {}
@@ -303,7 +366,7 @@ bool Signatures<ValueType, Mode>::SplitCondition::operator()(uint64_t const stat
         if (it1->distr.empty()) {
             continue;
         }
-        // Find a choice matching choice2 in sig1
+        // Find a choice matching choice2 in sig1. As both signatures are sorted the same way, it1 is usually close to the window of choice2.
         auto const [choiceInSig1It, foundIn1] = sig1.findWithHint(it1, *it2, tolerance);
         if (!foundIn1) {
             return true;
