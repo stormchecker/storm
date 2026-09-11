@@ -241,6 +241,40 @@ void AbstractEquationSolver<ValueType>::setBoundsFromOtherSolver(AbstractEquatio
 }
 
 template<typename ValueType>
+bool AbstractEquationSolver<ValueType>::hasSolutionLowerBounds() const {
+    return solutionBounds.hasLower();
+}
+
+template<typename ValueType>
+bool AbstractEquationSolver<ValueType>::hasSolutionUpperBounds() const {
+    return solutionBounds.hasUpper();
+}
+
+template<typename ValueType>
+std::vector<ValueType> const& AbstractEquationSolver<ValueType>::getSolutionLowerBounds() const {
+    STORM_LOG_ASSERT(this->hasSolutionLowerBounds(), "No lower bound on the solution was computed.");
+    return *solutionBounds.lower;
+}
+
+template<typename ValueType>
+std::vector<ValueType> const& AbstractEquationSolver<ValueType>::getSolutionUpperBounds() const {
+    STORM_LOG_ASSERT(this->hasSolutionUpperBounds(), "No upper bound on the solution was computed.");
+    return *solutionBounds.upper;
+}
+
+template<typename ValueType>
+void AbstractEquationSolver<ValueType>::setSolutionBounds(SolutionBounds<ValueType> bounds) const {
+    STORM_LOG_ASSERT(!bounds.hasLower() || !bounds.hasUpper() || bounds.lower->size() == bounds.upper->size(),
+                     "Bounds on the solution must have the same size.");
+    solutionBounds = std::move(bounds);
+}
+
+template<typename ValueType>
+void AbstractEquationSolver<ValueType>::clearSolutionBounds() const {
+    solutionBounds.clear();
+}
+
+template<typename ValueType>
 void AbstractEquationSolver<ValueType>::clearBounds() {
     lowerBound = boost::none;
     upperBound = boost::none;

@@ -116,13 +116,11 @@ SolverStatus IntervalIterationHelper<ValueType, TrivialRowGrouping>::II(std::pai
 }
 
 template<typename ValueType, bool TrivialRowGrouping>
-SolverStatus IntervalIterationHelper<ValueType, TrivialRowGrouping>::II(std::vector<ValueType>& operand, std::vector<ValueType> const& offsets,
-                                                                        uint64_t& numIterations, bool relative, ValueType const& precision,
-                                                                        std::function<void(std::vector<ValueType>&)> const& prepareLowerBounds,
-                                                                        std::function<void(std::vector<ValueType>&)> const& prepareUpperBounds,
-                                                                        std::optional<storm::OptimizationDirection> const& dir,
-                                                                        std::function<SolverStatus(IIData<ValueType> const&)> const& iterationCallback,
-                                                                        std::optional<storm::storage::BitVector> const& relevantValues) const {
+SolverStatus IntervalIterationHelper<ValueType, TrivialRowGrouping>::II(
+    std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative, ValueType const& precision,
+    std::function<void(std::vector<ValueType>&)> const& prepareLowerBounds, std::function<void(std::vector<ValueType>&)> const& prepareUpperBounds,
+    std::optional<storm::OptimizationDirection> const& dir, std::function<SolverStatus(IIData<ValueType> const&)> const& iterationCallback,
+    std::optional<storm::storage::BitVector> const& relevantValues, storm::OptionalRef<SolutionBounds<ValueType>> solutionBounds) const {
     // Create two vectors x and y using the given operand plus an auxiliary vector.
     std::pair<std::vector<ValueType>, std::vector<ValueType>> xy;
     auto& auxVector = viOperator->allocateAuxiliaryVector(operand.size());
@@ -139,6 +137,12 @@ SolverStatus IntervalIterationHelper<ValueType, TrivialRowGrouping>::II(std::vec
         status = II<OptimizationDirection::Maximize>(xy, offsets, numIterations, relative, precision, iterationCallback, relevantValues);
     } else {
         status = II<OptimizationDirection::Minimize>(xy, offsets, numIterations, relative, precision, iterationCallback, relevantValues);
+    }
+    if (solutionBounds.has_value()) {
+        // Interval iteration keeps xy.first below and xy.second above the solution in every iteration, so both
+        // sides are sound even if it was aborted. Read them out before they are collapsed into the estimate.
+        solutionBounds->lower = xy.first;
+        solutionBounds->upper = xy.second;
     }
     auto two = storm::utility::convertNumber<ValueType>(2.0);
     // get the average of lower- and upper result

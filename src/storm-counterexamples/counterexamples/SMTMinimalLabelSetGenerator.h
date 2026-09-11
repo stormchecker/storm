@@ -1668,8 +1668,9 @@ class SMTMinimalLabelSetGenerator {
         if (model.isOfType(storm::models::ModelType::Dtmc)) {
             if (rewardName == boost::none) {
                 results.push_back(storm::utility::zero<T>());
-                allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeUntilProbabilities(
-                    env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false);
+                allStatesResult = std::move(storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeUntilProbabilities(
+                                                env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false)
+                                                .values);
                 for (auto state : model.getInitialStates()) {
                     STORM_LOG_TRACE("Found probability " << allStatesResult[state]);
                     results.back() = std::max(results.back(), allStatesResult[state]);

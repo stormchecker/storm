@@ -134,7 +134,8 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
             helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(this->getModel(), formula);
             auto numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, SolutionType>::computeRewardBoundedValues(
                 env, checkTask.getOptimizationDirection(), rewardUnfolding, this->getModel().getInitialStates());
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
+            return std::unique_ptr<CheckResult>(
+                new ExplicitQuantitativeCheckResult<SolutionType>(this->getModel().getInitialStates(), std::move(numericResult)));
         }
     } else {
         STORM_LOG_THROW(pathFormula.hasUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have (a single) upper step bound.");
@@ -182,6 +183,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
         this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(),
         checkTask.isProduceSchedulersSet(), checkTask.getHint());
     std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(ret.values)));
+    result->asExplicitQuantitativeCheckResult<SolutionType>().setBounds(std::move(ret.solutionBounds));
     if (checkTask.isProduceSchedulersSet() && ret.scheduler) {
         result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(ret.scheduler));
     }
@@ -200,6 +202,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
         env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
         this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), checkTask.isProduceSchedulersSet());
     std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(ret.values)));
+    result->asExplicitQuantitativeCheckResult<SolutionType>().setBounds(std::move(ret.solutionBounds));
     if (checkTask.isProduceSchedulersSet() && ret.scheduler) {
         result->asExplicitQuantitativeCheckResult<SolutionType>().setScheduler(std::move(ret.scheduler));
     }
@@ -314,7 +317,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
         helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(this->getModel(), formula);
         auto numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, SolutionType>::computeRewardBoundedValues(
             env, checkTask.getOptimizationDirection(), rewardUnfolding, this->getModel().getInitialStates());
-        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
+        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(this->getModel().getInitialStates(), std::move(numericResult)));
     } else {
         STORM_LOG_THROW(rewardPathFormula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
         auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
