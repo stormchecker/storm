@@ -1,7 +1,9 @@
 #pragma once
 
 #include <boost/variant.hpp>
+#include <functional>
 
+#include "storm-dft/environment/DftEnvironment.h"
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/utility/RelevantEvents.h"
 #include "storm/logic/Formula.h"
@@ -23,6 +25,15 @@ class DFTModelChecker {
     typedef std::vector<boost::variant<ExtendedValueType, approximation_result>> dft_results;
     typedef std::vector<std::shared_ptr<storm::logic::Formula const>> property_vector;
 
+    /*!
+     * Callback invoked whenever a model has been built and is available for export.
+     *
+     * @param model The built model.
+     * @param isFinal True if it is the final model.
+     *                False if it is an intermediate model during the approximation loop.
+     */
+    using ModelExportCallback = std::function<void(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, bool isFinal)>;
+
     class ResultOutputVisitor : public boost::static_visitor<> {
        public:
         void operator()(ExtendedValueType const& result, std::ostream& os) const {
@@ -37,29 +48,19 @@ class DFTModelChecker {
     /*!
      * Constructor.
      */
-    DFTModelChecker(bool printOutput) : printInfo(printOutput) {}
+    DFTModelChecker(bool printOutput, ModelExportCallback exportCallback = {}) : printInfo(printOutput), exportCallback(std::move(exportCallback)) {}
 
     /*!
      * Main method for checking DFTs.
      *
+     * @param env Environment holding the DFT model-checking configuration.
      * @param origDft Original DFT.
      * @param properties Properties to check for.
-     * @param symred Flag whether symmetry reduction should be used.
-     * @param allowModularisation Flag indicating if modularisation is allowed.
      * @param relevantEvents Relevant events which should be observed.
-     * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events
-     * @param approximationError Error allowed for approximation. Value 0 indicates no approximation.
-     * @param approximationHeuristic Heuristic used for state space exploration.
-     * @param eliminateChains If true, chains of non-Markovian states are eliminated from the resulting MA
-     * @param labelBehavior Behavior of labels of eliminated states
      * @return Model checking results for the given properties..
      */
-    dft_results check(storm::dft::storage::DFT<ValueType> const& origDft, property_vector const& properties, bool symred = true,
-                      bool allowModularisation = true, storm::dft::utility::RelevantEvents const& relevantEvents = {}, bool allowDCForRelevant = false,
-                      double approximationError = 0.0,
-                      storm::dft::builder::ApproximationHeuristic approximationHeuristic = storm::dft::builder::ApproximationHeuristic::DEPTH,
-                      bool eliminateChains = false,
-                      storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels);
+    dft_results check(storm::dft::DftEnvironment const& env, storm::dft::storage::DFT<ValueType> const& origDft, property_vector const& properties,
+                      storm::dft::utility::RelevantEvents const& relevantEvents = {});
 
     /*!
      * Print timings of all operations to stream.
@@ -78,6 +79,7 @@ class DFTModelChecker {
 
    private:
     bool printInfo;
+    ModelExportCallback exportCallback;
 
     // Timing values
     storm::utility::Stopwatch buildingTimer;
@@ -89,70 +91,53 @@ class DFTModelChecker {
     /*!
      * Internal helper for model checking a DFT.
      *
+     * @param env Environment holding the DFT model-checking configuration.
      * @param dft DFT.
      * @param properties Properties to check for.
-     * @param symred Flag indicating if symmetry reduction should be used.
-     * @param allowModularisation Flag indicating if modularisation is allowed.
      * @param relevantEvents Relevant events which should be observed.
-     * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events
-     * @param approximationError Error allowed for approximation. Value 0 indicates no approximation.
-     * @param approximationHeuristic Heuristic used for approximation.
-     * @param eliminateChains If true, chains of non-Markovian states are eliminated from the resulting MA
-     * @param labelBehavior Behavior of labels of eliminated states
      * @return Model checking results (or in case of approximation two results for lower and upper bound)
      */
-    dft_results checkHelper(storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
-                            storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant = false, double approximationError = 0.0,
-                            storm::dft::builder::ApproximationHeuristic approximationHeuristic = storm::dft::builder::ApproximationHeuristic::DEPTH,
-                            bool eliminateChains = false,
-                            storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels);
+    dft_results checkHelper(storm::dft::DftEnvironment const& env, storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties,
+                            storm::dft::utility::RelevantEvents const& relevantEvents);
 
     /*!
      * Internal helper for building a CTMC from a DFT via parallel composition.
      *
+     * @param env Environment holding the DFT model-checking configuration.
      * @param dft DFT.
      * @param properties Properties to check for.
-     * @param symred Flag indicating if symmetry reduction should be used.
-     * @param allowModularisation Flag indicating if modularisation is allowed.
      * @param relevantEvents Relevant events which should be observed.
-     * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events
      * @return CTMC representing the DFT
      */
-    std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> buildModelViaComposition(storm::dft::storage::DFT<ValueType> const& dft,
-                                                                                     property_vector const& properties, bool symred, bool allowModularisation,
-                                                                                     storm::dft::utility::RelevantEvents const& relevantEvents,
-                                                                                     bool allowDCForRelevant);
+    std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> buildModelViaComposition(storm::dft::DftEnvironment const& env,
+                                                                                     storm::dft::storage::DFT<ValueType> const& dft,
+                                                                                     property_vector const& properties,
+                                                                                     storm::dft::utility::RelevantEvents const& relevantEvents);
 
     /*!
      * Check model generated from DFT.
      *
+     * @param env Environment holding the DFT model-checking configuration.
      * @param dft The DFT.
      * @param properties Properties to check for.
-     * @param symred Flag indicating if symmetry reduction should be used.
      * @param relevantEvents Relevant events which should be observed.
-     * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events
-     * @param approximationError Error allowed for approximation. Value 0 indicates no approximation.
-     * @param approximationHeuristic Heuristic used for approximation.
-     * @param eliminateChains If true, chains of non-Markovian states are eliminated from the resulting MA
-     * @param labelBehavior Behavior of labels of eliminated states
      *
      * @return Model checking result
      */
-    dft_results checkDFT(storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred,
-                         storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError = 0.0,
-                         storm::dft::builder::ApproximationHeuristic approximationHeuristic = storm::dft::builder::ApproximationHeuristic::DEPTH,
-                         bool eliminateChains = false,
-                         storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels);
+    dft_results checkDFT(storm::dft::DftEnvironment const& env, storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties,
+                         storm::dft::utility::RelevantEvents const& relevantEvents);
 
     /*!
      * Check the given markov model for the given properties.
      *
+     * @param env        Environment holding the DFT model-checking configuration.
      * @param model      Model to check
      * @param properties Properties to check for
      *
      * @return Model checking result
      */
-    std::vector<ExtendedValueType> checkModel(std::shared_ptr<storm::models::sparse::Model<ValueType>>& model, property_vector const& properties);
+    std::vector<ExtendedValueType> checkModel(storm::dft::DftEnvironment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>>& model,
+                                              property_vector const& properties);
 
     /*!
      * Checks if the computed approximation is sufficient, i.e.

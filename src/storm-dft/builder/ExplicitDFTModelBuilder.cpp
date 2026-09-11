@@ -2,13 +2,12 @@
 
 #include <map>
 
-#include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include "storm-dft/environment/ModelBuilderEnvironment.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/transformer/NonMarkovianChainTransformer.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
@@ -33,9 +32,10 @@ ExplicitDFTModelBuilder<ValueType, StateType>::MatrixBuilder::MatrixBuilder(bool
 }
 
 template<typename ValueType, typename StateType>
-ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::dft::storage::DFT<ValueType> const& dft,
+ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::dft::DftEnvironment const& env, storm::dft::storage::DFT<ValueType> const& dft,
                                                                        storm::dft::storage::DftSymmetries const& symmetries)
     : dft(dft),
+      env(env),
       stateGenerationInfo(std::make_shared<storm::dft::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
       generator(dft, *stateGenerationInfo),
       matrixBuilder(!generator.isDeterministicModel()),
@@ -223,10 +223,9 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(size_t iteration,
         }
     }
 
-    auto ftSettings = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>();
-    if (ftSettings.isMaxDepthSet()) {
+    if (env.modelBuilder().isMaxDepthSet()) {
         STORM_LOG_ASSERT(usedHeuristic == storm::dft::builder::ApproximationHeuristic::DEPTH, "MaxDepth requires 'depth' exploration heuristic.");
-        approximationThreshold = ftSettings.getMaxDepth();
+        approximationThreshold = env.modelBuilder().getMaxDepth();
     }
 
     exploreStateSpace(approximationThreshold);
@@ -414,8 +413,8 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double app
         } else {
             // Explore the current state
             ++nrExpandedStates;
-            storm::generator::StateBehavior<ValueType, StateType> behavior =
-                generator.expand(std::bind(&ExplicitDFTModelBuilder::getOrAddStateIndex, this, std::placeholders::_1));
+            storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(
+                std::bind(&ExplicitDFTModelBuilder::getOrAddStateIndex, this, std::placeholders::_1), env.modelBuilder().isTakeFirstDependency());
             STORM_LOG_ASSERT(!behavior.empty(), "Behavior is empty.");
             setMarkovian(behavior.begin()->isMarkovian());
 
@@ -522,7 +521,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double app
 
 template<typename ValueType, typename StateType>
 void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
-    bool isAddLabelsClaiming = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>().isAddLabelsClaiming();
+    bool isAddLabelsClaiming = env.modelBuilder().isAddLabelsClaiming();
 
     // Build state labeling
     modelComponents.stateLabeling = storm::models::sparse::StateLabeling(modelComponents.transitionMatrix.getRowGroupCount());
@@ -605,7 +604,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
 
 template<typename ValueType, typename StateType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType, StateType>::getModel() {
-    if (storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>().isMaxDepthSet() && skippedStates.size() > 0) {
+    if (env.modelBuilder().isMaxDepthSet() && skippedStates.size() > 0) {
         // Give skipped states separate label "skipped"
         modelComponents.stateLabeling.addLabel("skipped");
         for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
