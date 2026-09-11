@@ -84,19 +84,19 @@ bool parseInterval(std::string const& value, IntervalType& result) {
 
     std::string intermediate = value;
     boost::trim(intermediate);
-    carl::BoundType leftBound;
-    carl::BoundType rightBound;
+    storm::BoundType leftBound;
+    storm::BoundType rightBound;
     if (intermediate.front() == '(') {
-        leftBound = carl::BoundType::STRICT;
+        leftBound = storm::BoundType::STRICT;
     } else if (intermediate.front() == '[') {
-        leftBound = carl::BoundType::WEAK;
+        leftBound = storm::BoundType::WEAK;
     } else {
         return false;  // Expect start with '(' or '['.
     }
     if (intermediate.back() == ')') {
-        rightBound = carl::BoundType::STRICT;
+        rightBound = storm::BoundType::STRICT;
     } else if (intermediate.back() == ']') {
-        rightBound = carl::BoundType::WEAK;
+        rightBound = storm::BoundType::WEAK;
     } else {
         return false;  // Expected end with ')' or ']'.
     }
@@ -125,7 +125,7 @@ bool parseNumber(std::string const& value, NumberType& result) {
     if constexpr (std::is_same_v<NumberType, double>) {
         return parseDouble(value, result);
     } else if constexpr (std::is_same_v<NumberType, storm::RationalNumber>) {
-        return carl::try_parse(value, result);
+        return storm::utility::tryParseNumber(value, result);
     } else if constexpr (std::is_same_v<NumberType, storm::Interval>) {
         return parseInterval<storm::Interval>(value, result);
     } else if constexpr (std::is_same_v<NumberType, storm::RationalInterval>) {

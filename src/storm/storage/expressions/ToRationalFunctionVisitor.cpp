@@ -50,7 +50,7 @@ boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(BinaryNumerica
         case BinaryNumericalFunctionExpression::OperatorType::Power: {
             STORM_LOG_THROW(storm::utility::isInteger(secondOperandAsRationalFunction), storm::exceptions::InvalidArgumentException,
                             "Exponent of power operator must be an integer but is " << secondOperandAsRationalFunction << ".");
-            auto exponentAsInteger = storm::utility::convertNumber<carl::sint>(secondOperandAsRationalFunction);
+            auto exponentAsInteger = storm::utility::convertNumber<int_fast64_t>(secondOperandAsRationalFunction);
             return storm::utility::pow(firstOperandAsRationalFunction, exponentAsInteger);
         }
         default:

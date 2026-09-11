@@ -168,7 +168,7 @@ storm::RationalNumber WinningRegion::beliefSupportStates() const {
     storm::RationalNumber total = 0;
     storm::RationalNumber two = storm::utility::convertNumber<storm::RationalNumber>(2);
     for (auto const& size : observationSizes) {
-        total += carl::pow(two, size) - 1;
+        total += storm::utility::pow(two, size) - 1;
     }
     return total;
 }
@@ -182,9 +182,9 @@ std::pair<storm::RationalNumber, storm::RationalNumber> count(std::vector<storm:
     storm::RationalNumber two = storm::utility::convertNumber<storm::RationalNumber>(2);
     for (uint64_t i = 0; i < intersects.size(); ++i) {
         if (plus) {
-            newVal += carl::pow(two, intersects[i].getNumberOfSetBits());
+            newVal += storm::utility::pow(two, intersects[i].getNumberOfSetBits());
         } else {
-            newVal -= carl::pow(two, intersects[i].getNumberOfSetBits());
+            newVal -= storm::utility::pow(two, intersects[i].getNumberOfSetBits());
         }
     }
 
@@ -222,7 +222,7 @@ std::pair<storm::RationalNumber, storm::RationalNumber> count(std::vector<storm:
         std::vector<storm::storage::BitVector> useInfo;
         for (uint64_t i = 0; i < intersects.size(); ++i) {
             if (upperBoundElements > 10000 && intersects[i].getNumberOfSetBits() < intersectSetSkip - 3) {
-                skipped += (carl::pow(two, intersects[i].getNumberOfSetBits()) * origSets.size());
+                skipped += (storm::utility::pow(two, intersects[i].getNumberOfSetBits()) * origSets.size());
                 STORM_LOG_DEBUG("Skipped " << skipped);
             } else {
                 useIntersects.push_back(intersects[i]);
@@ -238,7 +238,7 @@ std::pair<storm::RationalNumber, storm::RationalNumber> count(std::vector<storm:
 
         for (uint64_t i = 0; i < origSets.size(); ++i) {
             if (upperBoundElements > 20000 && origSets[i].getNumberOfSetBits() < origSetSkip - 3) {
-                skipped += (carl::pow(two, origSets[i].getNumberOfSetBits()) * useIntersects.size());
+                skipped += (storm::utility::pow(two, origSets[i].getNumberOfSetBits()) * useIntersects.size());
                 STORM_LOG_DEBUG("Skipped " << skipped);
                 continue;
             }

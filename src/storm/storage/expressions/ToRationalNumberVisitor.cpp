@@ -135,7 +135,7 @@ boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BooleanLiteralExpr
 
 template<typename RationalNumberType>
 boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IntegerLiteralExpression const& expression, boost::any const&) {
-    return RationalNumberType(carl::rationalize<storm::RationalNumber>(static_cast<carl::sint>(expression.getValue())));
+    return RationalNumberType(storm::utility::convertNumber<storm::RationalNumber>(static_cast<int_fast64_t>(expression.getValue())));
 }
 
 template<typename RationalNumberType>

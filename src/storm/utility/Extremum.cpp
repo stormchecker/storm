@@ -1,5 +1,6 @@
 #include "storm/utility/Extremum.h"
 
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/macros.h"
@@ -129,13 +130,12 @@ void Extremum<Dir, ValueType>::reset() {
 template class Extremum<storm::OptimizationDirection::Minimize, double>;
 template class Extremum<storm::OptimizationDirection::Maximize, double>;
 
-#if defined(STORM_HAVE_CLN)
-template class Extremum<storm::OptimizationDirection::Minimize, storm::ClnRationalNumber>;
-template class Extremum<storm::OptimizationDirection::Maximize, storm::ClnRationalNumber>;
-#endif
-#if defined(STORM_HAVE_GMP)
-template class Extremum<storm::OptimizationDirection::Minimize, storm::GmpRationalNumber>;
-template class Extremum<storm::OptimizationDirection::Maximize, storm::GmpRationalNumber>;
+template class Extremum<storm::OptimizationDirection::Minimize, storm::RationalNumber>;
+template class Extremum<storm::OptimizationDirection::Maximize, storm::RationalNumber>;
+
+#if STORM_RATIONAL_NUMBER_DIFFERS_FROM_COEFFICIENT
+template class Extremum<storm::OptimizationDirection::Minimize, storm::RationalFunctionCoefficient>;
+template class Extremum<storm::OptimizationDirection::Maximize, storm::RationalFunctionCoefficient>;
 #endif
 
 }  // namespace storm::utility

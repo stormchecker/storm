@@ -12,6 +12,7 @@
 #include "storm-dft/storage/DftModule.h"
 #include "storm-dft/storage/DftSymmetries.h"
 #include "storm-dft/storage/elements/DFTElements.h"
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/macros.h"

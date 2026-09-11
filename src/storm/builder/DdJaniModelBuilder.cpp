@@ -188,7 +188,7 @@ class ParameterCreator<Type, storm::RationalFunction> {
     void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter) {
         for (auto const& constant : model.getConstants()) {
             if (!constant.isDefined()) {
-                storm::RationalFunctionVariable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
+                storm::RationalFunctionVariable carlVariable = storm::createRFVariable(constant.getExpressionVariable().getName());
                 parameters.insert(carlVariable);
                 auto rf = convertVariableToPolynomial(carlVariable);
                 rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);

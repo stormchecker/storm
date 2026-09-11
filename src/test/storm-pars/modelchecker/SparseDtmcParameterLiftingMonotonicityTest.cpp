@@ -51,10 +51,10 @@ class SparseDtmcParameterLiftingMonotonicityTest : public ::testing::Test {
 #ifndef STORM_HAVE_Z3
         GTEST_SKIP() << "Z3 not available.";
 #endif
-        carl::VariablePool::getInstance().clear();
+        storm::clearRFVariablePool();
     }
     virtual void TearDown() {
-        carl::VariablePool::getInstance().clear();
+        storm::clearRFVariablePool();
     }
 
    private:

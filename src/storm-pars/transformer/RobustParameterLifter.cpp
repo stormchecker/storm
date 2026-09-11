@@ -9,6 +9,8 @@
 #include <set>
 #include <vector>
 
+#include <boost/functional/hash.hpp>
+
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/utility/parametric.h"
@@ -491,7 +493,7 @@ std::optional<Annotation> const& RobustParameterLifter<ParametricType, ConstantT
 template<typename ParametricType, typename ConstantType>
 std::size_t RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getHashValue() const {
     std::size_t seed = 0;
-    carl::hash_add(seed, transition);
+    boost::hash_combine(seed, transition);
     return seed;
 }
 

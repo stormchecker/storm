@@ -586,7 +586,7 @@ ValueType evaluateLikelihoodExpression(storm::prism::Update const& update, storm
         if (update.isLikelihoodInterval()) {
             BaseValueType lower = evaluator.asRational(update.getLikelihoodExpressionInterval().first);
             BaseValueType upper = evaluator.asRational(update.getLikelihoodExpressionInterval().second);
-            return ValueType(lower, carl::BoundType::WEAK, upper, carl::BoundType::WEAK);
+            return ValueType(lower, storm::BoundType::WEAK, upper, storm::BoundType::WEAK);
         } else {
             return evaluator.asRational(update.getLikelihoodExpression());
         }

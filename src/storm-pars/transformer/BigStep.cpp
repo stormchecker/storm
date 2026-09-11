@@ -34,7 +34,7 @@ using UniPoly = carl::UnivariatePolynomial<RationalFunctionCoefficient>;
 
 RationalFunction BigStep::uniPolyToRationalFunction(UniPoly uniPoly) {
     auto multivariatePol = storm::RawPolynomial(uniPoly);
-    auto multiNominator = carl::FactorizedPolynomial<storm::RawPolynomial>(multivariatePol, rawPolynomialCache);
+    auto multiNominator = storm::Polynomial(multivariatePol, rawPolynomialCache);
     return RationalFunction(multiNominator);
 }
 

@@ -224,19 +224,14 @@ std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplif
                     newValue = firstOperandEvaluation / secondOperandEvaluation;
                     break;
                 case OperatorType::Power: {
-                    if (carl::isInteger(secondOperandEvaluation)) {
-                        auto exponent = carl::toInt<carl::sint>(secondOperandEvaluation);
-                        if (exponent >= 0) {
-                            newValue = carl::pow(firstOperandEvaluation, exponent);
-                        } else {
-                            storm::RationalNumber power = carl::pow(firstOperandEvaluation, -exponent);
-                            newValue = storm::utility::one<storm::RationalNumber>() / power;
-                        }
+                    if (storm::utility::isInteger(secondOperandEvaluation)) {
+                        auto exponent = storm::utility::convertNumber<int_fast64_t>(secondOperandEvaluation);
+                        newValue = storm::utility::pow(firstOperandEvaluation, exponent);
                     }
                     break;
                 }
                 case OperatorType::Modulo: {
-                    if (carl::isInteger(firstOperandEvaluation) && carl::isInteger(secondOperandEvaluation)) {
+                    if (storm::utility::isInteger(firstOperandEvaluation) && storm::utility::isInteger(secondOperandEvaluation)) {
                         newValue = storm::utility::mod(storm::utility::numerator(firstOperandEvaluation), storm::utility::numerator(secondOperandEvaluation));
                     }
                     break;

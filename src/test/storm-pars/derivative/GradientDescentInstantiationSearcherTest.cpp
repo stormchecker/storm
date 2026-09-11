@@ -81,10 +81,10 @@ class GradientDescentInstantiationSearcherTest : public ::testing::Test {
 #ifndef STORM_HAVE_Z3
         GTEST_SKIP() << "Z3 not available.";
 #endif
-        carl::VariablePool::getInstance().clear();
+        storm::clearRFVariablePool();
     }
     virtual void TearDown() {
-        carl::VariablePool::getInstance().clear();
+        storm::clearRFVariablePool();
     }
 
    private:
@@ -170,8 +170,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     auto doubleInstantiation = adamChecker.gradientDescent();
     auto walk = adamChecker.getVisualizationWalk();
 
-    carl::Variable badCVar;
-    carl::Variable pfVar;
+    storm::RationalFunctionVariable badCVar;
+    storm::RationalFunctionVariable pfVar;
     for (auto parameter : storm::models::sparse::getProbabilityParameters(*dtmc)) {
         if (parameter.name() == "badC") {
             badCVar = parameter;

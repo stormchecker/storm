@@ -1,6 +1,7 @@
 #include "storm/modelchecker/results/ParetoCurveCheckResult.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/vector.h"
 
 namespace storm {

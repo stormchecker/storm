@@ -1,5 +1,7 @@
 #include "storm/solver/MathsatSmtSolver.h"
 
+#include "storm/exceptions/ExpressionEvaluationException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotSupportedException.h"

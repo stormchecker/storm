@@ -816,8 +816,10 @@ boost::any ExpressionToJson::visit(storm::expressions::RationalLiteralExpression
 
     if (!storm::isJsonNumberExportAccurate(val)) {
         // Try if exact export is possible as fraction of two literals
-        auto [num, den] = storm::utility::asFraction(expression.getValue());
+        auto const& value = expression.getValue();
+        storm::RationalNumber den = storm::utility::convertNumber<storm::RationalNumber>(storm::utility::denominator(value));
         if (!storm::utility::isOne(den)) {
+            storm::RationalNumber num = storm::utility::convertNumber<storm::RationalNumber>(storm::utility::numerator(value));
             ExportJsonType numJson(num), denJson(den);
             if (isJsonNumberExportAccurate(numJson) && isJsonNumberExportAccurate(denJson)) {
                 val = ExportJsonType();

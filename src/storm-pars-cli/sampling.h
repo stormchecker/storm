@@ -358,7 +358,9 @@ void sampleDerivatives(std::shared_ptr<storm::models::sparse::Model<ValueType>> 
     std::map<typename storm::utility::parametric::VariableType<ValueType>::type, typename storm::utility::parametric::CoefficientType<ValueType>::type>
         instantiation;
     for (auto const& pair : keyValue) {
-        auto variable = carl::VariablePool::getInstance().findVariableWithName(pair.first);
+        auto variable = storm::findRFVariable(pair.first);
+        STORM_LOG_THROW(variable != storm::RationalFunctionVariable::NO_VARIABLE, storm::exceptions::WrongFormatException,
+                        "Parameter '" << pair.first << "' does not exist in the model.");
         auto value = storm::utility::convertNumber<typename storm::utility::parametric::CoefficientType<ValueType>::type>(pair.second);
         instantiation.emplace(variable, value);
     }

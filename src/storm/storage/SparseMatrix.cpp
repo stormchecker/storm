@@ -2496,10 +2496,10 @@ template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename Sparse
 template class SparseMatrixBuilder<double>;
 template class SparseMatrix<double>;
 template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
+template bool SparseMatrix<double>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
 template double SparseMatrix<double>::getPointwiseProductRowSum(storm::storage::SparseMatrix<double> const& otherMatrix,
                                                                 typename SparseMatrix<double>::index_type const& row) const;
 template std::vector<double> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<double> const& otherMatrix) const;
-template bool SparseMatrix<double>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
 
 template class MatrixEntry<uint32_t, double>;
 template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint32_t, double> const& entry);
@@ -2522,32 +2522,16 @@ template std::ostream& operator<<(std::ostream& out, SparseMatrix<storm::storage
 template bool SparseMatrix<int>::isSubmatrixOf(SparseMatrix<storm::storage::sparse::state_type> const& matrix) const;
 
 // Rational Numbers
-
-#if defined(STORM_HAVE_CLN)
-template class MatrixEntry<typename SparseMatrix<ClnRationalNumber>::index_type, ClnRationalNumber>;
-template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<ClnRationalNumber>::index_type, ClnRationalNumber> const& entry);
-template class SparseMatrixBuilder<ClnRationalNumber>;
-template class SparseMatrix<ClnRationalNumber>;
-template std::ostream& operator<<(std::ostream& out, SparseMatrix<ClnRationalNumber> const& matrix);
-template storm::ClnRationalNumber SparseMatrix<storm::ClnRationalNumber>::getPointwiseProductRowSum(
-    storm::storage::SparseMatrix<storm::ClnRationalNumber> const& otherMatrix, typename SparseMatrix<storm::ClnRationalNumber>::index_type const& row) const;
-template std::vector<storm::ClnRationalNumber> SparseMatrix<ClnRationalNumber>::getPointwiseProductRowSumVector(
-    storm::storage::SparseMatrix<storm::ClnRationalNumber> const& otherMatrix) const;
-template bool SparseMatrix<storm::ClnRationalNumber>::isSubmatrixOf(SparseMatrix<storm::ClnRationalNumber> const& matrix) const;
-#endif
-
-#if defined(STORM_HAVE_GMP)
-template class MatrixEntry<typename SparseMatrix<GmpRationalNumber>::index_type, GmpRationalNumber>;
-template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<GmpRationalNumber>::index_type, GmpRationalNumber> const& entry);
-template class SparseMatrixBuilder<GmpRationalNumber>;
-template class SparseMatrix<GmpRationalNumber>;
-template std::ostream& operator<<(std::ostream& out, SparseMatrix<GmpRationalNumber> const& matrix);
-template storm::GmpRationalNumber SparseMatrix<storm::GmpRationalNumber>::getPointwiseProductRowSum(
-    storm::storage::SparseMatrix<storm::GmpRationalNumber> const& otherMatrix, typename SparseMatrix<storm::GmpRationalNumber>::index_type const& row) const;
-template std::vector<storm::GmpRationalNumber> SparseMatrix<GmpRationalNumber>::getPointwiseProductRowSumVector(
-    storm::storage::SparseMatrix<storm::GmpRationalNumber> const& otherMatrix) const;
-template bool SparseMatrix<storm::GmpRationalNumber>::isSubmatrixOf(SparseMatrix<storm::GmpRationalNumber> const& matrix) const;
-#endif
+template class MatrixEntry<typename SparseMatrix<storm::RationalNumber>::index_type, storm::RationalNumber>;
+template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<storm::RationalNumber>::index_type, storm::RationalNumber> const& entry);
+template class SparseMatrixBuilder<storm::RationalNumber>;
+template class SparseMatrix<storm::RationalNumber>;
+template std::ostream& operator<<(std::ostream& out, SparseMatrix<storm::RationalNumber> const& matrix);
+template bool SparseMatrix<storm::RationalNumber>::isSubmatrixOf(SparseMatrix<storm::RationalNumber> const& matrix) const;
+template storm::RationalNumber SparseMatrix<storm::RationalNumber>::getPointwiseProductRowSum(
+    storm::storage::SparseMatrix<storm::RationalNumber> const& otherMatrix, typename SparseMatrix<storm::RationalNumber>::index_type const& row) const;
+template std::vector<storm::RationalNumber> SparseMatrix<storm::RationalNumber>::getPointwiseProductRowSumVector(
+    storm::storage::SparseMatrix<storm::RationalNumber> const& otherMatrix) const;
 
 // Rational Function
 template class MatrixEntry<typename SparseMatrix<RationalFunction>::index_type, RationalFunction>;
@@ -2555,6 +2539,7 @@ template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename Sparse
 template class SparseMatrixBuilder<RationalFunction>;
 template class SparseMatrix<RationalFunction>;
 template std::ostream& operator<<(std::ostream& out, SparseMatrix<RationalFunction> const& matrix);
+template bool SparseMatrix<storm::RationalFunction>::isSubmatrixOf(SparseMatrix<storm::RationalFunction> const& matrix) const;
 template storm::RationalFunction SparseMatrix<storm::RationalFunction>::getPointwiseProductRowSum(
     storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix, typename SparseMatrix<storm::RationalFunction>::index_type const& row) const;
 template storm::RationalFunction SparseMatrix<double>::getPointwiseProductRowSum(storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix,
@@ -2567,35 +2552,32 @@ template std::vector<storm::RationalFunction> SparseMatrix<double>::getPointwise
     storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
 template std::vector<storm::RationalFunction> SparseMatrix<int>::getPointwiseProductRowSumVector(
     storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
-template bool SparseMatrix<storm::RationalFunction>::isSubmatrixOf(SparseMatrix<storm::RationalFunction> const& matrix) const;
 
 // Intervals
-template std::vector<storm::Interval> SparseMatrix<double>::getPointwiseProductRowSumVector(
-    storm::storage::SparseMatrix<storm::Interval> const& otherMatrix) const;
 template class MatrixEntry<typename SparseMatrix<Interval>::index_type, Interval>;
 template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<Interval>::index_type, Interval> const& entry);
 template class SparseMatrixBuilder<Interval>;
 template class SparseMatrix<Interval>;
 template std::ostream& operator<<(std::ostream& out, SparseMatrix<Interval> const& matrix);
+template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<storm::Interval> const& matrix) const;
+template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
 template std::vector<storm::Interval> SparseMatrix<Interval>::getPointwiseProductRowSumVector(
     storm::storage::SparseMatrix<storm::Interval> const& otherMatrix) const;
-template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<storm::Interval> const& matrix) const;
-
-template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
+template std::vector<storm::Interval> SparseMatrix<double>::getPointwiseProductRowSumVector(
+    storm::storage::SparseMatrix<storm::Interval> const& otherMatrix) const;
 
 // Rational Intervals
-template std::vector<storm::RationalInterval> SparseMatrix<storm::RationalNumber>::getPointwiseProductRowSumVector(
-    storm::storage::SparseMatrix<storm::RationalInterval> const& otherMatrix) const;
 template class MatrixEntry<typename SparseMatrix<RationalInterval>::index_type, RationalInterval>;
 template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<RationalInterval>::index_type, RationalInterval> const& entry);
 template class SparseMatrixBuilder<RationalInterval>;
 template class SparseMatrix<RationalInterval>;
 template std::ostream& operator<<(std::ostream& out, SparseMatrix<RationalInterval> const& matrix);
+template bool SparseMatrix<storm::RationalInterval>::isSubmatrixOf(SparseMatrix<storm::RationalInterval> const& matrix) const;
+template bool SparseMatrix<storm::RationalInterval>::isSubmatrixOf(SparseMatrix<storm::RationalNumber> const& matrix) const;
 template std::vector<storm::RationalInterval> SparseMatrix<RationalInterval>::getPointwiseProductRowSumVector(
     storm::storage::SparseMatrix<storm::RationalInterval> const& otherMatrix) const;
-template bool SparseMatrix<storm::RationalInterval>::isSubmatrixOf(SparseMatrix<storm::RationalInterval> const& matrix) const;
-
-template bool SparseMatrix<storm::RationalInterval>::isSubmatrixOf(SparseMatrix<storm::RationalNumber> const& matrix) const;
+template std::vector<storm::RationalInterval> SparseMatrix<storm::RationalNumber>::getPointwiseProductRowSumVector(
+    storm::storage::SparseMatrix<storm::RationalInterval> const& otherMatrix) const;
 
 }  // namespace storage
 }  // namespace storm
