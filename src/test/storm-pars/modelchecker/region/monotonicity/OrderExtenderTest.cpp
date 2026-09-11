@@ -69,12 +69,12 @@ TEST_F(OrderExtenderTest, Brp_with_bisimulation_on_model) {
         EXPECT_TRUE((order->contains(i)));
     }
 
-    // Check on some nodes
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(5, 0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(94, 5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(7, 13));
+    // Check on some nodes. The state indices refer to the bisimulation quotient. If that numbering changes, these indices have to be adapted.
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(97, 98));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(97, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(4, 98));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(6, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(94, 88));
 }
 
 TEST_F(OrderExtenderTest, Brp_without_bisimulation_on_model) {
@@ -151,12 +151,12 @@ TEST_F(OrderExtenderTest, Brp_with_bisimulation_on_matrix) {
     EXPECT_EQ(order->getNumberOfAddedStates(), model->getNumberOfStates());
     EXPECT_TRUE(order->getDoneBuilding());
 
-    // Check on some nodes
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(5, 0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(94, 5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(7, 13));
+    // Check on some nodes. The state indices refer to the bisimulation quotient. If that numbering changes, these indices have to be adapted.
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(97, 98));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(97, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(4, 98));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(6, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(94, 88));
 }
 
 TEST_F(OrderExtenderTest, Brp_without_bisimulation_on_matrix) {

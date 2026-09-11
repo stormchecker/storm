@@ -6,22 +6,27 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/models/sparse/Model.h"
-#include "storm/utility/macros.h"
 
 namespace storm::bisimulation {
 
 template<typename ValueType>
-QuotientData<ValueType>::QuotientData(storm::models::sparse::Model<ValueType> const& model, storm::bisimulation::Partition const& partition,
+QuotientData<ValueType>::QuotientData(storm::bisimulation::Partition const& partition,
                                       storm::OptionalRef<storm::storage::BitVector const> preferredRepresentatives) {
-    uint64_t const undef = std::numeric_limits<uint64_t>::max();
-    toQuotientState.assign(model.getNumberOfStates(), undef);
+    uint64_t constexpr Undef = std::numeric_limits<uint64_t>::max();
+    toQuotientState.assign(partition.getNumberOfElements(), Undef);
     toRepresentativeState.reserve(partition.getNumberOfBlocks());
-    uint64_t quotientState = 0;
-    partition.forEachBlock([&](auto const& block) {
+    // Number the quotient states in the order of the smallest state of their block, so that the quotient resembles the order of the original states.
+    for (uint64_t state = 0; state < partition.getNumberOfElements(); ++state) {
+        if (toQuotientState[state] != Undef) {
+            continue;
+        }
+        auto const block = partition.getBlockOfElement(state);
+        uint64_t const quotientState = toRepresentativeState.size();
         for (auto const s : block) {
             toQuotientState[s] = quotientState;
         }
+        // Unless a preferred representative is available, the first state of the block is the representative. Approximative signature-based refinement
+        // relies on this: that state is the anchor that all other states of the block were compared with, cf. Signatures::extendQuotientData.
         uint64_t representativeState = block.front();
         if (preferredRepresentatives) {
             if (auto const it =
@@ -31,10 +36,7 @@ QuotientData<ValueType>::QuotientData(storm::models::sparse::Model<ValueType> co
             }
         }
         toRepresentativeState.push_back(representativeState);
-        ++quotientState;
-    });
-    STORM_LOG_ASSERT(std::none_of(toQuotientState.begin(), toQuotientState.end(), [&undef](auto const& s) { return s == undef; }),
-                     "Not all states appear in a block of the partition.");
+    }
 }
 
 template struct QuotientData<double>;

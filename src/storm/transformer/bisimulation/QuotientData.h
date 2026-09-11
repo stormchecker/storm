@@ -19,11 +19,13 @@ namespace storm::bisimulation {
 template<typename ValueType>
 struct QuotientData {
     /*!
-     * Computes the state index mappings between the given model and the quotient described by the given partition.
+     * Computes the state index mappings between the states (i.e., the elements of the given partition) and the quotient described by the partition.
+     * Quotient states are numbered in the order of the smallest state of their block.
      * @param preferredRepresentatives if given, the representative of a block is picked among these states whenever the block contains such a state.
+     * Otherwise, the first state of the block (cf. Partition::Block) is its representative.
      * @note does not compute any choice mappings, cf. below.
      */
-    QuotientData(storm::models::sparse::Model<ValueType> const& model, storm::bisimulation::Partition const& partition,
+    QuotientData(storm::bisimulation::Partition const& partition,
                  storm::OptionalRef<storm::storage::BitVector const> preferredRepresentatives = storm::NullRef);
 
     std::vector<uint64_t> toQuotientState;        // assigns to each input model state the corresponding quotient state

@@ -51,10 +51,11 @@ ReturnType<ValueType> performBisimulationMinimization(storm::models::sparse::Mod
     // Step 2: Apply refinement using the initial partition and choiceClasses. Initialize QuotientData.
     std::optional<storm::bisimulation::QuotientData<ValueType>> quotientData;
     // commonly called right after refinement.
-    auto initializeQuotientData = [&](storm::OptionalRef<storm::storage::BitVector const> preferredRepresentatives = storm::NullRef) {
+    auto initializeQuotientData = [&partition, &sw,
+                                   &quotientData](storm::OptionalRef<storm::storage::BitVector const> preferredRepresentatives = storm::NullRef) {
         STORM_LOG_STATISTICS(sw << " seconds for refinement (" << partition.getNumberOfBlocks() << " blocks).");
         sw.restart();
-        quotientData.emplace(model, partition, preferredRepresentatives);
+        quotientData.emplace(partition, preferredRepresentatives);
     };
     if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Bisimulation is not supported for Interval models.");
