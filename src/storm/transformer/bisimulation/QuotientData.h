@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <optional>
 #include <vector>
 
@@ -30,16 +31,16 @@ struct QuotientData {
     std::optional<std::vector<uint64_t>>
         toQuotientChoice;  // assigns to each input model choice (model.getNumberOfChoices() entries) the quotient choice that represents it.
 
-    // The following choice mappings are set iff signature-based refinement (and thus choice deduplication) was performed, cf. Signatures::moveToQuotientData.
+    // The following choice mappings are set iff signature-based refinement (and thus choice deduplication) was performed, cf. Signatures::extendQuotientData.
     struct SignatureData {
         std::vector<uint64_t> toRepresentativeChoice;  // assigns to each quotient choice the corresponding representative choice in the input model.
         std::vector<std::map<uint64_t, ValueType>>
             quotientChoiceDistributions;  // assigns to each quotient choice (same length as toRepresentativeChoice) the block distribution it was derived from.
         std::vector<uint64_t>
             quotientChoiceGroupIndices;  // CSR-style: has toRepresentativeState.size() + 1 entries; for quotient state s, the associated quotient choices are
-        // those in the (right-open) range [quotientChoiceGroupIndices->at(s), quotientChoiceGroupIndices->at(s + 1)).
-        // quotientChoiceGroupIndices->front() == 0 and
-        // quotientChoiceGroupIndices->back() == toRepresentativeChoice->size() == quotientChoiceSignatures->size().
+        // those in the (right-open) range [quotientChoiceGroupIndices[s], quotientChoiceGroupIndices[s + 1]).
+        // quotientChoiceGroupIndices.front() == 0 and
+        // quotientChoiceGroupIndices.back() == toRepresentativeChoice.size() == quotientChoiceDistributions.size().
     };
     std::optional<SignatureData> signatureData;
 

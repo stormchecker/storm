@@ -1,13 +1,13 @@
 #include "storm/transformer/bisimulation/Signatures.h"
 
 #include <algorithm>
+#include <limits>
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

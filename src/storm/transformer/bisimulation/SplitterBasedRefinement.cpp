@@ -84,20 +84,15 @@ struct SplitterRefinementContext {
 };
 
 /*!
- * Recomputes the silent states of every block of the partition from scratch.
+ * Recomputes whether the given candidate states are silent.
  */
 template<typename ValueType, SplitterRefinementMode Mode>
 void recomputeSilentStates(SplitterRefinementContext<ValueType, Mode>& context, auto const& candidates)
     requires(Mode != SplitterRefinementMode::Strong)
 {
-    auto& silentStates = context.weakData->silentStates;
-
     // A state can only ever go from silent to non-silent.
     for (uint64_t const state : candidates) {
-        auto const row = context.model.getTransitionMatrix().getRow(state);
-        silentStates.set(state, std::all_of(row.begin(), row.end(), [&context, &state](auto const& entry) {
-                             return storm::utility::isZero(entry.getValue()) || context.partition.isSameBlock(state, entry.getColumn());
-                         }));
+        context.weakData->silentStates.set(state, isSilentState(context.model.getTransitionMatrix(), context.partition, state));
     }
 }
 
@@ -108,17 +103,36 @@ template<typename ValueType, SplitterRefinementMode Mode>
 bool checkSilentStates(SplitterRefinementContext<ValueType, Mode> const& context)
     requires(Mode != SplitterRefinementMode::Strong)
 {
-    bool result = true;
-    context.partition.forEachBlock([&context, &result](auto const& block) {
-        for (uint64_t const state : block) {
-            auto const row = context.model.getTransitionMatrix().getRow(state);
-            bool const silent = std::all_of(row.begin(), row.end(), [&context, &state](auto const& entry) {
-                return storm::utility::isZero(entry.getValue()) || context.partition.isSameBlock(state, entry.getColumn());
-            });
-            result = result && context.weakData->silentStates.get(state) == silent;
+    for (uint64_t state = 0; state < context.partition.getNumberOfElements(); ++state) {
+        if (context.weakData->silentStates.get(state) != isSilentState(context.model.getTransitionMatrix(), context.partition, state)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/*!
+ * Replaces the given block, which has just been split, by its sub-blocks in the queue of splitters.
+ *
+ * For strong bisimulation, the largest sub-block is not enqueued if the given block is not in the queue: then, the partition is already stable with respect
+ * to the given block (or becomes stable in the current round). As the probability of moving into the block is the sum of the probabilities of moving into its
+ * sub-blocks, stability with respect to all other sub-blocks implies stability with respect to the largest one (with a positive tolerance, up to the
+ * accumulated tolerance). This way, every state is only part of logarithmically many splitters. The argument does not carry over to weak bisimulation, where
+ * the moves within the own block are unobservable, so that splitting a block changes what is observable for the states of its sub-blocks.
+ */
+template<typename ValueType, SplitterRefinementMode Mode>
+void enqueueSubBlocks(SplitterRefinementContext<ValueType, Mode>& context, storm::bisimulation::Partition::Block const splitBlock) {
+    bool const wasInQueue = context.queue.erase(splitBlock) > 0;
+    storm::bisimulation::Partition::Block largestSubBlock;
+    context.partition.forEachSubBlock(splitBlock, [&context, &largestSubBlock](auto const& subBlock) {
+        context.queue.insert(subBlock);
+        if (subBlock.size() > largestSubBlock.size()) {
+            largestSubBlock = subBlock;
         }
     });
-    return result;
+    if (Mode == SplitterRefinementMode::Strong && !wasInQueue) {
+        context.queue.erase(largestSubBlock);
+    }
 }
 
 /*!
@@ -142,11 +156,6 @@ void refineBlockStrong(SplitterRefinementContext<ValueType, Mode>& context, stor
     STORM_LOG_ASSERT(!predecessors.empty(), "The predecessor block should contain at least one predecessor state.");
     bool wasSplit = noPredecessors.size() > 0;
 
-    if (wasSplit) {
-        // add the block of states with no transition to the current splitter
-        context.queue.insert(noPredecessors);
-    }
-
     // Splitting with interval probabilities is not trivial: it is not clear whether the entire toSplitterProbs interval (which might be the sum of several
     // transitions) is feasible.
     static_assert(!storm::IsIntervalType<ValueType>, "Interval-valued splitter probabilities are not supported.");
@@ -164,9 +173,7 @@ void refineBlockStrong(SplitterRefinementContext<ValueType, Mode>& context, stor
     }
 
     if (wasSplit) {
-        // Add all remaining blocks that were split to splitter queue.
-        context.queue.erase(predecessorBlockToSplit);
-        context.partition.forEachSubBlock(predecessors, [&context](auto const& block) { context.queue.insert(block); });
+        enqueueSubBlocks(context, predecessorBlockToSplit);
     }
 }
 
@@ -243,7 +250,9 @@ void refineBlockWeak(SplitterRefinementContext<ValueType, SplitterRefinementMode
     {
         // true if state1 and state2 should be in different classes. Assumes conditionalValues[state1] <= conditionalValues[state2].
         auto const haveDifferentClass = [&conditionalValues, &context](uint64_t const state1, uint64_t const state2) {
-            if (storm::utility::isZero(context.tolerance)) {
+            // Whether a state can move to the splitter at all is not subject to the tolerance
+            if (storm::utility::isZero(context.tolerance) || storm::utility::isZero(conditionalValues[state1]) ||
+                storm::utility::isZero(conditionalValues[state2])) {
                 return conditionalValues[state1] != conditionalValues[state2];
             }
             return conditionalValues[state1] + context.tolerance < conditionalValues[state2];
@@ -317,8 +326,7 @@ void refineBlockWeak(SplitterRefinementContext<ValueType, SplitterRefinementMode
     context.partition.splitBlockByOrder(
         block, [&stateClasses](uint64_t const state1, uint64_t const state2) { return stateClasses[state1] < stateClasses[state2]; });
     STORM_LOG_ASSERT(context.partition.isProperSuperBlock(block), "As there are multiple different frontier states, the block must be split.");
-    context.queue.erase(block);
-    context.partition.forEachSubBlock(block, [&context](auto const& subBlock) { context.queue.insert(subBlock); });
+    enqueueSubBlocks(context, block);
 
     // Step 7: update silent states and clear cached data.
     recomputeSilentStates(context, nonSilentCandidates);

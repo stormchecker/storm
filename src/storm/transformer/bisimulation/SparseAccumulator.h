@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <set>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "storm/utility/constants.h"
@@ -22,14 +23,14 @@ class SparseAccumulator {
     explicit SparseAccumulator(uint64_t const numStates) : values(numStates, defaultValue()) {}
 
     /*!
-     * @return Retrieves the currently stored values
+     * @return the currently stored values
      */
     std::vector<ValueType> const& getValues() const {
         return values;
     }
 
     /*!
-     * @return the list of states currently holding a non-zero value
+     * @return the list of states currently holding a non-default value
      */
     std::vector<uint64_t> const& getNonDefaultStates() const {
         return nonDefaultStates;

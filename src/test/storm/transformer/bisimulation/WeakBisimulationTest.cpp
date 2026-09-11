@@ -113,6 +113,28 @@ TEST(WeakBisimulationTest, DivergentStates) {
     EXPECT_NEAR(checkFormula<ValueType>(quotient, "P=? [F \"goal\"]"), 0.5, 1e-12);
 }
 
+/*!
+ * A positive tolerance must not group a state that can move to a block with a state that cannot, no matter how small the probability is.
+ */
+TEST(WeakBisimulationTest, ZeroProbabilityIsNeverGroupedWithNonZeroProbability) {
+    // 0 moves to 1 and 2; 1 reaches "goal" (3) with a tiny probability and "sink" (4) otherwise; 2 only moves to "sink".
+    storm::storage::SparseMatrixBuilder<ValueType> builder(5, 5);
+    builder.addNextValue(0, 1, 0.5);
+    builder.addNextValue(0, 2, 0.5);
+    builder.addNextValue(1, 3, 1e-10);
+    builder.addNextValue(1, 4, 1.0 - 1e-10);
+    builder.addNextValue(2, 4, 1.0);
+    builder.addNextValue(3, 3, 1.0);
+    builder.addNextValue(4, 4, 1.0);
+    auto const model = buildModel<storm::models::sparse::Dtmc<ValueType>>(builder.build(), {{"goal", {3}}, {"sink", {4}}});
+
+    Options options = weakOptions();
+    options.tolerance = storm::utility::convertNumber<storm::RationalNumber>(1e-9);
+    auto const quotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, {}, options).quotient;
+    EXPECT_EQ(5ull, quotient->getNumberOfStates());
+    EXPECT_NEAR(checkFormula<ValueType>(quotient, "P=? [F \"goal\"]") / 5e-11, 1.0, 1e-6);
+}
+
 // ------------------------------------------------------------
 // Continuous-time models
 // ------------------------------------------------------------
@@ -177,6 +199,26 @@ TEST(WeakBisimulationTest, CtmcRateRewards) {
     // "goal" is reached after an Exp(1)-distributed amount of time, during which reward accumulates at rate one.
     EXPECT_NEAR(checkFormula<ValueType>(model, "R{\"rew\"}=? [F \"goal\"]"), 1.0, 1e-9);
     EXPECT_NEAR(checkFormula<ValueType>(quotient, "R{\"rew\"}=? [F \"goal\"]"), 1.0, 1e-9);
+}
+
+/*!
+ * Weak bisimulation on a CTMC preserves the distribution of the time spent within a block, and thus expected times.
+ */
+TEST(WeakBisimulationTest, CtmcExpectedTime) {
+    // 0 -> 1 with rate 100 and 0 -> 2 with rate 1; 1 -> 2 with rate 1; 2 absorbing and labeled "goal". Both 0 and 1 leave {0, 1} with rate 1.
+    storm::storage::SparseMatrixBuilder<ValueType> builder(3, 3);
+    builder.addNextValue(0, 1, 100.0);
+    builder.addNextValue(0, 2, 1.0);
+    builder.addNextValue(1, 2, 1.0);
+    builder.addNextValue(2, 2, 1.0);
+    auto const model = buildModel<storm::models::sparse::Ctmc<ValueType>>(builder.build(), {{"goal", {2}}});
+
+    storm::parser::FormulaParser formulaParser;
+    std::vector<std::shared_ptr<storm::logic::Formula const>> const formulas{formulaParser.parseSingleFormulaFromString("T=? [F \"goal\"]")};
+    auto const quotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, formulas, weakOptions()).quotient;
+    EXPECT_EQ(2ull, quotient->getNumberOfStates());
+    EXPECT_NEAR(checkFormula<ValueType>(model, "T=? [F \"goal\"]"), 1.0, 1e-9);
+    EXPECT_NEAR(checkFormula<ValueType>(quotient, "T=? [F \"goal\"]"), 1.0, 1e-9);
 }
 
 // ------------------------------------------------------------

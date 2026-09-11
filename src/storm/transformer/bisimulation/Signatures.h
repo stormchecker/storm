@@ -212,7 +212,7 @@ class Signatures {
      * To see why taking half of the tolerance is necessary, consider the following example:
      * Let s_1 and s_2 be two states of a block. Let c_1 be a choice of s_1 and let c_2 and c'_2 be two choices of s_2 such that c_1 ≈ c_2 ≈ c'_2.
      * Then, c'_2 does not need to appear in s_2's signature as it is represented by c_2.
-     * The quotient might only have s_1 and c_1 as representatives for the block but c_1 ≈ c'_2 does not need to hold. c_1 ≈ c_2 ≈ c'_2 only imples that
+     * The quotient might only have s_1 and c_1 as representatives for the block but c_1 ≈ c'_2 does not need to hold. c_1 ≈ c_2 ≈ c'_2 only implies that
      * c_1 and c'_2 are within twice of the tolerance considered for ≈.
      */
     ValueType const halfTolerance;

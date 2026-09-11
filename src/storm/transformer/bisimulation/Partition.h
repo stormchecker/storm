@@ -200,14 +200,14 @@ class Partition {
             auto const& subBlock = getBlockOfElement(blockContents[blockStart]);
             blockStart += subBlock.size();
             f(subBlock);
-        };
+        }
     }
 
     /*!
      * Splits the given block according to the given order.
      * Specifically, the elements in the block are sorted according to the given order and then the block is split into
      * multiple blocks, divided at every position where the order changes.
-     * @param less must define a transitive order (required for well-defined sorting)
+     * @param less must define a strict weak order (required for well-defined sorting)
      * @return true iff the block was split, i.e. if the input block is now a proper super block.
      */
     template<typename SplittingOrder>

@@ -1,9 +1,25 @@
 #pragma once
 
+#include <algorithm>
+#include <cstdint>
+
 #include "storm/storage/BitVector.h"
+#include "storm/storage/SparseMatrix.h"
 #include "storm/transformer/bisimulation/Partition.h"
+#include "storm/utility/constants.h"
 
 namespace storm::bisimulation {
+
+/*!
+ * @return true iff the given state is silent with respect to the given partition, i.e., iff it cannot leave its block in a single step.
+ */
+template<typename ValueType>
+bool isSilentState(storm::storage::SparseMatrix<ValueType> const& transitions, Partition const& partition, uint64_t const state) {
+    auto const row = transitions.getRow(state);
+    return std::all_of(row.begin(), row.end(), [&partition, &state](auto const& entry) {
+        return storm::utility::isZero(entry.getValue()) || partition.isSameBlock(state, entry.getColumn());
+    });
+}
 
 /*!
  * The state-level information that weak bisimulation requires on top of the partition

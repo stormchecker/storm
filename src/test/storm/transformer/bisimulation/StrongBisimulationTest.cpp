@@ -202,6 +202,13 @@ TEST(StrongBisimulationTest, DieAllLabels) {
     testQuotient(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm", "P=? [F \"one\"]", 13ull, 11ull, 17ull, 11ull, allLabelOptions());
 }
 
+/*!
+ * A reward operator without a reward model name refers to the unique reward model of the model.
+ */
+TEST(StrongBisimulationTest, DieUnnamedRewardModel) {
+    testQuotient(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm", "R=? [F \"done\"]", 13ull, 5ull, 7ull, 5ull);
+}
+
 TEST(StrongBisimulationTest, Crowds) {
     testQuotient(STORM_TEST_RESOURCES_DIR "/dtmc/crowds5_5.pm", "P=? [F \"observe0Greater1\"]", 7403ull, 65ull, 105ull, 65ull);
 }

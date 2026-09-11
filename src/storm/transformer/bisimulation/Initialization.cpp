@@ -26,6 +26,11 @@ PreservationInformation Initialization<ValueType>::getPreservationInformation() 
     // Add all labels that appear in all formulas
     for (auto const& f : formulas) {
         f->gatherReferencedRewardModels(information.preservedRewardModels);
+        // A reward operator without a reward model name refers to the unique reward model of the model, cf. Model::getRewardModel.
+        if (information.preservedRewardModels.contains("") && !model.getRewardModels().contains("")) {
+            information.preservedRewardModels.erase("");
+            information.preservedRewardModels.insert(model.getUniqueRewardModelName());
+        }
         for (auto const& l : f->getAtomicLabelFormulas()) {
             information.preservedStateLabels.insert(l->getLabel());
         }
@@ -80,9 +85,12 @@ Initialization<ValueType>::Initialization(storm::models::sparse::Model<ValueType
             .setRewardOperatorsAllowed(true)
             .setReachabilityRewardFormulasAllowed(true);
         if (model.isOfType(storm::models::ModelType::Ctmc)) {
-            // Weak bisimulation on a CTMC preserves the distribution of the time spent within a block, so time bounds are fine. Step bounds are not, which
-            // is why we only enable the time-bounded case here.
-            preservedFragment.setBoundedUntilFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true);
+            // Weak bisimulation on a CTMC preserves the distribution of the time spent within a block, so time bounds and expected times are fine.
+            // Step bounds are not, which is why we only enable the time-based cases here.
+            preservedFragment.setBoundedUntilFormulasAllowed(true)
+                .setTimeBoundedUntilFormulasAllowed(true)
+                .setTimeOperatorsAllowed(true)
+                .setReachbilityTimeFormulasAllowed(true);
         }
         for (auto const& f : this->formulas) {
             STORM_LOG_THROW(f->isInFragment(preservedFragment), storm::exceptions::IllegalFunctionCallException,
@@ -109,9 +117,9 @@ Initialization<ValueType>::Initialization(storm::models::sparse::Model<ValueType
         // Weak bisimulation on a CTMC drops the transitions within a block. The state rewards of a CTMC are rate rewards, so they are unaffected (the
         // distribution of the time spent within a block is preserved), but the state-action rewards are earned per taken transition and thus are not.
         STORM_LOG_THROW(!(options.bisimulationType == Options::BisimulationType::Weak && model.isOfType(storm::models::ModelType::Ctmc) &&
-                          (rewardModel.hasStateActionRewards() || rewardModel.hasTransitionRewards())),
+                          rewardModel.hasStateActionRewards()),
                         storm::exceptions::NotSupportedException,
-                        "Weak bisimulation on CTMCs does not preserve the transition rewards of reward model '" << rewName << "'.");
+                        "Weak bisimulation on CTMCs does not preserve the state-action rewards of reward model '" << rewName << "'.");
         if (rewardModel.hasStateRewards()) {
             preservedStateAnnotations.values.emplace_back(rewardModel.getStateRewardVector());
         }
@@ -315,14 +323,9 @@ storm::storage::BitVector computeDivergentStates(storm::storage::SparseMatrix<Va
 template<typename ValueType>
 storm::storage::BitVector computeSilentStates(storm::storage::SparseMatrix<ValueType> const& transitions, Partition const& partition) {
     storm::storage::BitVector silentStates(partition.getNumberOfElements(), false);
-    partition.forEachBlock([&transitions, &partition, &silentStates](Partition::Block const& block) {
-        for (uint64_t const state : block) {
-            auto const row = transitions.getRow(state);
-            silentStates.set(state, std::all_of(row.begin(), row.end(), [&partition, &block](auto const& entry) {
-                                 return storm::utility::isZero(entry.getValue()) || partition.isBlockOfElement(block, entry.getColumn());
-                             }));
-        }
-    });
+    for (uint64_t state = 0; state < partition.getNumberOfElements(); ++state) {
+        silentStates.set(state, isSilentState(transitions, partition, state));
+    }
     return silentStates;
 }
 
