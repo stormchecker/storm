@@ -213,7 +213,7 @@ std::ostream& ExplicitQualitativeCheckResult<ValueType>::writeToStream(std::ostr
             out << "{true, false}";
         }
     } else {
-        std::ios::fmtflags oldflags(std::cout.flags());
+        std::ios::fmtflags oldflags(out.flags());
         out << std::boolalpha;
 
         map_type const& map = boost::get<map_type>(truthValues);
@@ -238,7 +238,7 @@ std::ostream& ExplicitQualitativeCheckResult<ValueType>::writeToStream(std::ostr
             }
         }
 
-        std::cout.flags(oldflags);
+        out.flags(oldflags);
     }
     return out;
 }

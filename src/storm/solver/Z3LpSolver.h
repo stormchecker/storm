@@ -2,7 +2,7 @@
 
 #include <map>
 
-#include "storm-config.h"  // To detect whether the usage of Z3 is possible, this include is neccessary.
+#include "storm-config.h"  // To detect whether the usage of Z3 is possible, this include is necessary.
 #include "storm/adapters/Z3ExpressionAdapter.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/storage/expressions/Expressions.h"

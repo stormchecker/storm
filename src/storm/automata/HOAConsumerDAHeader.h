@@ -136,6 +136,7 @@ class HOAConsumerDAHeader : public cpphoafparser::HOAConsumer {
      * Called by the parser to notify that the BODY of the automaton has started [mandatory, once].
      */
     virtual void notifyBodyStart() {
+        // No built-in way to abort HOAParser::parse() early, the exception is used as a control-flow signal to stop right after the header.
         throw header_parsing_done();
     }
 

@@ -3,7 +3,7 @@
 #include <map>
 #include <optional>
 #include "storm/solver/LpSolver.h"
-// To detect whether the usage of Gurobi is possible, this include is neccessary.
+// To detect whether the usage of Gurobi is possible, this include is necessary.
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_GUROBI

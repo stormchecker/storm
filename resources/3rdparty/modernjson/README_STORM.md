@@ -1,7 +1,7 @@
 This version of [nlohmann/json](https://github.com/nlohmann/json) has been adapted by the Storm developers so that we
 are able to parse floating point numbers using exact arithmetic.
 
-For documentation on how to update the library versioin see [here](/doc/update_resources.md).
+For documentation on how to update the library version see [here](/doc/3rdparty_dependencies.md).
 
 The major changes are:
 

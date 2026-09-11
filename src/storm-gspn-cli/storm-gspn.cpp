@@ -1,5 +1,4 @@
 #include "storm-gspn/api/storm-gspn.h"
-#include "storm-gspn/builder/ExplicitGspnModelBuilder.h"
 #include "storm-gspn/builder/JaniGSPNBuilder.h"
 #include "storm-gspn/parser/GspnParser.h"
 #include "storm-gspn/storage/gspn/GSPN.h"

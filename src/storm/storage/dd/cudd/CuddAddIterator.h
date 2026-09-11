@@ -1,20 +1,15 @@
 #pragma once
 
-#include "storm-config.h"
-
 #include <cstdint>
 #include <memory>
 #include <set>
 #include <tuple>
 #include <utility>
 
+#include "storm-config.h"
+#include "storm/adapters/cudd.h"
 #include "storm/storage/dd/AddIterator.h"
 #include "storm/storage/expressions/SimpleValuation.h"
-
-#ifdef STORM_HAVE_CUDD
-// Include the C++-interface of CUDD.
-#include "cuddObj.hh"
-#endif
 
 namespace storm {
 namespace dd {

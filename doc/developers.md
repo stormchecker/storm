@@ -62,6 +62,12 @@ Important CMake options:
 | `STORM_BUILD_TESTS` | ON | Build test binaries |
 | `STORM_DISABLE_<DEP>` | OFF | Disable optional dependencies (CUDD, GLPK, Z3, …) |
 
+## Third party resources
+Storm makes extensive use of third-party resources.
+An overview of the dependencies is available on the [website](https://www.stormchecker.org/documentation/obtain-storm/dependencies.html).
+The resources are defined in `resources/3rdparty/CMakeLists.txt` and shipped resources are located in `resources/3rdparty`.
+See the dedicated documentation on [third-party dependencies](3rdparty_dependencies.md).
+
 
 ## Coding conventions
 
