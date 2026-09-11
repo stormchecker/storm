@@ -81,8 +81,8 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
         storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, dtmc, checkTask, storm::modelchecker::RegionCheckEngine::ExactParameterLifting);
     auto resultPLA = pla->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
-    auto plaSimple =
-        storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, simpleDtmc, checkTask, storm::modelchecker::RegionCheckEngine::ExactParameterLifting);
+    auto plaSimple = storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, simpleDtmc, checkTask,
+                                                                                       storm::modelchecker::RegionCheckEngine::ExactParameterLifting);
     auto resultPLASimple = plaSimple->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
     ASSERT_TRUE(resultPLA == resultPLASimple) << "Different PLA result with simplified DTMC";
