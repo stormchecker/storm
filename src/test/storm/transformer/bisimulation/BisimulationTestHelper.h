@@ -42,7 +42,7 @@ inline Options strongOptions() {
 
 inline Options weakOptions() {
     Options options;
-    options.bisimulationType = Options::BisimulationType::Weak;
+    options.bisimulationType = storm::bisimulation::BisimulationType::Weak;
     return options;
 }
 

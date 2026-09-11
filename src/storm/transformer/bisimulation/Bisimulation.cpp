@@ -27,7 +27,7 @@ ReturnType<ValueType> performBisimulationMinimization(storm::models::sparse::Mod
     // Step 0: Sanity checks and set-up
     STORM_LOG_THROW(options.tolerance >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidArgumentException,
                     "Tolerance for bisimulation minimization must be non-negative, but was " << options.tolerance << ".");
-    bool const isWeak = options.bisimulationType == Options::BisimulationType::Weak;
+    bool const isWeak = options.bisimulationType == BisimulationType::Weak;
     if (isWeak) {
         STORM_LOG_THROW(!model.isNondeterministicModel(), storm::exceptions::NotSupportedException,
                         "Weak bisimulation is only supported for deterministic models, but the given model is of type " << model.getType() << ".");

@@ -5,11 +5,11 @@
 
 #include <boost/variant.hpp>
 
-#include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/bisimulation/BisimulationOptions.h"
+#include "storm/transformer/bisimulation/BisimulationType.h"
 
 #include "storm/models/symbolic/Model.h"
 #include "storm/models/symbolic/NondeterministicModel.h"
@@ -38,9 +38,9 @@ class Partition {
     Partition<DdType, ValueType> replacePartition(storm::dd::Bdd<DdType> const& newPartitionBdd, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex,
                                                   boost::optional<storm::dd::Bdd<DdType>> const& changedStates = boost::none) const;
 
-    static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType,
+    static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::bisimulation::BisimulationType const& bisimulationType,
                             PreservationInformation<DdType, ValueType> const& preservationInformation);
-    static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType,
+    static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::bisimulation::BisimulationType const& bisimulationType,
                             std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, BisimulationOptions const& bisimulationOptions);
     static Partition createTrivialChoicePartition(storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model,
                                                   std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables);
@@ -108,7 +108,7 @@ class Partition {
      * Creates a partition from the given model that respects the given expressions.
      */
     static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions,
-                            storm::storage::BisimulationType const& bisimulationType);
+                            storm::bisimulation::BisimulationType const& bisimulationType);
 
     static Partition<DdType, ValueType> createDistanceBased(storm::models::symbolic::Model<DdType, ValueType> const& model,
                                                             storm::logic::Formula const& constraintFormula, storm::logic::Formula const& targetFormula);

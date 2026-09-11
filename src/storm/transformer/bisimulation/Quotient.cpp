@@ -25,7 +25,7 @@ auto Quotient<ValueType>::buildFromPartition(storm::models::sparse::Model<ValueT
                                              storm::bisimulation::PreservationInformation const& preservationInformation,
                                              QuotientData<ValueType> const& quotientData) -> std::shared_ptr<storm::models::sparse::Model<ValueType>> {
     auto const& weakData = quotientData.weakData;
-    bool const isWeak = options.bisimulationType == Options::BisimulationType::Weak;
+    bool const isWeak = options.bisimulationType == BisimulationType::Weak;
     STORM_LOG_ASSERT(isWeak == weakData.has_value(), "Weak bisimulation data must be given for (and only for) weak bisimulation.");
     bool const useSignature = quotientData.signatureData.has_value();
     bool const isNondeterministic = model.isNondeterministicModel();

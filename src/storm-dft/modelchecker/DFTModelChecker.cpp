@@ -162,7 +162,7 @@ namespace {
 template<typename ValueType>
 auto getBisimOptions() {
     storm::bisimulation::Options bisimOptions;
-    bisimOptions.bisimulationType = storm::bisimulation::Options::BisimulationType::Weak;
+    bisimOptions.bisimulationType = storm::bisimulation::BisimulationType::Weak;
     if constexpr (std::is_same_v<ValueType, double>) {
         bisimOptions.tolerance =
             storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision() * 1e-3);

@@ -72,7 +72,7 @@ Initialization<ValueType>::Initialization(storm::models::sparse::Model<ValueType
                                           std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas)
     : model(model), options(options), formulas(formulas) {
     // sanity checks
-    if (options.bisimulationType == Options::BisimulationType::Weak) {
+    if (options.bisimulationType == BisimulationType::Weak) {
         STORM_LOG_THROW(model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Ctmc),
                         storm::exceptions::NotSupportedException,
                         "Weak bisimulation is only implemented for DTMCs and CTMCs, but the given model is of type " << model.getType() << ".");
@@ -116,10 +116,10 @@ Initialization<ValueType>::Initialization(storm::models::sparse::Model<ValueType
                         "Bisimulation initialization does not handle transition rewards of reward model '" << rewName << "'.");
         // Weak bisimulation on a CTMC drops the transitions within a block. The state rewards of a CTMC are rate rewards, so they are unaffected (the
         // distribution of the time spent within a block is preserved), but the state-action rewards are earned per taken transition and thus are not.
-        STORM_LOG_THROW(!(options.bisimulationType == Options::BisimulationType::Weak && model.isOfType(storm::models::ModelType::Ctmc) &&
-                          rewardModel.hasStateActionRewards()),
-                        storm::exceptions::NotSupportedException,
-                        "Weak bisimulation on CTMCs does not preserve the state-action rewards of reward model '" << rewName << "'.");
+        STORM_LOG_THROW(
+            !(options.bisimulationType == BisimulationType::Weak && model.isOfType(storm::models::ModelType::Ctmc) && rewardModel.hasStateActionRewards()),
+            storm::exceptions::NotSupportedException,
+            "Weak bisimulation on CTMCs does not preserve the state-action rewards of reward model '" << rewName << "'.");
         if (rewardModel.hasStateRewards()) {
             preservedStateAnnotations.values.emplace_back(rewardModel.getStateRewardVector());
         }
@@ -335,7 +335,7 @@ template<typename ValueType>
 WeakBisimulationData Initialization<ValueType>::getWeakBisimulationData(Partition& partition,
                                                                         storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                         PreservationInformation const& preservationInformation) const {
-    STORM_LOG_ASSERT(options.bisimulationType == Options::BisimulationType::Weak, "Weak bisimulation data requested for a non-weak bisimulation.");
+    STORM_LOG_ASSERT(options.bisimulationType == BisimulationType::Weak, "Weak bisimulation data requested for a non-weak bisimulation.");
     STORM_LOG_ASSERT(!model.isNondeterministicModel(), "Weak bisimulation is only supported for deterministic models.");
     uint64_t const numberOfStates = model.getNumberOfStates();
     // Identify step-sensitive states: those states where the number of block-internal steps taken affects the semantics. This concerns rewards in DTMC.

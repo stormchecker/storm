@@ -3,13 +3,12 @@
 #include <optional>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/transformer/bisimulation/BisimulationType.h"
 #include "storm/utility/constants.h"
 
 namespace storm::bisimulation {
 
 struct Options {
-    enum class BisimulationType { Strong, Weak };
-
     // The model annotations that must be preserved.
     std::optional<bool> preserveAllStateLabels = std::nullopt;  // If not specified, then all state labels are preserved iff no formula is given.
     std::optional<bool> preserveAllRewards = std::nullopt;      // If not specified, then all rewards are preserved iff no formula is given.

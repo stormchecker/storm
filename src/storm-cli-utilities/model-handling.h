@@ -710,8 +710,8 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseModelBi
     std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input,
     storm::settings::modules::BisimulationSettings const& bisimulationSettings, bool graphPreserving = true) {
     storm::bisimulation::Options options;
-    options.bisimulationType = bisimulationSettings.isWeakBisimulationSet() ? storm::bisimulation::Options::BisimulationType::Weak
-                                                                            : storm::bisimulation::Options::BisimulationType::Strong;
+    options.bisimulationType =
+        bisimulationSettings.isWeakBisimulationSet() ? storm::bisimulation::BisimulationType::Weak : storm::bisimulation::BisimulationType::Strong;
     if (bisimulationSettings.isToleranceSet() || !storm::NumberTraits<ValueType>::IsExact) {
         options.tolerance = storm::utility::convertNumber<storm::RationalNumber>(bisimulationSettings.getTolerance());
     } else {
@@ -719,8 +719,8 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseModelBi
     }
     options.actionSensitive = bisimulationSettings.isActionSensitiveSet();
     STORM_LOG_INFO("Performing bisimulation minimization (type: "
-                   << (options.bisimulationType == storm::bisimulation::Options::BisimulationType::Weak ? "weak" : "strong")
-                   << ", tolerance: " << options.tolerance << (options.actionSensitive ? ", action-sensitive" : "") << ")...");
+                   << (options.bisimulationType == storm::bisimulation::BisimulationType::Weak ? "weak" : "strong") << ", tolerance: " << options.tolerance
+                   << (options.actionSensitive ? ", action-sensitive" : "") << ")...");
     return storm::api::performBisimulationMinimization<ValueType>(model, createFormulasToRespect(input.properties), options);
 }
 
@@ -909,8 +909,8 @@ std::shared_ptr<storm::models::Model<ExportValueType>> preprocessDdModelBisimula
 
     STORM_LOG_INFO("Performing bisimulation minimization...");
     return storm::api::performBisimulationMinimization<DdType, ValueType, ExportValueType>(
-        model, createFormulasToRespect(input.properties), storm::storage::BisimulationType::Strong, bisimulationSettings.getSignatureMode(), quotientFormat,
-        ddBisimulationOptions);
+        model, createFormulasToRespect(input.properties), storm::bisimulation::BisimulationType::Strong, bisimulationSettings.getSignatureMode(),
+        quotientFormat, ddBisimulationOptions);
 }
 
 template<typename ExportValueType, storm::dd::DdType DdType, typename ValueType>
