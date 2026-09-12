@@ -108,7 +108,7 @@ class Partition {
     /*!
      * Creates the partition { {0,1,...,numElements-1} } with a single block that contains all elements
      *
-     * @param numElements the number of elements.
+     * @param numElements the number of elements. Must be positive.
      */
     explicit Partition(ElementIndex numElements);
 

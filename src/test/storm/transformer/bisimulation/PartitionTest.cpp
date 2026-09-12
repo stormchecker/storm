@@ -2,6 +2,7 @@
 #include <vector>
 #include "storm/transformer/bisimulation/Partition.h"
 
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "test/storm_gtest.h"
 
 namespace {
@@ -36,6 +37,10 @@ bool equalBlocks(storm::bisimulation::Partition const& partition, std::initializ
     }
 
     return expectedContainsActual && actualContainsExpected;
+}
+
+TEST(PartitionTest, EmptyPartition) {
+    STORM_SILENT_EXPECT_THROW(storm::bisimulation::Partition(0), storm::exceptions::InvalidArgumentException);
 }
 
 TEST(PartitionTest, Basic) {

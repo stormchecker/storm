@@ -1,5 +1,7 @@
 #include "storm/transformer/bisimulation/Partition.h"
 
+#include "storm/exceptions/InvalidArgumentException.h"
+
 namespace storm::bisimulation {
 
 namespace {
@@ -47,6 +49,7 @@ Partition::Block Partition::NonSuperBlockSet::pop() {
 }
 
 Partition::Partition(ElementIndex numElements) : numBlocks(1) {
+    STORM_LOG_THROW(numElements > 0, storm::exceptions::InvalidArgumentException, "Cannot create a partition without elements.");
     auto indexRange = std::ranges::iota_view<ElementIndex, ElementIndex>(0, numElements);
     blockContents.assign(indexRange.begin(), indexRange.end());
     blockContentsInverse = blockContents;
