@@ -20,6 +20,7 @@
 #include "storm/solver/SymbolicLinearEquationSolver.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/dd/bisimulation/BisimulationDecomposition.h"
+#include "storm/storage/dd/bisimulation/BisimulationOptions.h"
 
 class Cudd {
    public:
@@ -308,27 +309,33 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, MarkovAutomatonExitRates) {
         ASSERT_EQ(storm::models::ModelType::MarkovAutomaton, model->getType());
         EXPECT_EQ(3ul, model->getNumberOfStates());
 
-        storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::storage::BisimulationType::Strong);
-        decomposition.compute();
-        std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
+        // Exercise both Dd-quotient extraction paths: the default one operating on new block variables (as used,
+        // e.g., by the hybrid engine) and the one reusing the original row/column variables (--bisimulation:origvars).
+        for (bool useOriginalVariables : {false, true}) {
+            storm::dd::bisimulation::BisimulationOptions options;
+            options.useOriginalVariables = useOriginalVariables;
+            storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::storage::BisimulationType::Strong, options);
+            decomposition.compute();
+            std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
 
-        ASSERT_EQ(storm::models::ModelType::MarkovAutomaton, quotient->getType());
-        ASSERT_TRUE(quotient->isSymbolicModel());
-        // The bisimilar states 1 and 2 should have been merged into a single block.
-        EXPECT_EQ(2ul, quotient->getNumberOfStates());
+            ASSERT_EQ(storm::models::ModelType::MarkovAutomaton, quotient->getType());
+            ASSERT_TRUE(quotient->isSymbolicModel());
+            // The bisimilar states 1 and 2 should have been merged into a single block.
+            EXPECT_EQ(2ul, quotient->getNumberOfStates());
 
-        auto quotientMa = quotient->as<storm::models::symbolic::MarkovAutomaton<DdType, double>>();
+            auto quotientMa = quotient->as<storm::models::symbolic::MarkovAutomaton<DdType, double>>();
 
-        storm::modelchecker::HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<DdType, double>> checker(*quotientMa);
-        storm::parser::FormulaParser formulaParser;
-        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Tmin=? [F \"done\"]");
-        storm::modelchecker::CheckTask<storm::logic::Formula, double> task(*formula);
+            storm::modelchecker::HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<DdType, double>> checker(*quotientMa);
+            storm::parser::FormulaParser formulaParser;
+            std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Tmin=? [F \"done\"]");
+            storm::modelchecker::CheckTask<storm::logic::Formula, double> task(*formula);
 
-        std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(this->env, task);
-        result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(quotientMa->getReachableStates(), quotientMa->getInitialStates()));
+            std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(this->env, task);
+            result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(quotientMa->getReachableStates(), quotientMa->getInitialStates()));
 
-        // The exit rate of the initial state is lambda + lambda = 4, so the expected time to reach "done" is
-        // 1/4. Before the fix, the quotient's exit rate incorrectly collapsed to 1, yielding 1 instead of 0.25.
-        EXPECT_NEAR(0.25, result->asQuantitativeCheckResult<double>().sum(), 1e-6);
+            // The exit rate of the initial state is lambda + lambda = 4, so the expected time to reach "done" is
+            // 1/4. Before the fix, the quotient's exit rate incorrectly collapsed to 1, yielding 1 instead of 0.25.
+            EXPECT_NEAR(0.25, result->asQuantitativeCheckResult<double>().sum(), 1e-6);
+        }
     });
 }
