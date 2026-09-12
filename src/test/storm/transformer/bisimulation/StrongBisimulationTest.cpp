@@ -17,6 +17,7 @@ using storm::test::bisimulation::buildModel;
 using storm::test::bisimulation::BuildOptions;
 using storm::test::bisimulation::checkFormula;
 using storm::test::bisimulation::Options;
+using storm::test::bisimulation::StateLabelPreservation;
 using storm::test::bisimulation::strongOptions;
 
 using ValueType = double;
@@ -25,7 +26,7 @@ using ValueType = double;
  * Checks the number of states, transitions and choices of the bisimulation quotient of the model built from the given PRISM file, plus that the quotient
  * preserves the value of the formula.
  *
- * If `options.preserveAllStateLabels` is set, the full state space is built with all labels of the program. Otherwise, the formula may restrict the
+ * If `options.stateLabelPreservation` is `All`, the full state space is built with all labels of the program. Otherwise, the formula may restrict the
  * exploration, e.g. by making the target states of a reachability formula absorbing.
  */
 void testQuotient(std::string const& prismFile, std::string const& formulaString, uint64_t expectedModelStates, uint64_t expectedStates,
@@ -33,7 +34,7 @@ void testQuotient(std::string const& prismFile, std::string const& formulaString
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
 #endif
-    if (options.preserveAllStateLabels.value_or(false)) {
+    if (options.stateLabelPreservation == StateLabelPreservation::All) {
         buildOptions.allLabels = true;
     }
     auto const input = buildFromPrism<ValueType>(prismFile, formulaString, buildOptions);
@@ -56,7 +57,10 @@ void testQuotient(std::string const& prismFile, std::string const& formulaString
     EXPECT_EQ(choiceLabels(input.model), choiceLabels(quotient));
     EXPECT_EQ(input.model->hasChoiceOrigins(), quotient->hasChoiceOrigins());
 
-    EXPECT_NEAR(checkFormula<ValueType>(quotient, formulaString), checkFormula<ValueType>(input.model, formulaString), 1e-9);
+    // The formulas were parsed for the PRISM program, so unlike the formula string they can be checked even if they contain atomic expressions.
+    for (auto const& formula : input.formulas) {
+        EXPECT_NEAR(checkFormula<ValueType>(quotient, formula), checkFormula<ValueType>(input.model, formula), 1e-9) << *formula;
+    }
 }
 
 /*!
@@ -64,7 +68,7 @@ void testQuotient(std::string const& prismFile, std::string const& formulaString
  */
 Options allLabelOptions() {
     Options options = strongOptions();
-    options.preserveAllStateLabels = true;
+    options.stateLabelPreservation = StateLabelPreservation::All;
     return options;
 }
 
@@ -152,6 +156,83 @@ TEST(StrongBisimulationTest, CtmcExitRateIsObservable) {
 
     auto const quotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, {}, strongOptions()).quotient;
     EXPECT_EQ(3ull, quotient->getNumberOfStates());
+}
+
+/*!
+ * The formula only observes the labels through the propositional subformula "a" & !"b", even if that subformula is nested within another operator. Hence,
+ * the states 1 and 2 are merged although they differ in both labels, unless the labels are preserved individually.
+ */
+TEST(StrongBisimulationTest, PropositionalSubformulas) {
+    // 0 moves uniformly to 1, 2 and 3, which are absorbing. 1 is labeled with "a" and "b", 2 is unlabeled and 3 is labeled with "a".
+    storm::storage::SparseMatrixBuilder<ValueType> builder(4, 4);
+    builder.addNextValue(0, 1, 1.0 / 3);
+    builder.addNextValue(0, 2, 1.0 / 3);
+    builder.addNextValue(0, 3, 1.0 / 3);
+    builder.addNextValue(1, 1, 1.0);
+    builder.addNextValue(2, 2, 1.0);
+    builder.addNextValue(3, 3, 1.0);
+    auto const model = buildModel<storm::models::sparse::Dtmc<ValueType>>(builder.build(), {{"a", {1, 3}}, {"b", {1}}});
+    Options individualOptions = strongOptions();
+    individualOptions.stateLabelPreservation = StateLabelPreservation::FormulaIndividual;
+
+    storm::parser::FormulaParser formulaParser;
+    for (std::string const formulaString : {"P=? [F \"a\" & !\"b\"]", "P=? [F P>=0.5 [F \"a\" & !\"b\"]]"}) {
+        std::vector<std::shared_ptr<storm::logic::Formula const>> const formulas{formulaParser.parseSingleFormulaFromString(formulaString)};
+        auto const quotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, formulas, strongOptions()).quotient;
+        EXPECT_EQ(3ull, quotient->getNumberOfStates()) << formulaString;  // {0}, {1, 2} and {3}
+        EXPECT_NEAR(checkFormula<ValueType>(quotient, formulaString), 1.0 / 3, 1e-12) << formulaString;
+
+        auto const individualQuotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, formulas, individualOptions).quotient;
+        EXPECT_EQ(4ull, individualQuotient->getNumberOfStates()) << formulaString;
+        EXPECT_NEAR(checkFormula<ValueType>(individualQuotient, formulaString), 1.0 / 3, 1e-12) << formulaString;
+    }
+}
+
+/*!
+ * The quotient takes a preserved "init" label from the representative states. Hence, the blocks have to respect this label on its own, even if it only occurs
+ * within a larger propositional subformula.
+ */
+TEST(StrongBisimulationTest, InitLabelInPropositionalSubformula) {
+    // 0 and 1 both move to the absorbing state 2, which is labeled "a". Only 1 is initial, so merging 0 and 1 would make 0 the representative of the initial
+    // block and thereby lose the initial state.
+    storm::storage::SparseMatrixBuilder<ValueType> builder(3, 3);
+    builder.addNextValue(0, 2, 1.0);
+    builder.addNextValue(1, 2, 1.0);
+    builder.addNextValue(2, 2, 1.0);
+    auto const model = buildModel<storm::models::sparse::Dtmc<ValueType>>(builder.build(), {{"a", {2}}});
+    model->getStateLabeling().removeLabelFromState("init", 0);
+    model->getStateLabeling().addLabelToState("init", 1);
+
+    std::string const formulaString = "P=? [F \"a\" & !\"init\"]";
+    storm::parser::FormulaParser formulaParser;
+    std::vector<std::shared_ptr<storm::logic::Formula const>> const formulas{formulaParser.parseSingleFormulaFromString(formulaString)};
+    auto const quotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, formulas, strongOptions()).quotient;
+    EXPECT_EQ(3ull, quotient->getNumberOfStates());
+    ASSERT_EQ(1ull, quotient->getInitialStates().getNumberOfSetBits());
+    EXPECT_NEAR(checkFormula<ValueType>(quotient, formulaString), 1.0, 1e-12);
+}
+
+/*!
+ * A quotient state gets the "init" label if it represents an initial state, whereas its other labels are taken from the representative state (cf. Quotient).
+ * A formula that combines "init" with another label would thus be evaluated on a mix of two states, unless the blocks respect the "init" label.
+ */
+TEST(StrongBisimulationTest, InitLabelCombinedWithOtherLabel) {
+    // 0 (labeled "a") and 1 (the only initial state) both move to the absorbing state 2. No state satisfies "init" & "a", but a block {0, 1, 2} would be
+    // represented by state 0 and thus yield a quotient state that is both initial and labeled "a".
+    storm::storage::SparseMatrixBuilder<ValueType> builder(3, 3);
+    builder.addNextValue(0, 2, 1.0);
+    builder.addNextValue(1, 2, 1.0);
+    builder.addNextValue(2, 2, 1.0);
+    auto const model = buildModel<storm::models::sparse::Dtmc<ValueType>>(builder.build(), {{"a", {0}}});
+    model->getStateLabeling().removeLabelFromState("init", 0);
+    model->getStateLabeling().addLabelToState("init", 1);
+
+    std::string const formulaString = "P=? [F \"init\" & \"a\"]";
+    storm::parser::FormulaParser formulaParser;
+    std::vector<std::shared_ptr<storm::logic::Formula const>> const formulas{formulaParser.parseSingleFormulaFromString(formulaString)};
+    auto const quotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, formulas, strongOptions()).quotient;
+    EXPECT_EQ(2ull, quotient->getNumberOfStates());  // {1} and {0, 2}
+    EXPECT_NEAR(checkFormula<ValueType>(quotient, formulaString), 0.0, 1e-12);
 }
 
 // ------------------------------------------------------------
@@ -366,6 +447,17 @@ TEST(StrongBisimulationTest, DieUnnamedRewardModel) {
     testQuotient(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm", "R=? [F \"done\"]", 13ull, 5ull, 7ull, 5ull);
 }
 
+/*!
+ * The states where the die shows one or two can be merged.
+ */
+TEST(StrongBisimulationTest, DiePropositionalSubformulas) {
+    std::string const formulaString = "P=? [F (s=7 & d=1) | \"two\"]";
+    testQuotient(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm", formulaString, 13ull, 6ull, 10ull, 6ull);
+    Options options = strongOptions();
+    options.stateLabelPreservation = StateLabelPreservation::FormulaIndividual;
+    testQuotient(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm", formulaString, 13ull, 7ull, 11ull, 7ull, options);
+}
+
 TEST(StrongBisimulationTest, Crowds) {
     testQuotient(STORM_TEST_RESOURCES_DIR "/dtmc/crowds5_5.pm", "P=? [F \"observe0Greater1\"]", 7403ull, 65ull, 105ull, 65ull);
 }
@@ -409,7 +501,7 @@ TEST(StrongBisimulationTest, CtmcEmbeddedExact) {
     ASSERT_EQ(14639ull, exactInput.model->getNumberOfTransitions());
 
     Options options = strongOptions();
-    options.preserveAllStateLabels = true;
+    options.stateLabelPreservation = StateLabelPreservation::All;
     auto const labeledQuotient =
         storm::bisimulation::performBisimulationMinimization<storm::RationalNumber>(*exactInput.model, exactInput.formulas, options).quotient;
     EXPECT_EQ(1127ull, labeledQuotient->getNumberOfStates());
@@ -417,7 +509,7 @@ TEST(StrongBisimulationTest, CtmcEmbeddedExact) {
 
     // Without the labels the quotient is much coarser. This is the configuration in which the reported sizes differed the most (136 on macOS vs 180 on
     // Linux), since the initial partition consists of a single block there.
-    options.preserveAllStateLabels = false;
+    options.stateLabelPreservation = StateLabelPreservation::None;
     auto const unlabeledQuotient = storm::bisimulation::performBisimulationMinimization<storm::RationalNumber>(*exactInput.model, {}, options).quotient;
     EXPECT_EQ(98ull, unlabeledQuotient->getNumberOfStates());
     EXPECT_EQ(539ull, unlabeledQuotient->getNumberOfTransitions());
@@ -435,12 +527,12 @@ TEST(StrongBisimulationTest, CtmcEmbeddedWithTolerance) {
     auto const input = buildFromPrism<double>(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", formulaString, {.allLabels = true});
 
     Options options = approximateOptions();
-    options.preserveAllStateLabels = true;
+    options.stateLabelPreservation = StateLabelPreservation::All;
     auto const labeledQuotient = storm::bisimulation::performBisimulationMinimization<double>(*input.model, input.formulas, options).quotient;
     EXPECT_EQ(1127ull, labeledQuotient->getNumberOfStates());
     EXPECT_EQ(5730ull, labeledQuotient->getNumberOfTransitions());
 
-    options.preserveAllStateLabels = false;
+    options.stateLabelPreservation = StateLabelPreservation::None;
     auto const unlabeledQuotient = storm::bisimulation::performBisimulationMinimization<double>(*input.model, {}, options).quotient;
     EXPECT_EQ(98ull, unlabeledQuotient->getNumberOfStates());
     EXPECT_EQ(539ull, unlabeledQuotient->getNumberOfTransitions());
@@ -589,7 +681,7 @@ void testPermutationInvariance(std::string const& prismFile, std::string const& 
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
 #endif
-    options.preserveAllStateLabels = true;
+    options.stateLabelPreservation = StateLabelPreservation::All;
     auto const input = buildFromPrism<VT>(prismFile, formulaString, {.allLabels = true});
     auto const quotient = storm::bisimulation::performBisimulationMinimization<VT>(*input.model, input.formulas, options).quotient;
 

@@ -35,6 +35,7 @@
 namespace storm::test::bisimulation {
 
 using Options = storm::bisimulation::Options;
+using StateLabelPreservation = storm::bisimulation::StateLabelPreservation;
 
 inline Options strongOptions() {
     return Options{};
@@ -103,11 +104,18 @@ std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> buildMarkovAu
  * @return the value of the given formula in the (unique) initial state of the given model.
  */
 template<typename ValueType>
-ValueType checkFormula(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& formulaString) {
-    storm::parser::FormulaParser formulaParser;
-    auto const formula = formulaParser.parseSingleFormulaFromString(formulaString);
+ValueType checkFormula(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
     auto const result = storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true));
     return result->template asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
+}
+
+/*!
+ * @return the value of the given formula in the (unique) initial state of the given model.
+ * @note the formula is parsed without a model description, so it must not contain atomic expressions.
+ */
+template<typename ValueType>
+ValueType checkFormula(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& formulaString) {
+    return checkFormula<ValueType>(model, storm::parser::FormulaParser().parseSingleFormulaFromString(formulaString));
 }
 
 /*!

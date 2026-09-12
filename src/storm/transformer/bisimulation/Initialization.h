@@ -4,7 +4,9 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <span>
+#include <variant>
 #include <vector>
 
 #include "storm/logic/FormulasForwardDeclarations.h"
@@ -49,12 +51,30 @@ class Initialization {
     std::vector<std::shared_ptr<storm::logic::Formula const>> const formulas;
 
     /*!
-     * Bookkeeping of the labels/rewards that need to be preserved by the bisimulation, split into their boolean-, integer-, and value-typed parts.
+     * Bookkeeping of the labels/rewards/etc that need to be preserved by the bisimulation, split into their boolean-, integer-, and value-typed parts.
      */
     struct PreservedAnnotations {
-        std::vector<std::reference_wrapper<storm::storage::BitVector const>> booleans;
         std::vector<std::span<uint64_t const>> integers;
         std::vector<std::span<ValueType const>> values;
+
+        /*!
+         * Add a reference to a preserved Boolean annotation.
+         */
+        void addBoolean(storm::storage::BitVector const& annotation);
+
+        /*!
+         * Add a boolean Boolean annotation, owned by this object.
+         */
+        void addBoolean(storm::storage::BitVector&& annotation);
+
+        /*!
+         * @return a range over the Boolean annotations.
+         */
+        auto getBooleans() const {
+            return optionallyOwnedBooleans | std::views::transform([](auto const& annotation) -> storm::storage::BitVector const& {
+                       return std::visit([](auto const& bitVector) -> storm::storage::BitVector const& { return bitVector; }, annotation);
+                   });
+        }
 
         /*!
          * @return true iff there are no preserved annotations
@@ -69,6 +89,12 @@ class Initialization {
          * @param extraAnnotation If non-empty, the partition is also split according to this additional annotation
          */
         void applySplit(Partition& partition, ValueType const& tolerance, std::vector<uint64_t> const& extraAnnotation = {}) const;
+
+       private:
+        // A Boolean annotation is either owned by this object or stored somewhere else.
+        using OptionallyOwnedBitVector = std::variant<std::reference_wrapper<storm::storage::BitVector const>, storm::storage::BitVector>;
+
+        std::vector<OptionallyOwnedBitVector> optionallyOwnedBooleans;
     } preservedStateAnnotations, preservedChoiceAnnotations;
 };
 

@@ -12,6 +12,8 @@
 #include "storm/logic/AtomicLabelFormula.h"
 #include "storm/logic/Formula.h"
 #include "storm/logic/FragmentSpecification.h"
+#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -20,8 +22,19 @@
 
 namespace storm::bisimulation {
 
+namespace {
+auto resolveStateLabelPreservationOption(StateLabelPreservation input, bool haveFormulas) {
+    using enum StateLabelPreservation;
+    if (input == Default) {
+        return haveFormulas ? FormulaPropositional : All;
+    }
+    return input;
+}
+
+}  // namespace
 template<typename ValueType>
 PreservationInformation Initialization<ValueType>::getPreservationInformation() const {
+    auto const stateLabelPreservation = resolveStateLabelPreservationOption(options.stateLabelPreservation, !formulas.empty());
     storm::bisimulation::PreservationInformation information;
     // Add all labels that appear in all formulas
     for (auto const& f : formulas) {
@@ -31,11 +44,13 @@ PreservationInformation Initialization<ValueType>::getPreservationInformation() 
             information.preservedRewardModels.erase("");
             information.preservedRewardModels.insert(model.getUniqueRewardModelName());
         }
-        for (auto const& l : f->getAtomicLabelFormulas()) {
-            information.preservedStateLabels.insert(l->getLabel());
-        }
-        for (auto const& e : f->getAtomicExpressionFormulas()) {
-            information.preservedStateLabels.insert(e->toString());
+        if (stateLabelPreservation != StateLabelPreservation::None) {
+            for (auto const& l : f->getAtomicLabelFormulas()) {
+                information.preservedStateLabels.insert(l->getLabel());
+            }
+            for (auto const& e : f->getAtomicExpressionFormulas()) {
+                information.preservedStateLabels.insert(e->toString());
+            }
         }
         STORM_LOG_ASSERT(std::all_of(information.preservedStateLabels.begin(), information.preservedStateLabels.end(),
                                      [this](std::string const& label) { return model.getStateLabeling().containsLabel(label); }),
@@ -44,8 +59,8 @@ PreservationInformation Initialization<ValueType>::getPreservationInformation() 
                                      [this](std::string const& rew) { return model.getRewardModels().contains(rew); }),
                          "Formula " << *f << " uses a reward model that is not known in the model.");
     }
-    // if requested or if there are no formulas given (and the user hasn't explicitly set something else), also add all state labels and rewards
-    if (options.preserveAllStateLabels.value_or(formulas.empty())) {
+    // if requested, also add all state labels of the model
+    if (stateLabelPreservation == StateLabelPreservation::All) {
         for (auto const& label : model.getStateLabeling().getLabels()) {
             if (label == "init") {
                 continue;  // "init" must not be preserved
@@ -97,15 +112,51 @@ Initialization<ValueType>::Initialization(storm::models::sparse::Model<ValueType
                             "The formula " << *f << " is not known to be preserved by weak bisimulation.");
         }
     }
-    auto const preservationInformation = getPreservationInformation();
 
-    // otherwise go through all relevant labels / rewards / model components and add them to the corresponding preserved annotations.
-    for (auto const& label : preservationInformation.preservedStateLabels) {
-        preservedStateAnnotations.booleans.push_back(std::cref(model.getStateLabeling().getStates(label)));
+    auto const preservationInformation = getPreservationInformation();
+    auto const stateLabelPreservation = resolveStateLabelPreservationOption(options.stateLabelPreservation, !formulas.empty());
+
+    // Go through all relevant labels / rewards / model components and add them to the corresponding preserved annotations.
+    if (stateLabelPreservation != StateLabelPreservation::FormulaPropositional) {
+        // Each preserved label is considered on its own. Note that nothing is preserved for StateLabelPreservation::None.
+        for (auto const& label : preservationInformation.preservedStateLabels) {
+            preservedStateAnnotations.addBoolean(model.getStateLabeling().getStates(label));
+        }
+    } else {
+        // The formulas only observe the labels through their maximal propositional subformulas, so it suffices to preserve the truth values of those.
+        using PropositionalChecker = storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>>;
+        PropositionalChecker propositionalChecker(model);
+        auto const collectPropositionalStates = [this, &propositionalChecker](storm::logic::Formula const& subformula) {
+            if (!propositionalChecker.canHandle(subformula)) {
+                // The checker handles exactly the propositional formulas, so we have to continue with the subformulas.
+                return true;
+            } else if (subformula.isBooleanLiteralFormula()) {
+                // Boolean literals do not distinguish any states, so we can skip them.
+                return false;
+            }
+            auto states = propositionalChecker.check(subformula)
+                              ->template asExplicitQualitativeCheckResult<typename PropositionalChecker::SolutionType>()
+                              .getTruthValuesVector();
+            // A subformula that holds in all or no states, or in the same states as a previous one, does not distinguish any further states.
+            if (!states.empty() && !states.full() &&
+                std::ranges::none_of(preservedStateAnnotations.getBooleans(), [&states](auto const& b) { return b == states; })) {
+                preservedStateAnnotations.addBoolean(std::move(states));
+            }
+            return false;
+        };
+        for (auto const& f : this->formulas) {
+            f->traverse(collectPropositionalStates);
+        }
+        // If a formula considers the init label, we need to preserve it precisely. Otherwise, e.g. "P=? [ F "init" & "a" ]" would be handled incorrectly:
+        // A block containing some "init"-states and some "a"-states (but no "init" & "a"-states) could get collapsed into a state with both, the "init"-label
+        // and the "a" label (obtained through the representative state)
+        if (preservationInformation.preservedStateLabels.contains("init")) {
+            preservedStateAnnotations.addBoolean(model.getStateLabeling().getStates("init"));
+        }
     }
     for (auto const& label : preservationInformation.preservedChoiceLabels) {
         STORM_LOG_ASSERT(model.hasChoiceLabeling(), "Preserving choice labels is only possible if the model has a choice labeling.");
-        preservedChoiceAnnotations.booleans.push_back(std::cref(model.getChoiceLabeling().getChoices(label)));
+        preservedChoiceAnnotations.addBoolean(model.getChoiceLabeling().getChoices(label));
     }
     if (model.hasChoiceOrigins() && options.preserveChoiceOrigins) {
         preservedChoiceAnnotations.integers.emplace_back(model.getChoiceOrigins()->getIdentifiers());
@@ -130,7 +181,7 @@ Initialization<ValueType>::Initialization(storm::models::sparse::Model<ValueType
     using enum storm::models::ModelType;
     if (model.isOfType(MarkovAutomaton)) {
         auto const& ma = model.template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
-        preservedStateAnnotations.booleans.emplace_back(ma->getMarkovianStates());
+        preservedStateAnnotations.addBoolean(ma->getMarkovianStates());
         preservedStateAnnotations.values.emplace_back(ma->getExitRates());
     } else {
         STORM_LOG_THROW(model.isOfType(Dtmc) || model.isOfType(Ctmc) || model.isOfType(Mdp), storm::exceptions::NotSupportedException,
@@ -139,8 +190,18 @@ Initialization<ValueType>::Initialization(storm::models::sparse::Model<ValueType
 }
 
 template<typename ValueType>
+void Initialization<ValueType>::PreservedAnnotations::addBoolean(storm::storage::BitVector const& annotation) {
+    optionallyOwnedBooleans.emplace_back(std::cref(annotation));
+}
+
+template<typename ValueType>
+void Initialization<ValueType>::PreservedAnnotations::addBoolean(storm::storage::BitVector&& annotation) {
+    optionallyOwnedBooleans.emplace_back(std::move(annotation));
+}
+
+template<typename ValueType>
 bool Initialization<ValueType>::PreservedAnnotations::empty() const {
-    return booleans.empty() && integers.empty() && values.empty();
+    return optionallyOwnedBooleans.empty() && integers.empty() && values.empty();
 }
 
 template<typename ValueType>
@@ -149,8 +210,7 @@ void Initialization<ValueType>::PreservedAnnotations::applySplit(Partition& part
     uint64_t const numElements = partition.getNumberOfElements();
 
     // Split according to Boolean annotations
-    for (auto const& bv : booleans) {
-        auto const& b = bv.get();
+    for (auto const& b : getBooleans()) {
         STORM_LOG_ASSERT(numElements == b.size(), "Boolean annotation has wrong size.");
         partition.forEachBlock([&b, &numElements, &partition](auto const& block) {
             // No need to split singleton blocks.

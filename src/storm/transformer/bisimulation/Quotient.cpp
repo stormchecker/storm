@@ -112,8 +112,21 @@ auto Quotient<ValueType>::buildFromPartition(storm::models::sparse::Model<ValueT
 
     // build state labeling
     {
-        components.stateLabeling = storm::models::sparse::StateLabeling(numberOfQuotientStates);
+        auto& stateLabeling = components.stateLabeling;
+        // Each quotient state that represents some initial state gets the "init" label
+        stateLabeling = storm::models::sparse::StateLabeling(numberOfQuotientStates);
+        storm::storage::BitVector init(numberOfQuotientStates, false);
+        for (auto const i : model.getStateLabeling().getStates("init")) {
+            init.set(toQuotientState[i], true);
+        }
+        stateLabeling.addLabel("init", std::move(init));
+        // The other labels are assigned based on the representative state.
+        // Note that we might only preserve propositional combinations of the labels, e.g., a quotient state representing "a" | "b" might get label "a", or "b",
+        // or both, depending on the representative state.
         for (auto const& l : preservationInformation.preservedStateLabels) {
+            if (l == "init") {
+                continue;  // see above.
+            }
             auto const& in = model.getStateLabeling().getStates(l);
             storm::storage::BitVector out(numberOfQuotientStates, false);
             for (uint64_t quotientState = 0; quotientState < numberOfQuotientStates; ++quotientState) {
@@ -121,14 +134,7 @@ auto Quotient<ValueType>::buildFromPartition(storm::models::sparse::Model<ValueT
                     out.set(quotientState, true);
                 }
             }
-            components.stateLabeling.addLabel(l, std::move(out));
-        }
-        if (!preservationInformation.preservedStateLabels.contains("init")) {
-            storm::storage::BitVector init(numberOfQuotientStates, false);
-            for (auto const i : model.getStateLabeling().getStates("init")) {
-                init.set(toQuotientState[i], true);
-            }
-            components.stateLabeling.addLabel("init", std::move(init));
+            stateLabeling.addLabel(l, std::move(out));
         }
     }
 

@@ -14,6 +14,7 @@ using storm::test::bisimulation::buildModel;
 using storm::test::bisimulation::BuildOptions;
 using storm::test::bisimulation::checkFormula;
 using storm::test::bisimulation::Options;
+using storm::test::bisimulation::StateLabelPreservation;
 using storm::test::bisimulation::strongOptions;
 using storm::test::bisimulation::weakOptions;
 
@@ -366,6 +367,40 @@ TEST(WeakBisimulationTest, SplitterSplitDuringItsOwnRound) {
 }
 
 // ------------------------------------------------------------
+// Preserved formulas
+// ------------------------------------------------------------
+
+/*!
+ * Only need to preserve the truth values of the maximal propositional subformulas of the formulas.
+ */
+TEST(WeakBisimulationTest, PropositionalSubformulas) {
+    // A silent chain 0 -> 1 -> 2 branches into the absorbing states 3, 4 and 5. 3 is labeled with "a" and "b", 4 is unlabeled and 5 is labeled with "a".
+    storm::storage::SparseMatrixBuilder<ValueType> builder(6, 6);
+    builder.addNextValue(0, 1, 1.0);
+    builder.addNextValue(1, 2, 1.0);
+    builder.addNextValue(2, 3, 0.25);
+    builder.addNextValue(2, 4, 0.25);
+    builder.addNextValue(2, 5, 0.5);
+    builder.addNextValue(3, 3, 1.0);
+    builder.addNextValue(4, 4, 1.0);
+    builder.addNextValue(5, 5, 1.0);
+    auto const model = buildModel<storm::models::sparse::Dtmc<ValueType>>(builder.build(), {{"a", {3, 5}}, {"b", {3}}});
+    std::string const formulaString = "P=? [F \"a\" & !\"b\"]";
+    storm::parser::FormulaParser formulaParser;
+    std::vector<std::shared_ptr<storm::logic::Formula const>> const formulas{formulaParser.parseSingleFormulaFromString(formulaString)};
+
+    auto const quotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, formulas, weakOptions()).quotient;
+    EXPECT_EQ(3ull, quotient->getNumberOfStates());  // {0, 1, 2}, {3, 4} and {5}
+    EXPECT_NEAR(checkFormula<ValueType>(quotient, formulaString), 0.5, 1e-12);
+
+    Options options = weakOptions();
+    options.stateLabelPreservation = StateLabelPreservation::FormulaIndividual;
+    auto const individualQuotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, formulas, options).quotient;
+    EXPECT_EQ(4ull, individualQuotient->getNumberOfStates());  // {0, 1, 2}, {3}, {4} and {5}
+    EXPECT_NEAR(checkFormula<ValueType>(individualQuotient, formulaString), 0.5, 1e-12);
+}
+
+// ------------------------------------------------------------
 // Randomized self-checks
 // ------------------------------------------------------------
 
@@ -468,8 +503,8 @@ void testAgainstOriginal(std::string const& prismFile, std::string const& formul
     strong.tolerance = storm::utility::convertNumber<storm::RationalNumber>(tolerance);
     weak.tolerance = strong.tolerance;
     if (buildOptions.allLabels) {
-        strong.preserveAllStateLabels = true;
-        weak.preserveAllStateLabels = true;
+        strong.stateLabelPreservation = StateLabelPreservation::All;
+        weak.stateLabelPreservation = StateLabelPreservation::All;
     }
 
     auto const strongQuotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, formulas, strong).quotient;
