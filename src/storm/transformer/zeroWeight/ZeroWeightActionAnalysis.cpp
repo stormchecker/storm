@@ -1,6 +1,9 @@
 #include "storm/transformer/zeroWeight/ZeroWeightActionAnalysis.h"
 
+#include <algorithm>
 #include <cstdint>
+#include <limits>
+#include <numeric>
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -25,9 +28,12 @@ typename ZeroWeightActionAnalysis<ValueType>::Result ZeroWeightActionAnalysis<Va
                         "Zero-weight action analysis requires nonnegative action weights.");
     }
 
-    Result result{storm::storage::BitVector(transitionMatrix.getRowCount(), false), storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false),
-                  storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false), storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false),
-                  storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false)};
+    Result result;
+    result.zeroWeightChoices = storm::storage::BitVector(transitionMatrix.getRowCount(), false);
+    result.statesWithZeroWeightChoices = storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
+    result.pureZeroWeightStates = storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
+    result.mixedZeroWeightStates = storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
+    result.positiveOnlyStates = storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
 
     auto const& rowGroupIndices = transitionMatrix.getRowGroupIndices();
     for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
@@ -56,6 +62,62 @@ typename ZeroWeightActionAnalysis<ValueType>::Result ZeroWeightActionAnalysis<Va
         } else if (hasPositiveWeightChoice) {
             result.positiveOnlyStates.set(state);
         }
+    }
+
+    uint64_t const numberOfStates = transitionMatrix.getRowGroupCount();
+    uint64_t const invalidComponent = std::numeric_limits<uint64_t>::max();
+    result.stateToWeakComponent.assign(numberOfStates, invalidComponent);
+    if (result.statesWithZeroWeightChoices.empty()) {
+        return result;
+    }
+
+    std::vector<uint64_t> parents(numberOfStates);
+    std::iota(parents.begin(), parents.end(), uint64_t{0});
+    std::vector<uint64_t> componentSizes(numberOfStates, 1);
+
+    auto findRoot = [&parents](uint64_t state) {
+        while (parents[state] != state) {
+            parents[state] = parents[parents[state]];
+            state = parents[state];
+        }
+        return state;
+    };
+    auto unite = [&componentSizes, &findRoot, &parents](uint64_t firstState, uint64_t secondState) {
+        uint64_t firstRoot = findRoot(firstState);
+        uint64_t secondRoot = findRoot(secondState);
+        if (firstRoot == secondRoot) {
+            return;
+        }
+        if (componentSizes[firstRoot] < componentSizes[secondRoot]) {
+            std::swap(firstRoot, secondRoot);
+        }
+        parents[secondRoot] = firstRoot;
+        componentSizes[firstRoot] += componentSizes[secondRoot];
+    };
+
+    for (uint64_t state : result.statesWithZeroWeightChoices) {
+        for (uint64_t row = rowGroupIndices[state]; row < rowGroupIndices[state + 1]; ++row) {
+            if (!result.zeroWeightChoices.get(row)) {
+                continue;
+            }
+            for (auto const& entry : transitionMatrix.getRow(row)) {
+                if (storm::utility::isPositive(entry.getValue()) && result.statesWithZeroWeightChoices.get(entry.getColumn())) {
+                    unite(state, entry.getColumn());
+                }
+            }
+        }
+    }
+
+    std::vector<uint64_t> rootToComponent(numberOfStates, invalidComponent);
+    for (uint64_t state : result.statesWithZeroWeightChoices) {
+        uint64_t const root = findRoot(state);
+        if (rootToComponent[root] == invalidComponent) {
+            rootToComponent[root] = result.weakComponents.size();
+            result.weakComponents.emplace_back();
+        }
+        uint64_t const component = rootToComponent[root];
+        result.stateToWeakComponent[state] = component;
+        result.weakComponents[component].push_back(state);
     }
 
     return result;

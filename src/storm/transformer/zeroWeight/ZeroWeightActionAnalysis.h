@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
 #include "storm/storage/BitVector.h"
@@ -8,7 +9,7 @@
 namespace storm::transformer {
 
 /*!
- * Classifies action weights outside target states.
+ * Classifies action weights and weak zero-weight components outside target states.
  */
 template<typename ValueType>
 class ZeroWeightActionAnalysis {
@@ -19,12 +20,14 @@ class ZeroWeightActionAnalysis {
         storm::storage::BitVector pureZeroWeightStates;
         storm::storage::BitVector mixedZeroWeightStates;
         storm::storage::BitVector positiveOnlyStates;
+        std::vector<std::vector<uint64_t>> weakComponents;
+        std::vector<uint64_t> stateToWeakComponent;
     };
 
     /*!
      * Classifies non-target actions and states by weight.
      *
-     * @param transitionMatrix The normalized transition matrix.
+     * @param transitionMatrix The transition matrix.
      * @param actionWeights One nonnegative weight per matrix row.
      * @param targetStates States excluded from the classification.
      * @return The action and state classification.

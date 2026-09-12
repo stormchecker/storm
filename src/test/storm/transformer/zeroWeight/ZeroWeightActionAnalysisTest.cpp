@@ -2,6 +2,7 @@
 #include "test/storm_gtest.h"
 
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 #include "storm/adapters/RationalNumberAdapter.h"
@@ -28,6 +29,28 @@ storm::storage::SparseMatrix<ValueType> buildSelfLoopMatrix(std::vector<uint64_t
             builder.addNextValue(row, state, storm::utility::one<ValueType>());
         }
     }
+    return builder.build();
+}
+
+template<typename ValueType>
+storm::storage::SparseMatrix<ValueType> buildWeakComponentMatrix() {
+    storm::storage::SparseMatrixBuilder<ValueType> builder(9, 7, 9, true, true, 7);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 1, storm::utility::one<ValueType>());
+    builder.newRowGroup(1);
+    builder.addNextValue(1, 1, storm::utility::one<ValueType>());
+    builder.newRowGroup(2);
+    builder.addNextValue(2, 0, storm::utility::one<ValueType>());
+    builder.newRowGroup(3);
+    builder.addNextValue(3, 4, storm::utility::one<ValueType>());
+    builder.addNextValue(4, 0, storm::utility::one<ValueType>());
+    builder.newRowGroup(5);
+    builder.addNextValue(5, 3, storm::utility::one<ValueType>());
+    builder.addNextValue(6, 5, storm::utility::one<ValueType>());
+    builder.newRowGroup(7);
+    builder.addNextValue(7, 3, storm::utility::one<ValueType>());
+    builder.newRowGroup(8);
+    builder.addNextValue(8, 0, storm::utility::one<ValueType>());
     return builder.build();
 }
 
@@ -82,6 +105,36 @@ TYPED_TEST(ZeroWeightActionAnalysisTest, RejectsMismatchingInputSizes) {
                  storm::exceptions::InvalidArgumentException);
     EXPECT_THROW(storm::transformer::ZeroWeightActionAnalysis<ValueType>::analyze(matrix, validActionWeights, storm::storage::BitVector(1, false)),
                  storm::exceptions::InvalidArgumentException);
+}
+
+TYPED_TEST(ZeroWeightActionAnalysisTest, FindsWeakComponents) {
+    using ValueType = TypeParam;
+    auto const matrix = buildWeakComponentMatrix<ValueType>();
+    std::vector<ValueType> const actionWeights = {storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>(),
+                                                  storm::utility::zero<ValueType>(), storm::utility::one<ValueType>(),  storm::utility::zero<ValueType>(),
+                                                  storm::utility::zero<ValueType>(), storm::utility::one<ValueType>(),  storm::utility::zero<ValueType>()};
+    storm::storage::BitVector targetStates(7, false);
+    targetStates.set(6);
+
+    auto const result = storm::transformer::ZeroWeightActionAnalysis<ValueType>::analyze(matrix, actionWeights, targetStates);
+
+    ASSERT_EQ(2ull, result.weakComponents.size());
+    EXPECT_EQ((std::vector<uint64_t>{0, 1}), result.weakComponents[0]);
+    EXPECT_EQ((std::vector<uint64_t>{3, 4}), result.weakComponents[1]);
+
+    uint64_t const invalidComponent = std::numeric_limits<uint64_t>::max();
+    EXPECT_EQ((std::vector<uint64_t>{0, 0, invalidComponent, 1, 1, invalidComponent, invalidComponent}), result.stateToWeakComponent);
+}
+
+TYPED_TEST(ZeroWeightActionAnalysisTest, FindsNoComponentsWithoutZeroWeights) {
+    using ValueType = TypeParam;
+    auto const matrix = buildSelfLoopMatrix<ValueType>({1, 1});
+    std::vector<ValueType> const actionWeights(2, storm::utility::one<ValueType>());
+
+    auto const result = storm::transformer::ZeroWeightActionAnalysis<ValueType>::analyze(matrix, actionWeights, storm::storage::BitVector(2, false));
+
+    EXPECT_TRUE(result.weakComponents.empty());
+    EXPECT_EQ((std::vector<uint64_t>(2, std::numeric_limits<uint64_t>::max())), result.stateToWeakComponent);
 }
 
 TYPED_TEST(ZeroWeightActionAnalysisTest, RejectsNegativeWeights) {
