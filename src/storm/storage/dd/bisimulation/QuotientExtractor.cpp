@@ -1121,7 +1121,7 @@ QuotientExtractor<DdType, ValueType, ExportValueType>::extractQuotientUsingBlock
         if (modelType == storm::models::ModelType::MarkovAutomaton) {
             auto const& markovAutomaton = *model.template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>();
             transitionMatrix = transitionMatrix * markovAutomaton.getMarkovianMarker().ite(markovAutomaton.getExitRateVector(),
-                                                                                            model.getManager().template getAddOne<ValueType>());
+                                                                                           model.getManager().template getAddOne<ValueType>());
         }
 
         auto start = std::chrono::high_resolution_clock::now();
@@ -1168,8 +1168,8 @@ QuotientExtractor<DdType, ValueType, ExportValueType>::extractQuotientUsingBlock
         std::set_union(blockPrimeVariableSet.begin(), blockPrimeVariableSet.end(), model.getColumnVariables().begin(), model.getColumnVariables().end(),
                        std::inserter(blockPrimeAndColumnVariables, blockPrimeAndColumnVariables.end()));
         storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
-        storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = transitionMatrix.multiplyMatrix(
-            partitionAsAdd.renameVariables(blockAndRowVariables, blockPrimeAndColumnVariables), model.getColumnVariables());
+        storm::dd::Add<DdType, ValueType> quotientTransitionMatrix =
+            transitionMatrix.multiplyMatrix(partitionAsAdd.renameVariables(blockAndRowVariables, blockPrimeAndColumnVariables), model.getColumnVariables());
 
         // Pick a representative from each block.
         partitionAsBdd &= representatives;
@@ -1284,7 +1284,7 @@ QuotientExtractor<DdType, ValueType, ExportValueType>::extractQuotientUsingOrigi
         if (modelType == storm::models::ModelType::MarkovAutomaton) {
             auto const& markovAutomaton = *model.template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>();
             transitionMatrix = transitionMatrix * markovAutomaton.getMarkovianMarker().ite(markovAutomaton.getExitRateVector(),
-                                                                                            model.getManager().template getAddOne<ValueType>());
+                                                                                           model.getManager().template getAddOne<ValueType>());
         }
 
         auto start = std::chrono::high_resolution_clock::now();
@@ -1339,8 +1339,7 @@ QuotientExtractor<DdType, ValueType, ExportValueType>::extractQuotientUsingOrigi
                        std::inserter(blockPrimeAndColumnVariables, blockPrimeAndColumnVariables.end()));
         storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
         storm::dd::Add<DdType, ValueType> quotientTransitionMatrix =
-            transitionMatrix
-                .multiplyMatrix(partitionAsAdd.renameVariables(model.getRowVariables(), model.getColumnVariables()), model.getColumnVariables())
+            transitionMatrix.multiplyMatrix(partitionAsAdd.renameVariables(model.getRowVariables(), model.getColumnVariables()), model.getColumnVariables())
                 .renameVariablesAbstract(blockVariableSet, model.getColumnVariables());
 
         // Pick a representative from each block.
