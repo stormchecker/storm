@@ -195,8 +195,9 @@ auto Quotient<ValueType>::buildFromPartition(storm::models::sparse::Model<ValueT
         for (uint64_t quotientState = 0; quotientState < numberOfQuotientStates; ++quotientState) {
             auto const representativeState = toRepresentativeState[quotientState];
             if (ma->isMarkovianState(representativeState)) {
+                // Note that a hybrid state (i.e. a Markovian state with further, probabilistic choices) keeps all of its choices here. As in the input
+                // model, the Markovian choice is the first one of the state, since the quotient choices follow the order of the representative state.
                 components.markovianStates->set(quotientState, true);
-                STORM_LOG_ASSERT(components.transitionMatrix.getRowGroupSize(quotientState) == 1, "Unexpected number of choices for Markovian state.");
                 components.exitRates.value()[quotientState] = ma->getExitRate(representativeState);
             }
         }

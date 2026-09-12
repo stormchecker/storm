@@ -183,6 +183,15 @@ Initialization<ValueType>::Initialization(storm::models::sparse::Model<ValueType
         auto const& ma = model.template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
         preservedStateAnnotations.addBoolean(ma->getMarkovianStates());
         preservedStateAnnotations.values.emplace_back(ma->getExitRates());
+        if (!ma->isClosed()) {
+            // A hybrid state has a Markovian choice (its first one) next to probabilistic ones. Those must never be merged with each other, which the
+            // distributions alone do not rule out.
+            storm::storage::BitVector markovianChoices(model.getNumberOfChoices(), false);
+            for (uint64_t const markovianState : ma->getMarkovianStates()) {
+                markovianChoices.set(model.getTransitionMatrix().getRowGroupIndices()[markovianState]);
+            }
+            preservedChoiceAnnotations.addBoolean(std::move(markovianChoices));
+        }
     } else {
         STORM_LOG_THROW(model.isOfType(Dtmc) || model.isOfType(Ctmc) || model.isOfType(Mdp), storm::exceptions::NotSupportedException,
                         "Bisimulation initialization is not implemented for model type '" << model.getType() << "'.");

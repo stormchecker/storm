@@ -395,6 +395,10 @@ void Signatures<ValueType, Mode>::extendQuotientData(QuotientData<ValueType>& qu
         // Relies on performSignatureBasedRefinement's postcondition that all cached signatures (including singleton blocks) are up to date.
         auto const& representativeSignature = stateSignatureCache[representativeState];
 
+        // At the quotientState, the choices should appear in the same order as the represented choices at the representativeState. This prevents unexpected
+        // effects downstream (e.g. different quality of the initial policy in policy iteration). For Markov automata with hybrid states, this is even necessary
+        // to ensure that the Markovian choice remains the first one.
+        // The choiceSignatureToQuotientChoiceIndex mapping below permutes the choices as they appear in representativeSignature into the right order.
         std::vector<uint64_t> choiceSignatureToQuotientChoiceIndex(representativeSignature.choices.size(), std::numeric_limits<uint64_t>::max());
         for (uint64_t const choiceIndex : model.getTransitionMatrix().getRowGroupIndices(representativeState)) {
             auto [it, found] = representativeSignature.find(getChoiceSignature(choiceIndex), halfTolerance);

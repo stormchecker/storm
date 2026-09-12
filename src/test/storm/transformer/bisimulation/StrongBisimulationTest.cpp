@@ -428,6 +428,49 @@ TEST(StrongBisimulationTest, MarkovAutomatonExpectedTime) {
     EXPECT_NEAR(1.0, checkFormula<ValueType>(quotient, "Tmax=? [F \"done\"]"), 1e-12);
 }
 
+/*!
+ * A hybrid state of an unclosed Markov automaton has a Markovian choice next to probabilistic ones. Those must not be merged with each other, even if they
+ * have the same distribution, since only the Markovian choice lets time pass.
+ */
+TEST(StrongBisimulationTest, MarkovAutomatonHybridStates) {
+    // The hybrid states 0 and 1 behave the same: both move to the Markovian state 2 (which moves on to the "goal" state 3), either through their Markovian
+    // choice or, without letting time pass, through their probabilistic one.
+    storm::storage::SparseMatrixBuilder<ValueType> builder(6, 4, 0, false, true, 4);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 2, 2.0);  // The Markovian choice of state 0, holding a rate.
+    builder.addNextValue(1, 2, 1.0);  // The probabilistic choice of state 0, with the same distribution.
+    builder.newRowGroup(2);
+    builder.addNextValue(2, 2, 2.0);
+    builder.addNextValue(3, 2, 1.0);
+    builder.newRowGroup(4);
+    builder.addNextValue(4, 3, 4.0);
+    builder.newRowGroup(5);
+    builder.addNextValue(5, 3, 1.0);
+    storm::storage::BitVector markovianStates(4);
+    markovianStates.set(0);
+    markovianStates.set(1);
+    markovianStates.set(2);
+    auto const model = buildMarkovAutomaton<ValueType>(builder.build(), std::move(markovianStates), {{"goal", {3}}});
+    ASSERT_FALSE(model->isClosed());
+
+    auto const quotient = storm::bisimulation::performBisimulationMinimization<ValueType>(*model, {}, strongOptions()).quotient;
+    EXPECT_EQ(3ull, quotient->getNumberOfStates());   // {0, 1}, {2} and {3}
+    EXPECT_EQ(4ull, quotient->getNumberOfChoices());  // The merged hybrid state keeps both of its choices.
+    auto const markovAutomaton = quotient->template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
+    ASSERT_FALSE(markovAutomaton->isClosed());
+    auto const hybridState = *quotient->getInitialStates().begin();
+    EXPECT_TRUE(markovAutomaton->isMarkovianState(hybridState));
+    EXPECT_EQ(2ull, quotient->getTransitionMatrix().getRowGroupSize(hybridState));
+    EXPECT_EQ(2.0, markovAutomaton->getExitRate(hybridState));
+
+    // Closing both models applies the maximal progress assumption, i.e. it keeps the probabilistic choice of a hybrid state. This also checks that the
+    // Markovian choice is the first choice of the quotient state, since that is the one close() removes.
+    model->close();
+    markovAutomaton->close();
+    EXPECT_NEAR(checkFormula<ValueType>(quotient, "Tmin=? [F \"goal\"]"), 0.25, 1e-9);
+    EXPECT_NEAR(checkFormula<ValueType>(model, "Tmin=? [F \"goal\"]"), 0.25, 1e-9);
+}
+
 // ------------------------------------------------------------
 // Benchmark models
 // ------------------------------------------------------------
