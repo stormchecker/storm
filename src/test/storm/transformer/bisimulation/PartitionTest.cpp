@@ -25,7 +25,7 @@ bool equalBlocks(storm::bisimulation::Partition const& partition, std::initializ
                  storm::bisimulation::Partition::Block const& actual) {
     bool const expectedContainsActual =
         std::all_of(actual.begin(), actual.end(), [&expected](auto const& e) { return std::find(expected.begin(), expected.end(), e) != expected.end(); });
-    EXPECT_TRUE(expectedContainsActual) << "Content missmatch: " << blockToString(expected) << " vs. " << blockToString(actual);
+    EXPECT_TRUE(expectedContainsActual) << "Content mismatch: " << blockToString(expected) << " vs. " << blockToString(actual);
     bool const actualContainsExpected =
         std::all_of(expected.begin(), expected.end(), [&actual](auto const& e) { return std::find(actual.begin(), actual.end(), e) != actual.end(); });
     EXPECT_TRUE(actualContainsExpected) << "Content missmatch: " << blockToString(expected) << " vs. " << blockToString(actual);
