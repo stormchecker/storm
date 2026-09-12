@@ -22,6 +22,8 @@ const std::string BisimulationSettings::reuseOptionName = "reuse";
 const std::string BisimulationSettings::initialPartitionOptionName = "init";
 const std::string BisimulationSettings::refinementModeOptionName = "refine";
 const std::string BisimulationSettings::exactArithmeticDdOptionName = "ddexact";
+const std::string BisimulationSettings::toleranceOptionName = "tolerance";
+const std::string BisimulationSettings::actionSensitiveOptionName = "action-sensitive";
 
 BisimulationSettings::BisimulationSettings() : ModuleSettings(moduleName) {
     std::vector<std::string> types = {"strong", "weak"};
@@ -91,6 +93,22 @@ BisimulationSettings::BisimulationSettings() : ModuleSettings(moduleName) {
                                          .setDefaultValueString("full")
                                          .build())
                         .build());
+
+    this->addOption(storm::settings::OptionBuilder(moduleName, toleranceOptionName, true,
+                                                   "Sets the tolerance to use for bisimulation minimization (only for sparse bisimulation).")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The tolerance. Defaults to 0 in exact mode.")
+                                         .setDefaultValueDouble(1e-9)
+                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
+                                         .build())
+                        .build());
+
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, actionSensitiveOptionName, true,
+                                       "Sets whether choices are only lumped together if they belong to the same state-local action index (only for "
+                                       "sparse bisimulation).")
+            .setIsAdvanced()
+            .build());
 }
 
 bool BisimulationSettings::isStrongBisimulationSet() const {
@@ -171,6 +189,18 @@ storm::dd::bisimulation::RefinementMode BisimulationSettings::getRefinementMode(
         return storm::dd::bisimulation::RefinementMode::ChangedStates;
     }
     return storm::dd::bisimulation::RefinementMode::Full;
+}
+
+bool BisimulationSettings::isToleranceSet() const {
+    return this->getOption(toleranceOptionName).getHasOptionBeenSet();
+}
+
+double BisimulationSettings::getTolerance() const {
+    return this->getOption(toleranceOptionName).getArgumentByName("value").getValueAsDouble();
+}
+
+bool BisimulationSettings::isActionSensitiveSet() const {
+    return this->getOption(actionSensitiveOptionName).getHasOptionBeenSet();
 }
 
 bool BisimulationSettings::check() const {

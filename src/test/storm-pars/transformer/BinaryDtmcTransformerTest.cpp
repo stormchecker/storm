@@ -19,7 +19,6 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/solver/OptimizationDirection.h"
-#include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/prism/Program.h"
 #include "storm/utility/constants.h"
 
@@ -34,8 +33,9 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     uint64_t initialStateModel = dtmc->getStates("init").getNextSetIndex(0);
 
-    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas, storm::storage::BisimulationType::Weak)
-               ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    dtmc =
+        storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas, {.bisimulationType = storm::bisimulation::BisimulationType::Weak})
+            ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     storm::transformer::BinaryDtmcTransformer binaryDtmcTransformer;
     auto simpleDtmc = binaryDtmcTransformer.transform(*dtmc, true);
@@ -77,11 +77,11 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
     auto region = storm::api::createRegion<storm::RationalFunction>("0.4", *dtmc);
 
     auto pla =
-        storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, dtmc, checkTask, storm::modelchecker::RegionCheckEngine::ParameterLifting);
+        storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, dtmc, checkTask, storm::modelchecker::RegionCheckEngine::ExactParameterLifting);
     auto resultPLA = pla->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
-    auto plaSimple =
-        storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, simpleDtmc, checkTask, storm::modelchecker::RegionCheckEngine::ParameterLifting);
+    auto plaSimple = storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, simpleDtmc, checkTask,
+                                                                                       storm::modelchecker::RegionCheckEngine::ExactParameterLifting);
     auto resultPLASimple = plaSimple->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
     ASSERT_TRUE(resultPLA == resultPLASimple) << "Different PLA result with simplified DTMC";

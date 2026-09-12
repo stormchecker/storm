@@ -132,10 +132,7 @@ TEST_F(MonotonicityHelperTest, Brp_with_bisimulation_no_samples) {
     model = simplifier.getSimplifiedModel();
 
     // Apply bisimulation
-    storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
-
-    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)
-                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     ASSERT_EQ(99ul, model->getNumberOfStates());
     ASSERT_EQ(195ul, model->getNumberOfTransitions());
 
@@ -184,10 +181,7 @@ TEST_F(MonotonicityHelperTest, Brp_with_bisimulation_samples) {
     model = simplifier.getSimplifiedModel();
 
     // Apply bisimulation
-    storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
-
-    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)
-                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     ASSERT_EQ(99ul, model->getNumberOfStates());
     ASSERT_EQ(195ul, model->getNumberOfTransitions());
 
@@ -235,10 +229,7 @@ TEST_F(MonotonicityHelperTest, zeroconf) {
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
-    storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
-
-    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)
-                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     ASSERT_EQ(7ul, model->getNumberOfStates());
     ASSERT_EQ(12ul, model->getNumberOfTransitions());
 

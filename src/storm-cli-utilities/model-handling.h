@@ -23,6 +23,7 @@
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
@@ -35,8 +36,11 @@
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/localeliminator/AutomaticAction.h"
 #include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
+#include "storm/transformer/bisimulation/Options.h"
 #include "storm/utility/Engine.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/Stopwatch.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
 
@@ -705,14 +709,19 @@ template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseModelBisimulation(
     std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input,
     storm::settings::modules::BisimulationSettings const& bisimulationSettings, bool graphPreserving = true) {
-    storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
-    if (bisimulationSettings.isWeakBisimulationSet()) {
-        bisimType = storm::storage::BisimulationType::Weak;
+    storm::bisimulation::Options options;
+    options.bisimulationType =
+        bisimulationSettings.isWeakBisimulationSet() ? storm::bisimulation::BisimulationType::Weak : storm::bisimulation::BisimulationType::Strong;
+    if (bisimulationSettings.isToleranceSet() || !storm::NumberTraits<ValueType>::IsExact) {
+        options.tolerance = storm::utility::convertNumber<storm::RationalNumber>(bisimulationSettings.getTolerance());
+    } else {
+        options.tolerance = storm::utility::zero<storm::RationalNumber>();
     }
-    std::optional<double> tolerance = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
-
-    STORM_LOG_INFO("Performing bisimulation minimization...");
-    return storm::api::performBisimulationMinimization<ValueType>(model, createFormulasToRespect(input.properties), bisimType, graphPreserving, tolerance);
+    options.actionSensitive = bisimulationSettings.isActionSensitiveSet();
+    STORM_LOG_INFO("Performing bisimulation minimization (type: "
+                   << (options.bisimulationType == storm::bisimulation::BisimulationType::Weak ? "weak" : "strong") << ", tolerance: " << options.tolerance
+                   << (options.actionSensitive ? ", action-sensitive" : "") << ")...");
+    return storm::api::performBisimulationMinimization<ValueType>(model, createFormulasToRespect(input.properties), options);
 }
 
 template<typename ValueType>
@@ -923,8 +932,8 @@ std::shared_ptr<storm::models::Model<ExportValueType>> preprocessDdModelBisimula
 
     STORM_LOG_INFO("Performing bisimulation minimization...");
     return storm::api::performBisimulationMinimization<DdType, ValueType, ExportValueType>(
-        model, createFormulasToRespect(input.properties), storm::storage::BisimulationType::Strong, bisimulationSettings.getSignatureMode(), quotientFormat,
-        ddBisimulationOptions);
+        model, createFormulasToRespect(input.properties), storm::bisimulation::BisimulationType::Strong, bisimulationSettings.getSignatureMode(),
+        quotientFormat, ddBisimulationOptions);
 }
 
 template<typename ExportValueType, storm::dd::DdType DdType, typename ValueType>

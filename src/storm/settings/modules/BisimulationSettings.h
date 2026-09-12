@@ -92,6 +92,23 @@ class BisimulationSettings : public ModuleSettings {
      */
     storm::dd::bisimulation::RefinementMode getRefinementMode() const;
 
+    /*!
+     * Retrieves whether the tolerance to use for (approximate) bisimulation minimization has been set explicitly (as opposed to using its default value).
+     */
+    bool isToleranceSet() const;
+
+    /*!
+     * Retrieves the tolerance to use for bisimulation minimization.
+     * NOTE: only applies to sparse bisimulation.
+     */
+    double getTolerance() const;
+
+    /*!
+     * Retrieves whether action-sensitive bisimulation is to be used, i.e., choices are only lumped together if they belong to the same action.
+     * NOTE: only applies to sparse bisimulation.
+     */
+    bool isActionSensitiveSet() const;
+
     virtual bool check() const override;
 
     // The name of the module.
@@ -109,6 +126,8 @@ class BisimulationSettings : public ModuleSettings {
     static const std::string refinementModeOptionName;
     static const std::string parallelismModeOptionName;
     static const std::string exactArithmeticDdOptionName;
+    static const std::string toleranceOptionName;
+    static const std::string actionSensitiveOptionName;
 };
 }  // namespace modules
 }  // namespace settings
