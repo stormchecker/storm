@@ -116,7 +116,7 @@ jobs:
       - name: Restore ccache (Docker)
         id: ccache-restore
         if: inputs.restore_cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .ci-ccache
           key: buildtest-ccache-${{ inputs.name }}-${{ inputs.buildType }}-${{ hashFiles(inputs.dockerfile, 'CMakeLists.txt') }}-${{ github.run_id }}
@@ -159,7 +159,7 @@ jobs:
           docker rm ccache-extract
       - name: Save ccache (Docker)
         if: inputs.save_cache && always() && steps.ccache-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .ci-ccache
           key: buildtest-ccache-${{ inputs.name }}-${{ inputs.buildType }}-${{ hashFiles(inputs.dockerfile, 'CMakeLists.txt') }}-${{ github.run_id }}

@@ -55,7 +55,7 @@ jobs:
         uses: actions/checkout@v7
       - name: Cache Homebrew downloads
         if: inputs.restore_cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/Library/Caches/Homebrew
           key: buildtest-brew-${{ inputs.distro }}-${{ hashFiles('.github/workflows/test-mac.yml') }}
@@ -67,7 +67,7 @@ jobs:
       - name: Restore ccache (macOS)
         id: ccache-restore-macos
         if: inputs.restore_cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: /Users/runner/.ccache
           key: buildtest-ccache-macos-${{ inputs.distro }}-${{ inputs.buildType }}-${{ github.run_id }}
@@ -100,7 +100,7 @@ jobs:
         run: ccache --show-stats --verbose
       - name: Save ccache (macOS)
         if: inputs.save_cache && always() && steps.ccache-restore-macos.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: /Users/runner/.ccache
           key: buildtest-ccache-macos-${{ inputs.distro }}-${{ inputs.buildType }}-${{ github.run_id }}
