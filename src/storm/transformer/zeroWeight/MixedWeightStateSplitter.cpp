@@ -24,7 +24,7 @@ typename MixedWeightStateSplitter<ValueType>::Result MixedWeightStateSplitter<Va
     STORM_LOG_THROW(initialStates.size() == numberOfStates, storm::exceptions::InvalidArgumentException, "Expected one initial-state bit per state.");
 
     Result result;
-    result.analysis = ZeroWeightActionAnalysis<ValueType>::analyze(transitionMatrix, actionWeights, targetStates);
+    result.analysis = ZeroWeightAnalysis<ValueType>::analyze(transitionMatrix, actionWeights, targetStates);
     STORM_LOG_THROW((initialStates & result.analysis.statesWithZeroWeightChoices).empty(), storm::exceptions::InvalidArgumentException,
                     "Zero-weight transformations require non-target initial states to have only positive-weight actions.");
 

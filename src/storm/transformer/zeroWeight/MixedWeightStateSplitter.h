@@ -5,7 +5,7 @@
 
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/transformer/zeroWeight/ZeroWeightActionAnalysis.h"
+#include "storm/transformer/zeroWeight/ZeroWeightAnalysis.h"
 
 namespace storm::transformer {
 
@@ -20,7 +20,7 @@ class MixedWeightStateSplitter {
         std::vector<ValueType> actionWeights;
         storm::storage::BitVector targetStates;
         storm::storage::BitVector initialStates;
-        typename ZeroWeightActionAnalysis<ValueType>::Result analysis;
+        typename ZeroWeightAnalysis<ValueType>::Result analysis;
         /*! Shell for each original state, or the maximum uint64_t if not split. */
         std::vector<uint64_t> positiveShells;
         /*! Original state for each output state, including shells. */

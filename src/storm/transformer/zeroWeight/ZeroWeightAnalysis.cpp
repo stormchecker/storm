@@ -1,9 +1,10 @@
-#include "storm/transformer/zeroWeight/ZeroWeightActionAnalysis.h"
+#include "storm/transformer/zeroWeight/ZeroWeightAnalysis.h"
 
 #include <algorithm>
 #include <cstdint>
 #include <limits>
 #include <numeric>
+#include <vector>
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -13,9 +14,9 @@
 namespace storm::transformer {
 
 template<typename ValueType>
-typename ZeroWeightActionAnalysis<ValueType>::Result ZeroWeightActionAnalysis<ValueType>::analyze(
-    storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& actionWeights,
-    storm::storage::BitVector const& targetStates) {
+typename ZeroWeightAnalysis<ValueType>::Result ZeroWeightAnalysis<ValueType>::analyze(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                                      std::vector<ValueType> const& actionWeights,
+                                                                                      storm::storage::BitVector const& targetStates) {
     STORM_LOG_THROW(actionWeights.size() == transitionMatrix.getRowCount(), storm::exceptions::InvalidArgumentException,
                     "Expected the action weight count to match the transition matrix row count (received " << actionWeights.size() << ", expected "
                                                                                                            << transitionMatrix.getRowCount() << ").");
@@ -117,13 +118,82 @@ typename ZeroWeightActionAnalysis<ValueType>::Result ZeroWeightActionAnalysis<Va
         }
         uint64_t const component = rootToComponent[root];
         result.stateToWeakComponent[state] = component;
-        result.weakComponents[component].push_back(state);
+        result.weakComponents[component].states.push_back(state);
     }
 
     return result;
 }
 
-template class ZeroWeightActionAnalysis<double>;
-template class ZeroWeightActionAnalysis<storm::RationalNumber>;
+template<typename ValueType>
+void ZeroWeightAnalysis<ValueType>::analyzeComponentInterfaces(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, Result& analysis) {
+    uint64_t const numberOfStates = transitionMatrix.getRowGroupCount();
+    STORM_LOG_THROW(transitionMatrix.getColumnCount() == numberOfStates && analysis.stateToWeakComponent.size() == numberOfStates &&
+                        analysis.positiveOnlyStates.size() == numberOfStates && analysis.mixedZeroWeightStates.size() == numberOfStates,
+                    storm::exceptions::InvalidArgumentException, "Expected matching transition matrix and action analysis.");
+    STORM_LOG_THROW(analysis.mixedZeroWeightStates.empty(), storm::exceptions::InvalidArgumentException,
+                    "Split mixed states before analyzing component interfaces.");
+
+    auto& components = analysis.weakComponents;
+    if (components.empty()) {
+        return;
+    }
+    for (auto& component : components) {
+        component.entryStates.clear();
+        component.positivePredecessorRows.clear();
+        component.boundaryStates.clear();
+    }
+
+    uint64_t const invalidIndex = std::numeric_limits<uint64_t>::max();
+    auto const& rowGroupIndices = transitionMatrix.getRowGroupIndices();
+    storm::storage::BitVector entryStates(numberOfStates, false);
+    std::vector<uint64_t> lastPredecessorRow(components.size(), invalidIndex);
+    for (uint64_t state : analysis.positiveOnlyStates) {
+        for (uint64_t row = rowGroupIndices[state]; row < rowGroupIndices[state + 1]; ++row) {
+            for (auto const& entry : transitionMatrix.getRow(row)) {
+                if (!storm::utility::isPositive(entry.getValue())) {
+                    continue;
+                }
+                uint64_t const component = analysis.stateToWeakComponent[entry.getColumn()];
+                if (component != invalidIndex) {
+                    STORM_LOG_ASSERT(component < components.size(), "Invalid zero-weight component index.");
+                    entryStates.set(entry.getColumn());
+                    if (lastPredecessorRow[component] != row) {
+                        components[component].positivePredecessorRows.push_back(row);
+                        lastPredecessorRow[component] = row;
+                    }
+                }
+            }
+        }
+    }
+    for (uint64_t state : entryStates) {
+        components[analysis.stateToWeakComponent[state]].entryStates.push_back(state);
+    }
+
+    std::vector<uint64_t> lastBoundaryComponent(numberOfStates, invalidIndex);
+    for (uint64_t component = 0; component < components.size(); ++component) {
+        for (uint64_t state : components[component].states) {
+            STORM_LOG_ASSERT(state < numberOfStates && analysis.stateToWeakComponent[state] == component, "Invalid zero-weight component membership.");
+            for (uint64_t row = rowGroupIndices[state]; row < rowGroupIndices[state + 1]; ++row) {
+                for (auto const& entry : transitionMatrix.getRow(row)) {
+                    if (!storm::utility::isPositive(entry.getValue())) {
+                        continue;
+                    }
+                    uint64_t const successor = entry.getColumn();
+                    uint64_t const successorComponent = analysis.stateToWeakComponent[successor];
+                    STORM_LOG_ASSERT(successorComponent == invalidIndex || successorComponent == component,
+                                     "Zero-weight transitions must not connect different weak components.");
+                    if (successorComponent == invalidIndex && lastBoundaryComponent[successor] != component) {
+                        components[component].boundaryStates.push_back(successor);
+                        lastBoundaryComponent[successor] = component;
+                    }
+                }
+            }
+        }
+        std::sort(components[component].boundaryStates.begin(), components[component].boundaryStates.end());
+    }
+}
+
+template class ZeroWeightAnalysis<double>;
+template class ZeroWeightAnalysis<storm::RationalNumber>;
 
 }  // namespace storm::transformer
