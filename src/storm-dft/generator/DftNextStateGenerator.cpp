@@ -1,9 +1,7 @@
 #include "storm-dft/generator/DftNextStateGenerator.h"
 
-#include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidModelException.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -15,7 +13,6 @@ DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::dft::s
                                                                    storm::dft::storage::DFTStateGenerationInfo const& stateGenerationInfo)
     : mDft(dft), mStateGenerationInfo(stateGenerationInfo), state(nullptr), uniqueFailedState(false) {
     deterministicModel = !mDft.canHaveNondeterminism();
-    mTakeFirstDependency = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>().isTakeFirstDependency();
 }
 
 template<typename ValueType, typename StateType>
@@ -63,11 +60,12 @@ void DftNextStateGenerator<ValueType, StateType>::load(DFTStatePointer const& st
 }
 
 template<typename ValueType, typename StateType>
-storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
+storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback,
+                                                                                                          bool takeFirstDependency) {
     STORM_LOG_DEBUG("Explore state: " << mDft.getStateString(state));
     // Initialization
     bool hasDependencies = this->state->getFailableElements().hasDependencies();
-    return exploreState(stateToIdCallback, hasDependencies, mTakeFirstDependency);
+    return exploreState(stateToIdCallback, hasDependencies, takeFirstDependency);
 }
 
 template<typename ValueType, typename StateType>

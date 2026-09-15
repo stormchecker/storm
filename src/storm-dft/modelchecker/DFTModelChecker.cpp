@@ -2,28 +2,29 @@
 
 #include "storm-dft/api/transformation.h"
 #include "storm-dft/builder/ExplicitDFTModelBuilder.h"
-#include "storm-dft/settings/modules/DftIOSettings.h"
+#include "storm-dft/environment/AnalysisEnvironment.h"
+#include "storm-dft/environment/ModelBuilderEnvironment.h"
+#include "storm-dft/environment/TransformationEnvironment.h"
 #include "storm-dft/utility/SymmetryFinder.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/bisimulation.h"
-#include "storm/api/export.h"
 #include "storm/api/verification.h"
 #include "storm/builder/ParallelCompositionBuilder.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidModelException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/ModelType.h"
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/IOSettings.h"
 #include "storm/utility/bitoperations.h"
 
 namespace storm::dft {
 namespace modelchecker {
 
 template<typename ValueType>
-typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::check(
-    storm::dft::storage::DFT<ValueType> const& origDft, std::vector<std::shared_ptr<const storm::logic::Formula>> const& properties, bool symred,
-    bool allowModularisation, storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError,
-    storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
+typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::check(storm::dft::DftEnvironment const& env,
+                                                                                   storm::dft::storage::DFT<ValueType> const& origDft,
+                                                                                   std::vector<std::shared_ptr<const storm::logic::Formula>> const& properties,
+                                                                                   storm::dft::utility::RelevantEvents const& relevantEvents) {
     totalTimer.start();
     dft_results results;
 
@@ -34,7 +35,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
 
     // Optimizing DFT for modularisation
     storm::dft::storage::DFT<ValueType> dft = origDft;
-    if (allowModularisation) {
+    if (env.analysis().isUseModularisation()) {
         dft = origDft.optimize();
     }
 
@@ -42,28 +43,26 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
 
     // Checking DFT
     // TODO: distinguish for all properties, not only for first one
-    if (properties[0]->isTimeOperatorFormula() && allowModularisation) {
+    if (properties[0]->isTimeOperatorFormula() && env.analysis().isUseModularisation()) {
         // Use parallel composition as modularisation approach for expected time
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> model =
-            buildModelViaComposition(dft, properties, symred, true, relevantEvents, allowDCForRelevant);
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> model = buildModelViaComposition(env, dft, properties, relevantEvents);
         // Model checking
-        std::vector<ExtendedValueType> resultsValue = checkModel(model, properties);
+        std::vector<ExtendedValueType> resultsValue = checkModel(env, model, properties);
         for (auto& result : resultsValue) {
             results.push_back(std::move(result));
         }
     } else {
-        results = checkHelper(dft, properties, symred, allowModularisation, relevantEvents, allowDCForRelevant, approximationError, approximationHeuristic,
-                              eliminateChains, labelBehavior);
+        results = checkHelper(env, dft, properties, relevantEvents);
     }
     totalTimer.stop();
     return results;
 }
 
 template<typename ValueType>
-typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::checkHelper(
-    storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
-    storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError,
-    storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
+typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::checkHelper(storm::dft::DftEnvironment const& env,
+                                                                                         storm::dft::storage::DFT<ValueType> const& dft,
+                                                                                         property_vector const& properties,
+                                                                                         storm::dft::utility::RelevantEvents const& relevantEvents) {
     STORM_LOG_TRACE("Check helper called");
     std::vector<storm::dft::storage::DFT<ValueType>> dfts;
     bool invResults = false;
@@ -71,7 +70,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
     size_t nrM = 0;  // K out of M
 
     // Try modularisation
-    if (allowModularisation) {
+    if (env.analysis().isUseModularisation()) {
         switch (dft.getTopLevelType()) {
             case storm::dft::storage::elements::DFTElementType::AND:
                 STORM_LOG_TRACE("top modularisation called AND");
@@ -113,9 +112,12 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
             } else {
                 // Recursively call model checking
                 std::vector<ValueType> res;
+                STORM_LOG_ASSERT(env.analysis().isUseModularisation(), "Modularisation should be enabled.");
+                // TODO: allow approximation in modularisation
+                STORM_LOG_THROW(!env.analysis().isApproximationErrorSet() || env.analysis().getApproximationError() == 0.0,
+                                storm::exceptions::NotSupportedException, "Combining modularisation with the partial state space generation is not supported.");
                 for (auto const& ft : dfts) {
-                    // TODO: allow approximation in modularisation
-                    dft_results ftResults = checkHelper(ft, {property}, symred, true, relevantEvents, allowDCForRelevant, 0.0);
+                    dft_results ftResults = checkHelper(env, ft, {property}, relevantEvents);
                     STORM_LOG_ASSERT(ftResults.size() == 1, "Wrong number of results.");
                     res.push_back(storm::utility::narrow<ValueType>(boost::get<ExtendedValueType>(ftResults[0])));
                 }
@@ -152,42 +154,40 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
         return results;
     } else {
         // No modularisation was possible
-        return checkDFT(dft, properties, symred, relevantEvents, allowDCForRelevant, approximationError, approximationHeuristic, eliminateChains,
-                        labelBehavior);
+        return checkDFT(env, dft, properties, relevantEvents);
     }
 }
 
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueType>::buildModelViaComposition(
-    storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
-    storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant) {
+    storm::dft::DftEnvironment const& env, storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties,
+    storm::dft::utility::RelevantEvents const& relevantEvents) {
     // TODO: use approximation?
     STORM_LOG_TRACE("Build model via composition");
     std::vector<storm::dft::storage::DFT<ValueType>> dfts;
     bool isAnd = true;
 
-    // Try modularisation
-    if (allowModularisation) {
-        switch (dft.getTopLevelType()) {
-            case storm::dft::storage::elements::DFTElementType::AND:
-                STORM_LOG_TRACE("top modularisation called AND");
-                dfts = dft.topModularisation();
-                STORM_LOG_TRACE("Modularisation into " << dfts.size() << " submodules.");
-                isAnd = true;
-                break;
-            case storm::dft::storage::elements::DFTElementType::OR:
-                STORM_LOG_TRACE("top modularisation called OR");
-                dfts = dft.topModularisation();
-                STORM_LOG_TRACE("Modularisation into " << dfts.size() << " submodules.");
-                isAnd = false;
-                break;
-            case storm::dft::storage::elements::DFTElementType::VOT:
-                // TODO enable modularisation for voting gate
-                break;
-            default:
-                // No static gate -> no modularisation applicable
-                break;
-        }
+    // Try modularisation.
+    STORM_LOG_ASSERT(env.analysis().isUseModularisation(), "Modularisation should be enabled.");
+    switch (dft.getTopLevelType()) {
+        case storm::dft::storage::elements::DFTElementType::AND:
+            STORM_LOG_TRACE("top modularisation called AND");
+            dfts = dft.topModularisation();
+            STORM_LOG_TRACE("Modularisation into " << dfts.size() << " submodules.");
+            isAnd = true;
+            break;
+        case storm::dft::storage::elements::DFTElementType::OR:
+            STORM_LOG_TRACE("top modularisation called OR");
+            dfts = dft.topModularisation();
+            STORM_LOG_TRACE("Modularisation into " << dfts.size() << " submodules.");
+            isAnd = false;
+            break;
+        case storm::dft::storage::elements::DFTElementType::VOT:
+            // TODO enable modularisation for voting gate
+            break;
+        default:
+            // No static gate -> no modularisation applicable
+            break;
     }
 
     // Perform modularisation via parallel composition
@@ -199,10 +199,10 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
             STORM_LOG_DEBUG("Building Model via parallel composition...");
             explorationTimer.start();
 
-            ft.setRelevantEvents(relevantEvents, allowDCForRelevant);
+            ft.setRelevantEvents(relevantEvents, env.modelBuilder().isAllowDCForRelevantEvents());
             // Find symmetries
             storm::dft::storage::DftSymmetries symmetries;
-            if (symred) {
+            if (env.modelBuilder().isUseSymmetryReduction()) {
                 symmetries = storm::dft::utility::SymmetryFinder<ValueType>::findSymmetries(ft);
                 STORM_LOG_DEBUG("Found " << symmetries.nrSymmetries() << " symmetries.");
                 STORM_LOG_TRACE("Symmetries: \n" << symmetries);
@@ -210,7 +210,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
 
             // Build a single CTMC
             STORM_LOG_DEBUG("Building Model from DFT with top level element " << *ft.getElement(ft.getTopLevelIndex()) << " ...");
-            storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(ft, symmetries);
+            storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(env, ft, symmetries);
             builder.buildModel(0, 0.0);
             std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
             explorationTimer.stop();
@@ -256,11 +256,11 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
         // No composition was possible
         explorationTimer.start();
 
-        dft.setRelevantEvents(relevantEvents, allowDCForRelevant);
+        dft.setRelevantEvents(relevantEvents, env.modelBuilder().isAllowDCForRelevantEvents());
 
         // Find symmetries
         storm::dft::storage::DftSymmetries symmetries;
-        if (symred) {
+        if (env.modelBuilder().isUseSymmetryReduction()) {
             symmetries = storm::dft::utility::SymmetryFinder<ValueType>::findSymmetries(dft);
             STORM_LOG_DEBUG("Found " << symmetries.nrSymmetries() << " symmetries.");
             STORM_LOG_TRACE("Symmetries: \n" << symmetries);
@@ -268,7 +268,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
         // Build a single CTMC
         STORM_LOG_DEBUG("Building Model...");
 
-        storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
+        storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(env, dft, symmetries);
         builder.buildModel(0, 0.0);
         std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
         if (printInfo) {
@@ -282,37 +282,39 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
 }
 
 template<typename ValueType>
-typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::checkDFT(
-    storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, storm::dft::utility::RelevantEvents const& relevantEvents,
-    bool allowDCForRelevant, double approximationError, storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains,
-    storm::transformer::EliminationLabelBehavior labelBehavior) {
+typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::checkDFT(storm::dft::DftEnvironment const& env,
+                                                                                      storm::dft::storage::DFT<ValueType> const& dft,
+                                                                                      property_vector const& properties,
+                                                                                      storm::dft::utility::RelevantEvents const& relevantEvents) {
     explorationTimer.start();
-    auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-    auto dftIOSettings = storm::settings::getModule<storm::dft::settings::modules::DftIOSettings>();
 
-    dft.setRelevantEvents(relevantEvents, allowDCForRelevant);
+    double const approximationError = env.analysis().isApproximationErrorSet() ? env.analysis().getApproximationError() : 0.0;
+
+    dft.setRelevantEvents(relevantEvents, env.modelBuilder().isAllowDCForRelevantEvents());
 
     // Find symmetries
     storm::dft::storage::DftSymmetries symmetries;
-    if (symred) {
+    if (env.modelBuilder().isUseSymmetryReduction()) {
         symmetries = storm::dft::utility::SymmetryFinder<ValueType>::findSymmetries(dft);
         STORM_LOG_DEBUG("Found " << symmetries.nrSymmetries() << " symmetries.");
         STORM_LOG_TRACE("Symmetries: \n" << symmetries);
     }
 
-    auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-    ValueType const precision = std::is_same<ValueType, storm::RationalFunction>::value
-                                    ? storm::utility::zero<ValueType>()
-                                    : storm::utility::convertNumber<ValueType>(generalSettings.getPrecision());
     if (approximationError > 0.0) {
         // Comparator for checking the error of the approximation
+        // TODO: better handling of precision for comparison
+        // Comparator precision is currently derived from the linear equation solver's precision.
+        auto precisionInfo = env.core().solver().getPrecisionOfLinearEquationSolver(env.core().solver().getLinearEquationSolverType());
+        storm::RationalNumber const precisionValue = precisionInfo.first.get_value_or(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        ValueType const precision =
+            std::is_same_v<ValueType, storm::RationalFunction> ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(precisionValue);
         storm::utility::ConstantsComparator<ValueType> comparator(precision);
 
         // Build approximate Markov Automata for lower and upper bound
         std::pair<ValueType, ValueType> approxResult = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
         std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
         std::vector<ExtendedValueType> newResult;
-        storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
+        storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(env, dft, symmetries);
 
         // TODO: compute approximation for all properties simultaneously?
         std::shared_ptr<const storm::logic::Formula> property = properties[0];
@@ -331,7 +333,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
             }
             STORM_LOG_DEBUG("Building model...");
             // TODO refine model using existing model and MC results
-            builder.buildModel(iteration, approximationError, approximationHeuristic);
+            builder.buildModel(iteration, approximationError, env.analysis().getApproximationHeuristic());
             explorationTimer.stop();
             buildingTimer.start();
 
@@ -341,21 +343,18 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
             STORM_LOG_DEBUG("Getting model for lower bound...");
             model = builder.getModelApproximation(true, !probabilityFormula);
             // We only output the info from the lower bound as the info for the upper bound is the same
-            if (printInfo && dftIOSettings.isShowDftStatisticsSet()) {
+            if (printInfo) {
                 std::cout << "Model in iteration " << (iteration + 1) << ":\n";
                 model->printModelInformationToStream(std::cout);
             }
             buildingTimer.stop();
 
-            if (ioSettings.isExportExplicitSet()) {
-                std::vector<std::string> parameterNames;
-                // TODO fill parameter names
-                storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames,
-                                                   !ioSettings.isExplicitExportPlaceholdersDisabled());
+            if (exportCallback) {
+                exportCallback(model, false);
             }
 
             // Check lower bounds
-            newResult = checkModel(model, {property});
+            newResult = checkModel(env, model, {property});
             STORM_LOG_ASSERT(newResult.size() == 1, "Wrong size for result vector.");
             STORM_LOG_THROW(storm::utility::isFinite(newResult[0]), storm::exceptions::NotSupportedException,
                             "Approximation does not work if result might be infinity.");
@@ -370,7 +369,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
             model = builder.getModelApproximation(false, !probabilityFormula);
             buildingTimer.stop();
             // Check upper bound
-            newResult = checkModel(model, {property});
+            newResult = checkModel(env, model, {property});
             STORM_LOG_ASSERT(newResult.size() == 1, "Wrong size for result vector.");
             STORM_LOG_THROW(storm::utility::isFinite(newResult[0]), storm::exceptions::NotSupportedException,
                             "Approximation does not work if result might be infinity.");
@@ -382,13 +381,12 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
             STORM_LOG_ASSERT(comparator.isLess(approxResult.first, approxResult.second) || comparator.isEqual(approxResult.first, approxResult.second),
                              "Under-approximation " << approxResult.first << " is greater than over-approximation " << approxResult.second);
             totalTimer.stop();
-            if (printInfo && dftIOSettings.isShowDftStatisticsSet()) {
-                std::cout << "Result after iteration " << (iteration + 1) << ": (" << approxResult.first << ", " << approxResult.second << ")\n";
-                printTimings();
-                std::cout << '\n';
-            } else {
-                STORM_LOG_DEBUG("Result after iteration " << (iteration + 1) << ": (" << approxResult.first << ", " << approxResult.second << ")");
-            }
+            STORM_LOG_STATISTICS_LAZY([this, iteration, &approxResult](std::ostream& out) {
+                out << "Result after iteration " << (iteration + 1) << ": (" << approxResult.first << ", " << approxResult.second << ")\n";
+                printTimings(out);
+                return true;
+            });
+            STORM_LOG_DEBUG("Result after iteration " << (iteration + 1) << ": (" << approxResult.first << ", " << approxResult.second << ")");
 
             totalTimer.start();
             ++iteration;
@@ -398,18 +396,22 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
         if (printInfo) {
             model->printModelInformationToStream(std::cout);
         }
+        // Export the model if required
+        if (exportCallback) {
+            exportCallback(model, true);
+        }
         dft_results results;
         results.push_back(approximation_result(std::move(approxResult.first), std::move(approxResult.second)));
         return results;
     } else {
         // Build a single Markov Automaton
         STORM_LOG_DEBUG("Building Model...");
-        storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
+        storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(env, dft, symmetries);
         builder.buildModel(0, 0.0);
         std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
-        if (eliminateChains && model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+        if (env.transformation().isEliminateChains() && model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
             auto ma = std::static_pointer_cast<storm::models::sparse::MarkovAutomaton<ValueType>>(model);
-            model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(ma, labelBehavior);
+            model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(ma, env.transformation().getLabelBehavior());
         }
         explorationTimer.stop();
 
@@ -419,19 +421,12 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
         }
 
         // Export the model if required
-        // TODO move this outside of the model checker?
-        if (ioSettings.isExportExplicitSet()) {
-            std::vector<std::string> parameterNames;
-            // TODO fill parameter names
-            storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames,
-                                               !ioSettings.isExplicitExportPlaceholdersDisabled());
-        }
-        if (ioSettings.isExportDotSet()) {
-            storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
+        if (exportCallback) {
+            exportCallback(model, true);
         }
 
         // Model checking
-        std::vector<ExtendedValueType> resultsValue = checkModel(model, properties);
+        std::vector<ExtendedValueType> resultsValue = checkModel(env, model, properties);
         dft_results results;
         for (auto& result : resultsValue) {
             results.push_back(std::move(result));
@@ -442,9 +437,9 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
 
 template<typename ValueType>
 std::vector<typename DFTModelChecker<ValueType>::ExtendedValueType> DFTModelChecker<ValueType>::checkModel(
-    std::shared_ptr<storm::models::sparse::Model<ValueType>>& model, property_vector const& properties) {
+    storm::dft::DftEnvironment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>>& model, property_vector const& properties) {
     // Bisimulation
-    if (model->isOfType(storm::models::ModelType::Ctmc) && storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet()) {
+    if (model->isOfType(storm::models::ModelType::Ctmc) && env.transformation().isUseBisimulation()) {
         bisimulationTimer.start();
         STORM_LOG_DEBUG("Bisimulation...");
         model = storm::api::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(
@@ -467,7 +462,7 @@ std::vector<typename DFTModelChecker<ValueType>::ExtendedValueType> DFTModelChec
         singleModelCheckingTimer.start();
         // STORM_PRINT_AND_LOG("Model checking property " << *property << " ...\n");
         std::unique_ptr<storm::modelchecker::CheckResult> result(
-            storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(property, true)));
+            storm::api::verifyWithSparseEngine<ValueType>(env.core(), model, storm::api::createTask<ValueType>(property, true)));
 
         if (result) {
             result->filter(storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>(model->getInitialStates()));

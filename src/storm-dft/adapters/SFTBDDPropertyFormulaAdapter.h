@@ -38,7 +38,8 @@ class SFTBDDPropertyFormulaAdapter {
         : formulas{formulas} {
         checkForm(formulas);
 
-        relevantEvents.insertNamesFromProperties(formulas.begin(), formulas.end());
+        // Claiming labels are not supported by BDD-based analysis.
+        relevantEvents.insertNamesFromProperties(formulas.begin(), formulas.end(), false);
         auto const transformator{std::make_shared<storm::dft::transformations::SftToBddTransformator<ValueType>>(dft, sylvanBddManager, relevantEvents)};
         checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(transformator);
     }

@@ -4,6 +4,8 @@
 
 #include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/builder/DFTBuilder.h"
+#include "storm-dft/environment/AnalysisEnvironment.h"
+#include "storm-dft/environment/ModelBuilderEnvironment.h"
 #include "storm-dft/modelchecker/DFTModelChecker.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
 #include "storm-dft/utility/DftModularizer.h"
@@ -134,7 +136,11 @@ typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results DftMo
     }
     auto const props{storm::api::extractFormulasFromProperties(storm::api::parseProperties(propertyStream.str()))};
 
-    return modelchecker.check(subDft, props, false, false, {});
+    // TODO: use propagated environment
+    storm::dft::DftEnvironment env;
+    env.modelBuilder().setUseSymmetryReduction(false);
+    env.analysis().setUseModularisation(false);
+    return modelchecker.check(env, subDft, props);
 }
 
 // Explicitly instantiate the class.

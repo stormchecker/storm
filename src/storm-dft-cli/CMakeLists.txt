@@ -1,5 +1,10 @@
 # Create storm-dft.
-add_executable(storm-dft-cli ${PROJECT_SOURCE_DIR}/src/storm-dft-cli/storm-dft.cpp)
+add_executable(storm-dft-cli
+    ${PROJECT_SOURCE_DIR}/src/storm-dft-cli/storm-dft.cpp
+    ${PROJECT_SOURCE_DIR}/src/storm-dft-cli/settings/modules/DftGspnSettings.cpp
+    ${PROJECT_SOURCE_DIR}/src/storm-dft-cli/settings/modules/DftIOSettings.cpp
+    ${PROJECT_SOURCE_DIR}/src/storm-dft-cli/settings/modules/FaultTreeSettings.cpp
+)
 target_link_libraries(storm-dft-cli storm-dft storm-cli-utilities)
 set_target_properties(storm-dft-cli PROPERTIES OUTPUT_NAME "storm-dft")
 set_target_properties(storm-dft-cli PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
