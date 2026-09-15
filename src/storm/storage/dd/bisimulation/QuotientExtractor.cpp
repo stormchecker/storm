@@ -319,13 +319,40 @@ class InternalSparseQuotientExtractorBase {
             STORM_LOG_ASSERT(!this->rowPermutation.empty(), "Expected proper row permutation.");
             std::vector<ExportValueType> valueVector = extractVectorInternal(vector, this->allSourceVariablesCube, this->nondeterminismOdd);
 
-            // Reorder the values according to the known row permutation.
-            std::vector<ExportValueType> reorderedValues(valueVector.size());
-            for (uint64_t pos = 0; pos < valueVector.size(); ++pos) {
+            // Reorder the values according to the known row permutation. Note that rowPermutation may be shorter
+            // than valueVector if redundant (duplicate) choices were removed while building the transition matrix.
+            std::vector<ExportValueType> reorderedValues(rowPermutation.size());
+            for (uint64_t pos = 0; pos < rowPermutation.size(); ++pos) {
                 reorderedValues[pos] = valueVector[rowPermutation[pos]];
             }
             return reorderedValues;
         }
+    }
+
+    // Extracts a state-action vector without reordering the entries according to the row permutation, i.e. the
+    // result is indexed by the choices of the original model. This is needed to obtain the state-action rewards
+    // of the preserved reward models before the redundant choices of the quotient are removed, so that the
+    // removal can distinguish choices that only differ in these rewards.
+    std::vector<ExportValueType> extractStateActionVectorRaw(storm::dd::Add<DdType, ValueType> const& vector) {
+        STORM_LOG_ASSERT(this->isNondeterministic, "Expected nondeterministic model.");
+        return extractVectorInternal(vector, this->allSourceVariablesCube, this->nondeterminismOdd);
+    }
+
+    // Sets, for each choice of the original model, the state-action rewards of all preserved reward models. The
+    // extraction of the transition matrix considers these rewards when deciding which choices are redundant.
+    void setStateActionRewardsForDedup(std::vector<std::vector<ExportValueType>>&& stateActionRewards) {
+        this->stateActionRewardsForDedup = std::move(stateActionRewards);
+    }
+
+    // Returns true iff the two given choices (indexed like matrixEntries, i.e. by the offset of the choice in
+    // the nondeterminism ODD) coincide w.r.t. the state-action rewards of all preserved reward models.
+    bool hasEqualStateActionRewards(uint64_t firstChoice, uint64_t secondChoice) const {
+        for (auto const& rewards : this->stateActionRewardsForDedup) {
+            if (rewards[firstChoice] != rewards[secondChoice]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     storm::storage::BitVector extractSetAll(storm::dd::Bdd<DdType> const& set) {
@@ -349,6 +376,22 @@ class InternalSparseQuotientExtractorBase {
             std::sort(row.begin(), row.end(),
                       [](storm::storage::MatrixEntry<uint_fast64_t, ExportValueType> const& a,
                          storm::storage::MatrixEntry<uint_fast64_t, ExportValueType> const& b) { return a.getColumn() < b.getColumn(); });
+            // Merge entries that point to the same column (block): a single choice may reach several original
+            // states of the same block, which the sparse matrix builder would sum up later anyway. Merging
+            // them here yields a canonical representation of each choice's distribution over blocks, which the
+            // duplicate-choice removal below relies on to identify logically equal choices.
+            uint64_t writeIndex = 0;
+            for (uint64_t readIndex = 1; readIndex < row.size(); ++readIndex) {
+                if (row[readIndex].getColumn() == row[writeIndex].getColumn()) {
+                    row[writeIndex].setValue(row[writeIndex].getValue() + row[readIndex].getValue());
+                } else {
+                    ++writeIndex;
+                    row[writeIndex] = std::move(row[readIndex]);
+                }
+            }
+            if (!row.empty()) {
+                row.resize(writeIndex + 1);
+            }
         }
 
         rowPermutation = std::vector<uint64_t>(matrixEntries.size());
@@ -356,11 +399,30 @@ class InternalSparseQuotientExtractorBase {
         if (this->isNondeterministic) {
             std::stable_sort(rowPermutation.begin(), rowPermutation.end(),
                              [this](uint64_t first, uint64_t second) { return this->rowToState[first] < this->rowToState[second]; });
+
+            // Remove choices that became exact duplicates of the (in the sorted order) preceding choice of the
+            // same state after quotienting, i.e. redundant nondeterminism that resulted from collapsing states
+            // into the same block. This mirrors what the sparse bisimulation engine does and keeps the two
+            // engines' quotients comparable. A choice is only treated as a duplicate of the preceding choice if
+            // it coincides with it w.r.t. the transition distribution *and* all preserved state-action rewards,
+            // as otherwise merging the choices would silently drop the rewards of the removed choice.
+            std::vector<uint64_t> deduplicatedPermutation;
+            deduplicatedPermutation.reserve(rowPermutation.size());
+            for (uint64_t i = 0; i < rowPermutation.size(); ++i) {
+                uint64_t const rowIdx = rowPermutation[i];
+                bool const isDuplicate = i > 0 && rowToState[rowPermutation[i - 1]] == rowToState[rowIdx] &&
+                                         matrixEntries[rowPermutation[i - 1]] == matrixEntries[rowIdx] &&
+                                         (stateActionRewardsForDedup.empty() || hasEqualStateActionRewards(rowPermutation[i - 1], rowIdx));
+                if (!isDuplicate) {
+                    deduplicatedPermutation.push_back(rowIdx);
+                }
+            }
+            rowPermutation = std::move(deduplicatedPermutation);
         }
 
         uint64_t rowCounter = 0;
         uint64_t lastState = this->isNondeterministic ? rowToState[rowPermutation.front()] : 0;
-        storm::storage::SparseMatrixBuilder<ExportValueType> builder(matrixEntries.size(), this->numberOfBlocks, 0, true, this->isNondeterministic);
+        storm::storage::SparseMatrixBuilder<ExportValueType> builder(rowPermutation.size(), this->numberOfBlocks, 0, true, this->isNondeterministic);
         if (this->isNondeterministic) {
             builder.newRowGroup(0);
         }
@@ -376,10 +438,6 @@ class InternalSparseQuotientExtractorBase {
                 builder.addNextValue(rowCounter, entry.getColumn(), entry.getValue());
             }
 
-            // Free storage for row.
-            row.clear();
-            row.shrink_to_fit();
-
             ++rowCounter;
         }
 
@@ -387,6 +445,8 @@ class InternalSparseQuotientExtractorBase {
         rowToState.shrink_to_fit();
         matrixEntries.clear();
         matrixEntries.shrink_to_fit();
+        stateActionRewardsForDedup.clear();
+        stateActionRewardsForDedup.shrink_to_fit();
 
         return builder.build();
     }
@@ -442,6 +502,12 @@ class InternalSparseQuotientExtractorBase {
 
     // A vector storing for each row which state it belongs to.
     std::vector<uint64_t> rowToState;
+
+    // The state-action rewards of the preserved reward models, one flat vector per reward model (in the order of
+    // the preserved reward models). Each flat vector is indexed like matrixEntries, i.e. by the offset of the
+    // choice in the nondeterminism ODD. Used to only treat choices as redundant if they also coincide w.r.t.
+    // these rewards. Empty if no preserved reward model has state-action rewards.
+    std::vector<std::vector<ExportValueType>> stateActionRewardsForDedup;
 
     // A vector storing the row permutation for nondeterministic models.
     std::vector<uint64_t> rowPermutation;
@@ -1008,6 +1074,21 @@ std::shared_ptr<storm::models::sparse::Model<ExportValueType>> QuotientExtractor
                      "Representatives do not cover all blocks.");
     InternalSparseQuotientExtractor<DdType, ValueType, ExportValueType> sparseExtractor(model, partitionAsBdd, partition.getBlockVariable(),
                                                                                         partition.getNumberOfBlocks(), representatives);
+
+    // Collect the state-action rewards of the preserved reward models upfront, so that the extraction of the
+    // transition matrix can distinguish choices that only differ in these rewards when removing redundant
+    // (duplicate) choices. These raw (unreordered) vectors are consumed by extractTransitionMatrix and
+    // cleared afterward; they are not reused for the quotient reward models below, which are extracted
+    // separately via extractStateActionVector (applying the post-dedup row permutation reordering).
+    std::vector<std::vector<ExportValueType>> stateActionRewards;
+    for (auto const& rewardModelName : preservationInformation.getRewardModelNames()) {
+        auto const& rewardModel = model.getRewardModel(rewardModelName);
+        if (rewardModel.hasStateActionRewards()) {
+            stateActionRewards.push_back(sparseExtractor.extractStateActionVectorRaw(rewardModel.getStateActionRewardVector()));
+        }
+    }
+    sparseExtractor.setStateActionRewardsForDedup(std::move(stateActionRewards));
+
     storm::storage::SparseMatrix<ExportValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix());
     auto end = std::chrono::high_resolution_clock::now();
     STORM_LOG_INFO("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");

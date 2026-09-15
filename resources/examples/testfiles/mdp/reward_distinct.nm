@@ -1,0 +1,23 @@
+// A small MDP in which, after quotienting via strong bisimulation, state 0's choices all induce the same
+// transition distribution (to the goal state s=1), but carry different state-action rewards. This exercises the
+// sparse quotient extraction's handling of redundant choices: choices with equal transition probabilities but
+// different rewards must NOT be merged, as that would silently drop reward information. The state s=1 is the
+// "goal" state and is absorbing in the model.
+mdp
+
+module reward_distinct
+  s : [0..1] init 0;
+
+  [] s=0 -> (s'=1);
+  [a] s=0 -> (s'=1);
+  [b] s=0 -> (s'=1);
+
+  [] s=1 -> (s'=1);
+endmodule
+
+label "goal" = s=1;
+
+rewards "r"
+  [a] true : 1;
+  [b] true : 2;
+endrewards
