@@ -35,28 +35,6 @@ storm::storage::SparseMatrix<ValueType> buildSelfLoopMatrix(std::vector<uint64_t
 }
 
 template<typename ValueType>
-storm::storage::SparseMatrix<ValueType> buildWeakComponentMatrix() {
-    storm::storage::SparseMatrixBuilder<ValueType> builder(9, 7, 9, true, true, 7);
-    builder.newRowGroup(0);
-    builder.addNextValue(0, 1, storm::utility::one<ValueType>());
-    builder.newRowGroup(1);
-    builder.addNextValue(1, 1, storm::utility::one<ValueType>());
-    builder.newRowGroup(2);
-    builder.addNextValue(2, 0, storm::utility::one<ValueType>());
-    builder.newRowGroup(3);
-    builder.addNextValue(3, 4, storm::utility::one<ValueType>());
-    builder.addNextValue(4, 0, storm::utility::one<ValueType>());
-    builder.newRowGroup(5);
-    builder.addNextValue(5, 3, storm::utility::one<ValueType>());
-    builder.addNextValue(6, 5, storm::utility::one<ValueType>());
-    builder.newRowGroup(7);
-    builder.addNextValue(7, 3, storm::utility::one<ValueType>());
-    builder.newRowGroup(8);
-    builder.addNextValue(8, 0, storm::utility::one<ValueType>());
-    return builder.build();
-}
-
-template<typename ValueType>
 class ZeroWeightAnalysisTest : public ::testing::Test {};
 
 using TestedValueTypes = ::testing::Types<double, storm::RationalNumber>;
@@ -111,14 +89,9 @@ TYPED_TEST(ZeroWeightAnalysisTest, RejectsMismatchingInputSizes) {
 
 TYPED_TEST(ZeroWeightAnalysisTest, FindsWeakComponents) {
     using ValueType = TypeParam;
-    auto const matrix = buildWeakComponentMatrix<ValueType>();
-    std::vector<ValueType> const actionWeights = {storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>(),
-                                                  storm::utility::zero<ValueType>(), storm::utility::one<ValueType>(),  storm::utility::zero<ValueType>(),
-                                                  storm::utility::zero<ValueType>(), storm::utility::one<ValueType>(),  storm::utility::zero<ValueType>()};
-    storm::storage::BitVector targetStates(7, false);
-    targetStates.set(6);
+    auto const model = storm::test::zeroWeight::buildWeakComponentModel<ValueType>();
 
-    auto const result = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, actionWeights, targetStates);
+    auto const result = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(model.matrix, model.weights, model.targets);
 
     ASSERT_EQ(2ull, result.weakComponents.size());
     EXPECT_EQ((std::vector<uint64_t>{0, 1}), result.weakComponents[0].states);
@@ -168,42 +141,9 @@ TYPED_TEST(ZeroWeightAnalysisTest, CollectsInterfacesAfterMixedStateSplitting) {
 
 TYPED_TEST(ZeroWeightAnalysisTest, SeparatesComponentsAndDeduplicatesInterfaces) {
     using ValueType = TypeParam;
-    auto const one = storm::utility::one<ValueType>();
-    auto const zero = storm::utility::zero<ValueType>();
-    ValueType const half = one / (one + one);
-    ValueType const quarter = half / (one + one);
-    storm::storage::SparseMatrixBuilder<ValueType> builder(9, 7, 18, true, true, 7);
-    builder.newRowGroup(0);
-    builder.addNextValue(0, 1, quarter);
-    builder.addNextValue(0, 2, quarter);
-    builder.addNextValue(0, 3, quarter);
-    builder.addNextValue(0, 4, quarter);
-    builder.addNextValue(1, 1, half);
-    builder.addNextValue(1, 4, zero);
-    builder.addNextValue(1, 5, half);
-    builder.newRowGroup(2);
-    builder.addNextValue(2, 2, half);
-    builder.addNextValue(2, 5, half);
-    builder.addNextValue(3, 5, one);
-    builder.addNextValue(3, 6, zero);
-    builder.newRowGroup(4);
-    builder.addNextValue(4, 5, one);
-    builder.newRowGroup(5);
-    builder.addNextValue(5, 4, half);
-    builder.addNextValue(5, 6, half);
-    builder.newRowGroup(6);
-    builder.addNextValue(6, 5, one);
-    builder.newRowGroup(7);
-    builder.addNextValue(7, 1, half);
-    builder.addNextValue(7, 3, half);
-    builder.newRowGroup(8);
-    builder.addNextValue(8, 1, one);
-
-    auto const matrix = builder.build();
-    storm::storage::BitVector targets(7, false);
-    targets.set(6);
-    auto analysis = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, std::vector<ValueType>{1, 1, 0, 0, 0, 0, 0, 1, 1}, targets);
-    storm::transformer::ZeroWeightAnalysis<ValueType>::analyzeComponentInterfaces(matrix, analysis);
+    auto const model = storm::test::zeroWeight::buildComponentInterfaceModel<ValueType>();
+    auto analysis = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(model.matrix, model.weights, model.targets);
+    storm::transformer::ZeroWeightAnalysis<ValueType>::analyzeComponentInterfaces(model.matrix, analysis);
 
     ASSERT_EQ(2ull, analysis.weakComponents.size());
     EXPECT_EQ((std::vector<uint64_t>{1, 2}), analysis.weakComponents[0].states);
