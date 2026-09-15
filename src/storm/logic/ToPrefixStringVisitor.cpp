@@ -192,7 +192,8 @@ boost::any ToPrefixStringVisitor::visit(WeakUntilFormula const& f, boost::any co
 boost::any ToPrefixStringVisitor::visit(ReleaseFormula const& f, boost::any const& data) const {
     std::string left = boost::any_cast<std::string>(f.getLeftSubformula().accept(*this, data));
     std::string right = boost::any_cast<std::string>(f.getRightSubformula().accept(*this, data));
-    return std::string("R ") + left + " " + right;
+    // Write as weak release (V), see https://spot.lre.epita.fr/ioltl.html
+    return std::string("V ") + left + " " + right;
 }
 
 boost::any ToPrefixStringVisitor::visit(HOAPathFormula const&, boost::any const&) const {
