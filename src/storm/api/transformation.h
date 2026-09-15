@@ -143,7 +143,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> transformToNondetermini
     } else {
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException,
                         "Cannot transform model of type " << model.getType() << " to a nondeterministic model.");
-        return nullptr;  // Should never happen but silences compiler warning
+        __builtin_unreachable();  // Should never happen but silences compiler warning
     }
 }
 

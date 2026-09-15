@@ -593,7 +593,7 @@ UncertaintyResolutionModeSetting IOSettings::getUncertaintyResolutionMode() cons
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Uncertainty resolution mode 'both' not yet implemented.");
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown nature resolution mode '" << uncertaintyResolutionModeString << "'.");
-    return UncertaintyResolutionModeSetting::Minimize;  // Should never happen but silences compiler warning
+    __builtin_unreachable();  // Should never happen but silences compiler warning
 }
 
 bool IOSettings::isUncertaintyResolutionModeSet() const {

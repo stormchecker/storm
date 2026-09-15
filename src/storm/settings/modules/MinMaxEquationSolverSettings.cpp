@@ -129,7 +129,7 @@ storm::solver::MinMaxMethod MinMaxEquationSolverSettings::getMinMaxEquationSolvi
 
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
                     "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
-    return storm::solver::MinMaxMethod::ValueIteration;  // Should never happen but silences compiler warning
+    __builtin_unreachable();  // Should never happen but silences compiler warning
 }
 
 bool MinMaxEquationSolverSettings::isMinMaxEquationSolvingMethodSetFromDefaultValue() const {
@@ -174,7 +174,7 @@ storm::solver::MultiplicationStyle MinMaxEquationSolverSettings::getValueIterati
         return storm::solver::MultiplicationStyle::Regular;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
-    return storm::solver::MultiplicationStyle::GaussSeidel;  // Should never happen but silences compiler warning
+    __builtin_unreachable();  // Should never happen but silences compiler warning
 }
 
 bool MinMaxEquationSolverSettings::isForceUniqueSolutionRequirementSet() const {

@@ -34,7 +34,7 @@ storm::solver::MultiplierType MultiplierSettings::getMultiplierType() const {
     }
 
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplier type '" << type << "'.");
-    return storm::solver::MultiplierType::Native;  // Should never happen but silences compiler warning
+    __builtin_unreachable();  // Should never happen but silences compiler warning
 }
 
 bool MultiplierSettings::isMultiplierTypeSetFromDefaultValue() const {

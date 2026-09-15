@@ -92,7 +92,7 @@ storm::solver::EigenLinearEquationSolverMethod EigenEquationSolverSettings::getL
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
                     "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
-    return storm::solver::EigenLinearEquationSolverMethod::SparseLU;  // Should never happen but silences compiler warning
+    __builtin_unreachable();  // Should never happen but silences compiler warning
 }
 
 bool EigenEquationSolverSettings::isPreconditioningMethodSet() const {
@@ -110,7 +110,7 @@ storm::solver::EigenLinearEquationSolverPreconditioner EigenEquationSolverSettin
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
                     "Unknown preconditioning technique '" << PreconditioningMethodAsString << "' selected.");
-    return storm::solver::EigenLinearEquationSolverPreconditioner::Ilu;  // Should never happen but silences compiler warning
+    __builtin_unreachable();  // Should never happen but silences compiler warning
 }
 
 bool EigenEquationSolverSettings::isRestartIterationCountSet() const {

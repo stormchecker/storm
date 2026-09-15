@@ -182,7 +182,7 @@ DrnHeader parseHeader(std::istream& file) {
     }
     // If we reach this point, we reached end of file before @model was found.
     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Reached end of file before @model was found.");
-    return header;  // Should never happen but silences compiler warning
+    __builtin_unreachable();  // Should never happen but silences compiler warning
 }
 
 template<typename ValueType>
