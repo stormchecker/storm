@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 
+#include "storm/solver/SolutionBounds.h"
 #include "storm/solver/SolverStatus.h"
 #include "storm/solver/TerminationCondition.h"
 #include "storm/utility/ProgressMeasurement.h"
@@ -183,6 +184,20 @@ class AbstractEquationSolver {
     void clearBounds();
 
     /*!
+     * Retrieves whether the last call to this solver computed a sound lower resp. upper bound on the solution.
+     * Only some algorithms provide these, and they need not provide both.
+     */
+    bool hasSolutionLowerBounds() const;
+    bool hasSolutionUpperBounds() const;
+
+    /*!
+     * Retrieves sound bounds on the solution that the last call to this solver computed.
+     * @pre The respective bound was computed, see hasSolutionLowerBounds() resp. hasSolutionUpperBounds().
+     */
+    std::vector<ValueType> const& getSolutionLowerBounds() const;
+    std::vector<ValueType> const& getSolutionUpperBounds() const;
+
+    /*!
      * Retrieves whether progress is to be shown.
      */
     bool isShowProgressSet() const;
@@ -210,6 +225,18 @@ class AbstractEquationSolver {
      */
     TerminationCondition<ValueType> const& getTerminationCondition() const;
     std::unique_ptr<TerminationCondition<ValueType>> const& getTerminationConditionPointer() const;
+
+    /*!
+     * Stores sound bounds on the solution that were obtained while solving. Note that solving is const, so
+     * that this is as well.
+     */
+    void setSolutionBounds(SolutionBounds<ValueType> bounds) const;
+
+    /*!
+     * Discards any bounds on the solution obtained by a previous call. This must happen whenever solving
+     * starts, so that a solver that is reused does not report stale bounds.
+     */
+    void clearSolutionBounds() const;
 
     void createUpperBoundsVector(std::vector<ValueType>& upperBoundsVector) const;
     void createUpperBoundsVector(std::unique_ptr<std::vector<ValueType>>& upperBoundsVector, uint64_t length) const;
@@ -263,6 +290,9 @@ class AbstractEquationSolver {
     boost::optional<std::vector<ValueType>> upperBounds;
 
    private:
+    // Sound bounds on the solution, if the last call to this solver produced any.
+    mutable SolutionBounds<ValueType> solutionBounds;
+
     // Indicates the progress of this solver.
     mutable boost::optional<storm::utility::ProgressMeasurement> progressMeasurement;
 };

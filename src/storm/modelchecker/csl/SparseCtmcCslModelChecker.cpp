@@ -94,9 +94,10 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, pathFormula.getSubformula());
     ExplicitQualitativeCheckResult<ValueType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<ValueType>();
     auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
-    std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeGloballyProbabilities(
-        env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), probabilisticTransitions, probabilisticTransitions.transpose(),
-        subResult.getTruthValuesVector(), checkTask.isQualitativeSet());
+    std::vector<ValueType> numericResult = std::move(storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeGloballyProbabilities(
+                                                         env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), probabilisticTransitions,
+                                                         probabilisticTransitions.transpose(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet())
+                                                         .values);
     return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
 }
 

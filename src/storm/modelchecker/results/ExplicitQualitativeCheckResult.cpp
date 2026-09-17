@@ -4,6 +4,8 @@
 
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
+#include <algorithm>
+
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"
@@ -12,52 +14,35 @@ namespace storm {
 namespace modelchecker {
 
 template<typename ValueType>
-ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult() : truthValues(map_type()) {
-    // Intentionally left empty.
+ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(storm::storage::sparse::state_type state, bool value)
+    : states(storm::storage::BitVector(state + 1)), truthValues(1, value) {
+    states->set(state);
 }
 
 template<typename ValueType>
-ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(map_type const& map) : truthValues(map) {
-    // Intentionally left empty.
-}
-
-template<typename ValueType>
-ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(map_type&& map) : truthValues(map) {
-    // Intentionally left empty.
-}
-
-template<typename ValueType>
-ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(storm::storage::sparse::state_type state, bool value) : truthValues(map_type()) {
-    boost::get<map_type>(truthValues)[state] = value;
-}
-
-template<typename ValueType>
-ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(storm::storage::BitVector const& truthValues) : truthValues(truthValues) {
-    // Intentionally left empty.
-}
-
-template<typename ValueType>
-ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(storm::storage::BitVector&& truthValues) : truthValues(std::move(truthValues)) {
-    // Intentionally left empty.
-}
-
-template<typename ValueType>
-ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type> const& truthValues,
+ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(vector_type const& truthValues,
                                                                           std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
     : truthValues(truthValues), scheduler(scheduler) {
     // Intentionally left empty.
 }
 
 template<typename ValueType>
-ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type>&& truthValues,
+ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(vector_type&& truthValues,
                                                                           std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
     : truthValues(std::move(truthValues)), scheduler(scheduler) {
     // Intentionally left empty.
 }
 
 template<typename ValueType>
+ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(storm::storage::BitVector states, vector_type&& truthValues,
+                                                                          std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
+    : states(std::move(states)), truthValues(std::move(truthValues)), scheduler(scheduler) {
+    STORM_LOG_ASSERT(this->states->getNumberOfSetBits() == this->truthValues.size(), "Expected one truth value per selected state.");
+}
+
+template<typename ValueType>
 std::unique_ptr<CheckResult> ExplicitQualitativeCheckResult<ValueType>::clone() const {
-    return std::make_unique<ExplicitQualitativeCheckResult<ValueType>>(this->truthValues);
+    return std::make_unique<ExplicitQualitativeCheckResult<ValueType>>(*this);
 }
 
 template<typename ValueType>
@@ -65,34 +50,13 @@ void ExplicitQualitativeCheckResult<ValueType>::performLogicalOperation(Explicit
                                                                         bool logicalAnd) {
     STORM_LOG_THROW(second.isExplicitQualitativeCheckResult(), storm::exceptions::InvalidOperationException,
                     "Cannot perform logical 'and' on check results of incompatible type.");
-    STORM_LOG_THROW(first.isResultForAllStates() == second.isResultForAllStates(), storm::exceptions::InvalidOperationException,
-                    "Cannot perform logical 'and' on check results of incompatible type.");
     ExplicitQualitativeCheckResult<ValueType> const& secondCheckResult = static_cast<ExplicitQualitativeCheckResult<ValueType> const&>(second);
-    if (first.isResultForAllStates()) {
-        if (logicalAnd) {
-            boost::get<vector_type>(first.truthValues) &= boost::get<vector_type>(secondCheckResult.truthValues);
-        } else {
-            boost::get<vector_type>(first.truthValues) |= boost::get<vector_type>(secondCheckResult.truthValues);
-        }
+    STORM_LOG_THROW(first.states == secondCheckResult.states && first.truthValues.size() == secondCheckResult.truthValues.size(),
+                    storm::exceptions::InvalidOperationException, "Cannot perform logical 'and' on check results of incompatible type.");
+    if (logicalAnd) {
+        first.truthValues &= secondCheckResult.truthValues;
     } else {
-        std::function<bool(bool, bool)> function = logicalAnd ? std::function<bool(bool, bool)>([](bool a, bool b) { return a && b; })
-                                                              : std::function<bool(bool, bool)>([](bool a, bool b) { return a || b; });
-
-        map_type& map1 = boost::get<map_type>(first.truthValues);
-        map_type const& map2 = boost::get<map_type>(secondCheckResult.truthValues);
-        for (auto& element1 : map1) {
-            auto const& keyValuePair = map2.find(element1.first);
-            STORM_LOG_THROW(keyValuePair != map2.end(), storm::exceptions::InvalidOperationException,
-                            "Cannot perform logical 'and' on check results of incompatible type.");
-            element1.second = function(element1.second, keyValuePair->second);
-        }
-
-        // Double-check that there are no entries in map2 that the current result does not have.
-        for (auto const& element2 : map2) {
-            auto const& keyValuePair = map1.find(element2.first);
-            STORM_LOG_THROW(keyValuePair != map1.end(), storm::exceptions::InvalidOperationException,
-                            "Cannot perform logical 'and' on check results of incompatible type.");
-        }
+        first.truthValues |= secondCheckResult.truthValues;
     }
 }
 
@@ -110,78 +74,53 @@ QualitativeCheckResult& ExplicitQualitativeCheckResult<ValueType>::operator|=(Qu
 
 template<typename ValueType>
 bool ExplicitQualitativeCheckResult<ValueType>::existsTrue() const {
-    if (this->isResultForAllStates()) {
-        return !boost::get<vector_type>(truthValues).empty();
-    } else {
-        for (auto& element : boost::get<map_type>(truthValues)) {
-            if (element.second) {
-                return true;
-            }
-        }
-        return false;
-    }
+    return !truthValues.empty();
 }
 
 template<typename ValueType>
 bool ExplicitQualitativeCheckResult<ValueType>::forallTrue() const {
-    if (this->isResultForAllStates()) {
-        return boost::get<vector_type>(truthValues).full();
-    } else {
-        for (auto& element : boost::get<map_type>(truthValues)) {
-            if (!element.second) {
-                return false;
-            }
-        }
-        return true;
-    }
+    return truthValues.full();
 }
 
 template<typename ValueType>
 uint64_t ExplicitQualitativeCheckResult<ValueType>::count() const {
-    if (this->isResultForAllStates()) {
-        return boost::get<vector_type>(truthValues).getNumberOfSetBits();
-    } else {
-        uint64_t result = 0;
-        for (auto& element : boost::get<map_type>(truthValues)) {
-            if (element.second) {
-                ++result;
-            }
-        }
-        return result;
+    return truthValues.getNumberOfSetBits();
+}
+
+template<typename ValueType>
+bool ExplicitQualitativeCheckResult<ValueType>::hasValueForState(storm::storage::sparse::state_type state) const {
+    if (states) {
+        return state < states->size() && states->get(state);
     }
+    return state < truthValues.size();
+}
+
+template<typename ValueType>
+uint64_t ExplicitQualitativeCheckResult<ValueType>::getOffset(storm::storage::sparse::state_type state) const {
+    STORM_LOG_THROW(this->hasValueForState(state), storm::exceptions::InvalidOperationException, "Unknown key '" << state << "'.");
+    return states ? states->getNumberOfSetBitsBeforeIndex(state) : state;
 }
 
 template<typename ValueType>
 bool ExplicitQualitativeCheckResult<ValueType>::operator[](storm::storage::sparse::state_type state) const {
-    if (this->isResultForAllStates()) {
-        return boost::get<vector_type>(truthValues).get(state);
-    } else {
-        map_type const& map = boost::get<map_type>(truthValues);
-        auto const& keyValuePair = map.find(state);
-        STORM_LOG_THROW(keyValuePair != map.end(), storm::exceptions::InvalidOperationException, "Unknown key '" << state << "'.");
-        return keyValuePair->second;
-    }
+    return truthValues.get(this->getOffset(state));
+}
+
+template<typename ValueType>
+storm::storage::BitVector const& ExplicitQualitativeCheckResult<ValueType>::getStates() const {
+    STORM_LOG_THROW(!this->isResultForAllStates(), storm::exceptions::InvalidOperationException,
+                    "Unable to retrieve the states of a result that is for all states.");
+    return *states;
 }
 
 template<typename ValueType>
 typename ExplicitQualitativeCheckResult<ValueType>::vector_type const& ExplicitQualitativeCheckResult<ValueType>::getTruthValuesVector() const {
-    return boost::get<vector_type>(truthValues);
-}
-
-template<typename ValueType>
-typename ExplicitQualitativeCheckResult<ValueType>::map_type const& ExplicitQualitativeCheckResult<ValueType>::getTruthValuesMap() const {
-    return boost::get<map_type>(truthValues);
+    return truthValues;
 }
 
 template<typename ValueType>
 void ExplicitQualitativeCheckResult<ValueType>::complement() {
-    if (this->isResultForAllStates()) {
-        boost::get<vector_type>(truthValues).complement();
-    } else {
-        for (auto& element : boost::get<map_type>(truthValues)) {
-            element.second = !element.second;
-        }
-    }
+    truthValues.complement();
 }
 
 template<typename ValueType>
@@ -191,7 +130,7 @@ bool ExplicitQualitativeCheckResult<ValueType>::isExplicit() const {
 
 template<typename ValueType>
 bool ExplicitQualitativeCheckResult<ValueType>::isResultForAllStates() const {
-    return truthValues.which() == 0;
+    return !states.has_value();
 }
 
 template<typename ValueType>
@@ -201,44 +140,16 @@ bool ExplicitQualitativeCheckResult<ValueType>::isExplicitQualitativeCheckResult
 
 template<typename ValueType>
 std::ostream& ExplicitQualitativeCheckResult<ValueType>::writeToStream(std::ostream& out) const {
-    if (this->isResultForAllStates()) {
-        vector_type const& vector = boost::get<vector_type>(truthValues);
-        bool allTrue = vector.full();
-        bool allFalse = !allTrue && vector.empty();
-        if (allTrue) {
-            out << "{true}";
-        } else if (allFalse) {
-            out << "{false}";
-        } else {
-            out << "{true, false}";
-        }
+    if (!this->isResultForAllStates() && truthValues.size() == 1) {
+        std::ios::fmtflags oldflags(out.flags());
+        out << std::boolalpha << truthValues.get(0);
+        out.flags(oldflags);
+    } else if (truthValues.full()) {
+        out << "{true}";
+    } else if (truthValues.empty()) {
+        out << "{false}";
     } else {
-        std::ios::fmtflags oldflags(std::cout.flags());
-        out << std::boolalpha;
-
-        map_type const& map = boost::get<map_type>(truthValues);
-        if (map.size() == 1) {
-            out << map.begin()->second;
-        } else {
-            bool allTrue = true;
-            bool allFalse = true;
-            for (auto const& entry : map) {
-                if (entry.second) {
-                    allFalse = false;
-                } else {
-                    allTrue = false;
-                }
-            }
-            if (allTrue) {
-                out << "{true}";
-            } else if (allFalse) {
-                out << "{false}";
-            } else {
-                out << "{true, false}";
-            }
-        }
-
-        std::cout.flags(oldflags);
+        out << "{true, false}";
     }
     return out;
 }
@@ -251,27 +162,18 @@ void ExplicitQualitativeCheckResult<ValueType>::filter(QualitativeCheckResult co
     ExplicitQualitativeCheckResult<ValueType> const& explicitFilter = filter.template asExplicitQualitativeCheckResult<ValueType>();
     vector_type const& filterTruthValues = explicitFilter.getTruthValuesVector();
 
-    if (this->isResultForAllStates()) {
-        map_type newMap;
-        for (auto element : filterTruthValues) {
-            newMap.emplace(element, this->getTruthValuesVector().get(element));
-        }
-        this->truthValues = newMap;
-    } else {
-        map_type const& map = boost::get<map_type>(truthValues);
+    // Line the filter up with the states this result has truth values for. The two need not span the same range
+    // of states, e.g. if this result holds a truth value for a single state only.
+    uint64_t const numStates = std::max(filterTruthValues.size(), states ? states->size() : truthValues.size());
+    storm::storage::BitVector available = states ? *states : storm::storage::BitVector(truthValues.size(), true);
+    available.resize(numStates);
+    storm::storage::BitVector selected(filterTruthValues);
+    selected.resize(numStates);
+    STORM_LOG_THROW(selected.isSubsetOf(available), storm::exceptions::InvalidOperationException,
+                    "The check result fails to contain some results referred to by the filter.");
 
-        map_type newMap;
-        for (auto const& element : map) {
-            if (filterTruthValues.get(element.first)) {
-                newMap.insert(element);
-            }
-        }
-
-        STORM_LOG_THROW(newMap.size() == filterTruthValues.getNumberOfSetBits(), storm::exceptions::InvalidOperationException,
-                        "The check result fails to contain some results referred to by the filter.");
-
-        this->truthValues = newMap;
-    }
+    truthValues = truthValues % (selected % available);
+    states = filterTruthValues;
 }
 
 template<typename ValueType>
@@ -319,17 +221,9 @@ template<typename JsonRationalType>
 storm::json<JsonRationalType> ExplicitQualitativeCheckResult<ValueType>::toJson(std::optional<storm::storage::sparse::Valuations> const& stateValuations,
                                                                                 std::optional<storm::models::sparse::StateLabeling> const& stateLabels) const {
     storm::json<JsonRationalType> result;
-    if (this->isResultForAllStates()) {
-        vector_type const& valuesAsVector = boost::get<vector_type>(truthValues);
-        for (uint64_t state = 0; state < valuesAsVector.size(); ++state) {
-            insertJsonEntry(result, state, valuesAsVector.get(state), stateValuations, stateLabels);
-        }
-    } else {
-        map_type const& valuesAsMap = boost::get<map_type>(truthValues);
-        for (auto const& stateValue : valuesAsMap) {
-            insertJsonEntry(result, stateValue.first, stateValue.second, stateValuations, stateLabels);
-        }
-    }
+    this->forEachState([&](storm::storage::sparse::state_type state, uint64_t offset) {
+        insertJsonEntry(result, state, truthValues.get(offset), stateValuations, stateLabels);
+    });
     return result;
 }
 
