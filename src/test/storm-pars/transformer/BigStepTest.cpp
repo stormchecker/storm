@@ -21,7 +21,6 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/solver/OptimizationDirection.h"
-#include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/prism/Program.h"
 #include "storm/utility/constants.h"
 
@@ -35,8 +34,7 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> const checkTask(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas, storm::storage::BisimulationType::Strong)
-               ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     storm::transformer::BigStep BigStep;
     auto timeTravelledDtmc = BigStep.bigStep(*dtmc, checkTask).first;

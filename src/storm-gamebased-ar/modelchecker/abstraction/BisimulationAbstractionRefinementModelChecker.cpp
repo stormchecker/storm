@@ -55,7 +55,7 @@ void BisimulationAbstractionRefinementModelChecker<ModelType>::initializeAbstrac
     }
 
     // Create the bisimulation object.
-    this->bisimulation = std::make_unique<storm::dd::BisimulationDecomposition<DdType, ValueType>>(this->model, storm::storage::BisimulationType::Strong,
+    this->bisimulation = std::make_unique<storm::dd::BisimulationDecomposition<DdType, ValueType>>(this->model, storm::bisimulation::BisimulationType::Strong,
                                                                                                    preservationInformation);
 }
 

@@ -14,6 +14,7 @@
 #include "storm/models/ModelType.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
+#include "storm/transformer/bisimulation/Options.h"
 #include "storm/utility/bitoperations.h"
 
 namespace storm::dft {
@@ -157,6 +158,19 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
     }
 }
 
+namespace {
+template<typename ValueType>
+auto getBisimOptions() {
+    storm::bisimulation::Options bisimOptions;
+    bisimOptions.bisimulationType = storm::bisimulation::BisimulationType::Weak;
+    if constexpr (std::is_same_v<ValueType, double>) {
+        bisimOptions.tolerance =
+            storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision() * 1e-3);
+    }
+    return bisimOptions;
+}
+}  // namespace
+
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueType>::buildModelViaComposition(
     storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
@@ -221,8 +235,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
 
             // Apply bisimulation to new CTMC
             bisimulationTimer.start();
-            ctmc = storm::api::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(
-                       ctmc, properties, storm::storage::BisimulationType::Weak)
+            ctmc = storm::api::performBisimulationMinimization<ValueType>(ctmc, properties, getBisimOptions<ValueType>())
                        ->template as<storm::models::sparse::Ctmc<ValueType>>();
             bisimulationTimer.stop();
 
@@ -235,8 +248,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
 
             // Apply bisimulation to parallel composition
             bisimulationTimer.start();
-            composedModel = storm::api::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(
-                                composedModel, properties, storm::storage::BisimulationType::Weak)
+            composedModel = storm::api::performBisimulationMinimization<ValueType>(composedModel, properties, getBisimOptions<ValueType>())
                                 ->template as<storm::models::sparse::Ctmc<ValueType>>();
             bisimulationTimer.stop();
 
@@ -447,9 +459,7 @@ std::vector<typename DFTModelChecker<ValueType>::ExtendedValueType> DFTModelChec
     if (model->isOfType(storm::models::ModelType::Ctmc) && storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet()) {
         bisimulationTimer.start();
         STORM_LOG_DEBUG("Bisimulation...");
-        model = storm::api::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(
-                    model->template as<storm::models::sparse::Ctmc<ValueType>>(), properties, storm::storage::BisimulationType::Weak)
-                    ->template as<storm::models::sparse::Ctmc<ValueType>>();
+        model = storm::api::performBisimulationMinimization<ValueType>(model, properties, getBisimOptions<ValueType>());
         STORM_LOG_DEBUG("No. states (Bisimulation): " << model->getNumberOfStates());
         STORM_LOG_DEBUG("No. transitions (Bisimulation): " << model->getNumberOfTransitions());
         bisimulationTimer.stop();

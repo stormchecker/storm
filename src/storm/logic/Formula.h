@@ -113,6 +113,12 @@ class Formula : public std::enable_shared_from_this<Formula> {
     boost::any accept(FormulaVisitor const& visitor) const;
     virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const = 0;
 
+    /*!
+     * Invokes the given callback on this formula and on its subformulas in pre-order, i.e., a formula is visited before its subformulas.
+     * @param callback the subformulas of a formula are only visited if the callback returns true for that formula.
+     */
+    void traverse(std::function<bool(Formula const&)> const& callback) const;
+
     static std::shared_ptr<Formula const> getTrueFormula();
 
     bool isInitialFormula() const;

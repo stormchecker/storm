@@ -94,7 +94,7 @@ Partition<DdType, ValueType>::extractConstraintTargetFormulas(storm::logic::Form
 
 template<storm::dd::DdType DdType, typename ValueType>
 Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model,
-                                                                  storm::storage::BisimulationType const& bisimulationType,
+                                                                  storm::bisimulation::BisimulationType const& bisimulationType,
                                                                   std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
                                                                   BisimulationOptions const& bisimulationOptions) {
     boost::optional<std::pair<std::shared_ptr<storm::logic::Formula const>, std::shared_ptr<storm::logic::Formula const>>> constraintTargetFormulas;
@@ -102,7 +102,7 @@ Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models:
         constraintTargetFormulas = extractConstraintTargetFormulas(*formulas.front());
     }
 
-    if (constraintTargetFormulas && bisimulationType == storm::storage::BisimulationType::Strong) {
+    if (constraintTargetFormulas && bisimulationType == storm::bisimulation::BisimulationType::Strong) {
         return createDistanceBased(model, *constraintTargetFormulas.get().first, *constraintTargetFormulas.get().second);
     } else {
         return create(model, bisimulationType, PreservationInformation<DdType, ValueType>(model, formulas));
@@ -111,7 +111,7 @@ Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models:
 
 template<storm::dd::DdType DdType, typename ValueType>
 Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model,
-                                                                  storm::storage::BisimulationType const& bisimulationType,
+                                                                  storm::bisimulation::BisimulationType const& bisimulationType,
                                                                   PreservationInformation<DdType, ValueType> const& preservationInformation) {
     std::vector<storm::expressions::Expression> expressionVector;
     for (auto const& expression : preservationInformation.getExpressions()) {
@@ -205,8 +205,8 @@ std::pair<storm::expressions::Variable, storm::expressions::Variable> Partition<
 template<storm::dd::DdType DdType, typename ValueType>
 Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model,
                                                                   std::vector<storm::expressions::Expression> const& expressions,
-                                                                  storm::storage::BisimulationType const& bisimulationType) {
-    STORM_LOG_THROW(bisimulationType == storm::storage::BisimulationType::Strong, storm::exceptions::NotSupportedException,
+                                                                  storm::bisimulation::BisimulationType const& bisimulationType) {
+    STORM_LOG_THROW(bisimulationType == storm::bisimulation::BisimulationType::Strong, storm::exceptions::NotSupportedException,
                     "Currently only strong bisimulation is supported.");
 
     std::pair<storm::expressions::Variable, storm::expressions::Variable> blockVariables = createBlockVariables(model);

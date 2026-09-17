@@ -31,7 +31,7 @@ std::unique_ptr<PartitionRefiner<DdType, ValueType>> createRefiner(storm::models
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model,
-                                                                                         storm::storage::BisimulationType const& bisimulationType,
+                                                                                         storm::bisimulation::BisimulationType const& bisimulationType,
                                                                                          bisimulation::BisimulationOptions const& bisimulationOptions)
     : model(model),
       preservationInformation(model),
@@ -42,7 +42,7 @@ BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecom
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(
-    storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType,
+    storm::models::symbolic::Model<DdType, ValueType> const& model, storm::bisimulation::BisimulationType const& bisimulationType,
     bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation, bisimulation::BisimulationOptions const& bisimulationOptions)
     : model(model),
       preservationInformation(preservationInformation),
@@ -54,7 +54,7 @@ BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecom
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(
     storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
-    storm::storage::BisimulationType const& bisimulationType, bisimulation::BisimulationOptions const& bisimulationOptions)
+    storm::bisimulation::BisimulationType const& bisimulationType, bisimulation::BisimulationOptions const& bisimulationOptions)
     : model(model),
       preservationInformation(model, formulas),
       bisimulationOptions(bisimulationOptions),
