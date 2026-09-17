@@ -72,6 +72,13 @@ if(NOT STORM_DISABLE_SPOT)
             message(WARNING "Storm - Building Spot in DEBUG mode.")
             set(STORM_SPOT_FLAGS "${STORM_SPOT_FLAGS};--enable-devel;--enable-debug;--disable-optimizations")
         endif()
+        # Spot links against libatomic when the target CPU isn't guaranteed to support CMPXCHG16B (relevant when STORM_PORTABLE=ON).
+        # This leads to issues on Linux when building stormpy wheels because libatomic is not present.
+        # As fix, we pre-seed LIBS with a statically linked libatomic so that the check already succeeds.
+        set(STORM_SPOT_LIBS "")
+        if (NOT MACOSX AND STORM_PORTABLE)
+            set(STORM_SPOT_LIBS "LIBS=-l:libatomic.a")
+        endif()
         ExternalProject_Add(Spot
                 URL https://www.lre.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz https://www.lrde.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz
                 DOWNLOAD_NO_PROGRESS TRUE
@@ -79,7 +86,7 @@ if(NOT STORM_DISABLE_SPOT)
                 DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
                 SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
                 PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
-                CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot "CC=${STORM_SPOT_CC}" "CXX=${STORM_SPOT_CXX}" ${STORM_SPOT_FLAGS}
+                CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot "CC=${STORM_SPOT_CC}" "CXX=${STORM_SPOT_CXX}" ${STORM_SPOT_LIBS} ${STORM_SPOT_FLAGS}
                 BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
                 INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
                 COMMAND ${SPOT_RPATH_FIX_COMMAND1}
