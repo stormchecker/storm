@@ -53,6 +53,7 @@ std::vector<storm::jani::Property> parseProperties(std::string const& inputStrin
         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                         e.what() << "Note that the used API function does not have access to model variables. If the property you tried to parse contains "
                                     "model variables, it will not be parsed correctly.");
+        return {};  // Should never happen but silences compiler warning
     }
 }
 

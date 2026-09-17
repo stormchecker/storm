@@ -84,6 +84,7 @@ storm::solver::LraMethod LongRunAverageSolverSettings::getDetLraMethod() const {
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
                     "Unknown lra solving technique for deterministic models:'" << lraMethodString << "'.");
+    return storm::solver::LraMethod::LinearProgramming;  // Should never happen but silences compiler warning
 }
 
 bool LongRunAverageSolverSettings::isDetLraMethodSetFromDefaultValue() const {
@@ -100,6 +101,7 @@ storm::solver::LraMethod LongRunAverageSolverSettings::getNondetLraMethod() cons
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
                     "Unknown lra solving technique for nondeterministic models:'" << lraMethodString << "'.");
+    return storm::solver::LraMethod::LinearProgramming;  // Should never happen but silences compiler warning
 }
 
 bool LongRunAverageSolverSettings::isNondetLraMethodSetFromDefaultValue() const {

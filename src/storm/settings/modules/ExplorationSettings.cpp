@@ -91,6 +91,7 @@ ExplorationSettings::PrecomputationType ExplorationSettings::getPrecomputationTy
         return ExplorationSettings::PrecomputationType::Global;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown precomputation type '" << typeAsString << "'.");
+    return ExplorationSettings::PrecomputationType::Local;  // Should never happen but silences compiler warning
 }
 
 uint_fast64_t ExplorationSettings::getNumberOfExplorationStepsUntilPrecomputation() const {
@@ -115,6 +116,7 @@ ExplorationSettings::NextStateHeuristic ExplorationSettings::getNextStateHeurist
         return ExplorationSettings::NextStateHeuristic::Uniform;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown next-state heuristic '" << nextStateHeuristicAsString << "'.");
+    return ExplorationSettings::NextStateHeuristic::DifferenceProbabilitySum;  // Should never happen but silences compiler warning
 }
 
 double ExplorationSettings::getPrecision() const {

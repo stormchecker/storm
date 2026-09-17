@@ -145,6 +145,7 @@ boost::any LinearCoefficientVisitor::visit(UnaryNumericalFunctionExpression cons
         return childResult;
     } else {
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+        return VariableCoefficients();  // Should never happen but silences compiler warning
     }
 }
 

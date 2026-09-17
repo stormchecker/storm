@@ -121,6 +121,7 @@ storm::solver::EquationSolverType CoreSettings::getEquationSolver() const {
         return storm::solver::EquationSolverType::Acyclic;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown equation solver '" << equationSolverName << "'.");
+    return storm::solver::EquationSolverType::Native;  // Should never happen but silences compiler warning
 }
 
 bool CoreSettings::isEquationSolverSet() const {
@@ -145,6 +146,7 @@ storm::solver::LpSolverType CoreSettings::getLpSolver() const {
         return storm::solver::LpSolverType::Z3;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << lpSolverName << "'.");
+    return storm::solver::LpSolverType::Glpk;  // Should never happen but silences compiler warning
 }
 
 bool CoreSettings::isLpSolverSetFromDefaultValue() const {
@@ -159,6 +161,7 @@ storm::solver::SmtSolverType CoreSettings::getSmtSolver() const {
         return storm::solver::SmtSolverType::Mathsat;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown SMT solver '" << smtSolverName << "'.");
+    return storm::solver::SmtSolverType::Z3;  // Should never happen but silences compiler warning
 }
 
 storm::dd::DdType CoreSettings::getDdLibraryType() const {

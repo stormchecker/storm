@@ -85,6 +85,7 @@ storm::solver::GmmxxLinearEquationSolverMethod GmmxxEquationSolverSettings::getL
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
                     "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
+    return storm::solver::GmmxxLinearEquationSolverMethod::Bicgstab;  // Should never happen but silences compiler warning
 }
 
 bool GmmxxEquationSolverSettings::isPreconditioningMethodSet() const {
@@ -102,6 +103,7 @@ storm::solver::GmmxxLinearEquationSolverPreconditioner GmmxxEquationSolverSettin
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
                     "Unknown preconditioning technique '" << preconditioningMethodAsString << "' selected.");
+    return storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu;  // Should never happen but silences compiler warning
 }
 
 bool GmmxxEquationSolverSettings::isRestartIterationCountSet() const {

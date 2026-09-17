@@ -78,6 +78,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb0or
         }
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Prob0or1 analysis is not supported for the property " << formula << ".");
+    return storm::storage::BitVector();  // Should never happen but silences compiler warning
 }
 
 template<typename ValueType>

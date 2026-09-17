@@ -728,6 +728,7 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
         STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException,
                         "Looking for operator for formula " << propertyStructure.dump() << ", but did not find one.");
     }
+    return nullptr;  // Should never happen but silences compiler warning
 }
 
 template<typename ValueType>

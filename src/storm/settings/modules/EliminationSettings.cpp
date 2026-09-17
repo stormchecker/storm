@@ -64,6 +64,7 @@ storm::solver::stateelimination::EliminationMethod EliminationSettings::getElimi
         return storm::solver::stateelimination::EliminationMethod::Hybrid;
     } else {
         STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal elimination method selected.");
+        return storm::solver::stateelimination::EliminationMethod::State;  // Should never happen but silences compiler warning
     }
 }
 
@@ -87,6 +88,7 @@ storm::solver::stateelimination::EliminationOrder EliminationSettings::getElimin
         return storm::solver::stateelimination::EliminationOrder::RegularExpression;
     } else {
         STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal elimination order selected.");
+        return storm::solver::stateelimination::EliminationOrder::Forward;  // Should never happen but silences compiler warning
     }
 }
 

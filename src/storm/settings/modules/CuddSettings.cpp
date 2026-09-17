@@ -123,6 +123,7 @@ storm::dd::CuddReorderingTechnique CuddSettings::getReorderingTechnique() const 
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
                     "Illegal value '" << reorderingTechniqueAsString << "' set as reordering technique of Cudd.");
+    return storm::dd::CuddReorderingTechnique::None;  // Should never happen but silences compiler warning
 }
 
 }  // namespace modules

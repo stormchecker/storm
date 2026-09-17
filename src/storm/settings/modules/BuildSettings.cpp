@@ -192,6 +192,7 @@ storm::builder::ExplorationOrder BuildSettings::getExplorationOrder() const {
         return storm::builder::ExplorationOrder::Bfs;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown exploration order '" << explorationOrderAsString << "'.");
+    return storm::builder::ExplorationOrder::Dfs;  // Should never happen but silences compiler warning
 }
 
 bool BuildSettings::isExplorationChecksSet() const {

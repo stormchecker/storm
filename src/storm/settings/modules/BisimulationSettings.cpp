@@ -141,6 +141,7 @@ storm::dd::bisimulation::SignatureMode BisimulationSettings::getSignatureMode() 
         return storm::dd::bisimulation::SignatureMode::Lazy;
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unknown signature mode '" << modeAsString << ".");
+    return storm::dd::bisimulation::SignatureMode::Eager;  // Should never happen but silences compiler warning
 }
 
 storm::dd::bisimulation::ReuseMode BisimulationSettings::getReuseMode() const {

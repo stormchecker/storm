@@ -84,6 +84,7 @@ storm::transformer::EliminationLabelBehavior TransformationSettings::getLabelBeh
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
                     "Illegal value '" << labelBehaviorAsString << "' set as label behavior for the elimination.");
+    return storm::transformer::EliminationLabelBehavior::KeepLabels;  // Should never happen but silences compiler warning
 }
 
 bool TransformationSettings::isToNondeterministicModelSet() const {

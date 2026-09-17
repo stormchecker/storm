@@ -85,6 +85,7 @@ storm::solver::EquationSolverType TopologicalEquationSolverSettings::getUnderlyi
         return storm::solver::EquationSolverType::Elimination;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown underlying equation solver '" << equationSolverName << "'.");
+    return storm::solver::EquationSolverType::Native;  // Should never happen but silences compiler warning
 }
 
 bool TopologicalEquationSolverSettings::isUnderlyingMinMaxMethodSet() const {
@@ -121,6 +122,7 @@ storm::solver::MinMaxMethod TopologicalEquationSolverSettings::getUnderlyingMinM
     }
 
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown underlying equation solver '" << minMaxEquationSolvingTechnique << "'.");
+    return storm::solver::MinMaxMethod::ValueIteration;  // Should never happen but silences compiler warning
 }
 
 bool TopologicalEquationSolverSettings::isExtendRelevantValues() const {

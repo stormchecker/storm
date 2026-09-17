@@ -224,6 +224,7 @@ AbstractionSettings::Method AbstractionSettings::getAbstractionRefinementMethod(
         return Method::Bisimulation;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown abstraction-refinement method '" << methodAsString << "'.");
+    return Method::Games;  // Should never happen but silences compiler warning
 }
 
 bool AbstractionSettings::isUseDecompositionSet() const {
@@ -292,6 +293,7 @@ AbstractionSettings::PivotSelectionHeuristic AbstractionSettings::getPivotSelect
         return AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown pivot selection heuristic '" << heuristicName << "'.");
+    return AbstractionSettings::PivotSelectionHeuristic::NearestMaximalDeviation;  // Should never happen but silences compiler warning
 }
 
 AbstractionSettings::ReuseMode AbstractionSettings::getReuseMode() const {

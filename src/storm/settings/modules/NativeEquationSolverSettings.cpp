@@ -120,6 +120,7 @@ storm::solver::NativeLinearEquationSolverMethod NativeEquationSolverSettings::ge
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
                     "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
+    return storm::solver::NativeLinearEquationSolverMethod::Jacobi;  // Should never happen but silences compiler warning
 }
 
 bool NativeEquationSolverSettings::isMaximalIterationCountSet() const {
@@ -159,6 +160,7 @@ storm::solver::MultiplicationStyle NativeEquationSolverSettings::getPowerMethodM
         return storm::solver::MultiplicationStyle::Regular;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
+    return storm::solver::MultiplicationStyle::GaussSeidel;  // Should never happen but silences compiler warning
 }
 
 bool NativeEquationSolverSettings::isForceIntervalIterationSymmetricUpdatesSet() const {

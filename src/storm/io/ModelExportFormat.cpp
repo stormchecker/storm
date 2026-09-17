@@ -52,6 +52,7 @@ ModelExportFormat getModelExportFormatFromFileExtension(std::string const& filen
             false, storm::exceptions::InvalidArgumentException,
             "The file '" << filename
                          << "' does not have an extension to determine the model export format from. Add a file extension or specify the format explicitly.");
+        return ModelExportFormat::Dot;  // Should never happen but silences compiler warning
     }
 }
 

@@ -57,6 +57,7 @@ storm::solver::GameMethod GameSolverSettings::getGameSolvingMethod() const {
         return storm::solver::GameMethod::PolicyIteration;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown game solving technique '" << gameSolvingTechnique << "'.");
+    return storm::solver::GameMethod::PolicyIteration;  // Should never happen but silences compiler warning
 }
 
 bool GameSolverSettings::isGameSolvingMethodSet() const {
