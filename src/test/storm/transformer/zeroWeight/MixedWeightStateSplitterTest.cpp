@@ -39,7 +39,7 @@ storm::storage::SparseMatrix<ValueType> buildExpectedSplitMatrix() {
     builder.addNextValue(7, 3, one);
     builder.newRowGroup(8);
     builder.addNextValue(8, 1, half);
-    builder.addNextValue(8, 2, half);
+    builder.addNextValue(8, 3, half);
     builder.addNextValue(9, 3, one);
     builder.newRowGroup(10);
     builder.addNextValue(10, 3, one);
@@ -71,7 +71,8 @@ TYPED_TEST(MixedWeightStateSplitterTest, SplitsMixedStatesAndUpdatesAnalysis) {
     expectedInitials.resize(6, false);
     EXPECT_EQ(expectedTargets, result.targetStates);
     EXPECT_EQ(expectedInitials, result.initialStates);
-    auto const expected = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(result.transitionMatrix, result.actionWeights, result.targetStates);
+    auto const expected =
+        storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(result.transitionMatrix, result.actionWeights, result.targetStates, result.initialStates);
 
     EXPECT_EQ(expected.zeroWeightChoices, result.analysis.zeroWeightChoices);
     EXPECT_EQ(expected.statesWithZeroWeightChoices, result.analysis.statesWithZeroWeightChoices);

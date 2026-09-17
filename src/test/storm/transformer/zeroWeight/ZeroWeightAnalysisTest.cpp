@@ -48,8 +48,9 @@ TYPED_TEST(ZeroWeightAnalysisTest, ClassifiesNonTargetActionsAndStates) {
                                                   storm::utility::zero<ValueType>()};
     storm::storage::BitVector targetStates(4, false);
     targetStates.set(3);
+    storm::storage::BitVector initialStates(4, false);
 
-    auto const result = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, actionWeights, targetStates);
+    auto const result = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, actionWeights, targetStates, initialStates);
 
     storm::storage::BitVector expectedZeroWeightChoices(5, false);
     expectedZeroWeightChoices.set(1);
@@ -79,11 +80,15 @@ TYPED_TEST(ZeroWeightAnalysisTest, RejectsMismatchingInputSizes) {
     auto const matrix = buildSelfLoopMatrix<ValueType>({1, 1});
     std::vector<ValueType> const validActionWeights(2, storm::utility::one<ValueType>());
     storm::storage::BitVector const validTargetStates(2, false);
+    storm::storage::BitVector const validInitialStates(2, false);
 
+    EXPECT_THROW(storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, std::vector<ValueType>(1, storm::utility::one<ValueType>()),
+                                                                            validTargetStates, validInitialStates),
+                 storm::exceptions::InvalidArgumentException);
     EXPECT_THROW(
-        storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, std::vector<ValueType>(1, storm::utility::one<ValueType>()), validTargetStates),
+        storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, validActionWeights, storm::storage::BitVector(1, false), validInitialStates),
         storm::exceptions::InvalidArgumentException);
-    EXPECT_THROW(storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, validActionWeights, storm::storage::BitVector(1, false)),
+    EXPECT_THROW(storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, validActionWeights, validTargetStates, storm::storage::BitVector(1, false)),
                  storm::exceptions::InvalidArgumentException);
 }
 
@@ -91,7 +96,7 @@ TYPED_TEST(ZeroWeightAnalysisTest, FindsWeakComponents) {
     using ValueType = TypeParam;
     auto const model = storm::test::zeroWeight::buildWeakComponentModel<ValueType>();
 
-    auto const result = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(model.matrix, model.weights, model.targets);
+    auto const result = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(model.matrix, model.weights, model.targets, model.initials);
 
     ASSERT_EQ(2ull, result.weakComponents.size());
     EXPECT_EQ((std::vector<uint64_t>{0, 1}), result.weakComponents[0].states);
@@ -106,7 +111,8 @@ TYPED_TEST(ZeroWeightAnalysisTest, FindsNoComponentsWithoutZeroWeights) {
     auto const matrix = buildSelfLoopMatrix<ValueType>({1, 1});
     std::vector<ValueType> const actionWeights(2, storm::utility::one<ValueType>());
 
-    auto const result = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, actionWeights, storm::storage::BitVector(2, false));
+    auto const result = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, actionWeights, storm::storage::BitVector(2, false),
+                                                                                   storm::storage::BitVector(2, false));
 
     EXPECT_TRUE(result.weakComponents.empty());
     EXPECT_EQ((std::vector<uint64_t>(2, std::numeric_limits<uint64_t>::max())), result.stateToWeakComponent);
@@ -117,14 +123,15 @@ TYPED_TEST(ZeroWeightAnalysisTest, RejectsNegativeWeights) {
     auto const matrix = buildSelfLoopMatrix<ValueType>({1});
     std::vector<ValueType> const actionWeights = {-storm::utility::one<ValueType>()};
 
-    EXPECT_THROW(storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, actionWeights, storm::storage::BitVector(1, false)),
+    EXPECT_THROW(storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, actionWeights, storm::storage::BitVector(1, false),
+                                                                            storm::storage::BitVector(1, false)),
                  storm::exceptions::InvalidArgumentException);
 }
 
 TYPED_TEST(ZeroWeightAnalysisTest, CollectsInterfacesAfterMixedStateSplitting) {
     using ValueType = TypeParam;
     auto const model = storm::test::zeroWeight::buildMixedModel<ValueType>();
-    auto unsplitAnalysis = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(model.matrix, model.weights, model.targets);
+    auto unsplitAnalysis = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(model.matrix, model.weights, model.targets, model.initials);
     EXPECT_THROW(storm::transformer::ZeroWeightAnalysis<ValueType>::analyzeComponentInterfaces(model.matrix, unsplitAnalysis),
                  storm::exceptions::InvalidArgumentException);
 
@@ -142,7 +149,7 @@ TYPED_TEST(ZeroWeightAnalysisTest, CollectsInterfacesAfterMixedStateSplitting) {
 TYPED_TEST(ZeroWeightAnalysisTest, SeparatesComponentsAndDeduplicatesInterfaces) {
     using ValueType = TypeParam;
     auto const model = storm::test::zeroWeight::buildComponentInterfaceModel<ValueType>();
-    auto analysis = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(model.matrix, model.weights, model.targets);
+    auto analysis = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(model.matrix, model.weights, model.targets, model.initials);
     storm::transformer::ZeroWeightAnalysis<ValueType>::analyzeComponentInterfaces(model.matrix, analysis);
 
     ASSERT_EQ(2ull, analysis.weakComponents.size());
@@ -154,6 +161,68 @@ TYPED_TEST(ZeroWeightAnalysisTest, SeparatesComponentsAndDeduplicatesInterfaces)
     EXPECT_EQ((std::vector<uint64_t>{3, 4}), analysis.weakComponents[1].entryStates);
     EXPECT_EQ((std::vector<uint64_t>{0, 7}), analysis.weakComponents[1].positivePredecessorRows);
     EXPECT_EQ((std::vector<uint64_t>{5, 6}), analysis.weakComponents[1].boundaryStates);
+}
+
+TYPED_TEST(ZeroWeightAnalysisTest, IgnoresUnreachableZeroWeightStatesAndChecksInitialStates) {
+    using ValueType = TypeParam;
+    auto const one = storm::utility::one<ValueType>();
+    storm::storage::SparseMatrixBuilder<ValueType> builder(5, 5, 5, true, true, 5);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 1, one);
+    builder.newRowGroup(1);
+    builder.addNextValue(1, 4, one);
+    builder.newRowGroup(2);
+    builder.addNextValue(2, 2, one);
+    builder.newRowGroup(3);
+    builder.addNextValue(3, 1, one);
+    builder.newRowGroup(4);
+    builder.addNextValue(4, 4, one);
+    auto const matrix = builder.build();
+    std::vector<ValueType> const actionWeights = {one, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>(),
+                                                  storm::utility::zero<ValueType>()};
+    storm::storage::BitVector targetStates(5, false);
+    targetStates.set(4);
+    storm::storage::BitVector initialStates(5, false);
+    initialStates.set(0);
+
+    auto const result = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, actionWeights, targetStates, initialStates);
+
+    ASSERT_EQ(1ull, result.weakComponents.size());
+    EXPECT_EQ((std::vector<uint64_t>{1}), result.weakComponents[0].states);
+    uint64_t const invalidComponent = std::numeric_limits<uint64_t>::max();
+    EXPECT_EQ((std::vector<uint64_t>{invalidComponent, 0, invalidComponent, invalidComponent, invalidComponent}), result.stateToWeakComponent);
+
+    initialStates.set(2);
+    EXPECT_THROW(storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, actionWeights, targetStates, initialStates),
+                 storm::exceptions::InvalidArgumentException);
+}
+
+TYPED_TEST(ZeroWeightAnalysisTest, ChecksLocalRatherThanGlobalProperness) {
+    using ValueType = TypeParam;
+    auto const one = storm::utility::one<ValueType>();
+    auto const zero = storm::utility::zero<ValueType>();
+    storm::storage::SparseMatrixBuilder<ValueType> builder(5, 4, 5, true, true, 4);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 1, one);
+    builder.newRowGroup(1);
+    builder.addNextValue(1, 1, one);
+    builder.addNextValue(2, 2, one);
+    builder.newRowGroup(3);
+    builder.addNextValue(3, 2, one);
+    builder.newRowGroup(4);
+    builder.addNextValue(4, 3, one);
+    auto const matrix = builder.build();
+    storm::storage::BitVector targetStates(4, false);
+    targetStates.set(3);
+    storm::storage::BitVector initialStates(4, false);
+    initialStates.set(0);
+    auto properResult = storm::transformer::MixedWeightStateSplitter<ValueType>::split(matrix, {one, one, zero, one, zero}, targetStates, initialStates);
+    storm::transformer::ZeroWeightAnalysis<ValueType>::analyzeComponentInterfaces(properResult.transitionMatrix, properResult.analysis);
+
+    auto improperAnalysis = storm::transformer::ZeroWeightAnalysis<ValueType>::analyze(matrix, {one, zero, zero, one, zero}, targetStates, initialStates);
+
+    EXPECT_THROW(storm::transformer::ZeroWeightAnalysis<ValueType>::analyzeComponentInterfaces(matrix, improperAnalysis),
+                 storm::exceptions::InvalidArgumentException);
 }
 
 }  // namespace

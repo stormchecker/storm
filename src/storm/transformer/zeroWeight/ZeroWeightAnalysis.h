@@ -36,19 +36,19 @@ class ZeroWeightAnalysis {
     };
 
     /*!
-     * Classifies non-target actions and states and finds weak zero-weight components.
+     * Classifies non-target actions and states and finds weak components of reachable zero-weight states.
      *
      * @param transitionMatrix The transition matrix.
      * @param actionWeights One nonnegative weight per matrix row.
      * @param targetStates States excluded from the classification.
+     * @param initialStates States used to restrict component discovery.
      * @return The classification and component membership.
      */
     static Result analyze(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& actionWeights,
-                          storm::storage::BitVector const& targetStates);
+                          storm::storage::BitVector const& targetStates, storm::storage::BitVector const& initialStates);
 
     /*!
-     * Fills sorted, unique component interfaces after mixed-state splitting.
-     * Boundaries cover the whole component. Properness is not checked.
+     * Fills component interfaces and checks universal boundary reachability.
      *
      * @param transitionMatrix The split transition matrix.
      * @param analysis Matching analysis, updated in place.

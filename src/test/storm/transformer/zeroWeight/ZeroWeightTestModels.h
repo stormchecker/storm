@@ -28,7 +28,7 @@ ZeroWeightTestModel<ValueType> buildMixedModel() {
     builder.addNextValue(1, 2, one);
     builder.newRowGroup(2);
     builder.addNextValue(2, 1, half);
-    builder.addNextValue(2, 2, half);
+    builder.addNextValue(2, 3, half);
     builder.addNextValue(3, 2, half);
     builder.addNextValue(3, 3, half);
     builder.addNextValue(4, 3, one);
@@ -55,30 +55,30 @@ template<typename ValueType>
 ZeroWeightTestModel<ValueType> buildWeakComponentModel() {
     auto const one = storm::utility::one<ValueType>();
     auto const zero = storm::utility::zero<ValueType>();
-    storm::storage::SparseMatrixBuilder<ValueType> builder(9, 7, 9, true, true, 7);
+    storm::storage::SparseMatrixBuilder<ValueType> builder(7, 7, 7, true, true, 7);
     builder.newRowGroup(0);
     builder.addNextValue(0, 1, one);
     builder.newRowGroup(1);
-    builder.addNextValue(1, 1, one);
+    builder.addNextValue(1, 6, one);
     builder.newRowGroup(2);
     builder.addNextValue(2, 0, one);
     builder.newRowGroup(3);
     builder.addNextValue(3, 4, one);
-    builder.addNextValue(4, 0, one);
+    builder.newRowGroup(4);
+    builder.addNextValue(4, 6, one);
     builder.newRowGroup(5);
     builder.addNextValue(5, 3, one);
-    builder.addNextValue(6, 5, one);
-    builder.newRowGroup(7);
-    builder.addNextValue(7, 3, one);
-    builder.newRowGroup(8);
-    builder.addNextValue(8, 0, one);
+    builder.newRowGroup(6);
+    builder.addNextValue(6, 6, one);
 
     ZeroWeightTestModel<ValueType> model;
     model.matrix = builder.build();
-    model.weights = {zero, zero, one, zero, one, zero, zero, one, zero};
+    model.weights = {zero, zero, one, zero, zero, one, zero};
     model.targets = storm::storage::BitVector(7, false);
     model.targets.set(6);
     model.initials = storm::storage::BitVector(7, false);
+    model.initials.set(2);
+    model.initials.set(5);
     return model;
 }
 
@@ -121,6 +121,7 @@ ZeroWeightTestModel<ValueType> buildComponentInterfaceModel() {
     model.targets = storm::storage::BitVector(7, false);
     model.targets.set(6);
     model.initials = storm::storage::BitVector(7, false);
+    model.initials.set(0);
     return model;
 }
 
