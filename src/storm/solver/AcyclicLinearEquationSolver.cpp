@@ -93,6 +93,10 @@ bool AcyclicLinearEquationSolver<ValueType>::internalSolveEquations(Environment 
         }
     }
 
+    // Ordering the rows topologically means every value is computed from ones that are already final, so the
+    // single sweep above ends at the solution.
+    this->setSolutionBoundsExact(x);
+
     if (!this->isCachingEnabled()) {
         this->clearCache();
     }

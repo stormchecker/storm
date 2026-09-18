@@ -269,8 +269,8 @@ template<typename ValueType, bool TrivialRowGrouping>
 SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
     std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative, ValueType const& precision,
     std::optional<storm::OptimizationDirection> const& dir, std::optional<ValueType> const& guessValue, std::optional<ValueType> const& lowerBound,
-    std::optional<ValueType> const& upperBound,
-    std::function<SolverStatus(SolverStatus const&, std::vector<ValueType> const&)> const& iterationCallback) const {
+    std::optional<ValueType> const& upperBound, std::function<SolverStatus(SolverStatus const&, std::vector<ValueType> const&)> const& iterationCallback,
+    storm::OptionalRef<SolutionBounds<ValueType>> solutionBounds) const {
     // Create two vectors v and u using the given operand plus an auxiliary vector.
     std::pair<std::vector<ValueType>, std::vector<ValueType>> vu;
     auto& auxVector = viOperator->allocateAuxiliaryVector(operand.size());
@@ -281,10 +281,21 @@ SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
         doublePrec -= precision * 1e-6;  // be slightly more precise to avoid a good chunk of floating point issues
     }
     auto status = OVI(vu, offsets, numIterations, relative, doublePrec, dir, guessValue ? *guessValue : doublePrec, lowerBound, upperBound, iterationCallback);
-    auto two = storm::utility::convertNumber<ValueType>(2.0);
-    // get the average of lower- and upper result
-    storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
-        vu.first, vu.second, vu.first, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+    bool const converged = status == SolverStatus::Converged;
+    if (solutionBounds.has_value()) {
+        // The operand started below the solution and every iteration applies the monotone operator to it, so
+        // vu.first lies below the solution whatever stopped the iteration.
+        solutionBounds->lower = vu.first;
+        // Until the verification phase succeeds vu.second is merely a guess, not an upper bound.
+        if (converged) {
+            solutionBounds->upper = vu.second;
+        }
+    }
+    if (converged) {
+        auto two = storm::utility::convertNumber<ValueType>(2.0);
+        storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
+            vu.first, vu.second, vu.first, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+    }
     // Swap operand and aux vector back to original positions.
     vu.first.swap(operand);
     vu.second.swap(auxVector);
@@ -296,10 +307,10 @@ template<typename ValueType, bool TrivialRowGrouping>
 SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
     std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, bool relative, ValueType const& precision,
     std::optional<storm::OptimizationDirection> const& dir, std::optional<ValueType> const& guessValue, std::optional<ValueType> const& lowerBound,
-    std::optional<ValueType> const& upperBound,
-    std::function<SolverStatus(SolverStatus const&, std::vector<ValueType> const&)> const& iterationCallback) const {
+    std::optional<ValueType> const& upperBound, std::function<SolverStatus(SolverStatus const&, std::vector<ValueType> const&)> const& iterationCallback,
+    storm::OptionalRef<SolutionBounds<ValueType>> solutionBounds) const {
     uint64_t numIterations = 0;
-    return OVI(operand, offsets, numIterations, relative, precision, dir, guessValue, lowerBound, upperBound, iterationCallback);
+    return OVI(operand, offsets, numIterations, relative, precision, dir, guessValue, lowerBound, upperBound, iterationCallback, solutionBounds);
 }
 
 template class OptimisticValueIterationHelper<double, true>;
