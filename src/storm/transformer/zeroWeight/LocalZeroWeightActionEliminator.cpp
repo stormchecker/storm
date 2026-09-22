@@ -6,10 +6,70 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/transformer/zeroWeight/MixedWeightStateSplitter.h"
+#include "storm/transformer/zeroWeight/ZeroWeightAnalysis.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm::transformer {
+
+template<typename ValueType>
+typename LocalZeroWeightActionEliminator<ValueType>::Result LocalZeroWeightActionEliminator<ValueType>::eliminate(
+    storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& actionWeights, storm::storage::BitVector const& targetStates,
+    storm::storage::BitVector const& initialStates) {
+    uint64_t const invalidIndex = std::numeric_limits<uint64_t>::max();
+    auto splitResult = MixedWeightStateSplitter<ValueType>::split(transitionMatrix, actionWeights, targetStates, initialStates);
+    ZeroWeightAnalysis<ValueType>::analyzeComponentInterfaces(splitResult.transitionMatrix, splitResult.analysis);
+
+    LocalZeroWeightActionEliminator<ValueType> eliminator(splitResult.transitionMatrix, splitResult.actionWeights, splitResult.targetStates,
+                                                          splitResult.initialStates);
+    for (auto const& component : splitResult.analysis.weakComponents) {
+        for (uint64_t state : component.states) {
+            eliminator.eliminateState(state);
+        }
+    }
+    auto result = eliminator.build();
+
+    std::vector<uint64_t> newToOldStateMapping;
+    newToOldStateMapping.reserve(result.newToOldStateMapping.size());
+    for (uint64_t splitState : result.newToOldStateMapping) {
+        STORM_LOG_ASSERT(splitState < splitResult.newToOldStateMapping.size(), "Invalid split state mapping.");
+        newToOldStateMapping.push_back(splitResult.newToOldStateMapping[splitState]);
+    }
+
+    std::vector<uint64_t> oldToNewStateMapping(transitionMatrix.getRowGroupCount(), invalidIndex);
+    for (uint64_t oldState = 0; oldState < oldToNewStateMapping.size(); ++oldState) {
+        uint64_t splitState = oldState;
+        if (result.oldToNewStateMapping[splitState] == invalidIndex && splitResult.positiveShells[oldState] != invalidIndex) {
+            splitState = splitResult.positiveShells[oldState];
+        }
+        oldToNewStateMapping[oldState] = result.oldToNewStateMapping[splitState];
+    }
+
+    std::vector<std::vector<uint64_t>> oldToNewRowMapping(transitionMatrix.getRowCount());
+    for (uint64_t oldRow = 0; oldRow < oldToNewRowMapping.size(); ++oldRow) {
+        uint64_t const splitRow = splitResult.oldToNewRowMapping[oldRow];
+        STORM_LOG_ASSERT(splitRow < result.oldToNewRowMapping.size(), "Invalid split row mapping.");
+        oldToNewRowMapping[oldRow] = std::move(result.oldToNewRowMapping[splitRow]);
+    }
+    for (auto& splitRow : result.newToOldRowMapping) {
+        STORM_LOG_ASSERT(splitRow < splitResult.newToOldRowMapping.size(), "Invalid output row mapping.");
+        splitRow = splitResult.newToOldRowMapping[splitRow];
+    }
+    for (auto& selections : result.choiceSelections) {
+        for (auto& selection : selections) {
+            STORM_LOG_ASSERT(selection.state < splitResult.newToOldStateMapping.size() && selection.row < splitResult.newToOldRowMapping.size(),
+                             "Invalid choice selection mapping.");
+            selection.state = splitResult.newToOldStateMapping[selection.state];
+            selection.row = splitResult.newToOldRowMapping[selection.row];
+        }
+    }
+
+    result.oldToNewStateMapping = std::move(oldToNewStateMapping);
+    result.newToOldStateMapping = std::move(newToOldStateMapping);
+    result.oldToNewRowMapping = std::move(oldToNewRowMapping);
+    return result;
+}
 
 template<typename ValueType>
 LocalZeroWeightActionEliminator<ValueType>::LocalZeroWeightActionEliminator(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,

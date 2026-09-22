@@ -17,6 +17,7 @@ class LocalZeroWeightActionEliminator {
    public:
     struct ChoiceSelection {
         uint64_t state;
+        /*! Input row, or the maximum uint64_t for a synthetic stop choice. */
         uint64_t row;
 
         bool operator==(ChoiceSelection const&) const = default;
@@ -33,6 +34,18 @@ class LocalZeroWeightActionEliminator {
         std::vector<uint64_t> newToOldRowMapping;
         std::vector<std::vector<ChoiceSelection>> choiceSelections;
     };
+
+    /*!
+     * Splits mixed states and eliminates every reachable zero-weight component.
+     *
+     * @param transitionMatrix One column and row group per state.
+     * @param actionWeights One nonnegative weight per row.
+     * @param targetStates States that must not be eliminated.
+     * @param initialStates States that must not be eliminated.
+     * @return The transformed matrix and mappings to the input.
+     */
+    static Result eliminate(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& actionWeights,
+                            storm::storage::BitVector const& targetStates, storm::storage::BitVector const& initialStates);
 
     /*!
      * Creates an elimination engine for a normalized transition matrix.
