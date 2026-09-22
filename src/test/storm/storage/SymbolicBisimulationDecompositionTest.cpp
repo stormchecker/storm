@@ -21,6 +21,7 @@
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/dd/bisimulation/BisimulationDecomposition.h"
 #include "storm/storage/dd/bisimulation/BisimulationOptions.h"
+#include "storm/utility/constants.h"
 
 class Cudd {
    public:
@@ -295,27 +296,27 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader) {
     });
 }
 
-TYPED_TEST(SymbolicModelBisimulationDecomposition, MarkovAutomatonExitRates) {
-    // Bisimulation minimization must preserve the exit rates of Markovian states.
-    const storm::dd::DdType DdType = TestFixture::DdType;
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/bisimulation_exit_rates.ma").preprocess();
+namespace {
 
-    // The Dd-based Prism model builder does not support Markov automata directly, so we go via Jani.
-    storm::storage::SymbolicModelDescription modelDescription(program.toJani());
-    std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model = storm::api::buildSymbolicModel<DdType, double>(
-        this->env, modelDescription, std::vector<std::shared_ptr<storm::logic::Formula const>>(), /*buildFullModel=*/true);
+// The exit rate of the initial state is lambda + lambda = 4, so the expected time to reach "done" is 1/4. Before
+// the fix, a quotient's/converted model's exit rate incorrectly collapsed to 1, yielding 1 instead of 0.25.
+template<storm::dd::DdType DdType, typename ValueType>
+void checkMarkovAutomatonExitRatePreserved(storm::Environment const& env, storm::models::symbolic::MarkovAutomaton<DdType, ValueType> const& ma) {
+    storm::modelchecker::HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>> checker(ma);
+    storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Tmin=? [F \"done\"]");
+    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*formula);
 
-    // The exit rate of the initial state is lambda + lambda = 4, so the expected time to reach "done" is 1/4.
-    auto checkExitRatePreserved = [this](storm::models::symbolic::MarkovAutomaton<DdType, double> const& ma) {
-        storm::modelchecker::HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<DdType, double>> checker(ma);
-        storm::parser::FormulaParser formulaParser;
-        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Tmin=? [F \"done\"]");
-        storm::modelchecker::CheckTask<storm::logic::Formula, double> task(*formula);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(env, task);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(ma.getReachableStates(), ma.getInitialStates()));
+    EXPECT_NEAR(0.25, storm::utility::convertNumber<double>(result->asQuantitativeCheckResult<ValueType>().sum()), 1e-6);
+}
 
-        std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(this->env, task);
-        result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(ma.getReachableStates(), ma.getInitialStates()));
-        EXPECT_NEAR(0.25, result->asQuantitativeCheckResult<double>().sum(), 1e-6);
-    };
+// Bisimulation minimization must preserve the exit rates of Markovian states, for any ValueType.
+template<storm::dd::DdType DdType, typename ValueType>
+void checkMarkovAutomatonExitRatesPreservedUnderBisimulation(storm::Environment const& env, storm::storage::SymbolicModelDescription const& modelDescription) {
+    std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> model = storm::api::buildSymbolicModel<DdType, ValueType>(
+        env, modelDescription, std::vector<std::shared_ptr<storm::logic::Formula const>>(), /*buildFullModel=*/true);
 
     model->getManager().execute([&]() {
         ASSERT_EQ(storm::models::ModelType::MarkovAutomaton, model->getType());
@@ -326,21 +327,36 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, MarkovAutomatonExitRates) {
         for (bool useOriginalVariables : {false, true}) {
             storm::dd::bisimulation::BisimulationOptions options;
             options.useOriginalVariables = useOriginalVariables;
-            storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::storage::BisimulationType::Strong, options);
+            storm::dd::BisimulationDecomposition<DdType, ValueType> decomposition(*model, storm::storage::BisimulationType::Strong, options);
             decomposition.compute();
-            std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
+            std::shared_ptr<storm::models::Model<ValueType>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
 
             ASSERT_EQ(storm::models::ModelType::MarkovAutomaton, quotient->getType());
             ASSERT_TRUE(quotient->isSymbolicModel());
             // The bisimilar states 1 and 2 should have been merged into a single block.
             EXPECT_EQ(2ul, quotient->getNumberOfStates());
 
-            checkExitRatePreserved(*quotient->template as<storm::models::symbolic::MarkovAutomaton<DdType, double>>());
+            checkMarkovAutomatonExitRatePreserved(env, *quotient->template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>());
         }
     });
+}
 
-    // Also test exact building (Sylvan only) with conversion to double
+}  // namespace
+
+TYPED_TEST(SymbolicModelBisimulationDecomposition, MarkovAutomatonExitRates) {
+    const storm::dd::DdType DdType = TestFixture::DdType;
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/bisimulation_exit_rates.ma").preprocess();
+
+    // The Dd-based Prism model builder does not support Markov automata directly, so we go via Jani.
+    storm::storage::SymbolicModelDescription modelDescription(program.toJani());
+
+    checkMarkovAutomatonExitRatesPreservedUnderBisimulation<DdType, double>(this->env, modelDescription);
+
+    // RationalNumber models are only supported by Sylvan, not CUDD.
     if constexpr (TestFixture::DdType == storm::dd::DdType::Sylvan) {
+        checkMarkovAutomatonExitRatesPreservedUnderBisimulation<DdType, storm::RationalNumber>(this->env, modelDescription);
+
+        // Also test exact building with conversion to double.
         std::shared_ptr<storm::models::symbolic::Model<DdType, storm::RationalNumber>> exactModel =
             storm::api::buildSymbolicModel<DdType, storm::RationalNumber>(this->env, modelDescription,
                                                                           std::vector<std::shared_ptr<storm::logic::Formula const>>(), /*buildFullModel=*/true);
@@ -351,7 +367,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, MarkovAutomatonExitRates) {
             auto doubleMa = exactMa->template toValueType<double>();
             ASSERT_TRUE(doubleMa->hasLabel("done"));
 
-            checkExitRatePreserved(*doubleMa);
+            checkMarkovAutomatonExitRatePreserved(this->env, *doubleMa);
         });
     }
 }
