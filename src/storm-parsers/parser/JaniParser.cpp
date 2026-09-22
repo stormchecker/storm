@@ -369,7 +369,8 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
 
         } else if (opString == "∀" || opString == "∃") {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for forall/exists.");
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Forall and Exists are currently not supported in " << scope.description << ".");
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::NotImplementedException,
+                                            "Forall and Exists are currently not supported in " << scope.description << ".");
         } else if (opString == "Emin" || opString == "Emax") {
             STORM_LOG_WARN_COND(model.getJaniVersion() == 1, "Model not compliant: Contains Emin/Emax property in " << scope.description << ".");
             STORM_LOG_THROW(propertyStructure.count("exp") == 1, storm::exceptions::InvalidJaniException,
@@ -580,10 +581,10 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
 
         } else if (opString == "W") {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for weak until.");
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Weak until is not supported.");
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::NotImplementedException, "Weak until is not supported.");
         } else if (opString == "R") {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for release.");
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Release is not supported.");
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::NotImplementedException, "Release is not supported.");
         } else if (opString == "∧" || opString == "∨") {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for conjunction/disjunction.");
             std::vector<std::shared_ptr<storm::logic::Formula const>> args =
@@ -645,8 +646,8 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                                     ct = storm::logic::ComparisonType::Less;
                                 }
                             } else {
-                                STORM_LOG_THROW(
-                                    false, storm::exceptions::NotSupportedException,
+                                STORM_LOG_THROW_UNCONDITIONALLY(
+                                    storm::exceptions::NotSupportedException,
                                     "Comparison operators '=' or '≠' in property specifications are currently not supported in " << scope.description << ".");
                             }
                         }
@@ -654,7 +655,7 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                     }
                 }
             }
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No complex comparisons for properties are supported.");
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::NotSupportedException, "No complex comparisons for properties are supported.");
         } else if (opString == "Multi") {
             STORM_LOG_WARN_COND(model.getModelFeatures().hasMultiObjectiveProperties(),
                                 "Model feature " << storm::jani::toString(storm::jani::ModelFeature::MultiObjectiveProperties)
@@ -698,11 +699,12 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                 typeString == "tradeoff" ? storm::logic::MultiObjectiveFormula::Type::Tradeoff : storm::logic::MultiObjectiveFormula::Type::Lexicographic;
             return std::make_shared<storm::logic::MultiObjectiveFormula const>(subformulas, type);
         } else if (expr.isInitialized()) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException,
-                            "Non-trivial Expression '" << expr << "' contains a boolean transient variable. Can not translate to PRCTL-like formula at "
-                                                       << scope.description << ".");
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidJaniException,
+                                            "Non-trivial Expression '" << expr
+                                                                       << "' contains a boolean transient variable. Can not translate to PRCTL-like formula at "
+                                                                       << scope.description << ".");
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opString << ".");
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidJaniException, "Unknown operator " << opString << ".");
         }
     } else {
         STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidJaniException,
