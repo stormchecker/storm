@@ -24,7 +24,8 @@ MarkovAutomaton<Type, ValueType>::MarkovAutomaton(
                                              nondeterminismVariables, labelToExpressionMap, rewardModels),
       markovianMarker(markovianMarker) {
     // Compute all Markovian info.
-    computeMarkovianInfo();
+    computeMarkovianChoicesAndStates();
+    convertToExitRatesAndProbabilities();
 }
 
 template<storm::dd::DdType Type, typename ValueType>
@@ -34,17 +35,23 @@ MarkovAutomaton<Type, ValueType>::MarkovAutomaton(
     std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables,
     std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
     std::set<storm::expressions::Variable> const& nondeterminismVariables, std::map<std::string, storm::dd::Bdd<Type>> labelToBddMap,
-    std::unordered_map<std::string, RewardModelType> const& rewardModels)
+    std::unordered_map<std::string, RewardModelType> const& rewardModels, std::optional<storm::dd::Add<Type, ValueType>> exitRateVector)
     : NondeterministicModel<Type, ValueType>(storm::models::ModelType::MarkovAutomaton, manager, reachableStates, initialStates, deadlockStates,
                                              transitionMatrix, rowVariables, columnVariables, rowColumnMetaVariablePairs, nondeterminismVariables,
                                              labelToBddMap, rewardModels),
       markovianMarker(markovianMarker) {
-    // Compute all Markovian info.
-    computeMarkovianInfo();
+    computeMarkovianChoicesAndStates();
+    if (exitRateVector) {
+        // The given transition matrix is already correctly normalized and the exit rates are already known.
+        this->exitRateVector = std::move(exitRateVector).value();
+    } else {
+        // Derive the exit rates from the (not yet normalized) transition matrix.
+        convertToExitRatesAndProbabilities();
+    }
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-void MarkovAutomaton<Type, ValueType>::computeMarkovianInfo() {
+void MarkovAutomaton<Type, ValueType>::computeMarkovianChoicesAndStates() {
     // Compute the Markovian choices.
     this->markovianChoices = this->getQualitativeTransitionMatrix() && this->markovianMarker;
 
@@ -56,6 +63,13 @@ void MarkovAutomaton<Type, ValueType>::computeMarkovianInfo() {
 
     // Compute the Markovian states.
     this->markovianStates = markovianChoices.existsAbstract(columnAndNondeterminsmVariables);
+}
+
+template<storm::dd::DdType Type, typename ValueType>
+void MarkovAutomaton<Type, ValueType>::convertToExitRatesAndProbabilities() {
+    std::set<storm::expressions::Variable> columnAndNondeterminsmVariables;
+    std::set_union(this->getColumnVariables().begin(), this->getColumnVariables().end(), this->getNondeterminismVariables().begin(),
+                   this->getNondeterminismVariables().end(), std::inserter(columnAndNondeterminsmVariables, columnAndNondeterminsmVariables.begin()));
 
     // Compute the vector of exit rates.
     this->exitRateVector = (this->getTransitionMatrix() * this->markovianMarker.template toAdd<ValueType>()).sumAbstract(columnAndNondeterminsmVariables);
@@ -125,11 +139,16 @@ std::shared_ptr<MarkovAutomaton<Type, NewValueType>> MarkovAutomaton<Type, Value
     auto newLabelToBddMap = this->getLabelToBddMap();
     newLabelToBddMap.erase("init");
     newLabelToBddMap.erase("deadlock");
+    // Convert expression-based labels to BDD-based ones.
+    for (auto const& labelExpressionPair : this->getLabelToExpressionMap()) {
+        newLabelToBddMap.emplace(labelExpressionPair.first, this->getStates(labelExpressionPair.first));
+    }
 
     return std::make_shared<MarkovAutomaton<Type, NewValueType>>(
         this->getManagerAsSharedPointer(), this->getMarkovianMarker(), this->getReachableStates(), this->getInitialStates(), this->getDeadlockStates(),
         this->getTransitionMatrix().template toValueType<NewValueType>(), this->getRowVariables(), this->getColumnVariables(),
-        this->getRowColumnMetaVariablePairs(), this->getNondeterminismVariables(), newLabelToBddMap, newRewardModels);
+        this->getRowColumnMetaVariablePairs(), this->getNondeterminismVariables(), newLabelToBddMap, newRewardModels,
+        this->exitRateVector.template toValueType<NewValueType>());
 }
 
 // Explicitly instantiate the template class.

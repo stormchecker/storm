@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "storm/models/symbolic/NondeterministicModel.h"
 
 namespace storm {
@@ -55,13 +57,15 @@ class MarkovAutomaton : public NondeterministicModel<Type, ValueType> {
      * @param reachableStates A DD representing the reachable states.
      * @param initialStates A DD representing the initial states of the model.
      * @param deadlockStates A DD representing the deadlock states of the model.
-     * @param transitionMatrix The matrix representing the transitions in the model as a probabilistic matrix.
+     * @param transitionMatrix The matrix representing the transitions in the model. Must be a probabilistic matrix if exitRateVector is given.
+     * If exitRateVector is not given, transitions at Markovian choices are interpreted as transition rates.
      * @param rowVariables The set of row meta variables used in the DDs.
      * @param columVariables The set of column meta variables used in the DDs.
      * @param rowColumnMetaVariablePairs All pairs of row/column meta variables.
      * @param nondeterminismVariables The meta variables used to encode the nondeterminism in the model.
      * @param labelToBddMap A mapping from label names to their defining BDDs.
      * @param rewardModels The reward models associated with the model.
+     * @param exitRateVector The exit rate of each Markovian state. If given, the transition matrix must be probabilistic.
      */
     MarkovAutomaton(std::shared_ptr<storm::dd::DdManager<Type>> manager, storm::dd::Bdd<Type> markovianMarker, storm::dd::Bdd<Type> reachableStates,
                     storm::dd::Bdd<Type> initialStates, storm::dd::Bdd<Type> deadlockStates, storm::dd::Add<Type, ValueType> transitionMatrix,
@@ -69,7 +73,8 @@ class MarkovAutomaton : public NondeterministicModel<Type, ValueType> {
                     std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                     std::set<storm::expressions::Variable> const& nondeterminismVariables,
                     std::map<std::string, storm::dd::Bdd<Type>> labelToBddMap = std::map<std::string, storm::dd::Bdd<Type>>(),
-                    std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
+                    std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
+                    std::optional<storm::dd::Add<Type, ValueType>> exitRateVector = std::nullopt);
 
     storm::dd::Bdd<Type> const& getMarkovianMarker() const;
     storm::dd::Bdd<Type> const& getMarkovianStates() const;
@@ -88,9 +93,15 @@ class MarkovAutomaton : public NondeterministicModel<Type, ValueType> {
 
    private:
     /*!
-     * Computes the member data related to Markovian stuff.
+     * Computes the Markovian choices/states and probabilistic states from the markovian marker and the
+     * (already normalized) transition matrix. Does not touch the exit rate vector or the transition matrix.
      */
-    void computeMarkovianInfo();
+    void computeMarkovianChoicesAndStates();
+
+    /*!
+     * Derive the state exit rates and transition probabilities from a transition matrix with rates
+     */
+    void convertToExitRatesAndProbabilities();
 
     storm::dd::Bdd<Type> markovianMarker;
     storm::dd::Bdd<Type> markovianStates;

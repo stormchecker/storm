@@ -55,6 +55,10 @@ std::shared_ptr<Dtmc<Type, NewValueType>> Dtmc<Type, ValueType>::toValueType() c
     auto newLabelToBddMap = this->getLabelToBddMap();
     newLabelToBddMap.erase("init");
     newLabelToBddMap.erase("deadlock");
+    // Convert expression-based labels to BDD-based ones.
+    for (auto const& labelExpressionPair : this->getLabelToExpressionMap()) {
+        newLabelToBddMap.emplace(labelExpressionPair.first, this->getStates(labelExpressionPair.first));
+    }
 
     return std::make_shared<Dtmc<Type, NewValueType>>(this->getManagerAsSharedPointer(), this->getReachableStates(), this->getInitialStates(),
                                                       this->getDeadlockStates(), this->getTransitionMatrix().template toValueType<NewValueType>(),
