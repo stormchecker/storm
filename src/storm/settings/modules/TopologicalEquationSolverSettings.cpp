@@ -84,8 +84,7 @@ storm::solver::EquationSolverType TopologicalEquationSolverSettings::getUnderlyi
     } else if (equationSolverName == "elimination") {
         return storm::solver::EquationSolverType::Elimination;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown underlying equation solver '" << equationSolverName << "'.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown underlying equation solver '" << equationSolverName << "'.");
 }
 
 bool TopologicalEquationSolverSettings::isUnderlyingMinMaxMethodSet() const {
@@ -121,8 +120,8 @@ storm::solver::MinMaxMethod TopologicalEquationSolverSettings::getUnderlyingMinM
         return storm::solver::MinMaxMethod::ViToLp;
     }
 
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown underlying equation solver '" << minMaxEquationSolvingTechnique << "'.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Unknown underlying equation solver '" << minMaxEquationSolvingTechnique << "'.");
 }
 
 bool TopologicalEquationSolverSettings::isExtendRelevantValues() const {

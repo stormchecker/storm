@@ -90,9 +90,8 @@ storm::solver::EigenLinearEquationSolverMethod EigenEquationSolverSettings::getL
     } else if (linearEquationSystemTechniqueAsString == "gmres") {
         return storm::solver::EigenLinearEquationSolverMethod::Gmres;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
 }
 
 bool EigenEquationSolverSettings::isPreconditioningMethodSet() const {
@@ -108,9 +107,8 @@ storm::solver::EigenLinearEquationSolverPreconditioner EigenEquationSolverSettin
     } else if (PreconditioningMethodAsString == "none") {
         return storm::solver::EigenLinearEquationSolverPreconditioner::None;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Unknown preconditioning technique '" << PreconditioningMethodAsString << "' selected.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Unknown preconditioning technique '" << PreconditioningMethodAsString << "' selected.");
 }
 
 bool EigenEquationSolverSettings::isRestartIterationCountSet() const {

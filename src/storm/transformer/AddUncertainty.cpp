@@ -69,8 +69,7 @@ std::shared_ptr<storm::models::sparse::Model<typename AddUncertainty<ValueType>:
         case storm::models::ModelType::Mdp:
             return std::make_shared<storm::models::sparse::Mdp<IntervalType>>(std::move(modelComponents));
         default:
-            STORM_LOG_THROW(false, exceptions::NotImplementedException, "Only DTMC and MDP model types are currently supported.");
-            __builtin_unreachable();  // Should never happen but silences compiler warning
+            STORM_LOG_THROW_UNCONDITIONALLY(exceptions::NotImplementedException, "Only DTMC and MDP model types are currently supported.");
     }
 }
 

@@ -153,8 +153,8 @@ storm::dft::builder::ApproximationHeuristic FaultTreeSettings::getApproximationH
     } else if (heuristicAsString == "bounddifference") {
         return storm::dft::builder::ApproximationHeuristic::BOUNDDIFFERENCE;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal value '" << heuristicAsString << "' set as heuristic for approximation.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Illegal value '" << heuristicAsString << "' set as heuristic for approximation.");
 }
 
 bool FaultTreeSettings::isMaxDepthSet() const {

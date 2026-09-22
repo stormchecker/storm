@@ -705,10 +705,9 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
             STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opString << ".");
         }
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException,
-                        "Looking for operator for formula " << propertyStructure.dump() << ", but did not find one.");
+        STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidJaniException,
+                                        "Looking for operator for formula " << propertyStructure.dump() << ", but did not find one.");
     }
-    __builtin_unreachable();  // Should never happen but silences compiler warning
 }
 
 template<typename ValueType>

@@ -223,8 +223,7 @@ AbstractionSettings::Method AbstractionSettings::getAbstractionRefinementMethod(
     } else if (methodAsString == "bisimulation" || methodAsString == "bisim") {
         return Method::Bisimulation;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown abstraction-refinement method '" << methodAsString << "'.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown abstraction-refinement method '" << methodAsString << "'.");
 }
 
 bool AbstractionSettings::isUseDecompositionSet() const {
@@ -292,8 +291,7 @@ AbstractionSettings::PivotSelectionHeuristic AbstractionSettings::getPivotSelect
     } else if (heuristicName == "max-weighted-dev") {
         return AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown pivot selection heuristic '" << heuristicName << "'.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown pivot selection heuristic '" << heuristicName << "'.");
 }
 
 AbstractionSettings::ReuseMode AbstractionSettings::getReuseMode() const {

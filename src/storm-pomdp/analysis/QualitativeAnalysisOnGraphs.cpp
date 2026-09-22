@@ -77,8 +77,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb0or
             return analyseProb1Max(subformula->asUntilFormula());
         }
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Prob0or1 analysis is not supported for the property " << formula << ".");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidPropertyException, "Prob0or1 analysis is not supported for the property " << formula << ".");
 }
 
 template<typename ValueType>

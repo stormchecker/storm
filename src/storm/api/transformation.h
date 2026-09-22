@@ -141,9 +141,8 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> transformToNondetermini
         components.markovianStates = storm::storage::BitVector(components.transitionMatrix.getRowGroupCount(), true);
         return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::MarkovAutomaton, std::move(components));
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException,
-                        "Cannot transform model of type " << model.getType() << " to a nondeterministic model.");
-        __builtin_unreachable();  // Should never happen but silences compiler warning
+        STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidOperationException,
+                                        "Cannot transform model of type " << model.getType() << " to a nondeterministic model.");
     }
 }
 

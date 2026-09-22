@@ -33,8 +33,7 @@ storm::solver::MultiplierType MultiplierSettings::getMultiplierType() const {
         return storm::solver::MultiplierType::ViOperator;
     }
 
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplier type '" << type << "'.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown multiplier type '" << type << "'.");
 }
 
 bool MultiplierSettings::isMultiplierTypeSetFromDefaultValue() const {

@@ -18,8 +18,7 @@ bool Bound::isSatisfied(ValueType const& compareValue) const {
         case ComparisonType::LessEqual:
             return compareValue <= thresholdAsValueType;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentException, "Unknown ComparisonType.");
 }
 
 storm::RationalNumber Bound::evaluateThresholdAsRational() const {

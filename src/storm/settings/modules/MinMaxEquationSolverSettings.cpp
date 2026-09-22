@@ -127,9 +127,8 @@ storm::solver::MinMaxMethod MinMaxEquationSolverSettings::getMinMaxEquationSolvi
         return storm::solver::MinMaxMethod::Acyclic;
     }
 
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
 }
 
 bool MinMaxEquationSolverSettings::isMinMaxEquationSolvingMethodSetFromDefaultValue() const {
@@ -173,8 +172,7 @@ storm::solver::MultiplicationStyle MinMaxEquationSolverSettings::getValueIterati
     } else if (multiplicationStyleString == "regular" || multiplicationStyleString == "r") {
         return storm::solver::MultiplicationStyle::Regular;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
 }
 
 bool MinMaxEquationSolverSettings::isForceUniqueSolutionRequirementSet() const {

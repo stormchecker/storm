@@ -83,9 +83,8 @@ storm::solver::GmmxxLinearEquationSolverMethod GmmxxEquationSolverSettings::getL
     } else if (linearEquationSystemTechniqueAsString == "gmres") {
         return storm::solver::GmmxxLinearEquationSolverMethod::Gmres;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
 }
 
 bool GmmxxEquationSolverSettings::isPreconditioningMethodSet() const {
@@ -101,9 +100,8 @@ storm::solver::GmmxxLinearEquationSolverPreconditioner GmmxxEquationSolverSettin
     } else if (preconditioningMethodAsString == "none") {
         return storm::solver::GmmxxLinearEquationSolverPreconditioner::None;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Unknown preconditioning technique '" << preconditioningMethodAsString << "' selected.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Unknown preconditioning technique '" << preconditioningMethodAsString << "' selected.");
 }
 
 bool GmmxxEquationSolverSettings::isRestartIterationCountSet() const {

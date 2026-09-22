@@ -56,8 +56,7 @@ storm::solver::GameMethod GameSolverSettings::getGameSolvingMethod() const {
     } else if (gameSolvingTechnique == "policy-iteration" || gameSolvingTechnique == "pi") {
         return storm::solver::GameMethod::PolicyIteration;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown game solving technique '" << gameSolvingTechnique << "'.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown game solving technique '" << gameSolvingTechnique << "'.");
 }
 
 bool GameSolverSettings::isGameSolvingMethodSet() const {

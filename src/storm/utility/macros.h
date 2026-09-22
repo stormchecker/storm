@@ -44,6 +44,13 @@
         }                                         \
     } while (false)
 
+// Unconditionally logs and throws the given exception.
+#define STORM_LOG_THROW_UNCONDITIONALLY(exception, message) \
+    do {                                                    \
+        STORM_LOG_ERROR(message);                           \
+        throw exception() << message;                       \
+    } while (false)
+
 #define STORM_LOG_WARN_COND(cond, message) \
     do {                                   \
         if (!(cond)) {                     \

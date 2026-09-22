@@ -37,7 +37,7 @@ std::string toString(ModelExportFormat const& input) {
         case ModelExportFormat::Umb:
             return "umb";
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unhandled model export format.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "Unhandled model export format.");
 }
 
 ModelExportFormat getModelExportFormatFromFileExtension(std::string const& filename) {
@@ -52,7 +52,6 @@ ModelExportFormat getModelExportFormatFromFileExtension(std::string const& filen
             false, storm::exceptions::InvalidArgumentException,
             "The file '" << filename
                          << "' does not have an extension to determine the model export format from. Add a file extension or specify the format explicitly.");
-        __builtin_unreachable();  // Should never happen but silences compiler warning
     }
 }
 

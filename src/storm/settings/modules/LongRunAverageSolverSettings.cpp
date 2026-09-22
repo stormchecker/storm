@@ -82,9 +82,8 @@ storm::solver::LraMethod LongRunAverageSolverSettings::getDetLraMethod() const {
     if (lraMethodString == "value-iteration" || lraMethodString == "vi") {
         return storm::solver::LraMethod::ValueIteration;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Unknown lra solving technique for deterministic models:'" << lraMethodString << "'.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Unknown lra solving technique for deterministic models:'" << lraMethodString << "'.");
 }
 
 bool LongRunAverageSolverSettings::isDetLraMethodSetFromDefaultValue() const {
@@ -99,9 +98,8 @@ storm::solver::LraMethod LongRunAverageSolverSettings::getNondetLraMethod() cons
     } else if (lraMethodString == "linear-programming" || lraMethodString == "lp") {
         return storm::solver::LraMethod::LinearProgramming;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Unknown lra solving technique for nondeterministic models:'" << lraMethodString << "'.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Unknown lra solving technique for nondeterministic models:'" << lraMethodString << "'.");
 }
 
 bool LongRunAverageSolverSettings::isNondetLraMethodSetFromDefaultValue() const {

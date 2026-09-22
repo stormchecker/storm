@@ -118,9 +118,8 @@ storm::solver::NativeLinearEquationSolverMethod NativeEquationSolverSettings::ge
     } else if (linearEquationSystemTechniqueAsString == "ratsearch") {
         return storm::solver::NativeLinearEquationSolverMethod::RationalSearch;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
 }
 
 bool NativeEquationSolverSettings::isMaximalIterationCountSet() const {
@@ -159,8 +158,7 @@ storm::solver::MultiplicationStyle NativeEquationSolverSettings::getPowerMethodM
     } else if (multiplicationStyleString == "regular" || multiplicationStyleString == "r") {
         return storm::solver::MultiplicationStyle::Regular;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
-    __builtin_unreachable();  // Should never happen but silences compiler warning
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
 }
 
 bool NativeEquationSolverSettings::isForceIntervalIterationSymmetricUpdatesSet() const {
