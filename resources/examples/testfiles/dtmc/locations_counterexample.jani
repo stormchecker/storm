@@ -1,0 +1,119 @@
+{
+  "jani-version": 1,
+  "name": "locations_counterexample",
+  "type": "dtmc",
+  "actions": [],
+  "variables": [
+    {
+      "name": "s",
+      "type": {
+        "kind": "bounded",
+        "base": "int",
+        "lower-bound": 0,
+        "upper-bound": 3
+      },
+      "initial-value": 0
+    }
+  ],
+  "properties": [],
+  "automata": [
+    {
+      "name": "A",
+      "locations": [
+        {
+          "name": "l0"
+        },
+        {
+          "name": "l1"
+        },
+        {
+          "name": "l2"
+        }
+      ],
+      "initial-locations": [
+        "l0"
+      ],
+      "edges": [
+        {
+          "location": "l0",
+          "guard": {
+            "exp": true
+          },
+          "destinations": [
+            {
+              "location": "l1",
+              "probability": {
+                "exp": 0.9
+              },
+              "assignments": [
+                {
+                  "ref": "s",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "location": "l2",
+              "probability": {
+                "exp": 0.1
+              },
+              "assignments": [
+                {
+                  "ref": "s",
+                  "value": 2
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "location": "l2",
+          "guard": {
+            "exp": true
+          },
+          "destinations": [
+            {
+              "location": "l2",
+              "probability": {
+                "exp": 1
+              },
+              "assignments": [
+                {
+                  "ref": "s",
+                  "value": 3
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "location": "l1",
+          "guard": {
+            "exp": true
+          },
+          "destinations": [
+            {
+              "location": "l1",
+              "probability": {
+                "exp": 1
+              },
+              "assignments": [
+                {
+                  "ref": "s",
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "system": {
+    "elements": [
+      {
+        "automaton": "A"
+      }
+    ]
+  }
+}
