@@ -29,9 +29,8 @@ storm::jani::Model computeJaniCounterexample(std::string const& janiFile, std::s
 
     auto counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(modelDescription, model, formula);
     auto highLevelCounterexample = std::dynamic_pointer_cast<storm::counterexamples::HighLevelCounterexample>(counterexample);
-    EXPECT_TRUE(highLevelCounterexample != nullptr);
-    EXPECT_TRUE(highLevelCounterexample->isJaniHighLevelCounterexample());
-    return highLevelCounterexample->getModelDescription().asJaniModel();
+    ASSERT_NE(highLevelCounterexample, nullptr);
+    ASSERT_TRUE(highLevelCounterexample->isJaniHighLevelCounterexample());
 }
 
 uint64_t getNumberOfEdges(storm::jani::Model const& model) {
