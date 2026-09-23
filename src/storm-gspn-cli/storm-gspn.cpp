@@ -1,39 +1,33 @@
+#include <boost/algorithm/string.hpp>
+#include <fstream>
+#include <iostream>
+#include <string>
+
+#include "storm-cli-utilities/cli.h"
+#include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-gspn/api/storm-gspn.h"
 #include "storm-gspn/builder/ExplicitGspnModelBuilder.h"
 #include "storm-gspn/builder/JaniGSPNBuilder.h"
 #include "storm-gspn/parser/GspnParser.h"
-#include "storm-gspn/storage/gspn/GSPN.h"
-#include "storm-gspn/storage/gspn/GspnBuilder.h"
-
-#include "storm/utility/initialize.h"
-#include "storm/utility/macros.h"
-
-#include "storm/api/storm.h"
-
-#include "storm-cli-utilities/cli.h"
-#include "storm-parsers/api/storm-parsers.h"
-
-#include "storm-parsers/parser/FormulaParser.h"
-
-#include <fstream>
-#include <iostream>
-#include <string>
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/visitor/JSONExporter.h"
-
-#include <boost/algorithm/string.hpp>
-
-#include "storm/exceptions/FileIoException.h"
-
-#include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-gspn/settings/modules/GSPNExportSettings.h"
 #include "storm-gspn/settings/modules/GSPNSettings.h"
+#include "storm-gspn/storage/gspn/GSPN.h"
+#include "storm-gspn/storage/gspn/GspnBuilder.h"
+#include "storm-parsers/api/storm-parsers.h"
+#include "storm-parsers/parser/FormulaParser.h"
+#include "storm/api/storm.h"
+#include "storm/exceptions/FileIoException.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/visitor/JSONExporter.h"
+#include "storm/utility/initialize.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
 
 /*!
  * Initialize the settings manager.
@@ -93,12 +87,41 @@ void processOptions() {
         gspn->setCapacities(capacities);
     }
 
-    storm::api::handleGSPNExportSettings(*gspn, [&](storm::builder::JaniGSPNBuilder const&) { return properties; });
+    auto const& exportSettings = storm::settings::getModule<storm::settings::modules::GSPNExportSettings>();
+    if (exportSettings.isWriteToDotSet()) {
+        storm::api::exportGspnToDot(*gspn, exportSettings.getWriteToDotFilename());
+    }
+    if (exportSettings.isWriteToPnproSet()) {
+        storm::api::exportGspnToPnpro(*gspn, exportSettings.getWriteToPnproFilename());
+    }
+    if (exportSettings.isWriteToPnmlSet()) {
+        storm::api::exportGspnToPnml(*gspn, exportSettings.getWriteToPnmlFilename());
+    }
+    if (exportSettings.isWriteToJsonSet()) {
+        storm::api::exportGspnToJson(*gspn, exportSettings.getWriteToJsonFilename());
+    }
+    if (exportSettings.isDisplayStatsSet()) {
+        std::cout << "============GSPN Statistics==============\n";
+        storm::api::printGspnStatsToStream(*gspn, std::cout);
+        std::cout << "=========================================\n";
+    }
+    if (exportSettings.isWriteStatsToFileSet()) {
+        storm::api::exportGspnStatsToFile(*gspn, exportSettings.getWriteStatsFilename());
+    }
+    if (exportSettings.isWriteToJaniSet()) {
+        auto const& janiSettings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
+        storm::api::GspnJaniExportOptions janiOptions;
+        janiOptions.addDeadlockProperties = exportSettings.isAddJaniPropertiesSet();
+        janiOptions.janiConversionOptions = storm::converter::JaniConversionOptions(janiSettings);
+        janiOptions.compactJson = janiSettings.isCompactJsonSet();
+        janiOptions.smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>();
+        storm::api::exportGspnToJani(*gspn, exportSettings.getWriteToJaniFilename(), janiOptions,
+                                     [&](storm::builder::JaniGSPNBuilder const&) { return properties; });
+    }
 
-    //        // construct ma
-    //        auto builder = storm::builder::ExplicitGspnModelBuilder<>();
-    //        auto ma = builder.translateGspn(gspn, formula);
-    //
+    // construct ma
+    // auto builder = storm::builder::ExplicitGspnModelBuilder<>();
+    // auto ma = builder.translateGspn(gspn, formula);
 
     delete gspn;
 }
