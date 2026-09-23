@@ -1,8 +1,6 @@
 #include "DftGspnSettings.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/settings/Argument.h"
-#include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/SettingsManager.h"
@@ -16,7 +14,6 @@ const std::string DftGspnSettings::transformToGspnOptionName = "to-gspn";
 const std::string DftGspnSettings::disableSmartTransformationOptionName = "disable-smart";
 const std::string DftGspnSettings::mergeDCFailedOptionName = "merge-dc-failed";
 const std::string DftGspnSettings::extendPrioritiesOptionName = "extend-priorities";
-const std::string DftGspnSettings::writeToJaniOptionName = "to-jani";
 
 DftGspnSettings::DftGspnSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, transformToGspnOptionName, false, "Transform DFT to GSPN.").build());
@@ -26,9 +23,6 @@ DftGspnSettings::DftGspnSettings() : ModuleSettings(moduleName) {
             .build());
     this->addOption(
         storm::settings::OptionBuilder(moduleName, extendPrioritiesOptionName, false, "Enable experimental calculation of transition priorities").build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, writeToJaniOptionName, false, "Destination for the jani output")
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build())
-                        .build());
 }
 
 bool DftGspnSettings::isTransformToGspn() const {
@@ -45,14 +39,6 @@ bool DftGspnSettings::isMergeDCFailed() const {
 
 bool DftGspnSettings::isExtendPriorities() const {
     return this->getOption(extendPrioritiesOptionName).getHasOptionBeenSet();
-}
-
-bool DftGspnSettings::isWriteToJaniSet() const {
-    return this->getOption(writeToJaniOptionName).getHasOptionBeenSet();
-}
-
-std::string DftGspnSettings::getWriteToJaniFilename() const {
-    return this->getOption(writeToJaniOptionName).getArgumentByName("filename").getValueAsString();
 }
 
 void DftGspnSettings::finalize() {}

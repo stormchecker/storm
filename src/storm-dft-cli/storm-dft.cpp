@@ -96,9 +96,9 @@ void processOptions() {
         // Transform to Jani
         // TODO analyse Jani model
         auto [model, properties] = storm::dft::api::transformToJani(*gspn, toplevelFailedPlace);
-        if (dftGspnSettings.isWriteToJaniSet()) {
+        if (gspnExportSettings.isWriteToJaniSet()) {
             bool compactJson = storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isCompactJsonSet();
-            storm::api::exportJaniToFile(*model, properties, dftGspnSettings.getWriteToJaniFilename(), compactJson);
+            storm::api::exportJaniToFile(*model, properties, gspnExportSettings.getWriteToJaniFilename(), compactJson);
         }
         return;
     }
