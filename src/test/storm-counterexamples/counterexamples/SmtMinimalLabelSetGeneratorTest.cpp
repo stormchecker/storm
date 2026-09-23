@@ -64,13 +64,15 @@ TEST(SmtMinimalLabelSetGeneratorTest, DtmcWithMultipleLocations) {
 
 TEST(SmtMinimalLabelSetGeneratorTest, MdpWithMultipleLocationsAndInitialLocations) {
     // Automaton A is as in the DTMC above, but its first edge synchronizes with automaton B, which has two initial
-    // locations. Both edges of B are therefore needed, while the edge of A in l1 is not.
+    // locations. As the property value is the maximum over the initial states, it suffices to keep the edge of B that
+    // is enabled in one of the two initial locations. The edge of A in l1 is not needed.
     auto result = computeJaniCounterexample(STORM_TEST_RESOURCES_DIR "/mdp/locations_counterexample.jani", "P<0.5 [ F s=3 ]");
     ASSERT_TRUE(result.has_value());
 
     ASSERT_EQ(2ull, result->getNumberOfAutomata());
     EXPECT_EQ(2ull, result->getAutomaton("A").getNumberOfEdges());
-    EXPECT_EQ(2ull, result->getAutomaton("B").getNumberOfEdges());
+    // Either edge of B yields a counterexample, so we only check how many of them are kept.
+    EXPECT_EQ(1ull, result->getAutomaton("B").getNumberOfEdges());
 }
 
 }  // namespace
