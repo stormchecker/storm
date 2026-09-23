@@ -34,8 +34,8 @@ std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::d
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation to GSPN not supported for this data type.");
 }
 
-std::pair<std::shared_ptr<storm::jani::Model>, std::vector<storm::jani::Property>> transformToJani(storm::gspn::GSPN const& gspn,
-                                                                                                   uint64_t toplevelFailedPlace) {
+std::pair<std::shared_ptr<storm::jani::Model>, std::vector<storm::jani::Property>> transformToJani(storm::gspn::GSPN const& gspn, uint64_t toplevelFailedPlace,
+                                                                                                   bool addDeadlockProperties) {
     // Build Jani model
     storm::builder::JaniGSPNBuilder builder(gspn);
     std::shared_ptr<storm::jani::Model> model(builder.build("dft_gspn"));
@@ -48,6 +48,10 @@ std::pair<std::shared_ptr<storm::jani::Model>, std::vector<storm::jani::Property
     builder.addTransientVariable(model.get(), "failed", targetExpression);
     auto failedFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(targetExpression);
     auto properties = builder.getStandardProperties(model.get(), failedFormula, "Failed", "a failed state", true);
+    if (addDeadlockProperties) {
+        auto deadlockProperties = builder.getDeadlockProperties(model.get());
+        properties.insert(properties.end(), deadlockProperties.begin(), deadlockProperties.end());
+    }
 
     return std::make_pair(model, properties);
 }

@@ -36,9 +36,11 @@ std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::d
  *
  * @param gspn GSPN.
  * @param toplevelFailedPlace Id of the failed place in the GSPN for the top level element in the DFT.
- * @return Pair of JANI model and its standard properties.
+ * @param addDeadlockProperties Whether deadlock properties are added to the returned properties.
+ * @return Pair of JANI model and its properties.
  */
-std::pair<std::shared_ptr<storm::jani::Model>, std::vector<storm::jani::Property>> transformToJani(storm::gspn::GSPN const& gspn, uint64_t toplevelFailedPlace);
+std::pair<std::shared_ptr<storm::jani::Model>, std::vector<storm::jani::Property>> transformToJani(storm::gspn::GSPN const& gspn, uint64_t toplevelFailedPlace,
+                                                                                                   bool addDeadlockProperties = false);
 
 }  // namespace api
 }  // namespace storm::dft
