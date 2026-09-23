@@ -124,6 +124,7 @@ storm::storage::FlatSet<uint_fast64_t> getGuaranteedLabelSet(storm::models::spar
     storm::storage::FlatSet<uint_fast64_t> knownLabels(relevantLabels);
     storm::storage::FlatSet<uint_fast64_t> tempIntersection;
     for (auto initialState : model.getInitialStates()) {
+        tempIntersection.clear();
         std::set_intersection(knownLabels.begin(), knownLabels.end(), guaranteedLabels[initialState].begin(), guaranteedLabels[initialState].end(),
                               std::inserter(tempIntersection, tempIntersection.end()));
         std::swap(knownLabels, tempIntersection);
