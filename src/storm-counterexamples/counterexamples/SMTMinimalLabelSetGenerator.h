@@ -426,9 +426,9 @@ class SMTMinimalLabelSetGenerator {
             features.remove(storm::jani::ModelFeature::StateExitRewards);
             features.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
             // Currently no arrays or functions
-            STORM_LOG_THROW(features.empty(), storm::exceptions::NotSupportedException,
+            STORM_LOG_THROW(
+                features.empty(), storm::exceptions::NotSupportedException,
                 "Counterexample generation with backward implications is not supported: Unhandled Jani model feature " << features.toString() << ".");
-
         }
 
         storm::storage::FlatSet<uint_fast64_t> initialLabels;
