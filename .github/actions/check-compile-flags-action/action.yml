@@ -44,13 +44,13 @@ runs:
     - name: Check LTO IR is actually embedded (Docker)
       if: ${{ (inputs.docker == 'true') && (inputs.buildType == 'Release') }}
       run: |
-        docker cp "${{ github.action_path }}/check-lto-ir.sh" ci:/tmp/check-lto-ir.sh
-        docker exec ci bash /tmp/check-lto-ir.sh /opt/storm/build/src/storm/CMakeFiles/storm.dir
+        docker cp "${{ github.action_path }}/check-lto.sh" ci:/tmp/check-lto.sh
+        docker exec ci bash /tmp/check-lto.sh /opt/storm/build/src/storm/CMakeFiles/storm.dir
       shell: bash
     - name: Check LTO IR is actually embedded (native)
       if: ${{ (inputs.docker == 'false') && (inputs.buildType == 'Release') }}
       run: |
-        bash "${{ github.action_path }}/check-lto-ir.sh" build/src/storm/CMakeFiles/storm.dir
+        bash "${{ github.action_path }}/check-lto.sh" build/src/storm/CMakeFiles/storm.dir
       shell: bash
     - name: Check debug flags (Docker)
       if: ${{ (inputs.docker == 'true') && (inputs.buildType == 'Debug') }}

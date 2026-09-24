@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Check that a compiled object file actually carries embedded LTO intermediate representation
 #
-# Usage: check-lto-ir.sh <dir-containing-object-files>
+# Usage: check-lto.sh <dir-containing-object-files>
 set -euo pipefail
 
 search_dir="$1"
