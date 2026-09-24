@@ -22,12 +22,35 @@ runs:
         docker exec ci bash -c "if ! grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi"
         docker exec ci bash -c "if ! grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi"
       shell: bash
-    - name: Check release flags (MacOS)
+    - name: Check release flags (native)
       if: ${{ (inputs.docker == 'false') && (inputs.buildType == 'Release') }}
       run: |
-        if grep -q -e '-g' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi
-        if ! grep -q -e '-O3' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi
-        if ! grep -q -e '-DNDEBUG' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi
+        if grep -q -e '-g' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo "Error: Unexpected flag '-g' for release build."; exit 1; fi
+        if ! grep -q -e '-O3' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo "Error: Missing flag '-O3' for release build."; exit 1; fi
+        if ! grep -q -e '-DNDEBUG' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo "Error: Missing flag '-DNDEBUG' for release build."; exit 1; fi
+      shell: bash
+    - name: Check LTO flags (Docker)
+      if: ${{ (inputs.docker == 'true') && (inputs.buildType == 'Release') }}
+      run: |
+        docker exec ci bash -c "if ! grep -q -e '-flto' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing '-flto' compile flag for release build.\"; exit 1; fi"
+        docker exec ci bash -c "if ! grep -q -e '-flto' /opt/storm/build/src/storm/CMakeFiles/storm.dir/link.txt; then echo \"Error: Missing '-flto' link flag for release build.\"; exit 1; fi"
+      shell: bash
+    - name: Check LTO flags (native)
+      if: ${{ (inputs.docker == 'false') && (inputs.buildType == 'Release') }}
+      run: |
+        if ! grep -q -e '-flto' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo "Error: Missing '-flto' compile flag for release build."; exit 1; fi
+        if ! grep -q -e '-flto' build/src/storm/CMakeFiles/storm.dir/link.txt; then echo "Error: Missing '-flto' link flag for release build."; exit 1; fi
+      shell: bash
+    - name: Check LTO IR is actually embedded (Docker)
+      if: ${{ (inputs.docker == 'true') && (inputs.buildType == 'Release') }}
+      run: |
+        docker cp "${{ github.action_path }}/check-lto-ir.sh" ci:/tmp/check-lto-ir.sh
+        docker exec ci bash /tmp/check-lto-ir.sh /opt/storm/build/src/storm/CMakeFiles/storm.dir
+      shell: bash
+    - name: Check LTO IR is actually embedded (native)
+      if: ${{ (inputs.docker == 'false') && (inputs.buildType == 'Release') }}
+      run: |
+        bash "${{ github.action_path }}/check-lto-ir.sh" build/src/storm/CMakeFiles/storm.dir
       shell: bash
     - name: Check debug flags (Docker)
       if: ${{ (inputs.docker == 'true') && (inputs.buildType == 'Debug') }}
@@ -36,10 +59,10 @@ runs:
         docker exec ci bash -c "if grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
         docker exec ci bash -c "if grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
       shell: bash
-    - name: Check debug flags (MacOS)
+    - name: Check debug flags (native)
       if: ${{ (inputs.docker == 'false') && (inputs.buildType == 'Debug') }}
       run: |
-        if ! grep -q -e '-g' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi
-        if grep -q -e '-O3' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi
-        if grep -q -e '-DNDEBUG' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi
+        if ! grep -q -e '-g' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo "Error: Missing flag '-g' for debug build."; exit 1; fi
+        if grep -q -e '-O3' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo "Error: Unexpected flag '-O3' for debug build."; exit 1; fi
+        if grep -q -e '-DNDEBUG' build/src/storm/CMakeFiles/storm.dir/flags.make; then echo "Error: Unexpected flag '-DNDEBUG' for debug build."; exit 1; fi
       shell: bash
