@@ -97,7 +97,7 @@ jobs:
           }
           - {name: "Clang",
              cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON -DSTORM_COMPILE_WITH_PCH=OFF",
-             packages: "clang",
+             packages: "clang llvm",
              dockerfile: ".github/workflows/Dockerfile.archlinux",
              baseImg: "archlinux:latest"
           }
