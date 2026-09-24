@@ -25,13 +25,6 @@ if (STORM_USE_THIN_LTO)
     message(STATUS "Storm - Enabling link-time optimizations using ThinLTO.")
 elseif (STORM_USE_LTO)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-
-    # Fix for problems that occurred when using LTO on gcc. This should be removed when it
-    # is not needed anymore as it makes the already long link-step potentially longer.
-    if (STORM_COMPILER_GCC)
-        add_link_options(-flto-partition=none)
-    endif()
-
     message(STATUS "Storm - Enabling link-time optimizations.")
 else()
     message(STATUS "Storm - Disabling link-time optimizations.")
