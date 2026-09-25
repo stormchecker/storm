@@ -241,6 +241,77 @@ void AbstractEquationSolver<ValueType>::setBoundsFromOtherSolver(AbstractEquatio
 }
 
 template<typename ValueType>
+bool AbstractEquationSolver<ValueType>::hasSolutionLowerBounds() const {
+    return solutionBounds.hasLower();
+}
+
+template<typename ValueType>
+bool AbstractEquationSolver<ValueType>::hasSolutionUpperBounds() const {
+    return solutionBounds.hasUpper();
+}
+
+template<typename ValueType>
+std::vector<ValueType> const& AbstractEquationSolver<ValueType>::getSolutionLowerBounds() const {
+    STORM_LOG_ASSERT(this->hasSolutionLowerBounds(), "No lower bound on the solution was computed.");
+    return *solutionBounds.lower;
+}
+
+template<typename ValueType>
+std::vector<ValueType> const& AbstractEquationSolver<ValueType>::getSolutionUpperBounds() const {
+    STORM_LOG_ASSERT(this->hasSolutionUpperBounds(), "No upper bound on the solution was computed.");
+    return *solutionBounds.upper;
+}
+
+template<typename ValueType>
+void AbstractEquationSolver<ValueType>::setSolutionBounds(SolutionBounds<ValueType> bounds) const {
+    STORM_LOG_ASSERT(!bounds.hasLower() || !bounds.hasUpper() || bounds.lower->size() == bounds.upper->size(),
+                     "Bounds on the solution must have the same size.");
+    solutionBounds = std::move(bounds);
+}
+
+template<typename ValueType>
+void AbstractEquationSolver<ValueType>::setSolutionBoundsExact(std::vector<ValueType> const& x) const {
+    SolutionBounds<ValueType> bounds;
+    bounds.lower = x;
+    bounds.upper = x;
+    this->setSolutionBounds(std::move(bounds));
+}
+
+template<typename ValueType>
+void AbstractEquationSolver<ValueType>::setSolutionBoundsFromPrecision(std::vector<ValueType> const& x, ValueType const& precision, bool relative) const {
+    if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot derive solution bounds from a precision for rational functions.");
+    } else {
+        STORM_LOG_ASSERT(!relative || precision < storm::utility::one<ValueType>(), "A relative precision of one or more carries no information.");
+        SolutionBounds<ValueType> bounds;
+        std::vector<ValueType>& lower = bounds.lower.emplace(x.size());
+        std::vector<ValueType>& upper = bounds.upper.emplace(x.size());
+        bool const tightenFromBelow = this->hasLowerBound();
+        bool const tightenFromAbove = this->hasUpperBound();
+        for (uint64_t i = 0; i < x.size(); ++i) {
+            // For the relative criterion the guarantee reads |x_i - s_i| <= precision * |s_i| for the exact solution s.
+            // That gives |s_i| <= |x_i| / (1 - precision) and hence the deviation below, which does not refer to s.
+            ValueType const deviation =
+                relative ? precision * storm::utility::abs<ValueType>(x[i]) / (storm::utility::one<ValueType>() - precision) : precision;
+            lower[i] = x[i] - deviation;
+            upper[i] = x[i] + deviation;
+            if (tightenFromBelow) {
+                lower[i] = std::max(lower[i], this->getLowerBound(i));
+            }
+            if (tightenFromAbove) {
+                upper[i] = std::min(upper[i], this->getUpperBound(i));
+            }
+        }
+        this->setSolutionBounds(std::move(bounds));
+    }
+}
+
+template<typename ValueType>
+void AbstractEquationSolver<ValueType>::clearSolutionBounds() const {
+    solutionBounds.clear();
+}
+
+template<typename ValueType>
 void AbstractEquationSolver<ValueType>::clearBounds() {
     lowerBound = boost::none;
     upperBound = boost::none;

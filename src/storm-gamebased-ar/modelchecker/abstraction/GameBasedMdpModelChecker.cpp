@@ -1286,8 +1286,10 @@ void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection cons
             }
         }
         auto dtmcMatrix = dtmcMatrixBuilder.build();
-        std::vector<ValueType> sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(
-            Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
+        std::vector<ValueType> sanityValues =
+            storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(
+                Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false)
+                .values;
 
         ValueType maxDiff = storm::utility::zero<ValueType>();
         uint64_t maxState = 0;
@@ -1325,7 +1327,8 @@ void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection cons
         }
         dtmcMatrix = dtmcMatrixBuilder.build();
         sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(
-            Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
+                           Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false)
+                           .values;
 
         maxDiff = storm::utility::zero<ValueType>();
         maxState = 0;

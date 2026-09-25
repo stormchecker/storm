@@ -182,6 +182,22 @@ TEST(ExportCheckResultTest, PrintsNoApproximationOfAnInexactValue) {
     EXPECT_EQ(std::string::npos, out.str().find("(approx.")) << "An approximation was printed for " << out.str() << ".";
 }
 
+/*!
+ * A result with ten or more values is written as the range of its values, which then also has to show the bounds.
+ */
+TEST(ExportCheckResultTest, RangeOutputShowsBounds) {
+    std::vector<double> values(10, 0.5);
+    values.front() = 0.25;
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> result(values);
+    std::vector<double> lower(10, 0.4);
+    lower.front() = 0.2;
+    result.setLowerBounds(storm::utility::widen(std::move(lower)));
+
+    std::stringstream out;
+    result.writeToStream(out);
+    EXPECT_EQ("[0.25, 0.5] (range) [0.2, -] (bounds)", out.str());
+}
+
 TEST(ExportCheckResultTest, InfiniteRewardDouble) {
     storm::Environment env;
     runExportTest<double>(env);
