@@ -1,24 +1,20 @@
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/LongRunAverageSolverSettings.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 
-LongRunAverageSolverEnvironment::LongRunAverageSolverEnvironment() {
-    auto const& lraSettings = storm::settings::getModule<storm::settings::modules::LongRunAverageSolverSettings>();
-    detMethod = lraSettings.getDetLraMethod();
-    detMethodSetFromDefault = lraSettings.isDetLraMethodSetFromDefaultValue();
-    nondetMethod = lraSettings.getNondetLraMethod();
-    nondetMethodSetFromDefault = lraSettings.isNondetLraMethodSetFromDefaultValue();
-    precision = storm::utility::convertNumber<storm::RationalNumber>(lraSettings.getPrecision());
-    relative = lraSettings.isRelativePrecision();
-    if (lraSettings.isMaximalIterationCountSet()) {
-        maxIters = lraSettings.getMaximalIterationCount();
-    }
-    aperiodicFactor = storm::utility::convertNumber<storm::RationalNumber>(lraSettings.getAperiodicFactor());
+LongRunAverageSolverEnvironment::LongRunAverageSolverEnvironment()
+    : detMethod(storm::solver::LraMethod::GainBiasEquations),
+      detMethodSetFromDefault(true),
+      nondetMethod(storm::solver::LraMethod::ValueIteration),
+      nondetMethodSetFromDefault(true),
+      precision(storm::utility::convertNumber<storm::RationalNumber>(1e-06)),
+      relative(true),
+      maxIters(boost::none),
+      aperiodicFactor(storm::utility::convertNumber<storm::RationalNumber>(0.125)) {
+    // Intentionally left empty.
 }
 
 LongRunAverageSolverEnvironment::~LongRunAverageSolverEnvironment() {

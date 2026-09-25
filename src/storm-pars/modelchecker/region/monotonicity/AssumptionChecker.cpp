@@ -22,7 +22,7 @@ AssumptionChecker<ValueType, ConstantType>::AssumptionChecker(storage::SparseMat
 }
 
 template<typename ValueType, typename ConstantType>
-void AssumptionChecker<ValueType, ConstantType>::initializeCheckingOnSamples(std::shared_ptr<logic::Formula const> formula,
+void AssumptionChecker<ValueType, ConstantType>::initializeCheckingOnSamples(Environment const& env, std::shared_ptr<logic::Formula const> formula,
                                                                              std::shared_ptr<models::sparse::Dtmc<ValueType>> model,
                                                                              storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples) {
     // Create sample points
@@ -45,11 +45,11 @@ void AssumptionChecker<ValueType, ConstantType>::initializeCheckingOnSamples(std
         if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
             const modelchecker::CheckTask<logic::UntilFormula, ConstantType> checkTask =
                 modelchecker::CheckTask<logic::UntilFormula, ConstantType>(formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula());
-            checkResult = checker.computeUntilProbabilities(Environment(), checkTask);
+            checkResult = checker.computeUntilProbabilities(env, checkTask);
         } else if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()) {
             const modelchecker::CheckTask<logic::EventuallyFormula, ConstantType> checkTask =
                 modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>(formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
-            checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
+            checkResult = checker.computeReachabilityProbabilities(env, checkTask);
         } else {
             STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula.");
         }

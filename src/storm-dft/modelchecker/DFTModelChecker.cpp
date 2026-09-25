@@ -15,6 +15,9 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/ModelType.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/EliminationSettings.h"
 #include "storm/utility/bitoperations.h"
 
 namespace storm::dft {
@@ -457,12 +460,16 @@ std::vector<typename DFTModelChecker<ValueType>::ExtendedValueType> DFTModelChec
 
     // Check each property
     storm::utility::Stopwatch singleModelCheckingTimer;
+    auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+    auto const& eliminationSettings = storm::settings::getModule<storm::settings::modules::EliminationSettings>();
+    bool const preferEliminationChecker =
+        coreSettings.getEquationSolver() == storm::solver::EquationSolverType::Elimination && eliminationSettings.isUseDedicatedModelCheckerSet();
     for (auto property : properties) {
         singleModelCheckingTimer.reset();
         singleModelCheckingTimer.start();
         // STORM_PRINT_AND_LOG("Model checking property " << *property << " ...\n");
         std::unique_ptr<storm::modelchecker::CheckResult> result(
-            storm::api::verifyWithSparseEngine<ValueType>(env.core(), model, storm::api::createTask<ValueType>(property, true)));
+            storm::api::verifyWithSparseEngine<ValueType>(env.core(), model, storm::api::createTask<ValueType>(property, true), preferEliminationChecker));
 
         if (result) {
             result->filter(storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>(model->getInitialStates()));

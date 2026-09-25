@@ -4,13 +4,11 @@
 #include "storm/environment/exploration/ExplorationEnvironment.h"
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 
 namespace storm {
 
 Environment::Environment() {
-    modelToleranceValue = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
+    modelToleranceValue = 1e-06;
 }
 
 Environment::~Environment() {

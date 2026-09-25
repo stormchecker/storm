@@ -26,9 +26,8 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Smg.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/EliminationSettings.h"
+#include "storm/models/ModelBase.h"
+#include "storm/models/symbolic/Model.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
 
@@ -102,10 +101,10 @@ std::unique_ptr<storm::modelchecker::CheckResult> verifyWithExplorationEngine(st
 template<typename ValueType>
 std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(storm::Environment const& env,
                                                                          std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> const& dtmc,
-                                                                         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+                                                                         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
+                                                                         bool preferEliminationChecker = false) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination &&
-        storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
+    if (preferEliminationChecker) {
         if constexpr (storm::IsIntervalType<ValueType>) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "We do not yet support using the elimination checker with intervals models.");
         }
@@ -128,9 +127,10 @@ std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(storm::
 
 template<typename ValueType>
 std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> const& dtmc,
-                                                                         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+                                                                         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
+                                                                         bool preferEliminationChecker = false) {
     Environment env;
-    return verifyWithSparseEngine(env, dtmc, task);
+    return verifyWithSparseEngine(env, dtmc, task, preferEliminationChecker);
 }
 
 template<typename ValueType>
@@ -238,10 +238,11 @@ std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(std::sh
 template<typename ValueType>
 std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(storm::Environment const& env,
                                                                          std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
-                                                                         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+                                                                         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
+                                                                         bool preferEliminationChecker = false) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
     if (model->getType() == storm::models::ModelType::Dtmc) {
-        result = verifyWithSparseEngine(env, model->template as<storm::models::sparse::Dtmc<ValueType>>(), task);
+        result = verifyWithSparseEngine(env, model->template as<storm::models::sparse::Dtmc<ValueType>>(), task, preferEliminationChecker);
     } else if (model->getType() == storm::models::ModelType::Mdp) {
         result = verifyWithSparseEngine(env, model->template as<storm::models::sparse::Mdp<ValueType>>(), task);
     } else if (model->getType() == storm::models::ModelType::Ctmc) {
@@ -258,9 +259,10 @@ std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(storm::
 
 template<typename ValueType>
 std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
-                                                                         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+                                                                         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
+                                                                         bool preferEliminationChecker = false) {
     Environment env;
-    return verifyWithSparseEngine(env, model, task);
+    return verifyWithSparseEngine(env, model, task, preferEliminationChecker);
 }
 
 template<typename ValueType>

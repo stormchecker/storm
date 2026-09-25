@@ -75,16 +75,17 @@ struct SampleInformation {
 };
 
 template<template<typename, typename> class ModelCheckerType, typename ModelType, typename ValueType, typename SolveValueType = double>
-void verifyPropertiesAtSamplePointsDerivative(ModelType const& model, cli::SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
+void verifyPropertiesAtSamplePointsDerivative(storm::Environment const& env, ModelType const& model, cli::SymbolicInput const& input,
+                                              SampleInformation<ValueType> const& samples) {
     // When samples are provided, we create an instantiation model checker.
     ModelCheckerType<ValueType, SolveValueType> derivativeModelchecker(model);
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<ModelType, SolveValueType> originalModelchecker(Environment(), model);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<ModelType, SolveValueType> originalModelchecker(env, model);
 
     for (auto const& property : input.properties) {
         storm::cli::printModelCheckingProperty(property);
 
         auto checkTask = storm::api::createTask<ValueType>(property.getRawFormula(), true);
-        derivativeModelchecker.specifyFormula(Environment(), checkTask);
+        derivativeModelchecker.specifyFormula(env, checkTask);
         originalModelchecker.specifyFormula(checkTask);
 
         storm::utility::parametric::Valuation<ValueType> valuation;
@@ -113,7 +114,7 @@ void verifyPropertiesAtSamplePointsDerivative(ModelType const& model, cli::Symbo
                 }
 
                 storm::utility::Stopwatch valuationWatch(true);
-                std::unique_ptr<storm::modelchecker::CheckResult> originalResult = originalModelchecker.check(Environment(), valuation);
+                std::unique_ptr<storm::modelchecker::CheckResult> originalResult = originalModelchecker.check(env, valuation);
                 valuationWatch.stop();
 
                 boost::optional<std::vector<SolveValueType>> valueVector = boost::none;
@@ -126,7 +127,7 @@ void verifyPropertiesAtSamplePointsDerivative(ModelType const& model, cli::Symbo
 
                 for (auto const& parameter : parameters) {
                     valuationWatch.restart();
-                    std::unique_ptr<storm::modelchecker::CheckResult> result = derivativeModelchecker.check(Environment(), valuation, parameter, valueVector);
+                    std::unique_ptr<storm::modelchecker::CheckResult> result = derivativeModelchecker.check(env, valuation, parameter, valueVector);
                     valuationWatch.stop();
 
                     if (result) {
@@ -160,9 +161,10 @@ void verifyPropertiesAtSamplePointsDerivative(ModelType const& model, cli::Symbo
 }
 
 template<template<typename, typename> class ModelCheckerType, typename ModelType, typename ValueType, typename SolveValueType = double, bool Derivative = false>
-void verifyPropertiesAtSamplePoints(ModelType const& model, cli::SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
+void verifyPropertiesAtSamplePoints(storm::Environment const& env, ModelType const& model, cli::SymbolicInput const& input,
+                                    SampleInformation<ValueType> const& samples) {
     // When samples are provided, we create an instantiation model checker.
-    ModelCheckerType<ModelType, SolveValueType> modelchecker(Environment(), model);
+    ModelCheckerType<ModelType, SolveValueType> modelchecker(env, model);
 
     for (auto const& property : input.properties) {
         storm::cli::printModelCheckingProperty(property);
@@ -196,7 +198,7 @@ void verifyPropertiesAtSamplePoints(ModelType const& model, cli::SymbolicInput c
                 }
 
                 storm::utility::Stopwatch valuationWatch(true);
-                std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(Environment(), valuation);
+                std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(env, valuation);
                 valuationWatch.stop();
 
                 if (result) {
@@ -228,28 +230,29 @@ void verifyPropertiesAtSamplePoints(ModelType const& model, cli::SymbolicInput c
 }
 
 template<typename ValueType, typename SolveValueType = double>
-void verifyPropertiesAtSamplePointsWithSparseEngineDerivatives(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+void verifyPropertiesAtSamplePointsWithSparseEngineDerivatives(storm::Environment const& env,
+                                                               std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
                                                                cli::SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
     if (model->isOfType(storm::models::ModelType::Dtmc)) {
         verifyPropertiesAtSamplePointsDerivative<storm::derivative::SparseDerivativeInstantiationModelChecker, storm::models::sparse::Dtmc<ValueType>,
-                                                 ValueType, SolveValueType>(*model->template as<storm::models::sparse::Dtmc<ValueType>>(), input, samples);
+                                                 ValueType, SolveValueType>(env, *model->template as<storm::models::sparse::Dtmc<ValueType>>(), input, samples);
     } else {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sampling the derivative is currently only supported for DTMCs.");
     }
 }
 
 template<typename ValueType, typename SolveValueType = double>
-void verifyPropertiesAtSamplePointsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, cli::SymbolicInput const& input,
-                                                    SampleInformation<ValueType> const& samples) {
+void verifyPropertiesAtSamplePointsWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                                    cli::SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
     if (model->isOfType(storm::models::ModelType::Dtmc)) {
         verifyPropertiesAtSamplePoints<storm::modelchecker::SparseDtmcInstantiationModelChecker, storm::models::sparse::Dtmc<ValueType>, ValueType,
-                                       SolveValueType>(*model->template as<storm::models::sparse::Dtmc<ValueType>>(), input, samples);
+                                       SolveValueType>(env, *model->template as<storm::models::sparse::Dtmc<ValueType>>(), input, samples);
     } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
         verifyPropertiesAtSamplePoints<storm::modelchecker::SparseCtmcInstantiationModelChecker, storm::models::sparse::Ctmc<ValueType>, ValueType,
-                                       SolveValueType>(*model->template as<storm::models::sparse::Ctmc<ValueType>>(), input, samples);
+                                       SolveValueType>(env, *model->template as<storm::models::sparse::Ctmc<ValueType>>(), input, samples);
     } else if (model->isOfType(storm::models::ModelType::Mdp)) {
         verifyPropertiesAtSamplePoints<storm::modelchecker::SparseMdpInstantiationModelChecker, storm::models::sparse::Mdp<ValueType>, ValueType,
-                                       SolveValueType>(*model->template as<storm::models::sparse::Mdp<ValueType>>(), input, samples);
+                                       SolveValueType>(env, *model->template as<storm::models::sparse::Mdp<ValueType>>(), input, samples);
     } else {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sampling is currently only supported for DTMCs, CTMCs and MDPs.");
     }
@@ -327,7 +330,7 @@ SampleInformation<ValueType> parseSamples(std::shared_ptr<storm::models::ModelBa
 }
 
 template<typename ValueType>
-void sampleDerivatives(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, cli::SymbolicInput const& input,
+void sampleDerivatives(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, cli::SymbolicInput const& input,
                        std::string const& instantiationString) {
     STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException,
                     "Gradient descent is currently only supported for DTMCs.");
@@ -378,12 +381,12 @@ void sampleDerivatives(std::shared_ptr<storm::models::sparse::Model<ValueType>> 
     }
     const storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> checkTask =
         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBound);
-    modelChecker.specifyFormula(Environment(), checkTask);
+    modelChecker.specifyFormula(env, checkTask);
 
     for (auto const& parameter : vars) {
         std::cout << "Derivative w.r.t. " << parameter << ": ";
 
-        auto result = modelChecker.check(Environment(), instantiation, parameter);
+        auto result = modelChecker.check(env, instantiation, parameter);
         std::cout << *result << '\n';
     }
 }

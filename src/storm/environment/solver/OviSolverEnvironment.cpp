@@ -1,20 +1,23 @@
 #include "storm/environment/solver/OviSolverEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/OviSolverSettings.h"
-#include "storm/utility/constants.h"
+#include <optional>
 
 namespace storm {
 
-OviSolverEnvironment::OviSolverEnvironment() {
-    auto const& oviSettings = storm::settings::getModule<storm::settings::modules::OviSolverSettings>();
-    if (oviSettings.hasUpperBoundGuessingFactorBeenSet()) {
-        upperBoundGuessingFactor = storm::utility::convertNumber<storm::RationalNumber>(oviSettings.getUpperBoundGuessingFactor());
-    }
+OviSolverEnvironment::OviSolverEnvironment() : upperBoundGuessingFactor(std::nullopt) {
+    // Intentionally left empty.
 }
 
 std::optional<storm::RationalNumber> const& OviSolverEnvironment::getUpperBoundGuessingFactor() const {
     return upperBoundGuessingFactor;
+}
+
+void OviSolverEnvironment::setUpperBoundGuessingFactor(storm::RationalNumber value) {
+    upperBoundGuessingFactor = value;
+}
+
+void OviSolverEnvironment::unsetUpperBoundGuessingFactor() {
+    upperBoundGuessingFactor = std::nullopt;
 }
 
 }  // namespace storm

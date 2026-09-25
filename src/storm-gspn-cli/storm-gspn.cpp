@@ -17,6 +17,7 @@
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/api/storm.h"
 #include "storm/exceptions/FileIoException.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"

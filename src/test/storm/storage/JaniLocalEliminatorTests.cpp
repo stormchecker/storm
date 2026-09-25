@@ -8,6 +8,7 @@
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/environment/Environment.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"

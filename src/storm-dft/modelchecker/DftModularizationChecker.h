@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "storm-dft/environment/DftEnvironment.h"
 #include "storm-dft/modelchecker/DFTModelChecker.h"
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/DftModule.h"
@@ -27,8 +28,9 @@ class DftModularizationChecker {
     /*!
      * Initializes and computes all modules.
      * @param dft DFT.
+     * @param env Environment used for analysing the dynamic modules.
      */
-    DftModularizationChecker(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft);
+    DftModularizationChecker(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft, storm::dft::DftEnvironment const &env = storm::dft::DftEnvironment());
 
     /*!
      * Calculate the properties specified by the formulas.
@@ -81,6 +83,8 @@ class DftModularizationChecker {
 
     // DFT.
     std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft;
+    // Environment used for analysing the dynamic modules.
+    storm::dft::DftEnvironment env;
     // DFT modelchecker
     storm::dft::modelchecker::DFTModelChecker<ValueType> modelchecker;
     // don't reinitialize Sylvan BDD

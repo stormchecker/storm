@@ -57,13 +57,15 @@ class LexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHe
      * In lexicographic order, each objective is solved for reachability, i.e. the MECs where the property can be fulfilled are the goal-states
      * The model is restricted to optimal actions concerning this reachability query
      * This is repeated for all objectives.
+     * @param env the environment used to solve the reachability queries
      * @param mecs MaximalEndcomponents in the product-model
      * @param mecLexArray corresponding Lex-arrays for each MEC
      * @param productModel the product of MDP and automaton
      * @param originalMdp the original MDP
      * @return
      */
-    MDPSparseModelCheckingHelperReturnType<ValueType> lexReachability(storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs,
+    MDPSparseModelCheckingHelperReturnType<ValueType> lexReachability(Environment const& env,
+                                                                      storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs,
                                                                       std::vector<std::vector<bool>> const& mecLexArray,
                                                                       std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel,
                                                                       SparseModelType const& originalMdp);
@@ -113,7 +115,8 @@ class LexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHe
     /*!
      * Solves the reachability-query for a given set of goal-states and initial-states
      */
-    MDPSparseModelCheckingHelperReturnType<ValueType> solveOneReachability(std::vector<uint64_t>& newInitalStates, storm::storage::BitVector const& psiStates,
+    MDPSparseModelCheckingHelperReturnType<ValueType> solveOneReachability(Environment const& env, std::vector<uint64_t>& newInitalStates,
+                                                                           storm::storage::BitVector const& psiStates,
                                                                            storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                            SparseModelType const& originalMdp,
                                                                            std::vector<uint64_t> const& compressedToReducedMapping,

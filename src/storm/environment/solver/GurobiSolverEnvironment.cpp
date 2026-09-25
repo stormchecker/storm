@@ -1,19 +1,17 @@
 #include "storm/environment/solver/GurobiSolverEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GurobiSettings.h"
 #include "storm/solver/GurobiLpSolver.h"
 
 namespace storm {
 
-GurobiSolverEnvironment::GurobiSolverEnvironment() {
-    auto const& gurobiSettings = storm::settings::getModule<storm::settings::modules::GurobiSettings>();
-    method = gurobiSettings.getMethod();
-    numberOfThreads = gurobiSettings.getNumberOfThreads();
-    mipFocus = gurobiSettings.getMIPFocus();
-    numberOfConcurrentMipThreads = gurobiSettings.getNumberOfConcurrentMipThreads();
-    integerTolerance = gurobiSettings.getIntegerTolerance();
-    output = gurobiSettings.isOutputSet();
+GurobiSolverEnvironment::GurobiSolverEnvironment()
+    : method(storm::solver::GurobiSolverMethod::AUTOMATIC),
+      numberOfThreads(1),
+      mipFocus(0),
+      numberOfConcurrentMipThreads(1),
+      integerTolerance(1e-06),
+      output(false) {
+    // Intentionally left empty.
 }
 
 GurobiSolverEnvironment::~GurobiSolverEnvironment() {
