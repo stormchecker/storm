@@ -2,7 +2,9 @@
 
 #include <bitset>
 #include <cstring>
+#include <limits>
 #include <ranges>
+#include <utility>
 
 #include <boost/functional/hash.hpp>
 
@@ -318,23 +320,27 @@ storm::umb::UmbModel::Valuation ValuationsStorage::getRawUmbData() const {
 void ValuationsStorage::resize(uint64_t newEntityCount, uint64_t const classIndex) {
     if (newEntityCount > size()) {
         // Initialize one new entity with default values. This is required to ensure that valuation data is consistent (e.g. avoid 0/0 for rationals).
+        uint64_t const initializedEntity = size();
         emplaceBack<true>(classIndex, [](auto&&...) {});
-        // For the remaining entities, we can be a bit quicker by copying the values of the last initialized entity.
+        // For the remaining entities, we can be a bit quicker by copying the values of the initialized entity.
         if (newEntityCount > size()) {
             uint64_t const classSize = variableClasses[classIndex].sizeInBytes;
             valuations.resize(valuations.size() + (newEntityCount - size()) * classSize);
             if (entityClassMappings) {
                 entityClassMappings->toClassMapping.resize(newEntityCount, classIndex);
-                for (uint64_t valEnd = entityClassMappings->toValuationsMapping.back() + classSize; valEnd < valuations.size(); valEnd += classSize) {
-                    entityClassMappings->toValuationsMapping.push_back(valEnd);
+                // Add the end of the valuation data of each new entity (there are newEntityCount + 1 entries in total).
+                auto& toValuationsMapping = entityClassMappings->toValuationsMapping;
+                for (uint64_t valEnd = toValuationsMapping.back() + classSize; toValuationsMapping.size() < newEntityCount + 1; valEnd += classSize) {
+                    toValuationsMapping.push_back(valEnd);
                 }
             }
-            auto const srcBytes = getRawBytes(numEntities);  // the bytes of the entry we initialized using emplaceBack
-            for (uint64_t newEntityIndex = numEntities + 1; newEntityIndex < newEntityCount; ++newEntityIndex) {
+            uint64_t const firstCopiedEntity = size();
+            numEntities = newEntityCount;
+            auto const srcBytes = getRawBytes(initializedEntity);
+            for (uint64_t newEntityIndex = firstCopiedEntity; newEntityIndex < newEntityCount; ++newEntityIndex) {
                 auto destBytes = getRawBytes(newEntityIndex);
                 std::copy(srcBytes.begin(), srcBytes.end(), destBytes.begin());
             }
-            numEntities = newEntityCount;
         }
     } else if (newEntityCount < size()) {
         uint64_t const newValuationsSize =
@@ -374,6 +380,32 @@ template void ValuationsStorage::setValuesInEvaluator<storm::RationalNumber>(uin
 ValuationsStorage::VariablesInformation const& ValuationsStorage::info(uint64_t entity) const {
     return variableClasses[getClassOfEntity(entity)];
 }
+
+template<typename ValueType>
+    requires(std::is_same_v<ValueType, int64_t> || std::is_same_v<ValueType, uint64_t> || std::is_same_v<ValueType, ValuationsStorage::Integer>)
+bool ValuationsStorage::fitsIntoStoredType(ValueType const& value, VariableInformation const& varInfo) const {
+    auto const bitSize = varInfo.description.type.bitSize();
+    STORM_LOG_ASSERT(bitSize > 0, "Expected a positive bit size for variable " << varInfo.description.name << ".");
+    bool const isSigned = varInfo.description.type.type == storm::umb::Type::Int;
+    STORM_LOG_ASSERT(isSigned || varInfo.description.type.type == storm::umb::Type::Uint, "Expected an integer type.");
+    if constexpr (std::is_same_v<ValueType, Integer>) {
+        // Signed: [-2^(bitSize-1), 2^(bitSize-1)), unsigned: [0, 2^bitSize)
+        Integer const limit = storm::utility::pow<Integer>(2, isSigned ? bitSize - 1 : bitSize);
+        return isSigned ? (value >= -limit && value < limit) : (value >= 0 && value < limit);
+    } else if (isSigned) {
+        if (bitSize >= 64) {
+            return std::cmp_less_equal(value, std::numeric_limits<int64_t>::max());  // every int64_t fits
+        }
+        int64_t const limit = int64_t(1) << (bitSize - 1);
+        return std::cmp_greater_equal(value, -limit) && std::cmp_less(value, limit);
+    } else {
+        return std::cmp_greater_equal(value, 0) && (bitSize >= 64 || std::cmp_less(value, uint64_t(1) << bitSize));
+    }
+}
+
+template bool ValuationsStorage::fitsIntoStoredType<int64_t>(int64_t const&, VariableInformation const&) const;
+template bool ValuationsStorage::fitsIntoStoredType<uint64_t>(uint64_t const&, VariableInformation const&) const;
+template bool ValuationsStorage::fitsIntoStoredType<ValuationsStorage::Integer>(Integer const&, VariableInformation const&) const;
 
 std::span<char const> ValuationsStorage::getRawBytes(uint64_t entity) const {
     STORM_LOG_ASSERT(entity < size(), "Entity index out of bounds: " << entity << " >= " << size() << ".");
@@ -421,7 +453,7 @@ uint64_t ValuationsStorage::readUint64(std::span<char const> bytes, uint64_t con
     auto const bitOffsetWithinByte = bitOffset % 8;
     auto const numBytes = (bitOffsetWithinByte + bitSize + 7) / 8;
     STORM_LOG_ASSERT(numBytes <= 9, "Invalid number of bytes computed: " << numBytes);
-    uint64_t result;
+    uint64_t result = 0;
     // set the first (up to) 8 bytes
     std::memcpy(&result, &bytes[firstByte], std::min<uint64_t>(numBytes, 8ull));
     result >>= bitOffsetWithinByte;
@@ -469,8 +501,11 @@ void ValuationsStorage::writeUint64(std::span<char> bytes, uint64_t const bitOff
             // we have to write a partial byte at the end, so we need to read the existing byte and only overwrite the relevant bits
             char& lastByte = bytes[firstByte + numFullBytes];
             uint8_t const numBitsUsedInLastByte = (bitOffsetWithinByte + bitSize) % 8;
-            lastByte &= static_cast<char>((1 << numBitsUsedInLastByte) - 1);                   // set relevant bits to zero
-            lastByte |= static_cast<char>(value >> (numFullBytes * 8 - bitOffsetWithinByte));  // set relevant bits to the value bits
+            uint8_t const relevantBitsMask = static_cast<uint8_t>((uint8_t(1) << numBitsUsedInLastByte) - 1);  // e.g. 0000 0111 for 3 bits
+            uint8_t newLastByte = std::bit_cast<uint8_t>(lastByte);
+            newLastByte &= static_cast<uint8_t>(~relevantBitsMask);                                  // set relevant bits to zero
+            newLastByte |= static_cast<uint8_t>(value >> (numFullBytes * 8 - bitOffsetWithinByte));  // set relevant bits to the value bits
+            lastByte = std::bit_cast<char>(newLastByte);
         }
     }
 }

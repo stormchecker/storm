@@ -87,9 +87,6 @@ storm::models::sparse::StateLabeling constructStateLabeling(storm::umb::UmbModel
     storm::models::sparse::StateLabeling stateLabelling(numStates);
     if (umbModel.stateIsInitial) {
         stateLabelling.addLabel("init", createBitVector(umbModel.stateIsInitial, numStates));
-    } else {
-        STORM_LOG_WARN("No initial states given in UMB model.");
-        stateLabelling.addLabel("init", storm::storage::BitVector(numStates, false));  // default to all states not being initial
     }
     if (umbModel.index.aps().has_value()) {
         auto aps = umbModel.index.aps();
@@ -103,10 +100,19 @@ storm::models::sparse::StateLabeling constructStateLabeling(storm::umb::UmbModel
             auto const& ap = umbModel.aps()->at(apName);
             auto labelName = apIndex.alias.value_or(apName);  // prefer alias as label name if it exists
             STORM_LOG_THROW(ap.states.has_value(), storm::exceptions::WrongFormatException, "Atomic proposition '" << apName << "' has no states values.");
-            STORM_LOG_THROW(!stateLabelling.containsLabel(labelName), storm::exceptions::WrongFormatException,
-                            "Label '" << labelName << "' already exists in state labeling.");
-            stateLabelling.addLabel(labelName, createBitVector(ap.states->values.template get<bool>(), numStates));
+            auto labeledStates = createBitVector(ap.states->values.template get<bool>(), numStates);
+            if (stateLabelling.containsLabel(labelName)) {
+                STORM_LOG_THROW(stateLabelling.getStates(labelName) == labeledStates, storm::exceptions::WrongFormatException,
+                                "Label '" << labelName << "' is declared multiple times and the labellings are not consistent.");
+                STORM_LOG_WARN("Ignoring additional declaration of label '" << labelName << "' as it is already defined with the same labelling.");
+            } else {
+                stateLabelling.addLabel(labelName, std::move(labeledStates));
+            }
         }
+    }
+    if (!stateLabelling.containsLabel("init")) {
+        STORM_LOG_WARN("No initial states given in UMB model.");
+        stateLabelling.addLabel("init", storm::storage::BitVector(numStates, false));  // default to all states not being initial
     }
     return stateLabelling;
 }

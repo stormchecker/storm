@@ -1,9 +1,12 @@
+#include <ranges>
+
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/generator/PrismNextStateGenerator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -416,4 +419,165 @@ TEST(ValuationTest, RejectsNonCompliantDoubleOrStringSize) {
     storm::storage::sparse::ValuationClassDescription::Variable const okDouble{
         .name = "d", .isOptional = std::nullopt, .type = {storm::umb::Type::Double, std::nullopt}, .lower = {}, .upper = {}, .offset = {}};
     EXPECT_NO_THROW(okBuilder.addVariable(okDouble));
+}
+
+TEST(ValuationTest, OverwriteValues) {
+    // Overwriting values must not affect neighboring variables (variables are not byte-aligned and span multiple bytes)
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto const a = manager->declareIntegerVariable("a");
+    auto const b = manager->declareIntegerVariable("b");
+    auto const c = manager->declareIntegerVariable("c");
+    storm::storage::sparse::ValuationDescriptionBuilder descBuilder(manager);
+    descBuilder.addIntegerVariable(a, 0, 7);       // 3 bits
+    descBuilder.addIntegerVariable(b, 0, 100000);  // 17 bits, crosses byte boundaries
+    descBuilder.addIntegerVariable(c, 0, 1000);    // 10 bits
+    storm::storage::sparse::ValuationsStorage storage(descBuilder.buildClassDescription(), manager);
+    storage.resize(1);
+    for (int64_t round = 0; round < 3; ++round) {
+        int64_t const av = round == 0 ? 7 : (round == 1 ? 0 : 5);
+        int64_t const bv = round == 0 ? 99999 : (round == 1 ? 1 : 65537);
+        int64_t const cv = round == 0 ? 1000 : (round == 1 ? 0 : 513);
+        storage.writeValue<int64_t>(0, a, av);
+        storage.writeValue<int64_t>(0, b, bv);
+        storage.writeValue<int64_t>(0, c, cv);
+        EXPECT_EQ(av, storage.readValue<int64_t>(0, a));
+        EXPECT_EQ(bv, storage.readValue<int64_t>(0, b));
+        EXPECT_EQ(cv, storage.readValue<int64_t>(0, c));
+    }
+}
+
+TEST(ValuationTest, ResizeInitializesAllNewEntitiesWithDefaults) {
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto const i = manager->declareIntegerVariable("i");
+    auto const r = manager->declareRationalVariable("r");
+    auto const b = manager->declareBooleanVariable("b");
+    storm::storage::sparse::ValuationDescriptionBuilder descBuilder(manager);
+    // The default value of i is its upper bound -3, whose bit representation is not zero
+    descBuilder.addVariable(
+        {.name = "i", .isOptional = std::nullopt, .type = {storm::umb::Type::Int, 8}, .lower = std::nullopt, .upper = -3, .offset = std::nullopt});
+    // The default value of r is 0/1 (and not 0/0)
+    descBuilder.addRationalVariable(r, 16);
+    descBuilder.addBooleanVariable(b);
+    storm::storage::sparse::ValuationsStorage storage(descBuilder.buildClassDescription(), manager);
+
+    storage.resize(5);
+    ASSERT_EQ(5u, storage.size());
+    for (uint64_t entity = 0; entity < 5; ++entity) {
+        EXPECT_EQ(-3, storage.readValue<int64_t>(entity, i)) << "entity " << entity;
+        EXPECT_EQ(storm::RationalNumber(0), storage.readValue<storm::RationalNumber>(entity, r)) << "entity " << entity;
+        EXPECT_FALSE(storage.readValue<bool>(entity, b)) << "entity " << entity;
+    }
+    // Growing an already non-empty storage keeps the existing entities
+    storage.writeValue<int64_t>(2, i, -7);
+    storage.resize(8);
+    ASSERT_EQ(8u, storage.size());
+    EXPECT_EQ(-7, storage.readValue<int64_t>(2, i));
+    for (uint64_t entity : {0, 1, 3, 4, 5, 6, 7}) {
+        EXPECT_EQ(-3, storage.readValue<int64_t>(entity, i)) << "entity " << entity;
+        EXPECT_EQ(storm::RationalNumber(0), storage.readValue<storm::RationalNumber>(entity, r)) << "entity " << entity;
+    }
+    // Shrinking
+    storage.resize(3);
+    EXPECT_EQ(3u, storage.size());
+    EXPECT_EQ(-7, storage.readValue<int64_t>(2, i));
+}
+
+TEST(ValuationTest, ResizeMultipleClasses) {
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto const a = manager->declareIntegerVariable("a");
+    auto const b = manager->declareIntegerVariable("b");
+    std::vector<storm::storage::sparse::ValuationClassDescription> classes;
+    {
+        storm::storage::sparse::ValuationDescriptionBuilder builder(manager);
+        builder.addIntegerVariable(a, 0, 7);  // 3 bits, padded to one byte
+        classes.push_back(builder.buildClassDescription());
+    }
+    {
+        storm::storage::sparse::ValuationDescriptionBuilder builder(manager);
+        builder.addIntegerVariable(b, -20000, 20000);  // 16 bits
+        classes.push_back(builder.buildClassDescription());
+    }
+    storm::storage::sparse::ValuationsStorage storage(classes, {manager});
+    ASSERT_EQ(2u, storage.numClasses());
+
+    storage.resize(3, 0);
+    storage.resize(7, 1);
+    ASSERT_EQ(7u, storage.size());
+    for (uint64_t entity = 0; entity < 7; ++entity) {
+        EXPECT_EQ(entity < 3 ? 0u : 1u, storage.getClassOfEntity(entity)) << "entity " << entity;
+    }
+    // Make sure that we can access all entities independently of each other (in particular the last one)
+    for (uint64_t entity = 0; entity < 3; ++entity) {
+        storage.writeValue<int64_t>(entity, a, entity + 1);
+    }
+    for (uint64_t entity = 3; entity < 7; ++entity) {
+        storage.writeValue<int64_t>(entity, b, -static_cast<int64_t>(entity) * 1000);
+    }
+    for (uint64_t entity = 0; entity < 3; ++entity) {
+        EXPECT_EQ(static_cast<int64_t>(entity + 1), storage.readValue<int64_t>(entity, a));
+    }
+    for (uint64_t entity = 3; entity < 7; ++entity) {
+        EXPECT_EQ(-static_cast<int64_t>(entity) * 1000, storage.readValue<int64_t>(entity, b));
+    }
+    EXPECT_EQ(3u + 4u * 2u, storage.getRawUmbData().valuations->size());
+}
+
+TEST(ValuationTest, WriteRejectsValuesThatDoNotFitIntoStoredType) {
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto const s = manager->declareIntegerVariable("s");
+    auto const u = manager->declareIntegerVariable("u");
+    storm::storage::sparse::ValuationDescriptionBuilder descBuilder(manager);
+    // Signed and unsigned 4 bit variables without declared bounds
+    descBuilder.addVariable({.name = "s", .isOptional = std::nullopt, .type = {storm::umb::Type::Int, 4}, .lower = {}, .upper = {}, .offset = {}});
+    descBuilder.addVariable({.name = "u", .isOptional = std::nullopt, .type = {storm::umb::Type::Uint, 4}, .lower = {}, .upper = {}, .offset = {}});
+    storm::storage::sparse::ValuationsStorage storage(descBuilder.buildClassDescription(), manager);
+    storage.resize(1);
+    using storm::exceptions::OutOfRangeException;
+    using Integer = storm::storage::sparse::ValuationsStorage::Integer;
+
+    for (int64_t v : std::views::iota(-8, 8)) {
+        storage.writeValue<int64_t>(0, s, v);
+        EXPECT_EQ(v, storage.readValue<int64_t>(0, s));
+    }
+    for (int64_t v : {-9, -100, 8, 15, 16}) {
+        STORM_SILENT_EXPECT_THROW(storage.writeValue<int64_t>(0, s, v), OutOfRangeException);
+        STORM_SILENT_EXPECT_THROW(storage.writeValue<Integer>(0, s, Integer(static_cast<long>(v))), OutOfRangeException);
+    }
+    // The failed writes did not modify the value
+    storage.writeValue<int64_t>(0, s, -8);
+    STORM_SILENT_EXPECT_THROW(storage.writeValue<int64_t>(0, s, 8), OutOfRangeException);
+    EXPECT_EQ(-8, storage.readValue<int64_t>(0, s));
+
+    for (int64_t v : std::views::iota(0, 16)) {
+        storage.writeValue<int64_t>(0, u, v);
+        EXPECT_EQ(v, storage.readValue<int64_t>(0, u));
+    }
+    for (int64_t v : {-1, -16, 16, 17}) {
+        STORM_SILENT_EXPECT_THROW(storage.writeValue<int64_t>(0, u, v), OutOfRangeException);
+    }
+    STORM_SILENT_EXPECT_THROW(storage.writeValue<Integer>(0, u, Integer(-1)), OutOfRangeException);
+}
+
+TEST(ValuationTest, FailedWriteDoesNotSetPresenceBitOfOptionalVariable) {
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto const i = manager->declareIntegerVariable("i");
+    storm::storage::sparse::ValuationDescriptionBuilder descBuilder(manager);
+    descBuilder.addIntegerVariable(i, 0, 5, true);
+    storm::storage::sparse::ValuationsStorage storage(descBuilder.buildClassDescription(), manager);
+    storage.emplaceBack<true>([](auto, auto, auto&) { /* leave optional variable unset */ });
+    auto isSet = [&storage, &i]() {
+        bool result = false;
+        storage.readCallback<std::nullopt_t, int64_t>(
+            0, i, [&result](auto, auto, auto const& value) { result = !std::is_same_v<std::remove_cvref_t<decltype(value)>, std::nullopt_t>; });
+        return result;
+    };
+    ASSERT_FALSE(isSet());
+    // Out of the variable's bounds
+    auto writeOutOfBounds = [&storage, &i]() { storage.writeCallback<false, true, int64_t>(0, i, [](auto, auto, auto& value) { value = 10; }); };
+    STORM_SILENT_EXPECT_THROW(writeOutOfBounds(), storm::exceptions::OutOfRangeException);
+    EXPECT_FALSE(isSet());
+    // Successful write
+    storage.writeCallback<false, true, int64_t>(0, i, [](auto, auto, auto& value) { value = 3; });
+    ASSERT_TRUE(isSet());
+    EXPECT_EQ(3, storage.readValue<int64_t>(0, i));
 }
