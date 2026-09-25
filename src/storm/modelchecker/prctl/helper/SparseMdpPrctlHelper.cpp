@@ -1215,26 +1215,35 @@ void computeFixedPointSystemReachabilityRewards(
     std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const&
         totalStateRewardVectorGetter,
     storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b, std::vector<ValueType>* oneStepTargetProbabilities = nullptr) {
-    // Remove rows and columns from the original transition probability matrix for states whose reward values are already known.
-    // If there are infinity states, we additionally have to remove choices of maybeState that lead to infinity.
-    if (qualitativeStateSets.infinityStates.empty()) {
+    // Restrict the system to choices of states with unknown rewards. For interval models, keep all successor columns
+    // so that nature can still assign probability mass to states with known values (in particular, target states).
+    // If there are infinity states, also remove choices of maybe states that lead to infinity.
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        // As with reachability probabilities, retain all successor columns to preserve feasible interval distributions.
+        auto const choices = selectedChoices ? *selectedChoices : transitionMatrix.getRowFilter(qualitativeStateSets.maybeStates);
+        submatrix = transitionMatrix.filterEntries(choices);
+        b = totalStateRewardVectorGetter(transitionMatrix.getRowCount(), transitionMatrix,
+                                         storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true));
+        storm::utility::vector::setVectorValues(b, ~choices, storm::utility::zero<ValueType>());
+    } else if (qualitativeStateSets.infinityStates.empty()) {
         submatrix = transitionMatrix.getSubmatrix(true, qualitativeStateSets.maybeStates, qualitativeStateSets.maybeStates, false);
         b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, qualitativeStateSets.maybeStates);
-        if (oneStepTargetProbabilities) {
-            (*oneStepTargetProbabilities) =
-                transitionMatrix.getConstrainedRowGroupSumVector(qualitativeStateSets.maybeStates, qualitativeStateSets.rewardZeroStates);
-        }
     } else {
         submatrix = transitionMatrix.getSubmatrix(false, *selectedChoices, qualitativeStateSets.maybeStates, false);
         b = totalStateRewardVectorGetter(transitionMatrix.getRowCount(), transitionMatrix,
                                          storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true));
         storm::utility::vector::filterVectorInPlace(b, *selectedChoices);
-        if (oneStepTargetProbabilities) {
-            (*oneStepTargetProbabilities) = transitionMatrix.getConstrainedRowSumVector(*selectedChoices, qualitativeStateSets.rewardZeroStates);
+    }
+    if (oneStepTargetProbabilities) {
+        if (qualitativeStateSets.infinityStates.empty()) {
+            *oneStepTargetProbabilities =
+                transitionMatrix.getConstrainedRowGroupSumVector(qualitativeStateSets.maybeStates, qualitativeStateSets.rewardZeroStates);
+        } else {
+            *oneStepTargetProbabilities = transitionMatrix.getConstrainedRowSumVector(*selectedChoices, qualitativeStateSets.rewardZeroStates);
         }
     }
 
-    // If the solve goal has relevant values, we need to adjust them.
+    // If the solve goal has relevant values, restrict them to the states that are actually solved.
     goal.restrictRelevantValues(qualitativeStateSets.maybeStates);
 }
 
@@ -1450,7 +1459,13 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
                 }
             } else {
                 // Set values of resulting vector according to result.
-                storm::utility::vector::setVectorValues(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                if constexpr (storm::IsIntervalType<ValueType>) {
+                    storm::utility::vector::setVectorValues(
+                        result, qualitativeStateSets.maybeStates,
+                        storm::utility::vector::filterVector(resultForMaybeStates.getValues(), qualitativeStateSets.maybeStates));
+                } else {
+                    storm::utility::vector::setVectorValues(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                }
                 if (produceScheduler) {
                     extractSchedulerChoices(*scheduler, transitionMatrix, resultForMaybeStates.getScheduler(), qualitativeStateSets.maybeStates,
                                             selectedChoices);
