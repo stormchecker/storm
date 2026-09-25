@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <unordered_map>
 #include <vector>
@@ -33,8 +34,8 @@ class Model : public storm::models::Model<CValueType> {
     typedef CRewardModelType RewardModelType;
     static const storm::models::ModelRepresentation Representation = ModelRepresentation::Sparse;
 
-    Model(Model<ValueType, RewardModelType> const& other) = default;
-    Model& operator=(Model<ValueType, RewardModelType> const& other) = default;
+    Model(Model<ValueType, RewardModelType> const& other);
+    Model& operator=(Model<ValueType, RewardModelType> const& other);
 
     /*!
      * Constructs a model from the given data.
@@ -46,6 +47,20 @@ class Model : public storm::models::Model<CValueType> {
     Model(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components);
 
     virtual ~Model() = default;
+
+    /*!
+     * Retrieves the tolerance up to which the model components are considered valid.
+     *
+     * @return The stochastic tolerance of this model.
+     */
+    ValueType const& getStochasticTolerance() const;
+
+    /*!
+     * Sets the tolerance up to which the model components are considered valid.
+     *
+     * @param tolerance The new stochastic tolerance.
+     */
+    void setStochasticTolerance(ValueType const& tolerance);
 
     /*!
      * Retrieves the backward transition relation of the model, i.e. a set of transitions between states
@@ -444,6 +459,10 @@ class Model : public storm::models::Model<CValueType> {
 
     // if set, gives information about where each choice originates w.r.t. the input model description
     std::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
+
+    // The tolerance up to which the model components are considered valid. Stored as a heap-allocated value to avoid
+    // requiring the value type to be complete at the point of instantiation of the class template.
+    std::unique_ptr<ValueType> stochasticTolerance;
 };
 
 /*!

@@ -367,6 +367,11 @@ storm::storage::sparse::ModelComponents<ValueType, RewardModelType> ExplicitMode
         transitionMatrixBuilder.build(0, transitionMatrixBuilder.getCurrentRowGroupCount()), buildStateLabeling(),
         std::unordered_map<std::string, RewardModelType>(), !generator->isDiscreteTimeModel());
 
+    // Carry over the stochastic tolerance so that the model can validate its components accordingly.
+    if (generator->getOptions().getStochasticTolerance() != 0.0) {
+        modelComponents.stochasticTolerance = storm::utility::convertNumber<ValueType>(generator->getOptions().getStochasticTolerance());
+    }
+
     uint_fast64_t numStates = modelComponents.transitionMatrix.getColumnCount();
     uint_fast64_t numChoices = modelComponents.transitionMatrix.getRowCount();
 

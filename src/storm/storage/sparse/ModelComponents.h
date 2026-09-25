@@ -67,6 +67,8 @@ struct ModelComponents {
     std::optional<storm::storage::sparse::Valuations> stateValuations;
     // stores for each choice from which parts of the input model description it originates
     std::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
+    // The tolerance up to which the model components are considered valid (e.g. transition probabilities sum to one).
+    std::optional<ValueType> stochasticTolerance;
 
     // POMDP specific components
     // The POMDP observations

@@ -46,13 +46,13 @@ inline void printCounterexample(std::shared_ptr<storm::counterexamples::Countere
 
 template<typename ModelType>
     requires(!std::derived_from<ModelType, storm::models::sparse::Model<double>>)
-inline void generateCounterexamples(std::shared_ptr<ModelType> const&, SymbolicInput const&) {
+inline void generateCounterexamples(std::shared_ptr<ModelType> const&, SymbolicInput const&, ModelProcessingInformation const&) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Counterexample generation is not supported for this data-type.");
 }
 
 template<typename ModelType>
     requires(std::derived_from<ModelType, storm::models::sparse::Model<double>>)
-inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseModel, SymbolicInput const& input) {
+inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseModel, SymbolicInput const& input, ModelProcessingInformation const& mpi) {
     using ValueType = typename ModelType::ValueType;
 
     for (auto& rewModel : sparseModel->getRewardModels()) {
@@ -73,7 +73,7 @@ inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseMode
                 STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException,
                                 "Counterexample generation using MILP is currently only supported for MDPs.");
                 counterexample = storm::api::computeHighLevelCounterexampleMilp(
-                    input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                    mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
             } else {
                 STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp),
                                 storm::exceptions::NotSupportedException,
@@ -81,10 +81,10 @@ inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseMode
 
                 if (sparseModel->isOfType(storm::models::ModelType::Dtmc)) {
                     counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(
-                        input.model.get(), sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula());
+                        mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula());
                 } else {
                     counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(
-                        input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                        mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
                 }
             }
             watch.stop();
@@ -646,7 +646,7 @@ inline void processInput(SymbolicInput const& input, ModelProcessingInformation 
         std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModel(input, mpi);
         if (model) {
             if (counterexampleSettings.isCounterexampleSet()) {
-                castAndApply(model, [&input](auto const& m) { generateCounterexamples(m, input); });
+                castAndApply(model, [&input, &mpi](auto const& m) { generateCounterexamples(m, input, mpi); });
             } else {
                 castAndApply(model, [&input, &mpi](auto const& m) { verifyModel(m, input, mpi); });
             }

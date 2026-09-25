@@ -677,12 +677,11 @@ Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMi
 }
 
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::ParameterRegion<ValueType> region) {
+void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(Environment const& env, storage::ParameterRegion<ValueType> region) {
     if (model != nullptr) {
         // Use parameter lifting modelchecker to get initial min/max values for order creation
         modelchecker::SparseDtmcParameterLiftingModelChecker<models::sparse::Dtmc<ValueType>, ConstantType> plaModelChecker;
         std::unique_ptr<modelchecker::CheckResult> checkResult;
-        auto env = Environment();
         boost::optional<modelchecker::CheckTask<logic::Formula, ValueType>> checkTask;
         if (this->formula->hasQuantitativeResult()) {
             checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*formula);
