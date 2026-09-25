@@ -1,4 +1,5 @@
-#include <typeinfo>
+#include <optional>
+#include <type_traits>
 
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
@@ -7,19 +8,26 @@
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 #include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
 #include "storm-pomdp-cli/settings/modules/ToParametricSettings.h"
+
+#include "storm-pomdp/analysis/FiniteBeliefMdpDetection.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/analysis/IterativePolicySearch.h"
 #include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
 #include "storm-pomdp/analysis/OneShotPolicySearch.h"
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
 #include "storm-pomdp/analysis/UniqueObservationStates.h"
-#include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelChecker.h"
+#include "storm-pomdp/beliefs/storage/Belief.h"
+#include "storm-pomdp/beliefs/verification/BeliefBasedModelChecker.h"
+#include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
 #include "storm-pomdp/transformer/ApplyFiniteSchedulerToPomdp.h"
 #include "storm-pomdp/transformer/BinaryPomdpTransformer.h"
 #include "storm-pomdp/transformer/GlobalPOMDPSelfLoopEliminator.h"
 #include "storm-pomdp/transformer/GlobalPomdpMecChoiceEliminator.h"
 #include "storm-pomdp/transformer/KnownProbabilityTransformer.h"
+#include "storm-pomdp/transformer/MakeStateSetObservationClosed.h"
 #include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
+#include "storm-pomdp/transformer/RewardBoundUnfolder.h"
+#include "storm-pomdp/transformer/ToStateBasedObservationTransformer.h"
 #include "storm/analysis/GraphConditions.h"
 #include "storm/api/storm.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -27,12 +35,13 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/transformer/MakePOMDPCanonic.h"
+#include "storm/transformer/SparseRationalModelToDoubleTransformer.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
+#include "storm/utility/graph.h"
 
 namespace storm {
 namespace pomdp {
@@ -60,7 +69,6 @@ bool performPreprocessing(std::shared_ptr<storm::models::sparse::Pomdp<ValueType
         storm::analysis::QualitativeAnalysisOnGraphs<ValueType> qualitativeAnalysis(*pomdp);
         STORM_PRINT_AND_LOG("Computing states with probability 0 ...");
         storm::storage::BitVector prob0States = qualitativeAnalysis.analyseProb0(formula.asProbabilityOperatorFormula());
-        std::cout << prob0States << '\n';
         STORM_PRINT_AND_LOG(" done. " << prob0States.getNumberOfSetBits() << " states found.\n");
         STORM_PRINT_AND_LOG("Computing states with probability 1 ...");
         storm::storage::BitVector prob1States = qualitativeAnalysis.analyseProb1(formula.asProbabilityOperatorFormula());
@@ -76,32 +84,54 @@ bool performPreprocessing(std::shared_ptr<storm::models::sparse::Pomdp<ValueType
 }
 
 template<typename ValueType>
-void printResult(ValueType const& lowerBound, ValueType const& upperBound) {
-    if (lowerBound == upperBound) {
-        if (storm::utility::isInfinity(lowerBound)) {
-            STORM_PRINT_AND_LOG("inf");
+void printResult(std::optional<ValueType> const& lowerBound, std::optional<ValueType> const& upperBound) {
+    if (lowerBound.has_value() && upperBound.has_value()) {
+        if (*lowerBound == *upperBound) {
+            if (storm::utility::isInfinity(*lowerBound)) {
+                STORM_PRINT_AND_LOG("inf");
+            } else {
+                STORM_PRINT_AND_LOG(*lowerBound);
+            }
+        } else if (storm::utility::isInfinity(ValueType(-*lowerBound))) {
+            if (storm::utility::isInfinity(*upperBound)) {
+                STORM_PRINT_AND_LOG("[-inf, inf] (width=inf)");
+            }
         } else {
-            STORM_PRINT_AND_LOG(lowerBound);
+            STORM_PRINT_AND_LOG("[" << *lowerBound << ", " << *upperBound << "] (width=" << ValueType(*upperBound - *lowerBound) << ")");
         }
-    } else if (storm::utility::isInfinity(ValueType(-lowerBound))) {
-        if (storm::utility::isInfinity(upperBound)) {
-            STORM_PRINT_AND_LOG("[-inf, inf] (width=inf)");
-        } else {
-            // Only upper bound is known
-            STORM_PRINT_AND_LOG("≤ " << upperBound);
-        }
-    } else if (storm::utility::isInfinity(upperBound)) {
-        STORM_PRINT_AND_LOG("≥ " << lowerBound);
-    } else {
-        STORM_PRINT_AND_LOG("[" << lowerBound << ", " << upperBound << "] (width=" << ValueType(upperBound - lowerBound) << ")");
+    } else if (lowerBound.has_value()) {
+        STORM_PRINT_AND_LOG("≥ " << *lowerBound);
+    } else if (upperBound.has_value()) {
+        STORM_PRINT_AND_LOG("≤ " << *upperBound);
     }
-    if (storm::NumberTraits<ValueType>::IsExact) {
+    if constexpr (storm::NumberTraits<ValueType>::IsExact) {
         STORM_PRINT_AND_LOG(" (approx. ");
-        double roundedLowerBound = storm::utility::convertNumber<double>(lowerBound);
-        double roundedUpperBound = storm::utility::convertNumber<double>(upperBound);
+        std::optional<double> roundedLowerBound = std::nullopt;
+        std::optional<double> roundedUpperBound = std::nullopt;
+        if (lowerBound.has_value()) {
+            roundedLowerBound = storm::utility::convertNumber<double>(*lowerBound);
+        }
+        if (upperBound.has_value()) {
+            roundedUpperBound = storm::utility::convertNumber<double>(*upperBound);
+        }
         printResult(roundedLowerBound, roundedUpperBound);
         STORM_PRINT_AND_LOG(")");
     }
+}
+
+template<typename Statistics>
+void printBeliefExplorationStatistics(Statistics const& statistics) {
+    STORM_PRINT_AND_LOG("Belief exploration " << (statistics.completedExploration ? "completed" : "stopped early") << ": " << statistics.discoveredBeliefs
+                                              << " beliefs discovered, " << statistics.exploredBeliefs << " beliefs explored.\n");
+    STORM_PRINT_AND_LOG("Constructed belief MDP: " << statistics.beliefMdpStates << " states, " << statistics.beliefMdpChoices << " choices, "
+                                                   << statistics.beliefMdpTransitions << " transitions.\n");
+    if (statistics.processedMdpStates && statistics.processedMdpChoices && statistics.processedMdpTransitions) {
+        STORM_PRINT_AND_LOG("Processed belief MDP: " << *statistics.processedMdpStates << " states, " << *statistics.processedMdpChoices << " choices, "
+                                                     << *statistics.processedMdpTransitions << " transitions.\n");
+    }
+    STORM_PRINT_AND_LOG("Time for exploring beliefs: " << statistics.explorationTimeMilliseconds << "ms.\n");
+    STORM_PRINT_AND_LOG("Time for building the belief MDP: " << statistics.beliefMdpBuildTimeMilliseconds << "ms.\n");
+    STORM_PRINT_AND_LOG("Time for analyzing the belief MDP: " << statistics.beliefMdpAnalysisTimeMilliseconds << "ms.\n");
 }
 
 MemlessSearchOptions fillMemlessSearchOptionsFromSettings() {
@@ -242,27 +272,270 @@ void performQualitativeAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<Val
     STORM_LOG_THROW(computedSomething, storm::exceptions::InvalidSettingsException, "Nothing to be done, did you forget to set a method?");
 }
 
+template<typename ValueType, typename BeliefType, typename BeliefMDPType>
+bool performBeliefExploration(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp,
+                              storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
+    auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
+    auto const& belExplSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
+    storm::Environment env;
+
+    storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMDPType> revisedOptions;
+    // We hard-code this to FIFO for now to mimic the legacy behaviour
+    revisedOptions.explorationQueueOrder = beliefs::ExplorationQueueOrder::FIFO;
+    if (belExplSettings.getExplorationTimeLimit() != 0) {
+        revisedOptions.maxExplorationTime = belExplSettings.getExplorationTimeLimit();
+    }
+    if (belExplSettings.isCutZeroGapSet()) {
+        revisedOptions.maxGapToCut = storm::utility::zero<BeliefMDPType>();
+    }
+
+    std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> preprocessedPomdpPtr = pomdp;
+
+    std::optional<std::string> rewardModelName;
+    std::set<uint32_t> targetObservations;
+    if (formulaInfo.isNonNestedReachabilityProbability() || formulaInfo.isNonNestedExpectedRewardFormula()) {
+        if (formulaInfo.getTargetStates().observationClosed) {
+            targetObservations = formulaInfo.getTargetStates().observations;
+        } else {
+            storm::transformer::MakeStateSetObservationClosed<ValueType> obsCloser(pomdp);
+            std::tie(preprocessedPomdpPtr, targetObservations) = obsCloser.transform(formulaInfo.getTargetStates().states);
+        }
+        if (formulaInfo.isNonNestedReachabilityProbability()) {
+            if (!formulaInfo.getSinkStates().empty()) {
+                storm::storage::sparse::ModelComponents<ValueType> components;
+                components.stateLabeling = preprocessedPomdpPtr->getStateLabeling();
+                components.rewardModels = preprocessedPomdpPtr->getRewardModels();
+                auto matrix = preprocessedPomdpPtr->getTransitionMatrix();
+                matrix.makeRowGroupsAbsorbing(formulaInfo.getSinkStates().states, true);
+                STORM_LOG_ASSERT(matrix.isProbabilistic(storm::utility::zero<ValueType>()), "Resulting transition matrix is not a probability matrix.");
+                STORM_LOG_ASSERT(matrix.hasOnlyPositiveEntries(), "Resulting transition matrix has non-positive entries.");
+                components.transitionMatrix = matrix;
+                components.observabilityClasses = preprocessedPomdpPtr->getObservations();
+                if (preprocessedPomdpPtr->hasChoiceLabeling()) {
+                    components.choiceLabeling = preprocessedPomdpPtr->getChoiceLabeling();
+                }
+                if (preprocessedPomdpPtr->hasObservationValuations()) {
+                    components.observationValuations = preprocessedPomdpPtr->getObservationValuations();
+                }
+                preprocessedPomdpPtr = std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components), true);
+                auto reachableFromSinkStates =
+                    storm::utility::graph::getReachableStates(preprocessedPomdpPtr->getTransitionMatrix(), formulaInfo.getSinkStates().states,
+                                                              formulaInfo.getSinkStates().states, ~formulaInfo.getSinkStates().states);
+                reachableFromSinkStates &= ~formulaInfo.getSinkStates().states;
+                STORM_LOG_THROW(reachableFromSinkStates.empty(), storm::exceptions::NotSupportedException,
+                                "There are sink states that can reach non-sink states. This is currently not supported");
+            }
+        } else {
+            // Expected reward formula!
+            rewardModelName = formulaInfo.getRewardModelName();
+        }
+    } else {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported formula '" << formula << "'.");
+    }
+    std::optional<storm::storage::BitVector> optionalTargetStates;
+    optionalTargetStates = formulaInfo.getTargetStates().states;
+    if (storm::pomdp::detectFiniteBeliefMdp(*preprocessedPomdpPtr, optionalTargetStates)) {
+        STORM_LOG_INFO("Detected that the belief MDP is finite.");
+    }
+
+    storm::pomdp::storage::BeliefExplorationBounds<ValueType> beliefExplorationBounds;
+
+    if (!formulaInfo.isBounded()) {
+        // Precompute initial bounds used for cut-offs and clipping
+        if (belExplSettings.isInexactPreprocessingSet()) {
+            STORM_LOG_WARN("Using inexact preprocessing for belief exploration can lead to inaccurate results.");
+            std::shared_ptr<storm::models::sparse::Pomdp<double>> preprocessedPomdpDouble;
+            if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+                preprocessedPomdpDouble = storm::transformer::sparseRationalModelToDouble(
+                                              preprocessedPomdpPtr, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
+                                              ->template as<storm::models::sparse::Pomdp<double>>();
+            } else {
+                STORM_LOG_WARN("Inexact preprocessing option has no effect for floating-point models.");
+                preprocessedPomdpDouble = preprocessedPomdpPtr;
+            }
+            auto inExactPreProcessingMC =
+                modelchecker::PreprocessingPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<double>>(*preprocessedPomdpDouble);
+            beliefExplorationBounds.preprocessingBounds = inExactPreProcessingMC.getValueBounds(env, formula).template toValueType<ValueType>();
+            if (belExplSettings.isUseClippingSet() && rewardModelName) {
+                beliefExplorationBounds.extremeBounds = inExactPreProcessingMC.getExtremeValueBound(env, formula).template toValueType<ValueType>();
+            }
+        } else {
+            auto preProcessingMC = modelchecker::PreprocessingPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<ValueType>>(*preprocessedPomdpPtr);
+            beliefExplorationBounds.preprocessingBounds = preProcessingMC.getValueBounds(env, formula);
+            if (belExplSettings.isUseClippingSet() && rewardModelName) {
+                beliefExplorationBounds.extremeBounds = preProcessingMC.getExtremeValueBound(env, formula);
+            }
+        }
+    } else {
+        // We only consider bounded probability formulae, so we can use 0-1 bounds
+        // TODO make smarter pre-computed value bounds
+        storm::pomdp::storage::PreprocessingPomdpValueBounds<ValueType> zeroOneValueBound;
+        zeroOneValueBound.lower.push_back(std::vector<ValueType>(preprocessedPomdpPtr->getNumberOfStates(), storm::utility::zero<ValueType>()));
+        zeroOneValueBound.upper.push_back(std::vector<ValueType>(preprocessedPomdpPtr->getNumberOfStates(), storm::utility::one<ValueType>()));
+
+        beliefExplorationBounds.preprocessingBounds = zeroOneValueBound;
+    }
+
+    uint64_t initialPomdpState = preprocessedPomdpPtr->getInitialStates().getNextSetIndex(0);
+    using ExtendedBeliefMDPType = storm::utility::ExtendedValueType<BeliefMDPType>;
+    std::optional<ExtendedBeliefMDPType> lowerBound =
+        storm::utility::fromSentinel(beliefExplorationBounds.preprocessingBounds->template getHighestLowerBound<BeliefMDPType>(initialPomdpState));
+    std::optional<ExtendedBeliefMDPType> upperBound =
+        storm::utility::fromSentinel(beliefExplorationBounds.preprocessingBounds->template getSmallestUpperBound<BeliefMDPType>(initialPomdpState));
+    STORM_LOG_INFO("Initial value bounds are [" << *lowerBound << ", " << *upperBound << "]");
+
+    auto updateLowerBound = [&lowerBound](ExtendedBeliefMDPType const& value) {
+        if (!lowerBound || value > *lowerBound) {
+            lowerBound = value;
+        }
+    };
+    auto updateUpperBound = [&upperBound](ExtendedBeliefMDPType const& value) {
+        if (!upperBound || value < *upperBound) {
+            upperBound = value;
+        }
+    };
+
+    storm::pomdp::beliefs::PropertyInformation propertyInfo;
+    if (rewardModelName) {
+        propertyInfo.kind = storm::pomdp::beliefs::PropertyInformation::Kind::ExpectedTotalReachabilityReward;
+        propertyInfo.rewardModelName = rewardModelName;
+    } else if (formulaInfo.isBounded()) {
+        propertyInfo.kind = storm::pomdp::beliefs::PropertyInformation::Kind::RewardBoundedReachabilityProbability;
+        // Collect reward bounds from bounded formula
+        auto boundedFormula = formula.asProbabilityOperatorFormula().getSubformula().asBoundedUntilFormula();
+        for (uint64_t i = 0; i < boundedFormula.getDimension(); ++i) {
+            const auto& tbRef = boundedFormula.getTimeBoundReference(i);
+            if (tbRef.isRewardBound()) {
+                propertyInfo.rewardBounds.push_back({.rewardModelName = tbRef.getOptionalRewardModelName().get_value_or(""),
+                                                     .lowerBound = boundedFormula.getLowerBoundAsOptionalTimeBound(i),
+                                                     .upperBound = boundedFormula.getUpperBoundAsOptionalTimeBound(i)});
+            }
+        }
+    } else {
+        propertyInfo.kind = storm::pomdp::beliefs::PropertyInformation::Kind::ReachabilityProbability;
+    }
+    propertyInfo.dir = formulaInfo.getOptimizationDirection();
+    propertyInfo.targetObservations = targetObservations;
+
+    storm::pomdp::beliefs::BeliefBasedModelChecker<storm::models::sparse::Pomdp<ValueType>, BeliefType, BeliefMDPType> checker(*preprocessedPomdpPtr);
+    ExtendedBeliefMDPType overResultValue;
+    ExtendedBeliefMDPType underResultValue;
+    bool isOverApproximation{false};
+    bool isUnderApproximation{false};
+    bool completedExploration{false};
+    if (pomdpSettings.isBeliefExplorationDiscretizeSet()) {
+        STORM_PRINT_AND_LOG("Computing an over-approximation via belief MDP discretization...\n");
+        isOverApproximation = true;
+        if (belExplSettings.getSizeThresholdInit() == 0) {
+            revisedOptions.maxExplorationSize.reset();
+        } else {
+            revisedOptions.maxExplorationSize = belExplSettings.getSizeThresholdInit();
+        }
+        if (propertyInfo.kind == beliefs::PropertyInformation::Kind::RewardBoundedReachabilityProbability) {
+            std::vector<std::string> relevantRewardModelNames;
+            for (auto const& rewardBound : propertyInfo.rewardBounds) {
+                relevantRewardModelNames.push_back(rewardBound.rewardModelName);
+            }
+            auto checkResult =
+                checker.checkRewardAwareDiscretize(env, propertyInfo, revisedOptions, belExplSettings.getResolutionInit(),
+                                                   belExplSettings.isDynamicTriangulationModeSet(), beliefExplorationBounds, relevantRewardModelNames);
+            overResultValue = checkResult.value;
+            printBeliefExplorationStatistics(checkResult.statistics);
+        } else {
+            auto checkResult = checker.checkDiscretize(env, propertyInfo, revisedOptions, belExplSettings.getResolutionInit(),
+                                                       belExplSettings.isDynamicTriangulationModeSet(), beliefExplorationBounds);
+            overResultValue = checkResult.value;
+            printBeliefExplorationStatistics(checkResult.statistics);
+        }
+    }
+
+    if (pomdpSettings.isBeliefExplorationUnfoldSet()) {
+        STORM_PRINT_AND_LOG("Computing an under-approximation via belief MDP unfolding...\n");
+        if (belExplSettings.getSizeThresholdInit() == 0) {
+            revisedOptions.maxExplorationSize = preprocessedPomdpPtr->getNumberOfStates() * preprocessedPomdpPtr->getMaxNrStatesWithSameObservation();
+            STORM_PRINT_AND_LOG("Heuristically selected an under-approximation MDP size threshold of " << revisedOptions.maxExplorationSize.value() << ".\n");
+        } else {
+            revisedOptions.maxExplorationSize = belExplSettings.getSizeThresholdInit();
+        }
+        if (belExplSettings.isUseClippingSet()) {
+            revisedOptions.useClipping = true;
+            revisedOptions.clippingResolutions = std::vector<uint64_t>(preprocessedPomdpPtr->getNrObservations(), belExplSettings.getClippingGridResolution());
+        }
+        isUnderApproximation = true;
+        auto checkResult = [&]() -> typename storm::pomdp::beliefs::BeliefBasedModelCheckerResult<BeliefMDPType> {
+            if (propertyInfo.kind == beliefs::PropertyInformation::Kind::RewardBoundedReachabilityProbability) {
+                std::vector<std::string> relevantRewardModelNames;
+                for (auto const& rewardBound : propertyInfo.rewardBounds) {
+                    relevantRewardModelNames.push_back(rewardBound.rewardModelName);
+                }
+                return checker.checkRewardAwareUnfold(env, propertyInfo, revisedOptions, beliefExplorationBounds, relevantRewardModelNames);
+            }
+            return checker.checkUnfold(env, propertyInfo, revisedOptions, beliefExplorationBounds);
+        }();
+        underResultValue = checkResult.value;
+        completedExploration = checkResult.completedExploration;
+        printBeliefExplorationStatistics(checkResult.statistics);
+        isOverApproximation = (completedExploration && !belExplSettings.isUseClippingSet()) || isOverApproximation;
+    }
+
+    if (completedExploration && !belExplSettings.isUseClippingSet()) {
+        updateLowerBound(underResultValue);
+        updateUpperBound(underResultValue);
+    } else {
+        if (isOverApproximation) {
+            if (storm::solver::maximize(propertyInfo.dir)) {
+                updateUpperBound(overResultValue);
+                if (!isUnderApproximation) {
+                    lowerBound.reset();
+                }
+            } else {
+                updateLowerBound(overResultValue);
+                if (!isUnderApproximation) {
+                    upperBound.reset();
+                }
+            }
+        }
+        if (isUnderApproximation) {
+            if (storm::solver::maximize(propertyInfo.dir)) {
+                updateLowerBound(underResultValue);
+                if (!isOverApproximation) {
+                    upperBound.reset();
+                }
+            } else {
+                updateUpperBound(underResultValue);
+                if (!isOverApproximation) {
+                    lowerBound.reset();
+                }
+            }
+        }
+    }
+
+    if (storm::utility::resources::isTerminate()) {
+        STORM_PRINT_AND_LOG("\nResult till abort: ");
+    } else {
+        STORM_PRINT_AND_LOG("\nResult: ");
+    }
+    printResult(lowerBound, upperBound);
+    STORM_PRINT_AND_LOG('\n');
+    return true;
+}
+
 template<typename ValueType, typename BeliefType = ValueType>
 bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo,
                      storm::logic::Formula const& formula) {
     auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
     bool analysisPerformed = false;
     if (pomdpSettings.isBeliefExplorationSet()) {
-        STORM_PRINT_AND_LOG("Exploring the belief MDP... \n");
-        auto options = storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>(pomdpSettings.isBeliefExplorationDiscretizeSet(),
-                                                                                                        pomdpSettings.isBeliefExplorationUnfoldSet());
         auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
-        beliefExplorationSettings.setValuesInOptionsStruct(options);
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>, BeliefType> checker(pomdp, options);
-        auto result = checker.check(formula);
-        checker.printStatisticsToStream(std::cout);
-        if (storm::utility::resources::isTerminate()) {
-            STORM_PRINT_AND_LOG("\nResult till abort: ");
-        } else {
-            STORM_PRINT_AND_LOG("\nResult: ");
+        if (beliefExplorationSettings.isBeliefMDPNumberTypeDouble()) {
+            performBeliefExploration<ValueType, BeliefType, double>(pomdp, formulaInfo, formula);
+        } else if (beliefExplorationSettings.isBeliefMDPNumberTypeRational()) {
+            performBeliefExploration<ValueType, BeliefType, storm::RationalNumber>(pomdp, formulaInfo, formula);
+        } else if (beliefExplorationSettings.isBeliefMDPNumberTypeMatch()) {
+            STORM_LOG_ASSERT(beliefExplorationSettings.isBeliefMDPNumberTypeMatch(),
+                             "Expected belief MDP number type to be set to match the POMDP, but it is not.");
+            performBeliefExploration<ValueType, BeliefType, ValueType>(pomdp, formulaInfo, formula);
         }
-        printResult(result.lowerBound, result.upperBound);
-        STORM_PRINT_AND_LOG('\n');
         analysisPerformed = true;
     }
     if (pomdpSettings.isQualitativeAnalysisSet()) {
@@ -281,7 +554,7 @@ bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> co
             } else {
                 STORM_PRINT_AND_LOG("\nResult: ");
             }
-            printResult(result.getMin(), result.getMax());
+            printResult(std::optional{result.getMin()}, std::optional{result.getMax()});
             STORM_PRINT_AND_LOG('\n');
         } else {
             STORM_PRINT_AND_LOG("\nResult: Not available.\n");
@@ -388,7 +661,54 @@ void processPomdp(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomd
 }
 
 template<typename ValueType>
-void processFormula(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>&& pomdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
+void processFormula(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>&& pomdp, std::shared_ptr<storm::logic::Formula const> formula) {
+    if (formula->asOperatorFormula().getSubformula().isBoundedUntilFormula()) {
+        auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
+        // Process bounded until formulas
+        // If level widths are given, unfold the levels and make sure that the level rewards (and only those) are made observable
+        // If explicit unfolding is requested, unfold all reward bounds (if levels were unfolded before, this means a second round of unfolding)
+        // If reward observability is set and no level widths are given, make all rewards occurring in the formula observable. This also happens if no
+        // unfolding was requested.
+        storm::utility::Stopwatch boundedUntilProcessingWatch(true);
+        auto const levelWidths = pomdpSettings.getLevelWidthForBoundedReachability();
+        if (!levelWidths.empty()) {
+            STORM_PRINT_AND_LOG("Perform unfolding for observation levels.\n");
+            // Unfold the levels (includes dimensions with level-width 0)
+            typename transformer::RewardBoundUnfolder<ValueType>::UnfoldingOptions options;
+            options.levelWidths = levelWidths;
+            auto const unfoldingResult = transformer::RewardBoundUnfolder<ValueType>::transform(*pomdp, *formula, options);
+            pomdp = unfoldingResult.model->template as<storm::models::sparse::Pomdp<ValueType>>();
+            formula = unfoldingResult.formula;
+            // make sure the levels are observable
+            std::set<std::string> levelRewardModels;
+            formula->gatherReferencedRewardModels(levelRewardModels);
+            pomdp = storm::pomdp::transformer::ToStateBasedObservationTransformer<ValueType>::transformRewardAware(*pomdp, levelRewardModels);
+        }
+        std::set<std::string> rewardModelsToObserve;
+        if (pomdpSettings.isRewardObservableSet() && levelWidths.empty()) {
+            formula->gatherReferencedRewardModels(rewardModelsToObserve);  // keep rewards to make them observable later
+        }
+        if (pomdpSettings.isBoundedToUnboundedReachabilityTransformationSet()) {
+            STORM_PRINT_AND_LOG("Perform explicit unfolding of reward bounds.\n");
+            typename transformer::RewardBoundUnfolder<ValueType>::UnfoldingOptions options;
+            options.preservedRewardModels = rewardModelsToObserve;
+            auto const unfoldingResult = transformer::RewardBoundUnfolder<ValueType>::transform(*pomdp, *formula, options);
+            pomdp = unfoldingResult.model->template as<storm::models::sparse::Pomdp<ValueType>>();
+            formula = unfoldingResult.formula;
+        }
+        if (pomdpSettings.isRewardObservableSet() && levelWidths.empty()) {
+            STORM_PRINT_AND_LOG("Extend observation function to become reward aware.\n");
+            pomdp = storm::pomdp::transformer::ToStateBasedObservationTransformer<ValueType>::transformRewardAware(*pomdp, rewardModelsToObserve);
+        }
+        STORM_LOG_THROW(!levelWidths.empty() || pomdpSettings.isRewardObservableSet() || pomdpSettings.isBoundedToUnboundedReachabilityTransformationSet(),
+                        storm::exceptions::InvalidSettingsException,
+                        "No handling of bounded until formulas specified. Consider setting --unfold-reward-bound and/or --reward-aware.");
+        STORM_PRINT_AND_LOG("bounded reachability processing done. POMDP Information:\n");
+        pomdp->printModelInformationToStream(std::cout);
+        STORM_PRINT_AND_LOG("Transformed formula: " << *formula << "\n");
+        boundedUntilProcessingWatch.stop();
+        STORM_PRINT_AND_LOG("Time for pre-processing: " << boundedUntilProcessingWatch << ".\n");
+    }
     auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(*pomdp, *formula);
     STORM_LOG_THROW(!formulaInfo.isUnsupported(), storm::exceptions::InvalidPropertyException,
                     "The formula '" << *formula << "' is not supported by storm-pomdp.");

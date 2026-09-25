@@ -38,7 +38,8 @@ boost::any LiftableTransitionRewardsVisitor::visit(BooleanLiteralFormula const&,
 
 boost::any LiftableTransitionRewardsVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {
     for (unsigned i = 0; i < f.getDimension(); ++i) {
-        if (f.getTimeBoundReference(i).isRewardBound() && rewardModelHasTransitionRewards(f.getTimeBoundReference(i).getRewardName())) {
+        if (f.getTimeBoundReference(i).isRewardBound() &&
+            rewardModelHasTransitionRewards(f.getTimeBoundReference(i).getOptionalRewardModelName().get_value_or(""))) {
             return false;
         }
     }
@@ -63,7 +64,8 @@ boost::any LiftableTransitionRewardsVisitor::visit(ConditionalFormula const& f, 
 
 boost::any LiftableTransitionRewardsVisitor::visit(CumulativeRewardFormula const& f, boost::any const&) const {
     for (unsigned i = 0; i < f.getDimension(); ++i) {
-        if (f.getTimeBoundReference(i).isRewardBound() && rewardModelHasTransitionRewards(f.getTimeBoundReference(i).getRewardName())) {
+        if (f.getTimeBoundReference(i).isRewardBound() &&
+            rewardModelHasTransitionRewards(f.getTimeBoundReference(i).getOptionalRewardModelName().get_value_or(""))) {
             return false;
         }
     }
@@ -159,7 +161,8 @@ boost::any LiftableTransitionRewardsVisitor::visit(HOAPathFormula const& f, boos
 
 boost::any LiftableTransitionRewardsVisitor::visit(DiscountedCumulativeRewardFormula const& f, boost::any const&) const {
     for (unsigned i = 0; i < f.getDimension(); ++i) {
-        if (f.getTimeBoundReference(i).isRewardBound() && rewardModelHasTransitionRewards(f.getTimeBoundReference(i).getRewardName())) {
+        if (f.getTimeBoundReference(i).isRewardBound() &&
+            rewardModelHasTransitionRewards(f.getTimeBoundReference(i).getOptionalRewardModelName().get_value_or(""))) {
             return false;
         }
     }

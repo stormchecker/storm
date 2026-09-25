@@ -9,16 +9,14 @@ module main
     s : [0..6] init 0;
     [alpha] s=0 -> (1-slippery) * 0.7: (s'=1) + (1-slippery) * 0.3: (s'=2) + slippery: true;
     [alpha] s>0 & s<5 -> (1-slippery): (s'=s+2) + slippery: true;
-    [beta]  s=3 -> (1-slippery): (s'=6)   + slippery: true;
+    [beta]  s=3 -> (1-slippery): (s'=6) + slippery: true;
     [beta]  s=4 -> (1-slippery): (s'=5) + slippery: true;
-    [alpha]  s=5 | s=6 -> 1: true;
+    [alpha] s=5 | s=6 -> 1: true;
 endmodule
 
 rewards
-    [alpha] s=3: 0.5;
-    [beta] s=4: 0.5;
-    true : s * 0.05;
+    [alpha] true : 1;
+    [beta] true : 1;
 endrewards
-
 
 label "goal" = s=5;
