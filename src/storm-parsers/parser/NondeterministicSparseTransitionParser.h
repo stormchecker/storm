@@ -1,6 +1,7 @@
 #pragma once
 
 #include "storm-parsers/parser/ExplicitModelParserOptions.h"
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/storage/SparseMatrix.h"
 
 #include <vector>
@@ -16,7 +17,7 @@ namespace parser {
  * The second pass then collects the actual file data and compiles it into a Result.
  */
 template<typename ValueType = double>
-class NondeterministicSparseTransitionParser {
+class STORM_PARSERS_API NondeterministicSparseTransitionParser {
    public:
     /*!
      * A structure representing the result of the first pass of this parser.

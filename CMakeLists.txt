@@ -59,6 +59,7 @@ option(STORM_COMPILE_WITH_ADDRESS_SANITIZER "Sets whether to compile with Addres
 option(STORM_COMPILE_WITH_ALL_SANITIZERS "Sets whether to compile with all sanitizers enabled" OFF)
 option(STORM_COMPILE_WITH_COMPILATION_PROFILING "Compile with output to profile compilation process" OFF)
 MARK_AS_ADVANCED(STORM_COMPILE_WITH_COMPILATION_PROFILING)
+option(STORM_STRIP_PARSER_BINARY "Strip symbols from storm-parsers after linking." ON)
 option(STORM_USE_CLN_EA "Sets whether CLN instead of GMP numbers should be used for exact arithmetic." OFF)
 export_option(STORM_USE_CLN_EA)
 option(STORM_USE_CLN_RF "Sets whether CLN instead of GMP numbers should be used for rational functions." ON)

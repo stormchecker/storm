@@ -1,4 +1,5 @@
 #pragma once
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/logic/Bound.h"
@@ -30,7 +31,7 @@ namespace parser {
  * Parses Models and Properties
  */
 template<typename ValueType>
-class JaniParser {
+class STORM_PARSERS_API JaniParser {
    public:
     typedef std::vector<storm::jani::Property> PropertyVector;
     typedef std::unordered_map<std::string, storm::jani::Variable const*> VariablesMap;

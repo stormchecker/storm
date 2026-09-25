@@ -1,11 +1,13 @@
 #pragma once
 
 #include <string>
+
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/storage/prism/Program.h"
 
 namespace storm::parser {
 
-class PrismParser {
+class STORM_PARSERS_API PrismParser {
    public:
     /*!
      * Parses the given file into the PRISM storage classes assuming it complies with the PRISM syntax.

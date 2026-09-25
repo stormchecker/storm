@@ -1,6 +1,7 @@
 #pragma once
 
 #include "storm-parsers/parser/ExplicitModelParserOptions.h"
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -14,7 +15,7 @@ namespace parser {
  * it loads the files, parses them and returns the desired model.
  */
 template<typename ValueType = double, typename RewardValueType = double>
-class NondeterministicModelParser {
+class STORM_PARSERS_API NondeterministicModelParser {
    public:
     /*!
      * Parse a Mdp.

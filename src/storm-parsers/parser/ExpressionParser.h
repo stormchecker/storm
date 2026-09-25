@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "storm-parsers/parser/SpiritErrorHandler.h"
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/storage/expressions/OperatorType.h"
 
@@ -32,7 +33,7 @@ struct RationalPolicies : boost::spirit::qi::strict_real_policies<NumberType> {
 
 class ExpressionCreator;
 
-class ExpressionParser : public qi::grammar<Iterator, storm::expressions::Expression(), Skipper> {
+class STORM_PARSERS_API ExpressionParser : public qi::grammar<Iterator, storm::expressions::Expression(), Skipper> {
    public:
     /*!
      * Creates an expression parser. Initially the parser is set to a mode in which it will not generate the

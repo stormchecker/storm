@@ -20,6 +20,15 @@
 #pragma GCC diagnostic pop
 #pragma clang diagnostic pop
 
+// Pin these carl types' visibility: consumers built with hidden visibility would otherwise instantiate them hidden.
+// Must precede any instantiation (GCC rejects a later visibility attribute).
+// Cache<PolynomialFactorizationPair<RawPolynomial>> is intentionally unpinned: it is only ever used via shared_ptr.
+namespace carl {
+extern template class __attribute__((visibility("default"))) MultivariatePolynomial<storm::RationalFunctionCoefficient>;
+extern template class __attribute__((visibility("default"))) FactorizedPolynomial<storm::RawPolynomial>;
+extern template class __attribute__((visibility("default"))) RationalFunction<storm::Polynomial, true>;
+}  // namespace carl
+
 namespace carl {
 // Define hash values for all polynomials and rational function.
 // Needed for boost::hash_combine() and other functions

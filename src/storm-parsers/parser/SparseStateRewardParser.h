@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "storm-parsers/storm-parsers-api.h"
+
 namespace storm {
 namespace parser {
 
@@ -11,7 +13,7 @@ namespace parser {
  * A class providing the functionality to parse a the state rewards of a model.
  */
 template<typename ValueType = double>
-class SparseStateRewardParser {
+class STORM_PARSERS_API SparseStateRewardParser {
    public:
     /*!
      *	Reads a state reward file and puts the result in a state reward vector.

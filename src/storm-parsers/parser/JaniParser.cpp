@@ -1877,7 +1877,7 @@ std::shared_ptr<storm::jani::Composition> JaniParser<ValueType>::parseCompositio
     return std::shared_ptr<storm::jani::Composition>(new storm::jani::ParallelComposition(compositions, syncVectors));
 }
 
-template class JaniParser<double>;
-template class JaniParser<storm::RationalNumber>;
+template class STORM_PARSERS_API JaniParser<double>;
+template class STORM_PARSERS_API JaniParser<storm::RationalNumber>;
 }  // namespace parser
 }  // namespace storm

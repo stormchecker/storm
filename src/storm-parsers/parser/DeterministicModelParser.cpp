@@ -80,9 +80,9 @@ DeterministicModelParser<ValueType, RewardValueType>::parseCtmc(std::string cons
     return storm::models::sparse::Ctmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(parserResult));
 }
 
-template class DeterministicModelParser<double, double>;
+template class STORM_PARSERS_API DeterministicModelParser<double, double>;
 
-template class DeterministicModelParser<double, storm::Interval>;
+template class STORM_PARSERS_API DeterministicModelParser<double, storm::Interval>;
 
 } /* namespace parser */
 } /* namespace storm */

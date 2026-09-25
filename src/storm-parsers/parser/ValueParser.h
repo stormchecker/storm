@@ -4,6 +4,7 @@
 #include <string>
 #include <type_traits>
 
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
@@ -20,7 +21,7 @@ class ExpressionParser;
  * Parser for values according to their ValueType.
  */
 template<typename ValueType>
-class ValueParser {
+class STORM_PARSERS_API ValueParser {
    public:
     /*!
      * Parse ValueType from string.
@@ -59,7 +60,7 @@ class ValueParser {
  * @return NumberType.
  */
 template<typename NumberType>
-NumberType parseNumber(std::string const& value);
+STORM_PARSERS_API NumberType parseNumber(std::string const& value);
 
 /*!
  * Parse number from string.
@@ -68,7 +69,7 @@ NumberType parseNumber(std::string const& value);
  * @return whether parsing is successful.
  */
 template<typename NumberType>
-bool parseNumber(std::string const& value, NumberType& result);
+STORM_PARSERS_API bool parseNumber(std::string const& value, NumberType& result);
 
 }  // namespace parser
 }  // namespace storm

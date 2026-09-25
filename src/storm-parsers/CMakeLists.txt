@@ -1,5 +1,5 @@
 file(GLOB_RECURSE STORM_PARSER_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-parsers/*/*.cpp)
-file(GLOB_RECURSE STORM_PARSER_HEADERS RELATIVE "${PROJECT_SOURCE_DIR}/src/storm-parsers" ${PROJECT_SOURCE_DIR}/src/storm-parsers/*/*.h)
+file(GLOB_RECURSE STORM_PARSER_HEADERS RELATIVE "${PROJECT_SOURCE_DIR}/src/storm-parsers" ${PROJECT_SOURCE_DIR}/src/storm-parsers/*.h ${PROJECT_SOURCE_DIR}/src/storm-parsers/*/*.h)
 
 # The heaviest parser translation units (esp. the boost::spirit grammars) compile close to the memory limit already in
 # parallel builds. Disable the Debug compiler flags for them to lessen memory consumption during compilation; the
@@ -57,7 +57,8 @@ target_sources(storm-parsers
         PRIVATE
         ${STORM_PARSER_SOURCES}
         PUBLIC
-        FILE_SET fs_storm_parsers_headers TYPE HEADERS BASE_DIRS "${PROJECT_SOURCE_DIR}/src" FILES ${STORM_PARSER_HEADERS})
+        FILE_SET fs_storm_parsers_headers TYPE HEADERS BASE_DIRS "${PROJECT_SOURCE_DIR}/src"
+        FILES ${STORM_PARSER_HEADERS})
 # Put the boost::spirit headers into the precompiled header: they are large and are included (transitively) by most
 # translation units of this library, dominating the header-parsing time. SpiritParserDefinitions.h must be used (instead
 # of the raw spirit headers), as it defines the required macros (BOOST_SPIRIT_UNICODE, BOOST_SPIRIT_USE_PHOENIX_V3)
@@ -66,6 +67,25 @@ storm_target_precompile_headers(storm-parsers PRIVATE ${STORM_PRECOMPILED_HEADER
         "${PROJECT_SOURCE_DIR}/src/storm-parsers/parser/SpiritParserDefinitions.h")
 set_target_properties(storm-parsers PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 set_target_properties(storm-parsers PROPERTIES DEFINE_SYMBOL "")  # to avoid problems with pch on linux.
+# Only symbols marked STORM_PARSERS_API (see storm-parsers-api.h) are exported.
+set_target_properties(storm-parsers PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN YES)
+# Drop code not reachable from the exported symbols.
+if(APPLE)
+    # ld64's -dead_strip works on clang's default .subsections_via_symbols.
+    target_link_options(storm-parsers PRIVATE "LINKER:-dead_strip")
+elseif(UNIX AND NOT APPLE)
+    # --gc-sections needs each function/data object in its own section.
+    target_compile_options(storm-parsers PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(storm-parsers PRIVATE "LINKER:--gc-sections")
+endif()
+# Strip symbols to keep the binary small; disable STORM_STRIP_PARSER_BINARY for debugging. On Linux -S drops DWARF sections.
+if(STORM_STRIP_PARSER_BINARY)
+    if(APPLE)
+        add_custom_command(TARGET storm-parsers POST_BUILD COMMAND ${CMAKE_STRIP} -x "$<TARGET_FILE:storm-parsers>" COMMENT "Stripping storm-parsers")
+    elseif(UNIX)
+        add_custom_command(TARGET storm-parsers POST_BUILD COMMAND ${CMAKE_STRIP} -S "$<TARGET_FILE:storm-parsers>" COMMENT "Stripping storm-parsers")
+    endif()
+endif()
 target_link_libraries(storm-parsers PUBLIC storm)
 if (MACOSX AND NOT APPLE_SILICON)
     # Linker flags for the unwinding issue on macOS Intel. See the matching -fno-omit-frame-pointer comment above.

@@ -5,6 +5,7 @@
 #include <string>
 
 #include "storm-parsers/parser/MappedFile.h"
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
 #include "storm/models/sparse/StateLabeling.h"
 
@@ -14,7 +15,7 @@ namespace parser {
 /*!
  * This class can be used to parse a labeling file.
  */
-class SparseItemLabelingParser {
+class STORM_PARSERS_API SparseItemLabelingParser {
    public:
     /*!
      * Parses the given file and returns the resulting state labeling.

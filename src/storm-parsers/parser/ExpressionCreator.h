@@ -2,6 +2,7 @@
 
 // Very ugly, but currently we would like to have the symbol table here.
 #include "storm-parsers/parser/SpiritParserDefinitions.h"
+#include "storm-parsers/storm-parsers-api.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"  // TODO: use forward header
 
@@ -14,7 +15,7 @@ enum struct OperatorType;
 }  // namespace expressions
 
 namespace parser {
-class ExpressionCreator {
+class STORM_PARSERS_API ExpressionCreator {
    public:
     ExpressionCreator(storm::expressions::ExpressionManager const& manager);
 

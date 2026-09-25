@@ -4,6 +4,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "storm/adapters/IntervalForward.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/models/Model.h"
 #include "storm/models/ModelRepresentation.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
@@ -473,6 +476,20 @@ std::set<storm::RationalFunctionVariable> getRateParameters(Model<storm::Rationa
  * @return Set of parameters.
  */
 std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::RationalFunction> const& model);
+
+// Must precede the extern template below, which would otherwise be the point of instantiation.
+template<>
+void Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::writeJsonToStream(std::ostream& outStream) const;
+
+// Instantiated in Model.cpp; prevents hidden consumers from duplicating the vtable/RTTI.
+extern template class Model<double>;
+extern template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+extern template class Model<storm::RationalNumber>;
+extern template class Model<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
+extern template class Model<storm::Interval>;
+extern template class Model<storm::RationalInterval>;
+extern template class Model<storm::RationalFunction>;
+
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm

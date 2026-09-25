@@ -64,8 +64,8 @@ MarkovAutomatonParser<ValueType, RewardValueType>::parseMarkovAutomaton(std::str
     return storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(components));
 }
 
-template class MarkovAutomatonParser<double, double>;
-template class MarkovAutomatonParser<double, storm::Interval>;
+template class STORM_PARSERS_API MarkovAutomatonParser<double, double>;
+template class STORM_PARSERS_API MarkovAutomatonParser<double, storm::Interval>;
 
 }  // namespace parser
 }  // namespace storm

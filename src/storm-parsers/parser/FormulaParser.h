@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/jani/Property.h"
 
@@ -17,7 +18,7 @@ namespace parser {
 // Forward-declare grammar.
 class FormulaParserGrammar;
 
-class FormulaParser {
+class STORM_PARSERS_API FormulaParser {
    public:
     FormulaParser();
     explicit FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager);

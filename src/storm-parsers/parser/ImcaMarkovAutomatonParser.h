@@ -1,13 +1,14 @@
 #pragma once
 
 #include "storm-parsers/parser/ExplicitModelParserOptions.h"
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 
 namespace storm {
 namespace parser {
 
 template<typename ValueType = double>
-class ImcaMarkovAutomatonParser {
+class STORM_PARSERS_API ImcaMarkovAutomatonParser {
    public:
     /*!
      * Parses the given file under the assumption that it contains a Markov automaton specified in the imca format.
