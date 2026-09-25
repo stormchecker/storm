@@ -91,6 +91,9 @@ bool EliminationLinearEquationSolver<ValueType>::internalSolveEquations(Environm
         eliminator.eliminateState(state, false);
     }
 
+    // State elimination ends at the solution rather than approaching it.
+    this->setSolutionBoundsExact(x);
+
     return true;
 }
 
