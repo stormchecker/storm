@@ -471,7 +471,7 @@ std::vector<typename DFTModelChecker<ValueType>::ExtendedValueType> DFTModelChec
 
         if (result) {
             result->filter(storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>(model->getInitialStates()));
-            results.push_back(result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second);
+            results.push_back(result->asExplicitQuantitativeCheckResult<ValueType>().getValueVector().front());
         } else {
             STORM_LOG_WARN("The property '" << *property << "' could not be checked with the current settings.");
             results.push_back(-storm::utility::one<ExtendedValueType>());

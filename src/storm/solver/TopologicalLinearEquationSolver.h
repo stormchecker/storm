@@ -39,6 +39,12 @@ class TopologicalLinearEquationSolver : public LinearEquationSolver<ValueType> {
     // Creates an SCC decomposition and sorts the SCCs according to a topological sort.
     void createSortedSccDecomposition(bool needLongestChainSize) const;
 
+    /*!
+     * Reports the precision that the SCCs were solved with as a bound on the solution, if that precision is a
+     * sound one. Does nothing otherwise.
+     */
+    void trySetSolutionBoundsFromPrecision(Environment const& env, std::vector<ValueType> const& x) const;
+
     // Solves the SCC with the given index
     // ... for the case that the SCC is trivial
     bool solveTrivialScc(uint64_t const& sccState, std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB) const;

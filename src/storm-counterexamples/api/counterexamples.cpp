@@ -51,7 +51,7 @@ std::shared_ptr<storm::counterexamples::Counterexample> computeKShortestPathCoun
     storm::storage::BitVector phiStates(model->getNumberOfStates(), true);
     auto results = storm::modelchecker::helper::SparseDtmcPrctlHelper<double>::computeUntilProbabilities(
         env, false, model->getTransitionMatrix(), model->getBackwardTransitions(), phiStates, subQualitativeResult.getTruthValuesVector(), true);
-    double reachProb = results.at(initialState);
+    double reachProb = results.values.at(initialState);
     STORM_LOG_THROW((reachProb > threshold) || (strictBound && reachProb >= threshold), storm::exceptions::InvalidArgumentException,
                     "Given probability threshold " << threshold << " cannot be " << (strictBound ? "achieved" : "exceeded")
                                                    << " in model with maximal reachability probability of " << reachProb << ".");
