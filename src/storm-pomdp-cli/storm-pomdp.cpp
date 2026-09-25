@@ -347,7 +347,7 @@ bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueTyp
         if (transformSettings.allowPostSimplifications()) {
             STORM_PRINT_AND_LOG("Simplifying pMC...");
             pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),
-                                                                                       {formula.asSharedPointer()}, storm::storage::BisimulationType::Strong)
+                                                                                       {formula.asSharedPointer()})
                       ->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
             STORM_PRINT_AND_LOG(" done.\n");
             pmc->printModelInformationToStream(std::cout);

@@ -66,7 +66,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, Die) {
 
     std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model = storm::builder::DdPrismModelBuilder<DdType, double>().build(this->env, program);
     model->getManager().execute([&]() {
-        storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::storage::BisimulationType::Strong);
+        storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::bisimulation::BisimulationType::Strong);
         decomposition.compute();
         std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
 
@@ -81,7 +81,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, Die) {
         std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
         formulas.push_back(formula);
 
-        storm::dd::BisimulationDecomposition<DdType, double> decomposition2(*model, formulas, storm::storage::BisimulationType::Strong);
+        storm::dd::BisimulationDecomposition<DdType, double> decomposition2(*model, formulas, storm::bisimulation::BisimulationType::Strong);
         decomposition2.compute();
         quotient = decomposition2.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
 
@@ -99,7 +99,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient) {
     std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model = storm::builder::DdPrismModelBuilder<DdType, double>().build(this->env, program);
 
     model->getManager().execute([&]() {
-        storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::storage::BisimulationType::Strong);
+        storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::bisimulation::BisimulationType::Strong);
 
         std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
         ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
@@ -196,7 +196,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, Crowds) {
         storm::builder::DdPrismModelBuilder<DdType, double>().build(this->env, smd.asPrismProgram());
 
     model->getManager().execute([&]() {
-        storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::storage::BisimulationType::Strong);
+        storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::bisimulation::BisimulationType::Strong);
         decomposition.compute();
         std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
 
@@ -211,7 +211,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, Crowds) {
         std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
         formulas.push_back(formula);
 
-        storm::dd::BisimulationDecomposition<DdType, double> decomposition2(*model, formulas, storm::storage::BisimulationType::Strong);
+        storm::dd::BisimulationDecomposition<DdType, double> decomposition2(*model, formulas, storm::bisimulation::BisimulationType::Strong);
         decomposition2.compute();
         quotient = decomposition2.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
 
@@ -229,7 +229,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, TwoDice) {
     std::shared_ptr<storm::models::symbolic::Model<DdType, double>> model = storm::builder::DdPrismModelBuilder<DdType, double>().build(this->env, program);
 
     model->getManager().execute([&]() {
-        storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::storage::BisimulationType::Strong);
+        storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::bisimulation::BisimulationType::Strong);
         decomposition.compute();
         std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
 
@@ -245,7 +245,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, TwoDice) {
         std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
         formulas.push_back(formula);
 
-        storm::dd::BisimulationDecomposition<DdType, double> decomposition2(*model, formulas, storm::storage::BisimulationType::Strong);
+        storm::dd::BisimulationDecomposition<DdType, double> decomposition2(*model, formulas, storm::bisimulation::BisimulationType::Strong);
         decomposition2.compute();
         quotient = decomposition2.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
 
@@ -271,7 +271,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader) {
         this->env, smd.asPrismProgram(), typename storm::builder::DdPrismModelBuilder<DdType, double>::Options(*formula));
 
     model->getManager().execute([&]() {
-        storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::storage::BisimulationType::Strong);
+        storm::dd::BisimulationDecomposition<DdType, double> decomposition(*model, storm::bisimulation::BisimulationType::Strong);
         decomposition.compute();
         std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
 
@@ -284,7 +284,7 @@ TYPED_TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader) {
         std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
         formulas.push_back(formula);
 
-        storm::dd::BisimulationDecomposition<DdType, double> decomposition2(*model, formulas, storm::storage::BisimulationType::Strong);
+        storm::dd::BisimulationDecomposition<DdType, double> decomposition2(*model, formulas, storm::bisimulation::BisimulationType::Strong);
         decomposition2.compute();
         quotient = decomposition2.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
 
