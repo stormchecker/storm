@@ -1,11 +1,8 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 
+#include "storm-config.h"
 #include "storm/environment/solver/AllSolverEnvironments.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/utility/macros.h"
 
@@ -15,16 +12,21 @@
 namespace storm {
 
 SolverEnvironment::SolverEnvironment() {
-    auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-    forceSoundness = generalSettings.isSoundSet();
-    forceExact = generalSettings.isExactSet() || generalSettings.isExactFinitePrecisionSet();
-    linearEquationSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
-    linearEquationSolverTypeSetFromDefault = storm::settings::getModule<storm::settings::modules::CoreSettings>().isEquationSolverSetFromDefaultValue();
-    lpSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver();
-    lpSolverTypeSetFromDefault = storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue();
-    debug = storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet();
-    verbose = generalSettings.isVerboseSet();
-    showProgressDelay = generalSettings.getShowProgressDelay();
+    forceSoundness = false;
+    forceExact = false;
+    linearEquationSolverType = storm::solver::EquationSolverType::Topological;
+    linearEquationSolverTypeSetFromDefault = true;
+#if defined STORM_HAVE_GLPK
+    lpSolverType = storm::solver::LpSolverType::Glpk;
+#elif defined STORM_HAVE_SOPLEX
+    lpSolverType = storm::solver::LpSolverType::Soplex;
+#else
+    lpSolverType = storm::solver::LpSolverType::Z3;
+#endif
+    lpSolverTypeSetFromDefault = true;
+    debug = false;
+    verbose = false;
+    showProgressDelay = 5;
 }
 
 SolverEnvironment::~SolverEnvironment() {

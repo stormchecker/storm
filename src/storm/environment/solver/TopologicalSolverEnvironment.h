@@ -13,11 +13,11 @@ class TopologicalSolverEnvironment {
 
     storm::solver::EquationSolverType const& getUnderlyingEquationSolverType() const;
     bool const& isUnderlyingEquationSolverTypeSetFromDefault() const;
-    void setUnderlyingEquationSolverType(storm::solver::EquationSolverType value);
+    void setUnderlyingEquationSolverType(storm::solver::EquationSolverType value, bool isSetFromDefault = false);
 
     storm::solver::MinMaxMethod const& getUnderlyingMinMaxMethod() const;
     bool const& isUnderlyingMinMaxMethodSetFromDefault() const;
-    void setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod value);
+    void setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod value, bool isSetFromDefault = false);
 
     bool isExtendRelevantValues() const;
     void setExtendRelevantValues(bool value);

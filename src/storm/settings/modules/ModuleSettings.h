@@ -62,7 +62,7 @@ class ModuleSettings {
     uint_fast64_t getPrintLengthOfLongestOption(bool includeAdvanced) const;
 
     /*!
-     * Restores the default values for all arguments of all options.
+     * Restores the default values for all arguments of all options and marks all options as not set.
      */
     void restoreDefaults();
 

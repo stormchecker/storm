@@ -38,6 +38,7 @@ class MonotonicityHelper {
     /*!
      * Constructor of MonotonicityHelper.
      *
+     * @param env The environment used for checking the samples.
      * @param model The model considered.
      * @param formulas The formulas considered.
      * @param regions The regions to consider.
@@ -46,9 +47,9 @@ class MonotonicityHelper {
      * @param precision Precision on which the samples are compared
      * @param dotOutput Whether or not dot output should be generated for the ROs.
      */
-    MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<logic::Formula const>> formulas,
-                       std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples = 0, double const& precision = 0.000001,
-                       bool dotOutput = false);
+    MonotonicityHelper(Environment const& env, std::shared_ptr<models::sparse::Model<ValueType>> model,
+                       std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions,
+                       uint_fast64_t numberOfSamples = 0, double const& precision = 0.000001, bool dotOutput = false);
 
     /*!
      * Checks if a derivative >=0 or/and <=0
@@ -121,9 +122,9 @@ class MonotonicityHelper {
    private:
     void createOrder();
 
-    void checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
+    void checkMonotonicityOnSamples(Environment const& env, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
 
-    void checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
+    void checkMonotonicityOnSamples(Environment const& env, std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
 
     void extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2,
                                     std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions,
@@ -156,6 +157,9 @@ class MonotonicityHelper {
     storage::SparseMatrix<ValueType> matrix;
 
     std::unordered_map<ValueType, std::unordered_map<VariableType, ValueType>> derivatives;
+
+    // Environment used for all model checking calls.
+    Environment env;
 
     AssumptionMaker<ValueType, ConstantType> assumptionMaker;
 };

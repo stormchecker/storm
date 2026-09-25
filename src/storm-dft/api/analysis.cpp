@@ -38,22 +38,23 @@ typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results analy
 }
 
 template<>
-void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<double>> const& dft, bool const exportToDot, std::string const& filename, bool const calculateMttf,
-                   double const mttfPrecision, double const mttfStepsize, std::string const mttfAlgorithmName, bool const calculateMCS,
-                   bool const calculateProbability, bool const useModularisation, std::string const importanceMeasureName,
-                   std::vector<double> const& timepoints, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
-                   std::vector<std::string> const& additionalRelevantEventNames, size_t const chunksize) {
+void analyzeDFTBdd(storm::dft::DftEnvironment const& env, std::shared_ptr<storm::dft::storage::DFT<double>> const& dft, bool const exportToDot,
+                   std::string const& filename, bool const calculateMttf, double const mttfPrecision, double const mttfStepsize,
+                   std::string const mttfAlgorithmName, bool const calculateMCS, bool const calculateProbability, bool const useModularisation,
+                   std::string const importanceMeasureName, std::vector<double> const& timepoints,
+                   std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, std::vector<std::string> const& additionalRelevantEventNames,
+                   size_t const chunksize) {
 #ifdef STORM_HAVE_SYLVAN
     if (calculateMttf) {
         if (mttfAlgorithmName == "proceeding") {
-            std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperProceeding(dft, mttfStepsize, mttfPrecision) << '\n';
+            std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperProceeding(env, dft, mttfStepsize, mttfPrecision) << '\n';
         } else if (mttfAlgorithmName == "variableChange") {
-            std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperVariableChange(dft, mttfStepsize) << '\n';
+            std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperVariableChange(env, dft, mttfStepsize) << '\n';
         }
     }
 
     if (useModularisation && calculateProbability) {
-        storm::dft::modelchecker::DftModularizationChecker<double> checker{dft};
+        storm::dft::modelchecker::DftModularizationChecker<double> checker{dft, env};
         if (chunksize == 1) {
             for (auto const& timebound : timepoints) {
                 auto const probability{checker.getProbabilityAtTimebound(timebound)};
@@ -81,7 +82,7 @@ void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<double>> const& dft,
                         "Try modularisation.");
     }
 
-    auto sylvanBddManager{storm::dft::storage::SylvanBddManager::createWithDefaultEnvironment()};
+    auto sylvanBddManager{std::make_shared<storm::dft::storage::SylvanBddManager>(env.core())};
     sylvanBddManager->execute([&]() {
         storm::dft::utility::RelevantEvents relevantEvents{additionalRelevantEventNames.begin(), additionalRelevantEventNames.end()};
         storm::dft::adapters::SFTBDDPropertyFormulaAdapter adapter{dft, properties, sylvanBddManager, relevantEvents};
@@ -186,11 +187,12 @@ void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<double>> const& dft,
 }
 
 template<>
-void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunction>> const& dft, bool const exportToDot, std::string const& filename,
-                   bool const calculateMttf, double const mttfPrecision, double const mttfStepsize, std::string const mttfAlgorithmName,
-                   bool const calculateMCS, bool const calculateProbability, bool const useModularisation, std::string const importanceMeasureName,
-                   std::vector<double> const& timepoints, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
-                   std::vector<std::string> const& additionalRelevantEventNames, size_t const chunksize) {
+void analyzeDFTBdd(storm::dft::DftEnvironment const&, std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunction>> const& dft, bool const exportToDot,
+                   std::string const& filename, bool const calculateMttf, double const mttfPrecision, double const mttfStepsize,
+                   std::string const mttfAlgorithmName, bool const calculateMCS, bool const calculateProbability, bool const useModularisation,
+                   std::string const importanceMeasureName, std::vector<double> const& timepoints,
+                   std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, std::vector<std::string> const& additionalRelevantEventNames,
+                   size_t const chunksize) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BDD analysis is not supported for this data type.");
 }
 
