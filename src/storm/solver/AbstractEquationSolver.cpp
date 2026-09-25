@@ -10,45 +10,45 @@
 namespace storm {
 namespace solver {
 
-template<typename ValueType>
-AbstractEquationSolver<ValueType>::AbstractEquationSolver() {
+template<typename SolutionType>
+AbstractEquationSolver<SolutionType>::AbstractEquationSolver() {
     // Intentionally left empty. Call setShowProgress() after construction to enable progress.
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::setShowProgress(bool verbose, uint64_t delay) {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setShowProgress(bool verbose, uint64_t delay) {
     if (verbose) {
         this->progressMeasurement = storm::utility::ProgressMeasurement("iterations", delay);
     }
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::setTerminationCondition(std::unique_ptr<TerminationCondition<ValueType>> terminationCondition) {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setTerminationCondition(std::unique_ptr<TerminationCondition<SolutionType>> terminationCondition) {
     this->terminationCondition = std::move(terminationCondition);
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::resetTerminationCondition() {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::resetTerminationCondition() {
     this->terminationCondition = nullptr;
 }
 
-template<typename ValueType>
-bool AbstractEquationSolver<ValueType>::hasCustomTerminationCondition() const {
+template<typename SolutionType>
+bool AbstractEquationSolver<SolutionType>::hasCustomTerminationCondition() const {
     return static_cast<bool>(this->terminationCondition);
 }
 
-template<typename ValueType>
-TerminationCondition<ValueType> const& AbstractEquationSolver<ValueType>::getTerminationCondition() const {
+template<typename SolutionType>
+TerminationCondition<SolutionType> const& AbstractEquationSolver<SolutionType>::getTerminationCondition() const {
     return *terminationCondition;
 }
 
-template<typename ValueType>
-std::unique_ptr<TerminationCondition<ValueType>> const& AbstractEquationSolver<ValueType>::getTerminationConditionPointer() const {
+template<typename SolutionType>
+std::unique_ptr<TerminationCondition<SolutionType>> const& AbstractEquationSolver<SolutionType>::getTerminationConditionPointer() const {
     return terminationCondition;
 }
 
-template<typename ValueType>
-bool AbstractEquationSolver<ValueType>::terminateNow(std::vector<ValueType> const& values, SolverGuarantee const& guarantee) const {
+template<typename SolutionType>
+bool AbstractEquationSolver<SolutionType>::terminateNow(std::vector<SolutionType> const& values, SolverGuarantee const& guarantee) const {
     if (!this->hasCustomTerminationCondition()) {
         return false;
     }
@@ -56,38 +56,38 @@ bool AbstractEquationSolver<ValueType>::terminateNow(std::vector<ValueType> cons
     return this->getTerminationCondition().terminateNow(values, guarantee);
 }
 
-template<typename ValueType>
-bool AbstractEquationSolver<ValueType>::hasRelevantValues() const {
+template<typename SolutionType>
+bool AbstractEquationSolver<SolutionType>::hasRelevantValues() const {
     return static_cast<bool>(relevantValues);
 }
 
-template<typename ValueType>
-storm::storage::BitVector const& AbstractEquationSolver<ValueType>::getRelevantValues() const {
+template<typename SolutionType>
+storm::storage::BitVector const& AbstractEquationSolver<SolutionType>::getRelevantValues() const {
     return relevantValues.get();
 }
 
-template<typename ValueType>
-boost::optional<storm::storage::BitVector> const& AbstractEquationSolver<ValueType>::getOptionalRelevantValues() const {
+template<typename SolutionType>
+boost::optional<storm::storage::BitVector> const& AbstractEquationSolver<SolutionType>::getOptionalRelevantValues() const {
     return relevantValues;
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::setRelevantValues(storm::storage::BitVector&& relevantValues) {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setRelevantValues(storm::storage::BitVector&& relevantValues) {
     this->relevantValues = std::move(relevantValues);
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::setRelevantValues(storm::storage::BitVector const& relevantValues) {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setRelevantValues(storm::storage::BitVector const& relevantValues) {
     this->relevantValues = relevantValues;
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::clearRelevantValues() {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::clearRelevantValues() {
     relevantValues = boost::none;
 }
 
-template<typename ValueType>
-bool AbstractEquationSolver<ValueType>::hasLowerBound(BoundType const& type) const {
+template<typename SolutionType>
+bool AbstractEquationSolver<SolutionType>::hasLowerBound(BoundType const& type) const {
     if (type == BoundType::Any) {
         return static_cast<bool>(lowerBound) || static_cast<bool>(lowerBounds);
     } else if (type == BoundType::Global) {
@@ -98,8 +98,8 @@ bool AbstractEquationSolver<ValueType>::hasLowerBound(BoundType const& type) con
     return false;
 }
 
-template<typename ValueType>
-bool AbstractEquationSolver<ValueType>::hasUpperBound(BoundType const& type) const {
+template<typename SolutionType>
+bool AbstractEquationSolver<SolutionType>::hasUpperBound(BoundType const& type) const {
     if (type == BoundType::Any) {
         return static_cast<bool>(upperBound) || static_cast<bool>(upperBounds);
     } else if (type == BoundType::Global) {
@@ -110,29 +110,29 @@ bool AbstractEquationSolver<ValueType>::hasUpperBound(BoundType const& type) con
     return false;
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::setLowerBound(ValueType const& value) {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setLowerBound(SolutionType const& value) {
     lowerBound = value;
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::setUpperBound(ValueType const& value) {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setUpperBound(SolutionType const& value) {
     upperBound = value;
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::setBounds(ValueType const& lower, ValueType const& upper) {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setBounds(SolutionType const& lower, SolutionType const& upper) {
     setLowerBound(lower);
     setUpperBound(upper);
 }
 
-template<typename ValueType>
-ValueType const& AbstractEquationSolver<ValueType>::getLowerBound() const {
+template<typename SolutionType>
+SolutionType const& AbstractEquationSolver<SolutionType>::getLowerBound() const {
     return lowerBound.get();
 }
 
-template<typename ValueType>
-ValueType const& AbstractEquationSolver<ValueType>::getLowerBound(uint64_t const& index) const {
+template<typename SolutionType>
+SolutionType const& AbstractEquationSolver<SolutionType>::getLowerBound(uint64_t const& index) const {
     if (lowerBounds) {
         STORM_LOG_ASSERT(index < lowerBounds->size(), "Invalid row index " << index << " for vector of size " << lowerBounds->size());
         if (lowerBound) {
@@ -146,24 +146,24 @@ ValueType const& AbstractEquationSolver<ValueType>::getLowerBound(uint64_t const
     }
 }
 
-template<typename ValueType>
-ValueType AbstractEquationSolver<ValueType>::getLowerBound(bool convertLocalBounds) const {
+template<typename SolutionType>
+SolutionType AbstractEquationSolver<SolutionType>::getLowerBound(bool convertLocalBounds) const {
     if (lowerBound) {
         return lowerBound.get();
     } else if (convertLocalBounds) {
         return *std::min_element(lowerBounds->begin(), lowerBounds->end());
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "No lower bound available but some was requested.");
-    return ValueType();
+    return SolutionType();
 }
 
-template<typename ValueType>
-ValueType const& AbstractEquationSolver<ValueType>::getUpperBound() const {
+template<typename SolutionType>
+SolutionType const& AbstractEquationSolver<SolutionType>::getUpperBound() const {
     return upperBound.get();
 }
 
-template<typename ValueType>
-ValueType const& AbstractEquationSolver<ValueType>::getUpperBound(uint64_t const& index) const {
+template<typename SolutionType>
+SolutionType const& AbstractEquationSolver<SolutionType>::getUpperBound(uint64_t const& index) const {
     if (upperBounds) {
         STORM_LOG_ASSERT(index < upperBounds->size(), "Invalid row index " << index << " for vector of size " << upperBounds->size());
         if (upperBound) {
@@ -177,55 +177,55 @@ ValueType const& AbstractEquationSolver<ValueType>::getUpperBound(uint64_t const
     }
 }
 
-template<typename ValueType>
-ValueType AbstractEquationSolver<ValueType>::getUpperBound(bool convertLocalBounds) const {
+template<typename SolutionType>
+SolutionType AbstractEquationSolver<SolutionType>::getUpperBound(bool convertLocalBounds) const {
     if (upperBound) {
         return upperBound.get();
     } else if (convertLocalBounds) {
         return *std::max_element(upperBounds->begin(), upperBounds->end());
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "No upper bound available but some was requested.");
-    return ValueType();
+    return SolutionType();
 }
 
-template<typename ValueType>
-std::vector<ValueType> const& AbstractEquationSolver<ValueType>::getLowerBounds() const {
+template<typename SolutionType>
+std::vector<SolutionType> const& AbstractEquationSolver<SolutionType>::getLowerBounds() const {
     return lowerBounds.get();
 }
 
-template<typename ValueType>
-std::vector<ValueType> const& AbstractEquationSolver<ValueType>::getUpperBounds() const {
+template<typename SolutionType>
+std::vector<SolutionType> const& AbstractEquationSolver<SolutionType>::getUpperBounds() const {
     return upperBounds.get();
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::setLowerBounds(std::vector<ValueType> const& values) {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setLowerBounds(std::vector<SolutionType> const& values) {
     lowerBounds = values;
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::setLowerBounds(std::vector<ValueType>&& values) {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setLowerBounds(std::vector<SolutionType>&& values) {
     lowerBounds = std::move(values);
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::setUpperBounds(std::vector<ValueType> const& values) {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setUpperBounds(std::vector<SolutionType> const& values) {
     upperBounds = values;
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::setUpperBounds(std::vector<ValueType>&& values) {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setUpperBounds(std::vector<SolutionType>&& values) {
     upperBounds = std::move(values);
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::setBounds(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper) {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setBounds(std::vector<SolutionType> const& lower, std::vector<SolutionType> const& upper) {
     setLowerBounds(lower);
     setUpperBounds(upper);
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::setBoundsFromOtherSolver(AbstractEquationSolver<ValueType> const& other) {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setBoundsFromOtherSolver(AbstractEquationSolver<SolutionType> const& other) {
     if (other.hasLowerBound(BoundType::Global)) {
         this->setLowerBound(other.getLowerBound());
     }
@@ -240,28 +240,69 @@ void AbstractEquationSolver<ValueType>::setBoundsFromOtherSolver(AbstractEquatio
     }
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::clearBounds() {
+template<typename SolutionType>
+bool AbstractEquationSolver<SolutionType>::hasSolutionLowerBounds() const {
+    return solutionBounds.hasLower();
+}
+
+template<typename SolutionType>
+bool AbstractEquationSolver<SolutionType>::hasSolutionUpperBounds() const {
+    return solutionBounds.hasUpper();
+}
+
+template<typename SolutionType>
+std::vector<SolutionType> const& AbstractEquationSolver<SolutionType>::getSolutionLowerBounds() const {
+    STORM_LOG_ASSERT(this->hasSolutionLowerBounds(), "No lower bound on the solution was computed.");
+    return *solutionBounds.lower;
+}
+
+template<typename SolutionType>
+std::vector<SolutionType> const& AbstractEquationSolver<SolutionType>::getSolutionUpperBounds() const {
+    STORM_LOG_ASSERT(this->hasSolutionUpperBounds(), "No upper bound on the solution was computed.");
+    return *solutionBounds.upper;
+}
+
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setSolutionBounds(SolutionBounds<SolutionType> bounds) const {
+    STORM_LOG_ASSERT(!bounds.hasLower() || !bounds.hasUpper() || bounds.lower->size() == bounds.upper->size(),
+                     "Bounds on the solution must have the same size.");
+    solutionBounds = std::move(bounds);
+}
+
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setSolutionBoundsExact(std::vector<SolutionType> const& x) const {
+    SolutionBounds<SolutionType> bounds;
+    bounds.setExact(x);
+    this->setSolutionBounds(std::move(bounds));
+}
+
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::clearSolutionBounds() const {
+    solutionBounds.clear();
+}
+
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::clearBounds() {
     lowerBound = boost::none;
     upperBound = boost::none;
     lowerBounds = boost::none;
     upperBounds = boost::none;
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::createLowerBoundsVector(std::vector<ValueType>& lowerBoundsVector) const {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::createLowerBoundsVector(std::vector<SolutionType>& lowerBoundsVector) const {
     if (this->hasLowerBound(BoundType::Local)) {
         lowerBoundsVector = this->getLowerBounds();
     } else {
-        ValueType lowerBound = this->hasLowerBound(BoundType::Global) ? this->getLowerBound() : storm::utility::zero<ValueType>();
+        SolutionType lowerBound = this->hasLowerBound(BoundType::Global) ? this->getLowerBound() : storm::utility::zero<SolutionType>();
         for (auto& e : lowerBoundsVector) {
             e = lowerBound;
         }
     }
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::createUpperBoundsVector(std::vector<ValueType>& upperBoundsVector) const {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::createUpperBoundsVector(std::vector<SolutionType>& upperBoundsVector) const {
     STORM_LOG_ASSERT(this->hasUpperBound(), "Expecting upper bound(s).");
     if (this->hasUpperBound(BoundType::Global)) {
         upperBoundsVector.assign(upperBoundsVector.size(), this->getUpperBound());
@@ -270,41 +311,41 @@ void AbstractEquationSolver<ValueType>::createUpperBoundsVector(std::vector<Valu
     }
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::createUpperBoundsVector(std::unique_ptr<std::vector<ValueType>>& upperBoundsVector, uint64_t length) const {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::createUpperBoundsVector(std::unique_ptr<std::vector<SolutionType>>& upperBoundsVector, uint64_t length) const {
     STORM_LOG_ASSERT(this->hasUpperBound(), "Expecting upper bound(s).");
     if (!upperBoundsVector) {
         if (this->hasUpperBound(BoundType::Local)) {
             STORM_LOG_ASSERT(length == this->getUpperBounds().size(), "Mismatching sizes.");
-            upperBoundsVector = std::make_unique<std::vector<ValueType>>(this->getUpperBounds());
+            upperBoundsVector = std::make_unique<std::vector<SolutionType>>(this->getUpperBounds());
         } else {
-            upperBoundsVector = std::make_unique<std::vector<ValueType>>(length, this->getUpperBound());
+            upperBoundsVector = std::make_unique<std::vector<SolutionType>>(length, this->getUpperBound());
         }
     } else {
         createUpperBoundsVector(*upperBoundsVector);
     }
 }
 
-template<typename ValueType>
-bool AbstractEquationSolver<ValueType>::isShowProgressSet() const {
+template<typename SolutionType>
+bool AbstractEquationSolver<SolutionType>::isShowProgressSet() const {
     return this->progressMeasurement.is_initialized();
 }
 
-template<typename ValueType>
-uint64_t AbstractEquationSolver<ValueType>::getShowProgressDelay() const {
+template<typename SolutionType>
+uint64_t AbstractEquationSolver<SolutionType>::getShowProgressDelay() const {
     STORM_LOG_ASSERT(this->isShowProgressSet(), "Tried to get the progress message delay but progress is not shown.");
     return this->progressMeasurement->getShowProgressDelay();
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::startMeasureProgress(uint64_t startingIteration) const {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::startMeasureProgress(uint64_t startingIteration) const {
     if (this->isShowProgressSet()) {
         this->progressMeasurement->startNewMeasurement(startingIteration);
     }
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::showProgressIterative(uint64_t iteration, boost::optional<uint64_t> const& bound) const {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::showProgressIterative(uint64_t iteration, boost::optional<uint64_t> const& bound) const {
     if (this->isShowProgressSet()) {
         if (bound) {
             this->progressMeasurement->setMaxCount(bound.get());
@@ -313,8 +354,8 @@ void AbstractEquationSolver<ValueType>::showProgressIterative(uint64_t iteration
     }
 }
 
-template<typename ValueType>
-void AbstractEquationSolver<ValueType>::reportStatus(SolverStatus status, boost::optional<uint64_t> const& iterations) const {
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::reportStatus(SolverStatus status, boost::optional<uint64_t> const& iterations) const {
     if (iterations) {
         switch (status) {
             case SolverStatus::Converged:
@@ -353,9 +394,9 @@ void AbstractEquationSolver<ValueType>::reportStatus(SolverStatus status, boost:
     }
 }
 
-template<typename ValueType>
-SolverStatus AbstractEquationSolver<ValueType>::updateStatus(SolverStatus status, bool earlyTermination, uint64_t iterations,
-                                                             uint64_t maximalNumberOfIterations) const {
+template<typename SolutionType>
+SolverStatus AbstractEquationSolver<SolutionType>::updateStatus(SolverStatus status, bool earlyTermination, uint64_t iterations,
+                                                                uint64_t maximalNumberOfIterations) const {
     if (status != SolverStatus::Converged) {
         if (earlyTermination) {
             status = SolverStatus::TerminatedEarly;
@@ -368,9 +409,9 @@ SolverStatus AbstractEquationSolver<ValueType>::updateStatus(SolverStatus status
     return status;
 }
 
-template<typename ValueType>
-SolverStatus AbstractEquationSolver<ValueType>::updateStatus(SolverStatus status, std::vector<ValueType> const& x, SolverGuarantee const& guarantee,
-                                                             uint64_t iterations, uint64_t maximalNumberOfIterations) const {
+template<typename SolutionType>
+SolverStatus AbstractEquationSolver<SolutionType>::updateStatus(SolverStatus status, std::vector<SolutionType> const& x, SolverGuarantee const& guarantee,
+                                                                uint64_t iterations, uint64_t maximalNumberOfIterations) const {
     return this->updateStatus(status, this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x, guarantee), iterations,
                               maximalNumberOfIterations);
 }

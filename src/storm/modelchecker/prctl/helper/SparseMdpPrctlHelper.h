@@ -38,9 +38,12 @@ class SparseMdpPrctlHelper {
     using ExtendedSolutionType = storm::utility::ExtendedValueType<SolutionType>;
     using ExtendedReturnType = MDPSparseModelCheckingHelperReturnType<SolutionType, ExtendedSolutionType>;
 
-    static std::map<storm::storage::sparse::state_type, SolutionType> computeRewardBoundedValues(
-        Environment const& env, OptimizationDirection dir, rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding,
-        storm::storage::BitVector const& initialStates);
+    /*!
+     * @return One value per given initial state, in the order of those states.
+     */
+    static std::vector<SolutionType> computeRewardBoundedValues(Environment const& env, OptimizationDirection dir,
+                                                                rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding,
+                                                                storm::storage::BitVector const& initialStates);
 
     static std::vector<SolutionType> computeNextProbabilities(Environment const& env, OptimizationDirection dir,
                                                               UncertaintyResolutionMode uncertaintyResolutionMode,

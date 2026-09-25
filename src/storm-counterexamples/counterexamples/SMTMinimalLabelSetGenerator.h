@@ -1669,7 +1669,8 @@ class SMTMinimalLabelSetGenerator {
             if (rewardName == boost::none) {
                 results.push_back(storm::utility::zero<T>());
                 allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeUntilProbabilities(
-                    env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false);
+                                      env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false)
+                                      .values;
                 for (auto state : model.getInitialStates()) {
                     STORM_LOG_TRACE("Found probability " << allStatesResult[state]);
                     results.back() = std::max(results.back(), allStatesResult[state]);
@@ -1689,10 +1690,10 @@ class SMTMinimalLabelSetGenerator {
             if (rewardName == boost::none) {
                 results.push_back(storm::utility::zero<T>());
                 storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
-                allStatesResult = std::move(
+                allStatesResult =
                     modelCheckerHelper
                         .computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false, false)
-                        .values);
+                        .values;
                 for (auto state : model.getInitialStates()) {
                     results.back() = std::max(results.back(), allStatesResult[state]);
                 }

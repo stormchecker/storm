@@ -259,7 +259,8 @@ std::vector<ValueType> SparseCtmcCslHelper::computeUntilProbabilities(Environmen
                                                                       std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& phiStates,
                                                                       storm::storage::BitVector const& psiStates, bool qualitative) {
     return SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(env, std::move(goal), computeProbabilityMatrix(rateMatrix, exitRateVector),
-                                                                       backwardTransitions, phiStates, psiStates, qualitative);
+                                                                       backwardTransitions, phiStates, psiStates, qualitative)
+        .values;
 }
 
 template<typename ValueType>
