@@ -6,8 +6,6 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/MissingLibraryException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
 #include "storm/solver/HighsLpSolver.h"
@@ -157,25 +155,13 @@ std::unique_ptr<storm::solver::LpSolver<ValueType, true>> getRawLpSolver(storm::
 }
 
 std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
-    storm::solver::SmtSolverType smtSolverType;
-    if (storm::settings::hasModule<storm::settings::modules::CoreSettings>()) {
-        smtSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getSmtSolver();
-    } else {
-#ifdef STORM_HAVE_Z3
-        smtSolverType = storm::solver::SmtSolverType::Z3;
-#elif defined STORM_HAVE_MATHSAT
-        smtSolverType = storm::solver::SmtSolverType::Mathsat;
+#ifdef STORM_DEFAULT_SMT_SOLVER_Z3
+    return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
+#elif defined STORM_DEFAULT_SMT_SOLVER_MATHSAT
+    return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
 #else
-        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Requested an SMT solver but none was installed.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Requested an SMT solver but none was installed.");
 #endif
-    }
-    switch (smtSolverType) {
-        case storm::solver::SmtSolverType::Z3:
-            return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
-        case storm::solver::SmtSolverType::Mathsat:
-            return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
-    }
-    return nullptr;
 }
 
 std::unique_ptr<storm::solver::SmtSolver> Z3SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {

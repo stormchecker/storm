@@ -3,9 +3,7 @@
 #include "storm/environment/modelchecker/ConditionalModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/ModelCheckerSettings.h"
+#include "storm/modelchecker/helper/infinitehorizon/SteadyStateDistributionAlgorithm.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/InvalidEnvironmentException.h"
@@ -13,20 +11,13 @@
 
 namespace storm {
 
-ModelCheckerEnvironment::ModelCheckerEnvironment() {
-    auto const& mcSettings = storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>();
-    if (mcSettings.isLtl2daToolSet()) {
-        ltl2daTool = mcSettings.getLtl2daTool();
-    }
-    auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-    steadyStateDistributionAlgorithm = ioSettings.getSteadyStateDistributionAlgorithm();
-
-    filterRewZero = mcSettings.isFilterRewZeroSet();
-
-    exportCdfEnabled = ioSettings.isExportCdfSet();
-    if (exportCdfEnabled) {
-        exportCdfDirectory = ioSettings.getExportCdfDirectory();
-    }
+ModelCheckerEnvironment::ModelCheckerEnvironment()
+    : ltl2daTool(boost::none),
+      steadyStateDistributionAlgorithm(storm::SteadyStateDistributionAlgorithm::Automatic),
+      filterRewZero(false),
+      exportCdfEnabled(false),
+      exportCdfDirectory("") {
+    // Intentionally left empty.
 }
 
 ModelCheckerEnvironment::~ModelCheckerEnvironment() {

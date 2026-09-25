@@ -18,6 +18,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/settings/EnvironmentBuilder.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
@@ -157,7 +158,7 @@ struct ModelProcessingInformation {
     storm::dd::DdType ddType;
 
     // The environment used during model checking
-    storm::Environment env;
+    storm::Environment env = storm::settings::EnvironmentBuilder::buildEnvironment();
 
     // A flag which is set to true, if the settings were detected to be compatible.
     // If this is false, it could be that the query can not be handled.

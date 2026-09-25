@@ -110,6 +110,9 @@ class SmtSolverFactory {
     virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;
 };
 
+// The factory for the compile-time chosen default SMT solver (see the CMake option STORM_DEFAULT_SMT_SOLVER).
+using DefaultSmtSolverFactory = SmtSolverFactory;
+
 class Z3SmtSolverFactory : public SmtSolverFactory {
    public:
     virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;

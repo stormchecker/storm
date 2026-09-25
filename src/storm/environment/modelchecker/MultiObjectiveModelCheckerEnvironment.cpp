@@ -1,56 +1,24 @@
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/MultiObjectiveSettings.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/modelchecker/multiobjective/MultiObjectiveModelCheckingMethod.h"
+#include "storm/storage/SchedulerClass.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/IllegalArgumentException.h"
 namespace storm {
 
-MultiObjectiveModelCheckerEnvironment::MultiObjectiveModelCheckerEnvironment() {
-    auto const& multiobjectiveSettings = storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>();
-    method = multiobjectiveSettings.getMultiObjectiveMethod();
-    if (multiobjectiveSettings.isExportPlotSet()) {
-        plotPathUnderApprox = multiobjectiveSettings.getExportPlotDirectory() + "underapproximation.csv";
-        plotPathOverApprox = multiobjectiveSettings.getExportPlotDirectory() + "overapproximation.csv";
-        plotPathParetoPoints = multiobjectiveSettings.getExportPlotDirectory() + "paretopoints.csv";
-    }
-
-    precision = storm::utility::convertNumber<storm::RationalNumber>(multiobjectiveSettings.getPrecision());
-    if (multiobjectiveSettings.getPrecisionAbsolute()) {
-        precisionType = PrecisionType::Absolute;
-    } else if (multiobjectiveSettings.getPrecisionRelativeToDiff()) {
-        precisionType = PrecisionType::RelativeToDiff;
-    } else {
-        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unhandled precision type.");
-    }
-
-    if (multiobjectiveSettings.isAutoEncodingSet()) {
-        encodingType = EncodingType::Auto;
-    } else if (multiobjectiveSettings.isClassicEncodingSet()) {
-        encodingType = EncodingType::Classic;
-    } else if (multiobjectiveSettings.isFlowEncodingSet()) {
-        encodingType = EncodingType::Flow;
-    }
-    STORM_LOG_ASSERT(multiobjectiveSettings.isBsccDetectionViaOrderConstraintsSet() || multiobjectiveSettings.isBsccDetectionViaFlowConstraintsSet(),
-                     "Unexpected settings.");
-    bsccOrderEncoding = multiobjectiveSettings.isBsccDetectionViaOrderConstraintsSet();
-    STORM_LOG_ASSERT(multiobjectiveSettings.isIndicatorConstraintsSet() || multiobjectiveSettings.isBigMConstraintsSet(), "Unexpected settings.");
-    indicatorConstraints = multiobjectiveSettings.isIndicatorConstraintsSet();
-    redundantBsccConstraints = multiobjectiveSettings.isRedundantBsccConstraintsSet();
-
-    if (multiobjectiveSettings.isWeightedSumApproximationTradeoffSet()) {
-        approximationTradeoff = storm::utility::convertNumber<storm::RationalNumber>(multiobjectiveSettings.getWeightedSumApproximationTradeoff());
-    }
-    if (multiobjectiveSettings.isMaxStepsSet()) {
-        maxSteps = multiobjectiveSettings.getMaxSteps();
-    }
-    if (multiobjectiveSettings.hasSchedulerRestriction()) {
-        schedulerRestriction = multiobjectiveSettings.getSchedulerRestriction();
-    }
-
-    printResults = multiobjectiveSettings.isPrintResultsSet();
+MultiObjectiveModelCheckerEnvironment::MultiObjectiveModelCheckerEnvironment()
+    : method(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa),
+      precision(storm::utility::convertNumber<storm::RationalNumber>(1e-04)),
+      precisionType(PrecisionType::Absolute),
+      encodingType(EncodingType::Auto),
+      indicatorConstraints(false),
+      bsccOrderEncoding(false),
+      redundantBsccConstraints(false),
+      printResults(false) {
+    // Intentionally left empty.
 }
 
 MultiObjectiveModelCheckerEnvironment::~MultiObjectiveModelCheckerEnvironment() {
