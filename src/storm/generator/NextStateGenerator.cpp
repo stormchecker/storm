@@ -278,7 +278,7 @@ void NextStateGenerator<ValueType, StateType>::postprocess(StateBehavior<ValueTy
 
         // Finally remove the choices that were added to other Markovian choices.
         if (numberOfChoicesToDelete > 0) {
-            result.getChoices().resize(result.getChoices().size() - numberOfChoicesToDelete);
+            result.removeLastChoices(numberOfChoicesToDelete);
         }
     }
 }

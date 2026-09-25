@@ -94,7 +94,12 @@ class NextStateGenerator {
     virtual storm::storage::sparse::Valuations initializeStateValuations() const;
 
     void load(CompressedState const& state);
-    virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) = 0;
+    /*!
+     * Computes the behavior of the currently loaded state.
+     * @return A reference to the behavior of the state. The reference is only valid until the next call of expand (the underlying memory is reused).
+     *         Make a copy of the returned object if it is required for longer.
+     */
+    virtual StateBehavior<ValueType, StateType> const& expand(StateToIdCallback const& stateToIdCallback) = 0;
     bool satisfies(storm::expressions::Expression const& expression) const;
 
     /// Adds the valuation for the currently loaded state to the given builder
@@ -166,6 +171,10 @@ class NextStateGenerator {
     virtual storm::storage::sparse::Valuations initializeObservationValuations() const;
 
     void postprocess(StateBehavior<ValueType, StateType>& result);
+
+    /// The behavior of the most recently expanded state. It is reused for every call of expand to avoid allocations.
+    /// @note As a consequence, expand is not thread-safe: A next state generator must not be used concurrently from multiple threads.
+    StateBehavior<ValueType, StateType> currentStateBehavior;
 
     /// The options to be used for next-state generation.
     NextStateGeneratorOptions options;

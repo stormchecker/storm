@@ -1,5 +1,9 @@
 #include "storm/generator/CompressedState.h"
 
+#include <array>
+#include <span>
+#include <vector>
+
 #include <boost/algorithm/string/join.hpp>
 
 #include "storm/adapters/JsonAdapter.h"
@@ -30,6 +34,80 @@ void unpackStateIntoEvaluator(CompressedState const& state, VariableInformation 
     for (auto const& integerVariable : variableInformation.integerVariables) {
         evaluator.setIntegerValue(integerVariable.variable,
                                   static_cast<int_fast64_t>(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth)) + integerVariable.lowerBound);
+    }
+}
+
+namespace {
+
+/*!
+ * A vector that can be either on the stack or on the heap, depending on its size.
+ */
+template<uint64_t StackCapacity = 16>
+class StackedIndexVector {
+   public:
+    explicit StackedIndexVector(uint64_t size) : heapData(size > StackCapacity ? size : 0, 0) {
+        data = size > StackCapacity ? std::span<uint64_t>(heapData) : std::span<uint64_t>(stackData).subspan(0, size);
+    }
+    // The span points into this object. Thus, copying or moving would result in dangling pointers.
+    StackedIndexVector(StackedIndexVector const&) = delete;
+    StackedIndexVector(StackedIndexVector&&) = delete;
+    StackedIndexVector& operator=(StackedIndexVector const&) = delete;
+    StackedIndexVector& operator=(StackedIndexVector&&) = delete;
+    std::span<uint64_t> get() {
+        return data;
+    }
+
+   private:
+    std::array<uint64_t, StackCapacity> stackData;
+    std::vector<uint64_t> heapData;
+    std::span<uint64_t> data;
+};
+}  // namespace
+
+template<typename ValueType>
+void unpackStateDifferenceIntoEvaluator(CompressedState const& newState, CompressedState const& oldState, VariableInformation const& variableInformation,
+                                        storm::expressions::ExpressionEvaluator<ValueType>& evaluator) {
+    STORM_LOG_ASSERT(newState.size() == oldState.size(), "Unexpected state sizes.");
+    // Compute the bits that differ between the two states, one bucket at a time (this is much cheaper than comparing the variables individually)
+    StackedIndexVector differenceStorage(newState.bucketCount());
+    std::span<uint64_t> difference = differenceStorage.get();
+    uint64_t anyDifference = 0;
+    for (uint64_t i = 0; i < difference.size(); ++i) {
+        difference[i] = newState.getBucket(i) ^ oldState.getBucket(i);
+        anyDifference |= difference[i];
+    }
+    if (anyDifference == 0) {
+        return;
+    }
+    // Checks whether any of the bits in the range [bitOffset, bitOffset + bitWidth) differ (bitWidth must be in [1,64]).
+    // Bit 0 of a bucket is the most significant bit (see BitVector::getAsInt).
+    auto differs = [difference](uint64_t bitOffset, uint64_t bitWidth) {
+        uint64_t const firstBucket = bitOffset >> 6;
+        uint64_t const offsetInBucket = bitOffset & 63;
+        uint64_t bits = difference[firstBucket] << offsetInBucket;
+        if (64 - offsetInBucket < bitWidth) {
+            bits |= difference[firstBucket + 1] >> (64 - offsetInBucket);
+        }
+        return (bits >> (64 - bitWidth)) != 0;
+    };
+
+    for (auto const& locationVariable : variableInformation.locationVariables) {
+        // Location variables without bits always have value 0 and thus never change
+        if (locationVariable.bitWidth != 0 && differs(locationVariable.bitOffset, locationVariable.bitWidth)) {
+            evaluator.setIntegerValue(locationVariable.variable, newState.getAsInt(locationVariable.bitOffset, locationVariable.bitWidth));
+        }
+    }
+    for (auto const& booleanVariable : variableInformation.booleanVariables) {
+        if (differs(booleanVariable.bitOffset, 1)) {
+            evaluator.setBooleanValue(booleanVariable.variable, newState.get(booleanVariable.bitOffset));
+        }
+    }
+    for (auto const& integerVariable : variableInformation.integerVariables) {
+        if (integerVariable.bitWidth != 0 && differs(integerVariable.bitOffset, integerVariable.bitWidth)) {
+            evaluator.setIntegerValue(
+                integerVariable.variable,
+                static_cast<int_fast64_t>(newState.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth)) + integerVariable.lowerBound);
+        }
     }
 }
 
@@ -286,5 +364,14 @@ template void unpackStateIntoEvaluator<storm::RationalNumber>(CompressedState co
                                                               storm::expressions::ExpressionEvaluator<storm::RationalNumber>& evaluator);
 template void unpackStateIntoEvaluator<storm::RationalFunction>(CompressedState const& state, VariableInformation const& variableInformation,
                                                                 storm::expressions::ExpressionEvaluator<storm::RationalFunction>& evaluator);
+template void unpackStateDifferenceIntoEvaluator<double>(CompressedState const& newState, CompressedState const& oldState,
+                                                         VariableInformation const& variableInformation,
+                                                         storm::expressions::ExpressionEvaluator<double>& evaluator);
+template void unpackStateDifferenceIntoEvaluator<storm::RationalNumber>(CompressedState const& newState, CompressedState const& oldState,
+                                                                        VariableInformation const& variableInformation,
+                                                                        storm::expressions::ExpressionEvaluator<storm::RationalNumber>& evaluator);
+template void unpackStateDifferenceIntoEvaluator<storm::RationalFunction>(CompressedState const& newState, CompressedState const& oldState,
+                                                                          VariableInformation const& variableInformation,
+                                                                          storm::expressions::ExpressionEvaluator<storm::RationalFunction>& evaluator);
 }  // namespace generator
 }  // namespace storm
