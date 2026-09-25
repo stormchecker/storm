@@ -632,8 +632,9 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         auto gviCallback = [&](helper::GVIData<ValueType> const& data) {
             this->showProgressIterative(numIterations);
-            bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
-                                  this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+            bool terminateEarly =
+                this->hasCustomTerminationCondition() && (this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) ||
+                                                          this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual));
             return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
         };
 
@@ -797,8 +798,9 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         uint64_t numIterations{0};
         auto iiCallback = [&](helper::IIData<ValueType> const& data) {
             this->showProgressIterative(numIterations);
-            bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
-                                  this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+            bool terminateEarly =
+                this->hasCustomTerminationCondition() && (this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) ||
+                                                          this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual));
             return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
         };
         std::optional<storm::storage::BitVector> optionalRelevantValues;
