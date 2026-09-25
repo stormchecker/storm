@@ -49,7 +49,7 @@ boost::any CumulativeRewardFormula::accept(FormulaVisitor const& visitor, boost:
 void CumulativeRewardFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
     for (unsigned i = 0; i < this->getDimension(); ++i) {
         if (getTimeBoundReference(i).isRewardBound()) {
-            referencedRewardModels.insert(this->getTimeBoundReference(i).getRewardName());
+            referencedRewardModels.insert(this->getTimeBoundReference(i).getOptionalRewardModelName().get_value_or(""));
         }
     }
 }
@@ -186,7 +186,9 @@ std::ostream& CumulativeRewardFormula::writeToStream(std::ostream& out, bool /*a
             if (this->getTimeBoundReference(i).hasRewardAccumulation()) {
                 out << "[" << this->getTimeBoundReference(i).getRewardAccumulation() << "]";
             }
-            out << "{\"" << this->getTimeBoundReference(i).getRewardName() << "\"}";
+            if (this->getTimeBoundReference(i).hasRewardModelName()) {
+                out << "{\"" << this->getTimeBoundReference(i).getRewardName() << "\"}";
+            }
         } else if (this->getTimeBoundReference(i).isStepBound()) {
             out << "steps";
             //} else if (this->getTimeBoundReference(i).isStepBound())

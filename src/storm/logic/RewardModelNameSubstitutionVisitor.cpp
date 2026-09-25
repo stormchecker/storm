@@ -38,7 +38,11 @@ boost::any RewardModelNameSubstitutionVisitor::visit(BoundedUntilFormula const& 
         }
         auto const& tbr = f.getTimeBoundReference(i);
         if (tbr.isRewardBound()) {
-            timeBoundReferences.emplace_back(getNewName(tbr.getRewardName()), tbr.getOptionalRewardAccumulation());
+            if (tbr.hasRewardModelName()) {
+                timeBoundReferences.emplace_back(getNewName(tbr.getRewardName()), tbr.getOptionalRewardAccumulation());
+            } else {
+                timeBoundReferences.emplace_back(boost::none, tbr.getOptionalRewardAccumulation());
+            }
         } else {
             timeBoundReferences.push_back(tbr);
         }
@@ -66,7 +70,11 @@ boost::any RewardModelNameSubstitutionVisitor::visit(CumulativeRewardFormula con
         bounds.emplace_back(TimeBound(f.isBoundStrict(i), f.getBound(i)));
         storm::logic::TimeBoundReference tbr = f.getTimeBoundReference(i);
         if (tbr.isRewardBound()) {
-            tbr = storm::logic::TimeBoundReference(getNewName(tbr.getRewardName()), tbr.getOptionalRewardAccumulation());
+            if (tbr.hasRewardModelName()) {
+                tbr = storm::logic::TimeBoundReference(getNewName(tbr.getRewardName()), tbr.getOptionalRewardAccumulation());
+            } else {
+                tbr = storm::logic::TimeBoundReference(boost::none, tbr.getOptionalRewardAccumulation());
+            }
         }
         timeBoundReferences.push_back(std::move(tbr));
     }
@@ -104,7 +112,11 @@ boost::any RewardModelNameSubstitutionVisitor::visit(DiscountedCumulativeRewardF
         bounds.emplace_back(TimeBound(f.isBoundStrict(i), f.getBound(i)));
         storm::logic::TimeBoundReference tbr = f.getTimeBoundReference(i);
         if (tbr.isRewardBound()) {
-            tbr = storm::logic::TimeBoundReference(getNewName(tbr.getRewardName()), tbr.getOptionalRewardAccumulation());
+            if (tbr.hasRewardModelName()) {
+                tbr = storm::logic::TimeBoundReference(getNewName(tbr.getRewardName()), tbr.getOptionalRewardAccumulation());
+            } else {
+                tbr = storm::logic::TimeBoundReference(boost::none, tbr.getOptionalRewardAccumulation());
+            }
         }
         timeBoundReferences.push_back(std::move(tbr));
     }
