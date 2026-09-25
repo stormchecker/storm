@@ -1,6 +1,7 @@
 #include "storm/utility/graph.h"
 
 #include <algorithm>
+#include <ranges>
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -742,70 +743,107 @@ storm::storage::BitVector performProb1E(storm::storage::SparseMatrix<T> const& t
                                         std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
                                         storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates,
                                         storm::storage::BitVector const& psiStates, boost::optional<storm::storage::BitVector> const& choiceConstraint) {
-    size_t numberOfStates = phiStates.size();
+    // We compute the largest set of candidates such that
+    //   (i)  every candidate that is not a psi state has an enabled choice whose successors are all candidates and
+    //   (ii) from every candidate, a psi state can be reached within the candidates using only choices as in (i).
+    // Starting with all (phi|psi)-states, we alternate two kinds of removals: Candidates violating (i) are removed by a cascading backward search and
+    // candidates violating (ii) are removed after a backward search from the psi states. As removing a state can invalidate (i) for its
+    // predecessors and (ii) for the states that reached the psi states through it, this is repeated until nothing changes anymore.
+    // Since we only ever remove states that can not be part of a set satisfying (i) and (ii), the computation converges to the desired set.
+    storm::storage::BitVector candidates = phiStates | psiStates;
 
-    // Initialize the environment for the iterative algorithm.
-    storm::storage::BitVector currentStates(numberOfStates, true);
-    std::vector<uint_fast64_t> stack;
-    stack.reserve(numberOfStates);
+    // The choices of the given state.
+    auto choicesOf = [&nondeterministicChoiceIndices](uint_fast64_t state) {
+        return std::views::iota(nondeterministicChoiceIndices[state], nondeterministicChoiceIndices[state + 1]);
+    };
 
-    // Perform the loop as long as the set of states gets larger.
-    bool done = false;
-    uint_fast64_t currentState;
-    while (!done) {
-        stack.clear();
-        storm::storage::BitVector nextStates(psiStates);
-        stack.insert(stack.end(), psiStates.begin(), psiStates.end());
+    // Whether the given choice is enabled and all of its successors are candidates.
+    auto choiceStaysInCandidates = [&](uint_fast64_t choice) -> bool {
+        return (!choiceConstraint || choiceConstraint->get(choice)) &&
+               std::ranges::all_of(transitionMatrix.getRow(choice), [&candidates](auto const& entry) { return candidates.get(entry.getColumn()); });
+    };
 
+    // Whether the given state satisfies (i).
+    auto satisfiesSafety = [&](uint_fast64_t state) -> bool { return psiStates.get(state) || std::ranges::any_of(choicesOf(state), choiceStaysInCandidates); };
+
+    std::vector<uint_fast64_t> stack;  // used for backpropagation.
+
+    // Removes the candidates that (transitively) violate (i) by backpropagating from the current stack contents
+    auto propagateRemovals = [&] {
         while (!stack.empty()) {
-            currentState = stack.back();
+            uint_fast64_t const removedState = stack.back();
             stack.pop_back();
-
-            for (typename storm::storage::SparseMatrix<T>::const_iterator predecessorEntryIt = backwardTransitions.begin(currentState),
-                                                                          predecessorEntryIte = backwardTransitions.end(currentState);
-                 predecessorEntryIt != predecessorEntryIte; ++predecessorEntryIt) {
-                if (phiStates.get(predecessorEntryIt->getColumn()) && !nextStates.get(predecessorEntryIt->getColumn())) {
-                    // Check whether the predecessor has only successors in the current state set for one of the
-                    // nondeterminstic choices.
-                    for (uint_fast64_t row = nondeterministicChoiceIndices[predecessorEntryIt->getColumn()];
-                         row < nondeterministicChoiceIndices[predecessorEntryIt->getColumn() + 1]; ++row) {
-                        if (!choiceConstraint || choiceConstraint.get().get(row)) {
-                            bool allSuccessorsInCurrentStates = true;
-                            bool hasNextStateSuccessor = false;
-                            for (typename storm::storage::SparseMatrix<T>::const_iterator successorEntryIt = transitionMatrix.begin(row),
-                                                                                          successorEntryIte = transitionMatrix.end(row);
-                                 successorEntryIt != successorEntryIte; ++successorEntryIt) {
-                                if (!currentStates.get(successorEntryIt->getColumn())) {
-                                    allSuccessorsInCurrentStates = false;
-                                    break;
-                                } else if (nextStates.get(successorEntryIt->getColumn())) {
-                                    hasNextStateSuccessor = true;
-                                }
-                            }
-
-                            // If all successors for a given nondeterministic choice are in the current state set, we
-                            // add it to the set of states for the next iteration and perform a backward search from
-                            // that state.
-                            if (allSuccessorsInCurrentStates && hasNextStateSuccessor) {
-                                nextStates.set(predecessorEntryIt->getColumn(), true);
-                                stack.push_back(predecessorEntryIt->getColumn());
-                                break;
-                            }
-                        }
-                    }
+            for (auto const& predecessorEntry : backwardTransitions.getRow(removedState)) {
+                uint_fast64_t const predecessor = predecessorEntry.getColumn();
+                if (candidates.get(predecessor) && !satisfiesSafety(predecessor)) {
+                    candidates.set(predecessor, false);
+                    stack.push_back(predecessor);
                 }
             }
         }
+    };
 
-        // Check whether we need to perform an additional iteration.
-        if (currentStates == nextStates) {
-            done = true;
-        } else {
-            currentStates = std::move(nextStates);
+    storm::storage::BitVector auxStates;  // Auxiliary storage used to check (ii)
+
+    // Whether the given choice stays in the candidates and has a successor in auxStates
+    auto isSafeChoiceReachingAux = [&](uint_fast64_t choice) -> bool {
+        if (choiceConstraint && !choiceConstraint->get(choice)) {
+            return false;
+        }
+        bool hasReachingSuccessor = false;
+        for (auto const& successorEntry : transitionMatrix.getRow(choice)) {
+            if (!candidates.get(successorEntry.getColumn())) {
+                return false;
+            }
+            hasReachingSuccessor = hasReachingSuccessor || auxStates.get(successorEntry.getColumn());
+        }
+        return hasReachingSuccessor;
+    };
+
+    // Gathers the states that satisfy (ii) with respect to the current candidates and stores them into auxStates
+    auto gatherReachingStates = [&] {
+        auxStates = psiStates;
+        stack.assign(psiStates.begin(), psiStates.end());
+        while (!stack.empty()) {
+            uint_fast64_t const currentState = stack.back();
+            stack.pop_back();
+            for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
+                uint_fast64_t const predecessor = predecessorEntry.getColumn();
+                if (candidates.get(predecessor) && !auxStates.get(predecessor) && std::ranges::any_of(choicesOf(predecessor), isSafeChoiceReachingAux)) {
+                    auxStates.set(predecessor, true);
+                    stack.push_back(predecessor);
+                }
+            }
+        }
+    };
+
+    // Initially, safety (i) has to be checked for every candidate.
+    for (uint_fast64_t state : candidates) {
+        if (!satisfiesSafety(state)) {
+            candidates.set(state, false);  // Note: BitVectors support removing elements while iterating over them.
+            stack.push_back(state);
         }
     }
 
-    return currentStates;
+    // Now alternate the two kinds of removals until a fixed point is reached.
+    do {
+        // Propagate the removals of states from the candidates set (these are stored in the stack at this point)
+        propagateRemovals();
+        STORM_LOG_ASSERT(stack.empty(), "Expected empty stack after propagating removals.");
+        // Perform a backward search from the psi states, only using choices that stay in the candidates (puts result into auxStates)
+        gatherReachingStates();
+        STORM_LOG_ASSERT(stack.empty(), "Expected empty stack after gathering reaching states.");
+        STORM_LOG_ASSERT(auxStates.isSubsetOf(candidates), "Expected that reaching states are a subset of the candidates.");
+        auxStates ^= candidates;
+        // At this point auxStates contains those candidates that cannot reach psi. Remove those states from the candidates.
+        for (uint_fast64_t state : auxStates) {
+            candidates.set(state, false);
+            stack.push_back(state);
+        }
+        // Now either propagate the removals or terminate if no more candidates have been removed
+    } while (!stack.empty());
+
+    return candidates;
 }
 
 template<typename T, typename RM>
@@ -823,9 +861,13 @@ std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max
                                                                                  storm::storage::BitVector const& psiStates) {
     std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
 
-    result.first = performProb0A(backwardTransitions, phiStates, psiStates);
+    result.first = performProbGreater0E(backwardTransitions, phiStates, psiStates);  // Will be complemented below to get prob0A-states.
 
-    result.second = performProb1E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
+    // Take the probGreater0E-states as phiStates to narrow down the search. The probGreater0E-states are a subset of (phi|psi)-state and a superset of prob1E.
+    result.second = performProb1E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, result.first, psiStates);
+
+    result.first.complement();  // prob0A = ~probGreater0E
+
     return result;
 }
 

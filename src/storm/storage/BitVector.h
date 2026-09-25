@@ -407,6 +407,16 @@ class BitVector {
     BitVector operator^(BitVector const& other) const;
 
     /*!
+     * Performs a logical "xor" with the given bit vector and assigns the result to the current bit vector.
+     * The given bit vector has to have the same size as the current one.
+     *
+     * @param other A reference to the bit vector to use for the operation.
+     * @return A reference to the current bit vector corresponding to the logical "xor"
+     * of the two bit vectors.
+     */
+    BitVector& operator^=(BitVector const& other);
+
+    /*!
      * Computes a bit vector that contains only the values of the bits given by the filter.
      * The returned bit vector is as long as the number of set bits in the given filter.
      * Bit i is set in the returned bit vector iff the i-th set bit of the current bit vector is set in the filter.
