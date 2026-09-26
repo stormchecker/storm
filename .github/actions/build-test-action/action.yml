@@ -73,9 +73,9 @@ runs:
       # Limit cache size to fit withn 10GB limit of GitHub
       run: |
         if [ "${{ env.BUILD_TYPE }}" = "Debug" ]; then
-          ccache --max-size=900M
+          ccache --max-size=1200M
         else
-          ccache --max-size=550M
+          ccache --max-size=750M
         fi
         ccache --zero-stats
         ccache --show-stats --verbose
