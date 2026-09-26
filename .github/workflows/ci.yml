@@ -62,9 +62,9 @@ jobs:
         id: resolve-config
         env:
           CONFIG: ${{ toJson(matrix.config) }}
-        # Update config: disable PCH when using caching, set developer mode for debug
+        # Update config: disable PCH when using caching, set developer mode for debug.
         run: |
-          if [ "${{ github.event_name == 'pull_request' }}" = "true" ]; then
+          if [ "${{ contains(matrix.config.scope, 'quick') }}" = "true" ]; then
             RESOLVED=$(echo "$CONFIG" | jq -c '.cmakeArgs += " -DSTORM_COMPILE_WITH_PCH=OFF" | .Developer = (.buildType == "Debug")')
           else
             RESOLVED=$(echo "$CONFIG" | jq -c '.Developer = (.buildType == "Debug")')
@@ -111,9 +111,9 @@ jobs:
         id: resolve-config
         env:
           CONFIG: ${{ toJson(matrix.config) }}
-        # Update config: disable PCH when using caching, set developer mode for debug
+        # Update config: disable PCH when using caching, set developer mode for debug.
         run: |
-          if [ "${{ github.event_name == 'pull_request' }}" = "true" ]; then
+          if [ "${{ contains(matrix.config.scope, 'quick') || contains(matrix.config.distro, 'intel') }}" = "true" ]; then
             RESOLVED=$(echo "$CONFIG" | jq -c '.cmakeArgs += " -DSTORM_COMPILE_WITH_PCH=OFF" | .Developer = (.buildType == "Debug")')
           else
             RESOLVED=$(echo "$CONFIG" | jq -c '.Developer = (.buildType == "Debug")')
