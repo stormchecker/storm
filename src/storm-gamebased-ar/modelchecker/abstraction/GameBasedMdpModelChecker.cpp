@@ -1181,12 +1181,13 @@ class ExplicitGameExporter {
 };
 
 template<typename ValueType>
-void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection const& player1Direction, storage::ExplicitGameStrategyPair& minStrategyPair,
-                           storage::ExplicitGameStrategyPair& maxStrategyPair, std::vector<uint64_t> const& player1Groups,
-                           std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                           storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates,
-                           storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult,
-                           bool redirectPlayer1, bool redirectPlayer2, bool sanityCheck) {
+void postProcessStrategies(Environment const& env, uint64_t iteration, storm::OptimizationDirection const& player1Direction,
+                           storage::ExplicitGameStrategyPair& minStrategyPair, storage::ExplicitGameStrategyPair& maxStrategyPair,
+                           std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups,
+                           storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& initialStates,
+                           storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates,
+                           ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, bool redirectPlayer1, bool redirectPlayer2,
+                           bool sanityCheck) {
     if (redirectPlayer1 || redirectPlayer2) {
         for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
             STORM_LOG_ASSERT(targetStates.get(state) || minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state),
@@ -1287,7 +1288,7 @@ void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection cons
         }
         auto dtmcMatrix = dtmcMatrixBuilder.build();
         std::vector<ValueType> sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(
-            Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
+            env, storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
 
         ValueType maxDiff = storm::utility::zero<ValueType>();
         uint64_t maxState = 0;
@@ -1325,7 +1326,7 @@ void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection cons
         }
         dtmcMatrix = dtmcMatrixBuilder.build();
         sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(
-            Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
+            env, storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
 
         maxDiff = storm::utility::zero<ValueType>();
         maxState = 0;
@@ -1527,7 +1528,7 @@ std::unique_ptr<storm::modelchecker::CheckResult> GameBasedMdpModelChecker<Type,
 
         // Post-process strategies for better refinements.
         storm::utility::Stopwatch strategyProcessingWatch(true);
-        postProcessStrategies(this->iteration, player1Direction, minStrategyPair, maxStrategyPair, player1Groups, player2RowGrouping, transitionMatrix,
+        postProcessStrategies(env, this->iteration, player1Direction, minStrategyPair, maxStrategyPair, player1Groups, player2RowGrouping, transitionMatrix,
                               initialStates, constraintStates, targetStates, quantitativeResult, this->fixPlayer1Strategy, this->fixPlayer2Strategy,
                               this->debug);
         strategyProcessingWatch.stop();

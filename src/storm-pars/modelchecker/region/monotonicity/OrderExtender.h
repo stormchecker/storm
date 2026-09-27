@@ -76,7 +76,7 @@ class OrderExtender {
     std::pair<uint_fast64_t, uint_fast64_t> getUnknownStates(std::shared_ptr<Order> order) const;
     void setUnknownStates(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
     void copyMinMax(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
-    void initializeMinMaxValues(storage::ParameterRegion<ValueType> region);
+    void initializeMinMaxValues(Environment const& env, storage::ParameterRegion<ValueType> region);
     void checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param,
                                std::shared_ptr<MonotonicityResult<VariableType>> monResult);
 

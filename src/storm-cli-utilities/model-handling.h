@@ -18,11 +18,13 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/settings/EnvironmentBuilder.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
@@ -156,7 +158,8 @@ struct ModelProcessingInformation {
     // The Dd library to be used
     storm::dd::DdType ddType;
 
-    // The environment used during model checking
+    // The environment used during model checking.
+    // It is constructed explicitly in getModelProcessingInformation(), once the CLI settings are known to be finalized.
     storm::Environment env;
 
     // A flag which is set to true, if the settings were detected to be compatible.
@@ -202,6 +205,7 @@ inline void getModelProcessingInformationAutomatic(SymbolicInput const& input, M
 inline ModelProcessingInformation getModelProcessingInformation(SymbolicInput const& input,
                                                                 std::shared_ptr<SymbolicInput> const& transformedJaniInput = nullptr) {
     ModelProcessingInformation mpi;
+    mpi.env = storm::settings::EnvironmentBuilder::buildEnvironment();
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
     auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();

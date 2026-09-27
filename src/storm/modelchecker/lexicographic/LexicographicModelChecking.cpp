@@ -12,7 +12,7 @@ namespace modelchecker {
 namespace lexicographic {
 
 template<typename SparseModelType, typename ValueType>
-helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment const&, SparseModelType const& model,
+helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment const& env, SparseModelType const& model,
                                                                 CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask,
                                                                 CheckFormulaCallback const& formulaChecker) {
     storm::logic::MultiObjectiveFormula const& formula = checkTask.getFormula();
@@ -49,7 +49,7 @@ helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment cons
 
     // solve the reachability query
     // That is: solve reachability for the lexicographic highest condition, restrict the model to optimal actions, repeat
-    return lMC.lexReachability(mecs, mecLexArrays, completeProductModel, model);
+    return lMC.lexReachability(env, mecs, mecLexArrays, completeProductModel, model);
 }
 
 template helper::MDPSparseModelCheckingHelperReturnType<double> check<storm::models::sparse::Mdp<double>, double>(
