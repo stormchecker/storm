@@ -70,7 +70,7 @@ runs:
           buildtest-ccache-${{ inputs.name }}-
     - name: Prepare ccache
       if: inputs.restore_cache == 'true'
-      # Limit cache size to fit withn 10GB limit of GitHub
+      # Limit cache size to fit within 10GB limit of GitHub
       run: |
         if [ "${{ env.BUILD_TYPE }}" = "Debug" ]; then
           ccache --max-size=1200M
