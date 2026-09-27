@@ -80,6 +80,7 @@
 // Whether a general type of support is available
 #cmakedefine STORM_HAVE_DD_LIBRARY
 #cmakedefine STORM_HAVE_LP_SOLVER
+#cmakedefine STORM_HAVE_SMT_SOLVER
 // Whether LTL model checking shall be enabled
 #ifdef STORM_HAVE_SPOT
    #define STORM_HAVE_LTL_MODELCHECKING_SUPPORT
