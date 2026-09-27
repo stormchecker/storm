@@ -6,7 +6,7 @@
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/solver/Z3SmtSolver.h"
+#include "storm/solver/SmtSolver.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm/storage/expressions/SimpleValuation.h"
@@ -145,7 +145,6 @@ template<typename ValueType, typename ConstantType>
 AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(
     uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order,
     storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValues) const {
-    std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
     std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
     AssumptionStatus result = AssumptionStatus::UNKNOWN;
     auto var1 = assumption->getFirstOperand()->asVariableExpression().getVariableName();
@@ -232,7 +231,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
     }
 
     if (orderKnown) {
-        solver::Z3SmtSolver s(*manager);
+        auto s = utility::solver::getSmtSolver(*manager);
         auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
         expressions::Expression expr1 = manager->rational(0);
         for (auto itr1 = row1.begin(); itr1 != row1.end(); ++itr1) {
@@ -288,19 +287,19 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
             }
         }
 
-        s.add(exprOrderSucc);
-        s.add(exprBounds);
-        s.setTimeout(100);
+        s->add(exprOrderSucc);
+        s->add(exprBounds);
+        s->setTimeout(100);
         // assert that sorting of successors in the order and the bounds on the expression are at least satisfiable
         // when this is not the case, the order is invalid
         // however, it could be that the sat solver didn't finish in time, in that case we just continue.
-        if (s.check() == solver::SmtSolver::CheckResult::Unsat) {
+        if (s->check() == solver::SmtSolver::CheckResult::Unsat) {
             return AssumptionStatus::INVALID;
         }
-        STORM_LOG_ASSERT(s.check() != solver::SmtSolver::CheckResult::Unsat, "SMT solver returned Unsat unexpectedly.");
+        STORM_LOG_ASSERT(s->check() != solver::SmtSolver::CheckResult::Unsat, "SMT solver returned Unsat unexpectedly.");
 
-        s.add(exprToCheck);
-        auto smtRes = s.check();
+        s->add(exprToCheck);
+        auto smtRes = s->check();
         if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
             // If there is no thing satisfying the negation we are safe.
             result = AssumptionStatus::VALID;

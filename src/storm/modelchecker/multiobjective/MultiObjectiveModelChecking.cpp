@@ -98,7 +98,7 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
             std::unique_ptr<SparseCbQuery<SparseModelType>> query;
             switch (preprocessorResult.queryType) {
                 case preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability:
-                    query = std::unique_ptr<SparseCbQuery<SparseModelType>>(new SparseCbAchievabilityQuery<SparseModelType>(preprocessorResult));
+                    query = std::unique_ptr<SparseCbQuery<SparseModelType>>(new SparseCbAchievabilityQuery<SparseModelType>(preprocessorResult, env));
                     break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,

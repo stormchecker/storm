@@ -4,6 +4,7 @@
 #include "storm-permissive/analysis/MILPPermissiveSchedulers.h"
 #include "storm-permissive/analysis/SmtBasedPermissiveSchedulers.h"
 #include "storm/environment/Environment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -43,7 +44,8 @@ boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMILP
 }
 
 template<typename RM>
-boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaSMT(storm::models::sparse::Mdp<double, RM> const& mdp,
+boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaSMT(storm::Environment const& env,
+                                                                                storm::models::sparse::Mdp<double, RM> const& mdp,
                                                                                 storm::logic::ProbabilityOperatorFormula const& safeProp) {
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<double, RM>> propMC(mdp);
     STORM_LOG_ASSERT(safeProp.getSubformula().isEventuallyFormula(), "No eventually formula.");
@@ -56,7 +58,7 @@ boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaSMT(
         storm::utility::graph::performProb0A(backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
 
     std::shared_ptr<storm::expressions::ExpressionManager> expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
-    auto solver = storm::utility::solver::getSmtSolver(*expressionManager);
+    auto solver = storm::utility::solver::getSmtSolver(env, *expressionManager);
     SmtPermissiveSchedulerComputation<storm::models::sparse::StandardRewardModel<double>> comp(*solver, mdp, goalstates, sinkstates);
     STORM_LOG_THROW(!storm::logic::isStrict(safeProp.getComparisonType()), storm::exceptions::NotImplementedException, "Strict bounds are not supported.");
     comp.calculatePermissiveScheduler(storm::logic::isLowerBound(safeProp.getComparisonType()), safeProp.getThresholdAs<double>());
@@ -71,7 +73,8 @@ boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaSMT(
 template boost::optional<SubMDPPermissiveScheduler<>> computePermissiveSchedulerViaMILP(storm::Environment const& env,
                                                                                         storm::models::sparse::Mdp<double> const& mdp,
                                                                                         storm::logic::ProbabilityOperatorFormula const& safeProp);
-template boost::optional<SubMDPPermissiveScheduler<>> computePermissiveSchedulerViaSMT(storm::models::sparse::Mdp<double> const& mdp,
+template boost::optional<SubMDPPermissiveScheduler<>> computePermissiveSchedulerViaSMT(storm::Environment const& env,
+                                                                                       storm::models::sparse::Mdp<double> const& mdp,
                                                                                        storm::logic::ProbabilityOperatorFormula const& safeProp);
 
 }  // namespace ps
