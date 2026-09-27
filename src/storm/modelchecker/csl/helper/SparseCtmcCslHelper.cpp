@@ -259,7 +259,8 @@ std::vector<ValueType> SparseCtmcCslHelper::computeUntilProbabilities(Environmen
                                                                       std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& phiStates,
                                                                       storm::storage::BitVector const& psiStates, bool qualitative) {
     return SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(env, std::move(goal), computeProbabilityMatrix(rateMatrix, exitRateVector),
-                                                                       backwardTransitions, phiStates, psiStates, qualitative);
+                                                                       backwardTransitions, phiStates, psiStates, qualitative)
+        .values;
 }
 
 template<typename ValueType>
@@ -428,8 +429,11 @@ std::vector<storm::utility::ExtendedValueType<ValueType>> SparseCtmcCslHelper::c
         }
     }
 
+    // TODO: the DTMC helper also reports sound bounds on these values; carrying them through the CTMC helpers
+    // would let reward queries on CTMCs report an enclosure as well.
     return storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(
-        env, std::move(goal), probabilityMatrix, backwardTransitions, totalRewardVector, targetStates, qualitative);
+               env, std::move(goal), probabilityMatrix, backwardTransitions, totalRewardVector, targetStates, qualitative)
+        .values;
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -464,8 +468,11 @@ std::vector<storm::utility::ExtendedValueType<ValueType>> SparseCtmcCslHelper::c
         totalRewardVector = rewardModel.getStateActionRewardVector();
     }
 
+    // TODO: the DTMC helper also reports sound bounds on these values; carrying them through the CTMC helpers
+    // would let reward queries on CTMCs report an enclosure as well.
     return storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(
-        env, std::move(goal), probabilityMatrix, backwardTransitions, totalRewardVector, targetStates, qualitative);
+               env, std::move(goal), probabilityMatrix, backwardTransitions, totalRewardVector, targetStates, qualitative)
+        .values;
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -502,7 +509,8 @@ std::vector<storm::utility::ExtendedValueType<ValueType>> SparseCtmcCslHelper::c
 
     RewardModelType dtmcRewardModel(std::move(totalRewardVector));
     return storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeTotalRewards(env, std::move(goal), probabilityMatrix, backwardTransitions,
-                                                                                              dtmcRewardModel, qualitative);
+                                                                                              dtmcRewardModel, qualitative)
+        .values;
 }
 
 template<typename ValueType>

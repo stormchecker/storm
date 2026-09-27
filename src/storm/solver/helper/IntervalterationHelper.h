@@ -6,9 +6,11 @@
 #include <vector>
 
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/SolutionBounds.h"
 #include "storm/solver/SolverStatus.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
 #include "storm/storage/BitVector.h"
+#include "storm/utility/OptionalRef.h"
 
 namespace storm::solver::helper {
 
@@ -37,7 +39,8 @@ class IntervalIterationHelper {
                     std::function<void(std::vector<ValueType>&)> const& prepareLowerBounds,
                     std::function<void(std::vector<ValueType>&)> const& prepareUpperBounds, std::optional<storm::OptimizationDirection> const& dir = {},
                     std::function<SolverStatus(IIData<ValueType> const&)> const& iterationCallback = {},
-                    std::optional<storm::storage::BitVector> const& relevantValues = {}) const;
+                    std::optional<storm::storage::BitVector> const& relevantValues = {},
+                    storm::OptionalRef<SolutionBounds<ValueType>> solutionBounds = storm::NullRef) const;
 
     SolverStatus II(std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, bool relative, ValueType const& precision,
                     std::function<void(std::vector<ValueType>&)> const& prepareLowerBounds,

@@ -6,9 +6,11 @@
 #include <vector>
 
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/SolutionBounds.h"
 #include "storm/solver/SolverStatus.h"
 #include "storm/solver/TerminationCondition.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
+#include "storm/utility/OptionalRef.h"
 
 namespace storm::solver::helper {
 
@@ -27,7 +29,12 @@ class SoundValueIterationHelper {
         std::optional<ValueType> const a, b;
 
         void trySetAverage(std::vector<ValueType>& out) const;
-        void trySetLowerUpper(std::vector<ValueType>& lowerOut, std::vector<ValueType>& upperOut) const;
+
+        /*!
+         * Writes the enclosure of the solution that this data represents.
+         * @return whether the two scaling factors it is built from are both known, i.e. whether anything was written.
+         */
+        bool trySetLowerUpper(std::vector<ValueType>& lowerOut, std::vector<ValueType>& upperOut) const;
         bool checkCustomTerminationCondition(storm::solver::TerminationCondition<ValueType> const& condition) const;
 
         bool checkConvergence(uint64_t& convergenceCheckState, std::function<void()> const& getNextConvergenceCheckState, bool relative,
@@ -54,12 +61,14 @@ class SoundValueIterationHelper {
     SolverStatus SVI(std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative, ValueType const& precision,
                      std::optional<storm::OptimizationDirection> const& dir = {}, std::optional<ValueType> const& lowerBound = {},
                      std::optional<ValueType> const& upperBound = {}, std::function<SolverStatus(SVIData const&)> const& iterationCallback = {},
-                     std::optional<storm::storage::BitVector> const& relevantValues = {}) const;
+                     std::optional<storm::storage::BitVector> const& relevantValues = {},
+                     storm::OptionalRef<SolutionBounds<ValueType>> solutionBounds = storm::NullRef) const;
 
     SolverStatus SVI(std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, bool relative, ValueType const& precision,
                      std::optional<storm::OptimizationDirection> const& dir = {}, std::optional<ValueType> const& lowerBound = {},
                      std::optional<ValueType> const& upperBound = {}, std::function<SolverStatus(SVIData const&)> const& iterationCallback = {},
-                     std::optional<storm::storage::BitVector> const& relevantValues = {}) const;
+                     std::optional<storm::storage::BitVector> const& relevantValues = {},
+                     storm::OptionalRef<SolutionBounds<ValueType>> solutionBounds = storm::NullRef) const;
 
    private:
     std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping>> viOperator;

@@ -89,11 +89,50 @@ std::optional<typename storm::transformer::EndComponentEliminator<ValueType>::En
     return ecElimResult;
 }
 
+/*!
+ * Sound bounds on a single value, either of which may be unknown.
+ */
+template<typename SolutionType>
+struct ValueBounds {
+    std::optional<SolutionType> lower;
+    std::optional<SolutionType> upper;
+};
+
+/*!
+ * Retrieves the bounds the last solve of the given solver obtained for the given entry of the solution.
+ */
+template<typename SolutionType>
+ValueBounds<SolutionType> getSolutionBoundsAt(storm::solver::AbstractEquationSolver<SolutionType> const& solver, uint64_t const index) {
+    ValueBounds<SolutionType> bounds;
+    if (solver.hasSolutionLowerBounds()) {
+        bounds.lower = solver.getSolutionLowerBounds()[index];
+    }
+    if (solver.hasSolutionUpperBounds()) {
+        bounds.upper = solver.getSolutionUpperBounds()[index];
+    }
+    return bounds;
+}
+
+/*!
+ * Bounds the ratio target/condition, where both are probabilities and the target implies the condition.
+ */
+template<typename SolutionType>
+ValueBounds<SolutionType> getRatioBounds(ValueBounds<SolutionType> const& target, ValueBounds<SolutionType> const& condition) {
+    ValueBounds<SolutionType> bounds;
+    if (target.lower && condition.upper && *condition.upper > storm::utility::zero<SolutionType>()) {
+        bounds.lower = std::max<SolutionType>(*target.lower, storm::utility::zero<SolutionType>()) / *condition.upper;
+    }
+    if (target.upper && condition.lower && *condition.lower > storm::utility::zero<SolutionType>()) {
+        bounds.upper = std::min<SolutionType>(*target.upper / *condition.lower, storm::utility::one<SolutionType>());
+    }
+    return bounds;
+}
+
 template<typename ValueType, typename SolutionType = ValueType>
 SolutionType solveMinMaxEquationSystem(storm::Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix,
                                        std::vector<ValueType> const& rowValues, storm::storage::BitVector const& rowsWithSum1,
                                        storm::solver::SolveGoal<ValueType, SolutionType> const& goal, uint64_t const initialState,
-                                       std::optional<std::vector<uint64_t>>& schedulerOutput) {
+                                       std::optional<std::vector<uint64_t>>& schedulerOutput, ValueBounds<SolutionType>& initialStateBounds) {
     // Initialize the solution vector.
     std::vector<SolutionType> x(matrix.getRowGroupCount(), storm::utility::zero<ValueType>());
 
@@ -121,6 +160,7 @@ SolutionType solveMinMaxEquationSystem(storm::Environment const& env, storm::sto
 
     // Solve the corresponding system of equations.
     solver->solveEquations(env, x, rowValues);
+    initialStateBounds = getSolutionBoundsAt(*solver, initialState);
 
     if (schedulerOutput) {
         *schedulerOutput = std::move(solver->getSchedulerChoices());
@@ -135,7 +175,7 @@ SolutionType solveMinMaxEquationSystem(storm::Environment const& env, storm::sto
  */
 template<typename ValueType>
 std::unique_ptr<storm::storage::Scheduler<ValueType>> computeReachabilityProbabilities(
-    Environment const& env, std::map<uint64_t, ValueType>& nonZeroResults, storm::solver::OptimizationDirection const dir,
+    Environment const& env, std::map<uint64_t, ValueType>& nonZeroResults, bool& valuesAreExact, storm::solver::OptimizationDirection const dir,
     storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& initialStates,
     storm::storage::BitVector const& allowedStates, storm::storage::BitVector const& targetStates, bool computeScheduler = true) {
     std::unique_ptr<storm::storage::Scheduler<ValueType>> scheduler;
@@ -161,6 +201,12 @@ std::unique_ptr<storm::storage::Scheduler<ValueType>> computeReachabilityProbabi
     auto const subResult = helper::SparseMdpPrctlHelper<ValueType, ValueType>::computeUntilProbabilities(
         reachabilityEnv, storm::solver::SolveGoal<ValueType>(dir, subInits), submatrix, submatrix.transpose(true),
         storm::storage::BitVector(subTargets.size(), true), subTargets, false, computeScheduler);
+
+    auto const& subBounds = subResult.solutionBounds;
+    if (!subBounds.hasLower() || !subBounds.hasUpper() ||
+        std::any_of(subInits.begin(), subInits.end(), [&subBounds](auto subInit) { return (*subBounds.lower)[subInit] != (*subBounds.upper)[subInit]; })) {
+        valuesAreExact = false;
+    }
 
     auto origInitIt = initialStates.begin();
     for (auto subInit : subInits) {
@@ -192,6 +238,7 @@ struct NormalFormData {
     storm::storage::BitVector const existentialObservationFailureStates;  // Those states s where a scheduler exists that (i) does not reach the condition from
                                                                           // s and (ii) acts optimal in all terminal states
     std::map<uint64_t, ValueType> const nonZeroTargetStateValues;         // The known non-zero target values. (default is zero)
+    bool const targetValuesAreExact;                                      // Whether the target values are exact rather than approximations
     // There are three cases of terminal states:
     // 1. conditionStates: The condition holds, so the target value is the optimal probability to reach target from there
     // 2. targetStates: The target is reached, so the target value is the optimal probability to reach a condition from there.
@@ -230,15 +277,17 @@ NormalFormData<ValueType> obtainNormalForm(Environment const& env, storm::solver
         storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, conditionStates);
     auto universalObservationFailureStates = storm::utility::graph::performProb0A(backwardTransitions, allStates, extendedConditionStates);
     std::map<uint64_t, ValueType> nonZeroTargetStateValues;
+    bool targetValuesAreExact = true;
     auto const extendedTargetStates =
         storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, targetStates);
     auto const targetAndNotCondFailStates = extendedTargetStates & ~(extendedConditionStates | universalObservationFailureStates);
 
     // compute schedulers for reaching target and condition states from target and condition states
     std::unique_ptr<storm::storage::Scheduler<ValueType>> schedulerChoicesForReachingTargetStates = computeReachabilityProbabilities(
-        env, nonZeroTargetStateValues, dir, transitionMatrix, extendedConditionStates, allStates, extendedTargetStates, computeScheduler);
-    std::unique_ptr<storm::storage::Scheduler<ValueType>> schedulerChoicesForReachingConditionStates = computeReachabilityProbabilities(
-        env, nonZeroTargetStateValues, dir, transitionMatrix, targetAndNotCondFailStates, allStates, extendedConditionStates, computeScheduler);
+        env, nonZeroTargetStateValues, targetValuesAreExact, dir, transitionMatrix, extendedConditionStates, allStates, extendedTargetStates, computeScheduler);
+    std::unique_ptr<storm::storage::Scheduler<ValueType>> schedulerChoicesForReachingConditionStates =
+        computeReachabilityProbabilities(env, nonZeroTargetStateValues, targetValuesAreExact, dir, transitionMatrix, targetAndNotCondFailStates, allStates,
+                                         extendedConditionStates, computeScheduler);
 
     // get states where the optimal policy reaches the condition with positive probability
     auto terminalStatesThatReachCondition = extendedConditionStates;
@@ -273,6 +322,7 @@ NormalFormData<ValueType> obtainNormalForm(Environment const& env, storm::solver
                                      .universalObservationFailureStates = std::move(universalObservationFailureStates),
                                      .existentialObservationFailureStates = std::move(existentialObservationFailureStates),
                                      .nonZeroTargetStateValues = std::move(nonZeroTargetStateValues),
+                                     .targetValuesAreExact = targetValuesAreExact,
                                      .schedulerChoicesForReachingTargetStates = std::move(schedulerChoicesForReachingTargetStates),
                                      .schedulerChoicesForReachingConditionStates = std::move(schedulerChoicesForReachingConditionStates)};
 }
@@ -433,6 +483,7 @@ struct ResultReturnType {
 
     ValueType initialStateValue;
     std::unique_ptr<storm::storage::Scheduler<SolutionType>> scheduler;
+    ValueBounds<SolutionType> bounds;
 };
 
 /*!
@@ -533,10 +584,14 @@ typename internal::ResultReturnType<ValueType> computeViaRestartMethod(Environme
     if (computeScheduler) {
         reducedSchedulerChoices.emplace();
     }
-    auto resultValue = solveMinMaxEquationSystem(env, matrix, rowValues, rowsWithSum1, goal, initStateInReduced, reducedSchedulerChoices);
+    ValueBounds<SolutionType> resultBounds;
+    auto resultValue = solveMinMaxEquationSystem(env, matrix, rowValues, rowsWithSum1, goal, initStateInReduced, reducedSchedulerChoices, resultBounds);
 
     // Create result (scheduler potentially added below)
     auto finalResult = ResultReturnType<ValueType, SolutionType>(resultValue);
+    if (normalForm.targetValuesAreExact) {
+        finalResult.bounds = std::move(resultBounds);
+    }
 
     if (!computeScheduler) {
         return finalResult;
@@ -810,7 +865,6 @@ class WeightedReachabilityHelper {
         }
         cachedSolver->setTrackScheduler(schedulerOutput.has_value());
         cachedSolver->setOptimizationDirection(dir);
-
         // Initialize the right-hand side vector.
         createScaledVector(cachedB, targetWeight, targetRowValues, conditionWeight, conditionRowValues);
 
@@ -826,6 +880,21 @@ class WeightedReachabilityHelper {
 
     auto getInternalInitialState() const {
         return initialStateInSubmatrix;
+    }
+
+    /*!
+     * Retrieves the bounds that the last call to computeWeightedDiff obtained for its result.
+     */
+    ValueBounds<SolutionType> getWeightedDiffBounds() const {
+        STORM_LOG_ASSERT(cachedSolver, "computeWeightedDiff has not been called.");
+        return getSolutionBoundsAt(*cachedSolver, initialStateInSubmatrix);
+    }
+
+    /*!
+     * Retrieves the bounds that the last call to evaluateScheduler obtained on the conditional probability of that scheduler.
+     */
+    ValueBounds<SolutionType> getScheduledRatioBounds() const {
+        return getRatioBounds(scheduledTargetBounds, scheduledConditionBounds);
     }
 
     void evaluateScheduler(storm::Environment const& env, std::vector<uint64_t>& scheduler, std::vector<SolutionType>& targetResults,
@@ -844,9 +913,11 @@ class WeightedReachabilityHelper {
         cachedB.resize(submatrix.getRowGroupCount());
         storm::utility::vector::selectVectorValues<ValueType>(cachedB, scheduler, submatrix.getRowGroupIndices(), targetRowValues);
         solver->solveEquations(env, targetResults, cachedB);
+        scheduledTargetBounds = getSolutionBoundsAt(*solver, initialStateInSubmatrix);
 
         storm::utility::vector::selectVectorValues<ValueType>(cachedB, scheduler, submatrix.getRowGroupIndices(), conditionRowValues);
         solver->solveEquations(env, conditionResults, cachedB);
+        scheduledConditionBounds = getSolutionBoundsAt(*solver, initialStateInSubmatrix);
     }
 
     SolutionType evaluateScheduler(storm::Environment const& env, std::vector<uint64_t> const& scheduler) {
@@ -858,10 +929,12 @@ class WeightedReachabilityHelper {
         storm::utility::vector::selectVectorValues<ValueType>(cachedB, scheduler, submatrix.getRowGroupIndices(), targetRowValues);
         solver->solveEquations(env, cachedX, cachedB);
         SolutionType targetValue = cachedX[initialStateInSubmatrix];
+        scheduledTargetBounds = getSolutionBoundsAt(*solver, initialStateInSubmatrix);
 
         storm::utility::vector::selectVectorValues<ValueType>(cachedB, scheduler, submatrix.getRowGroupIndices(), conditionRowValues);
         solver->solveEquations(env, cachedX, cachedB);
         SolutionType conditionValue = cachedX[initialStateInSubmatrix];
+        scheduledConditionBounds = getSolutionBoundsAt(*solver, initialStateInSubmatrix);
 
         return targetValue / conditionValue;
     }
@@ -963,6 +1036,8 @@ class WeightedReachabilityHelper {
     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> cachedSolver;
     std::vector<ValueType> cachedX;
     std::vector<ValueType> cachedB;
+    ValueBounds<SolutionType> scheduledTargetBounds;
+    ValueBounds<SolutionType> scheduledConditionBounds;
 
     // Data used to translate schedulers:
     std::vector<uint64_t> originalToReducedStateIndexMap;
@@ -988,15 +1063,34 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
     WeightedReachabilityHelper<ValueType, SolutionType> wrh(initialState, transitionMatrix, normalForm, computeScheduler);
     SolutionType pMin{storm::utility::zero<SolutionType>()};
     SolutionType pMax{storm::utility::one<SolutionType>()};
+    // Sound bounds on pMin and pMax. The probability of the condition never exceeds one.
+    std::optional<SolutionType> pMinLower;
+    SolutionType pMaxUpper{storm::utility::one<SolutionType>()};
 
     if (useAdvancedBounds) {
         pMin = wrh.computeWeightedDiff(env, storm::OptimizationDirection::Minimize, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+        if (auto const pMinBounds = wrh.getWeightedDiffBounds(); pMinBounds.lower && *pMinBounds.lower > storm::utility::zero<SolutionType>()) {
+            pMinLower = *pMinBounds.lower;
+        }
         pMax = wrh.computeWeightedDiff(env, storm::OptimizationDirection::Maximize, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+        if (auto const pMaxBounds = wrh.getWeightedDiffBounds(); pMaxBounds.upper) {
+            pMaxUpper = *pMaxBounds.upper;
+        }
         STORM_LOG_TRACE("Conditioning event bounds:\n\t Lower bound: " << storm::utility::convertNumber<double>(pMin)
                                                                        << ",\n\t Upper bound: " << storm::utility::convertNumber<double>(pMax));
     }
     storm::utility::Maximum<SolutionType> lowerBound = storm::utility::zero<ValueType>();
     storm::utility::Minimum<SolutionType> upperBound = storm::utility::one<ValueType>();
+
+    // The computed middleValue can result in unsound bounds if its bounds include zero. We therefore keep track of
+    // sound bounds that are only updated if the middleValue is certainly positive, negative, or zero.
+    // A sound bound is empty once it is known that it will not be reported.
+    storm::utility::Maximum<SolutionType> soundLowerBound;
+    storm::utility::Minimum<SolutionType> soundUpperBound;
+    if (normalForm.targetValuesAreExact) {
+        soundLowerBound = storm::utility::zero<SolutionType>();
+        soundUpperBound = storm::utility::one<SolutionType>();
+    }
 
     std::optional<std::vector<uint64_t>> lowerScheduler, upperScheduler, middleScheduler;
     storm::OptionalRef<std::vector<uint64_t>> middleSchedulerRef;
@@ -1016,6 +1110,31 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
         // evaluate the current middle
         SolutionType const middleValue = wrh.computeWeightedDiff(env, goal.direction(), storm::utility::one<ValueType>(), -middle, middleSchedulerRef);
         checkedMiddleValues.insert(middle);
+        // update sound bounds
+        auto const middleValueBounds = wrh.getWeightedDiffBounds();
+        STORM_LOG_WARN_COND(!middleValueBounds.lower || !middleValueBounds.upper || *middleValueBounds.lower >= storm::utility::zero<SolutionType>() ||
+                                *middleValueBounds.upper <= storm::utility::zero<SolutionType>(),
+                            "The bounds [" << *middleValueBounds.lower << ", " << *middleValueBounds.upper
+                                           << "] on the value of the middle do not determine whether the result is above or below " << middle
+                                           << ". The bisection step may be unsound; a finer solver precision avoids this.");
+        if (!middleValueBounds.lower) {
+            soundLowerBound.reset();
+        } else if (auto const& l = middleValueBounds.lower; !soundLowerBound.empty()) {
+            if (*l >= storm::utility::zero<SolutionType>()) {
+                soundLowerBound &= middle + *l / pMaxUpper;
+            } else if (pMinLower) {
+                soundLowerBound &= middle + *l / *pMinLower;
+            }
+        }
+        if (!middleValueBounds.upper) {
+            soundUpperBound.reset();
+        } else if (auto const& u = middleValueBounds.upper; !soundUpperBound.empty()) {
+            if (*u <= storm::utility::zero<SolutionType>()) {
+                soundUpperBound &= middle + *u / pMaxUpper;
+            } else if (pMinLower) {
+                soundUpperBound &= middle + *u / *pMinLower;
+            }
+        }
         // update the bounds and new middle value according to the bisection method
         if (!useAdvancedBounds) {
             if (middleValue >= storm::utility::zero<ValueType>()) {
@@ -1076,6 +1195,13 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
             auto result = wrh.evaluateScheduler(env, *lowerScheduler);
             lowerBound &= result;
             upperBound &= result;
+            // The value of any scheduler bounds the optimum from one side, whether or not the scheduler is optimal.
+            auto const schedulerBounds = wrh.getScheduledRatioBounds();
+            if (storm::solver::maximize(goal.direction()) && schedulerBounds.lower && !soundLowerBound.empty()) {
+                soundLowerBound &= *schedulerBounds.lower;
+            } else if (storm::solver::minimize(goal.direction()) && schedulerBounds.upper && !soundUpperBound.empty()) {
+                soundUpperBound &= *schedulerBounds.upper;
+            }
             terminatedThroughPolicyTracking = true;
             break;
         }
@@ -1138,6 +1264,8 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
 
     // Create result without scheduler
     auto finalResult = ResultReturnType<ValueType>((*lowerBound + *upperBound) / 2);
+    finalResult.bounds.lower = soundLowerBound.getOptionalValue();
+    finalResult.bounds.upper = soundUpperBound.getOptionalValue();
 
     if (!computeScheduler) {
         return finalResult;  // nothing else to do
@@ -1188,6 +1316,12 @@ typename internal::ResultReturnType<ValueType> decideThreshold(Environment const
     }
 
     SolutionType val = wrh.computeWeightedDiff(env, direction, storm::utility::one<ValueType>(), -threshold, schedulerRef);
+    auto const valBounds = wrh.getWeightedDiffBounds();
+    STORM_LOG_WARN_COND(!valBounds.lower || !valBounds.upper || *valBounds.lower >= storm::utility::zero<SolutionType>() ||
+                            *valBounds.upper <= storm::utility::zero<SolutionType>(),
+                        "The bounds [" << *valBounds.lower << ", " << *valBounds.upper
+                                       << "] on the weighted difference do not determine whether the result is above or below the threshold " << threshold
+                                       << ". The decision may be wrong; a finer solver precision avoids this.");
     SolutionType outputProbability;
     if (val > storm::utility::zero<SolutionType>()) {
         // if val is positive, the conditional probability is (strictly) greater than threshold
@@ -1217,6 +1351,20 @@ internal::ResultReturnType<SolutionType> computeViaPolicyIteration(Environment c
 
     std::vector<uint64_t> scheduler;
     std::vector<SolutionType> targetResults, conditionResults;
+    // Optimality of the final scheduler is only established on computed values. Its value is still achievable, so it bounds the optimum
+    // from one side.
+    auto createResult = [&wrh, &dir, &normalForm](ValueType const& lambda) {
+        internal::ResultReturnType<SolutionType> result(lambda);
+        if (normalForm.targetValuesAreExact) {
+            auto const schedulerBounds = wrh.getScheduledRatioBounds();
+            if (storm::solver::maximize(dir)) {
+                result.bounds.lower = schedulerBounds.lower;
+            } else {
+                result.bounds.upper = schedulerBounds.upper;
+            }
+        }
+        return result;
+    };
     for (uint64_t iterationCount = 1; true; ++iterationCount) {
         wrh.evaluateScheduler(env, scheduler, targetResults, conditionResults);
         STORM_LOG_WARN_COND(
@@ -1236,11 +1384,11 @@ internal::ResultReturnType<SolutionType> computeViaPolicyIteration(Environment c
         }
         if (!schedulerChanged) {
             STORM_LOG_INFO("Policy iteration for conditional probabilities converged after " << iterationCount << " iterations.");
-            return lambda;
+            return createResult(lambda);
         }
         if (storm::utility::resources::isTerminate()) {
             STORM_LOG_WARN("Policy iteration for conditional probabilities converged aborted after " << iterationCount << "iterations.");
-            return lambda;
+            return createResult(lambda);
         }
     }
 }
@@ -1307,9 +1455,15 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
     // Then, we solve the induced problem using the selected algorithm
     auto const initialState = *goal.relevantValues().begin();
     ValueType initialStateValue = -storm::utility::one<ValueType>();
+    internal::ValueBounds<SolutionType> initialStateBounds;
     std::unique_ptr<storm::storage::Scheduler<SolutionType>> scheduler = nullptr;
     if (auto trivialValue = internal::handleTrivialCases<ValueType, SolutionType>(initialState, normalFormData); trivialValue.has_value()) {
         initialStateValue = *trivialValue;
+        // Only an initial condition state takes its value from the normal form, all other trivial values are exact.
+        if (normalFormData.targetValuesAreExact || !normalFormData.conditionStates.get(initialState)) {
+            initialStateBounds.lower = *trivialValue;
+            initialStateBounds.upper = *trivialValue;
+        }
         if (initialStateValue == storm::utility::zero<ValueType>() && !normalFormData.terminalStates.get(initialState) && produceSchedulers) {
             // we need to compute a scheduler that at least reaches the condition with non-zero probability
             auto initialStateBitVector = storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
@@ -1370,9 +1524,18 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
             }
         }
         initialStateValue = result.initialStateValue;
+        initialStateBounds = std::move(result.bounds);
         scheduler = std::move(result.scheduler);
     }
     std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<SolutionType>(initialState, initialStateValue));
+    storm::solver::SolutionBounds<SolutionType> resultBounds;
+    if (initialStateBounds.lower) {
+        resultBounds.lower = std::vector<SolutionType>{*initialStateBounds.lower};
+    }
+    if (initialStateBounds.upper) {
+        resultBounds.upper = std::vector<SolutionType>{*initialStateBounds.upper};
+    }
+    result->asExplicitQuantitativeCheckResult<SolutionType>().setBounds(std::move(resultBounds));
 
     // if produce schedulers was set, we have to construct a scheduler with memory
     if (produceSchedulers && scheduler) {
