@@ -45,6 +45,8 @@ std::string getDefaultSmtSolverAsString() {
     return "z3";
 #elif defined STORM_DEFAULT_SMT_SOLVER_MATHSAT
     return "mathsat";
+#elif defined STORM_HAVE_CVC5
+    return "cvc5";
 #else
     return "z3";
 #endif
@@ -110,12 +112,15 @@ CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(storm::utility
 #if defined STORM_HAVE_MATHSAT
     smtSolvers.push_back("mathsat");
 #endif
-    if (smtSolvers.empty()) {
-        // The option always exists, since the solver environment reads it while it is constructed. Without
-        // any SMT solver compiled in there is no valid choice, so accept the empty list and let asking for
-        // a solver fail when one is actually requested.
-        smtSolvers.push_back(getDefaultSmtSolverAsString());
-    }
+  #if defined STORM_HAVE_CVC5
+      smtSolvers.push_back("cvc5");
+  #endif
+      if (smtSolvers.empty()) {
+          // The option always exists, since the solver environment reads it while it is constructed. Without
+          // any SMT solver compiled in there is no valid choice, so accept the empty list and let asking for
+          // a solver fail when one is actually requested.
+          smtSolvers.push_back(getDefaultSmtSolverAsString());
+      }
     this->addOption(storm::settings::OptionBuilder(moduleName, smtSolverOptionName, false, "Sets which SMT solver is preferred.")
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an SMT solver.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(smtSolvers))
@@ -179,6 +184,8 @@ storm::solver::SmtSolverType CoreSettings::getSmtSolver() const {
         return storm::solver::SmtSolverType::Z3;
     } else if (smtSolverName == "mathsat") {
         return storm::solver::SmtSolverType::Mathsat;
+    } else if (smtSolverName == "cvc5") {
+        return storm::solver::SmtSolverType::Cvc5;
     }
     STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown SMT solver '" << smtSolverName << "'.");
 }
