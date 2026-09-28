@@ -5,6 +5,7 @@
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/multiplier/NativeMultiplier.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/SubmatrixBuilder.h"
 
 namespace storm {
 
@@ -45,8 +46,9 @@ class TopologicalLinearEquationSolver : public LinearEquationSolver<ValueType> {
     // ... for the case that there is just one large SCC
     bool solveFullyConnectedEquationSystem(storm::Environment const& sccSolverEnvironment, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
     // ... for the remaining cases (1 < scc.size() < x.size())
-    bool solveScc(storm::Environment const& sccSolverEnvironment, storm::storage::BitVector const& scc, std::vector<ValueType>& globalX,
-                  std::vector<ValueType> const& globalB, std::optional<storm::storage::BitVector> const& globalRelevantValues) const;
+    bool solveScc(storm::Environment const& sccSolverEnvironment, storm::storage::StronglyConnectedComponent const& scc,
+                  storm::storage::BitVector const& sccAsBitVector, std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB,
+                  std::optional<storm::storage::BitVector> const& globalRelevantValues) const;
 
     // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
     // when the solver is destructed.
@@ -60,6 +62,8 @@ class TopologicalLinearEquationSolver : public LinearEquationSolver<ValueType> {
     mutable std::unique_ptr<storm::storage::StronglyConnectedComponentDecomposition<ValueType>> sortedSccDecomposition;
     mutable boost::optional<uint64_t> longestSccChainSize;
     mutable std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> sccSolver;
+    // Builds the submatrices of all SCCs (reuses its internal lookup table between SCCs)
+    mutable std::unique_ptr<storm::storage::SubmatrixBuilder<ValueType>> sccSubmatrixBuilder;
 };
 
 template<typename ValueType>

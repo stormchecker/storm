@@ -80,14 +80,12 @@ std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAu
     STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException,
                     "Currently step-bounded and reward-bounded properties on MAs are not supported.");
     double lowerBound = 0;
-    double upperBound = 0;
+    std::optional<double> upperBound;
     if (pathFormula.hasLowerBound()) {
         lowerBound = pathFormula.getLowerBound<double>();
     }
     if (pathFormula.hasUpperBound()) {
         upperBound = pathFormula.getNonStrictUpperBound<double>();
-    } else {
-        upperBound = storm::utility::infinity<double>();
     }
 
     std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(

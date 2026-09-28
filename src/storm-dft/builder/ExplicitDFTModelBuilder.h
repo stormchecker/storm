@@ -13,6 +13,7 @@
 #include "storm/storage/sparse/StateStorage.h"
 
 #include "storm-dft/builder/DftExplorationHeuristic.h"
+#include "storm-dft/environment/DftEnvironment.h"
 #include "storm-dft/generator/DftNextStateGenerator.h"
 #include "storm-dft/storage/BucketPriorityQueue.h"
 #include "storm-dft/storage/DFT.h"
@@ -150,10 +151,12 @@ class ExplicitDFTModelBuilder {
     /*!
      * Constructor.
      *
+     * @param env Environment holding the DFT model-building configuration.
      * @param dft DFT.
      * @param symmetries Symmetries in the dft.
      */
-    ExplicitDFTModelBuilder(storm::dft::storage::DFT<ValueType> const& dft, storm::dft::storage::DftSymmetries const& symmetries);
+    ExplicitDFTModelBuilder(storm::dft::DftEnvironment const& env, storm::dft::storage::DFT<ValueType> const& dft,
+                            storm::dft::storage::DftSymmetries const& symmetries);
 
     /*!
      * Build model from DFT.
@@ -271,6 +274,9 @@ class ExplicitDFTModelBuilder {
 
     // Dft
     storm::dft::storage::DFT<ValueType> const& dft;
+
+    // Environment holding the DFT model-building configuration.
+    storm::dft::DftEnvironment const& env;
 
     // General information for state generation
     // TODO: use const reference

@@ -8,8 +8,9 @@ namespace storm {
 namespace modelchecker {
 
 template<typename SparseModelType, typename ConstantType>
-SparseCtmcInstantiationModelChecker<SparseModelType, ConstantType>::SparseCtmcInstantiationModelChecker(SparseModelType const& parametricModel)
-    : SparseInstantiationModelChecker<SparseModelType, ConstantType>(parametricModel), modelInstantiator(parametricModel) {
+SparseCtmcInstantiationModelChecker<SparseModelType, ConstantType>::SparseCtmcInstantiationModelChecker(Environment const& env,
+                                                                                                        SparseModelType const& parametricModel)
+    : SparseInstantiationModelChecker<SparseModelType, ConstantType>(env, parametricModel), modelInstantiator(parametricModel) {
     // Intentionally left empty
 }
 

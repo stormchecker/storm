@@ -40,9 +40,11 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
     storm::transformer::BinaryDtmcTransformer binaryDtmcTransformer;
     auto simpleDtmc = binaryDtmcTransformer.transform(*dtmc, true);
 
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelChecker(*dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelChecker(storm::Environment(),
+                                                                                                                                        *dtmc);
     modelChecker.specifyFormula(checkTask);
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelCheckerSimple(*simpleDtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelCheckerSimple(
+        storm::Environment(), *simpleDtmc);
     modelCheckerSimple.specifyFormula(checkTask);
 
     auto parameters = storm::models::sparse::getAllParameters(*dtmc);

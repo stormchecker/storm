@@ -57,9 +57,9 @@ template<storm::dd::DdType DdType, typename ValueType>
 std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(
     Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant,
     storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates,
-    storm::dd::Bdd<DdType> const& psiStates, bool qualitative, ValueType lowerBound, ValueType upperBound) {
+    storm::dd::Bdd<DdType> const& psiStates, bool qualitative, ValueType lowerBound, std::optional<ValueType> const& upperBound) {
     // If the time bounds are [0, inf], we rather call untimed reachability.
-    if (storm::utility::isZero(lowerBound) && upperBound == storm::utility::infinity<ValueType>()) {
+    if (storm::utility::isZero(lowerBound) && !upperBound) {
         return computeUntilProbabilities(env, model, rateMatrix, exitRateVector, phiStates, psiStates, qualitative);
     }
 
@@ -99,7 +99,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
     STORM_LOG_INFO("Found " << statesWithProbabilityGreater0NonPsi.getNonZeroCount() << " 'maybe' states.");
 
     if (!statesWithProbabilityGreater0NonPsi.isZero()) {
-        if (storm::utility::isZero(upperBound)) {
+        if (upperBound && storm::utility::isZero(*upperBound)) {
             // In this case, the interval is of the form [0, 0].
             return std::unique_ptr<CheckResult>(
                 new SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), psiStates.template toAdd<ValueType>()));
@@ -136,12 +136,12 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
                 // Finally compute the transient probabilities.
                 std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNonZeroCount(), storm::utility::zero<ValueType>());
                 std::vector<ValueType> subresult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities(
-                    env, explicitUniformizedMatrix, &explicitB, upperBound, uniformizationRate, values, epsilon);
+                    env, explicitUniformizedMatrix, &explicitB, *upperBound, uniformizationRate, values, epsilon);
 
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(
                     model.getReachableStates(), (psiStates || !statesWithProbabilityGreater0) && model.getReachableStates(),
                     psiStates.template toAdd<ValueType>(), statesWithProbabilityGreater0NonPsi, odd, subresult));
-            } else if (upperBound == storm::utility::infinity<ValueType>()) {
+            } else if (!upperBound) {
                 // In this case, the interval is of the form [t, inf] with t != 0.
 
                 // Start by computing the (unbounded) reachability probabilities of reaching psi states while
@@ -168,6 +168,8 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
                     std::unique_ptr<CheckResult> explicitUnboundedResult =
                         unboundedResult->asHybridQuantitativeCheckResult<DdType, ValueType>().toExplicitQuantitativeCheckResult();
                     conversionWatch.stop();
+                    // getValueVector() hands out ExtendedValueType<ValueType>, which is ValueType only because bounded until is instantiated for
+                    // double alone: RationalNumber has no SupportsExponential.
                     result = std::move(explicitUnboundedResult->asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
                 } else {
                     STORM_LOG_THROW(unboundedResult->isSymbolicQuantitativeCheckResult(), storm::exceptions::InvalidStateException,
@@ -196,7 +198,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
             } else {
                 // In this case, the interval is of the form [t, t'] with t != 0 and t' != inf.
 
-                if (lowerBound != upperBound) {
+                if (lowerBound != *upperBound) {
                     // In this case, the interval is of the form [t, t'] with t != 0, t' != inf and t != t'.
 
                     // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
@@ -223,7 +225,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
                     // Compute the transient probabilities.
                     std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNonZeroCount(), storm::utility::zero<ValueType>());
                     std::vector<ValueType> subResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities(
-                        env, explicitUniformizedMatrix, &explicitB, upperBound - lowerBound, uniformizationRate, values, epsilon);
+                        env, explicitUniformizedMatrix, &explicitB, *upperBound - lowerBound, uniformizationRate, values, epsilon);
 
                     // Transform the explicit result to a hybrid check result, so we can easily convert it to
                     // a symbolic qualitative format.
@@ -243,6 +245,8 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
 
                     std::unique_ptr<CheckResult> explicitResult = hybridResult.toExplicitQuantitativeCheckResult();
                     conversionWatch.stop();
+                    // getValueVector() hands out ExtendedValueType<ValueType>, which is ValueType only because bounded until is instantiated for
+                    // double alone: RationalNumber has no SupportsExponential.
                     std::vector<ValueType> newSubresult = std::move(explicitResult->asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
 
                     // Then compute the transient probabilities of being in such a state after t time units. For this,
@@ -252,7 +256,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
 
                     // If the lower and upper bounds coincide, we have only determined the relevant states at this
                     // point, but we still need to construct the starting vector.
-                    if (lowerBound == upperBound) {
+                    if (lowerBound == *upperBound) {
                         odd = relevantStates.createOdd();
                         newSubresult = psiStates.template toAdd<ValueType>().toVector(odd);
                     }
@@ -488,7 +492,7 @@ template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilPr
     Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, bool onlyInitialStatesRelevant,
     storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector,
     storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, bool qualitative, double lowerBound,
-    double upperBound);
+    std::optional<double> const& upperBound);
 template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(
     Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, bool onlyInitialStatesRelevant,
     storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector,
@@ -523,7 +527,7 @@ template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilPr
     Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, bool onlyInitialStatesRelevant,
     storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector,
     storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound,
-    double upperBound);
+    std::optional<double> const& upperBound);
 template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(
     Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, bool onlyInitialStatesRelevant,
     storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector,

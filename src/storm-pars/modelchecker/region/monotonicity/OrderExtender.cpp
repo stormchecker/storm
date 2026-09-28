@@ -701,8 +701,8 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
             plaModelChecker.check(env, annotatedRegion, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
         modelchecker::ExplicitQuantitativeCheckResult<ConstantType> maxCheck =
             plaModelChecker.check(env, annotatedRegion, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
-        minValuesInit = minCheck.getValueVector();
-        maxValuesInit = maxCheck.getValueVector();
+        minValuesInit = minCheck.getFiniteValueVector();
+        maxValuesInit = maxCheck.getFiniteValueVector();
         STORM_LOG_ASSERT(minValuesInit->size() == numberOfStates, "MinValuesInit size mismatch.");
         STORM_LOG_ASSERT(maxValuesInit->size() == numberOfStates, "MaxValuesInit size mismatch.");
     }

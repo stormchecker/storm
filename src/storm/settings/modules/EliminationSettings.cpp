@@ -63,7 +63,7 @@ storm::solver::stateelimination::EliminationMethod EliminationSettings::getElimi
     } else if (eliminationMethodAsString == "hybrid") {
         return storm::solver::stateelimination::EliminationMethod::Hybrid;
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal elimination method selected.");
+        STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Illegal elimination method selected.");
     }
 }
 
@@ -86,7 +86,7 @@ storm::solver::stateelimination::EliminationOrder EliminationSettings::getElimin
     } else if (eliminationOrderAsString == "regex") {
         return storm::solver::stateelimination::EliminationOrder::RegularExpression;
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal elimination order selected.");
+        STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Illegal elimination order selected.");
     }
 }
 

@@ -12,6 +12,22 @@ SET_SOURCE_FILES_PROPERTIES(
         ${PROJECT_SOURCE_DIR}/src/storm-parsers/parser/ExpressionParser.cpp
         PROPERTIES COMPILE_FLAGS -g0)
 
+# On macOS x86_64 (Intel), a C++ exception unwinding within the boost::spirit parsers can crash the unwinder itself.
+# -fno-omit-frame-pointer preserves the frame-chain information the unwinder needs.
+# Is paired with the -Wl,-keep_dwarf_unwind link flag below.
+if (MACOSX AND NOT APPLE_SILICON)
+    set_source_files_properties(
+            ${PROJECT_SOURCE_DIR}/src/storm-parsers/parser/PrismParser.cpp
+            ${PROJECT_SOURCE_DIR}/src/storm-parsers/parser/PrismParserGrammar.cpp
+            ${PROJECT_SOURCE_DIR}/src/storm-parsers/parser/FormulaParserGrammar.cpp
+            ${PROJECT_SOURCE_DIR}/src/storm-parsers/parser/FormulaParser.cpp
+            ${PROJECT_SOURCE_DIR}/src/storm-parsers/parser/ExpressionParser.cpp
+            ${PROJECT_SOURCE_DIR}/src/storm-parsers/parser/ExpressionCreator.cpp
+            ${PROJECT_SOURCE_DIR}/src/storm-parsers/parser/ImcaMarkovAutomatonParserGrammar.cpp
+            ${PROJECT_SOURCE_DIR}/src/storm-parsers/parser/ImcaMarkovAutomatonParser.cpp
+            PROPERTIES COMPILE_OPTIONS -fno-omit-frame-pointer)
+endif()
+
 # With STORM_COMPILE_WITH_COMPILATION_PROFILING, src/CMakeLists.txt adds -ftime-trace to the whole build. The profiler
 # emits one trace event per template instantiation, which roughly doubles the compile time of the boost::spirit grammars
 # above. Since clang offers no way to negate -ftime-trace per source file, drop it from this directory's scope and
@@ -51,6 +67,10 @@ storm_target_precompile_headers(storm-parsers PRIVATE ${STORM_PRECOMPILED_HEADER
 set_target_properties(storm-parsers PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 set_target_properties(storm-parsers PROPERTIES DEFINE_SYMBOL "")  # to avoid problems with pch on linux.
 target_link_libraries(storm-parsers PUBLIC storm)
+if (MACOSX AND NOT APPLE_SILICON)
+    # Linker flags for the unwinding issue on macOS Intel. See the matching -fno-omit-frame-pointer comment above.
+    target_link_options(storm-parsers PRIVATE -Wl,-keep_dwarf_unwind)
+endif()
 
 list(APPEND STORM_TARGETS storm-parsers)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)

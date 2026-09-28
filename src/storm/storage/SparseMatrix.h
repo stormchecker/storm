@@ -1223,22 +1223,6 @@ class SparseMatrix {
     }
 
    private:
-    /*!
-     * Creates a submatrix of the current matrix by keeping only row groups and columns in the given row group
-     * and column constraint, respectively.
-     *
-     * @param rowGroupConstraint A bit vector indicating which row groups to keep.
-     * @param columnConstraint A bit vector indicating which columns to keep.
-     * @param rowGroupIndices A vector indicating which rows belong to a given row group.
-     * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
-     * each row in row group i. This can then be used for inserting other values later.
-     * @return A matrix corresponding to a submatrix of the current matrix in which only row groups and columns
-     * given by the row group constraint are kept and all others are dropped.
-     */
-    SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint,
-                              std::vector<index_type> const& rowGroupIndices, bool insertDiagonalEntries = false,
-                              storm::storage::BitVector const& makeZeroColumns = storm::storage::BitVector()) const;
-
     // The number of rows of the matrix.
     index_type rowCount;
 

@@ -3,7 +3,7 @@
 
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/builder.h"
@@ -74,10 +74,10 @@ class SparseDerivativeInstantiationModelCheckerTest : public ::testing::Test {
 #ifndef STORM_HAVE_Z3
         GTEST_SKIP() << "Z3 not available.";
 #endif
-        carl::VariablePool::getInstance().clear();
+        storm::clearRFVariablePool();
     }
     virtual void TearDown() {
-        carl::VariablePool::getInstance().clear();
+        storm::clearRFVariablePool();
     }
     void testModel(std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc,
                    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas, storm::RationalFunction reachabilityFunction);
@@ -172,13 +172,13 @@ TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Simple) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     // The associated polynomial. In this case, it's p * (1 - p).
-    carl::Variable varP = carl::VariablePool::getInstance().findVariableWithName("p");
+    storm::RationalFunctionVariable varP = storm::findRFVariable("p");
     std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
     auto p = storm::RationalFunction(storm::Polynomial(storm::RawPolynomial(varP), cache));
     storm::RationalFunction reachabilityFunction = p * (storm::RationalFunction(1) - p);
@@ -200,14 +200,14 @@ TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Simple2) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     // The associated polynomial. In this case, it's p * (1 - q).
-    carl::Variable varP = carl::VariablePool::getInstance().findVariableWithName("p");
-    carl::Variable varQ = carl::VariablePool::getInstance().findVariableWithName("q");
+    storm::RationalFunctionVariable varP = storm::findRFVariable("p");
+    storm::RationalFunctionVariable varQ = storm::findRFVariable("q");
     std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
     auto p = storm::RationalFunction(storm::Polynomial(storm::RawPolynomial(varP), cache));
     auto q = storm::RationalFunction(storm::Polynomial(storm::RawPolynomial(varQ), cache));
@@ -230,13 +230,13 @@ TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Brp162) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    carl::Variable pLVar = carl::VariablePool::getInstance().findVariableWithName("pL");
-    carl::Variable pKVar = carl::VariablePool::getInstance().findVariableWithName("pK");
+    storm::RationalFunctionVariable pLVar = storm::findRFVariable("pL");
+    storm::RationalFunctionVariable pKVar = storm::findRFVariable("pK");
     std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
     auto pL = storm::RationalFunction(storm::Polynomial(storm::RawPolynomial(pLVar), cache));
     auto pK = storm::RationalFunction(storm::Polynomial(storm::RawPolynomial(pKVar), cache));

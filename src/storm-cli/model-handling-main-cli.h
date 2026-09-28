@@ -114,7 +114,7 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
         if (ft == storm::modelchecker::FilterType::VALUES) {
             STORM_PRINT(*result);
         } else {
-            ValueType resultValue;
+            storm::utility::ExtendedValueType<ValueType> resultValue;
             switch (ft) {
                 case storm::modelchecker::FilterType::SUM:
                     resultValue = result->asQuantitativeCheckResult<ValueType>().sum();

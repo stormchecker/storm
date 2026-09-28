@@ -48,4 +48,18 @@ typedef carl::Relation CompareRelation;
 
 RationalFunctionVariable createRFVariable(std::string const& name);
 
+/*!
+ * Retrieves the (already existing) rational-function variable with the given name.
+ *
+ * @param name Variable name.
+ * @return Variable with the given name or an invalid variable, if no such variable exists.
+ */
+RationalFunctionVariable findRFVariable(std::string const& name);
+
+/*!
+ * Clears the global pool of rational-function variables.
+ * This is mainly used to reset the global state in-between tests.
+ */
+void clearRFVariablePool();
+
 }  // namespace storm

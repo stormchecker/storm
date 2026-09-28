@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/functional/hash.hpp>
 #include <unordered_map>
 
 #include "storm/adapters/EigenAdapter.h"
@@ -42,7 +43,7 @@ class HyperplaneCollector {
        public:
         std::size_t operator()(NormalOffset const& ns) const {
             std::size_t seed = std::hash<EigenVector>()(ns.first);
-            carl::hash_add(seed, std::hash<ValueType>()(ns.second));
+            boost::hash_combine(seed, std::hash<ValueType>()(ns.second));
             return seed;
         }
     };

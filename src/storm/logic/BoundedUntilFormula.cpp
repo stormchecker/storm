@@ -251,6 +251,14 @@ storm::expressions::Expression const& BoundedUntilFormula::getUpperBound(unsigne
     return upperBound.at(i).value().getBound();
 }
 
+std::optional<TimeBound> BoundedUntilFormula::getLowerBoundAsOptionalTimeBound(unsigned i) const {
+    return lowerBound.at(i);
+}
+
+std::optional<TimeBound> BoundedUntilFormula::getUpperBoundAsOptionalTimeBound(unsigned i) const {
+    return upperBound.at(i);
+}
+
 template<>
 double BoundedUntilFormula::getLowerBound(unsigned i) const {
     if (!hasLowerBound(i)) {

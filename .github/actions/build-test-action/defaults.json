@@ -1,0 +1,8 @@
+{
+  "carl_tag": "master",
+  "starterProjectCommand": "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'",
+  "disable_all": false,
+  "ClnExact": false,
+  "ClnRatfunc": true,
+  "AllSanitizers": false
+}

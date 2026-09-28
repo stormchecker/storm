@@ -132,7 +132,7 @@ storm::storage::PomdpMemoryPattern POMDPSettings::getMemoryPattern() const {
     } else if (pattern == "full") {
         return storm::storage::PomdpMemoryPattern::Full;
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The name of the memory pattern is unknown.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "The name of the memory pattern is unknown.");
 }
 
 void POMDPSettings::finalize() {}

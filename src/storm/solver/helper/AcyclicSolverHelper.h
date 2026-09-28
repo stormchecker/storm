@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/constants.h"
@@ -72,11 +74,14 @@ boost::optional<std::vector<uint64_t>> computeTopologicalGroupOrdering(storm::st
 }
 
 /// reorders the row group such that the i'th row of the new matrix corresponds to the order[i]'th row of the source matrix.
-/// Also eliminates selfloops p>0 and inserts 1/p into the bFactors
+/// Also eliminates selfloops p>0 and inserts 1/p into the bFactors.
+/// A factor of std::nullopt marks a row with a selfloop of probability one. Such a row has no scaling factor at all: the
+/// equation for it can only be satisfied if the row contributes nothing, i.e. if the corresponding entry of the b vector
+/// is zero.
 template<typename ValueType>
 storm::storage::SparseMatrix<ValueType> createReorderedMatrix(storm::storage::SparseMatrix<ValueType> const& matrix,
                                                               std::vector<uint64_t> const& newToOrigIndexMap,
-                                                              std::vector<std::pair<uint64_t, ValueType>>& bFactors) {
+                                                              std::vector<std::pair<uint64_t, std::optional<ValueType>>>& bFactors) {
     std::vector<uint64_t> origToNewMap(newToOrigIndexMap.size(), std::numeric_limits<uint64_t>::max());
     for (uint64_t i = 0; i < newToOrigIndexMap.size(); ++i) {
         origToNewMap[newToOrigIndexMap[i]] = i;
@@ -98,12 +103,13 @@ storm::storage::SparseMatrix<ValueType> createReorderedMatrix(storm::storage::Sp
                 }
                 if (entry.getColumn() == origRowGroup) {
                     if (storm::utility::isOne(entry.getValue())) {
-                        // a one selfloop can only mean that there is never a non-zero value at the b vector for the current row.
-                        // Let's "assert" this by considering infinity. (This is necessary to avoid division by zero)
-                        bFactors.emplace_back(newRow, storm::utility::infinity<ValueType>());
+                        // A one selfloop can only mean that there is never a non-zero value at the b vector for the current row.
+                        // There is no factor to apply here; computing one would divide by zero.
+                        bFactors.emplace_back(newRow, std::nullopt);
+                    } else {
+                        ValueType factor = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - entry.getValue());
+                        bFactors.emplace_back(newRow, factor);
                     }
-                    ValueType factor = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - entry.getValue());
-                    bFactors.emplace_back(newRow, factor);
                 }
                 builder.addNextValue(newRow, origToNewMap[entry.getColumn()], entry.getValue());
             }
@@ -113,10 +119,13 @@ storm::storage::SparseMatrix<ValueType> createReorderedMatrix(storm::storage::Sp
     auto result = builder.build(matrix.getRowCount(), matrix.getColumnCount(), matrix.getRowGroupCount());
     // apply the bFactors to the relevant rows
     for (auto const& bFactor : bFactors) {
-        STORM_LOG_ASSERT(!storm::utility::isInfinity(bFactor.second) || storm::utility::isZero(result.getRowSum(bFactor.first)),
-                         "The input matrix does not seem to be probabilistic.");
+        if (!bFactor.second) {
+            // A selfloop of probability one: the row is not scaled, but it may not contribute anything either.
+            STORM_LOG_ASSERT(storm::utility::isZero(result.getRowSum(bFactor.first)), "The input matrix does not seem to be probabilistic.");
+            continue;
+        }
         for (auto& entry : result.getRow(bFactor.first)) {
-            entry.setValue(entry.getValue() * bFactor.second);
+            entry.setValue(entry.getValue() * *bFactor.second);
         }
     }
     STORM_LOG_DEBUG("Reordered " << matrix.getDimensionsAsString() << " with " << bFactors.size() << " selfloop entries for acyclic solving.");

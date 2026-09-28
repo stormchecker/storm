@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <memory>
 
 #include "storm/models/symbolic/MarkovAutomaton.h"
@@ -32,7 +34,7 @@ class HybridMarkovAutomatonCslHelper {
                                                                          storm::dd::Bdd<DdType> const& markovianStates,
                                                                          storm::dd::Add<DdType, ValueType> const& exitRateVector,
                                                                          storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates,
-                                                                         bool qualitative, double lowerBound, double upperBound);
+                                                                         bool qualitative, double lowerBound, std::optional<double> const& upperBound);
 
     template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
     static std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(Environment const& env, OptimizationDirection dir,
@@ -41,7 +43,7 @@ class HybridMarkovAutomatonCslHelper {
                                                                          storm::dd::Bdd<DdType> const& markovianStates,
                                                                          storm::dd::Add<DdType, ValueType> const& exitRateVector,
                                                                          storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates,
-                                                                         bool qualitative, double lowerBound, double upperBound);
+                                                                         bool qualitative, double lowerBound, std::optional<double> const& upperBound);
 };
 
 }  // namespace helper

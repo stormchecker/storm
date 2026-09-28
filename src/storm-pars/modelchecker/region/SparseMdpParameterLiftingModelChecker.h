@@ -23,6 +23,7 @@ class SparseMdpParameterLiftingModelChecker : public SparseParameterLiftingModel
     using CoefficientType = typename RegionModelChecker<ParametricType>::CoefficientType;
     using VariableType = typename RegionModelChecker<ParametricType>::VariableType;
     using Valuation = typename RegionModelChecker<ParametricType>::Valuation;
+    using ExtendedConstantType = typename SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::ExtendedConstantType;
 
     SparseMdpParameterLiftingModelChecker();
     SparseMdpParameterLiftingModelChecker(std::unique_ptr<storm::solver::GameSolverFactory<ConstantType>>&& solverFactory);
@@ -52,10 +53,11 @@ class SparseMdpParameterLiftingModelChecker : public SparseParameterLiftingModel
     virtual void specifyReachabilityRewardFormula(Environment const& env, CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) override;
     virtual void specifyCumulativeRewardFormula(const CheckTask<storm::logic::CumulativeRewardFormula, ConstantType>& checkTask) override;
 
-    virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationChecker(bool quantitative) override;
+    virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationChecker(Environment const& env,
+                                                                                                                         bool quantitative) override;
 
-    virtual std::vector<ConstantType> computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
-                                                                storm::solver::OptimizationDirection const& dirForParameters) override;
+    virtual std::vector<ExtendedConstantType> computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
+                                                                        storm::solver::OptimizationDirection const& dirForParameters) override;
 
     virtual void reset() override;
 
@@ -63,7 +65,7 @@ class SparseMdpParameterLiftingModelChecker : public SparseParameterLiftingModel
     void computePlayer1Matrix(std::optional<storm::storage::BitVector> const& selectedRows = std::nullopt);
 
     storm::storage::BitVector maybeStates;
-    std::vector<ConstantType> resultsForNonMaybeStates;
+    std::vector<ExtendedConstantType> resultsForNonMaybeStates;
     std::optional<uint64_t> stepBound;
 
     std::unique_ptr<storm::modelchecker::SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>> instantiationChecker;

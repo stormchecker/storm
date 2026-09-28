@@ -51,6 +51,12 @@ class FragmentSpecification {
     bool areBoundedUntilFormulasAllowed() const;
     FragmentSpecification& setBoundedUntilFormulasAllowed(bool newValue);
 
+    bool areWeakUntilFormulasAllowed() const;
+    FragmentSpecification& setWeakUntilFormulasAllowed(bool newValue);
+
+    bool areReleaseFormulasAllowed() const;
+    FragmentSpecification& setReleaseFormulasAllowed(bool newValue);
+
     bool areHOAPathFormulasAllowed() const;
     FragmentSpecification& setHOAPathFormulasAllowed(bool newValue);
 
@@ -187,6 +193,8 @@ class FragmentSpecification {
     bool nextFormula;
     bool untilFormula;
     bool boundedUntilFormula;
+    bool weakUntilFormula;
+    bool releaseFormula;
     bool hoaPathFormula;
 
     bool atomicExpressionFormula;

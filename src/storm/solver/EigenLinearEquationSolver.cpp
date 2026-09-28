@@ -258,8 +258,10 @@ uint64_t EigenLinearEquationSolver<ValueType>::getMatrixColumnCount() const {
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(Environment const&) const {
-    return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>();
+std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
+    auto solver = std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>();
+    solver->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
+    return solver;
 }
 
 template<typename ValueType>

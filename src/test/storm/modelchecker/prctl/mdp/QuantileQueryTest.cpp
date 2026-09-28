@@ -63,9 +63,9 @@ class QuantileQueryTest : public ::testing::Test {
     storm::Environment const& env() const {
         return _environment;
     }
-    ValueType parseNumber(std::string const& input) const {
+    storm::utility::ExtendedValueType<ValueType> parseNumber(std::string const& input) const {
         if (input.find("inf") != std::string::npos) {
-            return storm::utility::infinity<ValueType>();
+            return storm::utility::positiveInfinity<ValueType>();
         }
         return storm::utility::convertNumber<ValueType>(input);
     }
@@ -107,11 +107,11 @@ class QuantileQueryTest : public ::testing::Test {
                                                std::unique_ptr<storm::modelchecker::CheckResult>& result, std::vector<std::string> const& expected) {
         bool equal = true;
         std::string errorMessage = "";
-        ValueType comparePrecision =
+        storm::utility::ExtendedValueType<ValueType> comparePrecision =
             std::is_same<ValueType, double>::value ? storm::utility::convertNumber<ValueType>(1e-10) : storm::utility::zero<ValueType>();
         auto filter = getInitialStateFilter(model);
         result->filter(*filter);
-        std::vector<std::vector<ValueType>> resultPoints;
+        std::vector<std::vector<storm::utility::ExtendedValueType<ValueType>>> resultPoints;
         if (result->isExplicitParetoCurveCheckResult()) {
             resultPoints = result->asExplicitParetoCurveCheckResult<ValueType>().getPoints();
         } else {
@@ -120,9 +120,9 @@ class QuantileQueryTest : public ::testing::Test {
             }
             resultPoints = {{result->asExplicitQuantitativeCheckResult<ValueType>().getMax()}};
         }
-        std::vector<std::vector<ValueType>> expectedPoints;
+        std::vector<std::vector<storm::utility::ExtendedValueType<ValueType>>> expectedPoints;
         for (auto const& pointAsString : expected) {
-            std::vector<ValueType> point;
+            std::vector<storm::utility::ExtendedValueType<ValueType>> point;
             for (auto const& entry : storm::parser::parseCommaSeperatedValues(pointAsString)) {
                 point.push_back(parseNumber(entry));
             }

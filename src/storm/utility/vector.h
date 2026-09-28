@@ -9,6 +9,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -74,8 +75,8 @@ void setAllValues(std::vector<T>& vec, storm::storage::BitVector const& position
  * @param positions The positions at which the values are to be set.
  * @param values The values that are to be set.
  */
-template<class T>
-void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<T> const& values) {
+template<class T, class S>
+void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<S> const& values) {
     STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized.");
     STORM_LOG_ASSERT(positions.getNumberOfSetBits() <= values.size(), "The number of selected positions (" << positions.getNumberOfSetBits()
                                                                                                            << ") exceeds the size of the input vector ("
@@ -94,8 +95,8 @@ void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& po
  * @param positions The positions at which the value is to be set.
  * @param value The value that is to be set.
  */
-template<class T>
-void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, T value) {
+template<class T, class S>
+void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, S const& value) {
     STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized.");
     for (uint64_t position : positions) {
         vector[position] = value;
@@ -517,7 +518,7 @@ storm::storage::BitVector filterGreaterZero(std::vector<T> const& values) {
  */
 template<class T>
 storm::storage::BitVector filterZero(std::vector<T> const& values) {
-    return filter<T>(values, storm::utility::isZero<T>);
+    return filter<T>(values, [](T const& value) { return storm::utility::isZero(value); });
 }
 
 /*!
@@ -528,7 +529,7 @@ storm::storage::BitVector filterZero(std::vector<T> const& values) {
  */
 template<class T>
 storm::storage::BitVector filterOne(std::vector<T> const& values) {
-    return filter<T>(values, storm::utility::isOne<T>);
+    return filter<T>(values, [](T const& value) { return storm::utility::isOne(value); });
 }
 
 /*!
@@ -539,7 +540,7 @@ storm::storage::BitVector filterOne(std::vector<T> const& values) {
  */
 template<class T>
 storm::storage::BitVector filterInfinity(std::vector<T> const& values) {
-    return filter<T>(values, storm::utility::isInfinity<T>);
+    return filter<T>(values, [](T const& value) { return storm::utility::isInfinity(value); });
 }
 
 /**
@@ -729,8 +730,11 @@ void reduceVectorMinOrMax(storm::solver::OptimizationDirection dir, std::vector<
  */
 template<class T>
 bool equalModuloPrecision(T const& val1, T const& val2, T const& precision, bool relativeError = true) {
+    if (!storm::utility::isFinite(val1) || !storm::utility::isFinite(val2)) {
+        return val1 == val2;
+    }
     if (relativeError) {
-        if (storm::utility::isZero<T>(val1)) {
+        if (storm::utility::isZero(val1)) {
             return storm::utility::isZero(val2);
         }
         T relDiff = (val1 - val2) / val1;
@@ -1018,21 +1022,26 @@ typename std::enable_if<std::is_same<ValueType, storm::RationalNumber>::value, s
     } else if (occurringNonZeroNumbers.size() == 1) {
         factor = *occurringNonZeroNumbers.begin();
     } else {
+        using IntegerType = typename storm::NumberTraits<ValueType>::IntegerType;
         // Obtain the least common multiple of the denominators of the occurring numbers.
         // We can then multiply the numbers with the lcm to obtain integers.
         auto numberIt = occurringNonZeroNumbers.begin();
-        ValueType lcm = storm::utility::asFraction(*numberIt).second;
+        IntegerType lcm = storm::utility::denominator(*numberIt);
         for (++numberIt; numberIt != occurringNonZeroNumbers.end(); ++numberIt) {
-            lcm = carl::lcm(lcm, storm::utility::asFraction(*numberIt).second);
+            lcm = storm::utility::lcm(lcm, storm::utility::denominator(*numberIt));
         }
         // Multiply all values with the lcm. To reduce the range of considered integers, we also obtain the gcd of the results.
         numberIt = occurringNonZeroNumbers.begin();
-        ValueType gcd = *numberIt * lcm;
+        STORM_LOG_ASSERT(storm::utility::denominator(ValueType(*numberIt * lcm)) == storm::utility::one<IntegerType>(),
+                         "Number '" << *numberIt << "' is not integral.");
+        IntegerType gcd = storm::utility::numerator(ValueType(*numberIt * lcm));
         for (++numberIt; numberIt != occurringNonZeroNumbers.end(); ++numberIt) {
-            gcd = carl::gcd(gcd, static_cast<ValueType>(*numberIt * lcm));
+            STORM_LOG_ASSERT(storm::utility::denominator(ValueType(*numberIt * lcm)) == storm::utility::one<IntegerType>(),
+                             "Number '" << *numberIt << "' is not integral.");
+            gcd = storm::utility::gcd(gcd, storm::utility::numerator(ValueType(*numberIt * lcm)));
         }
 
-        factor = gcd / lcm;
+        factor = storm::utility::convertNumber<ValueType>(gcd) / storm::utility::convertNumber<ValueType>(lcm);
     }
 
     // Build the result

@@ -62,14 +62,14 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
     for (auto const& obj : this->objectives) {
         obj.formula->gatherReferencedRewardModels(relevantRewardModels);
     }
-    storm::transformer::GoalStateMerger<SparseModelType> merger(*preprocessorResult.preprocessedModel);
+    storm::transformer::GoalStateMerger<typename SparseModelType::ValueType> merger(*preprocessorResult.preprocessedModel);
     auto mergerResult =
         merger.mergeTargetAndSinkStates(maybeStates, rewardAnalysis.reward0AStates, storm::storage::BitVector(maybeStates.size(), false),
                                         std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()), finiteTotalRewardChoices);
     goalStateMergerInputToReducedStateIndexMapping = std::move(mergerResult.oldToNewStateIndexMapping);
     goalStateMergerReducedToInputChoiceMapping = mergerResult.keptChoices.getNumberOfSetBitsBeforeIndices();
     // Initialize data specific for the considered model type
-    initializeModelTypeSpecificData(*mergerResult.model);
+    initializeModelTypeSpecificData(*mergerResult.model->template as<SparseModelType>());
 
     // Initilize general data of the model
     transitionMatrix = std::move(mergerResult.model->getTransitionMatrix());

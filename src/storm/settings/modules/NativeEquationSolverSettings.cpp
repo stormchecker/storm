@@ -118,8 +118,8 @@ storm::solver::NativeLinearEquationSolverMethod NativeEquationSolverSettings::ge
     } else if (linearEquationSystemTechniqueAsString == "ratsearch") {
         return storm::solver::NativeLinearEquationSolverMethod::RationalSearch;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
 }
 
 bool NativeEquationSolverSettings::isMaximalIterationCountSet() const {
@@ -158,7 +158,7 @@ storm::solver::MultiplicationStyle NativeEquationSolverSettings::getPowerMethodM
     } else if (multiplicationStyleString == "regular" || multiplicationStyleString == "r") {
         return storm::solver::MultiplicationStyle::Regular;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
 }
 
 bool NativeEquationSolverSettings::isForceIntervalIterationSymmetricUpdatesSet() const {

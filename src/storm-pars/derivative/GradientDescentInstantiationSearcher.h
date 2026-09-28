@@ -10,8 +10,10 @@
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 #include "storm-pars/utility/FeasibilitySynthesisTask.h"
 #include "storm-pars/utility/parametric.h"
+#include "storm/environment/Environment.h"
 #include "storm/logic/Formula.h"
 #include "storm/models/sparse/Dtmc.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/macros.h"
 
@@ -20,6 +22,8 @@ namespace derivative {
 template<typename FunctionType, typename ConstantType>
 class GradientDescentInstantiationSearcher {
    public:
+    using ExtendedConstantType = storm::utility::ExtendedValueType<ConstantType>;
+
     /**
      * The GradientDescentInstantiationSearcher can find extrema and feasible instantiations in pMCs,
      * for either rewards or probabilities.
@@ -40,17 +44,19 @@ class GradientDescentInstantiationSearcher {
      * If this is not set the region will be the graph-preseving region.
      */
     GradientDescentInstantiationSearcher(
-        storm::models::sparse::Dtmc<FunctionType> const& model, GradientDescentMethod method = GradientDescentMethod::ADAM, ConstantType learningRate = 0.1,
-        ConstantType averageDecay = 0.9, ConstantType squaredAverageDecay = 0.999, uint_fast64_t miniBatchSize = 32, ConstantType terminationEpsilon = 1e-6,
+        Environment const& env, storm::models::sparse::Dtmc<FunctionType> const& model, GradientDescentMethod method = GradientDescentMethod::ADAM,
+        ConstantType learningRate = 0.1, ConstantType averageDecay = 0.9, ConstantType squaredAverageDecay = 0.999, uint_fast64_t miniBatchSize = 32,
+        ConstantType terminationEpsilon = 1e-6,
         std::optional<
             std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>>
             startPoint = std::nullopt,
         GradientDescentConstraintMethod constraintMethod = GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT,
         std::optional<storage::ParameterRegion<FunctionType>> region = std::nullopt, bool recordRun = false)
-        : model(model),
+        : env(env),
+          model(model),
           derivativeEvaluationHelper(std::make_unique<SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>>(model)),
           instantiationModelChecker(
-              std::make_unique<modelchecker::SparseDtmcInstantiationModelChecker<models::sparse::Dtmc<FunctionType>, ConstantType>>(model)),
+              std::make_unique<modelchecker::SparseDtmcInstantiationModelChecker<models::sparse::Dtmc<FunctionType>, ConstantType>>(env, model)),
           startPoint(startPoint),
           miniBatchSize(miniBatchSize),
           terminationEpsilon(terminationEpsilon),
@@ -165,7 +171,7 @@ class GradientDescentInstantiationSearcher {
      * Perform Gradient Descent.
      */
     std::pair<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>,
-              ConstantType>
+              ExtendedConstantType>
     gradientDescent();
 
     /**
@@ -178,7 +184,7 @@ class GradientDescentInstantiationSearcher {
      */
     struct VisualizationPoint {
         std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type> position;
-        ConstantType value;
+        ExtendedConstantType value;
     };
     /**
      * Get the visualization walk that is recorded if recordRun is set to true in the constructor (false by default).
@@ -250,18 +256,14 @@ class GradientDescentInstantiationSearcher {
 
     ConstantType logarithmicBarrierTerm;
 
-    ConstantType stochasticGradientDescent(
+    ExtendedConstantType stochasticGradientDescent(
         std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>& position);
     ConstantType doStep(
         typename utility::parametric::VariableType<FunctionType>::type steppingParameter,
         std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>& position,
         const std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType>& gradient, uint_fast64_t stepNum);
     ConstantType constantTypeSqrt(ConstantType input) {
-        if (std::is_same<ConstantType, double>::value) {
-            return utility::sqrt(input);
-        } else {
-            return carl::sqrt(input);
-        }
+        return storm::utility::sqrt(input);
     }
 
     utility::Stopwatch stochasticWatch;

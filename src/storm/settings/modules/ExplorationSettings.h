@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm/modelchecker/exploration/ExplorationTypes.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
@@ -11,11 +12,8 @@ namespace modules {
  */
 class ExplorationSettings : public ModuleSettings {
    public:
-    // An enumeration of all available precomputation types.
-    enum class PrecomputationType { Local, Global };
-
-    // The available heuristics to choose the next state.
-    enum class NextStateHeuristic { DifferenceProbabilitySum, Probability, Uniform };
+    using PrecomputationType = storm::modelchecker::exploration_detail::PrecomputationType;
+    using NextStateHeuristic = storm::modelchecker::exploration_detail::NextStateHeuristic;
 
     /*!
      * Creates a new set of exploration settings.

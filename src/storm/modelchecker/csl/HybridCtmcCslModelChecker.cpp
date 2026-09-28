@@ -106,14 +106,12 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeBounde
         STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException,
                         "Currently step-bounded and reward-bounded properties on CTMCs are not supported.");
         ValueType lowerBound = 0;
-        ValueType upperBound = 0;
+        std::optional<ValueType> upperBound;
         if (pathFormula.hasLowerBound()) {
             lowerBound = pathFormula.getLowerBound<ValueType>();
         }
         if (pathFormula.hasUpperBound()) {
             upperBound = pathFormula.getNonStrictUpperBound<ValueType>();
-        } else {
-            upperBound = storm::utility::infinity<ValueType>();
         }
 
         return storm::modelchecker::helper::HybridCtmcCslHelper::computeBoundedUntilProbabilities<DdType, ValueType>(

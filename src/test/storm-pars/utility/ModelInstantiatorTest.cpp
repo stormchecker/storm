@@ -22,7 +22,7 @@ class ModelInstantiatorTest : public ::testing::Test {
 };
 
 TEST_F(ModelInstantiatorTest, BrpProb) {
-    carl::VariablePool::getInstance().clear();
+    storm::clearRFVariablePool();
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=5 ]";
@@ -43,10 +43,10 @@ TEST_F(ModelInstantiatorTest, BrpProb) {
 
     {
         std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> valuation;
-        storm::RationalFunctionVariable const& pL = carl::VariablePool::getInstance().findVariableWithName("pL");
-        ASSERT_NE(pL, carl::Variable::NO_VARIABLE);
-        storm::RationalFunctionVariable const& pK = carl::VariablePool::getInstance().findVariableWithName("pK");
-        ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
+        storm::RationalFunctionVariable const& pL = storm::findRFVariable("pL");
+        ASSERT_NE(pL, storm::RationalFunctionVariable::NO_VARIABLE);
+        storm::RationalFunctionVariable const& pK = storm::findRFVariable("pK");
+        ASSERT_NE(pK, storm::RationalFunctionVariable::NO_VARIABLE);
         valuation.insert(std::make_pair(pL, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.8)));
         valuation.insert(std::make_pair(pK, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.9)));
 
@@ -59,7 +59,7 @@ TEST_F(ModelInstantiatorTest, BrpProb) {
                 auto instantiatedEntry = instantiated.getTransitionMatrix().getRow(row).begin();
                 for (auto const& paramEntry : dtmc->getTransitionMatrix().getRow(row)) {
                     EXPECT_EQ(paramEntry.getColumn(), instantiatedEntry->getColumn());
-                    double evaluatedValue = carl::toDouble(paramEntry.getValue().evaluate(valuation));
+                    double evaluatedValue = storm::utility::convertNumber<double>(paramEntry.getValue().evaluate(valuation));
                     EXPECT_EQ(evaluatedValue, instantiatedEntry->getValue());
                     ++instantiatedEntry;
                 }
@@ -78,10 +78,10 @@ TEST_F(ModelInstantiatorTest, BrpProb) {
 
     {
         std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> valuation;
-        storm::RationalFunctionVariable const& pL = carl::VariablePool::getInstance().findVariableWithName("pL");
-        ASSERT_NE(pL, carl::Variable::NO_VARIABLE);
-        storm::RationalFunctionVariable const& pK = carl::VariablePool::getInstance().findVariableWithName("pK");
-        ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
+        storm::RationalFunctionVariable const& pL = storm::findRFVariable("pL");
+        ASSERT_NE(pL, storm::RationalFunctionVariable::NO_VARIABLE);
+        storm::RationalFunctionVariable const& pK = storm::findRFVariable("pK");
+        ASSERT_NE(pK, storm::RationalFunctionVariable::NO_VARIABLE);
         valuation.insert(std::make_pair(pL, storm::utility::one<storm::RationalFunctionCoefficient>()));
         valuation.insert(std::make_pair(pK, storm::utility::one<storm::RationalFunctionCoefficient>()));
 
@@ -94,7 +94,7 @@ TEST_F(ModelInstantiatorTest, BrpProb) {
                 auto instantiatedEntry = instantiated.getTransitionMatrix().getRow(row).begin();
                 for (auto const& paramEntry : dtmc->getTransitionMatrix().getRow(row)) {
                     EXPECT_EQ(paramEntry.getColumn(), instantiatedEntry->getColumn());
-                    double evaluatedValue = carl::toDouble(paramEntry.getValue().evaluate(valuation));
+                    double evaluatedValue = storm::utility::convertNumber<double>(paramEntry.getValue().evaluate(valuation));
                     EXPECT_EQ(evaluatedValue, instantiatedEntry->getValue());
                     ++instantiatedEntry;
                 }
@@ -112,10 +112,10 @@ TEST_F(ModelInstantiatorTest, BrpProb) {
 
     {
         std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> valuation;
-        storm::RationalFunctionVariable const& pL = carl::VariablePool::getInstance().findVariableWithName("pL");
-        ASSERT_NE(pL, carl::Variable::NO_VARIABLE);
-        storm::RationalFunctionVariable const& pK = carl::VariablePool::getInstance().findVariableWithName("pK");
-        ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
+        storm::RationalFunctionVariable const& pL = storm::findRFVariable("pL");
+        ASSERT_NE(pL, storm::RationalFunctionVariable::NO_VARIABLE);
+        storm::RationalFunctionVariable const& pK = storm::findRFVariable("pK");
+        ASSERT_NE(pK, storm::RationalFunctionVariable::NO_VARIABLE);
         valuation.insert(std::make_pair(pL, storm::utility::one<storm::RationalFunctionCoefficient>()));
         valuation.insert(std::make_pair(pK, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.9)));
 
@@ -128,7 +128,7 @@ TEST_F(ModelInstantiatorTest, BrpProb) {
                 auto instantiatedEntry = instantiated.getTransitionMatrix().getRow(row).begin();
                 for (auto const& paramEntry : dtmc->getTransitionMatrix().getRow(row)) {
                     EXPECT_EQ(paramEntry.getColumn(), instantiatedEntry->getColumn());
-                    double evaluatedValue = carl::toDouble(paramEntry.getValue().evaluate(valuation));
+                    double evaluatedValue = storm::utility::convertNumber<double>(paramEntry.getValue().evaluate(valuation));
                     EXPECT_EQ(evaluatedValue, instantiatedEntry->getValue());
                     ++instantiatedEntry;
                 }
@@ -147,7 +147,7 @@ TEST_F(ModelInstantiatorTest, BrpProb) {
 }
 
 TEST_F(ModelInstantiatorTest, Brp_Rew) {
-    carl::VariablePool::getInstance().clear();
+    storm::clearRFVariablePool();
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "R=? [F ((s=5) | (s=0&srep=3)) ]";
@@ -167,14 +167,14 @@ TEST_F(ModelInstantiatorTest, Brp_Rew) {
 
     {
         std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> valuation;
-        storm::RationalFunctionVariable const& pL = carl::VariablePool::getInstance().findVariableWithName("pL");
-        ASSERT_NE(pL, carl::Variable::NO_VARIABLE);
-        storm::RationalFunctionVariable const& pK = carl::VariablePool::getInstance().findVariableWithName("pK");
-        ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
-        storm::RationalFunctionVariable const& TOMsg = carl::VariablePool::getInstance().findVariableWithName("TOMsg");
-        ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
-        storm::RationalFunctionVariable const& TOAck = carl::VariablePool::getInstance().findVariableWithName("TOAck");
-        ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
+        storm::RationalFunctionVariable const& pL = storm::findRFVariable("pL");
+        ASSERT_NE(pL, storm::RationalFunctionVariable::NO_VARIABLE);
+        storm::RationalFunctionVariable const& pK = storm::findRFVariable("pK");
+        ASSERT_NE(pK, storm::RationalFunctionVariable::NO_VARIABLE);
+        storm::RationalFunctionVariable const& TOMsg = storm::findRFVariable("TOMsg");
+        ASSERT_NE(TOMsg, storm::RationalFunctionVariable::NO_VARIABLE);
+        storm::RationalFunctionVariable const& TOAck = storm::findRFVariable("TOAck");
+        ASSERT_NE(TOAck, storm::RationalFunctionVariable::NO_VARIABLE);
         valuation.insert(std::make_pair(pL, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.9)));
         valuation.insert(std::make_pair(pK, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.3)));
         valuation.insert(std::make_pair(TOMsg, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.3)));
@@ -189,7 +189,7 @@ TEST_F(ModelInstantiatorTest, Brp_Rew) {
                 auto instantiatedEntry = instantiated.getTransitionMatrix().getRow(row).begin();
                 for (auto const& paramEntry : dtmc->getTransitionMatrix().getRow(row)) {
                     EXPECT_EQ(paramEntry.getColumn(), instantiatedEntry->getColumn());
-                    double evaluatedValue = carl::toDouble(paramEntry.getValue().evaluate(valuation));
+                    double evaluatedValue = storm::utility::convertNumber<double>(paramEntry.getValue().evaluate(valuation));
                     EXPECT_EQ(evaluatedValue, instantiatedEntry->getValue());
                     ++instantiatedEntry;
                 }
@@ -204,7 +204,7 @@ TEST_F(ModelInstantiatorTest, Brp_Rew) {
         std::size_t stateActionEntries = dtmc->getUniqueRewardModel().getStateActionRewardVector().size();
         ASSERT_EQ(stateActionEntries, instantiated.getUniqueRewardModel().getStateActionRewardVector().size());
         for (std::size_t i = 0; i < stateActionEntries; ++i) {
-            double evaluatedValue = carl::toDouble(dtmc->getUniqueRewardModel().getStateActionRewardVector()[i].evaluate(valuation));
+            double evaluatedValue = storm::utility::convertNumber<double>(dtmc->getUniqueRewardModel().getStateActionRewardVector()[i].evaluate(valuation));
             EXPECT_EQ(evaluatedValue, instantiated.getUniqueRewardModel().getStateActionRewardVector()[i]);
         }
         EXPECT_EQ(dtmc->getStateLabeling(), instantiated.getStateLabeling());
@@ -219,7 +219,7 @@ TEST_F(ModelInstantiatorTest, Brp_Rew) {
 }
 
 TEST_F(ModelInstantiatorTest, Consensus) {
-    carl::VariablePool::getInstance().clear();
+    storm::clearRFVariablePool();
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pmdp/coin2_2.nm";
     std::string formulaAsString = "Pmin=? [F \"finished\"&\"all_coins_equal_1\" ]";
@@ -238,10 +238,10 @@ TEST_F(ModelInstantiatorTest, Consensus) {
     storm::utility::ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Mdp<double>> modelInstantiator(*mdp);
 
     std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> valuation;
-    storm::RationalFunctionVariable const& p1 = carl::VariablePool::getInstance().findVariableWithName("p1");
-    ASSERT_NE(p1, carl::Variable::NO_VARIABLE);
-    storm::RationalFunctionVariable const& p2 = carl::VariablePool::getInstance().findVariableWithName("p2");
-    ASSERT_NE(p2, carl::Variable::NO_VARIABLE);
+    storm::RationalFunctionVariable const& p1 = storm::findRFVariable("p1");
+    ASSERT_NE(p1, storm::RationalFunctionVariable::NO_VARIABLE);
+    storm::RationalFunctionVariable const& p2 = storm::findRFVariable("p2");
+    ASSERT_NE(p2, storm::RationalFunctionVariable::NO_VARIABLE);
     valuation.insert(std::make_pair(p1, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.51)));
     valuation.insert(std::make_pair(p2, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.49)));
     storm::models::sparse::Mdp<double> const& instantiated(modelInstantiator.instantiate(valuation));
@@ -253,7 +253,7 @@ TEST_F(ModelInstantiatorTest, Consensus) {
             auto instantiatedEntry = instantiated.getTransitionMatrix().getRow(row).begin();
             for (auto const& paramEntry : mdp->getTransitionMatrix().getRow(row)) {
                 EXPECT_EQ(paramEntry.getColumn(), instantiatedEntry->getColumn());
-                double evaluatedValue = carl::toDouble(paramEntry.getValue().evaluate(valuation));
+                double evaluatedValue = storm::utility::convertNumber<double>(paramEntry.getValue().evaluate(valuation));
                 EXPECT_EQ(evaluatedValue, instantiatedEntry->getValue());
                 ++instantiatedEntry;
             }

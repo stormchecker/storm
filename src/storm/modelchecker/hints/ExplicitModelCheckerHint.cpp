@@ -25,23 +25,23 @@ bool ExplicitModelCheckerHint<ValueType>::hasResultHint() const {
 }
 
 template<typename ValueType>
-std::vector<ValueType> const& ExplicitModelCheckerHint<ValueType>::getResultHint() const {
+std::vector<typename ExplicitModelCheckerHint<ValueType>::ExtendedValueType> const& ExplicitModelCheckerHint<ValueType>::getResultHint() const {
     return *resultHint;
 }
 
 template<typename ValueType>
-std::vector<ValueType>& ExplicitModelCheckerHint<ValueType>::getResultHint() {
+std::vector<typename ExplicitModelCheckerHint<ValueType>::ExtendedValueType>& ExplicitModelCheckerHint<ValueType>::getResultHint() {
     return *resultHint;
 }
 
 template<typename ValueType>
-void ExplicitModelCheckerHint<ValueType>::setResultHint(boost::optional<std::vector<ValueType>> const& resultHint) {
+void ExplicitModelCheckerHint<ValueType>::setResultHint(boost::optional<std::vector<ExtendedValueType>> const& resultHint) {
     this->resultHint = resultHint;
 }
 
 template<typename ValueType>
-void ExplicitModelCheckerHint<ValueType>::setResultHint(boost::optional<std::vector<ValueType>>&& resultHint) {
-    this->resultHint = resultHint;
+void ExplicitModelCheckerHint<ValueType>::setResultHint(boost::optional<std::vector<ExtendedValueType>>&& resultHint) {
+    this->resultHint = std::move(resultHint);
 }
 
 template<typename ValueType>

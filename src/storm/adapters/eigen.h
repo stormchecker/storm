@@ -1,7 +1,9 @@
 #pragma once
 
 #include <iostream>
-// Include these utility headers so we can access utility function from Eigen.
+
+// Include these headers so we can access number functions from Eigen.
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/utility/constants.h"
 
 #if defined(__clang__)

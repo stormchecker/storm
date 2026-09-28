@@ -441,8 +441,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsIntervalIteration(Envi
         optionalRelevantValues = this->getRelevantValues();
     }
     this->startMeasureProgress();
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
     auto status = iiHelper.II(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(), prec, lowerBoundsCallback, upperBoundsCallback, {},
-                              iiCallback, optionalRelevantValues);
+                              iiCallback, optionalRelevantValues, solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
     this->reportStatus(status, numIterations);
 
     if (!this->isCachingEnabled()) {
@@ -525,7 +529,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIterati
         guessingFactor = storm::utility::convertNumber<ValueType>(*env.solver().ovi().getUpperBoundGuessingFactor());
     }
     this->startMeasureProgress();
-    auto status = oviHelper.OVI(x, b, env.solver().native().getRelativeTerminationCriterion(), prec, {}, guessingFactor, lowerBound, upperBound, oviCallback);
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
+    auto status = oviHelper.OVI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(), prec, {}, guessingFactor, lowerBound, upperBound,
+                                oviCallback, solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
     this->reportStatus(status, numIterations);
 
     if (!this->isCachingEnabled()) {
@@ -712,8 +721,10 @@ uint64_t NativeLinearEquationSolver<ValueType>::getMatrixColumnCount() const {
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(Environment const&) const {
-    return std::make_unique<storm::solver::NativeLinearEquationSolver<ValueType>>();
+std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
+    auto solver = std::make_unique<storm::solver::NativeLinearEquationSolver<ValueType>>();
+    solver->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
+    return solver;
 }
 
 template<typename ValueType>

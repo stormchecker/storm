@@ -109,14 +109,12 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::co
     STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException,
                     "Currently step-bounded and reward-bounded properties on MarkovAutomatons are not supported.");
     double lowerBound = 0;
-    double upperBound = 0;
+    std::optional<double> upperBound;
     if (pathFormula.hasLowerBound()) {
         lowerBound = pathFormula.getLowerBound<double>();
     }
     if (pathFormula.hasUpperBound()) {
         upperBound = pathFormula.getNonStrictUpperBound<double>();
-    } else {
-        upperBound = storm::utility::infinity<double>();
     }
 
     return storm::modelchecker::helper::HybridMarkovAutomatonCslHelper::computeBoundedUntilProbabilities<DdType, ValueType>(

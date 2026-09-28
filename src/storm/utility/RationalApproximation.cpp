@@ -2,6 +2,7 @@
 #include "storm/utility/RationalApproximation.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

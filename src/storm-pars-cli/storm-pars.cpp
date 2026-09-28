@@ -19,8 +19,7 @@
 #include "storm-pars/settings/modules/SamplingSettings.h"
 #include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/transformer/BinaryDtmcTransformer.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/api/storm.h"
 #include "storm/exceptions/BaseException.h"
@@ -159,7 +158,7 @@ std::shared_ptr<storm::models::ModelBase> simplifyModel(std::shared_ptr<storm::m
     storm::utility::Stopwatch simplifyingWatch(true);
     std::shared_ptr<storm::models::ModelBase> result;
     if (model->isOfType(storm::models::ModelType::Dtmc)) {
-        storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<ValueType>> simplifier(
+        storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<ValueType>> simplifier(
             *(model->template as<storm::models::sparse::Dtmc<ValueType>>()));
 
         std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
@@ -168,7 +167,7 @@ std::shared_ptr<storm::models::ModelBase> simplifyModel(std::shared_ptr<storm::m
         STORM_LOG_THROW(simplifier.simplify(*(formulas[0])), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         result = simplifier.getSimplifiedModel();
     } else if (model->isOfType(storm::models::ModelType::Mdp)) {
-        storm::transformer::SparseParametricMdpSimplifier<storm::models::sparse::Mdp<ValueType>> simplifier(
+        storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Mdp<ValueType>> simplifier(
             *(model->template as<storm::models::sparse::Mdp<ValueType>>()));
 
         std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);

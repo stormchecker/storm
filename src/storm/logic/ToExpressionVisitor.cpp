@@ -132,6 +132,14 @@ boost::any ToExpressionVisitor::visit(UntilFormula const&, boost::any const&) co
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
 }
 
+boost::any ToExpressionVisitor::visit(WeakUntilFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+}
+
+boost::any ToExpressionVisitor::visit(ReleaseFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+}
+
 boost::any ToExpressionVisitor::visit(HOAPathFormula const&, boost::any const&) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
 }

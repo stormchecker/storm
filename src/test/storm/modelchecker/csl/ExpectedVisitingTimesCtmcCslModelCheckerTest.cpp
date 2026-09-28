@@ -150,13 +150,13 @@ TYPED_TEST(ExpectedVisitingTimesCtmcCslModelCheckerTest, expvisittimestest) {
         << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_NEAR(sortedVector[5], this->parseNumber("341/1215"), this->precision())
         << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
-    EXPECT_EQ(sortedVector[6], storm::utility::infinity<ValueType>())
+    EXPECT_EQ(sortedVector[6], storm::utility::positiveInfinity<ValueType>())
         << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
-    EXPECT_EQ(sortedVector[7], storm::utility::infinity<ValueType>())
+    EXPECT_EQ(sortedVector[7], storm::utility::positiveInfinity<ValueType>())
         << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
-    EXPECT_EQ(sortedVector[8], storm::utility::infinity<ValueType>())
+    EXPECT_EQ(sortedVector[8], storm::utility::positiveInfinity<ValueType>())
         << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
-    EXPECT_EQ(sortedVector[9], storm::utility::infinity<ValueType>())
+    EXPECT_EQ(sortedVector[9], storm::utility::positiveInfinity<ValueType>())
         << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
 }
 }  // namespace

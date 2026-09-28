@@ -1012,3 +1012,35 @@ TEST(SparseMatrix, isProbabilistic) {
     }
     ASSERT_FALSE(matrix.isProbabilistic(0, reason)) << reason;
 }
+
+TEST(SparseMatrix, EqualityIgnoresExplicitZeros) {
+    storm::storage::SparseMatrixBuilder<double> builder1(2, 3);
+    builder1.addNextValue(0, 0, 0.5);
+    builder1.addNextValue(0, 2, 0.0);  // explicit trailing zero
+    builder1.addNextValue(1, 1, 0.0);  // row that only consists of a zero
+    builder1.addNextValue(1, 2, 1.0);
+    auto matrix1 = builder1.build();
+
+    storm::storage::SparseMatrixBuilder<double> builder2(2, 3);
+    builder2.addNextValue(0, 0, 0.5);
+    builder2.addNextValue(1, 2, 1.0);
+    auto matrix2 = builder2.build();
+
+    EXPECT_TRUE(matrix1 == matrix2);
+    EXPECT_TRUE(matrix2 == matrix1);
+    EXPECT_TRUE(matrix1 == matrix1);
+
+    storm::storage::SparseMatrixBuilder<double> builder3(2, 3);
+    builder3.addNextValue(0, 0, 0.5);
+    builder3.addNextValue(1, 1, 0.25);
+    builder3.addNextValue(1, 2, 1.0);
+    auto matrix3 = builder3.build();
+    EXPECT_FALSE(matrix1 == matrix3);
+    EXPECT_FALSE(matrix3 == matrix2);
+    // Different number of non-zero entries in a row
+    storm::storage::SparseMatrixBuilder<double> builder4(2, 3);
+    builder4.addNextValue(0, 0, 0.5);
+    auto matrix4 = builder4.build();
+    EXPECT_FALSE(matrix4 == matrix2);
+    EXPECT_FALSE(matrix2 == matrix4);
+}

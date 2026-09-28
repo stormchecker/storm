@@ -71,12 +71,12 @@ std::unique_ptr<storm::modelchecker::CheckResult> verifyWithExplorationEngine(st
 
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-            storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Dtmc<ValueType>> checker(program);
+            storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Dtmc<ValueType>> checker(env, program);
             if (checker.canHandle(task)) {
                 result = checker.check(env, task);
             }
         } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
-            storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Mdp<ValueType>> checker(program);
+            storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Mdp<ValueType>> checker(env, program);
             if (checker.canHandle(task)) {
                 result = checker.check(env, task);
             }

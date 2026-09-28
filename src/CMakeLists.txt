@@ -7,22 +7,24 @@ if (STORM_FORCE_POPCNT)
     add_compile_options(-mpopcnt)
 endif()
 
+if (STORM_USE_LTO OR STORM_USE_THIN_LTO)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT STORM_IPO_SUPPORTED OUTPUT STORM_IPO_ERROR)
+    if (NOT STORM_IPO_SUPPORTED)
+        message(FATAL_ERROR "Storm - LTO requested but not supported by this toolchain: ${STORM_IPO_ERROR}")
+    endif()
+endif()
+
 if (STORM_USE_THIN_LTO)
-    if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
-        add_link_options(-flto=thin)
-        message(STATUS "Storm - Enabling link-time optimizations using ThinLTO.")
-    else()
+    if (NOT (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG))
         message(FATAL_ERROR "Storm - ThinLTO only supported for Clang. Use regular LTO instead.")
     endif()
+    # CMAKE_INTERPROCEDURAL_OPTIMIZATION cannot set ThinLTO. Needs to be explicitly set.
+    add_compile_options(-flto=thin)
+    add_link_options(-flto=thin)
+    message(STATUS "Storm - Enabling link-time optimizations using ThinLTO.")
 elseif (STORM_USE_LTO)
-    add_link_options(-flto)
-
-    # Fix for problems that occurred when using LTO on gcc. This should be removed when it
-    # is not needed anymore as it makes the already long link-step potentially longer.
-    if (STORM_COMPILER_GCC)
-        add_link_options(-flto-partition=none)
-    endif()
-
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
     message(STATUS "Storm - Enabling link-time optimizations.")
 else()
     message(STATUS "Storm - Disabling link-time optimizations.")

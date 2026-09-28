@@ -1,0 +1,163 @@
+name: 'Build and test Storm'
+description: 'Configure, build, test, and install Storm inside the calling job'
+inputs:
+  nr_jobs:
+    description: "Number of parallel build jobs"
+    type: string
+    default: "4"
+  name:
+    description: "Display name for the test configuration"
+    type: string
+    required: true
+  config:
+    description: >
+      JSON-encoded config object (e.g. from ci-configs.json, resolved by the calling job)
+      providing: buildType, cmakeArgs, Developer, carl_tag, starterProjectCommand, disable_all,
+      ClnExact, ClnRatfunc, AllSanitizers.
+    type: string
+    required: true
+  restore_cache:
+    description: "Restore ccache from cache"
+    type: boolean
+    default: false
+  save_cache:
+    description: "Save ccache to cache"
+    type: boolean
+    default: false
+  install:
+    description: "Run post-build steps: starter project, install, run installed storm"
+    type: boolean
+    default: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set CCACHE_DIR
+      run: |
+        if [ "$RUNNER_OS" = "macOS" ]; then
+          echo "CCACHE_DIR=/Users/runner/.ccache" >> "$GITHUB_ENV"
+        else
+          echo "CCACHE_DIR=${GITHUB_WORKSPACE}/.ci-ccache" >> "$GITHUB_ENV"
+        fi
+      shell: bash
+    - name: Parse config
+      env:
+        CONFIG: ${{ inputs.config }}
+      run: |
+        echo "BUILD_TYPE=$(echo "$CONFIG" | jq -r '.buildType')" >> "$GITHUB_ENV"
+        echo "CMAKE_ARGS=$(echo "$CONFIG" | jq -r '.cmakeArgs')" >> "$GITHUB_ENV"
+        echo "DEVELOPER=$(echo "$CONFIG" | jq -r '.Developer')" >> "$GITHUB_ENV"
+        echo "CARL_TAG=$(echo "$CONFIG" | jq -r '.carl_tag')" >> "$GITHUB_ENV"
+        echo "DISABLE_ALL=$(echo "$CONFIG" | jq -r '.disable_all')" >> "$GITHUB_ENV"
+        echo "CLN_EXACT=$(echo "$CONFIG" | jq -r '.ClnExact')" >> "$GITHUB_ENV"
+        echo "CLN_RATFUNC=$(echo "$CONFIG" | jq -r '.ClnRatfunc')" >> "$GITHUB_ENV"
+        echo "ALL_SANITIZERS=$(echo "$CONFIG" | jq -r '.AllSanitizers')" >> "$GITHUB_ENV"
+        echo "STARTER_PROJECT_COMMAND=$(echo "$CONFIG" | jq -r '.starterProjectCommand')" >> "$GITHUB_ENV"
+      shell: bash
+    - name: Ensure ccache directory exists
+      if: inputs.restore_cache == 'true'
+      run: mkdir -p "${CCACHE_DIR}"
+      shell: bash
+    - name: Restore ccache
+      id: ccache-restore
+      if: inputs.restore_cache == 'true'
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ env.CCACHE_DIR }}
+        key: buildtest-ccache-${{ inputs.name }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt') }}-${{ github.sha }}
+        restore-keys: |
+          buildtest-ccache-${{ inputs.name }}-${{ env.BUILD_TYPE }}-
+          buildtest-ccache-${{ inputs.name }}-
+    - name: Prepare ccache
+      if: inputs.restore_cache == 'true'
+      # Limit cache size to fit within 10GB limit of GitHub
+      run: |
+        if [ "${{ env.BUILD_TYPE }}" = "Debug" ]; then
+          ccache --max-size=1200M
+        else
+          ccache --max-size=750M
+        fi
+        ccache --zero-stats
+        ccache --show-stats --verbose
+      shell: bash
+    - name: Configure storm
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
+              -DSTORM_CARL_GIT_TAG="${{ env.CARL_TAG }}" \
+              -DSTORM_DISABLE_CUDD=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DISABLE_GLPK=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DISABLE_GMM=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DISABLE_GUROBI=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DISABLE_HIGHS=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DISABLE_LIBARCHIVE=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DISABLE_MATHSAT=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DISABLE_SOPLEX=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DISABLE_SPOT=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DISABLE_SYLVAN=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DISABLE_XERCES=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DISABLE_Z3=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DEVELOPER=${{ env.DEVELOPER == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_USE_CLN_EA=${{ env.CLN_EXACT == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_USE_CLN_RF=${{ env.CLN_RATFUNC == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_COMPILE_WITH_ALL_SANITIZERS=${{ env.ALL_SANITIZERS == 'true' && 'ON' || 'OFF' }} \
+              ${{ env.CMAKE_ARGS }} ..
+      shell: bash
+    - name: Build storm
+      working-directory: ./build
+      run: |
+        make -j ${{ inputs.nr_jobs }}
+      shell: bash
+    - name: Print ccache stats
+      if: inputs.restore_cache == 'true'
+      run: ccache --show-stats --verbose
+      shell: bash
+    - name: Save ccache
+      if: inputs.save_cache == 'true' && always() && steps.ccache-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ env.CCACHE_DIR }}
+        key: buildtest-ccache-${{ inputs.name }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt') }}-${{ github.sha }}
+    - name: Run storm
+      working-directory: ./build
+      run: ./bin/storm --version
+      shell: bash
+    - name: Check compile flags
+      uses: ./.github/actions/check-compile-flags-action
+      with:
+        buildType: ${{ env.BUILD_TYPE }}
+        docker: false
+    - name: Run tests
+      working-directory: ./build
+      # Disabled sanitizer checks for now
+      #run: ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest --output-on-failure
+      run: ctest --output-on-failure
+      shell: bash
+    - name: Build starter-project
+      if: inputs.install == 'true'
+      uses: ./.github/actions/starter-project-action
+      with:
+        docker: false
+        stormDir: "${GITHUB_WORKSPACE}/build"
+        command: ${{ env.STARTER_PROJECT_COMMAND }}
+    - name: Install storm
+      if: inputs.install == 'true'
+      working-directory: ./build
+      run: ${{ runner.os == 'macOS' && 'sudo make install' || 'make install' }}
+      shell: bash
+    - name: Remove build dir
+      if: inputs.install == 'true'
+      run: rm -rf build
+      shell: bash
+    - name: Run installed storm
+      if: inputs.install == 'true'
+      run: /usr/local/bin/storm --version
+      shell: bash
+    - name: Build starter-project on installed Storm
+      if: inputs.install == 'true'
+      uses: ./.github/actions/starter-project-action
+      with:
+        docker: false
+        stormDir: ""
+        command: ${{ env.STARTER_PROJECT_COMMAND }}

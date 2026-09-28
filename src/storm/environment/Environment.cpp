@@ -1,34 +1,46 @@
 #include "storm/environment/Environment.h"
 #include "storm/environment/SubEnvironment.h"
 #include "storm/environment/dd/DdEnvironment.h"
+#include "storm/environment/exploration/ExplorationEnvironment.h"
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
 namespace storm {
 
 Environment::Environment() {
-    // Intentionally left empty.
+    modelToleranceValue = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
 }
 
 Environment::~Environment() {
     // Intentionally left empty.
 }
 
-Environment::Environment(Environment const& other) : internalEnv(other.internalEnv) {
+Environment::Environment(Environment const& other) : internalEnv(other.internalEnv), modelToleranceValue(other.modelToleranceValue) {
     // Intentionally left empty.
 }
 
 Environment& Environment::operator=(Environment const& other) {
     internalEnv = other.internalEnv;
+    modelToleranceValue = other.modelToleranceValue;
     return *this;
 }
 
-SolverEnvironment& Environment::solver() {
-    return internalEnv.get().solverEnvironment.get();
+DdEnvironment& Environment::dd() {
+    return internalEnv.get().ddEnvironment.get();
 }
 
-SolverEnvironment const& Environment::solver() const {
-    return internalEnv.get().solverEnvironment.get();
+DdEnvironment const& Environment::dd() const {
+    return internalEnv.get().ddEnvironment.get();
+}
+
+ExplorationEnvironment& Environment::exploration() {
+    return internalEnv.get().explorationEnvironment.get();
+}
+
+ExplorationEnvironment const& Environment::exploration() const {
+    return internalEnv.get().explorationEnvironment.get();
 }
 
 ModelCheckerEnvironment& Environment::modelchecker() {
@@ -39,11 +51,20 @@ ModelCheckerEnvironment const& Environment::modelchecker() const {
     return internalEnv.get().modelcheckerEnvironment.get();
 }
 
-DdEnvironment& Environment::dd() {
-    return internalEnv.get().ddEnvironment.get();
+SolverEnvironment& Environment::solver() {
+    return internalEnv.get().solverEnvironment.get();
 }
 
-DdEnvironment const& Environment::dd() const {
-    return internalEnv.get().ddEnvironment.get();
+SolverEnvironment const& Environment::solver() const {
+    return internalEnv.get().solverEnvironment.get();
 }
+
+double Environment::modelTolerance() const {
+    return modelToleranceValue;
+}
+
+void Environment::setModelTolerance(double value) {
+    modelToleranceValue = value;
+}
+
 }  // namespace storm

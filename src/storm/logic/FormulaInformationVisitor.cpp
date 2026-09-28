@@ -187,6 +187,20 @@ boost::any FormulaInformationVisitor::visit(UntilFormula const& f, boost::any co
     return result;
 }
 
+boost::any FormulaInformationVisitor::visit(WeakUntilFormula const& f, boost::any const& data) const {
+    FormulaInformation result = boost::any_cast<FormulaInformation>(f.getLeftSubformula().accept(*this, data))
+                                    .join(boost::any_cast<FormulaInformation>(f.getRightSubformula().accept(*this)));
+    result.setContainsComplexPathFormula();
+    return result;
+}
+
+boost::any FormulaInformationVisitor::visit(ReleaseFormula const& f, boost::any const& data) const {
+    FormulaInformation result = boost::any_cast<FormulaInformation>(f.getLeftSubformula().accept(*this, data))
+                                    .join(boost::any_cast<FormulaInformation>(f.getRightSubformula().accept(*this)));
+    result.setContainsComplexPathFormula();
+    return result;
+}
+
 boost::any FormulaInformationVisitor::visit(HOAPathFormula const& f, boost::any const& data) const {
     FormulaInformation info;
     if (recurseIntoOperators) {

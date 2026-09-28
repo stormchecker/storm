@@ -735,6 +735,29 @@ std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessModel(std::
         STORM_PRINT_AND_LOG("Transition matrix hash after permuting: " << result.first->getTransitionMatrix().hash() << ".\n");
     }
 
+    // Merging of states should be done before applying bisimulation as this order leads to the smallest quotient
+    if (transformationSettings.isMergeEquivalentStatesSet()) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Merging equivalent states not supported for interval models.");
+        } else {
+            auto formulas = createFormulasToRespect(input.properties);
+            if (formulas.size() == 1) {
+                auto mergedModel = storm::api::mergeEquivalentStatesForFormula<ValueType>(result.first, *formulas.front());
+                if (mergedModel) {
+                    STORM_LOG_INFO("Merged equivalent states for the considered property '" << *formulas.front() << "'.");
+                    result.first = mergedModel;
+                    result.second = true;
+                } else {
+                    STORM_LOG_WARN("Merging equivalent states is not supported for the considered " << result.first->getType() << " model and property '"
+                                                                                                    << *formulas.front() << "'.");
+                }
+            } else {
+                STORM_LOG_WARN("Skipping merging of equivalent states as it requires exactly one input property. " << formulas.size()
+                                                                                                                   << " properties given instead.");
+            }
+        }
+    }
+
     if (result.first->isOfType(storm::models::ModelType::MarkovAutomaton)) {
         result.first = preprocessSparseMarkovAutomaton(result.first->template as<storm::models::sparse::MarkovAutomaton<ValueType>>());
         result.second = true;

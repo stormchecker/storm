@@ -3,7 +3,7 @@
 
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -51,10 +51,10 @@ class SparseDtmcParameterLiftingMonotonicityTest : public ::testing::Test {
 #ifndef STORM_HAVE_Z3
         GTEST_SKIP() << "Z3 not available.";
 #endif
-        carl::VariablePool::getInstance().clear();
+        storm::clearRFVariablePool();
     }
     virtual void TearDown() {
-        carl::VariablePool::getInstance().clear();
+        storm::clearRFVariablePool();
     }
 
    private:
@@ -79,7 +79,7 @@ void buildMonotonicityModel(std::string const& programFile, std::string const& f
 
     if (simplifyAndBisimulate) {
         // Simplify model
-        auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+        auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
         ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
         model = simplifier.getSimplifiedModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
         formulas[0] = simplifier.getSimplifiedFormula();

@@ -11,8 +11,6 @@
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -211,14 +209,14 @@ storm::expressions::Variable const& QuantileHelper<ModelType>::getVariableForDim
 }
 
 template<typename ModelType>
-std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType>::computeQuantile(Environment const& env) {
+std::vector<std::vector<storm::utility::ExtendedValueType<typename ModelType::ValueType>>> QuantileHelper<ModelType>::computeQuantile(Environment const& env) {
     numCheckedEpochs = 0;
     numPrecisionRefinements = 0;
     swEpochAnalysis.reset();
     swExploration.reset();
     cachedSubQueryResults.clear();
 
-    std::vector<std::vector<ValueType>> result;
+    std::vector<std::vector<storm::utility::ExtendedValueType<ValueType>>> result;
     Environment envCpy = env;  // It might be necessary to increase the precision during the computation
     // Call the internal recursive function
     auto internalResult = computeQuantile(envCpy, getOpenDimensions(), false);
@@ -237,20 +235,19 @@ std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType
     }
     STORM_LOG_ASSERT(permutation.size() == getOpenDimensions().getNumberOfSetBits(), "Permutation size mismatch.");
     for (auto const& costLimits : internalResult.first.getGenerator()) {
-        std::vector<ValueType> resultPoint;
+        std::vector<storm::utility::ExtendedValueType<ValueType>> resultPoint;
         for (auto const& dim : permutation) {
             CostLimit const& cl = costLimits[dim];
-            resultPoint.push_back(cl.isInfinity() ? storm::utility::infinity<ValueType>()
-                                                  : storm::utility::convertNumber<ValueType>(cl.get()) * internalResult.second[dim]);
+            resultPoint.push_back(cl.isInfinity() ? storm::utility::positiveInfinity<ValueType>()
+                                                  : storm::utility::ExtendedValueType<ValueType>(storm::utility::convertNumber<ValueType>(cl.get()) *
+                                                                                                 internalResult.second[dim]));
         }
         result.push_back(resultPoint);
     }
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        std::cout << "Number of checked epochs: " << numCheckedEpochs << '\n';
-        std::cout << "Number of required precision refinements: " << numPrecisionRefinements << '\n';
-        std::cout << "Time for epoch exploration: " << swExploration << " seconds.\n";
-        std::cout << "\tTime for epoch model analysis: " << swEpochAnalysis << " seconds.\n";
-    }
+    STORM_LOG_STATISTICS("Number of checked epochs: " << numCheckedEpochs);
+    STORM_LOG_STATISTICS("Number of required precision refinements: " << numPrecisionRefinements);
+    STORM_LOG_STATISTICS("Time for epoch exploration: " << swExploration << " seconds.");
+    STORM_LOG_STATISTICS("\tTime for epoch model analysis: " << swEpochAnalysis << " seconds.");
     return result;
 }
 

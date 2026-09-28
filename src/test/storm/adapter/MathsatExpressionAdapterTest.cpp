@@ -5,6 +5,8 @@
 #include <mathsat.h>
 #include "storm/adapters/MathsatExpressionAdapter.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/OperatorType.h"
 
 TEST(MathsatExpressionAdapter, StormToMathsatBasic) {

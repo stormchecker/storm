@@ -188,7 +188,7 @@ class ParameterCreator<Type, storm::RationalFunction> {
     void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter) {
         for (auto const& constant : model.getConstants()) {
             if (!constant.isDefined()) {
-                storm::RationalFunctionVariable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
+                storm::RationalFunctionVariable carlVariable = storm::createRFVariable(constant.getExpressionVariable().getName());
                 parameters.insert(carlVariable);
                 auto rf = convertVariableToPolynomial(carlVariable);
                 rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
@@ -1643,7 +1643,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
                     return combineEdgesToActionNondeterministic(edgeDds, localNondeterminismVariableOffset);
                 }
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Cannot translate model of type " << modelType << ".");
+                STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::WrongFormatException, "Cannot translate model of type " << modelType << ".");
             }
         } else {
             return ActionDd(this->variables.manager->getBddZero(), this->variables.manager->template getAddZero<ValueType>(), {},

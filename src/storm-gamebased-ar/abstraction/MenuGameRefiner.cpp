@@ -1192,13 +1192,17 @@ boost::optional<ExplicitPivotStateResult<ValueType>> pickPivotState(
 
     bool probabilityDistances = pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MostProbablePath;
     uint64_t numberOfStates = initialStates.size();
-    ValueType inftyDistance = probabilityDistances ? storm::utility::zero<ValueType>() : storm::utility::infinity<ValueType>();
+    // The distance of a state that has not been reached yet, i.e. one that any real distance improves upon. With
+    // probability distances that is zero. With hop distances no reachable state is more than numberOfStates - 1 hops
+    // away, so numberOfStates lies beyond every achievable distance.
+    ValueType unreachableDistance =
+        probabilityDistances ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType, uint64_t>(numberOfStates);
     ValueType zeroDistance = probabilityDistances ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
 
     // Create storages for the lower and upper Dijkstra search.
-    std::vector<ValueType> lowerDistances(numberOfStates, inftyDistance);
+    std::vector<ValueType> lowerDistances(numberOfStates, unreachableDistance);
     std::vector<std::pair<uint64_t, uint64_t>> lowerPredecessors;
-    std::vector<ValueType> upperDistances(numberOfStates, inftyDistance);
+    std::vector<ValueType> upperDistances(numberOfStates, unreachableDistance);
     std::vector<std::pair<uint64_t, uint64_t>> upperPredecessors;
 
     if (generatePredecessors) {
@@ -1228,7 +1232,7 @@ boost::optional<ExplicitPivotStateResult<ValueType>> pickPivotState(
                              lowerValues && upperValues;
     bool foundPivotState = false;
 
-    ExplicitDijkstraQueueElement<ValueType> pivotState(inftyDistance, 0, true);
+    ExplicitDijkstraQueueElement<ValueType> pivotState(unreachableDistance, 0, true);
     ValueType pivotStateDeviation = storm::utility::zero<ValueType>();
     auto const& player2Grouping = transitionMatrix.getRowGroupIndices();
 

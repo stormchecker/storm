@@ -9,9 +9,8 @@
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/ConstantsComparator.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -30,11 +29,7 @@ StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<s
       localPlayer2Matrix(nullptr),
       player1Grouping(nullptr),
       player1Matrix(&player1Matrix),
-      player2Matrix(player2Matrix),
-      linearEquationSolverIsExact(false) {
-    // Determine whether the linear equation solver is assumed to produce exact results.
-    linearEquationSolverIsExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
-}
+      player2Matrix(player2Matrix) {}
 
 template<typename ValueType>
 StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix,
@@ -46,11 +41,7 @@ StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<s
       localPlayer2Matrix(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(player2Matrix))),
       player1Grouping(nullptr),
       player1Matrix(localPlayer1Matrix.get()),
-      player2Matrix(*localPlayer2Matrix),
-      linearEquationSolverIsExact(false) {
-    // Determine whether the linear equation solver is assumed to produce exact results.
-    linearEquationSolverIsExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
-}
+      player2Matrix(*localPlayer2Matrix) {}
 
 template<typename ValueType>
 StandardGameSolver<ValueType>::StandardGameSolver(std::vector<uint64_t> const& player1Grouping, storm::storage::SparseMatrix<ValueType> const& player2Matrix,
@@ -61,11 +52,7 @@ StandardGameSolver<ValueType>::StandardGameSolver(std::vector<uint64_t> const& p
       localPlayer2Matrix(nullptr),
       player1Grouping(&player1Grouping),
       player1Matrix(nullptr),
-      player2Matrix(player2Matrix),
-      linearEquationSolverIsExact(false) {
-    // Determine whether the linear equation solver is assumed to produce exact results.
-    linearEquationSolverIsExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
-}
+      player2Matrix(player2Matrix) {}
 
 template<typename ValueType>
 StandardGameSolver<ValueType>::StandardGameSolver(std::vector<uint64_t>&& player1Grouping, storm::storage::SparseMatrix<ValueType>&& player2Matrix,
@@ -76,11 +63,7 @@ StandardGameSolver<ValueType>::StandardGameSolver(std::vector<uint64_t>&& player
       localPlayer2Matrix(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(player2Matrix))),
       player1Grouping(localPlayer1Grouping.get()),
       player1Matrix(nullptr),
-      player2Matrix(*localPlayer2Matrix),
-      linearEquationSolverIsExact(false) {
-    // Determine whether the linear equation solver is assumed to produce exact results.
-    linearEquationSolverIsExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
-}
+      player2Matrix(*localPlayer2Matrix) {}
 
 template<typename ValueType>
 GameMethod StandardGameSolver<ValueType>::getMethod(Environment const& env, bool isExactMode) const {
@@ -467,7 +450,7 @@ bool StandardGameSolver<ValueType>::extractChoices(Environment const& env, Optim
                                                    std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices,
                                                    std::vector<uint_fast64_t>& player2Choices) const {
     storm::utility::ConstantsComparator<ValueType> comparator(
-        linearEquationSolverIsExact
+        storm::NumberTraits<ValueType>::IsExact
             ? storm::utility::zero<ValueType>()
             : storm::utility::convertNumber<ValueType>(env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType()).first.get()),
         false);

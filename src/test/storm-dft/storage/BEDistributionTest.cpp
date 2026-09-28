@@ -4,6 +4,8 @@
 #include "storm-dft/api/analysis.h"
 #include "storm-dft/api/io.h"
 #include "storm-dft/api/transformation.h"
+#include "storm-dft/environment/AnalysisEnvironment.h"
+#include "storm-dft/environment/DftEnvironment.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/api/properties.h"
@@ -28,7 +30,8 @@ TEST(BEDistributionTest, ConstantFail) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft2).first);
     std::string property = "Pmax=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
+    storm::dft::DftEnvironment dftEnv;
+    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(dftEnv, *dft2, properties)[0]);
     EXPECT_NEAR(resultMC, 0.3296799540, 1e-10);
 }
 
@@ -49,7 +52,8 @@ TEST(BEDistributionTest, ConstantNonFail) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft2).first);
     std::string property = "P=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
+    storm::dft::DftEnvironment dftEnv;
+    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(dftEnv, *dft2, properties)[0]);
     EXPECT_NEAR(resultMC, 0.9592377960, 1e-10);
 }
 
@@ -70,7 +74,8 @@ TEST(BEDistributionTest, ConstantNonFail2) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft2).first);
     std::string property = "P=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
+    storm::dft::DftEnvironment dftEnv;
+    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(dftEnv, *dft2, properties)[0]);
     EXPECT_EQ(resultMC, 0);
 }
 
@@ -91,7 +96,8 @@ TEST(BEDistributionTest, Probability) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft2).first);
     std::string property = "Pmax=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
+    storm::dft::DftEnvironment dftEnv;
+    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(dftEnv, *dft2, properties)[0]);
     EXPECT_NEAR(resultMC, 0.1095403852, 1e-10);
 }
 
@@ -112,7 +118,8 @@ TEST(BEDistributionTest, Exponential) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft2).first);
     std::string property = "P=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
+    storm::dft::DftEnvironment dftEnv;
+    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(dftEnv, *dft2, properties)[0]);
     EXPECT_NEAR(resultMC, 0.108688872, 1e-10);
 }
 
@@ -133,7 +140,8 @@ TEST(BEDistributionTest, Erlang) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft2).first);
     std::string property = "P=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
+    storm::dft::DftEnvironment dftEnv;
+    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(dftEnv, *dft2, properties)[0]);
     EXPECT_NEAR(resultMC, 0.4949009834, 1e-10);
 }
 

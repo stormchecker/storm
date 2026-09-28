@@ -1276,7 +1276,7 @@ ModelFeatures Model::restrictToFeatures(ModelFeatures const& features, std::vect
     }
 
     // There is no elimination of MultiObjective properties
-    if (features.hasDerivedOperators()) {
+    if (features.hasMultiObjectiveProperties()) {
         uncheckedFeatures.remove(ModelFeature::MultiObjectiveProperties);
     }
 

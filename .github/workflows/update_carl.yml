@@ -28,8 +28,6 @@ jobs:
           sed -i -E 's/STORM_CARL_GIT_TAG "(.*)" "[0-9]+\.[0-9]+"\)/STORM_CARL_GIT_TAG "\1" "${{ inputs.carl_version }}"\)/' CMakeLists.txt
           # Update carl_tag
           sed -i -E 's/ARG carl_tag="[0-9]+\.[0-9]+"/ARG carl_tag="${{ inputs.carl_version }}"/' Dockerfile
-          sed -i -E 's/ARG carl_tag="[0-9]+\.[0-9]+"/ARG carl_tag="${{ inputs.carl_version }}"/' .github/workflows/Dockerfile.archlinux
-          sed -i -E 's/ARG carl_tag="[0-9]+\.[0-9]+"/ARG carl_tag="${{ inputs.carl_version }}"/' .github/workflows/Dockerfile.alpine
           sed -i -E 's/ARG carl_tag="[0-9]+\.[0-9]+"/ARG carl_tag="${{ inputs.carl_version }}"/' .github/workflows/Dockerfile.release
       - name: Commit update
         run: |

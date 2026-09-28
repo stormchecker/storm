@@ -60,7 +60,13 @@ bool AcyclicMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Enviro
             }
         }
         for (auto const& bFactor : bFactors) {
-            (*auxiliaryRowVector)[bFactor.first] *= bFactor.second;
+            if (bFactor.second) {
+                (*auxiliaryRowVector)[bFactor.first] *= *bFactor.second;
+            } else {
+                // A selfloop of probability one: the equation for this row can only be satisfied if it contributes nothing.
+                STORM_LOG_ASSERT(storm::utility::isZero((*auxiliaryRowVector)[bFactor.first]),
+                                 "Expected a zero b vector entry for a row with a selfloop of probability one.");
+            }
         }
         xPtr = &auxiliaryRowGroupVector.get();
         bPtr = &auxiliaryRowVector.get();

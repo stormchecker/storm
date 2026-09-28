@@ -140,7 +140,7 @@ storm::dd::bisimulation::SignatureMode BisimulationSettings::getSignatureMode() 
     } else if (modeAsString == "lazy") {
         return storm::dd::bisimulation::SignatureMode::Lazy;
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unknown signature mode '" << modeAsString << ".");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidSettingsException, "Unknown signature mode '" << modeAsString << ".");
 }
 
 storm::dd::bisimulation::ReuseMode BisimulationSettings::getReuseMode() const {

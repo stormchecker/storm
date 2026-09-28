@@ -169,7 +169,7 @@ TYPED_TEST(ConditionalDtmcPrctlModelCheckerTest, Conditional) {
 
     result = checker.check(this->env(), *formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<ValueType>();
-    EXPECT_EQ(storm::utility::infinity<ValueType>(), quantitativeResult3[0]);
+    EXPECT_EQ(storm::utility::positiveInfinity<ValueType>(), quantitativeResult3[0]);
 
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"target\" || F \"condition\"]");
 

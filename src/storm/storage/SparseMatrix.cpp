@@ -11,8 +11,10 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/storage/BitVector.h"
+#include "storm/storage/SubmatrixBuilder.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/ConstantsComparator.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/permutation.h"
@@ -627,29 +629,29 @@ bool SparseMatrix<ValueType>::operator==(SparseMatrix<ValueType> const& other) c
     }
 
     // For the actual contents, we need to do a little bit more work, because we want to ignore elements that
-    // are set to zero, please they may be represented implicitly in the other matrix.
+    // are set to zero, as they may be represented implicitly in the other matrix.
     for (index_type row = 0; row < this->getRowCount(); ++row) {
-        for (const_iterator it1 = this->begin(row), ite1 = this->end(row), it2 = other.begin(row), ite2 = other.end(row); it1 != ite1 && it2 != ite2;
-             ++it1, ++it2) {
-            // Skip over all zero entries in both matrices.
+        const_iterator it1 = this->begin(row), ite1 = this->end(row), it2 = other.begin(row), ite2 = other.end(row);
+        while (true) {
+            // Skip over all zero entries in both rows.
             while (it1 != ite1 && storm::utility::isZero(it1->getValue())) {
                 ++it1;
             }
             while (it2 != ite2 && storm::utility::isZero(it2->getValue())) {
                 ++it2;
             }
-            if ((it1 == ite1) || (it2 == ite2)) {
-                equalityResult = (it1 == ite1) ^ (it2 == ite2);
-                break;
-            } else {
-                if (it1->getColumn() != it2->getColumn() || it1->getValue() != it2->getValue()) {
-                    equalityResult = false;
-                    break;
+            if (it1 == ite1 || it2 == ite2) {
+                // The rows are equal iff both have no further non-zero entries.
+                if (it1 != ite1 || it2 != ite2) {
+                    return false;
                 }
+                break;
             }
-        }
-        if (!equalityResult) {
-            return false;
+            if (it1->getColumn() != it2->getColumn() || it1->getValue() != it2->getValue()) {
+                return false;
+            }
+            ++it1;
+            ++it2;
         }
     }
 
@@ -1127,122 +1129,16 @@ template<typename ValueType>
 SparseMatrix<ValueType> SparseMatrix<ValueType>::getSubmatrix(bool useGroups, storm::storage::BitVector const& rowConstraint,
                                                               storm::storage::BitVector const& columnConstraint, bool insertDiagonalElements,
                                                               storm::storage::BitVector const& makeZeroColumns) const {
+    SubmatrixBuilder<ValueType> submatrixBuilder(*this);
+    storm::OptionalRef<storm::storage::BitVector const> makeZeroColumnsRef;
+    if (makeZeroColumns.size() > 0) {
+        makeZeroColumnsRef.reset(makeZeroColumns);
+    }
     if (useGroups) {
-        return getSubmatrix(rowConstraint, columnConstraint, this->getRowGroupIndices(), insertDiagonalElements, makeZeroColumns);
+        return submatrixBuilder.getByRowGroupConstraint(rowConstraint, columnConstraint, insertDiagonalElements, makeZeroColumnsRef);
     } else {
-        // Create a fake row grouping to reduce this to a call to a more general method.
-        std::vector<index_type> fakeRowGroupIndices(rowCount + 1);
-        index_type i = 0;
-        for (std::vector<index_type>::iterator it = fakeRowGroupIndices.begin(); it != fakeRowGroupIndices.end(); ++it, ++i) {
-            *it = i;
-        }
-        auto res = getSubmatrix(rowConstraint, columnConstraint, fakeRowGroupIndices, insertDiagonalElements, makeZeroColumns);
-
-        // Create a new row grouping that reflects the new sizes of the row groups if the current matrix has a
-        // non trivial row-grouping.
-        if (!this->hasTrivialRowGrouping()) {
-            std::vector<index_type> newRowGroupIndices;
-            newRowGroupIndices.push_back(0);
-            auto selectedRowIt = rowConstraint.begin();
-
-            // For this, we need to count how many rows were preserved in every group.
-            for (index_type group = 0; group < this->getRowGroupCount(); ++group) {
-                index_type newRowCount = 0;
-                while (*selectedRowIt < this->getRowGroupIndices()[group + 1]) {
-                    ++selectedRowIt;
-                    ++newRowCount;
-                }
-                if (newRowCount > 0) {
-                    newRowGroupIndices.push_back(newRowGroupIndices.back() + newRowCount);
-                }
-            }
-
-            res.trivialRowGrouping = false;
-            res.rowGroupIndices = newRowGroupIndices;
-        }
-
-        return res;
+        return submatrixBuilder.getByRowConstraint(rowConstraint, columnConstraint, insertDiagonalElements, makeZeroColumnsRef);
     }
-}
-
-template<typename ValueType>
-SparseMatrix<ValueType> SparseMatrix<ValueType>::getSubmatrix(storm::storage::BitVector const& rowGroupConstraint,
-                                                              storm::storage::BitVector const& columnConstraint, std::vector<index_type> const& rowGroupIndices,
-                                                              bool insertDiagonalEntries, storm::storage::BitVector const& makeZeroColumns) const {
-    STORM_LOG_THROW(!rowGroupConstraint.empty() && !columnConstraint.empty(), storm::exceptions::InvalidArgumentException, "Cannot build empty submatrix.");
-    index_type submatrixColumnCount = columnConstraint.getNumberOfSetBits();
-
-    // Start by creating a temporary vector that stores for each index whose bit is set to true the number of
-    // bits that were set before that particular index.
-    std::vector<index_type> columnBitsSetBeforeIndex = columnConstraint.getNumberOfSetBitsBeforeIndices();
-    std::unique_ptr<std::vector<index_type>> tmp;
-    if (rowGroupConstraint != columnConstraint) {
-        tmp = std::make_unique<std::vector<index_type>>(rowGroupConstraint.getNumberOfSetBitsBeforeIndices());
-    }
-    std::vector<index_type> const& rowBitsSetBeforeIndex = tmp ? *tmp : columnBitsSetBeforeIndex;
-
-    // Then, we need to determine the number of entries and the number of rows of the submatrix.
-    index_type subEntries = 0;
-    index_type subRows = 0;
-    index_type rowGroupCount = 0;
-    for (uint64_t index : rowGroupConstraint) {
-        subRows += rowGroupIndices[index + 1] - rowGroupIndices[index];
-        for (index_type i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
-            bool foundDiagonalElement = false;
-
-            for (const_iterator it = this->begin(i), ite = this->end(i); it != ite; ++it) {
-                if (columnConstraint.get(it->getColumn()) && (makeZeroColumns.size() == 0 || !makeZeroColumns.get(it->getColumn()))) {
-                    ++subEntries;
-
-                    if (columnBitsSetBeforeIndex[it->getColumn()] == rowBitsSetBeforeIndex[index]) {
-                        foundDiagonalElement = true;
-                    }
-                }
-            }
-
-            // If requested, we need to reserve one entry more for inserting the diagonal zero entry.
-            if (insertDiagonalEntries && !foundDiagonalElement && rowGroupCount < submatrixColumnCount) {
-                ++subEntries;
-            }
-        }
-        ++rowGroupCount;
-    }
-
-    // Create and initialize resulting matrix.
-    SparseMatrixBuilder<ValueType> matrixBuilder(subRows, submatrixColumnCount, subEntries, true, !this->hasTrivialRowGrouping());
-
-    // Copy over selected entries.
-    rowGroupCount = 0;
-    index_type rowCount = 0;
-    subEntries = 0;
-    for (uint64_t index : rowGroupConstraint) {
-        if (!this->hasTrivialRowGrouping()) {
-            matrixBuilder.newRowGroup(rowCount);
-        }
-        for (index_type i = rowGroupIndices[index]; i < rowGroupIndices[index + 1]; ++i) {
-            bool insertedDiagonalElement = false;
-
-            for (const_iterator it = this->begin(i), ite = this->end(i); it != ite; ++it) {
-                if (columnConstraint.get(it->getColumn()) && (makeZeroColumns.size() == 0 || !makeZeroColumns.get(it->getColumn()))) {
-                    if (columnBitsSetBeforeIndex[it->getColumn()] == rowBitsSetBeforeIndex[index]) {
-                        insertedDiagonalElement = true;
-                    } else if (insertDiagonalEntries && !insertedDiagonalElement && columnBitsSetBeforeIndex[it->getColumn()] > rowBitsSetBeforeIndex[index]) {
-                        matrixBuilder.addNextValue(rowCount, rowGroupCount, storm::utility::zero<ValueType>());
-                        insertedDiagonalElement = true;
-                    }
-                    ++subEntries;
-                    matrixBuilder.addNextValue(rowCount, columnBitsSetBeforeIndex[it->getColumn()], it->getValue());
-                }
-            }
-            if (insertDiagonalEntries && !insertedDiagonalElement && rowGroupCount < submatrixColumnCount) {
-                matrixBuilder.addNextValue(rowCount, rowGroupCount, storm::utility::zero<ValueType>());
-            }
-            ++rowCount;
-        }
-        ++rowGroupCount;
-    }
-
-    return matrixBuilder.build();
 }
 
 template<typename ValueType>
@@ -2263,6 +2159,9 @@ template<typename ValueType>
 bool SparseMatrix<ValueType>::isProbabilistic(ValueType const& tolerance, storm::OptionalRef<std::string> reason) const {
     using BaseType =
         std::conditional_t<std::is_same_v<ValueType, storm::RationalFunction>, storm::RationalFunctionCoefficient, storm::IntervalBaseType<ValueType>>;
+    if constexpr (storm::NumberTraits<ValueType>::IsExact) {
+        STORM_LOG_ASSERT(tolerance == storm::utility::zero<ValueType>(), "Exact value type requires zero tolerance for isProbabilistic.");
+    }
     auto toBaseType = [](ValueType const& value) {
         if constexpr (std::is_same_v<ValueType, BaseType>) {
             return value;
@@ -2492,10 +2391,10 @@ template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename Sparse
 template class SparseMatrixBuilder<double>;
 template class SparseMatrix<double>;
 template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
+template bool SparseMatrix<double>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
 template double SparseMatrix<double>::getPointwiseProductRowSum(storm::storage::SparseMatrix<double> const& otherMatrix,
                                                                 typename SparseMatrix<double>::index_type const& row) const;
 template std::vector<double> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<double> const& otherMatrix) const;
-template bool SparseMatrix<double>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
 
 template class MatrixEntry<uint32_t, double>;
 template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint32_t, double> const& entry);
@@ -2518,32 +2417,16 @@ template std::ostream& operator<<(std::ostream& out, SparseMatrix<storm::storage
 template bool SparseMatrix<int>::isSubmatrixOf(SparseMatrix<storm::storage::sparse::state_type> const& matrix) const;
 
 // Rational Numbers
-
-#if defined(STORM_HAVE_CLN)
-template class MatrixEntry<typename SparseMatrix<ClnRationalNumber>::index_type, ClnRationalNumber>;
-template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<ClnRationalNumber>::index_type, ClnRationalNumber> const& entry);
-template class SparseMatrixBuilder<ClnRationalNumber>;
-template class SparseMatrix<ClnRationalNumber>;
-template std::ostream& operator<<(std::ostream& out, SparseMatrix<ClnRationalNumber> const& matrix);
-template storm::ClnRationalNumber SparseMatrix<storm::ClnRationalNumber>::getPointwiseProductRowSum(
-    storm::storage::SparseMatrix<storm::ClnRationalNumber> const& otherMatrix, typename SparseMatrix<storm::ClnRationalNumber>::index_type const& row) const;
-template std::vector<storm::ClnRationalNumber> SparseMatrix<ClnRationalNumber>::getPointwiseProductRowSumVector(
-    storm::storage::SparseMatrix<storm::ClnRationalNumber> const& otherMatrix) const;
-template bool SparseMatrix<storm::ClnRationalNumber>::isSubmatrixOf(SparseMatrix<storm::ClnRationalNumber> const& matrix) const;
-#endif
-
-#if defined(STORM_HAVE_GMP)
-template class MatrixEntry<typename SparseMatrix<GmpRationalNumber>::index_type, GmpRationalNumber>;
-template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<GmpRationalNumber>::index_type, GmpRationalNumber> const& entry);
-template class SparseMatrixBuilder<GmpRationalNumber>;
-template class SparseMatrix<GmpRationalNumber>;
-template std::ostream& operator<<(std::ostream& out, SparseMatrix<GmpRationalNumber> const& matrix);
-template storm::GmpRationalNumber SparseMatrix<storm::GmpRationalNumber>::getPointwiseProductRowSum(
-    storm::storage::SparseMatrix<storm::GmpRationalNumber> const& otherMatrix, typename SparseMatrix<storm::GmpRationalNumber>::index_type const& row) const;
-template std::vector<storm::GmpRationalNumber> SparseMatrix<GmpRationalNumber>::getPointwiseProductRowSumVector(
-    storm::storage::SparseMatrix<storm::GmpRationalNumber> const& otherMatrix) const;
-template bool SparseMatrix<storm::GmpRationalNumber>::isSubmatrixOf(SparseMatrix<storm::GmpRationalNumber> const& matrix) const;
-#endif
+template class MatrixEntry<typename SparseMatrix<storm::RationalNumber>::index_type, storm::RationalNumber>;
+template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<storm::RationalNumber>::index_type, storm::RationalNumber> const& entry);
+template class SparseMatrixBuilder<storm::RationalNumber>;
+template class SparseMatrix<storm::RationalNumber>;
+template std::ostream& operator<<(std::ostream& out, SparseMatrix<storm::RationalNumber> const& matrix);
+template bool SparseMatrix<storm::RationalNumber>::isSubmatrixOf(SparseMatrix<storm::RationalNumber> const& matrix) const;
+template storm::RationalNumber SparseMatrix<storm::RationalNumber>::getPointwiseProductRowSum(
+    storm::storage::SparseMatrix<storm::RationalNumber> const& otherMatrix, typename SparseMatrix<storm::RationalNumber>::index_type const& row) const;
+template std::vector<storm::RationalNumber> SparseMatrix<storm::RationalNumber>::getPointwiseProductRowSumVector(
+    storm::storage::SparseMatrix<storm::RationalNumber> const& otherMatrix) const;
 
 // Rational Function
 template class MatrixEntry<typename SparseMatrix<RationalFunction>::index_type, RationalFunction>;
@@ -2551,6 +2434,7 @@ template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename Sparse
 template class SparseMatrixBuilder<RationalFunction>;
 template class SparseMatrix<RationalFunction>;
 template std::ostream& operator<<(std::ostream& out, SparseMatrix<RationalFunction> const& matrix);
+template bool SparseMatrix<storm::RationalFunction>::isSubmatrixOf(SparseMatrix<storm::RationalFunction> const& matrix) const;
 template storm::RationalFunction SparseMatrix<storm::RationalFunction>::getPointwiseProductRowSum(
     storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix, typename SparseMatrix<storm::RationalFunction>::index_type const& row) const;
 template storm::RationalFunction SparseMatrix<double>::getPointwiseProductRowSum(storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix,
@@ -2563,35 +2447,32 @@ template std::vector<storm::RationalFunction> SparseMatrix<double>::getPointwise
     storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
 template std::vector<storm::RationalFunction> SparseMatrix<int>::getPointwiseProductRowSumVector(
     storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
-template bool SparseMatrix<storm::RationalFunction>::isSubmatrixOf(SparseMatrix<storm::RationalFunction> const& matrix) const;
 
 // Intervals
-template std::vector<storm::Interval> SparseMatrix<double>::getPointwiseProductRowSumVector(
-    storm::storage::SparseMatrix<storm::Interval> const& otherMatrix) const;
 template class MatrixEntry<typename SparseMatrix<Interval>::index_type, Interval>;
 template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<Interval>::index_type, Interval> const& entry);
 template class SparseMatrixBuilder<Interval>;
 template class SparseMatrix<Interval>;
 template std::ostream& operator<<(std::ostream& out, SparseMatrix<Interval> const& matrix);
+template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<storm::Interval> const& matrix) const;
+template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
 template std::vector<storm::Interval> SparseMatrix<Interval>::getPointwiseProductRowSumVector(
     storm::storage::SparseMatrix<storm::Interval> const& otherMatrix) const;
-template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<storm::Interval> const& matrix) const;
-
-template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
+template std::vector<storm::Interval> SparseMatrix<double>::getPointwiseProductRowSumVector(
+    storm::storage::SparseMatrix<storm::Interval> const& otherMatrix) const;
 
 // Rational Intervals
-template std::vector<storm::RationalInterval> SparseMatrix<storm::RationalNumber>::getPointwiseProductRowSumVector(
-    storm::storage::SparseMatrix<storm::RationalInterval> const& otherMatrix) const;
 template class MatrixEntry<typename SparseMatrix<RationalInterval>::index_type, RationalInterval>;
 template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<RationalInterval>::index_type, RationalInterval> const& entry);
 template class SparseMatrixBuilder<RationalInterval>;
 template class SparseMatrix<RationalInterval>;
 template std::ostream& operator<<(std::ostream& out, SparseMatrix<RationalInterval> const& matrix);
+template bool SparseMatrix<storm::RationalInterval>::isSubmatrixOf(SparseMatrix<storm::RationalInterval> const& matrix) const;
+template bool SparseMatrix<storm::RationalInterval>::isSubmatrixOf(SparseMatrix<storm::RationalNumber> const& matrix) const;
 template std::vector<storm::RationalInterval> SparseMatrix<RationalInterval>::getPointwiseProductRowSumVector(
     storm::storage::SparseMatrix<storm::RationalInterval> const& otherMatrix) const;
-template bool SparseMatrix<storm::RationalInterval>::isSubmatrixOf(SparseMatrix<storm::RationalInterval> const& matrix) const;
-
-template bool SparseMatrix<storm::RationalInterval>::isSubmatrixOf(SparseMatrix<storm::RationalNumber> const& matrix) const;
+template std::vector<storm::RationalInterval> SparseMatrix<storm::RationalNumber>::getPointwiseProductRowSumVector(
+    storm::storage::SparseMatrix<storm::RationalInterval> const& otherMatrix) const;
 
 }  // namespace storage
 }  // namespace storm

@@ -54,14 +54,14 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBoundedUntil
     Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<DdType, ValueType> const& model,
     storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& markovianStates,
     storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative,
-    double lowerBound, double upperBound) {
+    double lowerBound, std::optional<double> const& upperBound) {
     // If the time bounds are [0, inf], we rather call untimed reachability.
-    if (storm::utility::isZero(lowerBound) && upperBound == storm::utility::infinity<ValueType>()) {
+    if (storm::utility::isZero(lowerBound) && !upperBound) {
         return storm::modelchecker::helper::HybridMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(env, dir, model, transitionMatrix, phiStates,
                                                                                                                psiStates, qualitative);
     }
     // If the interval is of the form [0,0], we can return the result directly
-    if (storm::utility::isZero(upperBound)) {
+    if (upperBound && storm::utility::isZero(*upperBound)) {
         // In this case, the interval is of the form [0, 0].
         return std::unique_ptr<CheckResult>(
             new SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), psiStates.template toAdd<ValueType>()));
@@ -88,7 +88,7 @@ template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!
 std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(
     Environment const&, OptimizationDirection, storm::models::symbolic::MarkovAutomaton<DdType, ValueType> const&, storm::dd::Add<DdType, ValueType> const&,
     storm::dd::Bdd<DdType> const&, storm::dd::Add<DdType, ValueType> const&, storm::dd::Bdd<DdType> const&, storm::dd::Bdd<DdType> const&, bool, double,
-    double) {
+    std::optional<double> const&) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded until probabilities is unsupported for this value type.");
 }
 
@@ -105,7 +105,7 @@ template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBou
     Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::CUDD, double> const& model,
     storm::dd::Add<storm::dd::DdType::CUDD, double> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& markovianStates,
     storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates,
-    storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, bool qualitative, double lowerBound, double upperBound);
+    storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, bool qualitative, double lowerBound, std::optional<double> const& upperBound);
 
 // Sylvan, double.
 template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeReachabilityRewards(
@@ -118,7 +118,7 @@ template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBou
     Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, double> const& model,
     storm::dd::Add<storm::dd::DdType::Sylvan, double> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& markovianStates,
     storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates,
-    storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, double upperBound);
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, std::optional<double> const& upperBound);
 
 // Sylvan, rational number.
 template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeReachabilityRewards(
@@ -131,7 +131,7 @@ template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBou
     Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model,
     storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& markovianStates,
     storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates,
-    storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, double upperBound);
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, std::optional<double> const& upperBound);
 
 }  // namespace helper
 }  // namespace modelchecker

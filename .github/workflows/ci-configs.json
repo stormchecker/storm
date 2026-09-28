@@ -1,0 +1,214 @@
+{
+  "linuxTests": [
+    {
+      "name": "All dependencies",
+      "scope": [
+        "quick",
+        "normal"
+      ],
+      "buildType": "Debug",
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest"
+    },
+    {
+      "name": "All dependencies",
+      "scope": [
+        "quick",
+        "normal"
+      ],
+      "buildType": "Release",
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest"
+    },
+    {
+      "name": "All dependencies",
+      "scope": [
+        "extensive"
+      ],
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest"
+    },
+    {
+      "name": "Minimal dependencies",
+      "scope": [
+        "quick",
+        "normal",
+        "extensive"
+      ],
+      "buildType": "Release",
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-basesystem:minimal_dependencies",
+      "disable_all": true,
+      "ClnExact": false,
+      "ClnRatfunc": false,
+      "starterProjectCommand": "--help"
+    },
+    {
+      "name": "GMP; GMP; Required dependencies",
+      "scope": [
+        "normal",
+        "extensive"
+      ],
+      "buildType": "Release",
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-basesystem:latest",
+      "ClnExact": false,
+      "ClnRatfunc": false
+    },
+    {
+      "name": "CLN; GMP; Required dependencies",
+      "scope": [
+        "extensive"
+      ],
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-basesystem:latest",
+      "ClnExact": true,
+      "ClnRatfunc": false
+    },
+    {
+      "name": "GMP; CLN; Required dependencies",
+      "scope": [
+        "extensive"
+      ],
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-basesystem:latest",
+      "ClnExact": false,
+      "ClnRatfunc": true
+    },
+    {
+      "name": "CLN; CLN; Required dependencies",
+      "scope": [
+        "normal",
+        "extensive"
+      ],
+      "buildType": "Release",
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-basesystem:latest",
+      "ClnExact": true,
+      "ClnRatfunc": true
+    },
+    {
+      "name": "All dependencies (disabled)",
+      "scope": [
+        "extensive"
+      ],
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "disable_all": true,
+      "ClnExact": false,
+      "ClnRatfunc": false,
+      "starterProjectCommand": "--help"
+    },
+    {
+      "name": "GCC",
+      "scope": [
+        "quick",
+        "normal",
+        "extensive"
+      ],
+      "buildType": "Debug",
+      "cmakeArgs": "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "setup": "pacman -Syu --noconfirm && pacman -S --noconfirm base-devel ccache cmake git boost cln ginac glpk gmp highs hwloc libarchive xerces-c z3",
+      "baseImg": "archlinux:latest"
+    },
+    {
+      "name": "Clang",
+      "scope": [
+        "quick",
+        "normal",
+        "extensive"
+      ],
+      "buildType": "Debug",
+      "cmakeArgs": "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "setup": "pacman -Syu --noconfirm && pacman -S --noconfirm base-devel ccache cmake git boost cln ginac glpk gmp highs hwloc libarchive xerces-c z3 clang llvm",
+      "baseImg": "archlinux:latest"
+    },
+    {
+      "name": "musl",
+      "scope": [
+        "extensive"
+      ],
+      "buildType": "Debug",
+      "cmakeArgs": "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_HIGHS=ON",
+      "setup": "apk add --no-cache bash ccache cmake make gcc g++ git autoconf automake libc-dev linux-headers patch boost-dev gmp-dev cln-dev ginac-dev glpk-dev libarchive-dev z3-dev ",
+      "baseImg": "alpine:edge"
+    },
+    {
+      "name": "Debian 12",
+      "scope": [
+        "quick",
+        "normal",
+        "extensive"
+      ],
+      "buildType": "Release",
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-basesystem:debian-12"
+    },
+    {
+      "name": "Debian 13",
+      "scope": [
+        "normal",
+        "extensive"
+      ],
+      "buildType": "Release",
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-basesystem:debian-13"
+    },
+    {
+      "name": "Ubuntu 24.04",
+      "scope": [
+        "quick",
+        "normal",
+        "extensive"
+      ],
+      "buildType": "Release",
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-basesystem:ubuntu-24.04"
+    }
+  ],
+  "macTests": [
+    {
+      "name": "Mac 14 ARM",
+      "scope": [
+        "extensive"
+      ],
+      "buildType": "Release",
+      "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
+      "distro": "macos-14",
+      "xcode": "15.4"
+    },
+    {
+      "name": "Mac 15 ARM",
+      "scope": [
+        "normal",
+        "extensive"
+      ],
+      "buildType": "Release",
+      "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
+      "distro": "macos-15",
+      "xcode": "16.4"
+    },
+    {
+      "name": "Mac 26 ARM",
+      "scope": [
+        "quick",
+        "normal",
+        "extensive"
+      ],
+      "buildType": "Release",
+      "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
+      "distro": "macos-26",
+      "xcode": "latest-stable"
+    },
+    {
+      "name": "Mac 26 Intel",
+      "scope": [
+        "extensive"
+      ],
+      "buildType": "Release",
+      "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
+      "distro": "macos-26-intel",
+      "xcode": "latest-stable"
+    }
+  ]
+}

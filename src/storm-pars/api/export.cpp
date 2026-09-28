@@ -37,14 +37,12 @@ void exportParametricResultToFile(std::optional<storm::RationalFunction> result,
         filestream << "$Well-formed Constraints: \n";
         std::vector<std::string> stringConstraints;
         std::transform(constraintCollector->getWellformedConstraints().begin(), constraintCollector->getWellformedConstraints().end(),
-                       std::back_inserter(stringConstraints),
-                       [](carl::Formula<typename storm::Polynomial::PolyType> const& c) -> std::string { return c.toString(); });
+                       std::back_inserter(stringConstraints), [](auto const& c) -> std::string { return c.toString(); });
         std::copy(stringConstraints.begin(), stringConstraints.end(), std::ostream_iterator<std::string>(filestream, "\n"));
         filestream << "$Graph-preserving Constraints: \n";
         stringConstraints.clear();
         std::transform(constraintCollector->getGraphPreservingConstraints().begin(), constraintCollector->getGraphPreservingConstraints().end(),
-                       std::back_inserter(stringConstraints),
-                       [](carl::Formula<typename storm::Polynomial::PolyType> const& c) -> std::string { return c.toString(); });
+                       std::back_inserter(stringConstraints), [](auto const& c) -> std::string { return c.toString(); });
         std::copy(stringConstraints.begin(), stringConstraints.end(), std::ostream_iterator<std::string>(filestream, "\n"));
     }
     storm::io::closeFile(filestream);

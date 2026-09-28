@@ -84,7 +84,7 @@ storm::solver::EquationSolverType TopologicalEquationSolverSettings::getUnderlyi
     } else if (equationSolverName == "elimination") {
         return storm::solver::EquationSolverType::Elimination;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown underlying equation solver '" << equationSolverName << "'.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown underlying equation solver '" << equationSolverName << "'.");
 }
 
 bool TopologicalEquationSolverSettings::isUnderlyingMinMaxMethodSet() const {
@@ -120,7 +120,8 @@ storm::solver::MinMaxMethod TopologicalEquationSolverSettings::getUnderlyingMinM
         return storm::solver::MinMaxMethod::ViToLp;
     }
 
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown underlying equation solver '" << minMaxEquationSolvingTechnique << "'.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Unknown underlying equation solver '" << minMaxEquationSolvingTechnique << "'.");
 }
 
 bool TopologicalEquationSolverSettings::isExtendRelevantValues() const {

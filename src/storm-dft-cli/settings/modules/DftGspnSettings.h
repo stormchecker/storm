@@ -44,20 +44,6 @@ class DftGspnSettings : public storm::settings::modules::ModuleSettings {
      */
     bool isExtendPriorities() const;
 
-    /*!
-     * Retrieves whether the GSPN should be exported as a Jani file.
-     *
-     * @return True if the Jani file should be exported.
-     */
-    bool isWriteToJaniSet() const;
-
-    /*!
-     * Retrieves the jani filename for export.
-     *
-     * @return Filename.
-     */
-    std::string getWriteToJaniFilename() const;
-
     bool check() const override;
 
     void finalize() override;
@@ -71,7 +57,6 @@ class DftGspnSettings : public storm::settings::modules::ModuleSettings {
     static const std::string disableSmartTransformationOptionName;
     static const std::string mergeDCFailedOptionName;
     static const std::string extendPrioritiesOptionName;
-    static const std::string writeToJaniOptionName;
 };
 
 }  // namespace modules

@@ -88,6 +88,10 @@ std::shared_ptr<StochasticTwoPlayerGame<Type, NewValueType>> StochasticTwoPlayer
     auto newLabelToBddMap = this->getLabelToBddMap();
     newLabelToBddMap.erase("init");
     newLabelToBddMap.erase("deadlock");
+    // Convert expression-based labels to BDD-based ones.
+    for (auto const& labelExpressionPair : this->getLabelToExpressionMap()) {
+        newLabelToBddMap.emplace(labelExpressionPair.first, this->getStates(labelExpressionPair.first));
+    }
 
     return std::make_shared<StochasticTwoPlayerGame<Type, NewValueType>>(
         this->getManagerAsSharedPointer(), this->getReachableStates(), this->getInitialStates(), this->getDeadlockStates(),

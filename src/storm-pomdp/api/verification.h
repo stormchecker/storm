@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -80,7 +81,7 @@ storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sp
     options.skipHeuristicSchedulers = false;
     options.useClipping = useClipping;
     options.useStateEliminationCutoff = false;
-    options.sizeThresholdInit = storm::utility::infinity<uint64_t>();
+    options.sizeThresholdInit = std::numeric_limits<uint64_t>::max();  // i.e. no size limit
     options.interactiveUnfolding = true;
     options.refine = false;
     options.gapThresholdInit = 0;

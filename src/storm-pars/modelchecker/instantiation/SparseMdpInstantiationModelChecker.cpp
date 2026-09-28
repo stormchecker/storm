@@ -1,14 +1,13 @@
 #include "storm-pars/modelchecker/instantiation/SparseMdpInstantiationModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/vector.h"
@@ -17,9 +16,12 @@ namespace storm {
 namespace modelchecker {
 
 template<typename SparseModelType, typename ConstantType>
-SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>::SparseMdpInstantiationModelChecker(SparseModelType const& parametricModel,
+SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>::SparseMdpInstantiationModelChecker(Environment const& env,
+                                                                                                      SparseModelType const& parametricModel,
                                                                                                       bool produceScheduler)
-    : SparseInstantiationModelChecker<SparseModelType, ConstantType>(parametricModel), modelInstantiator(parametricModel), produceScheduler(produceScheduler) {
+    : SparseInstantiationModelChecker<SparseModelType, ConstantType>(env, parametricModel),
+      modelInstantiator(parametricModel),
+      produceScheduler(produceScheduler) {
     // Intentionally left empty
 }
 
@@ -33,8 +35,7 @@ std::unique_ptr<CheckResult> SparseMdpInstantiationModelChecker<SparseModelType,
         STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::zero<ConstantType>()),
                         storm::exceptions::InvalidArgumentException, "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
     } else {
-        auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(generalSettings.getPrecision())),
+        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(env.modelTolerance())),
                         storm::exceptions::InvalidArgumentException, "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
     }
 
@@ -77,24 +78,23 @@ std::unique_ptr<CheckResult> SparseMdpInstantiationModelChecker<SparseModelType,
 
     if (this->getInstantiationsAreGraphPreserving() && !hint.hasMaybeStates()) {
         // Perform purely qualitative analysis once
-        std::vector<ConstantType> qualitativeResult;
+        std::vector<ExtendedConstantType> qualitativeResult;
         if (this->currentCheckTask->getFormula().asOperatorFormula().hasQuantitativeResult()) {
             auto newCheckTask = *this->currentCheckTask;
             newCheckTask.setQualitative(true);
             newCheckTask.setOnlyInitialStatesRelevant(false);
             newCheckTask.setProduceSchedulers(false);
-            qualitativeResult = modelChecker.check(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+            qualitativeResult = std::move(modelChecker.check(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
         } else {
             auto newCheckTask = this->currentCheckTask->substituteFormula(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula());
             newCheckTask.setQualitative(true);
             newCheckTask.setOnlyInitialStatesRelevant(false);
             newCheckTask.setProduceSchedulers(false);
             qualitativeResult =
-                modelChecker.computeProbabilities(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                std::move(modelChecker.computeProbabilities(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
         }
-        storm::storage::BitVector maybeStates = storm::utility::vector::filter<ConstantType>(qualitativeResult, [](ConstantType const& value) -> bool {
-            return !(storm::utility::isZero<ConstantType>(value) || storm::utility::isOne<ConstantType>(value));
-        });
+        storm::storage::BitVector maybeStates = storm::utility::vector::filter<ExtendedConstantType>(
+            qualitativeResult, [](ExtendedConstantType const& value) -> bool { return !(storm::utility::isZero(value) || storm::utility::isOne(value)); });
         hint.setMaybeStates(std::move(maybeStates));
         hint.setResultHint(std::move(qualitativeResult));
         hint.setComputeOnlyMaybeStates(true);
@@ -148,23 +148,23 @@ std::unique_ptr<CheckResult> SparseMdpInstantiationModelChecker<SparseModelType,
 
     if (this->getInstantiationsAreGraphPreserving() && !hint.hasMaybeStates()) {
         // Perform purely qualitative analysis once
-        std::vector<ConstantType> qualitativeResult;
+        std::vector<ExtendedConstantType> qualitativeResult;
         if (this->currentCheckTask->getFormula().asOperatorFormula().hasQuantitativeResult()) {
             auto newCheckTask = *this->currentCheckTask;
             newCheckTask.setQualitative(true);
             newCheckTask.setOnlyInitialStatesRelevant(false);
             newCheckTask.setProduceSchedulers(false);
-            qualitativeResult = modelChecker.check(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+            qualitativeResult = std::move(modelChecker.check(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
         } else {
             auto newCheckTask = this->currentCheckTask->substituteFormula(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula());
             newCheckTask.setQualitative(true);
             newCheckTask.setOnlyInitialStatesRelevant(false);
             newCheckTask.setProduceSchedulers(false);
-            qualitativeResult = modelChecker.computeRewards(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+            qualitativeResult =
+                std::move(modelChecker.computeRewards(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
         }
-        storm::storage::BitVector maybeStates = storm::utility::vector::filter<ConstantType>(qualitativeResult, [](ConstantType const& value) -> bool {
-            return !(storm::utility::isZero<ConstantType>(value) || storm::utility::isInfinity<ConstantType>(value));
-        });
+        storm::storage::BitVector maybeStates = storm::utility::vector::filter<ExtendedConstantType>(
+            qualitativeResult, [](ExtendedConstantType const& value) -> bool { return !(storm::utility::isZero(value) || storm::utility::isInfinity(value)); });
         hint.setMaybeStates(std::move(maybeStates));
         hint.setResultHint(std::move(qualitativeResult));
         hint.setComputeOnlyMaybeStates(true);
@@ -247,8 +247,7 @@ bool SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>::isWellDe
     if (instantiatedModel.isExact()) {
         return instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::zero<ConstantType>());
     } else {
-        auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-        return instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(generalSettings.getPrecision()));
+        return instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(this->env.modelTolerance()));
     }
 }
 

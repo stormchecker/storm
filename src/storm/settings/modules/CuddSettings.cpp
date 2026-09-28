@@ -121,8 +121,8 @@ storm::dd::CuddReorderingTechnique CuddSettings::getReorderingTechnique() const 
     } else if (reorderingTechniqueAsString == "exact") {
         return storm::dd::CuddReorderingTechnique::Exact;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Illegal value '" << reorderingTechniqueAsString << "' set as reordering technique of Cudd.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Illegal value '" << reorderingTechniqueAsString << "' set as reordering technique of Cudd.");
 }
 
 }  // namespace modules

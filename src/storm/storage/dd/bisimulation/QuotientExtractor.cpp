@@ -1222,12 +1222,18 @@ QuotientExtractor<DdType, ValueType, ExportValueType>::extractQuotientUsingBlock
                 model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet,
                 blockPrimeVariableSet, blockMetaVariablePairs, model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
         } else {
+            STORM_LOG_ASSERT(modelType == storm::models::ModelType::MarkovAutomaton, "Unexpected model type " << modelType << ".");
+            // For Markov automata, bisimilar Markovian states are required to have the same exit rate, so the
+            // quotient's exit rate for each block is simply the representative's (already known) exit rate --
+            // obtained via the same representative-based projection as for the reward vectors above.
+            auto const& ma = *model.template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>();
+            auto quotientExitRateVector = ma.getExitRateVector().multiplyMatrix(partitionAsAdd, model.getRowVariables());
             result =
                 std::shared_ptr<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>(new storm::models::symbolic::MarkovAutomaton<DdType, ValueType>(
                     model.getManager().asSharedPointer(),
                     model.template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>()->getMarkovianMarker(), reachableStates, initialStates,
                     deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs,
-                    model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
+                    model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels, quotientExitRateVector));
         }
 
         return result->template toValueType<ExportValueType>();
@@ -1389,12 +1395,20 @@ QuotientExtractor<DdType, ValueType, ExportValueType>::extractQuotientUsingOrigi
                 model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), model.getNondeterminismVariables(), preservedLabelBdds,
                 quotientRewardModels));
         } else {
+            STORM_LOG_ASSERT(modelType == storm::models::ModelType::MarkovAutomaton, "Unexpected model type " << modelType << ".");
+            // For Markov automata, bisimilar Markovian states are required to have the same exit rate, so the
+            // quotient's exit rate for each block is simply the representative's (already known) exit rate --
+            // obtained via the same representative-based projection as for the reward vectors above.
+            auto const& ma = *model.template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>();
+            auto quotientExitRateVector = ma.getExitRateVector()
+                                              .multiplyMatrix(partitionAsAdd, model.getRowVariables())
+                                              .renameVariablesAbstract(blockVariableSet, model.getRowVariables());
             result =
                 std::shared_ptr<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>(new storm::models::symbolic::MarkovAutomaton<DdType, ValueType>(
                     model.getManager().asSharedPointer(),
                     model.template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>()->getMarkovianMarker(), reachableStates, initialStates,
                     deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(),
-                    model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels));
+                    model.getNondeterminismVariables(), preservedLabelBdds, quotientRewardModels, quotientExitRateVector));
         }
 
         return result->template toValueType<ExportValueType>();

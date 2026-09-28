@@ -4,6 +4,7 @@
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/parser/JaniParser.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/logic/Formulas.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/ModelType.h"
 #include "storm/storage/jani/Property.h"
@@ -79,6 +80,162 @@ TEST(JaniParser, DieExampleTest) {
 						"op": "=",
 						"left": "s",
 						"right": 7
+					}
+				}
+			}
+		},
+		{
+			"name": "Conjunction of path formulas",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "∧",
+						"left": {
+							"op": "G",
+							"exp": {
+								"op": "≠",
+								"left": "d",
+								"right": 6
+							}
+						},
+						"right": {
+							"op": "F",
+							"exp": {
+								"op": "=",
+								"left": "s",
+								"right": 6
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "Disjunction of path formulas",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "∨",
+						"left": {
+							"op": "G",
+							"exp": {
+								"op": "≠",
+								"left": "s",
+								"right": 3
+							}
+						},
+						"right": {
+							"op": "G",
+							"exp": {
+								"op": "≠",
+								"left": "s",
+								"right": 4
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "Negation of a path formula",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "¬",
+						"exp": {
+							"op": "F",
+							"exp": {
+								"op": "=",
+								"left": "d",
+								"right": 1
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "Implication of path formulas",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "⇒",
+						"left": {
+							"op": "F",
+							"exp": {
+								"op": "=",
+								"left": "s",
+								"right": 3
+							}
+						},
+						"right": {
+							"op": "F",
+							"exp": {
+								"op": "=",
+								"left": "d",
+								"right": 1
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "Conjunction of state formulas",
+			"expression": {
+				"op": "filter",
+				"fun": "count",
+				"states": true,
+				"values": {
+					"op": "∧",
+					"left": {
+						"op": "¬",
+						"exp": {
+							"op": "≥",
+							"left": {
+								"op": "Pmin",
+								"exp": {
+									"op": "F",
+									"exp": {
+										"op": "=",
+										"left": "d",
+										"right": 6
+									}
+								}
+							},
+							"right": 0.5
+						}
+					},
+					"right": {
+						"op": "≥",
+						"left": {
+							"op": "Pmin",
+							"exp": {
+								"op": "F",
+								"exp": {
+									"op": "≥",
+									"left": "d",
+									"right": 4
+								}
+							}
+						},
+						"right": 0.5
 					}
 				}
 			}
@@ -373,6 +530,23 @@ TEST(JaniParser, DieExampleTest) {
     EXPECT_EQ(storm::jani::ModelType::DTMC, result.first.getModelType());
     EXPECT_TRUE(result.first.hasGlobalVariable("s"));
     EXPECT_EQ(1ul, result.first.getNumberOfAutomata());
+
+    ASSERT_EQ(7ul, result.second.size());
+
+    auto const& conjunction = result.second[2].getRawFormula()->asProbabilityOperatorFormula().getSubformula();
+    ASSERT_TRUE(conjunction.isBinaryBooleanPathFormula());
+
+    auto const& disjunction = result.second[3].getRawFormula()->asProbabilityOperatorFormula().getSubformula();
+    ASSERT_TRUE(disjunction.isBinaryBooleanPathFormula());
+
+    auto const& negation = result.second[4].getRawFormula()->asProbabilityOperatorFormula().getSubformula();
+    ASSERT_TRUE(negation.isUnaryBooleanPathFormula());
+
+    auto const& implication = result.second[5].getRawFormula()->asProbabilityOperatorFormula().getSubformula();
+    ASSERT_TRUE(implication.isBinaryBooleanPathFormula());
+
+    auto const& stateConjunction = *result.second[6].getRawFormula();
+    ASSERT_TRUE(stateConjunction.isBinaryBooleanStateFormula());
 }
 
 TEST(JaniParser, DieArrayExampleTest) {

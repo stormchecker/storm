@@ -10,6 +10,7 @@
 
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/models/ModelBase.h"
+#include "storm/utility/ExtendedNumber.h"
 
 namespace storm {
 
@@ -30,6 +31,7 @@ template<typename ParametricType>
 class RegionRefinementChecker {
    public:
     using CoefficientType = typename storm::storage::ParameterRegion<ParametricType>::CoefficientType;
+    using ExtendedCoefficientType = storm::utility::ExtendedValueType<CoefficientType>;
     using VariableType = typename storm::storage::ParameterRegion<ParametricType>::VariableType;
     using Valuation = typename storm::storage::ParameterRegion<ParametricType>::Valuation;
 
@@ -71,10 +73,10 @@ class RegionRefinementChecker {
      * @param rejectInstance input some value from the parameter space, output whether we will reject because this exists
      * @return
      */
-    std::pair<CoefficientType, Valuation> computeExtremalValueHelper(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
-                                                                     storm::solver::OptimizationDirection const& dir,
-                                                                     std::function<bool(CoefficientType, CoefficientType)> acceptGlobalBound,
-                                                                     std::function<bool(CoefficientType)> rejectInstance);
+    std::pair<ExtendedCoefficientType, Valuation> computeExtremalValueHelper(
+        Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir,
+        std::function<bool(ExtendedCoefficientType const&, ExtendedCoefficientType const&)> acceptGlobalBound,
+        std::function<bool(ExtendedCoefficientType const&)> rejectInstance);
 
     /*!
      * Finds the extremal value within the given region and with the given precision.
@@ -89,9 +91,9 @@ class RegionRefinementChecker {
      * @param absolutePrecision true iff precision should be measured absolutely
      * @return
      */
-    std::pair<CoefficientType, Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
-                                                               storm::solver::OptimizationDirection const& dir, ParametricType const& precision,
-                                                               bool absolutePrecision, std::optional<storm::logic::Bound> const& boundInvariant);
+    std::pair<ExtendedCoefficientType, Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
+                                                                       storm::solver::OptimizationDirection const& dir, ParametricType const& precision,
+                                                                       bool absolutePrecision, std::optional<storm::logic::Bound> const& boundInvariant);
 
     /*!
      * Checks whether the bound is satisfied on the complete region.

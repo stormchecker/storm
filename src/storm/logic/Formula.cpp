@@ -85,6 +85,14 @@ bool Formula::isBoundedUntilFormula() const {
     return false;
 }
 
+bool Formula::isWeakUntilFormula() const {
+    return false;
+}
+
+bool Formula::isReleaseFormula() const {
+    return false;
+}
+
 bool Formula::isEventuallyFormula() const {
     return false;
 }
@@ -328,6 +336,22 @@ UntilFormula& Formula::asUntilFormula() {
 
 UntilFormula const& Formula::asUntilFormula() const {
     return dynamic_cast<UntilFormula const&>(*this);
+}
+
+WeakUntilFormula& Formula::asWeakUntilFormula() {
+    return dynamic_cast<WeakUntilFormula&>(*this);
+}
+
+WeakUntilFormula const& Formula::asWeakUntilFormula() const {
+    return dynamic_cast<WeakUntilFormula const&>(*this);
+}
+
+ReleaseFormula& Formula::asReleaseFormula() {
+    return dynamic_cast<ReleaseFormula&>(*this);
+}
+
+ReleaseFormula const& Formula::asReleaseFormula() const {
+    return dynamic_cast<ReleaseFormula const&>(*this);
 }
 
 BoundedUntilFormula& Formula::asBoundedUntilFormula() {

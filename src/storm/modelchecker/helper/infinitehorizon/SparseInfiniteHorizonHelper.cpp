@@ -150,7 +150,7 @@ std::vector<ValueType> SparseInfiniteHorizonHelper<ValueType, Nondeterministic>:
     // Set up some logging
     std::string const componentString = (Nondeterministic ? std::string("Maximal end") : std::string("Bottom strongly connected")) +
                                         (_longRunComponentDecomposition->size() == 1 ? std::string(" component") : std::string(" components"));
-    storm::utility::ProgressMeasurement progress(componentString);
+    storm::utility::ProgressMeasurement progress(componentString, env.solver().getShowProgressDelay());
     progress.setMaxCount(_longRunComponentDecomposition->size());
     progress.startNewMeasurement(0);
     STORM_LOG_INFO("Computing long run average values for " << _longRunComponentDecomposition->size() << " " << componentString << " individually...");

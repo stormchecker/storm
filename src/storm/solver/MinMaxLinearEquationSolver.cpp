@@ -40,6 +40,8 @@ bool MinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquations(Environ
     STORM_LOG_WARN_COND_DEBUG(this->isRequirementsCheckedSet(),
                               "The requirements of the solver have not been marked as checked. Please provide the appropriate check or mark the requirements "
                               "as checked (if applicable).");
+    // A reused solver must not report bounds that a previous call computed.
+    this->clearSolutionBounds();
     return internalSolveEquations(env, d, x, b);
 }
 
@@ -273,6 +275,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinM
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
     }
     result->setRequirementsChecked(this->isRequirementsCheckedSet());
+    result->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
     return result;
 }
 
@@ -296,6 +299,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMax
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
     }
     result->setRequirementsChecked(this->isRequirementsCheckedSet());
+    result->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
     return result;
 }
 

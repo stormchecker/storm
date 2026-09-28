@@ -20,6 +20,13 @@ ModelCheckerEnvironment::ModelCheckerEnvironment() {
     }
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     steadyStateDistributionAlgorithm = ioSettings.getSteadyStateDistributionAlgorithm();
+
+    filterRewZero = mcSettings.isFilterRewZeroSet();
+
+    exportCdfEnabled = ioSettings.isExportCdfSet();
+    if (exportCdfEnabled) {
+        exportCdfDirectory = ioSettings.getExportCdfDirectory();
+    }
 }
 
 ModelCheckerEnvironment::~ModelCheckerEnvironment() {
@@ -34,20 +41,20 @@ ConditionalModelCheckerEnvironment const& ModelCheckerEnvironment::conditional()
     return conditionalModelCheckerEnvironment.get();
 }
 
-SteadyStateDistributionAlgorithm ModelCheckerEnvironment::getSteadyStateDistributionAlgorithm() const {
-    return steadyStateDistributionAlgorithm;
-}
-
-void ModelCheckerEnvironment::setSteadyStateDistributionAlgorithm(SteadyStateDistributionAlgorithm value) {
-    steadyStateDistributionAlgorithm = value;
-}
-
 MultiObjectiveModelCheckerEnvironment& ModelCheckerEnvironment::multi() {
     return multiObjectiveModelCheckerEnvironment.get();
 }
 
 MultiObjectiveModelCheckerEnvironment const& ModelCheckerEnvironment::multi() const {
     return multiObjectiveModelCheckerEnvironment.get();
+}
+
+SteadyStateDistributionAlgorithm ModelCheckerEnvironment::getSteadyStateDistributionAlgorithm() const {
+    return steadyStateDistributionAlgorithm;
+}
+
+void ModelCheckerEnvironment::setSteadyStateDistributionAlgorithm(SteadyStateDistributionAlgorithm value) {
+    steadyStateDistributionAlgorithm = value;
 }
 
 bool ModelCheckerEnvironment::isLtl2daToolSet() const {
@@ -64,6 +71,30 @@ void ModelCheckerEnvironment::setLtl2daTool(std::string const& value) {
 
 void ModelCheckerEnvironment::unsetLtl2daTool() {
     ltl2daTool = boost::none;
+}
+
+bool ModelCheckerEnvironment::isFilterRewZeroSet() const {
+    return filterRewZero;
+}
+
+void ModelCheckerEnvironment::setFilterRewZero(bool value) {
+    filterRewZero = value;
+}
+
+bool ModelCheckerEnvironment::isExportCdfSet() const {
+    return exportCdfEnabled;
+}
+
+void ModelCheckerEnvironment::setExportCdf(bool value) {
+    exportCdfEnabled = value;
+}
+
+std::string const& ModelCheckerEnvironment::getExportCdfDirectory() const {
+    return exportCdfDirectory;
+}
+
+void ModelCheckerEnvironment::setExportCdfDirectory(std::string const& value) {
+    exportCdfDirectory = value;
 }
 
 }  // namespace storm

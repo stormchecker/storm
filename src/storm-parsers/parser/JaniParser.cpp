@@ -20,7 +20,9 @@
 #include "storm/storage/jani/types/ContinuousType.h"
 #include "storm/storage/jani/types/JaniType.h"
 
+#include "storm/logic/BinaryBooleanPathFormula.h"
 #include "storm/logic/RewardAccumulationEliminationVisitor.h"
+#include "storm/logic/UnaryBooleanPathFormula.h"
 
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/InvalidJaniException.h"
@@ -328,6 +330,25 @@ void insertLowerUpperTimeBounds(std::vector<std::optional<storm::logic::TimeBoun
     }
 }
 
+std::shared_ptr<storm::logic::Formula const> makeBinaryBooleanFormula(storm::logic::BinaryBooleanOperatorType oper,
+                                                                      std::shared_ptr<storm::logic::Formula const> const& left,
+                                                                      std::shared_ptr<storm::logic::Formula const> const& right,
+                                                                      storm::logic::FormulaContext context) {
+    if (left->isPathFormula() || right->isPathFormula()) {
+        return std::make_shared<storm::logic::BinaryBooleanPathFormula const>(oper, left, right, context);
+    }
+    return std::make_shared<storm::logic::BinaryBooleanStateFormula const>(oper, left, right);
+}
+
+std::shared_ptr<storm::logic::Formula const> makeUnaryBooleanFormula(storm::logic::UnaryBooleanOperatorType oper,
+                                                                     std::shared_ptr<storm::logic::Formula const> const& sub,
+                                                                     storm::logic::FormulaContext context) {
+    if (sub->isPathFormula()) {
+        return std::make_shared<storm::logic::UnaryBooleanPathFormula const>(oper, sub, context);
+    }
+    return std::make_shared<storm::logic::UnaryBooleanStateFormula const>(oper, sub);
+}
+
 template<typename ValueType>
 std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula(storm::jani::Model& model, Json const& propertyStructure,
                                                                                  storm::logic::FormulaContext formulaContext, Scope const& scope,
@@ -369,7 +390,8 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
 
         } else if (opString == "∀" || opString == "∃") {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for forall/exists.");
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Forall and Exists are currently not supported in " << scope.description << ".");
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::NotImplementedException,
+                                            "Forall and Exists are currently not supported in " << scope.description << ".");
         } else if (opString == "Emin" || opString == "Emax") {
             STORM_LOG_WARN_COND(model.getJaniVersion() == 1, "Model not compliant: Contains Emin/Emax property in " << scope.description << ".");
             STORM_LOG_THROW(propertyStructure.count("exp") == 1, storm::exceptions::InvalidJaniException,
@@ -580,32 +602,51 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
 
         } else if (opString == "W") {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for weak until.");
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Weak until is not supported.");
+            std::vector<std::shared_ptr<storm::logic::Formula const>> args =
+                parseBinaryFormulaArguments(model, propertyStructure, formulaContext, opString, scope);
+            STORM_LOG_ASSERT(args.size() == 2, "Expected two arguments for weak until.");
+            if (propertyStructure.count("step-bounds") > 0) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weak until and step-bounds are not supported.");
+            } else if (propertyStructure.count("time-bounds") > 0) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weak until and time bounds are not supported.");
+            } else if (propertyStructure.count("reward-bounds") > 0) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Weak until and reward bounded properties are not supported.");
+            }
+            return std::make_shared<storm::logic::WeakUntilFormula const>(args[0], args[1]);
         } else if (opString == "R") {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for release.");
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Release is not supported.");
+            std::vector<std::shared_ptr<storm::logic::Formula const>> args =
+                parseBinaryFormulaArguments(model, propertyStructure, formulaContext, opString, scope);
+            STORM_LOG_ASSERT(args.size() == 2, "Expected two arguments for release.");
+            if (propertyStructure.count("step-bounds") > 0) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Release and step-bounds are not supported.");
+            } else if (propertyStructure.count("time-bounds") > 0) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Release and time bounds are not supported.");
+            } else if (propertyStructure.count("reward-bounds") > 0) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Release and reward bounded properties are not supported.");
+            }
+            return std::make_shared<storm::logic::ReleaseFormula const>(args[0], args[1]);
         } else if (opString == "∧" || opString == "∨") {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for conjunction/disjunction.");
             std::vector<std::shared_ptr<storm::logic::Formula const>> args =
                 parseBinaryFormulaArguments(model, propertyStructure, formulaContext, opString, scope);
             STORM_LOG_ASSERT(args.size() == 2, "Expected two arguments for conjunction/disjunction.");
-            storm::logic::BinaryBooleanStateFormula::OperatorType oper =
-                opString == "∧" ? storm::logic::BinaryBooleanStateFormula::OperatorType::And : storm::logic::BinaryBooleanStateFormula::OperatorType::Or;
-            return std::make_shared<storm::logic::BinaryBooleanStateFormula const>(oper, args[0], args[1]);
+            storm::logic::BinaryBooleanOperatorType oper =
+                opString == "∧" ? storm::logic::BinaryBooleanOperatorType::And : storm::logic::BinaryBooleanOperatorType::Or;
+            return makeBinaryBooleanFormula(oper, args[0], args[1], formulaContext);
         } else if (opString == "⇒") {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for implication.");
             std::vector<std::shared_ptr<storm::logic::Formula const>> args =
                 parseBinaryFormulaArguments(model, propertyStructure, formulaContext, opString, scope);
             STORM_LOG_ASSERT(args.size() == 2, "Expected two arguments for implication.");
-            std::shared_ptr<storm::logic::UnaryBooleanStateFormula const> tmp =
-                std::make_shared<storm::logic::UnaryBooleanStateFormula const>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, args[0]);
-            return std::make_shared<storm::logic::BinaryBooleanStateFormula const>(storm::logic::BinaryBooleanStateFormula::OperatorType::Or, tmp, args[1]);
+            std::shared_ptr<storm::logic::Formula const> tmp = makeUnaryBooleanFormula(storm::logic::UnaryBooleanOperatorType::Not, args[0], formulaContext);
+            return makeBinaryBooleanFormula(storm::logic::BinaryBooleanOperatorType::Or, tmp, args[1], formulaContext);
         } else if (opString == "¬") {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for negation.");
             std::vector<std::shared_ptr<storm::logic::Formula const>> args =
                 parseUnaryFormulaArgument(model, propertyStructure, formulaContext, opString, scope);
             STORM_LOG_ASSERT(args.size() == 1, "Expected one argument for negation.");
-            return std::make_shared<storm::logic::UnaryBooleanStateFormula const>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, args[0]);
+            return makeUnaryBooleanFormula(storm::logic::UnaryBooleanOperatorType::Not, args[0], formulaContext);
         } else if (!expr.isInitialized() && (opString == "≥" || opString == "≤" || opString == "<" || opString == ">" || opString == "=" || opString == "≠")) {
             STORM_LOG_ASSERT(bound == boost::none, "Unexpected bound for comparison.");
             storm::logic::ComparisonType ct;
@@ -645,8 +686,8 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                                     ct = storm::logic::ComparisonType::Less;
                                 }
                             } else {
-                                STORM_LOG_THROW(
-                                    false, storm::exceptions::NotSupportedException,
+                                STORM_LOG_THROW_UNCONDITIONALLY(
+                                    storm::exceptions::NotSupportedException,
                                     "Comparison operators '=' or '≠' in property specifications are currently not supported in " << scope.description << ".");
                             }
                         }
@@ -654,7 +695,7 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                     }
                 }
             }
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No complex comparisons for properties are supported.");
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::NotSupportedException, "No complex comparisons for properties are supported.");
         } else if (opString == "Multi") {
             STORM_LOG_WARN_COND(model.getModelFeatures().hasMultiObjectiveProperties(),
                                 "Model feature " << storm::jani::toString(storm::jani::ModelFeature::MultiObjectiveProperties)
@@ -698,15 +739,16 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                 typeString == "tradeoff" ? storm::logic::MultiObjectiveFormula::Type::Tradeoff : storm::logic::MultiObjectiveFormula::Type::Lexicographic;
             return std::make_shared<storm::logic::MultiObjectiveFormula const>(subformulas, type);
         } else if (expr.isInitialized()) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException,
-                            "Non-trivial Expression '" << expr << "' contains a boolean transient variable. Can not translate to PRCTL-like formula at "
-                                                       << scope.description << ".");
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidJaniException,
+                                            "Non-trivial Expression '" << expr
+                                                                       << "' contains a boolean transient variable. Can not translate to PRCTL-like formula at "
+                                                                       << scope.description << ".");
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opString << ".");
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidJaniException, "Unknown operator " << opString << ".");
         }
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException,
-                        "Looking for operator for formula " << propertyStructure.dump() << ", but did not find one.");
+        STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidJaniException,
+                                        "Looking for operator for formula " << propertyStructure.dump() << ", but did not find one.");
     }
 }
 

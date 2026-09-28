@@ -68,7 +68,8 @@ void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>
         };
 
         for (auto& property : input.properties) {
-            auto result = verificationCallback(property.getRawFormula())->asExplicitQuantitativeCheckResult<ValueType>().getValueVector();
+            auto const checkResult = verificationCallback(property.getRawFormula());
+            auto const result = checkResult->asExplicitQuantitativeCheckResult<ValueType>().getFiniteValueVector();
             ValueType valuation;
 
             auto states = model->getInitialStates();

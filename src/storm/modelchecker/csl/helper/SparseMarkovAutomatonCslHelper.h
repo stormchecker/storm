@@ -1,11 +1,14 @@
 #pragma once
 
+#include <optional>
+
 #include "storm/modelchecker/prctl/helper/MDPModelCheckingHelperReturnType.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolveGoal.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/MaximalEndComponent.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/numerical.h"
 
@@ -23,14 +26,16 @@ class SparseMarkovAutomatonCslHelper {
                                                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                    std::vector<ValueType> const& exitRateVector,
                                                                    storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& phiStates,
-                                                                   storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair);
+                                                                   storm::storage::BitVector const& psiStates,
+                                                                   std::pair<double, std::optional<double>> const& boundsPair);
 
     template<typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
     static std::vector<ValueType> computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
                                                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                    std::vector<ValueType> const& exitRateVector,
                                                                    storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& phiStates,
-                                                                   storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair);
+                                                                   storm::storage::BitVector const& psiStates,
+                                                                   std::pair<double, std::optional<double>> const& boundsPair);
 
     template<typename ValueType>
     static MDPSparseModelCheckingHelperReturnType<ValueType> computeUntilProbabilities(Environment const& env, OptimizationDirection dir,
@@ -41,29 +46,23 @@ class SparseMarkovAutomatonCslHelper {
                                                                                        bool produceScheduler);
 
     template<typename ValueType, typename RewardModelType>
-    static MDPSparseModelCheckingHelperReturnType<ValueType> computeTotalRewards(Environment const& env, OptimizationDirection dir,
-                                                                                 storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                 storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                                 std::vector<ValueType> const& exitRateVector,
-                                                                                 storm::storage::BitVector const& markovianStates,
-                                                                                 RewardModelType const& rewardModel, bool produceScheduler);
+    static MDPSparseModelCheckingHelperReturnType<ValueType, storm::utility::ExtendedValueType<ValueType>> computeTotalRewards(
+        Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+        storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
+        storm::storage::BitVector const& markovianStates, RewardModelType const& rewardModel, bool produceScheduler);
 
     template<typename ValueType, typename RewardModelType>
-    static MDPSparseModelCheckingHelperReturnType<ValueType> computeReachabilityRewards(Environment const& env, OptimizationDirection dir,
-                                                                                        storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                        storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                                        std::vector<ValueType> const& exitRateVector,
-                                                                                        storm::storage::BitVector const& markovianStates,
-                                                                                        RewardModelType const& rewardModel,
-                                                                                        storm::storage::BitVector const& psiStates, bool produceScheduler);
+    static MDPSparseModelCheckingHelperReturnType<ValueType, storm::utility::ExtendedValueType<ValueType>> computeReachabilityRewards(
+        Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+        storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
+        storm::storage::BitVector const& markovianStates, RewardModelType const& rewardModel, storm::storage::BitVector const& psiStates,
+        bool produceScheduler);
 
     template<typename ValueType>
-    static MDPSparseModelCheckingHelperReturnType<ValueType> computeReachabilityTimes(Environment const& env, OptimizationDirection dir,
-                                                                                      storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                      storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                                      std::vector<ValueType> const& exitRateVector,
-                                                                                      storm::storage::BitVector const& markovianStates,
-                                                                                      storm::storage::BitVector const& psiStates, bool produceScheduler);
+    static MDPSparseModelCheckingHelperReturnType<ValueType, storm::utility::ExtendedValueType<ValueType>> computeReachabilityTimes(
+        Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+        storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
+        storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, bool produceScheduler);
 };
 
 }  // namespace helper

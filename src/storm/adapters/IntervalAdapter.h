@@ -15,3 +15,12 @@ inline size_t hash_value(carl::Interval<Number> const& i) {
     return h(i);
 }
 }  // namespace carl
+
+namespace storm {
+
+/*!
+ * Type describing the interval bounds.
+ */
+using BoundType = carl::BoundType;
+
+}  // namespace storm

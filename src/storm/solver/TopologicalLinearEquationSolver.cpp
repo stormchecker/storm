@@ -110,18 +110,25 @@ bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environm
         }
         storm::storage::BitVector sccAsBitVector(x.size(), false);
         uint64_t sccIndex = 0;
-        storm::utility::ProgressMeasurement progress("states");
+        storm::utility::ProgressMeasurement progress("states", env.solver().getShowProgressDelay());
         progress.setMaxCount(x.size());
         progress.startNewMeasurement(0);
         for (auto const& scc : *this->sortedSccDecomposition) {
             if (scc.size() == 1) {
                 returnValue = solveTrivialScc(*scc.begin(), x, b) && returnValue;
             } else {
-                sccAsBitVector.clear();
                 for (auto const& state : scc) {
                     sccAsBitVector.set(state, true);
                 }
-                returnValue = solveScc(sccSolverEnvironment, sccAsBitVector, x, b, newRelevantValues) && returnValue;
+                returnValue = solveScc(sccSolverEnvironment, scc, sccAsBitVector, x, b, newRelevantValues) && returnValue;
+                // clear sccAsBitVector, either by clearing all bits or by clearing the bits of the current SCC (if its small)
+                if (scc.size() * 64 < sccAsBitVector.size()) {
+                    for (auto const& state : scc) {
+                        sccAsBitVector.set(state, false);
+                    }
+                } else {
+                    sccAsBitVector.clear();
+                }
             }
             ++sccIndex;
             progress.updateProgress(sccIndex);
@@ -203,36 +210,55 @@ bool TopologicalLinearEquationSolver<ValueType>::solveFullyConnectedEquationSyst
 }
 
 template<typename ValueType>
-bool TopologicalLinearEquationSolver<ValueType>::solveScc(storm::Environment const& sccSolverEnvironment, storm::storage::BitVector const& scc,
-                                                          std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB,
+bool TopologicalLinearEquationSolver<ValueType>::solveScc(storm::Environment const& sccSolverEnvironment, storm::storage::StronglyConnectedComponent const& scc,
+                                                          storm::storage::BitVector const& sccAsBitVector, std::vector<ValueType>& globalX,
+                                                          std::vector<ValueType> const& globalB,
                                                           std::optional<storm::storage::BitVector> const& globalRelevantValues) const {
+    // Restricts a vector indexed by states to the states of the scc
+    auto restrictToScc = [&scc](std::vector<ValueType> const& globalVector) {
+        std::vector<ValueType> result;
+        result.reserve(scc.size());
+        for (uint64_t const state : scc) {
+            result.push_back(globalVector[state]);
+        }
+        return result;
+    };
+
     // Set up the SCC solver
     if (!this->sccSolver) {
         this->sccSolver = GeneralLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
         this->sccSolver->setCachingEnabled(true);
     }
+    if (!this->sccSubmatrixBuilder) {
+        this->sccSubmatrixBuilder = std::make_unique<storm::storage::SubmatrixBuilder<ValueType>>(*this->A);
+    }
     if (globalRelevantValues) {
-        this->sccSolver->setRelevantValues((*globalRelevantValues) % scc);
+        storm::storage::BitVector sccRelevantValues(scc.size(), false);
+        uint64_t sccState = 0;
+        for (uint64_t const state : scc) {
+            sccRelevantValues.set(sccState++, globalRelevantValues->get(state));
+        }
+        this->sccSolver->setRelevantValues(std::move(sccRelevantValues));
     }
 
     // Matrix
     bool asEquationSystem = this->sccSolver->getEquationProblemFormat(sccSolverEnvironment) == LinearEquationSolverProblemFormat::EquationSystem;
-    storm::storage::SparseMatrix<ValueType> sccA = this->A->getSubmatrix(true, scc, scc, asEquationSystem);
+    storm::storage::SparseMatrix<ValueType> sccA = this->sccSubmatrixBuilder->getByRowGroupConstraint(scc, scc, asEquationSystem);
     if (asEquationSystem) {
         sccA.convertToEquationSystem();
     }
     this->sccSolver->setMatrix(std::move(sccA));
 
     // x Vector
-    auto sccX = storm::utility::vector::filterVector(globalX, scc);
+    auto sccX = restrictToScc(globalX);
 
     // b Vector
     std::vector<ValueType> sccB;
-    sccB.reserve(scc.getNumberOfSetBits());
-    for (uint64_t row : scc) {
+    sccB.reserve(scc.size());
+    for (uint64_t const row : scc) {
         ValueType bi = globalB[row];
         for (auto const& entry : this->A->getRow(row)) {
-            if (!scc.get(entry.getColumn())) {
+            if (!sccAsBitVector.get(entry.getColumn())) {
                 bi += entry.getValue() * globalX[entry.getColumn()];
             }
         }
@@ -243,19 +269,21 @@ bool TopologicalLinearEquationSolver<ValueType>::solveScc(storm::Environment con
     if (this->hasLowerBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Global)) {
         this->sccSolver->setLowerBound(this->getLowerBound());
     } else if (this->hasLowerBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Local)) {
-        this->sccSolver->setLowerBounds(storm::utility::vector::filterVector(this->getLowerBounds(), scc));
+        this->sccSolver->setLowerBounds(restrictToScc(this->getLowerBounds()));
     }
     if (this->hasUpperBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Global)) {
         this->sccSolver->setUpperBound(this->getUpperBound());
     } else if (this->hasUpperBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Local)) {
-        this->sccSolver->setUpperBounds(storm::utility::vector::filterVector(this->getUpperBounds(), scc));
+        this->sccSolver->setUpperBounds(restrictToScc(this->getUpperBounds()));
     }
 
-    // std::cout << "rhs is " << storm::utility::vector::toString(sccB) << '\n';
-    // std::cout << "x is " << storm::utility::vector::toString(sccX) << '\n';
-
     bool returnvalue = this->sccSolver->solveEquations(sccSolverEnvironment, sccX, sccB);
-    storm::utility::vector::setVectorValues(globalX, scc, sccX);
+
+    // Set solution
+    uint64_t sccState = 0;
+    for (uint64_t const state : scc) {
+        globalX[state] = std::move(sccX[sccState++]);
+    }
     return returnvalue;
 }
 
@@ -275,6 +303,7 @@ void TopologicalLinearEquationSolver<ValueType>::clearCache() const {
     sortedSccDecomposition.reset();
     longestSccChainSize = boost::none;
     sccSolver.reset();
+    sccSubmatrixBuilder.reset();
     LinearEquationSolver<ValueType>::clearCache();
 }
 
@@ -290,7 +319,9 @@ uint64_t TopologicalLinearEquationSolver<ValueType>::getMatrixColumnCount() cons
 
 template<typename ValueType>
 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> TopologicalLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
-    return std::make_unique<storm::solver::TopologicalLinearEquationSolver<ValueType>>();
+    auto solver = std::make_unique<storm::solver::TopologicalLinearEquationSolver<ValueType>>();
+    solver->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
+    return solver;
 }
 
 template<typename ValueType>

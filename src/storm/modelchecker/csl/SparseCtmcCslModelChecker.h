@@ -3,6 +3,7 @@
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/solver/LinearEquationSolver.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/NumberTraits.h"
 
 namespace storm {
@@ -12,6 +13,7 @@ template<class SparseCtmcModelType>
 class SparseCtmcCslModelChecker : public SparsePropositionalModelChecker<SparseCtmcModelType> {
    public:
     typedef typename SparseCtmcModelType::ValueType ValueType;
+    typedef storm::utility::ExtendedValueType<ValueType> ExtendedValueType;
     typedef typename SparseCtmcModelType::RewardModelType RewardModelType;
 
     explicit SparseCtmcCslModelChecker(SparseCtmcModelType const& model);

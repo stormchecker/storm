@@ -7,7 +7,7 @@ Note that in most cases a simultaneous release of [carl-storm](https://github.co
    This should be automatically handled by a CI workflow triggered by new releases in carl-storm.
    To manually update the carl version, update the following locations:
    * `STORM_CARL_GIT_TAG` in `CMakeLists.txt`
-   * `carl_tag` in `Dockerfile`, `.github/workflows/Dockerfile.alpine`, `.github/workflows/Dockerfile.archlinux` and `.github/workflows/Dockerfile.release`
+   * `carl_tag` in `Dockerfile` and `.github/workflows/Dockerfile.release`
 
 2. Update the versions of the dependencies in the [storm-dependencies Dockerfile](https://github.com/stormchecker/docker-storm/blob/main/storm-dependencies/Dockerfile).
    Use the [CI of docker-storm](https://github.com/stormchecker/docker-storm/actions/workflows/dependencies.yml) to create new Docker images.

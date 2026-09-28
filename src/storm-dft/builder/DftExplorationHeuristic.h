@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <memory>
 
 #include "storm/exceptions/NotImplementedException.h"
@@ -140,13 +142,10 @@ class DFTExplorationHeuristicProbability : public DFTExplorationHeuristic<ValueT
 template<typename ValueType>
 class DFTExplorationHeuristicBoundDifference : public DFTExplorationHeuristicProbability<ValueType> {
    public:
-    DFTExplorationHeuristicBoundDifference(size_t id)
-        : DFTExplorationHeuristicProbability<ValueType>(id), lowerBound(storm::utility::zero<ValueType>()), upperBound(storm::utility::infinity<ValueType>()) {}
+    DFTExplorationHeuristicBoundDifference(size_t id) : DFTExplorationHeuristicProbability<ValueType>(id) {}
 
     DFTExplorationHeuristicBoundDifference(size_t id, DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate)
-        : DFTExplorationHeuristicProbability<ValueType>(id, predecessor, rate, exitRate),
-          lowerBound(storm::utility::zero<ValueType>()),
-          upperBound(storm::utility::infinity<ValueType>()) {}
+        : DFTExplorationHeuristicProbability<ValueType>(id, predecessor, rate, exitRate) {}
 
     void setBounds(ValueType lowerBound, ValueType upperBound) override {
         this->lowerBound = lowerBound;
@@ -154,18 +153,22 @@ class DFTExplorationHeuristicBoundDifference : public DFTExplorationHeuristicPro
     }
 
     ValueType getLowerBound() const override {
-        return lowerBound;
+        STORM_LOG_ASSERT(lowerBound.has_value(), "Bounds have not been set for this heuristic.");
+        return *lowerBound;
     }
 
     ValueType getUpperBound() const override {
-        return upperBound;
+        STORM_LOG_ASSERT(upperBound.has_value(), "Bounds have not been set for this heuristic.");
+        return *upperBound;
     }
 
     double getPriority() const override;
 
    protected:
-    ValueType lowerBound;
-    ValueType upperBound;
+    /// The bounds are set by the model builder before the heuristic enters the exploration queue. Until then there are
+    /// no bounds at all, rather than bounds that happen to be infinite.
+    std::optional<ValueType> lowerBound;
+    std::optional<ValueType> upperBound;
 };
 
 }  // namespace builder

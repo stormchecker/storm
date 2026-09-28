@@ -45,7 +45,7 @@ class SparseExplorationModelChecker : public AbstractModelChecker<ModelType> {
     typedef StateType ActionType;
     typedef std::vector<std::pair<StateType, ActionType>> StateActionStack;
 
-    SparseExplorationModelChecker(storm::prism::Program const& program);
+    SparseExplorationModelChecker(storm::Environment const& env, storm::prism::Program const& program);
 
     static bool canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask);
 

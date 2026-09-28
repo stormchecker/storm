@@ -77,6 +77,8 @@ class Formula : public std::enable_shared_from_this<Formula> {
     virtual bool isGloballyFormula() const;
     virtual bool isEventuallyFormula() const;
     virtual bool isReachabilityProbabilityFormula() const;
+    virtual bool isWeakUntilFormula() const;
+    virtual bool isReleaseFormula() const;
     virtual bool isHOAPathFormula() const;
 
     // Reward formulas.
@@ -150,6 +152,12 @@ class Formula : public std::enable_shared_from_this<Formula> {
 
     UntilFormula& asUntilFormula();
     UntilFormula const& asUntilFormula() const;
+
+    WeakUntilFormula& asWeakUntilFormula();
+    WeakUntilFormula const& asWeakUntilFormula() const;
+
+    ReleaseFormula& asReleaseFormula();
+    ReleaseFormula const& asReleaseFormula() const;
 
     HOAPathFormula& asHOAPathFormula();
     HOAPathFormula const& asHOAPathFormula() const;

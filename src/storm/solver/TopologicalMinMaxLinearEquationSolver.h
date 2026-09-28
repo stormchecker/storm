@@ -6,6 +6,7 @@
 
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/SubmatrixBuilder.h"
 
 namespace storm {
 
@@ -45,14 +46,16 @@ class TopologicalMinMaxLinearEquationSolver : public StandardMinMaxLinearEquatio
     bool solveFullyConnectedEquationSystem(storm::Environment const& sccSolverEnvironment, OptimizationDirection d, std::vector<SolutionType>& x,
                                            std::vector<ValueType> const& b) const;
     // ... for the remaining cases (1 < scc.size() < x.size())
-    bool solveScc(storm::Environment const& sccSolverEnvironment, OptimizationDirection d, storm::storage::BitVector const& sccRowGroups,
-                  storm::storage::BitVector const& sccRows, std::vector<SolutionType>& globalX, std::vector<ValueType> const& globalB,
+    bool solveScc(storm::Environment const& sccSolverEnvironment, OptimizationDirection d, storm::storage::StronglyConnectedComponent const& scc,
+                  storm::storage::BitVector const& sccAsBitVector, std::vector<SolutionType>& globalX, std::vector<ValueType> const& globalB,
                   std::optional<storm::storage::BitVector> const& globalRelevantValues) const;
 
     // cached auxiliary data
     mutable std::unique_ptr<storm::storage::StronglyConnectedComponentDecomposition<ValueType>> sortedSccDecomposition;
     mutable boost::optional<uint64_t> longestSccChainSize;
     mutable std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> sccSolver;
+    // Builds the submatrices of all SCCs (reuses its internal lookup table between SCCs)
+    mutable std::unique_ptr<storm::storage::SubmatrixBuilder<ValueType>> sccSubmatrixBuilder;
     mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector;  // A.rowGroupCount() entries
 };
 }  // namespace solver

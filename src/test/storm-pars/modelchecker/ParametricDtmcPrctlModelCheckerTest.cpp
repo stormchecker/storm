@@ -86,7 +86,7 @@ void checkDie(storm::Environment const& env) {
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult1 =
         result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
 
-    EXPECT_EQ(parseNumber("1/6"), quantitativeResult1[0].evaluate(instantiation));
+    EXPECT_EQ(parseNumber("1/6"), quantitativeResult1[0].getFinite().evaluate(instantiation));
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"two\"]");
 
@@ -94,7 +94,7 @@ void checkDie(storm::Environment const& env) {
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult2 =
         result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
 
-    EXPECT_EQ(parseNumber("1/6"), quantitativeResult2[0].evaluate(instantiation));
+    EXPECT_EQ(parseNumber("1/6"), quantitativeResult2[0].getFinite().evaluate(instantiation));
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"three\"]");
 
@@ -102,7 +102,7 @@ void checkDie(storm::Environment const& env) {
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult3 =
         result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
 
-    EXPECT_EQ(parseNumber("1/6"), quantitativeResult3[0].evaluate(instantiation));
+    EXPECT_EQ(parseNumber("1/6"), quantitativeResult3[0].getFinite().evaluate(instantiation));
 
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"done\"]");
 
@@ -110,7 +110,7 @@ void checkDie(storm::Environment const& env) {
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult4 =
         result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
 
-    EXPECT_EQ(parseNumber("11/3"), quantitativeResult4[0].evaluate(instantiation));
+    EXPECT_EQ(parseNumber("11/3"), quantitativeResult4[0].getFinite().evaluate(instantiation));
 }
 
 typedef ::testing::Types<EigenEnvironment, EliminationEnvironment> TestingTypes;

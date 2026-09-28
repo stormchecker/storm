@@ -267,13 +267,13 @@ template<typename ParametricType, typename ConstantType>
 std::size_t ParameterLifter<ParametricType, ConstantType>::AbstractValuation::getHashValue() const {
     std::size_t seed = 0;
     for (auto const& p : lowerPars) {
-        carl::hash_add(seed, p);
+        boost::hash_combine(seed, std::hash<VariableType>()(p));
     }
     for (auto const& p : upperPars) {
-        carl::hash_add(seed, p);
+        boost::hash_combine(seed, std::hash<VariableType>()(p));
     }
     for (auto const& p : unspecifiedPars) {
-        carl::hash_add(seed, p);
+        boost::hash_combine(seed, std::hash<VariableType>()(p));
     }
     return seed;
 }

@@ -1076,7 +1076,7 @@ typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismMode
 
         return ActionDecisionDiagram(action1.guardDd || action2.guardDd, combinedTransitions, assignedGlobalVariables, numberOfUsedNondeterminismVariables + 1);
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Illegal model type.");
+        STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidStateException, "Illegal model type.");
     }
 }
 

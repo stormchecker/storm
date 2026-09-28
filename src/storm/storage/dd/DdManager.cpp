@@ -526,7 +526,6 @@ template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getAddOne() c
 template Add<DdType::CUDD, storm::RationalNumber> DdManager<DdType::CUDD>::getAddOne() const;
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getInfinity<double>() const;
-template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getInfinity<uint_fast64_t>() const;
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getConstant(double const& value) const;
 template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getConstant(uint_fast64_t const& value) const;
@@ -553,7 +552,6 @@ template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::g
 template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getAddOne() const;
 
 template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getInfinity<double>() const;
-template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getInfinity<uint_fast64_t>() const;
 template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::getInfinity<storm::RationalNumber>() const;
 template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getInfinity<storm::RationalFunction>() const;
 

@@ -90,7 +90,7 @@ ExplorationSettings::PrecomputationType ExplorationSettings::getPrecomputationTy
     } else if (typeAsString == "global") {
         return ExplorationSettings::PrecomputationType::Global;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown precomputation type '" << typeAsString << "'.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown precomputation type '" << typeAsString << "'.");
 }
 
 uint_fast64_t ExplorationSettings::getNumberOfExplorationStepsUntilPrecomputation() const {
@@ -114,7 +114,7 @@ ExplorationSettings::NextStateHeuristic ExplorationSettings::getNextStateHeurist
     } else if (nextStateHeuristicAsString == "unif") {
         return ExplorationSettings::NextStateHeuristic::Uniform;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown next-state heuristic '" << nextStateHeuristicAsString << "'.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown next-state heuristic '" << nextStateHeuristicAsString << "'.");
 }
 
 double ExplorationSettings::getPrecision() const {
