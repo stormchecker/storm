@@ -44,7 +44,7 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
 
     struct keywordsStruct : qi::symbols<char, uint_fast64_t> {
         keywordsStruct() {
-            add("true", 1)("false", 2)("min", 3)("max", 4)("F", 5)("G", 6)("X", 7)("U", 8)("C", 9)("I", 10)("P", 11)("R", 12)("S", 13);
+            add("true", 1)("false", 2)("min", 3)("max", 4)("F", 5)("G", 6)("X", 7)("U", 8)("C", 9)("I", 10)("P", 11)("R", 12)("S", 13)("W", 14);
         }
     };
     // A parser used for recognizing the standard keywords (that also apply to e.g. PRISM). These shall not coincide with expression variables
