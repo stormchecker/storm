@@ -81,3 +81,32 @@ TEST_F(SparseMaCbMultiObjectiveModelCheckerTest, serverWithSolverFromEnvironment
     EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 #endif
+#ifdef STORM_HAVE_CVC5
+TEST_F(SparseMaCbMultiObjectiveModelCheckerTest, serverWithCvc5) {
+    storm::Environment env;
+    env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::ConstraintBased);
+    env.solver().setSmtSolverType(storm::solver::SmtSolverType::Cvc5);
+
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/server.ma";
+    std::string formulasAsString = "multi(T>=5/3 [ F \"error\" ], P>=7/12 [ F \"processB\" ]) ";  // true
+    formulasAsString += "; multi(T>=16/9 [ F \"error\" ], P>=7/12 [ F \"processB\" ]) ";          // false
+
+    storm::prism::Program program = storm::api::parseProgram(programFile);
+    program = program.preprocess("");
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> ma =
+        storm::api::buildSparseModel<storm::RationalNumber>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>();
+    uint_fast64_t const initState = *ma->getInitialStates().begin();
+
+    std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+    result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
+    ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
+    EXPECT_TRUE(result->template asExplicitQualitativeCheckResult<storm::RationalNumber>()[initState]);
+
+    result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula());
+    ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
+    EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<storm::RationalNumber>()[initState]);
+}
+#endif
