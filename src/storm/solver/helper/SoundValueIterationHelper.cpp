@@ -249,7 +249,7 @@ bool SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::checkCus
             return condition.terminateNow([&](uint64_t const& i) { return xy.first[i] + xy.second[i] * max; }, storm::solver::SolverGuarantee::GreaterOrEqual);
         } else if (condition.requiresGuarantee(storm::solver::SolverGuarantee::LessOrEqual)) {
             auto min = std::min(*a, *b);
-            return condition.terminateNow([&](uint64_t const& i) { return xy.first[i] + xy.second[i] * min; }, storm::solver::SolverGuarantee::GreaterOrEqual);
+            return condition.terminateNow([&](uint64_t const& i) { return xy.first[i] + xy.second[i] * min; }, storm::solver::SolverGuarantee::LessOrEqual);
         }
     }
     return false;
