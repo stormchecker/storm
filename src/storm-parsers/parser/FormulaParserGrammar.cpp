@@ -39,8 +39,8 @@ void FormulaParserGrammar::initialize() {
 
     // Auxiliary helpers
     isPathFormula = qi::eps(qi::_r1 == FormulaKind::Path);
-    noAmbiguousNonAssociativeOperator =
-        !(qi::lit(qi::_r2)[qi::_pass = phoenix::bind(&FormulaParserGrammar::raiseAmbiguousNonAssociativeOperatorError, phoenix::ref(*this), qi::_r1, qi::_r2)]);
+    noAmbiguousNonAssociativeOperator = !(
+        binaryPathOperator_[qi::_pass = phoenix::bind(&FormulaParserGrammar::raiseAmbiguousNonAssociativeOperatorError, phoenix::ref(*this), qi::_r1, qi::_1)]);
     noAmbiguousNonAssociativeOperator.name("no ambiguous non-associative operator");
     identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_') | qi::char_('.')) >> *(qi::alnum | qi::char_('_')))]]];
     identifier.name("identifier");
@@ -167,13 +167,15 @@ void FormulaParserGrammar::initialize() {
     multiBoundedPathFormula = ((qi::lit("multi") > qi::lit("(")) >> (multiBoundedPathFormulaOperand(qi::_r1) % qi::lit(",")) >>
                                qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiBoundedPathFormula, phoenix::ref(*this), qi::_1)];
     multiBoundedPathFormula.name("multi bounded path formula");
-    untilLevelPathFormula =
+    // U, W, R go through here
+    binaryLevelPathFormula =
         basicPathFormula(qi::_r1)[qi::_val = qi::_1] >>
-        -((qi::lit("U") > (-timeBounds) >
-           basicPathFormula(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createUntilFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)]) >>
-        (qi::eps > noAmbiguousNonAssociativeOperator(qi::_val, std::string("U")));  // Do not parse a U b U c
-    untilLevelPathFormula.name("until precedence level path formula");
-    pathFormula = untilLevelPathFormula(qi::_r1);
+        -((binaryPathOperator_ > (-timeBounds) >
+           basicPathFormula(
+               qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createBinaryPathFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_3)]) >>
+        (qi::eps > noAmbiguousNonAssociativeOperator(qi::_val));  // Do not parse a U b U c
+    binaryLevelPathFormula.name("binary path operator precedence level path formula");
+    pathFormula = binaryLevelPathFormula(qi::_r1);
     pathFormula.name("path formula");
 
     // Quantitative path formulae (reward)
@@ -277,7 +279,7 @@ void FormulaParserGrammar::initialize() {
     //            debug(multiBoundedPathFormula)
     //            debug(prefixOperatorPathFormula)
     //            debug(basicPathFormula)
-    //            debug(untilLevelPathFormula)
+    //            debug(binaryLevelPathFormula)
     //            debug(pathFormula)
     //            debug(longRunAverageRewardFormula)
     //            debug(instantaneousRewardFormula)
@@ -318,7 +320,7 @@ void FormulaParserGrammar::initialize() {
     qi::on_error<qi::fail>(multiBoundedPathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(prefixOperatorPathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(basicPathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-    qi::on_error<qi::fail>(untilLevelPathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+    qi::on_error<qi::fail>(binaryLevelPathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(pathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(longRunAverageRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(instantaneousRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -508,36 +510,56 @@ std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createNextFor
     return std::shared_ptr<storm::logic::Formula const>(new storm::logic::NextFormula(subformula));
 }
 
-std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createUntilFormula(
-    std::shared_ptr<storm::logic::Formula const> const& leftSubformula,
+std::string FormulaParserGrammar::toString(BinaryPathOperator op) {
+    switch (op) {
+        case BinaryPathOperator::Until:
+            return "U";
+        case BinaryPathOperator::WeakUntil:
+            return "W";
+        case BinaryPathOperator::Release:
+            return "R";
+    }
+    return "";
+}
+
+std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createBinaryPathFormula(
+    std::shared_ptr<storm::logic::Formula const> const& leftSubformula, BinaryPathOperator op,
     boost::optional<std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>,
                                            std::shared_ptr<storm::logic::TimeBoundReference>>>> const& timeBounds,
-    std::shared_ptr<storm::logic::Formula const> const& rightSubformula) {
-    if (timeBounds && !timeBounds.get().empty()) {
-        // Conversion of boost::optional to std::optional
-        // This can be simplified if the input is changed to already use std::optional
-        std::vector<std::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
-        std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
-        for (auto const& timeBound : timeBounds.get()) {
-            auto const& lowerBound = std::get<0>(timeBound);
-            auto const& upperBound = std::get<1>(timeBound);
-            if (lowerBound) {
-                lowerBounds.emplace_back(lowerBound.get());
-            } else {
-                lowerBounds.emplace_back();
-            }
-            if (upperBound) {
-                upperBounds.emplace_back(upperBound.get());
-            } else {
-                upperBounds.emplace_back();
-            }
-            timeBoundReferences.emplace_back(*std::get<2>(timeBound));
+    std::shared_ptr<storm::logic::Formula const> const& rightSubformula) const {
+    bool const hasTimeBounds = timeBounds && !timeBounds.get().empty();
+    if (op != BinaryPathOperator::Until) {
+        // Only until operator has a bounded variant.
+        STORM_LOG_THROW(!hasTimeBounds, storm::exceptions::WrongFormatException, "Bounded '" << toString(op) << "' formulas are not supported.");
+        if (op == BinaryPathOperator::WeakUntil) {
+            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::WeakUntilFormula(leftSubformula, rightSubformula));
         }
-        return std::shared_ptr<storm::logic::Formula const>(
-            new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, lowerBounds, upperBounds, timeBoundReferences));
-    } else {
+        return std::shared_ptr<storm::logic::Formula const>(new storm::logic::ReleaseFormula(leftSubformula, rightSubformula));
+    }
+    if (!hasTimeBounds) {
         return std::shared_ptr<storm::logic::Formula const>(new storm::logic::UntilFormula(leftSubformula, rightSubformula));
     }
+    // Conversion of boost::optional to std::optional
+    // This can be simplified if the input is changed to already use std::optional
+    std::vector<std::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
+    std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
+    for (auto const& timeBound : timeBounds.get()) {
+        auto const& lowerBound = std::get<0>(timeBound);
+        auto const& upperBound = std::get<1>(timeBound);
+        if (lowerBound) {
+            lowerBounds.emplace_back(lowerBound.get());
+        } else {
+            lowerBounds.emplace_back();
+        }
+        if (upperBound) {
+            upperBounds.emplace_back(upperBound.get());
+        } else {
+            upperBounds.emplace_back();
+        }
+        timeBoundReferences.emplace_back(*std::get<2>(timeBound));
+    }
+    return std::shared_ptr<storm::logic::Formula const>(
+        new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, lowerBounds, upperBounds, timeBoundReferences));
 }
 
 std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createHOAPathFormula(std::string const& automatonFile) const {
@@ -785,8 +807,8 @@ bool FormulaParserGrammar::isBooleanReturnType(std::shared_ptr<storm::logic::For
     return false;
 }
 
-bool FormulaParserGrammar::raiseAmbiguousNonAssociativeOperatorError(std::shared_ptr<storm::logic::Formula const> const& formula, std::string const& op) {
-    STORM_LOG_ERROR("Ambiguous use of non-associative operator '" << op << "' in formula '" << *formula << " U ... '");
+bool FormulaParserGrammar::raiseAmbiguousNonAssociativeOperatorError(std::shared_ptr<storm::logic::Formula const> const& formula, BinaryPathOperator op) const {
+    STORM_LOG_ERROR("Ambiguous use of non-associative operator '" << toString(op) << "' in formula '" << *formula << " " << toString(op) << " ... '");
     return true;
 }
 
