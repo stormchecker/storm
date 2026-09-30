@@ -138,6 +138,54 @@ TEST(FragmentCheckerTest, Csrl) {
     EXPECT_TRUE(checker.conformsToSpecification(*formula, csrl));
 }
 
+TEST(FragmentCheckerTest, RecursionIntoSubformulas) {
+    auto expManager = std::make_shared<storm::expressions::ExpressionManager>();
+    storm::logic::FragmentChecker checker;
+    storm::logic::FragmentSpecification pctl_nl = storm::logic::pctl();
+    pctl_nl.setBooleanLiteralFormulasAllowed(false);
+
+    storm::parser::FormulaParser formulaParser(expManager);
+    std::shared_ptr<storm::logic::Formula const> formula;
+
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [G \"label\"]"));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, pctl_nl));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [X \"label\"]"));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, pctl_nl));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [F \"label\"]"));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, pctl_nl));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [\"label\" U \"label\"]"));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, pctl_nl));
+
+    // Should be out of spec
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [G true]"));
+    EXPECT_FALSE(checker.conformsToSpecification(*formula, pctl_nl));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [X true]"));
+    EXPECT_FALSE(checker.conformsToSpecification(*formula, pctl_nl));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [F true]"));
+    EXPECT_FALSE(checker.conformsToSpecification(*formula, pctl_nl));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [\"label\" U true]"));
+    EXPECT_FALSE(checker.conformsToSpecification(*formula, pctl_nl));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [true U \"label\"]"));
+    EXPECT_FALSE(checker.conformsToSpecification(*formula, pctl_nl));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [true U true]"));
+    EXPECT_FALSE(checker.conformsToSpecification(*formula, pctl_nl));
+
+    // But fine in pctl
+    storm::logic::FragmentSpecification pctl = storm::logic::pctl();
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [G true]"));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, pctl));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [X true]"));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, pctl));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [F true]"));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, pctl));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [\"label\" U true]"));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, pctl));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [true U \"label\"]"));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, pctl));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [true U true]"));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, pctl));
+}
+
 TEST(FragmentCheckerTest, MultiObjective) {
     storm::logic::FragmentChecker checker;
     storm::logic::FragmentSpecification multiobjective = storm::logic::multiObjective();
