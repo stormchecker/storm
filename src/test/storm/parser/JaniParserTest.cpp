@@ -1,529 +1,24 @@
 #include "storm-config.h"
+
+#include <fstream>
+#include <iterator>
 #include "test/storm_gtest.h"
 
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/parser/JaniParser.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/io/file.h"
 #include "storm/logic/Formulas.h"
+#include "storm/logic/FragmentSpecification.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/ModelType.h"
 #include "storm/storage/jani/Property.h"
 
 TEST(JaniParser, DieExampleTest) {
-    std::string testInput = R"({
-	"jani-version": 1,
-	"name": "die.jani",
-	"type": "dtmc",
-	"features": [ "derived-operators" ],
-	"variables": [
-		{
-			"name": "s",
-			"type": {
-				"base": "int",
-				"kind": "bounded",
-				"lower-bound": 0,
-				"upper-bound": 7
-			},
-			"initial-value": 0
-		},
-		{
-			"name": "d",
-			"type": {
-				"base": "int",
-				"kind": "bounded",
-				"lower-bound": 0,
-				"upper-bound": 6
-			},
-			"initial-value": 0
-		}
-	],
-	"properties": [
-		{
-			"name": "Probability to throw a six",
-			"expression": {
-				"op": "filter",
-				"fun": "max",
-				"states": { "op": "initial" },
-				"values": {
-					"op": "Pmin",
-					"exp": {
-						"op": "U",
-						"left": true,
-						"right": {
-							"op": "∧",
-							"left": {
-								"op": "=",
-								"left": "s",
-								"right": 7
-							},
-							"right": {
-								"op": "=",
-								"left": "d",
-								"right": 6
-							}
-						}
-					}
-				}
-			}
-		},
-		{
-			"name": "Expected number of coin flips",
-			"expression": {
-				"op": "filter",
-				"fun": "max",
-				"states": { "op": "initial" },
-				"values": {
-					"op": "Emin",
-					"accumulate": [ "steps" ],
-					"exp": 1,
-					"reach": {
-						"op": "=",
-						"left": "s",
-						"right": 7
-					}
-				}
-			}
-		},
-		{
-			"name": "Conjunction of path formulas",
-			"expression": {
-				"op": "filter",
-				"fun": "max",
-				"states": { "op": "initial" },
-				"values": {
-					"op": "Pmin",
-					"exp": {
-						"op": "∧",
-						"left": {
-							"op": "G",
-							"exp": {
-								"op": "≠",
-								"left": "d",
-								"right": 6
-							}
-						},
-						"right": {
-							"op": "F",
-							"exp": {
-								"op": "=",
-								"left": "s",
-								"right": 6
-							}
-						}
-					}
-				}
-			}
-		},
-		{
-			"name": "Disjunction of path formulas",
-			"expression": {
-				"op": "filter",
-				"fun": "max",
-				"states": { "op": "initial" },
-				"values": {
-					"op": "Pmin",
-					"exp": {
-						"op": "∨",
-						"left": {
-							"op": "G",
-							"exp": {
-								"op": "≠",
-								"left": "s",
-								"right": 3
-							}
-						},
-						"right": {
-							"op": "G",
-							"exp": {
-								"op": "≠",
-								"left": "s",
-								"right": 4
-							}
-						}
-					}
-				}
-			}
-		},
-		{
-			"name": "Negation of a path formula",
-			"expression": {
-				"op": "filter",
-				"fun": "max",
-				"states": { "op": "initial" },
-				"values": {
-					"op": "Pmin",
-					"exp": {
-						"op": "¬",
-						"exp": {
-							"op": "F",
-							"exp": {
-								"op": "=",
-								"left": "d",
-								"right": 1
-							}
-						}
-					}
-				}
-			}
-		},
-		{
-			"name": "Implication of path formulas",
-			"expression": {
-				"op": "filter",
-				"fun": "max",
-				"states": { "op": "initial" },
-				"values": {
-					"op": "Pmin",
-					"exp": {
-						"op": "⇒",
-						"left": {
-							"op": "F",
-							"exp": {
-								"op": "=",
-								"left": "s",
-								"right": 3
-							}
-						},
-						"right": {
-							"op": "F",
-							"exp": {
-								"op": "=",
-								"left": "d",
-								"right": 1
-							}
-						}
-					}
-				}
-			}
-		},
-		{
-			"name": "Conjunction of state formulas",
-			"expression": {
-				"op": "filter",
-				"fun": "count",
-				"states": true,
-				"values": {
-					"op": "∧",
-					"left": {
-						"op": "¬",
-						"exp": {
-							"op": "≥",
-							"left": {
-								"op": "Pmin",
-								"exp": {
-									"op": "F",
-									"exp": {
-										"op": "=",
-										"left": "d",
-										"right": 6
-									}
-								}
-							},
-							"right": 0.5
-						}
-					},
-					"right": {
-						"op": "≥",
-						"left": {
-							"op": "Pmin",
-							"exp": {
-								"op": "F",
-								"exp": {
-									"op": "≥",
-									"left": "d",
-									"right": 4
-								}
-							}
-						},
-						"right": 0.5
-					}
-				}
-			}
-		}
-	],
-	"automata": [
-		{
-			"name": "die",
-			"locations": [{ "name": "l" }],
-			"initial-locations": ["l"],
-			"edges": [
-				{
-					"location": "l",
-					"guard": {
-						"exp": {
-							"op": "=",
-							"left": "s",
-							"right": 0
-						}
-					},
-					"destinations": [
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 },
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 1
-								}
-							]
-						},
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 },
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 2
-								}
-							]
-						}
-					]
-				},
-				{
-					"location": "l",
-					"guard": {
-						"exp": {
-							"left": "s",
-							"op": "=",
-							"right": 1
-						}
-					},
-					"destinations": [
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 },
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 3
-								}
-							]
-						},
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 },
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 4
-								}
-							]
-						}
-					]
-				},
-				{
-					"location": "l",
-					"guard": {
-						"exp": {
-							"left": "s",
-							"op": "=",
-							"right": 2
-						}
-					},
-					"destinations": [
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 },
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 5
-								}
-							]
-						},
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 },
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 6
-								}
-							]
-						}
-					]
-				},
-				{
-					"location": "l",
-					"guard": {
-						"exp": {
-							"left": "s",
-							"op": "=",
-							"right": 3
-						}
-					},
-					"destinations": [
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 }, 
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 1
-								}
-							]
-						},
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 },
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 7
-								},
-								{
-									"ref": "d",
-									"value": 1
-								}
-							]
-						}
-					]
-				},
-				{
-					"location": "l",
-					"guard": {
-						"exp": {
-							"left": "s",
-							"op": "=",
-							"right": 4
-						}
-					},
-					"destinations": [
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 },
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 7
-								},
-								{
-									"ref": "d",
-									"value": 2
-								}
-							]
-						},
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 },
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 7
-								},
-								{
-									"ref": "d",
-									"value": 3
-								}
-							]
-						}
-					]
-				},
-				{
-					"location": "l",
-					"guard": {
-						"exp": {
-							"left": "s",
-							"op": "=",
-							"right": 5
-						}
-					},
-					"destinations": [
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 },
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 7
-								},
-								{
-									"ref": "d",
-									"value": 4
-								}
-							]
-						},
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 },
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 7
-								},
-								{
-									"ref": "d",
-									"value": 5
-								}
-							]
-						}
-					]
-				},
-				{
-					"location": "l",
-					"guard": {
-						"exp": {
-							"left": "s",
-							"op": "=",
-							"right": 6
-						}
-					},
-					"destinations": [
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 },
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 2
-								}
-							]
-						},
-						{
-							"location": "l",
-							"probability": { "exp": 0.5 },
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 7
-								},
-								{
-									"ref": "d",
-									"value": 6
-								}
-							]
-						}
-					]
-				},
-				{
-					"location": "l",
-					"guard": {
-						"exp": {
-							"left": "s",
-							"op": "=",
-							"right": 7
-						}
-					},
-					"destinations": [
-						{
-							"location": "l",
-							"assignments": [
-								{
-									"ref": "s",
-									"value": 7
-								}
-							]
-						}
-					]
-				}
-			]
-			
-		}
-	], 
-	"system": {
-		"elements": [ { "automaton": "die" } ]
-	}
-    })";
+    std::ifstream file;
+    storm::io::openFile(STORM_TEST_RESOURCES_DIR "/dtmc/die_janiproperties.jani", file);
+    std::string const testInput{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+    ASSERT_FALSE(testInput.empty());
 
     std::pair<storm::jani::Model, std::vector<storm::jani::Property>> result;
     EXPECT_NO_THROW(result = storm::api::parseJaniModelFromString(testInput));
@@ -531,7 +26,10 @@ TEST(JaniParser, DieExampleTest) {
     EXPECT_TRUE(result.first.hasGlobalVariable("s"));
     EXPECT_EQ(1ul, result.first.getNumberOfAutomata());
 
-    ASSERT_EQ(7ul, result.second.size());
+    ASSERT_EQ(12ul, result.second.size());
+
+    // Parse from file vs parse from string
+    EXPECT_EQ(storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/die_janiproperties.jani").second.size(), result.second.size());
 
     auto const& conjunction = result.second[2].getRawFormula()->asProbabilityOperatorFormula().getSubformula();
     ASSERT_TRUE(conjunction.isBinaryBooleanPathFormula());
@@ -547,6 +45,37 @@ TEST(JaniParser, DieExampleTest) {
 
     auto const& stateConjunction = *result.second[6].getRawFormula();
     ASSERT_TRUE(stateConjunction.isBinaryBooleanStateFormula());
+
+    auto const& weakUntil = result.second[7].getRawFormula()->asProbabilityOperatorFormula().getSubformula();
+    ASSERT_TRUE(weakUntil.isWeakUntilFormula());
+
+    auto const& release = result.second[8].getRawFormula()->asProbabilityOperatorFormula().getSubformula();
+    ASSERT_TRUE(release.isReleaseFormula());
+}
+
+TEST(JaniParser, DieExampleFragmentTest) {
+    std::pair<storm::jani::Model, std::vector<storm::jani::Property>> result;
+    EXPECT_NO_THROW(result = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/die_janiproperties.jani"));
+    ASSERT_EQ(12ul, result.second.size());
+
+    auto const& weakUntil = result.second[7].getRawFormula()->asProbabilityOperatorFormula().getSubformula();
+    auto const& release = result.second[8].getRawFormula()->asProbabilityOperatorFormula().getSubformula();
+    auto const& until = result.second[9].getRawFormula()->asProbabilityOperatorFormula().getSubformula();
+
+    // Weak until
+    ASSERT_TRUE(weakUntil.isWeakUntilFormula());
+    EXPECT_FALSE(weakUntil.isInFragment(storm::logic::pctl()));
+    EXPECT_TRUE(weakUntil.isInFragment(storm::logic::pctlstar()));
+
+    // Release
+    ASSERT_TRUE(release.isReleaseFormula());
+    EXPECT_FALSE(release.isInFragment(storm::logic::pctl()));
+    EXPECT_TRUE(release.isInFragment(storm::logic::pctlstar()));
+
+    // Until
+    ASSERT_TRUE(until.isUntilFormula());
+    EXPECT_TRUE(until.isInFragment(storm::logic::pctl()));
+    EXPECT_TRUE(until.isInFragment(storm::logic::pctlstar()));
 }
 
 TEST(JaniParser, DieArrayExampleTest) {

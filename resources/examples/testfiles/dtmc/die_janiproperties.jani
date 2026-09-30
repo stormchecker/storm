@@ -1,6 +1,7 @@
 {
 	"jani-version": 1,
-	"name": "die.jani",
+	"name": "die_janiproperties.jani",
+	"comment": "Caution: the properties below is checked in JaniParserTest.cpp, addressed by index!",
 	"type": "dtmc",
 	"features": [ "derived-operators" ],
 	"variables": [
@@ -27,7 +28,7 @@
 	],
 	"properties": [
 		{
-			"name": "Probability to throw a six",
+			"name": "N0: Probability to throw a six",
 			"expression": {
 				"op": "filter",
 				"fun": "max",
@@ -55,7 +56,7 @@
 			}
 		},
 		{
-			"name": "Expected number of coin flips",
+			"name": "N1: Expected number of coin flips",
 			"expression": {
 				"op": "filter",
 				"fun": "max",
@@ -73,7 +74,7 @@
 			}
 		},
 		{
-			"name": "Conjunction of path formulas",
+			"name": "N2: Conjunction of path formulas",
 			"expression": {
 				"op": "filter",
 				"fun": "max",
@@ -103,7 +104,7 @@
 			}
 		},
 		{
-			"name": "Disjunction of path formulas",
+			"name": "N3: Disjunction of path formulas",
 			"expression": {
 				"op": "filter",
 				"fun": "max",
@@ -133,7 +134,7 @@
 			}
 		},
 		{
-			"name": "Negation of a path formula",
+			"name": "N4: Negation of a path formula",
 			"expression": {
 				"op": "filter",
 				"fun": "max",
@@ -155,7 +156,7 @@
 			}
 		},
 		{
-			"name": "Implication of path formulas",
+			"name": "N5: Implication of path formulas",
 			"expression": {
 				"op": "filter",
 				"fun": "max",
@@ -185,7 +186,7 @@
 			}
 		},
 		{
-			"name": "Conjunction of state formulas",
+			"name": "N6: Conjunction of state formulas",
 			"expression": {
 				"op": "filter",
 				"fun": "count",
@@ -224,6 +225,134 @@
 							}
 						},
 						"right": 0.5
+					}
+				}
+			}
+		},
+		{
+			"name": "N7: Weak until",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "W",
+						"left": {
+							"op": "≠",
+							"left": "s",
+							"right": 3
+						},
+						"right": {
+							"op": "=",
+							"left": "d",
+							"right": 1
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "N8: Release",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "R",
+						"left": {
+							"op": "=",
+							"left": "s",
+							"right": 7
+						},
+						"right": {
+							"op": "≤",
+							"left": "d",
+							"right": 5
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "N9: Until vs weak until",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "U",
+						"left": {
+							"op": "≠",
+							"left": "s",
+							"right": 3
+						},
+						"right": {
+							"op": "=",
+							"left": "d",
+							"right": 1
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "N10: Weak until dual",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "U",
+						"left": {
+							"op": "≠",
+							"left": "d",
+							"right": 1
+						},
+						"right": {
+							"op": "∧",
+							"left": {
+								"op": "=",
+								"left": "s",
+								"right": 3
+							},
+							"right": {
+								"op": "≠",
+								"left": "d",
+								"right": 1
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "N11: Release dual",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "U",
+						"left": {
+							"op": "≠",
+							"left": "s",
+							"right": 7
+						},
+						"right": {
+							"op": "≥",
+							"left": "d",
+							"right": 6
+						}
 					}
 				}
 			}
