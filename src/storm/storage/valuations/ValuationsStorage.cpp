@@ -399,7 +399,10 @@ bool ValuationsStorage::fitsIntoStoredType(ValueType const& value, VariableInfor
         int64_t const limit = int64_t(1) << (bitSize - 1);
         return std::cmp_greater_equal(value, -limit) && std::cmp_less(value, limit);
     } else {
-        return std::cmp_greater_equal(value, 0) && (bitSize >= 64 || std::cmp_less(value, uint64_t(1) << bitSize));
+        if (bitSize >= 64) {
+            return true;  // every bit pattern of a >=64-bit carrier is a valid uint64 encoding
+        }
+        return std::cmp_greater_equal(value, 0) && std::cmp_less(value, uint64_t(1) << bitSize);
     }
 }
 
