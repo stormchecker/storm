@@ -1,7 +1,8 @@
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/solver/Z3SmtSolver.h"
+#include "storm/solver/SmtSolver.h"
+#include "storm/utility/solver.h"
 
 namespace storm {
 namespace analysis {
@@ -129,9 +130,8 @@ std::pair<bool, bool> MonotonicityChecker<ValueType>::checkDerivative(ValueType 
     bool monIncr = false;
     bool monDecr = false;
 
-    std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
     std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
-    solver::Z3SmtSolver s(*manager);
+    auto s = utility::solver::getSmtSolver(*manager);
     std::set<VariableType> variables = derivative.gatherVariables();
 
     expressions::Expression exprBounds = manager->boolean(true);
@@ -146,16 +146,16 @@ std::pair<bool, bool> MonotonicityChecker<ValueType>::checkDerivative(ValueType 
 
     // < 0, so not monotone increasing. If this is unsat, then it should be monotone increasing.
     expressions::Expression exprToCheck = converter.toExpression(derivative) < manager->rational(0);
-    s.add(exprBounds);
-    s.add(exprToCheck);
-    monIncr = s.check() == solver::SmtSolver::CheckResult::Unsat;
+    s->add(exprBounds);
+    s->add(exprToCheck);
+    monIncr = s->check() == solver::SmtSolver::CheckResult::Unsat;
 
     // > 0, so not monotone decreasing. If this is unsat it should be monotone decreasing.
     exprToCheck = converter.toExpression(derivative) > manager->rational(0);
-    s.reset();
-    s.add(exprBounds);
-    s.add(exprToCheck);
-    monDecr = s.check() == solver::SmtSolver::CheckResult::Unsat;
+    s->reset();
+    s->add(exprBounds);
+    s->add(exprToCheck);
+    monDecr = s->check() == solver::SmtSolver::CheckResult::Unsat;
 
     STORM_LOG_ASSERT(!(monIncr && monDecr), "Error analyzing " << derivative);
 

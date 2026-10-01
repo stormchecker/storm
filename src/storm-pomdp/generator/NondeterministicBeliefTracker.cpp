@@ -316,7 +316,7 @@ uint64_t NondeterministicBeliefTracker<ValueType, BeliefState>::getCurrentDimens
 template<typename ValueType, typename BeliefState>
 uint64_t NondeterministicBeliefTracker<ValueType, BeliefState>::reduce() {
     reductionTimedOut = false;
-    std::shared_ptr<storm::utility::solver::SmtSolverFactory> solverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> solverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>();
     storm::storage::geometry::ReduceVertexCloud<ValueType> rvc(solverFactory, options.wiggle, options.timeOut);
     std::vector<std::map<uint64_t, ValueType>> points;
     std::vector<typename std::unordered_set<BeliefState>::iterator> iterators;

@@ -17,7 +17,7 @@ class SparseCbAchievabilityQuery : public SparseCbQuery<SparseModelType> {
    public:
     typedef typename SparseModelType::ValueType ValueType;
 
-    SparseCbAchievabilityQuery(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
+    SparseCbAchievabilityQuery(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult, Environment const& env);
 
     virtual ~SparseCbAchievabilityQuery() = default;
 

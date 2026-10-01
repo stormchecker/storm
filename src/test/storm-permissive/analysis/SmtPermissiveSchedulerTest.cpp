@@ -41,9 +41,9 @@ TEST(SmtPermissiveSchedulerTest, DieSelection) {
     //    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms2 = storm::ps::computePermissiveSchedulerViaSMT<>(*mdp, formula001);
     //    EXPECT_EQ(perms2, boost::none);
 
-    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms3 = storm::ps::computePermissiveSchedulerViaSMT<>(*mdp, formula02b);
+    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms3 = storm::ps::computePermissiveSchedulerViaSMT<>(env, *mdp, formula02b);
     EXPECT_TRUE(perms3.is_initialized());
-    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms4 = storm::ps::computePermissiveSchedulerViaSMT<>(*mdp, formula001b);
+    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms4 = storm::ps::computePermissiveSchedulerViaSMT<>(env, *mdp, formula001b);
     EXPECT_FALSE(perms4.is_initialized());
 
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker0(*mdp);

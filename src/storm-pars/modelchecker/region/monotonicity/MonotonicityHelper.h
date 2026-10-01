@@ -13,7 +13,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 
-#include "storm/solver/Z3SmtSolver.h"
+#include "storm/solver/SmtSolver.h"
 
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
@@ -21,6 +21,7 @@
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 
 #include "storm/utility/constants.h"
+#include "storm/utility/solver.h"
 
 #include "storm-pars/api/region.h"
 
@@ -67,9 +68,8 @@ class MonotonicityHelper {
             monIncr = derivative.constantPart() >= 0;
             monDecr = derivative.constantPart() <= 0;
         } else {
-            std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
             std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
-            solver::Z3SmtSolver s(*manager);
+            auto s = utility::solver::getSmtSolver(*manager);
             std::set<VariableType> variables = derivative.gatherVariables();
 
             expressions::Expression exprBounds = manager->boolean(true);
@@ -84,16 +84,16 @@ class MonotonicityHelper {
 
             // < 0, so not monotone increasing. If this is unsat, then it should be monotone increasing.
             expressions::Expression exprToCheck = converter.toExpression(derivative) < manager->rational(0);
-            s.add(exprBounds);
-            s.add(exprToCheck);
-            monIncr = s.check() == solver::SmtSolver::CheckResult::Unsat;
+            s->add(exprBounds);
+            s->add(exprToCheck);
+            monIncr = s->check() == solver::SmtSolver::CheckResult::Unsat;
 
             // > 0, so not monotone decreasing. If this is unsat it should be monotone decreasing.
             exprToCheck = converter.toExpression(derivative) > manager->rational(0);
-            s.reset();
-            s.add(exprBounds);
-            s.add(exprToCheck);
-            monDecr = s.check() == solver::SmtSolver::CheckResult::Unsat;
+            s->reset();
+            s->add(exprBounds);
+            s->add(exprToCheck);
+            monDecr = s->check() == solver::SmtSolver::CheckResult::Unsat;
         }
         STORM_LOG_ASSERT(!(monIncr && monDecr) || derivative.isZero(), "Monotonicity both increasing and decreasing but derivative not zero.");
 
