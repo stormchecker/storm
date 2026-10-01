@@ -1,0 +1,20 @@
+// A small MDP in which the two choices of state 0 induce the same distribution over bisimulation blocks,
+// even though they reach different original states: states 1 and 2 are strongly bisimilar (both transition to
+// state 0 with probability 1), so after quotienting they form a single block. The two choices of state 0 are
+// then logically identical distributions over blocks (each goes with probability 1 to the block {1, 2}).
+// However, a single choice may reach several original states of the same block (here 1 and 2), which the
+// sparse quotient extractor represents by multiple matrix entries with the same column. The duplicate-choice
+// removal must still recognize the two choices as duplicates, i.e. it must compare the aggregated distributions
+// over blocks rather than the un-aggregated per-state entries.
+mdp
+
+module m
+  s : [0..2] init 0;
+
+  [] s=0 -> 0.5:(s'=1) + 0.5:(s'=2);
+  [b] s=0 -> 0.3:(s'=1) + 0.7:(s'=2);
+  [] s=1 -> (s'=0);
+  [] s=2 -> (s'=0);
+endmodule
+
+label "goal" = s=1 | s=2;
