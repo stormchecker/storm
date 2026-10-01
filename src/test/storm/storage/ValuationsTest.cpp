@@ -558,6 +558,21 @@ TEST(ValuationTest, WriteRejectsValuesThatDoNotFitIntoStoredType) {
     STORM_SILENT_EXPECT_THROW(storage.writeValue<Integer>(0, u, Integer(-1)), OutOfRangeException);
 }
 
+TEST(ValuationTest, WriteAcceptsFullRangeInt64UintVariable) {
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto const v = manager->declareIntegerVariable("v");
+    storm::storage::sparse::ValuationDescriptionBuilder descBuilder(manager);
+    descBuilder.addIntegerVariable(v, std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max());
+    storm::storage::sparse::ValuationsStorage storage(descBuilder.buildClassDescription(), manager);
+    storage.resize(1);
+
+    for (int64_t const val :
+         {int64_t(0), int64_t(1), int64_t(5), std::numeric_limits<int64_t>::max(), int64_t(-1), int64_t(-5), std::numeric_limits<int64_t>::min()}) {
+        storage.writeValue<int64_t>(0, v, val);
+        EXPECT_EQ(val, storage.readValue<int64_t>(0, v)) << "Round-trip failed for value " << val;
+    }
+}
+
 TEST(ValuationTest, FailedWriteDoesNotSetPresenceBitOfOptionalVariable) {
     auto manager = std::make_shared<storm::expressions::ExpressionManager>();
     auto const i = manager->declareIntegerVariable("i");
