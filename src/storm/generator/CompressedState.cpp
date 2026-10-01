@@ -69,7 +69,7 @@ void unpackStateDifferenceIntoEvaluator(CompressedState const& newState, Compres
                                         storm::expressions::ExpressionEvaluator<ValueType>& evaluator) {
     STORM_LOG_ASSERT(newState.size() == oldState.size(), "Unexpected state sizes.");
     // Compute the bits that differ between the two states, one bucket at a time (this is much cheaper than comparing the variables individually)
-    StackedIndexVector differenceStorage(newState.bucketCount());
+    StackedIndexVector<> differenceStorage(newState.bucketCount());
     std::span<uint64_t> difference = differenceStorage.get();
     uint64_t anyDifference = 0;
     for (uint64_t i = 0; i < difference.size(); ++i) {
