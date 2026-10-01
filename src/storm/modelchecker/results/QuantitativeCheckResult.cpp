@@ -13,6 +13,22 @@ std::unique_ptr<CheckResult> QuantitativeCheckResult<ValueType>::compareAgainstB
 }
 
 template<typename ValueType>
+AggregatedValue<typename QuantitativeCheckResult<ValueType>::ExtendedValueType> QuantitativeCheckResult<ValueType>::aggregate(FilterType filter) const {
+    switch (filter) {
+        case FilterType::MIN:
+            return {this->getMin(), std::nullopt, std::nullopt};
+        case FilterType::MAX:
+            return {this->getMax(), std::nullopt, std::nullopt};
+        case FilterType::SUM:
+            return {this->sum(), std::nullopt, std::nullopt};
+        case FilterType::AVG:
+            return {this->average(), std::nullopt, std::nullopt};
+        default:
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "The filter " << toString(filter) << " does not aggregate values.");
+    }
+}
+
+template<typename ValueType>
 bool QuantitativeCheckResult<ValueType>::isQuantitative() const {
     return true;
 }

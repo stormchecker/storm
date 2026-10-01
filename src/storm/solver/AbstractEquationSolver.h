@@ -191,11 +191,21 @@ class AbstractEquationSolver {
     bool hasSolutionUpperBounds() const;
 
     /*!
+     * Retrieves whether the bounds computed by the last call to this solver coincide.
+     */
+    bool hasExactSolutionBounds() const;
+
+    /*!
      * Retrieves sound bounds on the solution that the last call to this solver computed.
      * @pre The respective bound was computed, see hasSolutionLowerBounds() resp. hasSolutionUpperBounds().
      */
     std::vector<SolutionType> const& getSolutionLowerBounds() const;
     std::vector<SolutionType> const& getSolutionUpperBounds() const;
+
+    /*!
+     * Retrieves both bounds at once, either of which may be unset.
+     */
+    SolutionBounds<SolutionType> const& getSolutionBounds() const;
 
     /*!
      * Retrieves whether progress is to be shown.
@@ -240,10 +250,29 @@ class AbstractEquationSolver {
     void setSolutionBoundsExact(std::vector<SolutionType> const& x) const;
 
     /*!
+     * Settles the bounds to report once solving is over: the ones handed to this solver beforehand are folded into
+     * the ones it computed itself, and both are widened until they enclose the solution that is handed back.
+     *
+     * @param x The computed solution.
+     */
+    void finalizeSolutionBounds(std::vector<SolutionType> const& x) const;
+
+    /*!
      * Discards any bounds on the solution obtained by a previous call. This must happen whenever solving
      * starts, so that a solver that is reused does not report stale bounds.
      */
     void clearSolutionBounds() const;
+
+    /*!
+     * Turns a precision that the solving procedure is known to have achieved into sound bounds on the solution,
+     * i.e. stores [x_i - d_i, x_i + d_i] where d_i is the largest deviation from x_i that is still compatible with
+     * that precision. Any a priori bounds known to this solver are used to tighten the result.
+     *
+     * @param x The computed solution.
+     * @param precision The precision that the computation is guaranteed to have achieved.
+     * @param relative Whether that precision is to be read relative to the solution instead of as an absolute value.
+     */
+    void setSolutionBoundsFromPrecision(std::vector<SolutionType> const& x, SolutionType const& precision, bool relative) const;
 
     void createUpperBoundsVector(std::vector<SolutionType>& upperBoundsVector) const;
     void createUpperBoundsVector(std::unique_ptr<std::vector<SolutionType>>& upperBoundsVector, uint64_t length) const;

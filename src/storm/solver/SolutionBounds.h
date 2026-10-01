@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <optional>
+#include <type_traits>
 #include <vector>
 
 #include "storm/utility/constants.h"
@@ -61,6 +62,13 @@ struct SolutionBounds {
     }
 
     /*!
+     * Returns true if both bounds are set and coincide.
+     */
+    bool isExact() const {
+        return hasLower() && hasUpper() && *lower == *upper;
+    }
+
+    /*!
      * Sets both bounds to the given values, i.e. states that these values are known exactly.
      */
     void setExact(std::vector<ValueType> const& values) {
@@ -80,6 +88,35 @@ struct SolutionBounds {
             std::ranges::transform(*upper, upper->begin(), oneMinus);
         }
         std::swap(lower, upper);
+    }
+
+    /*!
+     * Applies the given function to whichever of the bounds are set, e.g. to carry them along a transformation of
+     * the solution vector they belong to.
+     */
+    template<typename Function>
+    auto transform(Function const& function) const {
+        SolutionBounds<typename std::invoke_result_t<Function, std::vector<ValueType> const&>::value_type> result;
+        if (hasLower()) {
+            result.lower = function(*lower);
+        }
+        if (hasUpper()) {
+            result.upper = function(*upper);
+        }
+        return result;
+    }
+
+    /*!
+     * Widens whichever bounds are set until they enclose the given values. A bound only ever moves away from the
+     * solution that way, so it stays sound.
+     */
+    void widenTo(std::vector<ValueType> const& values) {
+        if (hasLower()) {
+            std::ranges::transform(*lower, values, lower->begin(), [](ValueType const& bound, ValueType const& value) { return std::min(bound, value); });
+        }
+        if (hasUpper()) {
+            std::ranges::transform(*upper, values, upper->begin(), [](ValueType const& bound, ValueType const& value) { return std::max(bound, value); });
+        }
     }
 
     /*!
