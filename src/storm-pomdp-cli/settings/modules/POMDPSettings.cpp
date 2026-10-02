@@ -1,5 +1,8 @@
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 
+#include <charconv>
+#include <limits>
+
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
@@ -24,6 +27,8 @@ const std::string memoryPatternOption = "memorypattern";
 const std::vector<std::string> memoryPatterns = {"trivial", "fixedcounter", "selectivecounter", "ring", "fixedring", "settablebits", "full"};
 const std::string checkFullyObservableOption = "check-fully-observable";
 const std::string isQualitativeOption = "qualitative-analysis";
+const std::string isBoundedToUnboundedReachabilityTransformationOption = "unfold-reward-bound";
+const std::string isRewardObservableOption = "reward-aware";
 
 POMDPSettings::POMDPSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, noCanonicOption, false,
@@ -52,17 +57,27 @@ POMDPSettings::POMDPSettings() : ModuleSettings(moduleName) {
                                          .setDefaultValueString("full")
                                          .build())
                         .build());
-    this->addOption(
-        storm::settings::OptionBuilder(moduleName, beliefExplorationOption, false, "Analyze the POMDP by exploring the belief state-space.")
-            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "Sets whether lower, upper, or interval result bounds are computed.")
-                             .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(beliefExplorationModes))
-                             .setDefaultValueString("both")
-                             .makeOptional()
-                             .build())
-            .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, beliefExplorationOption, false, "Analyze the POMDP by exploring the belief space.")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument(
+                                         "mode", "Sets whether lower bounds, upper bounds, or interval bounds are computed.")
+                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(beliefExplorationModes))
+                                         .setDefaultValueString("both")
+                                         .makeOptional()
+                                         .build())
+                        .build());
     this->addOption(
         storm::settings::OptionBuilder(moduleName, checkFullyObservableOption, false, "Performs standard model checking on the underlying MDP").build());
     this->addOption(storm::settings::OptionBuilder(moduleName, isQualitativeOption, false, "Sets the option qualitative analysis").build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, isBoundedToUnboundedReachabilityTransformationOption, false,
+                                                   "Transforms reward-bounded reachability properties to an unbounded problem on an unfolded POMDP.")
+                        .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, isRewardObservableOption, false, "Makes rewards observable for bounded reachability properties.")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument(
+                                         "levelwidths", "Comma-separated reward level widths (integers from 0 to INT64_MAX).")
+                                         .setDefaultValueString("")
+                                         .makeOptional()
+                                         .build())
+                        .build());
 }
 
 bool POMDPSettings::isNoCanonicSet() const {
@@ -109,6 +124,32 @@ bool POMDPSettings::isCheckFullyObservableSet() const {
 
 bool POMDPSettings::isQualitativeAnalysisSet() const {
     return this->getOption(isQualitativeOption).getHasOptionBeenSet();
+}
+
+bool POMDPSettings::isBoundedToUnboundedReachabilityTransformationSet() const {
+    return this->getOption(isBoundedToUnboundedReachabilityTransformationOption).getHasOptionBeenSet();
+}
+
+bool POMDPSettings::isRewardObservableSet() const {
+    return this->getOption(isRewardObservableOption).getHasOptionBeenSet();
+}
+
+std::vector<uint64_t> POMDPSettings::getLevelWidthForBoundedReachability() const {
+    auto const input = this->getOption(isRewardObservableOption).getArgumentByName("levelwidths").getValueAsString();
+    if (input.empty()) {
+        return {};
+    }
+    std::vector<uint64_t> result;
+    for (auto&& range : input | std::ranges::views::split(',')) {
+        std::string const token(range.begin(), range.end());
+        uint64_t width = 0;
+        auto const [end, error] = std::from_chars(token.data(), token.data() + token.size(), width);
+        STORM_LOG_THROW(error == std::errc{} && end == token.data() + token.size() && width <= std::numeric_limits<int64_t>::max(),
+                        storm::exceptions::InvalidArgumentException,
+                        "Invalid reward level width '" << token << "'. Expected an unsigned integer fitting in int64_t.");
+        result.push_back(width);
+    }
+    return result;
 }
 
 uint64_t POMDPSettings::getMemoryBound() const {
