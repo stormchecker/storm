@@ -687,6 +687,21 @@ class MdpPrctlModelCheckerTest : public ::testing::Test {
         }
     }
 
+    /*!
+     * Expects the value at the initial states to be the given one and the result to report it as exact.
+     */
+    void expectExactResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
+                                         std::unique_ptr<storm::modelchecker::CheckResult>& result, ValueType const& expected) {
+        expectQuantitativeResultAtInitialState(model, result, expected);
+        if (!result->isExplicitQuantitativeCheckResult()) {
+            return;  // Only explicit results carry bounds.
+        }
+        auto const& explicitResult = result->template asExplicitQuantitativeCheckResult<ValueType>();
+        ASSERT_TRUE(explicitResult.hasLowerBounds()) << "No lower bound was reported although the values are exact.";
+        ASSERT_TRUE(explicitResult.hasUpperBounds()) << "No upper bound was reported although the values are exact.";
+        EXPECT_EQ(explicitResult.getLowerBoundVector(), explicitResult.getUpperBoundVector()) << "The bounds do not pin the values down.";
+    }
+
    private:
     storm::Environment _environment;
 
@@ -787,10 +802,10 @@ STORM_EXPENSIVE_TYPED_TEST(MdpPrctlModelCheckerTest, AsynchronousLeader) {
         this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1"));
 
         result = checker->check(this->env(), tasks[2]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/16"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/16"));
 
         result = checker->check(this->env(), tasks[3]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/16"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/16"));
 
         result = checker->check(this->env(), tasks[4]);
         this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("30/7"));
@@ -1132,9 +1147,9 @@ TYPED_TEST(MdpPrctlModelCheckerTest, OneStateDiscounting) {
         std::unique_ptr<storm::modelchecker::CheckResult> result = checker->check(this->env(), tasks[0]);
         this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1000"));
         result = checker->check(this->env(), tasks[1]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("40951/100"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("40951/100"));
         result = checker->check(this->env(), tasks[2]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("6513215599/10000000"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("6513215599/10000000"));
     } else {
         EXPECT_FALSE(checker->canHandle(tasks[0]));
         EXPECT_FALSE(checker->canHandle(tasks[1]));
@@ -1163,25 +1178,25 @@ TYPED_TEST(MdpPrctlModelCheckerTest, StepBoundedReachability) {
 
     if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse) {
         std::unique_ptr<storm::modelchecker::CheckResult> result = checker->check(this->env(), tasks[0]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("0"));
         result = checker->check(this->env(), tasks[1]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/2"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/2"));
         result = checker->check(this->env(), tasks[2]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("3/4"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("3/4"));
         result = checker->check(this->env(), tasks[3]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/4"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/4"));
         result = checker->check(this->env(), tasks[4]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("3/8"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("3/8"));
         result = checker->check(this->env(), tasks[5]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("0"));
         result = checker->check(this->env(), tasks[6]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/4"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/4"));
         result = checker->check(this->env(), tasks[7]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/4"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/4"));
         result = checker->check(this->env(), tasks[8]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/4"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/4"));
         result = checker->check(this->env(), tasks[9]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("7/8"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("7/8"));
     }
 }
 }  // namespace

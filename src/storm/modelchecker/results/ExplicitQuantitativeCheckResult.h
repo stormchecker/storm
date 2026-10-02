@@ -150,6 +150,11 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
         requires(!std::is_same_v<storm::utility::ExtendedValueType<ValueType>, ValueType>);
 
     /*!
+     * States that the values of this result are the exact ones, i.e. bounds each of them by itself.
+     */
+    void setValuesExact();
+
+    /*!
      * Drops all bounds, e.g. after an operation that cannot maintain them.
      */
     void clearBounds();
@@ -166,6 +171,8 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
     virtual ExtendedValueType average() const override;
     virtual ExtendedValueType sum() const override;
 
+    virtual AggregatedValue<ExtendedValueType> aggregate(FilterType filter) const override;
+
     virtual bool hasScheduler() const override;
     void setScheduler(std::unique_ptr<storm::storage::Scheduler<ValueType>>&& scheduler);
     storm::storage::Scheduler<ValueType> const& getScheduler() const;
@@ -178,6 +185,11 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
     bool hasValueType(std::type_info const& t) const override {
         return t == typeid(ValueType);
     }
+
+    /*!
+     * Aggregates a single vector of this result, i.e. the values or one of the bounds on them.
+     */
+    static ExtendedValueType aggregateVector(vector_type const& vector, FilterType filter);
 
     /*!
      * Retrieves the index at which the value of the given state is stored.

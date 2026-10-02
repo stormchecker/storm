@@ -65,6 +65,22 @@ storm::ExtendedRationalNumber getQuantitativeResultAtInitialState(std::shared_pt
     return result->asQuantitativeCheckResult<storm::RationalNumber>().getMin();
 }
 
+void expectSolutionBoundsEnclose(std::unique_ptr<storm::modelchecker::CheckResult> const& result, double expected) {
+    auto const& explicitResult = result->asExplicitQuantitativeCheckResult<double>();
+    ASSERT_TRUE(explicitResult.hasLowerBounds()) << "No lower bound on the solution was reported.";
+    ASSERT_TRUE(explicitResult.hasUpperBounds()) << "No upper bound on the solution was reported.";
+    EXPECT_LE(explicitResult.getLowerBoundVector().front(), expected + 0.0001) << "The lower bound exceeds the expected value.";
+    EXPECT_LE(expected, explicitResult.getUpperBoundVector().front() + 0.0001) << "The upper bound falls below the expected value.";
+}
+
+void expectSolutionBoundsEnclose(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::RationalNumber const& expected) {
+    auto const& explicitResult = result->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
+    ASSERT_TRUE(explicitResult.hasLowerBounds()) << "No lower bound on the solution was reported.";
+    ASSERT_TRUE(explicitResult.hasUpperBounds()) << "No upper bound on the solution was reported.";
+    EXPECT_LE(explicitResult.getLowerBoundVector().front(), expected) << "The lower bound exceeds the expected value.";
+    EXPECT_LE(expected, explicitResult.getUpperBoundVector().front()) << "The upper bound falls below the expected value.";
+}
+
 void expectThrow(std::string const& path, std::string const& formulaString) {
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::parser::parseDirectEncodingModel<storm::Interval>(path);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
@@ -95,9 +111,11 @@ void checkModel(std::string const& path, std::string const& formulaString, doubl
     auto checker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>(*mdp);
     auto resultMax = checker.check(env, taskMax);
     EXPECT_NEAR(maxmin, getQuantitativeResultAtInitialState(mdp, resultMax), 0.0001);
+    expectSolutionBoundsEnclose(resultMax, maxmin);
     taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
     auto resultMaxNonRobust = checker.check(env, taskMax);
     EXPECT_NEAR(maxmax, getQuantitativeResultAtInitialState(mdp, resultMaxNonRobust), 0.0001);
+    expectSolutionBoundsEnclose(resultMaxNonRobust, maxmax);
 
     auto taskMin = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[1]);
     taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Robust);
@@ -105,9 +123,11 @@ void checkModel(std::string const& path, std::string const& formulaString, doubl
 
     auto resultMin = checker.check(env, taskMin);
     EXPECT_NEAR(minmax, getQuantitativeResultAtInitialState(mdp, resultMin), 0.0001);
+    expectSolutionBoundsEnclose(resultMin, minmax);
     taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
     auto resultMinNonRobust = checker.check(env, taskMin);
     EXPECT_NEAR(minmin, getQuantitativeResultAtInitialState(mdp, resultMinNonRobust), 0.0001);
+    expectSolutionBoundsEnclose(resultMinNonRobust, minmin);
 }
 
 void checkPrismModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double minmin, double minmax, double maxmin, double maxmax,
@@ -167,9 +187,11 @@ void checkModelRational(std::string const& path, std::string const& formulaStrin
     taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Robust);
     auto resultMax = checker.check(env, taskMax);
     EXPECT_EQ(maxmin, getQuantitativeResultAtInitialState(mdp, resultMax));
+    expectSolutionBoundsEnclose(resultMax, maxmin);
     taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
     auto resultMaxNonRobust = checker.check(env, taskMax);
     EXPECT_EQ(maxmax, getQuantitativeResultAtInitialState(mdp, resultMaxNonRobust));
+    expectSolutionBoundsEnclose(resultMaxNonRobust, maxmax);
 
     auto taskMin = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[1]);
     taskMin.setProduceSchedulers(produceScheduler);
@@ -177,6 +199,7 @@ void checkModelRational(std::string const& path, std::string const& formulaStrin
     taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Robust);
     auto resultMin = checker.check(env, taskMin);
     EXPECT_EQ(minmax, getQuantitativeResultAtInitialState(mdp, resultMin));
+    expectSolutionBoundsEnclose(resultMin, minmax);
     taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
     auto resultMinNonRobust = checker.check(env, taskMin);
     EXPECT_EQ(minmin, getQuantitativeResultAtInitialState(mdp, resultMinNonRobust));

@@ -662,6 +662,21 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
         }
     }
 
+    /*!
+     * Expects the value at the initial states to be the given one and the result to report it as exact.
+     */
+    void expectExactResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
+                                         std::unique_ptr<storm::modelchecker::CheckResult>& result, ValueType const& expected) {
+        expectQuantitativeResultAtInitialState(model, result, expected);
+        if (!result->isExplicitQuantitativeCheckResult()) {
+            return;  // Only explicit results carry bounds.
+        }
+        auto const& explicitResult = result->template asExplicitQuantitativeCheckResult<ValueType>();
+        ASSERT_TRUE(explicitResult.hasLowerBounds()) << "No lower bound was reported although the values are exact.";
+        ASSERT_TRUE(explicitResult.hasUpperBounds()) << "No upper bound was reported although the values are exact.";
+        EXPECT_EQ(explicitResult.getLowerBoundVector(), explicitResult.getUpperBoundVector()) << "The bounds do not pin the values down.";
+    }
+
    private:
     storm::Environment _environment;
 
@@ -765,7 +780,7 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, SynchronousLeader) {
         this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1"));
 
         result = checker->check(this->env(), tasks[1]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("24/25"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("24/25"));
 
         result = checker->check(this->env(), tasks[2]);
         this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("25/24"));
@@ -786,25 +801,34 @@ TEST(DtmcPrctlModelCheckerTest, BoundedReachability) {
     ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
     auto task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
 
+    // Unrolling a step bound ends at the values, so each of them is reported as its own lower and upper bound.
+    auto expectExactValue = [](std::unique_ptr<storm::modelchecker::CheckResult> const& result, double expected) {
+        EXPECT_NEAR(expected, result->asQuantitativeCheckResult<double>().getMin(), 0.0001);
+        auto const& explicitResult = result->asExplicitQuantitativeCheckResult<double>();
+        ASSERT_TRUE(explicitResult.hasLowerBounds());
+        ASSERT_TRUE(explicitResult.hasUpperBounds());
+        EXPECT_EQ(explicitResult.getLowerBoundVector(), explicitResult.getUpperBoundVector());
+    };
+
     auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>(*dtmc);
     auto result = checker.check(env, task);
     auto filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(dtmc->getInitialStates());
     result->filter(*filter);
-    EXPECT_NEAR(0.2, result->asQuantitativeCheckResult<double>().getMin(), 0.0001);
+    expectExactValue(result, 0.2);
 
     task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[1]);
 
     result = checker.check(env, task);
     filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(dtmc->getInitialStates());
     result->filter(*filter);
-    EXPECT_NEAR(0.2, result->asQuantitativeCheckResult<double>().getMin(), 0.0001);
+    expectExactValue(result, 0.2);
 
     task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[2]);
 
     result = checker.check(env, task);
     filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(dtmc->getInitialStates());
     result->filter(*filter);
-    EXPECT_NEAR(0.366, result->asQuantitativeCheckResult<double>().getMin(), 0.0001);
+    expectExactValue(result, 0.366);
 }
 
 TEST(DtmcPrctlModelCheckerTest, AllUntilProbabilities) {

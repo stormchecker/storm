@@ -39,6 +39,10 @@ class TopologicalMinMaxLinearEquationSolver : public StandardMinMaxLinearEquatio
     // Creates an SCC decomposition and sorts the SCCs according to a topological sort.
     void createSortedSccDecomposition(bool needLongestChainSize) const;
 
+    // Reports what the SCC-wise solve established about the solution: the values themselves if every SCC was
+    // solved exactly, otherwise the precision they were solved with, if that precision is a sound one.
+    void trySetSolutionBounds(Environment const& env, std::vector<SolutionType> const& x, bool allSccsExact) const;
+
     // Solves the SCC with the given index
     // ... for the case that the SCC is trivial
     bool solveTrivialScc(uint64_t const& sccState, OptimizationDirection d, std::vector<SolutionType>& globalX, std::vector<ValueType> const& globalB) const;
