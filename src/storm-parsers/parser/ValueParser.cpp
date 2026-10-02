@@ -32,7 +32,7 @@ void ValueParser<ValueType>::addParameter(std::string const& parameter) {
 }
 
 template<>
-void ValueParser<storm::RationalFunction>::addParameter(std::string const& parameter) {
+void STORM_PARSERS_API ValueParser<storm::RationalFunction>::addParameter(std::string const& parameter) {
     storm::expressions::Variable var = data.manager->declareRationalVariable(parameter);
     data.identifierMapping.emplace(var.getName(), var);
     data.parser->setIdentifierMapping(data.identifierMapping);
@@ -40,7 +40,7 @@ void ValueParser<storm::RationalFunction>::addParameter(std::string const& param
 }
 
 template<>
-storm::RationalFunction ValueParser<storm::RationalFunction>::parseValue(std::string const& value) const {
+STORM_PARSERS_API storm::RationalFunction ValueParser<storm::RationalFunction>::parseValue(std::string const& value) const {
     storm::RationalFunction rationalFunction = data.evaluator->asRational(data.parser->parseFromString(value));
     STORM_LOG_TRACE("Parsed expression: " << rationalFunction);
     return rationalFunction;
@@ -135,14 +135,15 @@ bool parseNumber(std::string const& value, NumberType& result) {
     }
 }
 
-// Template instantiations.
-template class ValueParser<double>;
-template class ValueParser<storm::RationalNumber>;
+// Template instantiations. ValueParser<storm::RationalFunction> omits STORM_PARSERS_API: GCC rejects it as redundant
+// after the member specializations above.
+template class STORM_PARSERS_API ValueParser<double>;
+template class STORM_PARSERS_API ValueParser<storm::RationalNumber>;
 template class ValueParser<storm::RationalFunction>;
-template class ValueParser<storm::Interval>;
-template class ValueParser<storm::RationalInterval>;
+template class STORM_PARSERS_API ValueParser<storm::Interval>;
+template class STORM_PARSERS_API ValueParser<storm::RationalInterval>;
 
-template std::size_t parseNumber<std::size_t>(std::string const&);
+template STORM_PARSERS_API std::size_t parseNumber<std::size_t>(std::string const&);
 
 }  // namespace parser
 }  // namespace storm

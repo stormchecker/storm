@@ -1,6 +1,7 @@
 #pragma once
 
 #include "storm-parsers/parser/ExplicitModelParserOptions.h"
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 
@@ -15,7 +16,7 @@ namespace parser {
  * The second pass then collects the actual file data and compiles it into a Result.
  */
 template<typename ValueType = double>
-class MarkovAutomatonSparseTransitionParser {
+class STORM_PARSERS_API MarkovAutomatonSparseTransitionParser {
    public:
     /*!
      * A structure representing the result of the first pass of this parser. It contains the number of non-zero entries in the model, the highest state index

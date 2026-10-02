@@ -1,12 +1,15 @@
 #pragma once
 
+#include "storm/adapters/IntervalForward.h"
+
+// isNan() below needs storm::RationalNumber to be a complete type.
+#include "storm/adapters/RationalNumberAdapter.h"
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundefined-reinterpret-cast"
 #pragma clang diagnostic ignored "-Wunused-template"
 #include <carl/interval/Interval.h>
 #pragma clang diagnostic pop
-
-#include "storm/adapters/IntervalForward.h"
 
 namespace carl {
 template<typename Number>
@@ -24,3 +27,11 @@ namespace storm {
 using BoundType = carl::BoundType;
 
 }  // namespace storm
+
+namespace carl {
+// Rationals are never NaN; avoids instantiating carl's isNan(), which lacks a rational overload.
+template<>
+inline bool Interval<storm::RationalNumber>::isNan() const {
+    return false;
+}
+}  // namespace carl

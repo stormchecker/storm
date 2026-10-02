@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <cstddef>
 
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/utility/OsDetection.h"
 
 namespace storm {
@@ -18,7 +19,7 @@ namespace parser {
  * Using this method, the kernel will take care of all buffering.
  * This is most probably much more efficient than doing this manually.
  */
-class MappedFile {
+class STORM_PARSERS_API MappedFile {
    public:
     /*!
      * Constructs a MappedFile.

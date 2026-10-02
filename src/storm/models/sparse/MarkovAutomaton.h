@@ -1,5 +1,8 @@
 #pragma once
 
+#include "storm/adapters/IntervalForward.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/NondeterministicModel.h"
 
@@ -188,6 +191,15 @@ class MarkovAutomaton : public NondeterministicModel<ValueType, RewardModelType>
     // A flag indicating whether the Markov automaton contains Zeno cycles.
     mutable boost::optional<bool> hasZenoCycle;
 };
+
+// Instantiated in MarkovAutomaton.cpp; prevents hidden consumers from duplicating the vtable/RTTI.
+extern template class MarkovAutomaton<double>;
+extern template class MarkovAutomaton<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+extern template class MarkovAutomaton<storm::RationalNumber>;
+extern template class MarkovAutomaton<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
+extern template class MarkovAutomaton<storm::Interval>;
+extern template class MarkovAutomaton<storm::RationalInterval>;
+extern template class MarkovAutomaton<storm::RationalFunction>;
 
 }  // namespace sparse
 }  // namespace models
