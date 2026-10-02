@@ -192,7 +192,6 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
     auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
     auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
     auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
-    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     PreprocessResult result(model, false);
     // TODO: why only simplify in these modes
@@ -209,8 +208,8 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
     }
 
     if (mpi.applyBisimulation) {
-        result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input,
-                                                                     bisimulationSettings, regionSettings.isAssumeGraphPreservingSet());
+        result.model =
+            storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input, bisimulationSettings);
         result.changed = true;
     }
 
@@ -230,7 +229,7 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
 
         if (mpi.applyBisimulation) {
             result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input,
-                                                                         bisimulationSettings, regionSettings.isAssumeGraphPreservingSet());
+                                                                         bisimulationSettings);
         }
         result.changed = true;
     }
