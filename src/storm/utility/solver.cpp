@@ -6,6 +6,7 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/MissingLibraryException.h"
+#include "storm/solver/Cvc5SmtSolver.h"
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
 #include "storm/solver/HighsLpSolver.h"
@@ -161,6 +162,8 @@ std::unique_ptr<storm::solver::SmtSolver> createSmtSolver(storm::solver::SmtSolv
             return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
         case storm::solver::SmtSolverType::Mathsat:
             return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
+        case storm::solver::SmtSolverType::Cvc5:
+            return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Cvc5SmtSolver(manager));
     }
     STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::MissingLibraryException, "Requested an SMT solver but none was installed.");
 }
@@ -172,6 +175,8 @@ std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expres
     return createSmtSolver(storm::solver::SmtSolverType::Z3, manager);
 #elif defined STORM_DEFAULT_SMT_SOLVER_MATHSAT
     return createSmtSolver(storm::solver::SmtSolverType::Mathsat, manager);
+#elif defined STORM_DEFAULT_SMT_SOLVER_CVC5
+    return createSmtSolver(storm::solver::SmtSolverType::Cvc5, manager);
 #else
     STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::MissingLibraryException, "Requested an SMT solver but none was installed.");
 #endif
@@ -196,6 +201,14 @@ std::unique_ptr<storm::solver::SmtSolver> MathsatSmtSolverFactory::create(storm:
 
 std::unique_ptr<storm::solver::SmtSolver> MathsatSmtSolverFactory::create(storm::Environment const&, storm::expressions::ExpressionManager& manager) const {
     return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
+}
+
+std::unique_ptr<storm::solver::SmtSolver> Cvc5SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
+    return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Cvc5SmtSolver(manager));
+}
+
+std::unique_ptr<storm::solver::SmtSolver> Cvc5SmtSolverFactory::create(storm::Environment const&, storm::expressions::ExpressionManager& manager) const {
+    return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Cvc5SmtSolver(manager));
 }
 
 std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::expressions::ExpressionManager& manager) {

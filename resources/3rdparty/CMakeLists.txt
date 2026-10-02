@@ -339,6 +339,67 @@ else()
     message(WARNING "Storm - Not linking with Z3. Building of Prism/JANI models will not be supported.")
 endif()
 
+#############################################################
+##
+##	CVC5 (optional)
+##
+#############################################################
+
+# Storm builds terms through cvc5::TermManager, which it passes to the cvc5::Solver constructor.
+set(STORM_CVC5_MIN_VERSION "1.2")
+
+if(NOT STORM_DISABLE_CVC5)
+    # CVC5's own config file looks for the (lower case) cvc5_ROOT variable, whereas Storm uses upper case
+    # variable names for the roots of the different solvers.
+    if(CVC5_ROOT)
+        set(cvc5_ROOT "${CVC5_ROOT}")
+    endif()
+
+    # Recent versions of CVC5 provide a config file, so try that first. Note that we cannot request a minimum
+    # version here, because cvc5's own version file uses the ExactVersion strategy and would accept nothing but that
+    # exact version. We compare the version we find ourselves further below instead.
+    find_package(cvc5 QUIET NO_MODULE)
+    if(TARGET cvc5::cvc5)
+        set(cvc5_FOUND_VERSION "${cvc5_VERSION}")
+        set(cvc5_FOUND_WITH_CONFIG_FILE TRUE)
+        set(STORM_CVC5_CONFIG ON)
+    else()
+        # For installations without a config file, we use a FindCVC5.cmake script.
+        find_package(CVC5 QUIET)
+
+        if(CVC5_FOUND)
+            set(cvc5_FOUND_VERSION "${CVC5_VERSION}")
+            set(STORM_CVC5_CONFIG OFF)
+        endif()
+    endif()
+
+    if(NOT cvc5_FOUND_VERSION)
+        message(WARNING "Storm - cvc5 not found, or its version could not be determined."
+                " CVC5 will not be available as an SMT solver backend.")
+    elseif(cvc5_FOUND_VERSION VERSION_LESS STORM_CVC5_MIN_VERSION)
+        message(WARNING "Storm - Found cvc5 ${cvc5_FOUND_VERSION}, but ${STORM_CVC5_MIN_VERSION} or newer is required."
+                " CVC5 will not be available as an SMT solver backend.")
+    else()
+        set(STORM_HAVE_CVC5 ON)
+        message(STATUS "Storm - Linking with cvc5 (version ${cvc5_FOUND_VERSION}).")
+
+        if(cvc5_FOUND_WITH_CONFIG_FILE)
+            list(APPEND STORM_DEP_IMP_TARGETS cvc5::cvc5)
+        else()
+            add_library(cvc5 SHARED IMPORTED)
+            set_target_properties(
+                    cvc5
+                    PROPERTIES
+                    IMPORTED_LOCATION ${CVC5_LIBRARIES}
+                    INTERFACE_INCLUDE_DIRECTORIES ${CVC5_INCLUDE_DIRS}
+            )
+            list(APPEND STORM_DEP_IMP_TARGETS cvc5)
+        endif()
+    endif()
+else()
+    set(STORM_HAVE_CVC5 OFF)
+    message(STATUS "Storm - Not linking with cvc5.")
+endif()
 
 #############################################################
 ##

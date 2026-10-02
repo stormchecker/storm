@@ -41,6 +41,21 @@ if(@STORM_HAVE_CUDD@)  # STORM_HAVE_CUDD
     )
 endif()
 
+if(@STORM_HAVE_CVC5@)  # STORM_HAVE_CVC5
+    if(@STORM_CVC5_CONFIG@)
+        find_dependency(cvc5 NO_MODULE)
+    else()
+        find_dependency(CVC5)
+        add_library(cvc5 SHARED IMPORTED)
+        set_target_properties(
+                cvc5
+                PROPERTIES
+                IMPORTED_LOCATION ${CVC5_LIBRARIES}
+                INTERFACE_INCLUDE_DIRECTORIES ${CVC5_INCLUDE_DIRS}
+        )
+    endif()
+endif()
+
 if(@STORM_HAVE_GLPK@)  # STORM_HAVE_GLPK
     find_dependency(GLPK)
     add_library(glpk SHARED IMPORTED)

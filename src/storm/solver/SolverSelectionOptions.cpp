@@ -116,6 +116,8 @@ std::string toString(SmtSolverType t) {
             return "Z3";
         case SmtSolverType::Mathsat:
             return "Mathsat";
+        case SmtSolverType::Cvc5:
+            return "CVC5";
     }
     return "invalid";
 }
