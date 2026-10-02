@@ -1,0 +1,643 @@
+{
+	"jani-version": 1,
+	"name": "die_janiproperties.jani",
+	"comment": "Caution: the properties below is checked in JaniParserTest.cpp, addressed by index!",
+	"type": "dtmc",
+	"features": [ "derived-operators" ],
+	"variables": [
+		{
+			"name": "s",
+			"type": {
+				"base": "int",
+				"kind": "bounded",
+				"lower-bound": 0,
+				"upper-bound": 7
+			},
+			"initial-value": 0
+		},
+		{
+			"name": "d",
+			"type": {
+				"base": "int",
+				"kind": "bounded",
+				"lower-bound": 0,
+				"upper-bound": 6
+			},
+			"initial-value": 0
+		}
+	],
+	"properties": [
+		{
+			"name": "N0: Probability to throw a six",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "U",
+						"left": true,
+						"right": {
+							"op": "∧",
+							"left": {
+								"op": "=",
+								"left": "s",
+								"right": 7
+							},
+							"right": {
+								"op": "=",
+								"left": "d",
+								"right": 6
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "N1: Expected number of coin flips",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Emin",
+					"accumulate": [ "steps" ],
+					"exp": 1,
+					"reach": {
+						"op": "=",
+						"left": "s",
+						"right": 7
+					}
+				}
+			}
+		},
+		{
+			"name": "N2: Conjunction of path formulas",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "∧",
+						"left": {
+							"op": "G",
+							"exp": {
+								"op": "≠",
+								"left": "d",
+								"right": 6
+							}
+						},
+						"right": {
+							"op": "F",
+							"exp": {
+								"op": "=",
+								"left": "s",
+								"right": 6
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "N3: Disjunction of path formulas",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "∨",
+						"left": {
+							"op": "G",
+							"exp": {
+								"op": "≠",
+								"left": "s",
+								"right": 3
+							}
+						},
+						"right": {
+							"op": "G",
+							"exp": {
+								"op": "≠",
+								"left": "s",
+								"right": 4
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "N4: Negation of a path formula",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "¬",
+						"exp": {
+							"op": "F",
+							"exp": {
+								"op": "=",
+								"left": "d",
+								"right": 1
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "N5: Implication of path formulas",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "⇒",
+						"left": {
+							"op": "F",
+							"exp": {
+								"op": "=",
+								"left": "s",
+								"right": 3
+							}
+						},
+						"right": {
+							"op": "F",
+							"exp": {
+								"op": "=",
+								"left": "d",
+								"right": 1
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "N6: Conjunction of state formulas",
+			"expression": {
+				"op": "filter",
+				"fun": "count",
+				"states": true,
+				"values": {
+					"op": "∧",
+					"left": {
+						"op": "¬",
+						"exp": {
+							"op": "≥",
+							"left": {
+								"op": "Pmin",
+								"exp": {
+									"op": "F",
+									"exp": {
+										"op": "=",
+										"left": "d",
+										"right": 6
+									}
+								}
+							},
+							"right": 0.5
+						}
+					},
+					"right": {
+						"op": "≥",
+						"left": {
+							"op": "Pmin",
+							"exp": {
+								"op": "F",
+								"exp": {
+									"op": "≥",
+									"left": "d",
+									"right": 4
+								}
+							}
+						},
+						"right": 0.5
+					}
+				}
+			}
+		},
+		{
+			"name": "N7: Weak until",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "W",
+						"left": {
+							"op": "≠",
+							"left": "s",
+							"right": 3
+						},
+						"right": {
+							"op": "=",
+							"left": "d",
+							"right": 1
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "N8: Release",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "R",
+						"left": {
+							"op": "=",
+							"left": "s",
+							"right": 7
+						},
+						"right": {
+							"op": "≤",
+							"left": "d",
+							"right": 5
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "N9: Until vs weak until",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "U",
+						"left": {
+							"op": "≠",
+							"left": "s",
+							"right": 3
+						},
+						"right": {
+							"op": "=",
+							"left": "d",
+							"right": 1
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "N10: Weak until dual",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "U",
+						"left": {
+							"op": "≠",
+							"left": "d",
+							"right": 1
+						},
+						"right": {
+							"op": "∧",
+							"left": {
+								"op": "=",
+								"left": "s",
+								"right": 3
+							},
+							"right": {
+								"op": "≠",
+								"left": "d",
+								"right": 1
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "N11: Release dual",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"states": { "op": "initial" },
+				"values": {
+					"op": "Pmin",
+					"exp": {
+						"op": "U",
+						"left": {
+							"op": "≠",
+							"left": "s",
+							"right": 7
+						},
+						"right": {
+							"op": "≥",
+							"left": "d",
+							"right": 6
+						}
+					}
+				}
+			}
+		}
+	],
+	"automata": [
+		{
+			"name": "die",
+			"locations": [{ "name": "l" }],
+			"initial-locations": ["l"],
+			"edges": [
+				{
+					"location": "l",
+					"guard": {
+						"exp": {
+							"op": "=",
+							"left": "s",
+							"right": 0
+						}
+					},
+					"destinations": [
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 },
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 1
+								}
+							]
+						},
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 },
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 2
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l",
+					"guard": {
+						"exp": {
+							"left": "s",
+							"op": "=",
+							"right": 1
+						}
+					},
+					"destinations": [
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 },
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 3
+								}
+							]
+						},
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 },
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 4
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l",
+					"guard": {
+						"exp": {
+							"left": "s",
+							"op": "=",
+							"right": 2
+						}
+					},
+					"destinations": [
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 },
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 5
+								}
+							]
+						},
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 },
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 6
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l",
+					"guard": {
+						"exp": {
+							"left": "s",
+							"op": "=",
+							"right": 3
+						}
+					},
+					"destinations": [
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 }, 
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 1
+								}
+							]
+						},
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 },
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 7
+								},
+								{
+									"ref": "d",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l",
+					"guard": {
+						"exp": {
+							"left": "s",
+							"op": "=",
+							"right": 4
+						}
+					},
+					"destinations": [
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 },
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 7
+								},
+								{
+									"ref": "d",
+									"value": 2
+								}
+							]
+						},
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 },
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 7
+								},
+								{
+									"ref": "d",
+									"value": 3
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l",
+					"guard": {
+						"exp": {
+							"left": "s",
+							"op": "=",
+							"right": 5
+						}
+					},
+					"destinations": [
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 },
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 7
+								},
+								{
+									"ref": "d",
+									"value": 4
+								}
+							]
+						},
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 },
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 7
+								},
+								{
+									"ref": "d",
+									"value": 5
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l",
+					"guard": {
+						"exp": {
+							"left": "s",
+							"op": "=",
+							"right": 6
+						}
+					},
+					"destinations": [
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 },
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 2
+								}
+							]
+						},
+						{
+							"location": "l",
+							"probability": { "exp": 0.5 },
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 7
+								},
+								{
+									"ref": "d",
+									"value": 6
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l",
+					"guard": {
+						"exp": {
+							"left": "s",
+							"op": "=",
+							"right": 7
+						}
+					},
+					"destinations": [
+						{
+							"location": "l",
+							"assignments": [
+								{
+									"ref": "s",
+									"value": 7
+								}
+							]
+						}
+					]
+				}
+			]
+			
+		}
+	], 
+	"system": {
+		"elements": [ { "automaton": "die" } ]
+	}
+}
