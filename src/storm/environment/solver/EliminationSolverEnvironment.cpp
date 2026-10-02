@@ -1,17 +1,13 @@
 #include "storm/environment/solver/EliminationSolverEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/EliminationSettings.h"
-
 namespace storm {
 
-EliminationSolverEnvironment::EliminationSolverEnvironment() {
-    auto const& eliminationSettings = storm::settings::getModule<storm::settings::modules::EliminationSettings>();
-
-    order = eliminationSettings.getEliminationOrder();
-    method = eliminationSettings.getEliminationMethod();
-    maximalSccSize = eliminationSettings.getMaximalSccSize();
-    eliminateEntryStatesLast = eliminationSettings.isEliminateEntryStatesLastSet();
+EliminationSolverEnvironment::EliminationSolverEnvironment()
+    : order(storm::solver::stateelimination::EliminationOrder::ForwardReversed),
+      method(storm::solver::stateelimination::EliminationMethod::State),
+      maximalSccSize(20),
+      eliminateEntryStatesLast(false) {
+    // Intentionally left empty.
 }
 
 EliminationSolverEnvironment::~EliminationSolverEnvironment() {

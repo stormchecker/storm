@@ -17,8 +17,8 @@ namespace storm::dft {
 namespace modelchecker {
 
 template<typename ValueType>
-DftModularizationChecker<ValueType>::DftModularizationChecker(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft)
-    : dft{dft}, modelchecker(true), sylvanBddManager{storm::dft::storage::SylvanBddManager::createWithDefaultEnvironment()} {
+DftModularizationChecker<ValueType>::DftModularizationChecker(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft, storm::dft::DftEnvironment const& env)
+    : dft{dft}, env{env}, modelchecker(true), sylvanBddManager{std::make_shared<storm::dft::storage::SylvanBddManager>(env.core())} {
     // Initialize modules
     storm::dft::utility::DftModularizer<ValueType> modularizer;
     auto topModule = modularizer.computeModules(*dft);
@@ -136,11 +136,10 @@ typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results DftMo
     }
     auto const props{storm::api::extractFormulasFromProperties(storm::api::parseProperties(propertyStream.str()))};
 
-    // TODO: use propagated environment
-    storm::dft::DftEnvironment env;
-    env.modelBuilder().setUseSymmetryReduction(false);
-    env.analysis().setUseModularisation(false);
-    return modelchecker.check(env, subDft, props);
+    storm::dft::DftEnvironment moduleEnv = env;
+    moduleEnv.modelBuilder().setUseSymmetryReduction(false);
+    moduleEnv.analysis().setUseModularisation(false);
+    return modelchecker.check(moduleEnv, subDft, props);
 }
 
 // Explicitly instantiate the class.

@@ -10,7 +10,7 @@ namespace {
  * \note
  * Helperfunction for MTTFHelper
  */
-void linspace(std::vector<double> &buffer, double start, double const stepsize) {
+void linspace(std::vector<double>& buffer, double start, double const stepsize) {
     for (size_t i{0}; i < buffer.size(); ++i) {
         buffer[i] = i * stepsize + start;
     }
@@ -21,9 +21,10 @@ void linspace(std::vector<double> &buffer, double start, double const stepsize) 
 namespace storm::dft {
 namespace utility {
 
-double MTTFHelperProceeding(std::shared_ptr<storm::dft::storage::DFT<double>> const dft, double const stepsize, double const precision) {
+double MTTFHelperProceeding(storm::dft::DftEnvironment const& env, std::shared_ptr<storm::dft::storage::DFT<double>> const dft, double const stepsize,
+                            double const precision) {
     constexpr size_t chunksize{1001};
-    storm::dft::modelchecker::DftModularizationChecker<double> checker{dft};
+    storm::dft::modelchecker::DftModularizationChecker<double> checker{dft, env};
 
     std::vector<double> timepoints{};
     timepoints.resize(chunksize);
@@ -62,9 +63,9 @@ double MTTFHelperProceeding(std::shared_ptr<storm::dft::storage::DFT<double>> co
     return rval;
 }
 
-double MTTFHelperVariableChange(std::shared_ptr<storm::dft::storage::DFT<double>> const dft, double const stepsize) {
+double MTTFHelperVariableChange(storm::dft::DftEnvironment const& env, std::shared_ptr<storm::dft::storage::DFT<double>> const dft, double const stepsize) {
     constexpr size_t chunksize{1001};
-    storm::dft::modelchecker::DftModularizationChecker<double> checker{dft};
+    storm::dft::modelchecker::DftModularizationChecker<double> checker{dft, env};
 
     std::vector<double> timepoints{};
     timepoints.resize(static_cast<size_t>(1 / stepsize) - 1);
@@ -81,7 +82,7 @@ double MTTFHelperVariableChange(std::shared_ptr<storm::dft::storage::DFT<double>
         double x{(i + 1) * stepsize};
         x = 1 / (1 - x);
         x = x * x;
-        auto &p{probabilities[i]};
+        auto& p{probabilities[i]};
         p = (1 - p) * x;
 
         rval += p;

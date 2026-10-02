@@ -82,8 +82,9 @@ TEST_P(SftBddTest, ProbabilityAtTimeOne) {
 
 TEST_P(SftBddTest, MTTF) {
     auto const &param{TestWithParam::GetParam()};
-    EXPECT_NEAR(storm::dft::utility::MTTFHelperProceeding(checker->getDFT()), param.mttf, 1e-5);
-    EXPECT_NEAR(storm::dft::utility::MTTFHelperVariableChange(checker->getDFT()), param.mttf, 1e-5);
+    storm::dft::DftEnvironment const env;
+    EXPECT_NEAR(storm::dft::utility::MTTFHelperProceeding(env, checker->getDFT()), param.mttf, 1e-5);
+    EXPECT_NEAR(storm::dft::utility::MTTFHelperVariableChange(env, checker->getDFT()), param.mttf, 1e-5);
 }
 
 template<typename T1, typename T2>

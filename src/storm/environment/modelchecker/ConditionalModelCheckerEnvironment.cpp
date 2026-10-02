@@ -1,18 +1,16 @@
 #include "storm/environment/modelchecker/ConditionalModelCheckerEnvironment.h"
 
 #include "storm/adapters/RationalNumberForward.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/ConditionalSettings.h"
 #include "storm/utility/constants.h"
 
 namespace storm {
 
-ConditionalModelCheckerEnvironment::ConditionalModelCheckerEnvironment() {
-    auto const& mcSettings = storm::settings::getModule<storm::settings::modules::ConditionalSettings>();
-    algorithm = mcSettings.getConditionalAlgorithmSetting();
-    precision = storm::utility::convertNumber<storm::RationalNumber>(mcSettings.getConditionalPrecision());
-    relative = !mcSettings.isConditionalPrecisionAbsolute();
-    precisionSetFromDefault = mcSettings.isConditionalPrecisionSetFromDefaultValue();
+ConditionalModelCheckerEnvironment::ConditionalModelCheckerEnvironment()
+    : algorithm(storm::ConditionalAlgorithmSetting::Default),
+      precision(storm::utility::convertNumber<storm::RationalNumber>(1e-06)),
+      precisionSetFromDefault(true),
+      relative(true) {
+    // Intentionally left empty.
 }
 
 ConditionalModelCheckerEnvironment::~ConditionalModelCheckerEnvironment() {

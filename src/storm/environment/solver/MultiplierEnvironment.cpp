@@ -1,16 +1,9 @@
 #include "storm/environment/solver/MultiplierEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/MultiplierSettings.h"
-#include "storm/utility/constants.h"
-#include "storm/utility/macros.h"
-
 namespace storm {
 
-MultiplierEnvironment::MultiplierEnvironment() {
-    auto const& multiplierSettings = storm::settings::getModule<storm::settings::modules::MultiplierSettings>();
-    type = multiplierSettings.getMultiplierType();
-    typeSetFromDefault = multiplierSettings.isMultiplierTypeSetFromDefaultValue();
+MultiplierEnvironment::MultiplierEnvironment() : type(storm::solver::MultiplierType::ViOperator), typeSetFromDefault(true) {
+    // Intentionally left empty.
 }
 
 MultiplierEnvironment::~MultiplierEnvironment() {

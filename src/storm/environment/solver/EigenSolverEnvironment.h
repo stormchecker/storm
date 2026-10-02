@@ -14,7 +14,7 @@ class EigenSolverEnvironment {
     ~EigenSolverEnvironment();
 
     storm::solver::EigenLinearEquationSolverMethod const& getMethod() const;
-    void setMethod(storm::solver::EigenLinearEquationSolverMethod value);
+    void setMethod(storm::solver::EigenLinearEquationSolverMethod value, bool isSetFromDefault = false);
     bool isMethodSetFromDefault() const;
     storm::solver::EigenLinearEquationSolverPreconditioner const& getPreconditioner() const;
     void setPreconditioner(storm::solver::EigenLinearEquationSolverPreconditioner value);
