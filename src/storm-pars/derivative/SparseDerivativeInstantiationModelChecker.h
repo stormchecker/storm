@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <map>
 #include "storm-pars/utility/parametric.h"
-#include "storm/analysis/GraphConditions.h"
 #include "storm/logic/Formula.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/results/CheckResult.h"

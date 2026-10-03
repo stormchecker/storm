@@ -353,7 +353,7 @@ bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueTyp
             pmc->printModelInformationToStream(std::cout);
         }
         STORM_PRINT_AND_LOG("Exporting pMC...");
-        storm::analysis::ConstraintCollector<storm::RationalFunction> constraints(*pmc);
+        storm::analysis::ConstraintCollector constraints(*pmc);
         auto const& parameterSet = constraints.getVariables();
         std::vector<storm::RationalFunctionVariable> parameters(parameterSet.begin(), parameterSet.end());
         std::vector<std::string> parameterNames;

@@ -102,10 +102,20 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
             ASSERT_TRUE(variables.size() == 1);
             auto parameter = *variables.begin();
 
+            // Build the expected values with the cache of the model, just like the transformer does.
+            std::shared_ptr<storm::RawPolynomialCache> cache;
+            for (auto const& entry : row) {
+                if (!entry.getValue().isConstant()) {
+                    cache = entry.getValue().nominator().pCache();
+                    break;
+                }
+            }
+            ASSERT_TRUE(cache != nullptr);
+
             auto parameterPol = storm::RawPolynomial(parameter);
-            auto parameterRational = storm::RationalFunction(carl::makePolynomial<storm::Polynomial>(parameterPol));
+            auto parameterRational = storm::RationalFunction(storm::Polynomial(parameterPol, cache));
             auto oneMinusParameter = storm::RawPolynomial(1) - parameterPol;
-            auto oneMinusParameterRational = storm::RationalFunction(carl::makePolynomial<storm::Polynomial>(oneMinusParameter));
+            auto oneMinusParameterRational = storm::RationalFunction(storm::Polynomial(oneMinusParameter, cache));
 
             uint64_t seenP = 0;
             uint64_t seenOneMinusP = 0;

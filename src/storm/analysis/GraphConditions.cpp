@@ -1,190 +1,211 @@
 #include "storm/analysis/GraphConditions.h"
 
-#include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/storage/expressions/HashVisitor.h"
+#include "storm/storage/expressions/PolynomialToExpression.h"
 #include "storm/utility/constants.h"
 
 namespace storm {
 namespace analysis {
 
-template<typename ValueType>
-ConstraintCollector<ValueType>::ConstraintCollector(storm::models::sparse::Model<ValueType> const& model) {
+namespace {
+
+/*!
+ * Retrieves the expression representing the given polynomial, declaring its variables in the given manager.
+ */
+template<typename PolynomialType>
+storm::expressions::Expression toExpression(PolynomialType const& polynomial, std::shared_ptr<storm::expressions::ExpressionManager> const& manager) {
+    return storm::expressions::polynomialToExpression(polynomial, manager);
+}
+
+}  // namespace
+
+ConstraintCollector::ConstraintCollector(storm::models::sparse::Model<storm::RationalFunction> const& model)
+    : expressionManager(std::make_shared<storm::expressions::ExpressionManager>()) {
     process(model);
 }
 
-template<typename ValueType>
-std::unordered_set<typename ConstraintType<ValueType>::val> const& ConstraintCollector<ValueType>::getWellformedConstraints() const {
+ConstraintCollector::ConstraintSet const& ConstraintCollector::getWellformedConstraints() const {
     return this->wellformedConstraintSet;
 }
 
-template<typename ValueType>
-std::unordered_set<typename ConstraintType<ValueType>::val> const& ConstraintCollector<ValueType>::getGraphPreservingConstraints() const {
+ConstraintCollector::ConstraintSet const& ConstraintCollector::getGraphPreservingConstraints() const {
     return this->graphPreservingConstraintSet;
 }
 
-template<typename ValueType>
-std::set<storm::RationalFunctionVariable> const& ConstraintCollector<ValueType>::getVariables() const {
+std::set<storm::RationalFunctionVariable> const& ConstraintCollector::getVariables() const {
     return this->variableSet;
 }
 
-template<typename ValueType>
-void ConstraintCollector<ValueType>::wellformedRequiresNonNegativeEntries(std::vector<ValueType> const& vec) {
-    for (auto const& entry : vec) {
-        if (!storm::utility::isConstant(entry)) {
-            auto const& transitionVars = entry.gatherVariables();
-            variableSet.insert(transitionVars.begin(), transitionVars.end());
-            if (entry.denominator().isConstant()) {
-                STORM_LOG_ASSERT(entry.denominator().constantPart() != 0, "Denominator should not be zero.");
-                if (entry.denominator().constantPart() > 0) {
-                    wellformedConstraintSet.emplace(entry.nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ);
-                } else if (entry.denominator().constantPart() < 0) {
-                    wellformedConstraintSet.emplace(entry.nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ);
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Should have failed before.");
-                }
-            } else {
-                wellformedConstraintSet.emplace(entry.denominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
-                wellformedConstraintSet.emplace(
-                    carl::FormulaType::ITE,
-                    typename ConstraintType<ValueType>::val(entry.denominator().polynomialWithCoefficient(), storm::CompareRelation::GREATER),
-                    typename ConstraintType<ValueType>::val(entry.nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ),
-                    typename ConstraintType<ValueType>::val(entry.nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ));
-            }
-        }
+storm::expressions::Expression ConstraintCollector::relateToZero(storm::RawPolynomial const& polynomial, storm::expressions::RelationType relation) const {
+    auto zero = expressionManager->rational(storm::utility::convertNumber<storm::RationalNumber>(0));
+    switch (relation) {
+        case storm::expressions::RelationType::Less:
+            return toExpression(polynomial, expressionManager) < zero;
+        case storm::expressions::RelationType::LessOrEqual:
+            return toExpression(polynomial, expressionManager) <= zero;
+        case storm::expressions::RelationType::Greater:
+            return toExpression(-polynomial, expressionManager) < zero;
+        case storm::expressions::RelationType::GreaterOrEqual:
+            return toExpression(-polynomial, expressionManager) <= zero;
+        case storm::expressions::RelationType::Equal:
+            return toExpression(polynomial, expressionManager) == zero;
+        case storm::expressions::RelationType::NotEqual:
+            return toExpression(polynomial, expressionManager) != zero;
+    }
+    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled relation.");
+}
+
+std::size_t ConstraintCollector::ExpressionStructuralHash::operator()(storm::expressions::Expression const& expression) const {
+    storm::expressions::HashVisitor visitor;
+    return visitor.hash(expression);
+}
+
+bool ConstraintCollector::ExpressionSyntacticalEquality::operator()(storm::expressions::Expression const& first,
+                                                                    storm::expressions::Expression const& second) const {
+    return first.isSyntacticallyEqual(second);
+}
+
+void ConstraintCollector::addWellformedConstraint(storm::expressions::Expression const& constraint) {
+    if (this->wellformedConstraintIndex.insert(constraint).second) {
+        this->wellformedConstraintSet.push_back(constraint);
     }
 }
 
-template<typename ValueType>
-void ConstraintCollector<ValueType>::process(storm::models::sparse::Model<ValueType> const& model) {
-    if (model.getType() != storm::models::ModelType::Ctmc) {
+void ConstraintCollector::addGraphPreservingConstraint(storm::expressions::Expression const& constraint) {
+    if (this->graphPreservingConstraintIndex.insert(constraint).second) {
+        this->graphPreservingConstraintSet.push_back(constraint);
+    }
+}
+
+void ConstraintCollector::wellformedRequiresNonNegativeEntries(storm::RationalFunction const& value) {
+    if (storm::utility::isConstant(value)) {
+        return;
+    }
+
+    auto valueVariables = value.gatherVariables();
+    variableSet.insert(valueVariables.begin(), valueVariables.end());
+
+    storm::RawPolynomial nominator = value.nominator().polynomialWithCoefficient();
+    storm::RawPolynomial denominator = value.denominator().polynomialWithCoefficient();
+
+    if (denominator.isConstant()) {
+        // The sign of the denominator is known, so non-negativity of the quotient reduces to a sign constraint on
+        // the nominator.
+        STORM_LOG_ASSERT(denominator.constantPart() != 0, "Denominator should not be zero.");
+        auto relation = denominator.constantPart() > 0 ? storm::expressions::RelationType::GreaterOrEqual : storm::expressions::RelationType::LessOrEqual;
+        addWellformedConstraint(relateToZero(nominator, relation));
+    } else {
+        // The denominator may change its sign, so we need to constrain that it never vanishes and that the sign of
+        // the nominator follows the sign of the denominator.
+        addWellformedConstraint(relateToZero(denominator, storm::expressions::RelationType::NotEqual));
+        addWellformedConstraint(storm::expressions::ite(relateToZero(denominator, storm::expressions::RelationType::Greater),
+                                                        relateToZero(nominator, storm::expressions::RelationType::GreaterOrEqual),
+                                                        relateToZero(nominator, storm::expressions::RelationType::LessOrEqual)));
+    }
+}
+
+void ConstraintCollector::wellformedRequiresAtMostOne(storm::RationalFunction const& value) {
+    if (storm::utility::isConstant(value)) {
+        return;
+    }
+
+    auto denominator = value.denominator().polynomialWithCoefficient();
+    if (!denominator.isConstant()) {
+        // TODO: Assert: value <= 1 <==> if denom > 0 then nom - denom <= 0 else nom - denom >= 0
+        // This sign reasoning cannot be expressed with the relations available in the expression system.
+        return;
+    }
+
+    STORM_LOG_ASSERT(denominator.constantPart() != 0, "Denominator should not be zero.");
+    storm::RawPolynomial nominator = value.nominator().polynomialWithCoefficient();
+    // Express the bound as a relation of the difference to zero, so that it coincides with another constraint
+    // whenever the two are equivalent.
+    auto relation = denominator.constantPart() > 0 ? storm::expressions::RelationType::LessOrEqual : storm::expressions::RelationType::GreaterOrEqual;
+    addWellformedConstraint(relateToZero(nominator - denominator, relation));
+}
+
+void ConstraintCollector::graphPreservingRequiresNonZero(storm::RationalFunction const& value) {
+    addGraphPreservingConstraint(relateToZero(value.nominator().polynomialWithCoefficient(), storm::expressions::RelationType::NotEqual));
+}
+
+void ConstraintCollector::process(storm::models::sparse::Model<storm::RationalFunction> const& model) {
+    bool const isCtmc = model.getType() == storm::models::ModelType::Ctmc;
+
+    if (!isCtmc) {
         for (uint_fast64_t action = 0; action < model.getTransitionMatrix().getRowCount(); ++action) {
-            ValueType sum = storm::utility::zero<ValueType>();
+            storm::RationalFunction sum = storm::utility::zero<storm::RationalFunction>();
 
             for (auto transitionIt = model.getTransitionMatrix().begin(action); transitionIt != model.getTransitionMatrix().end(action); ++transitionIt) {
-                auto const& transition = *transitionIt;
-                sum += transition.getValue();
-                if (!storm::utility::isConstant(transition.getValue())) {
-                    auto const& transitionVars = transition.getValue().gatherVariables();
-                    variableSet.insert(transitionVars.begin(), transitionVars.end());
+                auto const& value = transitionIt->getValue();
+                sum += value;
+                if (!storm::utility::isConstant(value)) {
                     // Assert: 0 <= transition <= 1
-                    if (transition.getValue().denominator().isConstant()) {
-                        STORM_LOG_ASSERT(transition.getValue().denominator().constantPart() != 0, "Denominator should not be zero.");
-                        if (transition.getValue().denominator().constantPart() > 0) {
-                            // Assert: nom <= denom
-                            wellformedConstraintSet.emplace(
-                                (transition.getValue().nominator() - transition.getValue().denominator()).polynomialWithCoefficient(),
-                                storm::CompareRelation::LEQ);
-                            // Assert: nom >= 0
-                            wellformedConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ);
-                        } else if (transition.getValue().denominator().constantPart() < 0) {
-                            // Assert nom >= denom
-                            wellformedConstraintSet.emplace(
-                                (transition.getValue().nominator() - transition.getValue().denominator()).polynomialWithCoefficient(),
-                                storm::CompareRelation::GEQ);
-                            // Assert: nom <= 0
-                            wellformedConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ);
-                        } else {
-                            STORM_LOG_ASSERT(false, "Denominator should not be zero.");
-                        }
-                    } else {
-                        // Assert: denom != 0
-                        wellformedConstraintSet.emplace(transition.getValue().denominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
-                        // Assert: transition >= 0 <==> if denom > 0 then nom >= 0 else nom <= 0
-                        wellformedConstraintSet.emplace(
-                            carl::FormulaType::ITE,
-                            typename ConstraintType<ValueType>::val(transition.getValue().denominator().polynomialWithCoefficient(),
-                                                                    storm::CompareRelation::GREATER),
-                            typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ),
-                            typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomialWithCoefficient(),
-                                                                    storm::CompareRelation::LEQ));
-                        // TODO: Assert: transition <= 1 <==> if denom > 0 then nom - denom <= 0 else nom - denom >= 0
-                    }
-                    // Assert: transition > 0
-                    graphPreservingConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
+                    wellformedRequiresNonNegativeEntries(value);
+                    wellformedRequiresAtMostOne(value);
+                    // Assert: transition > 0, so that the underlying graph does not change.
+                    graphPreservingRequiresNonZero(value);
                 }
             }
             STORM_LOG_ASSERT(!storm::utility::isConstant(sum) || storm::utility::isOne(sum), "If the sum is a constant, it must be equal to 1.");
             if (!storm::utility::isConstant(sum)) {
+                auto sumVariables = sum.gatherVariables();
+                variableSet.insert(sumVariables.begin(), sumVariables.end());
                 // Assert: sum == 1
-                wellformedConstraintSet.emplace((sum.nominator() - sum.denominator()).polynomialWithCoefficient(), storm::CompareRelation::EQ);
+                addWellformedConstraint(relateToZero(sum.nominator().polynomialWithCoefficient() - sum.denominator().polynomialWithCoefficient(),
+                                                     storm::expressions::RelationType::Equal));
             }
         }
     } else {
         for (auto const& transition : model.getTransitionMatrix()) {
-            if (!transition.getValue().isConstant()) {
-                if (transition.getValue().denominator().isConstant()) {
-                    STORM_LOG_ASSERT(transition.getValue().denominator().constantPart() != 0, "Denominator should not be zero.");
-                    if (transition.getValue().denominator().constantPart() > 0) {
-                        wellformedConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ);
-                    } else if (transition.getValue().denominator().constantPart() < 0) {
-                        wellformedConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ);
-                    } else {
-                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Should have failed before.");
-                    }
-                } else {
-                    wellformedConstraintSet.emplace(transition.getValue().denominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
-                    wellformedConstraintSet.emplace(
-                        carl::FormulaType::ITE,
-                        typename ConstraintType<ValueType>::val(transition.getValue().denominator().polynomialWithCoefficient(),
-                                                                storm::CompareRelation::GREATER),
-                        typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ),
-                        typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ));
-                }
-                graphPreservingConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
+            if (!storm::utility::isConstant(transition.getValue())) {
+                // Assert: 0 <= transition
+                wellformedRequiresNonNegativeEntries(transition.getValue());
+                // Assert: transition > 0, so that the underlying graph does not change.
+                graphPreservingRequiresNonZero(transition.getValue());
             }
         }
     }
 
-    if (model.getType() == storm::models::ModelType::Ctmc) {
-        auto const& exitRateVector = static_cast<storm::models::sparse::Ctmc<ValueType> const&>(model).getExitRateVector();
-        wellformedRequiresNonNegativeEntries(exitRateVector);
+    if (isCtmc) {
+        auto const& exitRateVector = static_cast<storm::models::sparse::Ctmc<storm::RationalFunction> const&>(model).getExitRateVector();
+        for (auto const& exitRate : exitRateVector) {
+            wellformedRequiresNonNegativeEntries(exitRate);
+        }
     } else if (model.getType() == storm::models::ModelType::MarkovAutomaton) {
-        auto const& exitRateVector = static_cast<storm::models::sparse::MarkovAutomaton<ValueType> const&>(model).getExitRates();
-        wellformedRequiresNonNegativeEntries(exitRateVector);
+        auto const& exitRateVector = static_cast<storm::models::sparse::MarkovAutomaton<storm::RationalFunction> const&>(model).getExitRates();
+        for (auto const& exitRate : exitRateVector) {
+            wellformedRequiresNonNegativeEntries(exitRate);
+        }
     }
 
     for (auto const& rewModelEntry : model.getRewardModels()) {
         if (rewModelEntry.second.hasStateRewards()) {
-            wellformedRequiresNonNegativeEntries(rewModelEntry.second.getStateRewardVector());
+            for (auto const& stateReward : rewModelEntry.second.getStateRewardVector()) {
+                wellformedRequiresNonNegativeEntries(stateReward);
+            }
         }
         if (rewModelEntry.second.hasStateActionRewards()) {
-            wellformedRequiresNonNegativeEntries(rewModelEntry.second.getStateActionRewardVector());
+            for (auto const& stateActionReward : rewModelEntry.second.getStateActionRewardVector()) {
+                wellformedRequiresNonNegativeEntries(stateActionReward);
+            }
         }
         if (rewModelEntry.second.hasTransitionRewards()) {
             for (auto const& entry : rewModelEntry.second.getTransitionRewardMatrix()) {
-                if (!entry.getValue().isConstant()) {
-                    if (entry.getValue().denominator().isConstant()) {
-                        STORM_LOG_ASSERT(entry.getValue().denominator().constantPart() != 0, "Denominator should not be zero.");
-                        if (entry.getValue().denominator().constantPart() > 0) {
-                            wellformedConstraintSet.emplace(entry.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ);
-                        } else if (entry.getValue().denominator().constantPart() < 0) {
-                            wellformedConstraintSet.emplace(entry.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ);
-                        } else {
-                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Should have failed before.");
-                        }
-                    } else {
-                        wellformedConstraintSet.emplace(entry.getValue().denominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
-                        wellformedConstraintSet.emplace(
-                            carl::FormulaType::ITE,
-                            typename ConstraintType<ValueType>::val(entry.getValue().denominator().polynomialWithCoefficient(),
-                                                                    storm::CompareRelation::GREATER),
-                            typename ConstraintType<ValueType>::val(entry.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ),
-                            typename ConstraintType<ValueType>::val(entry.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::LEQ));
-                    }
+                if (!storm::utility::isConstant(entry.getValue())) {
+                    wellformedRequiresNonNegativeEntries(entry.getValue());
                 }
             }
         }
     }
 }
 
-template<typename ValueType>
-void ConstraintCollector<ValueType>::operator()(storm::models::sparse::Model<ValueType> const& model) {
+void ConstraintCollector::operator()(storm::models::sparse::Model<storm::RationalFunction> const& model) {
     process(model);
 }
 
-template class ConstraintCollector<storm::RationalFunction>;
 }  // namespace analysis
 }  // namespace storm
