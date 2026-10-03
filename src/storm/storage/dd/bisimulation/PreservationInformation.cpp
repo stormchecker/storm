@@ -97,7 +97,7 @@ std::set<std::string> const& PreservationInformation<DdType, ValueType>::getLabe
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-std::set<storm::expressions::Expression> const& PreservationInformation<DdType, ValueType>::getExpressions() const {
+storm::expressions::ExpressionSet const& PreservationInformation<DdType, ValueType>::getExpressions() const {
     return expressions;
 }
 

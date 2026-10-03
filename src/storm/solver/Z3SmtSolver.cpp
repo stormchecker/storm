@@ -174,7 +174,7 @@ SmtSolver::CheckResult Z3SmtSolver::check() {
 #endif
 }
 
-SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) {
+SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(storm::expressions::ExpressionSet const& assumptions) {
 #ifdef STORM_HAVE_Z3
     lastCheckAssumptions = true;
     z3::expr_vector z3Assumptions(*this->context);

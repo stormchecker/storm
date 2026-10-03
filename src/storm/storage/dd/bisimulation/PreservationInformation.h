@@ -38,12 +38,12 @@ class PreservationInformation {
     void addRewardModel(std::string const& name);
 
     std::set<std::string> const& getLabels() const;
-    std::set<storm::expressions::Expression> const& getExpressions() const;
+    storm::expressions::ExpressionSet const& getExpressions() const;
     std::set<std::string> const& getRewardModelNames() const;
 
    private:
     std::set<std::string> labels;
-    std::set<storm::expressions::Expression> expressions;
+    storm::expressions::ExpressionSet expressions;
     std::set<std::string> rewardModelNames;
 };
 

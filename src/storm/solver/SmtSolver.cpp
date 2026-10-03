@@ -22,7 +22,7 @@ SmtSolver::~SmtSolver() {
     // Intentionally left empty.
 }
 
-void SmtSolver::add(std::set<storm::expressions::Expression> const& assertions) {
+void SmtSolver::add(storm::expressions::ExpressionSet const& assertions) {
     for (storm::expressions::Expression assertion : assertions) {
         this->add(assertion);
     }

@@ -113,7 +113,7 @@ class SmtSolver {
      *
      * @param assertions The assertions to add.
      */
-    void add(std::set<storm::expressions::Expression> const& assertions);
+    void add(storm::expressions::ExpressionSet const& assertions);
 
     /*!
      * Adds the given list of assertions to the solver's stack.
@@ -144,7 +144,7 @@ class SmtSolver {
      * @return Sat if the conjunction of the asserted expressions together with the provided assumptions is
      * satisfiable, Unsat if it is unsatisfiable and Unknown if the solver could not determine satisfiability.
      */
-    virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) = 0;
+    virtual CheckResult checkWithAssumptions(storm::expressions::ExpressionSet const& assumptions) = 0;
 
     /*!
      * Checks whether the conjunction of assertions that are currently on the solver's stack together with the

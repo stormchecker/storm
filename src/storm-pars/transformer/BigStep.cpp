@@ -378,7 +378,7 @@ std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgra
     return std::make_pair(subgraph, bottomStates);
 }
 
-std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>> BigStep::bigStep(
+std::pair<models::sparse::Dtmc<RationalFunction>, UniPolyAnnotationMap> BigStep::bigStep(
     models::sparse::Dtmc<RationalFunction> const& model, modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask) {
     models::sparse::Dtmc<RationalFunction> dtmc(model);
     storage::SparseMatrix<RationalFunction> transitionMatrix = dtmc.getTransitionMatrix();
@@ -466,7 +466,7 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
     storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, trueVector, falseVector);
 
     // We will return these stored annotations to help find the zeroes
-    std::map<UniPoly, Annotation> storedAnnotations;
+    UniPolyAnnotationMap storedAnnotations;
 
     std::map<RationalFunctionVariable, std::set<uint64_t>> bottomStatesSeen;
 
@@ -662,7 +662,7 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
     uint64_t start, const RationalFunctionVariable& parameter, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
     const storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
     const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-    const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const std::map<UniPoly, Annotation>& storedAnnotations) {
+    const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const UniPolyAnnotationMap& storedAnnotations) {
     // Find the subgraph we will work on using DFS, following the treeStates, stopping before cycles
     auto const [subtree, bottomStates] = findSubgraph(flexibleMatrix, start, treeStates, stateRewardVector, parameter);
 
@@ -883,12 +883,12 @@ std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(const std::map
     return insertTransitions;
 }
 
-std::map<UniPoly, Annotation> BigStep::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
-                                                                 storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
-                                                                 storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
-                                                                 storage::BitVector& reachableStates,
-                                                                 std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate) {
-    std::map<UniPoly, Annotation> storedAnnotations;
+UniPolyAnnotationMap BigStep::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
+                                                        storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+                                                        storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
+                                                        storage::BitVector& reachableStates,
+                                                        std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate) {
+    UniPolyAnnotationMap storedAnnotations;
 
     // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsFlexibleMatrix.createSparseMatrix(), "");
     // Delete old transitions - backwards

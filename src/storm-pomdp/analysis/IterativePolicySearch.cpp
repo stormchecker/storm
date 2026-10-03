@@ -440,7 +440,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
         smtSolver->add(storm::expressions::disjunction(atLeastOneOfStates));
     }
 
-    std::set<storm::expressions::Expression> allOfTheseAssumption;
+    storm::expressions::ExpressionSet allOfTheseAssumption;
     std::vector<storm::expressions::Expression> updateForObservationExpressions;
 
     for (uint64_t state : allOfTheseStates) {
@@ -882,7 +882,7 @@ typename IterativePolicySearch<ValueType>::Statistics const& IterativePolicySear
 }
 
 template<typename ValueType>
-bool IterativePolicySearch<ValueType>::smtCheck(uint64_t iteration, std::set<storm::expressions::Expression> const& assumptions) {
+bool IterativePolicySearch<ValueType>::smtCheck(uint64_t iteration, storm::expressions::ExpressionSet const& assumptions) {
     if (options.isExportSATSet()) {
         STORM_LOG_DEBUG("Export SMT Solver Call (" << iteration << ")");
         std::string filepath = options.getExportSATCallsPath() + "call_" + std::to_string(iteration) + ".smt2";

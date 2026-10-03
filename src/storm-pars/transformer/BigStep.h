@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <set>
 
@@ -31,6 +32,12 @@ using UniPoly = RawUnivariatePolynomial;
 // optimization for the polynomial cache - built in comparison is slow
 struct UniPolyCompare {
     bool operator()(const UniPoly& lhs, const UniPoly& rhs) const;
+};
+
+struct UniPolyDefaultCompare {
+    bool operator()(UniPoly const& lhs, UniPoly const& rhs) const {
+        return lhs.less(rhs);
+    }
 };
 
 struct PolynomialCache : std::unordered_map<RationalFunctionVariable, std::pair<std::map<UniPoly, uint64_t, UniPolyCompare>, std::vector<UniPoly>>> {
@@ -168,6 +175,8 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
 
 std::ostream& operator<<(std::ostream& os, const Annotation& annotation);
 
+using UniPolyAnnotationMap = std::map<UniPoly, Annotation, UniPolyDefaultCompare>;
+
 /**
  * Shorthand for std::unordered_map<T, uint64_t>. Counts elements (which elements, how many of them).
  *
@@ -192,8 +201,8 @@ class BigStep {
      * @param checkTask A property (probability or reward) on the pMC.
      * @return models::sparse::Dtmc<RationalFunction> The time-travelled pMC.
      */
-    std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>> bigStep(
-        models::sparse::Dtmc<RationalFunction> const& model, modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask);
+    std::pair<models::sparse::Dtmc<RationalFunction>, UniPolyAnnotationMap> bigStep(models::sparse::Dtmc<RationalFunction> const& model,
+                                                                                    modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask);
 
     static std::unordered_map<RationalFunction, Annotation> lastSavedAnnotations;
 
@@ -213,7 +222,7 @@ class BigStep {
         uint64_t start, const RationalFunctionVariable& parameter, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
         const storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
         const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-        const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const std::map<UniPoly, Annotation>& storedAnnotations);
+        const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const UniPolyAnnotationMap& storedAnnotations);
 
     /**
      * Find time-travelling on the given big-step paths, i.e., identify transitions that are linear to each other and put them into seperate states,
@@ -243,11 +252,11 @@ class BigStep {
      * @param backwardsFlexibleMatrix The backwards flexible matrix (modifies this!)
      * @param treeStatesNeedUpdate The map of tree states that need updating (modifies this!)
      */
-    std::map<UniPoly, Annotation> replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
-                                                            storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
-                                                            storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
-                                                            storage::BitVector& reachableStates,
-                                                            std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate);
+    UniPolyAnnotationMap replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
+                                                   storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+                                                   storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
+                                                   storage::BitVector& reachableStates,
+                                                   std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate);
 
     /**
      * Updates which states are unreachable after the previous transformation without needing a model checking procedure.

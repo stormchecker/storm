@@ -3,9 +3,11 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <set>
 #include <unordered_map>
 #include <vector>
 
+#include "storm-config.h"
 #include "storm/storage/expressions/BaseExpression.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/utility/OsDetection.h"
@@ -468,16 +470,24 @@ Expression apply(std::vector<storm::expressions::Expression> const& expressions,
 Expression applyAssociative(std::vector<storm::expressions::Expression> const& expressions,
                             std::function<Expression(Expression const&, Expression const&)> const& function);
 Expression makeBinaryRelationExpression(Expression const& lhs, Expression const& rhs, RelationType const& reltype);
+
+struct ExpressionLess {
+    bool operator()(Expression const& lhs, Expression const& rhs) const {
+        return std::less<BaseExpression const*>()(lhs.getBaseExpressionPointer().get(), rhs.getBaseExpressionPointer().get());
+    }
+};
 }  // namespace expressions
 }  // namespace storm
 
 namespace std {
+#ifndef STORM_WORKAROUND_LLVM_EXPRESSION_LESS_BUG
 template<>
 struct less<storm::expressions::Expression> {
     bool operator()(storm::expressions::Expression const& lhs, storm::expressions::Expression const& rhs) const {
         return lhs.getBaseExpressionPointer() < rhs.getBaseExpressionPointer();
     }
 };
+#endif
 
 template<>
 struct hash<storm::expressions::Expression> {
@@ -493,3 +503,16 @@ struct equal_to<storm::expressions::Expression> {
     }
 };
 }  // namespace std
+
+namespace storm {
+namespace expressions {
+#ifdef STORM_WORKAROUND_LLVM_EXPRESSION_LESS_BUG
+using ExpressionComparator = ExpressionLess;
+#else
+using ExpressionComparator = std::less<Expression>;
+#endif
+using ExpressionSet = std::set<Expression, ExpressionComparator>;
+template<typename Value>
+using ExpressionMap = std::map<Expression, Value, ExpressionComparator>;
+}  // namespace expressions
+}  // namespace storm

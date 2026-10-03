@@ -203,7 +203,7 @@ class IterativePolicySearch {
 
     bool initialize(uint64_t k);
 
-    bool smtCheck(uint64_t iteration, std::set<storm::expressions::Expression> const& assumptions = {});
+    bool smtCheck(uint64_t iteration, storm::expressions::ExpressionSet const& assumptions = {});
 
     std::unique_ptr<storm::solver::SmtSolver> smtSolver;
     storm::models::sparse::Pomdp<ValueType> const& pomdp;

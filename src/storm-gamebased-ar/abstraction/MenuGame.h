@@ -46,7 +46,7 @@ class MenuGame : public storm::models::symbolic::StochasticTwoPlayerGame<Type, V
              std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables,
              std::set<storm::expressions::Variable> const& allNondeterminismVariables,
              std::set<storm::expressions::Variable> const& probabilisticBranchingVariables,
-             std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap);
+             storm::expressions::ExpressionMap<storm::dd::Bdd<Type>> const& expressionToBddMap);
 
     virtual storm::dd::Bdd<Type> getStates(std::string const& label) const override;
 
@@ -102,7 +102,7 @@ class MenuGame : public storm::models::symbolic::StochasticTwoPlayerGame<Type, V
     std::set<storm::expressions::Variable> probabilisticBranchingVariables;
 
     // A mapping from expressions that were used in the abstraction process to the the BDDs representing them.
-    std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> expressionToBddMap;
+    storm::expressions::ExpressionMap<storm::dd::Bdd<Type>> expressionToBddMap;
 
     // The bottom states of the model.
     storm::dd::Bdd<Type> bottomStates;

@@ -29,6 +29,7 @@
 // Logging configuration
 #cmakedefine STORM_LOGGING_FRAMEWORK
 #cmakedefine STORM_LOG_DISABLE_DEBUG
+#cmakedefine STORM_WORKAROUND_LLVM_EXPRESSION_LESS_BUG
 
 
 // Carl configuration

@@ -109,7 +109,7 @@ bool LValue::operator<(LValue const& other) const {
             return false;
         } else {
             return std::lexicographical_compare(arrayIndexVector.begin(), arrayIndexVector.end(), other.getArrayIndexVector().begin(),
-                                                other.getArrayIndexVector().end(), std::less<storm::expressions::Expression>());
+                                                other.getArrayIndexVector().end(), storm::expressions::ExpressionComparator());
         }
     }
 }

@@ -344,7 +344,7 @@ std::size_t AbstractionInformation<DdType>::getAuxVariableCount() const {
 }
 
 template<storm::dd::DdType DdType>
-std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> const& AbstractionInformation<DdType>::getPredicateToBddMap() const {
+storm::expressions::ExpressionMap<storm::dd::Bdd<DdType>> const& AbstractionInformation<DdType>::getPredicateToBddMap() const {
     return expressionToBddMap;
 }
 

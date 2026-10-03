@@ -21,7 +21,7 @@ MenuGame<Type, ValueType>::MenuGame(std::shared_ptr<storm::dd::DdManager<Type>> 
                                     std::set<storm::expressions::Variable> const& player2Variables,
                                     std::set<storm::expressions::Variable> const& allNondeterminismVariables,
                                     std::set<storm::expressions::Variable> const& probabilisticBranchingVariables,
-                                    std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap)
+                                    storm::expressions::ExpressionMap<storm::dd::Bdd<Type>> const& expressionToBddMap)
     : storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType>(
           manager, reachableStates, initialStates, deadlockStates, transitionMatrix.sumAbstract(probabilisticBranchingVariables), rowVariables, nullptr,
           columnVariables, rowColumnMetaVariablePairs, player1Variables, player2Variables, allNondeterminismVariables),
