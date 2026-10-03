@@ -31,6 +31,12 @@ jobs:
         run: |
           echo "TIDY_VERSION=$(grep '^CLANG_TIDY_VERSION=' resources/scripts/clang-versions | cut -d= -f2)" >> "$GITHUB_OUTPUT"
 
+      - name: Restore 3rdparty source cache
+        id: cache-3rdparty-restore
+        uses: ./.github/actions/cache-3rdparty-action
+        with:
+          restore: true
+
       - name: Configure to generate compile_commands.json
         run: |
           cmake -S . -B build \
@@ -38,7 +44,8 @@ jobs:
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -DSTORM_PORTABLE=ON \
             -DSTORM_DEVELOPER=ON \
-            -DSTORM_COMPILE_WITH_PCH=OFF
+            -DSTORM_COMPILE_WITH_PCH=OFF \
+            ${{ steps.cache-3rdparty-restore.outputs.cmake-args }}
 
       - name: Build external resources to populate include directories
         run: cmake --build build --target storm_resources -j ${NR_JOBS}

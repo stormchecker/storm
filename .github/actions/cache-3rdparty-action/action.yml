@@ -1,0 +1,112 @@
+name: 'Cache 3rdparty source downloads'
+description: >
+  Restores and saves cached sources for gmm, Eigen, and googletest (fetched via FetchContent).
+  Avoids redownloading them.
+  First call with restore: true, then execute configure step and append this call's cmake-args, then call with save: true.
+inputs:
+  restore:
+    description: "Restore cached 3rdparty source downloads"
+    default: false
+  save:
+    description: "Save 3rdparty source downloads to cache"
+    default: false
+outputs:
+  cmake-args:
+    description: >
+      -DFETCHCONTENT_SOURCE_DIR_<NAME> arguments for every cache hit.
+    value: ${{ steps.cmake-args.outputs.cmake-args }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Determine 3rdparty dependency versions
+      if: inputs.restore == 'true' || inputs.save == 'true'
+      run: |
+        GMM_VERSION=$(sed -n 's/^ *set(GMM_VERSION "\(.*\)")$/\1/p' resources/3rdparty/CMakeLists.txt)
+        EIGEN_TAG=$(sed -n 's/^ *set(STORM_EIGEN_GIT_TAG "\(.*\)")$/\1/p' resources/3rdparty/CMakeLists.txt)
+        GTEST_VERSION=$(sed -n 's/^ *set(GTEST_VERSION "\(.*\)")$/\1/p' resources/3rdparty/CMakeLists.txt)
+        echo "GMM_VERSION=$GMM_VERSION" >> "$GITHUB_ENV"
+        echo "EIGEN_TAG=$EIGEN_TAG" >> "$GITHUB_ENV"
+        echo "GTEST_VERSION=$GTEST_VERSION" >> "$GITHUB_ENV"
+        echo "STORM_3RDPARTY_CACHE_DIR=${RUNNER_TEMP}/storm-3rdparty-cache" >> "$GITHUB_ENV"
+      shell: bash
+    - name: Restore gmm source cache
+      id: gmm-cache-restore
+      if: inputs.restore == 'true'
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ env.STORM_3RDPARTY_CACHE_DIR }}/gmm
+        key: 3rdparty-gmm-${{ env.GMM_VERSION }}
+    - name: Restore Eigen source cache
+      id: eigen-cache-restore
+      if: inputs.restore == 'true'
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ env.STORM_3RDPARTY_CACHE_DIR }}/StormEigen
+        key: 3rdparty-eigen-${{ env.EIGEN_TAG }}
+    - name: Restore googletest source cache
+      id: googletest-cache-restore
+      if: inputs.restore == 'true'
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ env.STORM_3RDPARTY_CACHE_DIR }}/googletest
+        key: 3rdparty-googletest-${{ env.GTEST_VERSION }}
+    - name: Compute FetchContent cache-hit CMake args
+      id: cmake-args
+      if: inputs.restore == 'true'
+      run: |
+        ARGS=""
+        if [ "${{ steps.gmm-cache-restore.outputs.cache-hit }}" = "true" ]; then
+          ARGS="$ARGS -DFETCHCONTENT_SOURCE_DIR_GMM=${{ env.STORM_3RDPARTY_CACHE_DIR }}/gmm"
+        fi
+        if [ "${{ steps.eigen-cache-restore.outputs.cache-hit }}" = "true" ]; then
+          ARGS="$ARGS -DFETCHCONTENT_SOURCE_DIR_EIGEN=${{ env.STORM_3RDPARTY_CACHE_DIR }}/StormEigen"
+        fi
+        if [ "${{ steps.googletest-cache-restore.outputs.cache-hit }}" = "true" ]; then
+          ARGS="$ARGS -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=${{ env.STORM_3RDPARTY_CACHE_DIR }}/googletest"
+        fi
+        echo "cmake-args=$ARGS" >> "$GITHUB_OUTPUT"
+        # Persisted via $GITHUB_ENV (not just as step outputs) so the later save: true invocation can reuse it.
+        echo "GMM_CACHE_HIT=${{ steps.gmm-cache-restore.outputs.cache-hit }}" >> "$GITHUB_ENV"
+        echo "EIGEN_CACHE_HIT=${{ steps.eigen-cache-restore.outputs.cache-hit }}" >> "$GITHUB_ENV"
+        echo "GOOGLETEST_CACHE_HIT=${{ steps.googletest-cache-restore.outputs.cache-hit }}" >> "$GITHUB_ENV"
+      shell: bash
+
+    - name: Seed 3rdparty cache from fresh downloads
+      if: inputs.save == 'true'
+      run: |
+        if [ "${{ env.GMM_CACHE_HIT }}" != "true" ] && [ -d build/_deps/gmm-src ]; then
+          mkdir -p "${{ env.STORM_3RDPARTY_CACHE_DIR }}"
+          cp -a build/_deps/gmm-src "${{ env.STORM_3RDPARTY_CACHE_DIR }}/gmm"
+        fi
+        if [ "${{ env.EIGEN_CACHE_HIT }}" != "true" ] && [ -d build/resources/3rdparty/StormEigen/StormEigen ]; then
+          mkdir -p "${{ env.STORM_3RDPARTY_CACHE_DIR }}"
+          cp -a build/resources/3rdparty/StormEigen/StormEigen "${{ env.STORM_3RDPARTY_CACHE_DIR }}/StormEigen"
+        fi
+        if [ "${{ env.GOOGLETEST_CACHE_HIT }}" != "true" ] && [ -d build/_deps/googletest-src ]; then
+          mkdir -p "${{ env.STORM_3RDPARTY_CACHE_DIR }}"
+          cp -a build/_deps/googletest-src "${{ env.STORM_3RDPARTY_CACHE_DIR }}/googletest"
+        fi
+        # Only save if the directory actually exists (the dependency could be disabled).
+        echo "GMM_DIR_EXISTS=$([ -d "${{ env.STORM_3RDPARTY_CACHE_DIR }}/gmm" ] && echo true || echo false)" >> "$GITHUB_ENV"
+        echo "EIGEN_DIR_EXISTS=$([ -d "${{ env.STORM_3RDPARTY_CACHE_DIR }}/StormEigen" ] && echo true || echo false)" >> "$GITHUB_ENV"
+        echo "GOOGLETEST_DIR_EXISTS=$([ -d "${{ env.STORM_3RDPARTY_CACHE_DIR }}/googletest" ] && echo true || echo false)" >> "$GITHUB_ENV"
+      shell: bash
+    - name: Save gmm source cache
+      if: inputs.save == 'true' && env.GMM_CACHE_HIT != 'true' && env.GMM_DIR_EXISTS == 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ env.STORM_3RDPARTY_CACHE_DIR }}/gmm
+        key: 3rdparty-gmm-${{ env.GMM_VERSION }}
+    - name: Save Eigen source cache
+      if: inputs.save == 'true' && env.EIGEN_CACHE_HIT != 'true' && env.EIGEN_DIR_EXISTS == 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ env.STORM_3RDPARTY_CACHE_DIR }}/StormEigen
+        key: 3rdparty-eigen-${{ env.EIGEN_TAG }}
+    - name: Save googletest source cache
+      if: inputs.save == 'true' && env.GOOGLETEST_CACHE_HIT != 'true' && env.GOOGLETEST_DIR_EXISTS == 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ env.STORM_3RDPARTY_CACHE_DIR }}/googletest
+        key: 3rdparty-googletest-${{ env.GTEST_VERSION }}

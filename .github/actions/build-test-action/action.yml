@@ -24,6 +24,14 @@ inputs:
     description: "Save ccache to cache"
     type: boolean
     default: false
+  restore_3rdparty_cache:
+    description: "Restore cached 3rdparty source downloads"
+    type: boolean
+    default: false
+  save_3rdparty_cache:
+    description: "Save 3rdparty source downloads to cache"
+    type: boolean
+    default: false
   install:
     description: "Run post-build steps: starter project, install, run installed storm"
     type: boolean
@@ -80,6 +88,15 @@ runs:
         ccache --zero-stats
         ccache --show-stats --verbose
       shell: bash
+
+    # Caching source code for 3rdparty dependencies.
+    - name: Restore 3rdparty source cache
+      id: cache-3rdparty-restore
+      uses: ./.github/actions/cache-3rdparty-action
+      with:
+        restore: ${{ inputs.restore_3rdparty_cache }}
+
+    # Configure Storm
     - name: Configure storm
       run: |
         mkdir build
@@ -102,13 +119,22 @@ runs:
               -DSTORM_USE_CLN_EA=${{ env.CLN_EXACT == 'true' && 'ON' || 'OFF' }} \
               -DSTORM_USE_CLN_RF=${{ env.CLN_RATFUNC == 'true' && 'ON' || 'OFF' }} \
               -DSTORM_COMPILE_WITH_ALL_SANITIZERS=${{ env.ALL_SANITIZERS == 'true' && 'ON' || 'OFF' }} \
+              ${{ steps.cache-3rdparty-restore.outputs.cmake-args }} \
               ${{ env.CMAKE_ARGS }} ..
       shell: bash
+
+    - name: Save 3rdparty source cache
+      uses: ./.github/actions/cache-3rdparty-action
+      with:
+        save: ${{ inputs.save_3rdparty_cache }}
+
+    # Build Storm
     - name: Build storm
       working-directory: ./build
       run: |
         make -j ${{ inputs.nr_jobs }}
       shell: bash
+
     - name: Print ccache stats
       if: inputs.restore_cache == 'true'
       run: ccache --show-stats --verbose
@@ -119,6 +145,8 @@ runs:
       with:
         path: ${{ env.CCACHE_DIR }}
         key: buildtest-ccache-${{ inputs.name }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt') }}-${{ github.sha }}
+
+    # Perform checks
     - name: Run storm
       working-directory: ./build
       run: ./bin/storm --version

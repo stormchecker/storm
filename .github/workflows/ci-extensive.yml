@@ -62,6 +62,8 @@ jobs:
           config: ${{ steps.resolve-config.outputs.config }}
           restore_cache: false
           save_cache: false
+          restore_3rdparty_cache: true
+          save_3rdparty_cache: false
           install: true
 
   macTests:
@@ -99,6 +101,8 @@ jobs:
           config: ${{ steps.resolve-config.outputs.config }}
           restore_cache: false
           save_cache: false
+          restore_3rdparty_cache: true
+          save_3rdparty_cache: false
           install: true
 
   deploy:

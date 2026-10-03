@@ -79,6 +79,8 @@ jobs:
           # ccache is only cached for configs in "quick" scope: caching everything would exceed GitHub's 10GB limit
           restore_cache: ${{ contains(matrix.config.scope, 'quick') }}
           save_cache: ${{ contains(matrix.config.scope, 'quick') && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          restore_3rdparty_cache: true
+          save_3rdparty_cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           # Skip install steps for a quick PR push
           install: ${{ !(github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready for review')) }}
 
@@ -129,6 +131,8 @@ jobs:
           # Intel runners are also cached since they are rather slow
           restore_cache: ${{ contains(matrix.config.scope, 'quick') || contains(matrix.config.distro, 'intel') }}
           save_cache: ${{ (contains(matrix.config.scope, 'quick') || contains(matrix.config.distro, 'intel')) && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          restore_3rdparty_cache: true
+          save_3rdparty_cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           # Skip install steps for a quick PR push
           install: ${{ !(github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready for review')) }}
 

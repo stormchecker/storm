@@ -16,27 +16,22 @@ message(STATUS "Storm - Building external resources with ${STORM_RESOURCES_BUILD
 
 # Do not take a branch, needs internet connection.
 message(STATUS "Storm - Including l3pp logging.")
-ExternalProject_Add(
-        l3pp_ext
+FetchContent_Declare(
+        l3pp
         GIT_REPOSITORY https://github.com/hbruintjes/l3pp.git
         GIT_TAG 513c7589232396e4b8975113b7709a8f39b46c85
-        SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/l3pp
-        UPDATE_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
-        LOG_DOWNLOAD ON
-        LOG_INSTALL ON
-        LOG_OUTPUT_ON_FAILURE ON
+        # l3pp has no CMakeLists.txt today, but guard against it gaining one upstream and being
+        # silently added as a subdirectory (see Eigen/Boost.PFR above for the same pattern).
+        SOURCE_SUBDIR do-not-add-as-subdirectory
 )
+FetchContent_MakeAvailable(l3pp)
 add_library(l3pp INTERFACE) # Not imported, we are in control of the sources.
-add_dependencies(l3pp l3pp_ext)
 target_include_directories(l3pp INTERFACE
-        $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}/l3pp>
+        $<BUILD_INTERFACE:${l3pp_SOURCE_DIR}>
         $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/l3pp>
 )
 install(TARGETS l3pp EXPORT storm_Targets)
-install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/l3pp/ DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/l3pp FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
+install(DIRECTORY ${l3pp_SOURCE_DIR}/ DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/l3pp FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
 add_dependencies(storm_resources l3pp)
 list(APPEND STORM_DEP_TARGETS l3pp)
 
@@ -85,30 +80,22 @@ endif()
 if(NOT STORM_DISABLE_GMM)
     set(GMM_VERSION "5.5")
     message(STATUS "Storm - Including gmm ${GMM_VERSION}.")
-    ExternalProject_Add(
-            gmm_src
+    FetchContent_Declare(
+            gmm
             URL https://download-mirror.savannah.gnu.org/releases/getfem/stable/gmm-${GMM_VERSION}.tar.gz
-            SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/gmm
             # Try to apply patch and otherwise check that patch was already applied
             # Needed because while -N ignores already applied patches it still returns with exit code 1
             PATCH_COMMAND patch -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch || patch --dry-run -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch | grep "Reversed (or previously applied) patch detected!"
-            UPDATE_COMMAND ""
-            CONFIGURE_COMMAND ""
-            BUILD_COMMAND ""
-            INSTALL_COMMAND ""
-            LOG_DOWNLOAD ON
-            LOG_INSTALL ON
-            LOG_OUTPUT_ON_FAILURE ON
     )
+    FetchContent_MakeAvailable(gmm)
     add_library(gmm INTERFACE) # Not imported, we are in control of the sources.
-    add_dependencies(gmm gmm_src)
     add_dependencies(storm_resources gmm)
     target_include_directories(gmm INTERFACE
-            $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}/gmm/include>
+            $<BUILD_INTERFACE:${gmm_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}>
     )
     install(TARGETS gmm EXPORT storm_Targets)
-    install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/gmm/include/gmm
+    install(DIRECTORY ${gmm_SOURCE_DIR}/include/gmm
             DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}
             FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
     list(APPEND STORM_DEP_TARGETS gmm)
@@ -124,38 +111,36 @@ endif()
 ##
 #############################################################
 
-# Checkout Eigen
-# https://gitlab.com/libeigen/eigen
 set(STORM_EIGEN_GIT_TAG "bc3b39870ecb690a623a3f49149a358b95c5781d")
 message(STATUS "Storm - Including Eigen commit ${STORM_EIGEN_GIT_TAG} (Version 5.0.1).")
-ExternalProject_Add(
-        eigen_src
+FetchContent_Declare(
+        eigen
         GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
         GIT_TAG ${STORM_EIGEN_GIT_TAG}
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/StormEigen/StormEigen
+        # Eigen ships its own CMakeLists.txt, which we do not want to  process.
+        # Pointing SOURCE_SUBDIR at a subdirectory with no CMakeLists.txt makes FetchContent_MakeAvailable() populate
+        # the source without calling add_subdirectory() on it.
+        SOURCE_SUBDIR do-not-add-as-subdirectory
         # First check whether patch was already applied (--reverse --check), otherwise apply patch
         PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch --reverse --check -q || git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch
-        UPDATE_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
-        LOG_DOWNLOAD ON
-        LOG_INSTALL ON
-        LOG_OUTPUT_ON_FAILURE ON
 )
+FetchContent_MakeAvailable(eigen)
+# The include path exposes the parent of the checkout, whose directory is named "StormEigen".
+# This allows to #include <StormEigen/Eigen/Dense> and avoids name clashes with system-installed Eigen.
+cmake_path(GET eigen_SOURCE_DIR PARENT_PATH STORM_EIGEN_PARENT_DIR)
 add_library(eigenstorm INTERFACE) # Not imported, we are in control of the sources.
-add_dependencies(eigenstorm eigen_src)
 if(STORM_WARNING_AS_ERROR AND STORM_COMPILER_GCC)
         # Ignore warning in Eigen
         target_compile_options(eigenstorm INTERFACE -Wno-class-memaccess)
 endif()
 # note that we include without StormEigen
 target_include_directories(eigenstorm INTERFACE
-        $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}/StormEigen>
+        $<BUILD_INTERFACE:${STORM_EIGEN_PARENT_DIR}>
         $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/StormEigen>
 )
 install(TARGETS eigenstorm EXPORT storm_Targets)
-install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/StormEigen/StormEigen
+install(DIRECTORY ${eigen_SOURCE_DIR}
         DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}
         FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
 add_dependencies(storm_resources eigenstorm)
@@ -178,28 +163,21 @@ endif()
 
 if(${Boost_VERSION} VERSION_LESS "1.75.0") # Debian 12 ships with Boost 1.74.0
     message(STATUS "Storm - Loading Boost.PFR as it is not part of Boost < 1.75.0")
-    ExternalProject_Add(
-            boost_pfr_src
+    FetchContent_Declare(
+            boost_pfr
             GIT_REPOSITORY https://github.com/boostorg/pfr.git
             GIT_TAG 2.2.0
-            SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/boost_pfr
-            PATCH_COMMAND ""
-            UPDATE_COMMAND ""
-            CONFIGURE_COMMAND ""
-            BUILD_COMMAND ""
-            INSTALL_COMMAND ""
-            LOG_DOWNLOAD ON
-            LOG_INSTALL ON
-            LOG_OUTPUT_ON_FAILURE ON
+            # pfr ships its own CMakeLists.txt, which we do not want to process (see Eigen above).
+            SOURCE_SUBDIR do-not-add-as-subdirectory
     )
+    FetchContent_MakeAvailable(boost_pfr)
     add_library(boost_pfr INTERFACE) # Not imported, we are in control of the sources.
-    add_dependencies(boost_pfr boost_pfr_src)
     target_include_directories(boost_pfr INTERFACE
-            $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}/boost_pfr/include>
+            $<BUILD_INTERFACE:${boost_pfr_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}>
     )
     install(TARGETS boost_pfr EXPORT storm_Targets)
-    install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/boost_pfr/include/boost
+    install(DIRECTORY ${boost_pfr_SOURCE_DIR}/include/boost
             DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}
             PATTERN ".git" EXCLUDE)
     add_dependencies(storm_resources boost_pfr)
@@ -538,23 +516,18 @@ endif()
 
 set(STORM_HAVE_QVBS OFF)
 if(STORM_LOAD_QVBS)
-    ExternalProject_Add(
-            download_qvbs
+    FetchContent_Declare(
+            qvbs
             GIT_REPOSITORY https://github.com/ahartmanns/qcomp.git
             GIT_SHALLOW 1
-            PREFIX ${PROJECT_BINARY_DIR}/qvbs
-            UPDATE_COMMAND ""
-            CONFIGURE_COMMAND ""
-            BUILD_COMMAND ""
-            INSTALL_COMMAND ""
-            LOG_DOWNLOAD ON
-            LOG_INSTALL ON
-            LOG_OUTPUT_ON_FAILURE ON
+            # qcomp has no CMakeLists.txt today, but guard against it gaining one upstream and
+            # being silently added as a subdirectory (see Eigen/Boost.PFR/l3pp above). Only
+            # STORM_QVBS_ROOT (a plain source-dir path) is actually needed here.
+            SOURCE_SUBDIR do-not-add-as-subdirectory
     )
-    add_dependencies(storm_resources download_qvbs)
+    FetchContent_MakeAvailable(qvbs)
     set(STORM_HAVE_QVBS ON)
-    ExternalProject_Get_Property(download_qvbs source_dir)
-    set(STORM_QVBS_ROOT "${source_dir}/benchmarks")
+    set(STORM_QVBS_ROOT "${qvbs_SOURCE_DIR}/benchmarks")
 elseif(NOT "${STORM_QVBS_ROOT}" STREQUAL "")
     if( EXISTS "${STORM_QVBS_ROOT}/index.json")
         set(STORM_HAVE_QVBS ON)
