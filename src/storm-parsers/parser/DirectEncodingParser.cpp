@@ -380,7 +380,10 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseM
                     if (match.length(1) > 0) {
                         labels.push_back(match.str(1));
                     } else {
-                        labels.push_back(match.str(3));
+                        std::string const& unquotedLabel = match.str(3);
+                        STORM_LOG_THROW(!unquotedLabel.starts_with("["), storm::exceptions::WrongFormatException,
+                                        "Unexpected token '" << unquotedLabel << "' among labels in line " << lineNumber << ". Did you mix up the order?");
+                        labels.push_back(unquotedLabel);
                     }
                 }
 
