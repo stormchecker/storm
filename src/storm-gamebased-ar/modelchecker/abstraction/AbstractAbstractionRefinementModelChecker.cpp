@@ -596,7 +596,7 @@ std::unique_ptr<storm::gbar::abstraction::QualitativeResultMinMax> AbstractAbstr
     auto timeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     STORM_LOG_DEBUG("Computed qualitative solution in " << timeInMilliseconds << "ms.");
 
-    return std::move(result);  // move() required by, e.g., clang 3.8
+    return result;
 }
 
 template<typename ModelType>
@@ -732,7 +732,7 @@ std::unique_ptr<storm::gbar::abstraction::QualitativeResultMinMax> AbstractAbstr
     }
     STORM_LOG_DEBUG("Computed qualitative solution in " << timeInMilliseconds << "ms.");
 
-    return std::move(result);  // move() required by, e.g., clang 3.8
+    return result;
 }
 
 template<typename ModelType>
@@ -797,7 +797,7 @@ std::unique_ptr<storm::gbar::abstraction::QualitativeResultMinMax> AbstractAbstr
     auto timeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     STORM_LOG_DEBUG("Computed qualitative solution in " << timeInMilliseconds << "ms.");
 
-    return std::move(result);  // move() required by, e.g., clang 3.8
+    return result;
 }
 
 template<typename ModelType>

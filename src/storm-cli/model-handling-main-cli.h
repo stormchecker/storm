@@ -131,10 +131,12 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
                 case storm::modelchecker::FilterType::ARGMIN:
                 case storm::modelchecker::FilterType::ARGMAX:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Outputting states is not supported.");
+                    break;
                 case storm::modelchecker::FilterType::EXISTS:
                 case storm::modelchecker::FilterType::FORALL:
                 case storm::modelchecker::FilterType::COUNT:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Filter type only defined for qualitative results.");
+                    break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unhandled filter type.");
             }
@@ -161,6 +163,7 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
             case storm::modelchecker::FilterType::ARGMIN:
             case storm::modelchecker::FilterType::ARGMAX:
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Outputting states is not supported.");
+                break;
             case storm::modelchecker::FilterType::SUM:
             case storm::modelchecker::FilterType::AVG:
             case storm::modelchecker::FilterType::MIN:

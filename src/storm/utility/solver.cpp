@@ -132,6 +132,7 @@ std::unique_ptr<LpSolverFactory<ValueType>> getLpSolverFactory(storm::Environmen
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "The HiGHS LP solver only supports double precision.");
             }
+            break;
         case storm::solver::LpSolverType::Soplex:
             return std::unique_ptr<LpSolverFactory<ValueType>>(new SoplexLpSolverFactory<ValueType>());
         case storm::solver::LpSolverType::Z3:
