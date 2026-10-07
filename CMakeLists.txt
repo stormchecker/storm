@@ -169,10 +169,16 @@ if (STORM_DEVELOPER)
     if (NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE "DEBUG")
     endif()
+    # Enable debug builds for 3rdparty libraries
     set(STORM_DEBUG_CUDD ON)
     set(STORM_DEBUG_SPOT ON)
     set(STORM_DEBUG_SYLVAN ON)
+    # Disable LTO
+    set(STORM_USE_LTO OFF)
+    set(STORM_USE_THIN_LTO OFF)
+    # More strict handling of compiler warnings
     set(STORM_WARNING_AS_ERROR ON)
+    # Enable developer tools
     set(STORM_ENABLE_CLANG_FORMAT ON)
     set(STORM_ENABLE_CLANG_TIDY ON)
 else()
