@@ -115,7 +115,7 @@ jobs:
           CONFIG: ${{ toJson(matrix.config) }}
         # Update config: disable PCH when using caching, set developer mode for debug.
         run: |
-          if [ "${{ contains(matrix.config.scope, 'quick') || contains(matrix.config.distro, 'intel') }}" = "true" ]; then
+          if [ "${{ contains(matrix.config.scope, 'quick') }}" = "true" ]; then
             RESOLVED=$(echo "$CONFIG" | jq -c '.cmakeArgs += " -DSTORM_COMPILE_WITH_PCH=OFF" | .Developer = (.buildType == "Debug")')
           else
             RESOLVED=$(echo "$CONFIG" | jq -c '.Developer = (.buildType == "Debug")')
@@ -128,9 +128,8 @@ jobs:
           name: ${{ matrix.config.name }}
           config: ${{ steps.resolve-config.outputs.config }}
           # ccache is only cached for configs in "quick" scope: caching everything would exceed GitHub's 10GB limit.
-          # Intel runners are also cached since they are rather slow
-          restore_cache: ${{ contains(matrix.config.scope, 'quick') || contains(matrix.config.distro, 'intel') }}
-          save_cache: ${{ (contains(matrix.config.scope, 'quick') || contains(matrix.config.distro, 'intel')) && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          restore_cache: ${{ contains(matrix.config.scope, 'quick') }}
+          save_cache: ${{ contains(matrix.config.scope, 'quick') && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           restore_3rdparty_cache: true
           save_3rdparty_cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           # Skip install steps for a quick PR push

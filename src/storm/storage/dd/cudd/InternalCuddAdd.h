@@ -8,15 +8,11 @@
 #include <unordered_map>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/adapters/cudd.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalAdd.h"
 #include "storm/storage/dd/Odd.h"
 #include "storm/storage/expressions/Variable.h"
-
-#ifdef STORM_HAVE_CUDD
-// Include the C++-interface of CUDD.
-#include "cuddObj.hh"
-#endif
 
 namespace storm {
 namespace storage {

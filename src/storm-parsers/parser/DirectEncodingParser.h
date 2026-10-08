@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <memory>
 
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -25,8 +26,8 @@ enum class DirectEncodingValueType { Default, Double, DoubleInterval, Rational, 
  * @param valueType Value type used for output model.
  * @param options Parsing options.
  */
-std::shared_ptr<storm::models::ModelBase> parseDirectEncodingModel(std::filesystem::path const& file, DirectEncodingValueType valueType,
-                                                                   DirectEncodingParserOptions const& options = DirectEncodingParserOptions());
+STORM_PARSERS_API std::shared_ptr<storm::models::ModelBase> parseDirectEncodingModel(
+    std::filesystem::path const& file, DirectEncodingValueType valueType, DirectEncodingParserOptions const& options = DirectEncodingParserOptions());
 
 /*!
  * Parses the given file in DRN format.
@@ -39,7 +40,7 @@ std::shared_ptr<storm::models::ModelBase> parseDirectEncodingModel(std::filesyst
  * @param options Parsing options.
  */
 template<typename ValueType, typename RewardModelType = models::sparse::StandardRewardModel<ValueType>>
-std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseDirectEncodingModel(
+STORM_PARSERS_API std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseDirectEncodingModel(
     std::filesystem::path const& file, DirectEncodingParserOptions const& options = DirectEncodingParserOptions());
 
 }  // namespace storm::parser

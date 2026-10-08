@@ -70,7 +70,8 @@ if(NOT STORM_DISABLE_SPOT)
             set(STORM_SPOT_FLAGS "${STORM_SPOT_FLAGS};--disable-devel;--disable-debug;--enable-optimizations")
         else()
             message(WARNING "Storm - Building Spot in DEBUG mode.")
-            set(STORM_SPOT_FLAGS "${STORM_SPOT_FLAGS};--enable-devel;--enable-debug;--disable-optimizations")
+            # Use --disable-warnings to disable the compiler warnings enabled through --enable-devel.
+            set(STORM_SPOT_FLAGS "${STORM_SPOT_FLAGS};--enable-devel;--enable-debug;--disable-optimizations;--disable-warnings")
         endif()
         ExternalProject_Add(Spot
                 URL https://www.lre.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz https://www.lrde.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz

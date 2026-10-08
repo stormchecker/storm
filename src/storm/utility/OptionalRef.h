@@ -184,7 +184,7 @@ class OptionalRef {
     }
 
     /*!
-     * Rebinds the reference. `has_value()' yields true after calling this.
+     * Rebinds the reference. `has_value()` yields true after calling this.
      */
     void reset(T& t) {
         ptr = std::addressof(t);

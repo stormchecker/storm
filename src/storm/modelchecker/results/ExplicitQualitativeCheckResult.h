@@ -120,7 +120,7 @@ class ExplicitQualitativeCheckResult : public QualitativeCheckResult {
     template<typename Function>
     void forEachState(Function const& f) const {
         uint64_t offset = 0;
-        for (auto const& state : states) {
+        for (uint64_t state : states) {
             f(state, truthValues.get(offset));
             ++offset;
         }

@@ -156,6 +156,9 @@ void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(
     uint64_t numberOfExploredStates = 0;
     uint64_t numberOfExploredStatesSinceLastMessage = 0;
 
+    // The behavior of states that are not expanded due to exceeding the exploration state limit.
+    storm::generator::StateBehavior<ValueType, StateType> const emptyBehavior;
+
     // Perform a search through the model.
     while (!statesToExplore.empty()) {
         // Get the first state in the queue.
@@ -178,12 +181,10 @@ void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(
             generator->addStateValuation(currentIndex, stateAndChoiceInformationBuilder.stateValuations());
         }
 
-        storm::generator::StateBehavior<ValueType, StateType> behavior;
         // If the exploration state limit is set and the limit is reached, we stop the exploration.
         bool const stateLimitExceeded = options.explorationStateLimit.has_value() && stateStorage.getNumberOfStates() >= options.explorationStateLimit.value();
-        if (!stateLimitExceeded) {
-            behavior = generator->expand(stateToIdCallback);
-        }
+        // Note that the reference returned by expand is only valid until the next call of expand.
+        storm::generator::StateBehavior<ValueType, StateType> const& behavior = stateLimitExceeded ? emptyBehavior : generator->expand(stateToIdCallback);
 
         if (behavior.empty()) {
             // There are three possible cases for missing behavior:

@@ -6,8 +6,7 @@
 
 #include <boost/functional/hash.hpp>
 
-// Include the C++-interface of CUDD.
-#include "cuddObj.hh"
+#include "storm/adapters/cudd.h"
 
 namespace storm {
 namespace dd {

@@ -22,6 +22,8 @@ SolverEnvironment::SolverEnvironment() {
     linearEquationSolverTypeSetFromDefault = storm::settings::getModule<storm::settings::modules::CoreSettings>().isEquationSolverSetFromDefaultValue();
     lpSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver();
     lpSolverTypeSetFromDefault = storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue();
+    smtSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getSmtSolver();
+    smtSolverTypeSetFromDefault = storm::settings::getModule<storm::settings::modules::CoreSettings>().isSmtSolverSetFromDefaultValue();
     debug = storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet();
     verbose = generalSettings.isVerboseSet();
     showProgressDelay = generalSettings.getShowProgressDelay();
@@ -175,6 +177,19 @@ void SolverEnvironment::setLpSolverType(storm::solver::LpSolverType const& value
 
 bool SolverEnvironment::isLpSolverTypeSetFromDefaultValue() const {
     return lpSolverTypeSetFromDefault;
+}
+
+storm::solver::SmtSolverType const& SolverEnvironment::getSmtSolverType() const {
+    return smtSolverType;
+}
+
+void SolverEnvironment::setSmtSolverType(storm::solver::SmtSolverType const& value, bool isSetFromDefault) {
+    smtSolverTypeSetFromDefault = isSetFromDefault;
+    smtSolverType = value;
+}
+
+bool SolverEnvironment::isSmtSolverTypeSetFromDefaultValue() const {
+    return smtSolverTypeSetFromDefault;
 }
 
 std::pair<boost::optional<storm::RationalNumber>, boost::optional<bool>> SolverEnvironment::getPrecisionOfLinearEquationSolver(

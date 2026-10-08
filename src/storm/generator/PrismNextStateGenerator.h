@@ -33,7 +33,7 @@ class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> 
     virtual bool isPartiallyObservable() const override;
     virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
 
-    virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
+    virtual StateBehavior<ValueType, StateType> const& expand(StateToIdCallback const& stateToIdCallback) override;
     bool evaluateBooleanExpressionInCurrentState(storm::expressions::Expression const&) const;
 
     virtual std::size_t getNumberOfRewardModels() const override;
@@ -93,7 +93,7 @@ class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> 
      * @param state The state for which to retrieve the unlabeled choices.
      * @return The asynchronous choices of the state.
      */
-    std::vector<Choice<ValueType>> getAsynchronousChoices(CompressedState const& state, StateToIdCallback stateToIdCallback,
+    std::vector<Choice<ValueType>> getAsynchronousChoices(CompressedState const& state, StateToIdCallback const& stateToIdCallback,
                                                           CommandFilter const& commandFilter = CommandFilter::All);
 
     /*!
@@ -104,7 +104,7 @@ class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> 
      * @param state The state for which to retrieve the unlabeled choices.
      * @return The synchronous choices of the state.
      */
-    void addSynchronousChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback,
+    void addSynchronousChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback const& stateToIdCallback,
                                CommandFilter const& commandFilter = CommandFilter::All);
 
     /*!
@@ -113,7 +113,7 @@ class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> 
      * @param state The state for which to retrieve the unlabeled choices.
      * @return The choices representing self-loops for all actions of the state.
      */
-    std::vector<Choice<ValueType>> getSelfLoopsForAllActions(CompressedState const& state, StateToIdCallback stateToIdCallback,
+    std::vector<Choice<ValueType>> getSelfLoopsForAllActions(CompressedState const& state, StateToIdCallback const& stateToIdCallback,
                                                              CommandFilter const& commandFilter = CommandFilter::All);
 
     /*!
@@ -131,7 +131,7 @@ class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> 
      */
     void generateSynchronizedDistribution(storm::storage::BitVector const& state, ValueType const& probability, uint64_t position,
                                           std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator> const& iteratorList,
-                                          storm::generator::Distribution<StateType, ValueType>& distribution, StateToIdCallback stateToIdCallback);
+                                          storm::generator::Distribution<StateType, ValueType>& distribution, StateToIdCallback const& stateToIdCallback);
 
     bool isCommandPotentiallySynchronizing(prism::Command const& command) const;
 

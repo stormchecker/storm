@@ -130,6 +130,7 @@ boost::any ToDiceStringVisitor::visit(BinaryNumericalFunctionExpression const& e
             break;
         case BinaryNumericalFunctionExpression::OperatorType::Logarithm:
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Dice translation not supported for log expressions.");
+            break;
         case BinaryNumericalFunctionExpression::OperatorType::Max:
             stream << "max(";
             expression.getFirstOperand()->accept(*this, data);

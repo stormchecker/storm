@@ -72,6 +72,9 @@
 #cmakedefine STORM_HAVE_SYLVAN
 #cmakedefine STORM_HAVE_XERCES
 #cmakedefine STORM_HAVE_Z3
+// Which SMT solver is chosen as the compile-time default (see option STORM_DEFAULT_SMT_SOLVER in CMake).
+#cmakedefine STORM_DEFAULT_SMT_SOLVER_Z3
+#cmakedefine STORM_DEFAULT_SMT_SOLVER_MATHSAT
 // Whether a general type of support is available
 #cmakedefine STORM_HAVE_DD_LIBRARY
 #cmakedefine STORM_HAVE_LP_SOLVER

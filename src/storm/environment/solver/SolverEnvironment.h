@@ -93,6 +93,17 @@ class SolverEnvironment {
     void setLpSolverType(storm::solver::LpSolverType const& value, bool isSetFromDefault = false);
     bool isLpSolverTypeSetFromDefaultValue() const;
 
+    /*!
+     * Retrieves the SMT solver that is currently selected. The value is initialized from the
+     * ``smtsolver`` core setting when the environment is constructed and can be overridden
+     * afterwards, e.g., in order to run a sub-computation with a different backend.
+     *
+     * @return The selected SMT solver.
+     */
+    storm::solver::SmtSolverType const& getSmtSolverType() const;
+    void setSmtSolverType(storm::solver::SmtSolverType const& value, bool isSetFromDefault = false);
+    bool isSmtSolverTypeSetFromDefaultValue() const;
+
     std::pair<boost::optional<storm::RationalNumber>, boost::optional<bool>> getPrecisionOfLinearEquationSolver(
         storm::solver::EquationSolverType const& solverType) const;
     void setLinearEquationSolverPrecision(boost::optional<storm::RationalNumber> const& newPrecision,
@@ -128,6 +139,8 @@ class SolverEnvironment {
     bool linearEquationSolverTypeSetFromDefault;
     storm::solver::LpSolverType lpSolverType;
     bool lpSolverTypeSetFromDefault;
+    storm::solver::SmtSolverType smtSolverType;
+    bool smtSolverTypeSetFromDefault;
     bool forceSoundness;
     bool forceExact;
     bool debug;

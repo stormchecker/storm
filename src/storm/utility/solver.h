@@ -103,22 +103,50 @@ class SmtSolverFactory {
     /*!
      * Creates a new SMT solver instance.
      *
+     * The SMT solver is the one that was selected at compile time (see the CMake option
+     * STORM_DEFAULT_SMT_SOLVER).
+     *
      * @param manager The expression manager responsible for the expressions that will be given to the SMT
      * solver.
      * @return A pointer to the newly created solver.
      */
     virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;
+
+    /*!
+     * Creates a new SMT solver instance, taking the SMT solver selected in the given environment into account.
+     *
+     * The environment takes precedence: the SMT solver stored in it is used, no matter whether it was
+     * selected explicitly or seeded from the ``smtsolver`` core setting.
+     *
+     * @param env The environment determining the SMT solver to use.
+     * @param manager The expression manager responsible for the expressions that will be given to the SMT
+     * solver.
+     * @return A pointer to the newly created solver.
+     */
+    virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::Environment const& env, storm::expressions::ExpressionManager& manager) const;
 };
 
 class Z3SmtSolverFactory : public SmtSolverFactory {
    public:
     virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;
+    virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::Environment const& env, storm::expressions::ExpressionManager& manager) const;
 };
 
 class MathsatSmtSolverFactory : public SmtSolverFactory {
    public:
     virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;
+    virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::Environment const& env, storm::expressions::ExpressionManager& manager) const;
 };
 
 std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::expressions::ExpressionManager& manager);
+
+/*!
+ * Creates a new SMT solver instance, honoring an SMT solver selected in the given environment.
+ *
+ * @param env The environment determining the SMT solver to use.
+ * @param manager The expression manager responsible for the expressions that will be given to the SMT
+ * solver.
+ * @return A pointer to the newly created solver.
+ */
+std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::Environment const& env, storm::expressions::ExpressionManager& manager);
 }  // namespace storm::utility::solver

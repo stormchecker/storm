@@ -513,6 +513,17 @@ class ValuationsStorage {
     explicit ValuationsStorage(std::vector<VariablesInformation> const& variableClasses);
 
     VariablesInformation const& info(uint64_t entity) const;
+
+    /*!
+     * @return true iff the given value can be encoded within the bit size of the (integer) type of the given variable, i.e. iff it lies in
+     * [-2^(bitSize-1), 2^(bitSize-1)) for a signed type and in [0, 2^bitSize) for an unsigned type.
+     * @note The given value is compared to the encodable range directly. In particular, the bounds and the offset of the variable are not taken into account.
+     * If the offset is non-zero, callers have to subtract it from the value beforehand.
+     */
+    template<typename ValueType>
+        requires(std::is_same_v<ValueType, int64_t> || std::is_same_v<ValueType, uint64_t> || std::is_same_v<ValueType, Integer>)
+    bool fitsIntoStoredType(ValueType const& value, VariableInformation const& varInfo) const;
+
     std::span<char const> getRawBytes(uint64_t entity) const;
     std::span<char> getRawBytes(uint64_t entity);
 
@@ -677,7 +688,7 @@ class ValuationsStorage {
         auto invokeCallback = [this, &entity, &varInfo, &callback]<typename ValueType>() -> bool {
             bool constexpr IsAllowed = (sizeof...(AllowedTypes) == 0) || std::disjunction_v<std::is_same<ValueType, AllowedTypes>...>;
             if constexpr (IsAllowed) {
-                ValueType value;
+                ValueType value{};  // value-initialize so that types like bool and double have a defined default
                 bool isOptional = varInfo.description.isOptional.value_or(false);
                 bool initializeAsUnsetOptional = false;
                 if constexpr (InitializeWithCurrent) {
@@ -706,6 +717,7 @@ class ValuationsStorage {
                 }
                 // Invoke the callback. Determine if we need to write a value and ensure that `value` holds the value to write.
                 bool haveToWriteValue = false;
+                bool setPresenceBit = false;  // The presence bit of an optional variable is only set once the value is validated.
                 if (isOptional) {
                     if constexpr (AllowOptional) {
                         std::optional<ValueType> optionalValue = initializeAsUnsetOptional ? std::optional<ValueType>() : value;
@@ -713,9 +725,12 @@ class ValuationsStorage {
                         if (optionalValue.has_value()) {
                             value = std::move(optionalValue.value());
                             haveToWriteValue = true;
+                            setPresenceBit = true;
                         }
                         STORM_LOG_ASSERT(varInfo.bitOffset > 0, "Invalid variable information: optional variable must have a preceding presence bit.");
-                        writeBit(getRawBytes(entity), varInfo.bitOffset - 1, optionalValue.has_value());
+                        if (!optionalValue.has_value()) {
+                            writeBit(getRawBytes(entity), varInfo.bitOffset - 1, false);
+                        }
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::UnexpectedException,
                                         "Writing to optional variable " << varInfo.description.name << " was not expected.");
@@ -759,8 +774,14 @@ class ValuationsStorage {
                                 value -= storm::utility::convertNumber<ValueType>(offset);
                             }
                         }
+                        STORM_LOG_THROW(fitsIntoStoredType(value, varInfo), storm::exceptions::OutOfRangeException,
+                                        "Value " << value << " does not fit into the " << varInfo.description.type.toString() << " variable "
+                                                 << varInfo.description.name << ".");
                     }
-                    // Write the value
+                    // Write the value (and the presence bit for optional variables)
+                    if (setPresenceBit) {
+                        writeBit(getRawBytes(entity), varInfo.bitOffset - 1, true);
+                    }
                     writeValue(getRawBytes(entity), varInfo.bitOffset, varInfo.description.type.bitSize(), value);
                 }
             }

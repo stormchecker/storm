@@ -194,7 +194,7 @@ boost::any FragmentChecker::visit(GloballyFormula const& f, boost::any const& da
     if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
         result = result && !f.getSubformula().isPathFormula();
     }
-    result&& boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+    result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
     return result;
 }
 
@@ -263,7 +263,7 @@ boost::any FragmentChecker::visit(NextFormula const& f, boost::any const& data) 
     if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
         result = result && !f.getSubformula().isPathFormula();
     }
-    result&& boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+    result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
     return result;
 }
 

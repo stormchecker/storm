@@ -1,5 +1,7 @@
 #pragma once
 
+#include <span>
+
 #include "storm/generator/PrismNextStateGenerator.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/prism/Program.h"
@@ -40,7 +42,7 @@ class DiscreteTimePrismProgramSimulator {
      * @return A list of choices that encode the possibilities in the current state.
      * @note successor states are encoded using state indices that will potentially be invalidated as soon as the internal state of the simulator changes
      */
-    std::vector<generator::Choice<ValueType, uint32_t>> const& getChoices() const;
+    std::span<generator::Choice<ValueType, uint32_t> const> getChoices() const;
 
     bool isSinkState() const;
 

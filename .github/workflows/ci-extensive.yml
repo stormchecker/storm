@@ -82,9 +82,16 @@ jobs:
         with:
           xcode-version: ${{ matrix.config.xcode }}
       - name: Install dependencies
+        env:
+          # Skip ccache on macOS 14 and macOS Intel to avoid the recompilation of the ccache package on Homebrew
+          SKIP_CCACHE: ${{ matrix.config.distro == 'macos-14' || contains(matrix.config.distro, 'intel') }}
         run: |
           brew update
-          brew install automake boost ccache cln ginac glpk highs hwloc libarchive xerces-c z3
+          PACKAGES=(automake boost cln ginac glpk highs hwloc libarchive xerces-c z3)
+          if [ "$SKIP_CCACHE" != "true" ]; then
+            PACKAGES+=(ccache)
+          fi
+          brew install "${PACKAGES[@]}"
       - name: Resolve config
         id: resolve-config
         env:

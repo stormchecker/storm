@@ -1,5 +1,8 @@
 #pragma once
 
+#include "storm/adapters/IntervalForward.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/models/sparse/DeterministicModel.h"
 
 namespace storm {
@@ -50,6 +53,15 @@ class Dtmc : public DeterministicModel<ValueType, RewardModelType> {
 
     virtual void reduceToStateBasedRewards() override;
 };
+
+// Instantiated in Dtmc.cpp; prevents hidden consumers from duplicating the vtable/RTTI.
+extern template class Dtmc<double>;
+extern template class Dtmc<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+extern template class Dtmc<storm::RationalNumber>;
+extern template class Dtmc<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
+extern template class Dtmc<storm::Interval>;
+extern template class Dtmc<storm::RationalInterval>;
+extern template class Dtmc<storm::RationalFunction>;
 
 }  // namespace sparse
 }  // namespace models

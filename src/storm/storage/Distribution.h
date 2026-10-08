@@ -34,6 +34,11 @@ class Distribution {
     void reserve(uint64_t size);
 
     /*!
+     * Removes all entries from this distribution. The allocated memory is kept.
+     */
+    void clear();
+
+    /*!
      * Adds the given distribution to the current one.
      */
     void add(Distribution const& other);

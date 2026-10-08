@@ -51,6 +51,6 @@ std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ImcaMarkovAut
         ->template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
 }
 
-template class ImcaMarkovAutomatonParser<double>;
+template class STORM_PARSERS_API ImcaMarkovAutomatonParser<double>;
 }  // namespace parser
 }  // namespace storm

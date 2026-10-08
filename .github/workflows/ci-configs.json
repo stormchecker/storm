@@ -170,7 +170,6 @@
     {
       "name": "Mac 14 ARM",
       "scope": [
-        "normal",
         "extensive"
       ],
       "buildType": "Release",
@@ -204,7 +203,6 @@
     {
       "name": "Mac 26 Intel",
       "scope": [
-        "normal",
         "extensive"
       ],
       "buildType": "Release",

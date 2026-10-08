@@ -29,6 +29,12 @@ struct Choice {
      */
     void add(Choice const& other);
 
+    /*!
+     * Resets this choice to an empty choice with the given action index (i.e., as if it was newly constructed).
+     * In contrast to assigning a new Choice, this keeps the allocated memory (e.g., for the distribution and the rewards) for reuse.
+     */
+    void reset(uint_fast64_t actionIndex = 0, bool markovian = false);
+
     /**
      * Given a value q, find the event in the ordered distribution that corresponds to this prob.
      * Example: Given a (sub)distribution { x -> 0.4, y -> 0.3, z -> 0.2 },
@@ -169,6 +175,11 @@ struct Choice {
      * Retrieves the rewards for this choice under selected reward models.
      */
     std::vector<ValueType> const& getRewards() const;
+
+    /*!
+     * Retrieves the rewards for this choice under selected reward models. The rewards can be modified in place.
+     */
+    std::vector<ValueType>& getRewards();
 
     /*!
      * Retrieves whether the choice is Markovian.

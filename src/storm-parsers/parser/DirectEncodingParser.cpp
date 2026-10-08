@@ -380,7 +380,10 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseM
                     if (match.length(1) > 0) {
                         labels.push_back(match.str(1));
                     } else {
-                        labels.push_back(match.str(3));
+                        std::string const& unquotedLabel = match.str(3);
+                        STORM_LOG_THROW(!unquotedLabel.starts_with("["), storm::exceptions::WrongFormatException,
+                                        "Unexpected token '" << unquotedLabel << "' among labels in line " << lineNumber << ". Did you mix up the order?");
+                        labels.push_back(unquotedLabel);
                     }
                 }
 
@@ -581,15 +584,15 @@ std::shared_ptr<storm::models::ModelBase> parseDirectEncodingModel(std::filesyst
 }
 
 // Template instantiations.
-template std::shared_ptr<storm::models::sparse::Model<double>> parseDirectEncodingModel<double>(std::filesystem::path const& file,
-                                                                                                DirectEncodingParserOptions const& options);
-template std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> parseDirectEncodingModel<storm::RationalNumber>(
-    std::filesystem::path const& file, DirectEncodingParserOptions const& options);
-template std::shared_ptr<storm::models::sparse::Model<storm::Interval>> parseDirectEncodingModel<storm::Interval>(std::filesystem::path const& file,
+template STORM_PARSERS_API std::shared_ptr<storm::models::sparse::Model<double>> parseDirectEncodingModel<double>(std::filesystem::path const& file,
                                                                                                                   DirectEncodingParserOptions const& options);
-template std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> parseDirectEncodingModel<storm::RationalInterval>(
+template STORM_PARSERS_API std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> parseDirectEncodingModel<storm::RationalNumber>(
     std::filesystem::path const& file, DirectEncodingParserOptions const& options);
-template std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> parseDirectEncodingModel<storm::RationalFunction>(
+template STORM_PARSERS_API std::shared_ptr<storm::models::sparse::Model<storm::Interval>> parseDirectEncodingModel<storm::Interval>(
+    std::filesystem::path const& file, DirectEncodingParserOptions const& options);
+template STORM_PARSERS_API std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> parseDirectEncodingModel<storm::RationalInterval>(
+    std::filesystem::path const& file, DirectEncodingParserOptions const& options);
+template STORM_PARSERS_API std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> parseDirectEncodingModel<storm::RationalFunction>(
     std::filesystem::path const& file, DirectEncodingParserOptions const& options);
 
 }  // namespace storm::parser

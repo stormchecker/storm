@@ -4,15 +4,12 @@
 #include <functional>
 
 #include "storm-config.h"
+#include "storm/adapters/cudd.h"
 #include "storm/environment/dd/CuddDdManagerEnvironment.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalDdManager.h"
 #include "storm/storage/dd/cudd/InternalCuddAdd.h"
 #include "storm/storage/dd/cudd/InternalCuddBdd.h"
-
-#ifdef STORM_HAVE_CUDD
-#include "cuddObj.hh"
-#endif
 
 namespace storm {
 namespace dd {

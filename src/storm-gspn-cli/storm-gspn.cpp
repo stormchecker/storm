@@ -6,7 +6,6 @@
 #include "storm-cli-utilities/cli.h"
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-gspn/api/storm-gspn.h"
-#include "storm-gspn/builder/ExplicitGspnModelBuilder.h"
 #include "storm-gspn/builder/JaniGSPNBuilder.h"
 #include "storm-gspn/parser/GspnParser.h"
 #include "storm-gspn/settings/modules/GSPNExportSettings.h"

@@ -114,6 +114,11 @@ void printVersion() {
 #else
     STORM_PRINT("Not linked with Gurobi.\n");
 #endif
+#ifdef STORM_HAVE_HIGHS
+    STORM_PRINT("Linked with HiGHS.\n");
+#else
+    STORM_PRINT("Not linked with HiGHS.\n");
+#endif
 #ifdef STORM_HAVE_MATHSAT
     char* msatVersion = msat_get_version();
     STORM_PRINT("Linked with " << msatVersion << ".\n");

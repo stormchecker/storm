@@ -24,8 +24,8 @@ jobs:
           repository: stormchecker/storm
       - name: Update carl-storm version
         run: |
-          # Update STORM_CARL_GIT_TAG
-          sed -i -E 's/STORM_CARL_GIT_TAG "(.*)" "[0-9]+\.[0-9]+"\)/STORM_CARL_GIT_TAG "\1" "${{ inputs.carl_version }}"\)/' CMakeLists.txt
+          # Update STORM_CARL_GIT_TAG_DEFAULT (the default for STORM_CARL_GIT_TAG)
+          sed -i -E 's/STORM_CARL_GIT_TAG_DEFAULT "([0-9]+\.[0-9]+)"/STORM_CARL_GIT_TAG_DEFAULT "${{ inputs.carl_version }}"/' CMakeLists.txt
           # Update carl_tag
           sed -i -E 's/ARG carl_tag="[0-9]+\.[0-9]+"/ARG carl_tag="${{ inputs.carl_version }}"/' Dockerfile
           sed -i -E 's/ARG carl_tag="[0-9]+\.[0-9]+"/ARG carl_tag="${{ inputs.carl_version }}"/' .github/workflows/Dockerfile.release

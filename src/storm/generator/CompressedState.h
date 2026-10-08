@@ -36,6 +36,20 @@ void unpackStateIntoEvaluator(CompressedState const& state, VariableInformation 
                               storm::expressions::ExpressionEvaluator<ValueType>& evaluator);
 
 /*!
+ * Updates the (non-transient) variable values in the given evaluator from the values of oldState to the values of newState.
+ * Only the values of variables that differ between the two states are written to the evaluator.
+ *
+ * @pre The evaluator currently holds the variable values of oldState (e.g., due to a previous call of unpackStateIntoEvaluator(oldState, ...)).
+ * @param newState The state to unpack.
+ * @param oldState The state that is currently loaded into the evaluator.
+ * @param variableInformation The information about how the variables are packed within the states.
+ * @param evaluator The evaluator into which to load the state.
+ */
+template<typename ValueType>
+void unpackStateDifferenceIntoEvaluator(CompressedState const& newState, CompressedState const& oldState, VariableInformation const& variableInformation,
+                                        storm::expressions::ExpressionEvaluator<ValueType>& evaluator);
+
+/*!
  * Converts the compressed state into an explicit representation in the form of a valuation.
  *
  * @param state The state to unpack.

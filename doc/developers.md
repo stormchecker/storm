@@ -24,12 +24,26 @@ The key source directories are:
 | `src/storm-pomdp` | `libstorm-pomdp` | POMDPs |
 | `src/storm-gspn` | `libstorm-gspn` | Generalised Stochastic Petri Nets |
 | `src/storm-conv` | `libstorm-conv` | Model conversion |
-| `src/storm-parsers` | (part of libstorm) | PRISM and JANI parsers |
+| `src/storm-parsers` | `libstorm-parsers` | PRISM and JANI parsers |
 | `src/storm-gamebased-ar` | | Game-based abstraction refinement |
 | `src/storm-permissive` | | Permissive schedulers |
 | `src/test` | | GTest test suite mirroring the library structure |
 
 Each library's public API lives in its `api/` subdirectory (e.g., `src/storm/api/`, `src/storm-pars/api/`).
+
+`libstorm-parsers` is compiled with hidden visibility, so only symbols that opt in are exported from it. Mark every
+non-inline, externally visible function or class of that library with `STORM_PARSERS_API`, which is defined in
+`src/storm-parsers/storm-parsers-api.h`:
+
+```cpp
+#include "storm-parsers/storm-parsers-api.h"
+
+STORM_PARSERS_API void storm::parser::SomeParser::doSomething();
+```
+
+Header-only functions need no annotation: they are instantiated in the consuming translation unit. Code that is generic over
+the numeric backends additionally needs `extern template` declarations (and one explicit instantiation in a `.cpp` file) so
+that consumers do not instantiate the template themselves and thereby duplicate its symbols.
 
 
 ## Building
@@ -61,6 +75,12 @@ Important CMake options:
 | `STORM_USE_CLN_RF` | ON | Use CLN for rational functions |
 | `STORM_BUILD_TESTS` | ON | Build test binaries |
 | `STORM_DISABLE_<DEP>` | OFF | Disable optional dependencies (CUDD, GLPK, Z3, …) |
+
+## Third party resources
+Storm makes extensive use of third-party resources.
+An overview of the dependencies is available on the [website](https://www.stormchecker.org/documentation/obtain-storm/dependencies.html).
+The resources are defined in `resources/3rdparty/CMakeLists.txt` and shipped resources are located in `resources/3rdparty`.
+See the dedicated documentation on [third-party dependencies](3rdparty_dependencies.md).
 
 
 ## Coding conventions
