@@ -81,7 +81,7 @@ jobs:
           xcode-version: ${{ matrix.config.xcode }}
       - name: Install dependencies
         env:
-          # Skip ccache on macOS 14 and macOS Intel to avoid recompilation
+          # Skip ccache on macOS 14 and macOS Intel to avoid the recompilation of the ccache package on Homebrew
           SKIP_CCACHE: ${{ matrix.config.distro == 'macos-14' || contains(matrix.config.distro, 'intel') }}
         run: |
           brew update
