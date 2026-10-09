@@ -33,6 +33,9 @@ class POMDPSettings : public ModuleSettings {
     bool isSelfloopReductionSet() const;
     bool isCheckFullyObservableSet() const;
     bool isQualitativeAnalysisSet() const;
+    bool isBoundedToUnboundedReachabilityTransformationSet() const;
+    std::vector<uint64_t> getLevelWidthForBoundedReachability() const;
+    bool isRewardObservableSet() const;
     uint64_t getMemoryBound() const;
 
     storm::storage::PomdpMemoryPattern getMemoryPattern() const;
