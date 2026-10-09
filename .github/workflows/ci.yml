@@ -98,13 +98,6 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: ${{ matrix.config.xcode }}
-      - name: Cache Homebrew downloads
-        uses: actions/cache@v6
-        with:
-          path: ~/Library/Caches/Homebrew
-          key: buildtest-brew-${{ matrix.config.name }}-${{ hashFiles('.github/actions/build-test-action/action.yml') }}
-          restore-keys: |
-            buildtest-brew-${{ matrix.config.name }}-
       - name: Install dependencies
         run: |
           brew update
