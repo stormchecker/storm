@@ -107,7 +107,7 @@
         "extensive"
       ],
       "buildType": "Debug",
-      "cmakeArgs": "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "cmakeArgs": "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_ALLWARNINGS=ON",
       "setup": "pacman -Syu --noconfirm && pacman -S --noconfirm base-devel ccache cmake git boost cln ginac glpk gmp highs hwloc libarchive xerces-c z3",
       "baseImg": "archlinux:latest"
     },
@@ -119,7 +119,7 @@
         "extensive"
       ],
       "buildType": "Debug",
-      "cmakeArgs": "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "cmakeArgs": "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_ALLWARNINGS=ON",
       "setup": "pacman -Syu --noconfirm && pacman -S --noconfirm base-devel ccache cmake git boost cln ginac glpk gmp highs hwloc libarchive xerces-c z3 clang llvm",
       "baseImg": "archlinux:latest"
     },
