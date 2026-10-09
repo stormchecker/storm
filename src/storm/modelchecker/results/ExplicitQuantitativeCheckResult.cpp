@@ -187,6 +187,11 @@ void ExplicitQuantitativeCheckResult<ValueType>::setBounds(storm::solver::Soluti
 }
 
 template<typename ValueType>
+void ExplicitQuantitativeCheckResult<ValueType>::setValuesExact() {
+    bounds.setExact(values);
+}
+
+template<typename ValueType>
 void ExplicitQuantitativeCheckResult<ValueType>::clearBounds() {
     bounds.clear();
 }
@@ -225,13 +230,13 @@ void ExplicitQuantitativeCheckResult<ValueType>::filter(QualitativeCheckResult c
 template<typename ValueType>
 typename ExplicitQuantitativeCheckResult<ValueType>::ExtendedValueType ExplicitQuantitativeCheckResult<ValueType>::getMin() const {
     STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Minimum of empty set is not defined.");
-    return storm::utility::minimum(values);
+    return aggregateVector(values, FilterType::MIN);
 }
 
 template<typename ValueType>
 typename ExplicitQuantitativeCheckResult<ValueType>::ExtendedValueType ExplicitQuantitativeCheckResult<ValueType>::getMax() const {
     STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Maximum of empty set is not defined.");
-    return storm::utility::maximum(values);
+    return aggregateVector(values, FilterType::MAX);
 }
 
 template<typename ValueType>
@@ -244,42 +249,73 @@ ExplicitQuantitativeCheckResult<ValueType>::getMinMax() const {
 template<typename ValueType>
 typename ExplicitQuantitativeCheckResult<ValueType>::ExtendedValueType ExplicitQuantitativeCheckResult<ValueType>::sum() const {
     STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Sum of empty set is not defined.");
-
-    // Infinities are kept out of the running sum, as adding them to it is either a no-op or, for the types that
-    // carry infinity as a separate kind, an error. They only decide what the sum is once all values are seen.
-    bool hasPositiveInfinity = false;
-    bool hasNegativeInfinity = false;
-    ExtendedValueType sum = storm::utility::zero<ExtendedValueType>();
-    for (auto const& element : values) {
-        if (storm::utility::isInfinity(element)) {
-            hasPositiveInfinity = true;
-        } else if (storm::utility::isNegativeInfinity(element)) {
-            hasNegativeInfinity = true;
-        } else {
-            sum += element;
-        }
-    }
-    STORM_LOG_THROW(!hasPositiveInfinity || !hasNegativeInfinity, storm::exceptions::InvalidOperationException,
-                    "Cannot compute the sum of values containing both infinity and -infinity.");
-    if (hasPositiveInfinity) {
-        return storm::utility::positiveInfinity<ValueType>();
-    }
-    if (hasNegativeInfinity) {
-        return storm::utility::negativeInfinity<ValueType>();
-    }
-    return sum;
+    return aggregateVector(values, FilterType::SUM);
 }
 
 template<typename ValueType>
 typename ExplicitQuantitativeCheckResult<ValueType>::ExtendedValueType ExplicitQuantitativeCheckResult<ValueType>::average() const {
     STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Average of empty set is not defined.");
+    return aggregateVector(values, FilterType::AVG);
+}
 
-    ExtendedValueType const total = sum();
-    if (storm::utility::isInfinity(total) || storm::utility::isNegativeInfinity(total)) {
-        // Dividing an infinite sum by the finite number of values leaves it unchanged.
-        return total;
+template<typename ValueType>
+typename ExplicitQuantitativeCheckResult<ValueType>::ExtendedValueType ExplicitQuantitativeCheckResult<ValueType>::aggregateVector(vector_type const& vector,
+                                                                                                                                   FilterType filter) {
+    STORM_LOG_THROW(!vector.empty(), storm::exceptions::InvalidOperationException, "Aggregate of empty set is not defined.");
+    switch (filter) {
+        case FilterType::MIN:
+            return storm::utility::minimum(vector);
+        case FilterType::MAX:
+            return storm::utility::maximum(vector);
+        case FilterType::SUM: {
+            // Infinities are kept out of the running sum, since adding infinities is not always defined.
+            // If the vector does contain an infinity, the results are decided by it.
+            bool hasPositiveInfinity = false;
+            bool hasNegativeInfinity = false;
+            ExtendedValueType sum = storm::utility::zero<ExtendedValueType>();
+            for (auto const& element : vector) {
+                if (storm::utility::isInfinity(element)) {
+                    hasPositiveInfinity = true;
+                } else if (storm::utility::isNegativeInfinity(element)) {
+                    hasNegativeInfinity = true;
+                } else {
+                    sum += element;
+                }
+            }
+            STORM_LOG_THROW(!hasPositiveInfinity || !hasNegativeInfinity, storm::exceptions::InvalidOperationException,
+                            "Cannot compute the sum of values containing both infinity and -infinity.");
+            if (hasPositiveInfinity) {
+                return storm::utility::positiveInfinity<ValueType>();
+            }
+            if (hasNegativeInfinity) {
+                return storm::utility::negativeInfinity<ValueType>();
+            }
+            return sum;
+        }
+        case FilterType::AVG: {
+            ExtendedValueType const total = aggregateVector(vector, FilterType::SUM);
+            if (storm::utility::isInfinity(total) || storm::utility::isNegativeInfinity(total)) {
+                // Dividing an infinite sum by the finite number of values leaves it unchanged.
+                return total;
+            }
+            return total / storm::utility::convertNumber<ExtendedValueType, uint64_t>(vector.size());
+        }
+        default:
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidOperationException, "The filter " << toString(filter) << " does not aggregate values.");
     }
-    return total / storm::utility::convertNumber<ExtendedValueType, uint64_t>(values.size());
+}
+
+template<typename ValueType>
+AggregatedValue<typename ExplicitQuantitativeCheckResult<ValueType>::ExtendedValueType> ExplicitQuantitativeCheckResult<ValueType>::aggregate(
+    FilterType filter) const {
+    AggregatedValue<ExtendedValueType> result = QuantitativeCheckResult<ValueType>::aggregate(filter);
+    if (this->hasLowerBounds()) {
+        result.lower = aggregateVector(*bounds.lower, filter);
+    }
+    if (this->hasUpperBounds()) {
+        result.upper = aggregateVector(*bounds.upper, filter);
+    }
+    return result;
 }
 
 template<typename ValueType>
@@ -304,63 +340,99 @@ storm::storage::Scheduler<ValueType>& ExplicitQuantitativeCheckResult<ValueType>
     return *scheduler.value();
 }
 
+// Whether a value of this type is printed with its decimal approximation alongside.
 template<typename ValueType>
-void print(std::ostream& out, ValueType const& value) {
+constexpr bool printsApproximation = std::is_same_v<ValueType, storm::RationalNumber> || std::is_same_v<ValueType, storm::ExtendedRationalNumber>;
+
+template<typename ValueType>
+void printExact(std::ostream& out, ValueType const& value) {
     if (storm::utility::isInfinity(value)) {
         out << "inf";
     } else {
         out << value;
-        if (std::is_same_v<ValueType, storm::RationalNumber> || std::is_same_v<ValueType, storm::ExtendedRationalNumber>) {
-            out << " (approx. " << storm::utility::convertNumber<double>(value) << ")";
+    }
+}
+
+template<typename ValueType>
+void printApproximation(std::ostream& out, ValueType const& value) {
+    if (storm::utility::isInfinity(value)) {
+        out << "inf";
+    } else {
+        out << storm::utility::convertNumber<double>(value);
+    }
+}
+
+template<typename ValueType>
+void print(std::ostream& out, ValueType const& value) {
+    printExact(out, value);
+    if constexpr (printsApproximation<ValueType>) {
+        if (!storm::utility::isInfinity(value)) {
+            out << " (approx. ";
+            printApproximation(out, value);
+            out << ")";
         }
+    }
+}
+
+/*!
+ * Writes the given interval, an unknown end of it as "?".
+ */
+template<typename ValueType>
+void printInterval(std::ostream& out, std::optional<ValueType> const& lower, std::optional<ValueType> const& upper) {
+    auto const printEnd = [&out](std::optional<ValueType> const& value, bool approximate) {
+        if (!value) {
+            out << "?";
+        } else if (approximate) {
+            printApproximation(out, *value);
+        } else {
+            printExact(out, *value);
+        }
+    };
+    out << "[";
+    printEnd(lower, false);
+    out << ", ";
+    printEnd(upper, false);
+    out << "]";
+    if constexpr (printsApproximation<ValueType>) {
+        out << " (approx. [";
+        printEnd(lower, true);
+        out << ", ";
+        printEnd(upper, true);
+        out << "])";
     }
 }
 
 template<typename ValueType>
 void printRange(std::ostream& out, ValueType const& min, ValueType const& max) {
-    out << "[";
-    print(out, min);
-    out << ", ";
-    print(out, max);
-    out << "]";
-    if (std::is_same_v<ValueType, storm::RationalNumber> || std::is_same_v<ValueType, storm::ExtendedRationalNumber>) {
-        out << " (approx. [";
-        if (storm::utility::isInfinity(min)) {
-            out << "inf";
-        } else {
-            out << storm::utility::convertNumber<double>(min);
-        }
-        out << ", ";
-        if (storm::utility::isInfinity(max)) {
-            out << "inf";
-        } else {
-            out << storm::utility::convertNumber<double>(max);
-        }
-        out << "])";
-    }
+    printInterval<ValueType>(out, min, max);
     out << " (range)";
+}
+
+/*!
+ * Writes the given bounds on the solution, and nothing at all if neither side is known.
+ */
+template<typename ValueType>
+void printBounds(std::ostream& out, std::optional<ValueType> const& lower, std::optional<ValueType> const& upper) {
+    if (!lower && !upper) {
+        return;
+    }
+    if (lower && upper && *lower == *upper) {
+        out << ". Exact solution.";
+        return;
+    }
+    out << ". Solution bounds: ";
+    printInterval(out, lower, upper);
+    out << ".";
 }
 
 template<typename ValueType>
 void ExplicitQuantitativeCheckResult<ValueType>::printValue(std::ostream& out, uint64_t offset) const {
     print(out, values[offset]);
-    if (!this->hasLowerBounds() && !this->hasUpperBounds()) {
-        return;
-    }
-    out << " [";
-    // A side that is not known is written as a dash, so that it cannot be read as an infinite bound.
-    if (this->hasLowerBounds()) {
-        print(out, this->getLowerBoundVector()[offset]);
-    } else {
-        out << "?";
-    }
-    out << ", ";
-    if (this->hasUpperBounds()) {
-        print(out, this->getUpperBoundVector()[offset]);
-    } else {
-        out << "?";
-    }
-    out << "]";
+    std::optional<ExtendedValueType> const lower =
+        this->hasLowerBounds() ? std::optional<ExtendedValueType>(this->getLowerBoundVector()[offset]) : std::nullopt;
+    std::optional<ExtendedValueType> const upper =
+        this->hasUpperBounds() ? std::optional<ExtendedValueType>(this->getUpperBoundVector()[offset]) : std::nullopt;
+    printBounds(out, lower, upper);
 }
 
 template<typename ValueType>
@@ -370,21 +442,15 @@ std::ostream& ExplicitQuantitativeCheckResult<ValueType>::writeToStream(std::ost
     if (values.size() >= 10 && minMaxSupported) {
         std::pair<ExtendedValueType, ExtendedValueType> minmax = this->getMinMax();
         printRange(out, minmax.first, minmax.second);
-        if (this->hasLowerBounds() || this->hasUpperBounds()) {
-            // The smallest lower and the largest upper bound enclose all values, with a dash for a side that is not known.
-            out << " [";
-            if (this->hasLowerBounds()) {
-                print(out, storm::utility::minimum(this->getLowerBoundVector()));
-            } else {
-                out << "?";
-            }
-            out << ", ";
-            if (this->hasUpperBounds()) {
-                print(out, storm::utility::maximum(this->getUpperBoundVector()));
-            } else {
-                out << "?";
-            }
-            out << "] (bounds)";
+        if (bounds.isExact()) {
+            out << ". Exact solution.";
+        } else {
+            // The smallest lower and the largest upper bound enclose all values.
+            std::optional<ExtendedValueType> const lower =
+                this->hasLowerBounds() ? std::optional<ExtendedValueType>(storm::utility::minimum(this->getLowerBoundVector())) : std::nullopt;
+            std::optional<ExtendedValueType> const upper =
+                this->hasUpperBounds() ? std::optional<ExtendedValueType>(storm::utility::maximum(this->getUpperBoundVector())) : std::nullopt;
+            printBounds(out, lower, upper);
         }
     } else if (values.size() == 1) {
         this->printValue(out, 0);

@@ -379,9 +379,19 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsPower(Environment cons
         return this->updateStatus(current, x, guarantee, numIterations, env.solver().native().getMaximalNumberOfIterations());
     };
     this->startMeasureProgress();
+    // Reading the direction of every sweep costs in the innermost loop, so unless the initial vector already carries
+    // a guarantee, only do it where soundness was asked for.
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
+    storm::OptionalRef<storm::solver::SolutionBounds<ValueType>> solutionBoundsRef;
+    if (guarantee != SolverGuarantee::None || env.solver().isForceSoundness()) {
+        solutionBoundsRef.reset(solutionBounds);
+    }
     auto status = viHelper.VI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(),
                               storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()), {}, viCallback,
-                              env.solver().native().getPowerMethodMultiplicationStyle());
+                              env.solver().native().getPowerMethodMultiplicationStyle(), UncertaintyResolutionMode::Unset, solutionBoundsRef, guarantee);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
 
     this->reportStatus(status, numIterations);
 
@@ -486,8 +496,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(En
     }
     this->startMeasureProgress();
     helper::SoundValueIterationHelper<ValueType, true> sviHelper(viOperator);
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
     auto status = sviHelper.SVI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(), precision, {}, lowerBound, upperBound,
-                                sviCallback, optionalRelevantValues);
+                                sviCallback, optionalRelevantValues, solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
 
     this->reportStatus(status, numIterations);
 
@@ -571,6 +585,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsGuessingValueIteration
     auto status = helper.solveEquations(*lowerX, *upperX, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
                                         {},  // No optimization dir
                                         gviCallback);
+    // A verified guess encloses the solution in every iteration.
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
+    solutionBounds.lower = *lowerX;
+    solutionBounds.upper = *upperX;
+    this->setSolutionBounds(std::move(solutionBounds));
+
     auto two = storm::utility::convertNumber<ValueType>(2.0);
     storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
         *lowerX, *upperX, x, [&two](ValueType const& first, ValueType const& second) -> ValueType { return (first + second) / two; });
@@ -608,6 +628,11 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsRationalSearch(Environ
     };
     this->startMeasureProgress();
     auto status = rsHelper.RS(x, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()), {}, rsCallback);
+
+    // Convergence here means a sharpened candidate was verified to be an exact fixed point.
+    if (status == SolverStatus::Converged) {
+        this->setSolutionBoundsExact(x);
+    }
 
     this->reportStatus(status, numIterations);
 

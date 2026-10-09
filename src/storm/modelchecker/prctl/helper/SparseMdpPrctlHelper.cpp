@@ -772,12 +772,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                         ecInformation.get().setValues(bound, qualitativeStateSets.maybeStates, boundInEcQuotient);
                         return bound;
                     };
-                    if (resultForMaybeStates.solutionBounds.hasLower()) {
-                        resultBounds.lower = liftBound(*resultForMaybeStates.solutionBounds.lower);
-                    }
-                    if (resultForMaybeStates.solutionBounds.hasUpper()) {
-                        resultBounds.upper = liftBound(*resultForMaybeStates.solutionBounds.upper);
-                    }
+                    resultBounds = resultForMaybeStates.solutionBounds.transform(liftBound);
                     ecInformation.get().setValues(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                     if (produceScheduler) {
                         ecInformation.get().setScheduler(*scheduler, qualitativeStateSets.maybeStates, transitionMatrix, backwardTransitions,
@@ -794,17 +789,13 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                         storm::utility::vector::setVectorValues<SolutionType>(bound, qualitativeStateSets.maybeStates, boundForMaybeStates);
                         return bound;
                     };
-                    if (resultForMaybeStates.solutionBounds.hasLower()) {
-                        resultBounds.lower = embedBound(*resultForMaybeStates.solutionBounds.lower);
-                    }
-                    if (resultForMaybeStates.solutionBounds.hasUpper()) {
-                        resultBounds.upper = embedBound(*resultForMaybeStates.solutionBounds.upper);
-                    }
+                    resultBounds = resultForMaybeStates.solutionBounds.transform(embedBound);
                     storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                 } else {
                     // For interval models, the result for maybe states indeed also holds values for all qualitative states.
                     STORM_LOG_ASSERT(resultForMaybeStates.getValues().size() == transitionMatrix.getColumnCount(), "Dimensions do not match.");
                     result = resultForMaybeStates.getValues();
+                    resultBounds = std::move(resultForMaybeStates.solutionBounds);
                 }
                 if (produceScheduler) {
                     extractSchedulerChoices<SolutionType, !storm::IsIntervalType<ValueType>>(*scheduler, resultForMaybeStates.getScheduler(),
@@ -1004,9 +995,14 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
                     return newChoicesWithoutReward;
                 });
 
-            std::vector<ExtendedSolutionType> resultInEcQuotient = std::move(result.values);
-            result.values.resize(ecElimResult.oldToNewStateMapping.size());
-            storm::utility::vector::selectVectorValues(result.values, ecElimResult.oldToNewStateMapping, resultInEcQuotient);
+            // All states of an eliminated end component share their quotient state's value, and its bounds.
+            auto liftFromEcQuotient = [&ecElimResult](std::vector<ExtendedSolutionType> const& valuesInEcQuotient) {
+                std::vector<ExtendedSolutionType> lifted(ecElimResult.oldToNewStateMapping.size());
+                storm::utility::vector::selectVectorValues(lifted, ecElimResult.oldToNewStateMapping, valuesInEcQuotient);
+                return lifted;
+            };
+            result.solutionBounds = result.solutionBounds.transform(liftFromEcQuotient);
+            result.values = liftFromEcQuotient(result.values);
             return result;
         }
     }
@@ -1395,6 +1391,7 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
     ModelCheckerHint const& hint) {
     // Prepare resulting vector.
     std::vector<ExtendedSolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ExtendedSolutionType>());
+    storm::solver::SolutionBounds<ExtendedSolutionType> resultBounds;
 
     // Determine which states have a reward that is infinity or less than infinity.
     QualitativeStateSetsReachabilityRewards qualitativeStateSets = getQualitativeStateSetsReachabilityRewards(
@@ -1492,6 +1489,13 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
                     }
                 }
             } else {
+                // The copy of result supplies the exact values outside the maybe states.
+                auto embedBound = [&result, &qualitativeStateSets](std::vector<SolutionType> const& boundForMaybeStates) {
+                    std::vector<ExtendedSolutionType> bound(result);
+                    storm::utility::vector::setVectorValues(bound, qualitativeStateSets.maybeStates, boundForMaybeStates);
+                    return bound;
+                };
+                resultBounds = resultForMaybeStates.solutionBounds.transform(embedBound);
                 // Set values of resulting vector according to result.
                 storm::utility::vector::setVectorValues(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                 if (produceScheduler) {
@@ -1513,10 +1517,19 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler.");
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
 
+    if (qualitativeStateSets.maybeStates.empty()) {
+        // The qualitative precomputation already decided every state, so all values are exact.
+        resultBounds.setExact(result);
+    }
+
     if constexpr (storm::IsIntervalType<ValueType>) {
-        return ExtendedReturnType(std::move(result));
+        ExtendedReturnType returnValue(std::move(result));
+        returnValue.solutionBounds = std::move(resultBounds);
+        return returnValue;
     } else {
-        return ExtendedReturnType(std::move(result), std::move(scheduler));
+        ExtendedReturnType returnValue(std::move(result), std::move(scheduler));
+        returnValue.solutionBounds = std::move(resultBounds);
+        return returnValue;
     }
 }
 

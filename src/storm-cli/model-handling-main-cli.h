@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <sstream>
 
 #include "storm-cli-utilities/model-handling.h"
@@ -114,19 +115,11 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
         if (ft == storm::modelchecker::FilterType::VALUES) {
             STORM_PRINT(*result);
         } else {
-            storm::utility::ExtendedValueType<ValueType> resultValue;
             switch (ft) {
                 case storm::modelchecker::FilterType::SUM:
-                    resultValue = result->asQuantitativeCheckResult<ValueType>().sum();
-                    break;
                 case storm::modelchecker::FilterType::AVG:
-                    resultValue = result->asQuantitativeCheckResult<ValueType>().average();
-                    break;
                 case storm::modelchecker::FilterType::MIN:
-                    resultValue = result->asQuantitativeCheckResult<ValueType>().getMin();
-                    break;
                 case storm::modelchecker::FilterType::MAX:
-                    resultValue = result->asQuantitativeCheckResult<ValueType>().getMax();
                     break;
                 case storm::modelchecker::FilterType::ARGMIN:
                 case storm::modelchecker::FilterType::ARGMAX:
@@ -140,10 +133,44 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unhandled filter type.");
             }
-            if (storm::NumberTraits<ValueType>::IsExact && storm::utility::isConstant(resultValue)) {
-                STORM_PRINT(resultValue << " (approx. " << storm::utility::convertNumber<double>(resultValue) << ")");
-            } else {
-                STORM_PRINT(resultValue);
+            auto const aggregate = result->asQuantitativeCheckResult<ValueType>().aggregate(ft);
+            auto const printSide = [](std::optional<storm::utility::ExtendedValueType<ValueType>> const& value, bool approximate) {
+                if (!value) {
+                    STORM_PRINT("?");
+                } else if (storm::utility::isInfinity(*value)) {
+                    STORM_PRINT("inf");
+                } else if (approximate) {
+                    STORM_PRINT(storm::utility::convertNumber<double>(*value));
+                } else {
+                    STORM_PRINT(*value);
+                }
+            };
+            // Only an exact value type has a decimal approximation to add, and a rational function has none to give.
+            bool const approximates =
+                storm::NumberTraits<ValueType>::IsExact && !storm::utility::isInfinity(aggregate.value) && storm::utility::isConstant(aggregate.value);
+            printSide(aggregate.value, false);
+            if (approximates) {
+                STORM_PRINT(" (approx. ");
+                printSide(aggregate.value, true);
+                STORM_PRINT(")");
+            }
+            // An aggregate of an enclosure encloses the aggregate, so report it in the same shape as the values do.
+            if (aggregate.hasLower() && aggregate.hasUpper() && *aggregate.lower == *aggregate.upper) {
+                STORM_PRINT(". Exact solution.");
+            } else if (aggregate.hasLower() || aggregate.hasUpper()) {
+                STORM_PRINT(". Solution bounds: [");
+                printSide(aggregate.lower, false);
+                STORM_PRINT(", ");
+                printSide(aggregate.upper, false);
+                STORM_PRINT("]");
+                if (approximates) {
+                    STORM_PRINT(" (approx. [");
+                    printSide(aggregate.lower, true);
+                    STORM_PRINT(", ");
+                    printSide(aggregate.upper, true);
+                    STORM_PRINT("])");
+                }
+                STORM_PRINT(".");
             }
         }
     } else {

@@ -42,7 +42,11 @@ bool MinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquations(Environ
                               "as checked (if applicable).");
     // A reused solver must not report bounds that a previous call computed.
     this->clearSolutionBounds();
-    return internalSolveEquations(env, d, x, b);
+    bool const result = internalSolveEquations(env, d, x, b);
+    if (result) {
+        this->finalizeSolutionBounds(x);
+    }
+    return result;
 }
 
 template<typename ValueType, typename SolutionType>

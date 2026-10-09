@@ -1,6 +1,7 @@
 #include "storm/solver/TopologicalLinearEquationSolver.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
@@ -48,8 +49,14 @@ storm::Environment TopologicalLinearEquationSolver<ValueType>::getEnvironmentFor
     if (adaptPrecision) {
         STORM_LOG_ASSERT(this->longestSccChainSize, "Did not compute the longest SCC chain size although it is needed.");
         auto subEnvPrec = subEnv.solver().getPrecisionOfLinearEquationSolver(subEnv.solver().getLinearEquationSolverType());
-        subEnv.solver().setLinearEquationSolverPrecision(
-            static_cast<storm::RationalNumber>(subEnvPrec.first.get() / storm::utility::convertNumber<storm::RationalNumber>(this->longestSccChainSize.get())));
+        storm::RationalNumber const prec = subEnvPrec.first.get();
+        storm::RationalNumber divisor = storm::utility::convertNumber<storm::RationalNumber>(this->longestSccChainSize.get());
+        if (subEnvPrec.second.is_initialized() && subEnvPrec.second.get()) {
+            // Relative errors compose multiplicatively along a chain, so dividing by its length alone leaves
+            // (1 + prec/k)^k - 1 > prec. Dividing by k(1 + prec) as well brings the product back below prec.
+            divisor *= storm::utility::one<storm::RationalNumber>() + prec;
+        }
+        subEnv.solver().setLinearEquationSolverPrecision(static_cast<storm::RationalNumber>(prec / divisor));
     }
     return subEnv;
 }
@@ -84,12 +91,19 @@ bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environm
 
     // Handle the case where there is just one large SCC
     bool returnValue = true;
+    bool aborted = false;
+    // Trivial SCCs are settled by substitution, so they only ever inherit the error of their successors. SCCs come
+    // in topological order, so conjoining as we go is enough.
+    bool allSccsExact = true;
+    bool allSccsPrecise = true;
     if (this->sortedSccDecomposition->size() == 1) {
         if (auto const& scc = *this->sortedSccDecomposition->begin(); scc.size() == 1) {
             // Catch the trivial case where the whole system is just a single state.
             returnValue = solveTrivialScc(*scc.begin(), x, b);
         } else {
             returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, x, b);
+            allSccsExact = this->sccSolver->hasExactSolutionBounds();
+            allSccsPrecise = lastSccMetPrecision(sccSolverEnvironment);
         }
     } else {
         // Solve each SCC individually
@@ -121,6 +135,8 @@ bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environm
                     sccAsBitVector.set(state, true);
                 }
                 returnValue = solveScc(sccSolverEnvironment, scc, sccAsBitVector, x, b, newRelevantValues) && returnValue;
+                allSccsExact = allSccsExact && this->sccSolver->hasExactSolutionBounds();
+                allSccsPrecise = allSccsPrecise && lastSccMetPrecision(sccSolverEnvironment);
                 // clear sccAsBitVector, either by clearing all bits or by clearing the bits of the current SCC (if its small)
                 if (scc.size() * 64 < sccAsBitVector.size()) {
                     for (auto const& state : scc) {
@@ -134,9 +150,14 @@ bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environm
             progress.updateProgress(sccIndex);
             if (storm::utility::resources::isTerminate()) {
                 STORM_LOG_WARN("Topological solver aborted after analyzing " << sccIndex << "/" << this->sortedSccDecomposition->size() << " SCCs.");
+                aborted = true;
                 break;
             }
         }
+    }
+
+    if (returnValue && !aborted) {
+        trySetSolutionBounds(env, x, allSccsExact, allSccsPrecise && needAdaptPrecision);
     }
 
     if (!this->isCachingEnabled()) {
@@ -144,6 +165,40 @@ bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environm
     }
 
     return returnValue;
+}
+
+template<typename ValueType>
+void TopologicalLinearEquationSolver<ValueType>::trySetSolutionBounds(Environment const& env, std::vector<ValueType> const& x, bool allSccsExact,
+                                                                      bool allSccsPrecise) const {
+    if (allSccsExact) {
+        this->setSolutionBoundsExact(x);
+        return;
+    }
+    if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+        // Precisions are meaningless for rational functions.
+        return;
+    } else {
+        auto const precision = env.solver().getPrecisionOfLinearEquationSolver(env.solver().topological().getUnderlyingEquationSolverType());
+        if (!allSccsPrecise || !precision.first.is_initialized()) {
+            return;
+        }
+        this->setSolutionBoundsFromPrecision(x, storm::utility::convertNumber<ValueType>(precision.first.get()),
+                                             precision.second.is_initialized() && precision.second.get());
+    }
+}
+
+template<typename ValueType>
+bool TopologicalLinearEquationSolver<ValueType>::lastSccMetPrecision(Environment const& sccSolverEnvironment) const {
+    if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+        return false;
+    } else {
+        auto const precision = sccSolverEnvironment.solver().getPrecisionOfLinearEquationSolver(sccSolverEnvironment.solver().getLinearEquationSolverType());
+        if (!precision.first.is_initialized()) {
+            return false;
+        }
+        return this->sccSolver->getSolutionBounds().isWithinPrecision(storm::utility::convertNumber<ValueType>(precision.first.get()),
+                                                                      precision.second.is_initialized() && precision.second.get());
+    }
 }
 
 template<typename ValueType>

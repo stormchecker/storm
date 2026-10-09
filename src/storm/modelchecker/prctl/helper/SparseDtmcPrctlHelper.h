@@ -67,11 +67,12 @@ class SparseDtmcPrctlHelper {
                                                                  storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                  RewardModelType const& rewardModel, uint_fast64_t stepCount);
 
-    static std::vector<ExtendedSolutionType> computeTotalRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                                 storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                 storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                 RewardModelType const& rewardModel, bool qualitative,
-                                                                 ModelCheckerHint const& hint = ModelCheckerHint());
+    static DTMCSparseModelCheckingHelperReturnType<ExtendedSolutionType> computeTotalRewards(Environment const& env,
+                                                                                             storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                                                             storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                                             storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                                             RewardModelType const& rewardModel, bool qualitative,
+                                                                                             ModelCheckerHint const& hint = ModelCheckerHint());
 
     static std::vector<SolutionType> computeDiscountedCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                         storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
@@ -83,24 +84,20 @@ class SparseDtmcPrctlHelper {
                                                                    RewardModelType const& rewardModel, bool qualitative, ValueType discountFactor,
                                                                    ModelCheckerHint const& hint = ModelCheckerHint());
 
-    static std::vector<ExtendedSolutionType> computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                                        storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                        storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                        RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates,
-                                                                        bool qualitative, ModelCheckerHint const& hint = ModelCheckerHint());
+    static DTMCSparseModelCheckingHelperReturnType<ExtendedSolutionType> computeReachabilityRewards(
+        Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+        storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates,
+        bool qualitative, ModelCheckerHint const& hint = ModelCheckerHint());
 
-    static std::vector<ExtendedSolutionType> computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                                        storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                        storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                        std::vector<ValueType> const& totalStateRewardVector,
-                                                                        storm::storage::BitVector const& targetStates, bool qualitative,
-                                                                        ModelCheckerHint const& hint = ModelCheckerHint());
+    static DTMCSparseModelCheckingHelperReturnType<ExtendedSolutionType> computeReachabilityRewards(
+        Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+        storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& totalStateRewardVector,
+        storm::storage::BitVector const& targetStates, bool qualitative, ModelCheckerHint const& hint = ModelCheckerHint());
 
-    static std::vector<ExtendedSolutionType> computeReachabilityTimes(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                                      storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                      storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                      storm::storage::BitVector const& targetStates, bool qualitative,
-                                                                      ModelCheckerHint const& hint = ModelCheckerHint());
+    static DTMCSparseModelCheckingHelperReturnType<ExtendedSolutionType> computeReachabilityTimes(
+        Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+        storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, bool qualitative,
+        ModelCheckerHint const& hint = ModelCheckerHint());
 
     static std::vector<ExtendedSolutionType> computeConditionalProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                              storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
@@ -115,7 +112,7 @@ class SparseDtmcPrctlHelper {
                                                                        storm::storage::BitVector const& conditionStates, bool qualitative);
 
    private:
-    static std::vector<ExtendedSolutionType> computeReachabilityRewards(
+    static DTMCSparseModelCheckingHelperReturnType<ExtendedSolutionType> computeReachabilityRewards(
         Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
         storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
         std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const&
