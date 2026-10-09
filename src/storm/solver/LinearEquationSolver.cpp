@@ -26,7 +26,11 @@ template<typename ValueType>
 bool LinearEquationSolver<ValueType>::solveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
     // A reused solver must not report bounds that a previous call computed.
     this->clearSolutionBounds();
-    return this->internalSolveEquations(env, x, b);
+    bool const result = this->internalSolveEquations(env, x, b);
+    if (result) {
+        this->finalizeSolutionBounds(x);
+    }
+    return result;
 }
 
 template<typename ValueType>

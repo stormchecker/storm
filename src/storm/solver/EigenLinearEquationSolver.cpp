@@ -79,7 +79,11 @@ bool EigenLinearEquationSolver<storm::RationalNumber>::internalSolveEquations(En
     solver.compute(*eigenA);
     solver._solve_impl(eigenB, eigenX);
 
-    return solver.info() == Eigen::ComputationInfo::Success;
+    if (solver.info() != Eigen::ComputationInfo::Success) {
+        return false;
+    }
+    this->setSolutionBoundsExact(x);
+    return true;
 }
 
 // Specialization for storm::RationalFunction
@@ -97,7 +101,11 @@ bool EigenLinearEquationSolver<storm::RationalFunction>::internalSolveEquations(
     Eigen::SparseLU<Eigen::SparseMatrix<storm::RationalFunction>, Eigen::COLAMDOrdering<int>> solver;
     solver.compute(*eigenA);
     solver._solve_impl(eigenB, eigenX);
-    return solver.info() == Eigen::ComputationInfo::Success;
+    if (solver.info() != Eigen::ComputationInfo::Success) {
+        return false;
+    }
+    this->setSolutionBoundsExact(x);
+    return true;
 }
 
 template<typename ValueType>
@@ -112,6 +120,7 @@ bool EigenLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
         Eigen::SparseLU<Eigen::SparseMatrix<ValueType>, Eigen::COLAMDOrdering<int>> solver;
         solver.compute(*this->eigenA);
         solver._solve_impl(eigenB, eigenX);
+        this->setSolutionBoundsExact(x);
     } else {
         bool converged = false;
         uint64_t numberOfIterations = 0;

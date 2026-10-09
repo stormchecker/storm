@@ -251,6 +251,11 @@ bool AbstractEquationSolver<SolutionType>::hasSolutionUpperBounds() const {
 }
 
 template<typename SolutionType>
+bool AbstractEquationSolver<SolutionType>::hasExactSolutionBounds() const {
+    return solutionBounds.isExact();
+}
+
+template<typename SolutionType>
 std::vector<SolutionType> const& AbstractEquationSolver<SolutionType>::getSolutionLowerBounds() const {
     STORM_LOG_ASSERT(this->hasSolutionLowerBounds(), "No lower bound on the solution was computed.");
     return *solutionBounds.lower;
@@ -260,6 +265,11 @@ template<typename SolutionType>
 std::vector<SolutionType> const& AbstractEquationSolver<SolutionType>::getSolutionUpperBounds() const {
     STORM_LOG_ASSERT(this->hasSolutionUpperBounds(), "No upper bound on the solution was computed.");
     return *solutionBounds.upper;
+}
+
+template<typename SolutionType>
+SolutionBounds<SolutionType> const& AbstractEquationSolver<SolutionType>::getSolutionBounds() const {
+    return solutionBounds;
 }
 
 template<typename SolutionType>
@@ -274,6 +284,56 @@ void AbstractEquationSolver<SolutionType>::setSolutionBoundsExact(std::vector<So
     SolutionBounds<SolutionType> bounds;
     bounds.setExact(x);
     this->setSolutionBounds(std::move(bounds));
+}
+
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::setSolutionBoundsFromPrecision(std::vector<SolutionType> const& x, SolutionType const& precision,
+                                                                          bool relative) const {
+    if constexpr (std::is_same_v<SolutionType, storm::RationalFunction>) {
+        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot derive solution bounds from a precision for rational functions.");
+    } else {
+        STORM_LOG_ASSERT(!relative || precision < storm::utility::one<SolutionType>(), "A relative precision of one or more carries no information.");
+        SolutionBounds<SolutionType> bounds;
+        std::vector<SolutionType>& lower = bounds.lower.emplace(x.size());
+        std::vector<SolutionType>& upper = bounds.upper.emplace(x.size());
+        for (uint64_t i = 0; i < x.size(); ++i) {
+            // For the relative criterion the guarantee reads |x_i - s_i| <= precision * |s_i| for the exact solution s.
+            // That gives |s_i| <= |x_i| / (1 - precision) and hence the deviation below, which does not refer to s.
+            SolutionType const deviation =
+                relative ? precision * storm::utility::abs<SolutionType>(x[i]) / (storm::utility::one<SolutionType>() - precision) : precision;
+            lower[i] = x[i] - deviation;
+            upper[i] = x[i] + deviation;
+        }
+        this->setSolutionBounds(std::move(bounds));
+    }
+}
+
+template<typename SolutionType>
+void AbstractEquationSolver<SolutionType>::finalizeSolutionBounds(std::vector<SolutionType> const& x) const {
+    if constexpr (std::is_same_v<SolutionType, storm::RationalFunction>) {
+        // Rational functions are not ordered, so there is no tighter of two bounds to pick.
+        return;
+    } else {
+        if (this->hasLowerBound()) {
+            bool const hadBound = solutionBounds.hasLower();
+            std::vector<SolutionType>& bound = hadBound ? *solutionBounds.lower : solutionBounds.lower.emplace(x.size());
+            STORM_LOG_ASSERT(bound.size() == x.size(), "Computed lower bound does not match the size of the solution.");
+            for (uint64_t i = 0; i < x.size(); ++i) {
+                bound[i] = hadBound ? std::max(bound[i], this->getLowerBound(i)) : this->getLowerBound(i);
+            }
+        }
+        if (this->hasUpperBound()) {
+            bool const hadBound = solutionBounds.hasUpper();
+            std::vector<SolutionType>& bound = hadBound ? *solutionBounds.upper : solutionBounds.upper.emplace(x.size());
+            STORM_LOG_ASSERT(bound.size() == x.size(), "Computed upper bound does not match the size of the solution.");
+            for (uint64_t i = 0; i < x.size(); ++i) {
+                bound[i] = hadBound ? std::min(bound[i], this->getUpperBound(i)) : this->getUpperBound(i);
+            }
+        }
+        // Every step between establishing a bound and handing back a solution, the extraction of a scheduler among
+        // them, can move a value a rounding error past it. Following the values keeps the bounds sound.
+        solutionBounds.widenTo(x);
+    }
 }
 
 template<typename SolutionType>

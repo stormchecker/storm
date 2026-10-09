@@ -150,6 +150,16 @@ class MinMaxLinearEquationSolverTest : public ::testing::Test {
         return storm::utility::convertNumber<ValueType>(input);
     }
 
+    /*!
+     * Expects the solver to report bounds on the solution that enclose the given value.
+     */
+    void expectSolutionBoundsEnclose(storm::solver::MinMaxLinearEquationSolver<ValueType> const& solver, uint64_t index, ValueType const& value) const {
+        ASSERT_TRUE(solver.hasSolutionLowerBounds()) << "No lower bound on the solution was reported.";
+        ASSERT_TRUE(solver.hasSolutionUpperBounds()) << "No upper bound on the solution was reported.";
+        EXPECT_LE(solver.getSolutionLowerBounds()[index], value + precision()) << "The lower bound exceeds the solution.";
+        EXPECT_LE(value, solver.getSolutionUpperBounds()[index] + precision()) << "The upper bound falls below the solution.";
+    }
+
    private:
     storm::Environment _environment;
 };
@@ -184,8 +194,41 @@ TYPED_TEST(MinMaxLinearEquationSolverTest, SolveEquations) {
     ASSERT_FALSE(req.hasEnabledRequirement());
     ASSERT_NO_THROW(solver->solveEquations(this->env(), storm::OptimizationDirection::Minimize, x, b));
     EXPECT_NEAR(x[0], this->parseNumber("0.5"), this->precision());
+    // The bounds handed to the solver above are reported back whatever the method established on its own.
+    this->expectSolutionBoundsEnclose(*solver, 0, this->parseNumber("0.5"));
 
     ASSERT_NO_THROW(solver->solveEquations(this->env(), storm::OptimizationDirection::Maximize, x, b));
     EXPECT_NEAR(x[0], this->parseNumber("0.99"), this->precision());
+    this->expectSolutionBoundsEnclose(*solver, 0, this->parseNumber("0.99"));
+}
+
+TEST(MinMaxLinearEquationSolverTest, TopologicalWithoutCyclesIsExact) {
+    // Two row groups whose only cycles are self loops, so the topological solver settles both by substitution.
+    storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 0, 0.5);
+    builder.addNextValue(0, 1, 0.25);
+    builder.newRowGroup(1);
+    builder.addNextValue(1, 1, 0.5);
+    storm::storage::SparseMatrix<double> A = builder.build(2, 2, 2);
+
+    storm::Environment env;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
+    env.solver().topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::ValueIteration);
+
+    std::vector<double> x(2);
+    std::vector<double> b = {0.0, 0.5};
+
+    auto solver = storm::solver::GeneralMinMaxLinearEquationSolverFactory<double>().create(env, A);
+    solver->setHasUniqueSolution(true);
+    solver->setHasNoEndComponents(true);
+    solver->setRequirementsChecked(true);
+    ASSERT_NO_THROW(solver->solveEquations(env, storm::OptimizationDirection::Maximize, x, b));
+
+    EXPECT_TRUE(solver->hasExactSolutionBounds()) << "An acyclic topological solve should report the values as exact.";
+    ASSERT_TRUE(solver->hasSolutionLowerBounds());
+    ASSERT_TRUE(solver->hasSolutionUpperBounds());
+    EXPECT_EQ(x, solver->getSolutionLowerBounds());
+    EXPECT_EQ(x, solver->getSolutionUpperBounds());
 }
 }  // namespace
