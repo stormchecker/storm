@@ -145,7 +145,11 @@ void exportPrismToFile(storm::prism::Program const& program, std::vector<storm::
     if (!properties.empty()) {
         storm::io::openFile(filename + ".props", stream);
         for (auto const& prop : properties) {
-            stream << prop.asPrismSyntax() << '\n';
+            prop.asPrismSyntax(stream);
+            if (!prop.getComment().empty()) {
+                stream << " // " << prop.getComment();
+            }
+            stream << '\n';
             STORM_LOG_WARN_COND(!prop.containsUndefinedConstants(), "A property contains undefined constants. These might not be exported correctly.");
         }
         storm::io::closeFile(stream);
@@ -155,7 +159,11 @@ void printPrismToStream(storm::prism::Program const& program, std::vector<storm:
     ostream << program << '\n';
     for (auto const& prop : properties) {
         STORM_LOG_WARN_COND(!prop.containsUndefinedConstants(), "A property contains undefined constants. These might not be exported correctly.");
-        ostream << prop.asPrismSyntax() << '\n';
+        prop.asPrismSyntax(ostream);
+        if (!prop.getComment().empty()) {
+            ostream << " // " << prop.getComment();
+        }
+        ostream << '\n';
     }
 }
 
