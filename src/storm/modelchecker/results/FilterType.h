@@ -10,6 +10,5 @@ enum class FilterType { MIN, MAX, SUM, AVG, COUNT, FORALL, EXISTS, ARGMIN, ARGMA
 
 std::string toString(FilterType);
 std::string toPrismSyntax(FilterType);
-bool isStateFilter(FilterType);
 }  // namespace modelchecker
 }  // namespace storm
