@@ -167,7 +167,7 @@ bool JaniLocalEliminator::Session::computeIsPartOfProp(const std::string &automa
 }
 
 bool JaniLocalEliminator::Session::computeIsPartOfProp(const std::map<expressions::Variable, expressions::Expression> &substitutionMap) {
-    storm::solver::Z3SmtSolver solver(model.getExpressionManager());
+    auto solver = storm::utility::solver::getSmtSolver(model.getExpressionManager());
     auto propertyFormula = property.getRawFormula()->substitute(substitutionMap);
     auto expression = model.getExpressionManager().boolean(false);
     if (propertyFormula->isProbabilityOperatorFormula() || propertyFormula->isRewardOperatorFormula()) {
@@ -189,9 +189,9 @@ bool JaniLocalEliminator::Session::computeIsPartOfProp(const std::map<expression
     if (simplified.isLiteral()) {
         return simplified.evaluateAsBool();
     }
-    solver.add(simplified);
+    solver->add(simplified);
 
-    auto result = solver.check();
+    auto result = solver->check();
     return result != storm::solver::SmtSolver::CheckResult::Unsat;
 }
 
@@ -397,30 +397,30 @@ void JaniLocalEliminator::Session::addMissingGuards(const std::string &automaton
 
         // Before we add the edge, check whether it is satisfiable:
         auto variables = newGuard.getVariables();
-        storm::solver::Z3SmtSolver solver(model.getExpressionManager());
-        solver.add(newGuard);
+        auto solver = storm::utility::solver::getSmtSolver(model.getExpressionManager());
+        solver->add(newGuard);
         for (const auto &var : model.getGlobalVariables()) {
             if (var.getType().isBoundedType() && var.getType().asBoundedType().isIntegerType() && variables.count(var.getExpressionVariable()) > 0) {
                 auto &biVariable = var.getType().asBoundedType();
-                solver.add(var.getExpressionVariable().getExpression() >= biVariable.getLowerBound());
-                solver.add(var.getExpressionVariable().getExpression() <= biVariable.getUpperBound());
+                solver->add(var.getExpressionVariable().getExpression() >= biVariable.getLowerBound());
+                solver->add(var.getExpressionVariable().getExpression() <= biVariable.getUpperBound());
             }
         }
         for (const auto &var : automaton.getVariables()) {
             if (var.getType().isBoundedType() && var.getType().asBoundedType().isIntegerType() && variables.count(var.getExpressionVariable()) > 0) {
                 auto &biVariable = var.getType().asBoundedType();
-                solver.add(var.getExpressionVariable().getExpression() >= biVariable.getLowerBound());
-                solver.add(var.getExpressionVariable().getExpression() <= biVariable.getUpperBound());
+                solver->add(var.getExpressionVariable().getExpression() >= biVariable.getLowerBound());
+                solver->add(var.getExpressionVariable().getExpression() <= biVariable.getUpperBound());
             }
         }
-        auto result = solver.check();
+        auto result = solver->check();
 
         if (result != storm::solver::SmtSolver::CheckResult::Unsat) {
             STORM_LOG_TRACE("\tAdding missing guard from location " + automaton.getLocation(i).getName());
             if (result == storm::solver::SmtSolver::CheckResult::Sat) {
                 STORM_LOG_TRACE("\t\tThe guard was satisfiable with assignment\n"
                                 << ([&] {
-                                       auto satisfyingAssignment = solver.getModel();
+                                       auto satisfyingAssignment = solver->getModel();
                                        std::string message;
                                        for (auto &var : variables) {
                                            if (var.hasIntegerType()) {

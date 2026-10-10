@@ -1,6 +1,8 @@
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbAchievabilityQuery.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
@@ -20,11 +22,11 @@ namespace multiobjective {
 
 template<class SparseModelType>
 SparseCbAchievabilityQuery<SparseModelType>::SparseCbAchievabilityQuery(
-    preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult)
+    preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult, Environment const& env)
     : SparseCbQuery<SparseModelType>(preprocessorResult) {
     STORM_LOG_ASSERT(preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability,
                      "Invalid query Type.");
-    solver = storm::utility::solver::SmtSolverFactory().create(*this->expressionManager);
+    solver = storm::utility::solver::SmtSolverFactory().create(env, *this->expressionManager);
 }
 
 template<class SparseModelType>

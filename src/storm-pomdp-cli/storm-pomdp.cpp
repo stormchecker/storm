@@ -151,7 +151,7 @@ void performQualitativeAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<Val
     bool computedSomething = false;
     if (qualSettings.isMemlessSearchSet()) {
         computedSomething = true;
-        std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+        std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>();
         uint64_t lookahead = qualSettings.getLookahead();
         if (lookahead == 0) {
             lookahead = pomdp.getNumberOfStates();
