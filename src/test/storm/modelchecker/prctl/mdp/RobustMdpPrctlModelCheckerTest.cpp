@@ -298,6 +298,25 @@ TEST(RobustMDPModelCheckingTest, Tiny05maxmin) {
     checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-05.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", 0.3, 0.4, 0.4, 0.3, false);
 }
 
+TEST(RobustMDPModelCheckingTest, ConstantSupportReachabilityReward) {
+    auto formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties("R{\"steps\"}max=? [ F \"target\" ]"));
+    storm::Environment env;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+
+    for (auto const& path :
+         {STORM_TEST_RESOURCES_DIR "/imdp/constant-support-reward.drn", STORM_TEST_RESOURCES_DIR "/imdp/constant-support-reward-infinity.drn"}) {
+        auto model = storm::parser::parseDirectEncodingModel<storm::Interval>(path)->as<storm::models::sparse::Mdp<storm::Interval>>();
+        storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>> checker(*model);
+        storm::modelchecker::CheckTask<storm::logic::Formula, double> task(*formulas.front());
+        task.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Minimize);
+        auto result = checker.check(env, task);
+        EXPECT_NEAR(5.0 / 3.0, getQuantitativeResultAtInitialState(model, result), 1e-5) << path;
+        task.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Maximize);
+        result = checker.check(env, task);
+        EXPECT_NEAR(2.5, getQuantitativeResultAtInitialState(model, result), 1e-5) << path;
+    }
+}
+
 TEST(RobustMDPModelCheckingTest, Tiny04maxmin_rewards) {
     expectThrow(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn", "Rmin=? [ F \"target\"]");
 }

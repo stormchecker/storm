@@ -1,0 +1,18 @@
+@type: MDP
+@value_type: double-interval
+@parameters
+
+@reward_models
+steps
+@nr_states
+2
+@nr_choices
+2
+@model
+state 0 [1] init
+    action 0
+        0 : [0.4, 0.6]
+        1 : [0.4, 0.6]
+state 1 [7] target
+    action 0
+        1 : [1, 1]
