@@ -83,7 +83,7 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
             add("min", storm::modelchecker::FilterType::MIN)("max", storm::modelchecker::FilterType::MAX)("sum", storm::modelchecker::FilterType::SUM)(
                 "avg", storm::modelchecker::FilterType::AVG)("count", storm::modelchecker::FilterType::COUNT)(
                 "forall", storm::modelchecker::FilterType::FORALL)("exists", storm::modelchecker::FilterType::EXISTS)(
-                "argmin", storm::modelchecker::FilterType::ARGMIN)("argmax", storm::modelchecker::FilterType::ARGMAX)("values",
+                "argmin", storm::modelchecker::FilterType::ARGMIN)("argmax", storm::modelchecker::FilterType::ARGMAX)("printall",
                                                                                                                       storm::modelchecker::FilterType::VALUES);
         }
     };
