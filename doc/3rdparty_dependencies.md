@@ -44,6 +44,25 @@ See the list below for the steps.
 New versions of third-party resources should be supported by Storm.
 In the following, we list the steps for specific resources.
 
+### cvc5
+cvc5 is an optional SMT solver (`storm/solver/Cvc5SmtSolver`). It is not shipped with Storm and has to be installed separately.
+
+- Storm finds cvc5 via the CMake config file that cvc5 installs with its own `make install` (available since cvc5 1.2).
+  A non-default installation location can be given via `CVC5_ROOT`.
+  The minimal supported version is `STORM_CVC5_MIN_VERSION` in `$STORM_DIR/resources/3rdparty/CMakeLists.txt`.
+- **cvc5 must be built in unrestricted mode.**
+  The `safe` and `stable` build types of recent cvc5 versions (restricted modes do not exist in cvc5 1.2) reject terms that Storm creates, for example the power operator, with a run-time exception.
+  cvc5 records its build type in its CMake config file (`CVC5_SAFE_BUILD` and `CVC5_STABLE_BUILD`).
+  If one of them is set, CMake prints a warning and Storm is built without cvc5.
+  An unrestricted build is obtained with the following commands (in older cvc5 versions, the build type `production` is the unrestricted one):
+  ```
+  ./configure.sh unrestricted --auto-download --poly
+  cd build && make && make install
+  ```
+- To support a new cvc5 version, build Storm against it and run the tests of the solver and the expression adapter (`Cvc5SmtSolverTest`, `Cvc5ExpressionAdapterTest`).
+  Storm uses `cvc5::TermManager` and `cvc5::Solver`, so check API changes there.
+  Also update `CVC5_VERSION` in the `storm-dependencies` Dockerfile of [docker-storm](https://github.com/stormchecker/docker-storm/).
+
 ### Eigen
 In Eigen, we have adapted `SparseLU` to work with scalar types that do not default construct from a double (like CLN numbers) or that do not have an operator< or std::abs
 

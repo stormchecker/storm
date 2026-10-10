@@ -45,6 +45,8 @@ std::string getDefaultSmtSolverAsString() {
     return "z3";
 #elif defined STORM_DEFAULT_SMT_SOLVER_MATHSAT
     return "mathsat";
+#elif defined STORM_DEFAULT_SMT_SOLVER_CVC5
+    return "cvc5";
 #else
     return "z3";
 #endif
@@ -109,6 +111,9 @@ CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(storm::utility
 #endif
 #if defined STORM_HAVE_MATHSAT
     smtSolvers.push_back("mathsat");
+#endif
+#if defined STORM_HAVE_CVC5
+    smtSolvers.push_back("cvc5");
 #endif
     // The option always exists, since the solver environment reads it while it is constructed. This also
     // holds when no SMT solver is compiled in at all: in that case smtSolvers is empty above, but the
@@ -181,6 +186,8 @@ storm::solver::SmtSolverType CoreSettings::getSmtSolver() const {
         return storm::solver::SmtSolverType::Z3;
     } else if (smtSolverName == "mathsat") {
         return storm::solver::SmtSolverType::Mathsat;
+    } else if (smtSolverName == "cvc5") {
+        return storm::solver::SmtSolverType::Cvc5;
     }
     STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown SMT solver '" << smtSolverName << "'.");
 }

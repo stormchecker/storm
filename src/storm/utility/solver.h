@@ -138,6 +138,12 @@ class MathsatSmtSolverFactory : public SmtSolverFactory {
     virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::Environment const& env, storm::expressions::ExpressionManager& manager) const;
 };
 
+class Cvc5SmtSolverFactory : public SmtSolverFactory {
+   public:
+    virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;
+    virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::Environment const& env, storm::expressions::ExpressionManager& manager) const;
+};
+
 std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::expressions::ExpressionManager& manager);
 
 /*!

@@ -317,6 +317,54 @@ else()
     message(WARNING "Storm - Not linking with Z3. Building of Prism/JANI models will not be supported.")
 endif()
 
+#############################################################
+##
+##	CVC5 (optional)
+##
+#############################################################
+
+# Storm builds terms through cvc5::TermManager, which it passes to the cvc5::Solver constructor.
+set(STORM_CVC5_MIN_VERSION "1.2")
+
+if(NOT STORM_DISABLE_CVC5)
+    # CVC5's own config file looks for the (lower case) cvc5_ROOT variable, whereas Storm uses upper case
+    # variable names for the roots of the different solvers.
+    if(CVC5_ROOT)
+        set(cvc5_ROOT "${CVC5_ROOT}")
+    endif()
+
+    # We rely on the CMake config file that cvc5 installs (since version 1.2), so cvc5 has to be installed with its own
+    # "make install". Note that we cannot request a minimum version here: cvc5's own version file uses the
+    # SamePatchVersion strategy and reports compatibility only for an exact major.minor.patch match, so requesting 1.2
+    # would reject an installed 1.4.0. We compare the version we find ourselves further below instead.
+    find_package(cvc5 QUIET NO_MODULE)
+    if(TARGET cvc5::cvc5)
+        set(cvc5_FOUND_VERSION "${cvc5_VERSION}")
+    endif()
+
+    if(NOT cvc5_FOUND_VERSION)
+        message(WARNING "Storm - cvc5 not found, or its version could not be determined."
+                " CVC5 will not be available as an SMT solver backend.")
+    elseif(cvc5_FOUND_VERSION VERSION_LESS STORM_CVC5_MIN_VERSION)
+        message(WARNING "Storm - Found cvc5 ${cvc5_FOUND_VERSION}, but ${STORM_CVC5_MIN_VERSION} or newer is required."
+                " CVC5 will not be available as an SMT solver backend.")
+    elseif(CVC5_SAFE_BUILD OR CVC5_STABLE_BUILD)
+        # cvc5 records its build type in the config file (since 1.3; older versions have no restricted modes). Safe and
+        # stable builds reject terms that Storm creates, e.g., the power operator, so we require an unrestricted build.
+        # Note that the unrestricted build sets both variables to IGNORE, which CMake considers to be false.
+        message(WARNING "Storm - Found cvc5 ${cvc5_FOUND_VERSION}, but it was built in safe or stable mode, which does not support all"
+                " features that Storm requires. Build cvc5 with './configure.sh unrestricted'."
+                " CVC5 will not be available as an SMT solver backend.")
+    else()
+        set(STORM_HAVE_CVC5 ON)
+        message(STATUS "Storm - Linking with cvc5 (version ${cvc5_FOUND_VERSION}).")
+
+        list(APPEND STORM_DEP_IMP_TARGETS cvc5::cvc5)
+    endif()
+else()
+    set(STORM_HAVE_CVC5 OFF)
+    message(STATUS "Storm - Not linking with cvc5.")
+endif()
 
 #############################################################
 ##

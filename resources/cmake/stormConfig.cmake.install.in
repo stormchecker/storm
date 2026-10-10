@@ -41,6 +41,18 @@ if(@STORM_HAVE_CUDD@)  # STORM_HAVE_CUDD
     )
 endif()
 
+if(@STORM_HAVE_CVC5@)  # STORM_HAVE_CVC5
+    # cvc5's version file reports compatibility only for an exact major.minor.patch match, so a minimum
+    # version handed to find_dependency would reject every release but that one. Look the package up without
+    # a version and compare ourselves, as we already do while configuring.
+    find_dependency(cvc5 NO_MODULE)
+    if(NOT cvc5_VERSION OR cvc5_VERSION VERSION_LESS "@STORM_CVC5_MIN_VERSION@")
+        set(storm_FOUND FALSE)
+        set(storm_NOT_FOUND_MESSAGE "storm requires cvc5 @STORM_CVC5_MIN_VERSION@ or newer, but ${cvc5_VERSION} was found.")
+        return()
+    endif()
+endif()
+
 if(@STORM_HAVE_GLPK@)  # STORM_HAVE_GLPK
     find_dependency(GLPK)
     add_library(glpk SHARED IMPORTED)
