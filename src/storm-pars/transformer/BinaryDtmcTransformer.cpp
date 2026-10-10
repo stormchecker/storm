@@ -1,11 +1,5 @@
 #include "storm-pars/transformer/BinaryDtmcTransformer.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wthread-safety-negative"
-#pragma clang diagnostic ignored "-Wundefined-reinterpret-cast"
-#pragma clang diagnostic ignored "-Wunused-template"
-#include <carl/formula/Constraint.h>
-#pragma clang diagnostic pop
 #include <queue>
 
 #include "storm-pars/utility/parametric.h"
@@ -40,6 +34,44 @@ struct StateWithRow {
     uint64_t state;
     std::vector<storage::MatrixEntry<uint64_t, RationalFunction>> row;
 };
+
+namespace {
+
+/*!
+ * Retrieves the polynomial cache to be used for newly created factorized polynomials.
+ *
+ * The cache of the given polynomial is reused, so that the newly created polynomials share their factorizations
+ * with the polynomials of the model instead of allocating a cache of their own. Only a polynomial that has not
+ * been factored (which includes every constant polynomial) has no cache; in that case a fresh one is created.
+ *
+ * @param polynomial A polynomial of the model whose cache is to be reused.
+ * @return The cache to be used for newly created polynomials.
+ */
+std::shared_ptr<RawPolynomialCache> cacheOf(Polynomial const& polynomial) {
+    auto cache = polynomial.pCache();
+    if (!cache) {
+        // The polynomial was never factored, so there is nothing to share. This is only expected for constant
+        // polynomials.
+        STORM_LOG_ASSERT(polynomial.isConstant(), "Expected a non-constant polynomial to carry a cache.");
+        return std::make_shared<RawPolynomialCache>();
+    }
+    return cache;
+}
+
+/*!
+ * Builds the rational function that has the given numerator over the given denominator, building the numerator as
+ * a polynomial that shares the given factorization cache.
+ *
+ * @param numerator The numerator of the rational function.
+ * @param denominator The denominator of the rational function.
+ * @param cache The factorization cache that the numerator shares.
+ * @return The corresponding rational function.
+ */
+RationalFunction toRationalFunction(RawPolynomial const& numerator, Polynomial const& denominator, std::shared_ptr<RawPolynomialCache> const& cache) {
+    return RationalFunction(Polynomial(numerator, cache), denominator);
+}
+
+}  // namespace
 
 typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transformTransitions(
     storm::models::sparse::Dtmc<RationalFunction> const& dtmc) const {
@@ -92,6 +124,16 @@ typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transf
             RationalFunction sumOfLeftBranch;
             RationalFunction sumOfRightBranch;
 
+            // Every entry of this row depends on the parameter, so at least one of them is non-constant and thus
+            // carries the cache of the model, which the polynomials created below share.
+            std::shared_ptr<RawPolynomialCache> cache;
+            for (auto const& entry : stateWithRow.row) {
+                if (!entry.getValue().isConstant()) {
+                    cache = cacheOf(entry.getValue().nominator());
+                    break;
+                }
+            }
+
             for (auto const& entry : stateWithRow.row) {
                 if (entry.getValue().isConstant()) {
                     outgoing.push_back(entry);
@@ -100,14 +142,14 @@ typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transf
                 auto denominator = entry.getValue().denominator();
                 auto byP = RawPolynomial(nominator).divideBy(parameterPol);
                 if (byP.remainder.isZero()) {
-                    auto probability = RationalFunction(carl::makePolynomial<Polynomial>(byP.quotient), denominator);
+                    auto probability = toRationalFunction(byP.quotient, denominator, cache);
                     newStateLeft.push_back(storage::MatrixEntry<uint64_t, RationalFunction>(entry.getColumn(), probability));
                     sumOfLeftBranch += probability;
                     continue;
                 }
                 auto byOneMinusP = RawPolynomial(nominator).divideBy(oneMinusParameter);
                 if (byOneMinusP.remainder.isZero()) {
-                    auto probability = RationalFunction(carl::makePolynomial<Polynomial>(byOneMinusP.quotient), denominator);
+                    auto probability = toRationalFunction(byOneMinusP.quotient, denominator, cache);
                     newStateRight.push_back(storage::MatrixEntry<uint64_t, RationalFunction>(entry.getColumn(), probability));
                     sumOfRightBranch += probability;
                     continue;
@@ -123,13 +165,14 @@ typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transf
                 entry.setValue(entry.getValue() / sumOfRightBranch);
             }
 
+            auto parameterPolynomial = Polynomial(RawPolynomial(parameter), cache);
+
             queue.push(StateWithRow{currAuxState, newStateLeft});
-            outgoing.push_back(storage::MatrixEntry<uint64_t, RationalFunction>(
-                currAuxState, (sumOfLeftBranch)*RationalFunction(carl::makePolynomial<Polynomial>(parameter))));
+            outgoing.push_back(storage::MatrixEntry<uint64_t, RationalFunction>(currAuxState, (sumOfLeftBranch)*RationalFunction(parameterPolynomial)));
             ++currAuxState;
             queue.push(StateWithRow{currAuxState, newStateRight});
             outgoing.push_back(storage::MatrixEntry<uint64_t, RationalFunction>(
-                currAuxState, (sumOfRightBranch) * (utility::one<RationalFunction>() - RationalFunction(carl::makePolynomial<Polynomial>(parameter)))));
+                currAuxState, (sumOfRightBranch) * (utility::one<RationalFunction>() - RationalFunction(parameterPolynomial))));
             ++currAuxState;
 
             for (auto const& entry : outgoing) {
