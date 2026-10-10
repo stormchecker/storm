@@ -70,6 +70,20 @@ class GeneralSettings : public ModuleSettings {
     double getPrecision() const;
 
     /*!
+     * Retrieves the tolerance to use for comparing probabilities and rates.
+     *
+     * @return The tolerance to use for comparing probabilities and rates.
+     */
+    double getTolerance() const;
+
+    /*!
+     * Retrieves whether the tolerance option was set.
+     *
+     * @return True iff the tolerance option was set.
+     */
+    bool isToleranceSet() const;
+
+    /*!
      * Retrieves whether the config option was set.
      *
      * @return True if the config option was set.
@@ -141,6 +155,7 @@ class GeneralSettings : public ModuleSettings {
     static const std::string showProgressOptionShortName;
     static const std::string precisionOptionName;
     static const std::string precisionOptionShortName;
+    static const std::string toleranceOptionName;
     static const std::string configOptionName;
     static const std::string configOptionShortName;
     static const std::string bisimulationOptionName;

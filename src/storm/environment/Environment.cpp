@@ -10,7 +10,7 @@
 namespace storm {
 
 Environment::Environment() {
-    modelToleranceValue = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
+    modelToleranceValue = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getTolerance();
 }
 
 Environment::~Environment() {

@@ -278,6 +278,8 @@ TEST(StrongBisimulationTest, FloatingPointRoundingNeedsTolerance) {
 
     EXPECT_EQ(5ull, storm::bisimulation::performBisimulationMinimization<ValueType>(*model, {}, strongOptions()).quotient->getNumberOfStates());
     EXPECT_EQ(4ull, storm::bisimulation::performBisimulationMinimization<ValueType>(*model, {}, approximateOptions()).quotient->getNumberOfStates());
+    // When no tolerance is set, the model's stochastic tolerance is used, which is 1e-9 for double models and also identifies the two states.
+    EXPECT_EQ(4ull, storm::bisimulation::performBisimulationMinimization<ValueType>(*model, {}, Options{}).quotient->getNumberOfStates());
 }
 
 // ------------------------------------------------------------

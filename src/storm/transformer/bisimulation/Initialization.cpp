@@ -303,7 +303,7 @@ std::optional<std::vector<uint64_t>> Initialization<ValueType>::getChoiceClasses
         }
     }
     // Split the partition based on preserved choice annotations.
-    preservedChoiceAnnotations.applySplit(choicePartition, storm::utility::convertNumber<ValueType>(options.tolerance), auxVector);
+    preservedChoiceAnnotations.applySplit(choicePartition, storm::utility::convertNumber<ValueType>(options.tolerance.value()), auxVector);
 
     // Catch the case where all choices are equal so we don't have to deal with choice classes.
     if (choicePartition.getNumberOfBlocks() == 1) {
@@ -324,7 +324,7 @@ std::optional<std::vector<uint64_t>> Initialization<ValueType>::getChoiceClasses
 
 template<typename ValueType>
 Partition Initialization<ValueType>::getInitialStatePartition(std::optional<std::vector<uint64_t>> const& choiceClasses) const {
-    ValueType const tolerance = storm::utility::convertNumber<ValueType>(options.tolerance);
+    ValueType const tolerance = storm::utility::convertNumber<ValueType>(options.tolerance.value());
     Partition statePartition(model.getNumberOfStates());
     if (choiceClasses && model.isNondeterministicModel()) {
         auto const& groupIndices = model.getTransitionMatrix().getRowGroupIndices();

@@ -38,12 +38,17 @@ using Options = storm::bisimulation::Options;
 using StateLabelPreservation = storm::bisimulation::StateLabelPreservation;
 
 inline Options strongOptions() {
-    return Options{};
+    Options options;
+    // Tests use exact bisimulation unless they deliberately opt into a positive tolerance.
+    options.tolerance = storm::utility::zero<storm::RationalNumber>();
+    return options;
 }
 
 inline Options weakOptions() {
     Options options;
     options.bisimulationType = storm::bisimulation::BisimulationType::Weak;
+    // Tests use exact bisimulation unless they deliberately opt into a positive tolerance.
+    options.tolerance = storm::utility::zero<storm::RationalNumber>();
     return options;
 }
 

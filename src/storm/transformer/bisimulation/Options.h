@@ -30,8 +30,9 @@ struct Options {
     // The kind of bisimulation that is applied.
     bool actionSensitive = false;  // If set, the i'th choice of state1 can only be matched with the i'th choice of state2.
     BisimulationType bisimulationType = BisimulationType::Strong;
-    storm::RationalNumber tolerance = storm::utility::zero<RationalNumber>();  // Every value (probability, rate, reward) of the original model deviates by
-                                                                               // at most this tolerance from the corresponding value in the quotient.
+    // Every value (probability, rate, reward) of the original model deviates by at most this tolerance from the corresponding value in the quotient.
+    // If unset, the stochastic tolerance of the model is used.
+    std::optional<storm::RationalNumber> tolerance = std::nullopt;
 
     // Algorithm Options
     bool createQuotientChoiceMapping = false;  // If set, a mapping from input choice index to quotient choice index is created and returned. This mapping can

@@ -14,6 +14,7 @@
 #include "storm/transformer/bisimulation/Signatures.h"
 #include "storm/transformer/bisimulation/SplitterBasedRefinement.h"
 #include "storm/transformer/bisimulation/WeakBisimulationData.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/OptionalRef.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/constants.h"
@@ -27,24 +28,34 @@ ReturnType<ValueType> performBisimulationMinimization(storm::models::sparse::Mod
     if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Bisimulation is not supported for Interval models.");
     }
-    STORM_LOG_THROW(options.tolerance >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidArgumentException,
-                    "Tolerance for bisimulation minimization must be non-negative, but was " << options.tolerance << ".");
-    bool const isWeak = options.bisimulationType == BisimulationType::Weak;
+    // When the caller does not pick an explicit tolerance, fall back to the model's stochastic tolerance. Exact value types use zero.
+    Options resolvedOptions = options;
+    if (!resolvedOptions.tolerance.has_value()) {
+        if constexpr (storm::NumberTraits<ValueType>::IsExact) {
+            resolvedOptions.tolerance = storm::utility::zero<storm::RationalNumber>();
+        } else {
+            resolvedOptions.tolerance = storm::utility::convertNumber<storm::RationalNumber>(model.getStochasticTolerance());
+        }
+    }
+    storm::RationalNumber const& tolerance = *resolvedOptions.tolerance;
+    STORM_LOG_THROW(tolerance >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidArgumentException,
+                    "Tolerance for bisimulation minimization must be non-negative, but was " << tolerance << ".");
+    bool const isWeak = resolvedOptions.bisimulationType == BisimulationType::Weak;
     if (isWeak) {
         STORM_LOG_THROW(!model.isNondeterministicModel(), storm::exceptions::NotSupportedException,
                         "Weak bisimulation is only supported for deterministic models, but the given model is of type " << model.getType() << ".");
-        STORM_LOG_WARN_COND(!options.preferSignatureRefinement,
+        STORM_LOG_WARN_COND(!resolvedOptions.preferSignatureRefinement,
                             "Using splitter-based refinement because weak bisimulation is not supported for signature-based refinement.");
     }
     // Weak bisimulation for signature-based refinement is not supported.
     // Deterministic models default to splitter-based refinement, which is usually faster
-    bool const useSignatureRefinement = !isWeak && (model.isNondeterministicModel() || options.preferSignatureRefinement);
+    bool const useSignatureRefinement = !isWeak && (model.isNondeterministicModel() || resolvedOptions.preferSignatureRefinement);
     STORM_LOG_INFO("Using " << (useSignatureRefinement ? "signature" : "splitter") << "-based refinement for bisimulation minimization.");
     storm::utility::Stopwatch sw(true);
     STORM_LOG_STATISTICS("-------- Bisimulation Minimization --------");
 
     // Step 1: Obtain an initial partition based on what needs to be preserved (labels, rewards, ...)
-    storm::bisimulation::Initialization<ValueType> initialization(model, options, formulas);
+    storm::bisimulation::Initialization<ValueType> initialization(model, resolvedOptions, formulas);
     auto const preservationInformation = initialization.getPreservationInformation();
     auto const choiceClasses = initialization.getChoiceClasses();
     auto partition = initialization.getInitialStatePartition(choiceClasses);
@@ -72,52 +83,51 @@ ReturnType<ValueType> performBisimulationMinimization(storm::models::sparse::Mod
         sw.restart();
         if (model.isDiscreteTimeModel()) {
             storm::bisimulation::performSplitterBasedRefinement<ValueType, SplitterRefinementMode::WeakDiscreteTime>(
-                model, backwardTransitions, partition, storm::utility::convertNumber<ValueType>(options.tolerance), weakData);
+                model, backwardTransitions, partition, storm::utility::convertNumber<ValueType>(tolerance), weakData);
         } else {
             storm::bisimulation::performSplitterBasedRefinement<ValueType, SplitterRefinementMode::WeakContinuousTime>(
-                model, backwardTransitions, partition, storm::utility::convertNumber<ValueType>(options.tolerance), weakData);
+                model, backwardTransitions, partition, storm::utility::convertNumber<ValueType>(tolerance), weakData);
         }
         // For weak bisimulation, the quotient transitions have to be derived from a state that can actually leave its block.
         auto const nonSilentStates = ~weakData.silentStates;
         initializeQuotientData(nonSilentStates);
         quotientData->weakData.emplace(std::move(weakData));
-        if (options.createQuotientChoiceMapping) {
+        if (resolvedOptions.createQuotientChoiceMapping) {
             // For deterministic models, quotient state and choice mappings are identical.
             STORM_LOG_ASSERT(!model.isNondeterministicModel(), "Expected a deterministic model.");
             quotientData->toQuotientChoice = quotientData->toQuotientState;
         }
-    } else if (useSignatureRefinement && storm::utility::isZero(options.tolerance)) {
+    } else if (useSignatureRefinement && storm::utility::isZero(tolerance)) {
         storm::bisimulation::Signatures<ValueType, SignatureMode::Exact> signatures(model, choiceClasses, partition);
         storm::bisimulation::performSignatureBasedRefinement(model, partition, signatures);
         initializeQuotientData();
-        signatures.extendQuotientData(quotientData.value(), options.createQuotientChoiceMapping);
-    } else if (useSignatureRefinement && !storm::utility::isZero(options.tolerance)) {
+        signatures.extendQuotientData(quotientData.value(), resolvedOptions.createQuotientChoiceMapping);
+    } else if (useSignatureRefinement && !storm::utility::isZero(tolerance)) {
         if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                            "Bisimulation with positive tolerance " << options.tolerance << " (approximately "
-                                                                    << storm::utility::convertNumber<double>(options.tolerance)
+                            "Bisimulation with positive tolerance " << tolerance << " (approximately " << storm::utility::convertNumber<double>(tolerance)
                                                                     << ") is not supported for parametric models.");
         } else {
             storm::bisimulation::Signatures<ValueType, SignatureMode::Approximative> signatures(model, choiceClasses, partition,
-                                                                                                storm::utility::convertNumber<ValueType>(options.tolerance));
+                                                                                                storm::utility::convertNumber<ValueType>(tolerance));
             storm::bisimulation::performSignatureBasedRefinement(model, partition, signatures);
             initializeQuotientData();
-            signatures.extendQuotientData(quotientData.value(), options.createQuotientChoiceMapping);
+            signatures.extendQuotientData(quotientData.value(), resolvedOptions.createQuotientChoiceMapping);
         }
     } else {
         // For deterministic models we do splitter based refinement.
         STORM_LOG_ASSERT(!model.isNondeterministicModel(), "Splitter-based refinement is only applicable to deterministic models.");
         storm::bisimulation::performSplitterBasedRefinement<ValueType>(model, model.getBackwardTransitions(), partition,
-                                                                       storm::utility::convertNumber<ValueType>(options.tolerance));
+                                                                       storm::utility::convertNumber<ValueType>(tolerance));
         initializeQuotientData();
-        if (options.createQuotientChoiceMapping) {
+        if (resolvedOptions.createQuotientChoiceMapping) {
             // For deterministic models, quotient state and choice mappings are identical.
             quotientData->toQuotientChoice = quotientData->toQuotientState;
         }
     }
 
     // Step 3: Extract the quotient
-    auto quotientModel = storm::bisimulation::Quotient<ValueType>::buildFromPartition(model, options, preservationInformation, quotientData.value());
+    auto quotientModel = storm::bisimulation::Quotient<ValueType>::buildFromPartition(model, resolvedOptions, preservationInformation, quotientData.value());
     STORM_LOG_STATISTICS(sw << " seconds for quotient extraction.");
     STORM_LOG_STATISTICS("-------------------------------------------");
 

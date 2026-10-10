@@ -24,6 +24,7 @@ const std::string GeneralSettings::verboseOptionShortName = "v";
 const std::string GeneralSettings::showProgressOptionName = "progress";
 const std::string GeneralSettings::precisionOptionName = "precision";
 const std::string GeneralSettings::precisionOptionShortName = "eps";
+const std::string GeneralSettings::toleranceOptionName = "tolerance";
 const std::string GeneralSettings::configOptionName = "config";
 const std::string GeneralSettings::configOptionShortName = "c";
 const std::string GeneralSettings::bisimulationOptionName = "bisimulation";
@@ -62,6 +63,13 @@ GeneralSettings::GeneralSettings() : ModuleSettings(moduleName) {
                                          .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0))
                                          .build())
                         .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, toleranceOptionName, false, "The tolerance up to which probabilities and rates are considered equal.")
+            .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The tolerance to use.")
+                             .setDefaultValueDouble(1e-09)
+                             .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0))
+                             .build())
+            .build());
     this->addOption(
         storm::settings::OptionBuilder(moduleName, configOptionName, false,
                                        "If given, this file will be read and parsed for additional configuration settings.")
@@ -119,6 +127,14 @@ void GeneralSettings::setPrecision(std::string precision) {
 }
 double GeneralSettings::getPrecision() const {
     return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
+}
+
+bool GeneralSettings::isToleranceSet() const {
+    return this->getOption(toleranceOptionName).getHasOptionBeenSet();
+}
+
+double GeneralSettings::getTolerance() const {
+    return this->getOption(toleranceOptionName).getArgumentByName("value").getValueAsDouble();
 }
 
 bool GeneralSettings::isConfigSet() const {
