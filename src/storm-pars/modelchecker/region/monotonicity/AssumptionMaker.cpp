@@ -72,10 +72,10 @@ std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatu
 }
 
 template<typename ValueType, typename ConstantType>
-void AssumptionMaker<ValueType, ConstantType>::initializeCheckingOnSamples(std::shared_ptr<logic::Formula const> formula,
+void AssumptionMaker<ValueType, ConstantType>::initializeCheckingOnSamples(Environment const& env, std::shared_ptr<logic::Formula const> formula,
                                                                            std::shared_ptr<models::sparse::Dtmc<ValueType>> model,
                                                                            storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples) {
-    assumptionChecker.initializeCheckingOnSamples(formula, model, region, numberOfSamples);
+    assumptionChecker.initializeCheckingOnSamples(env, formula, model, region, numberOfSamples);
 }
 
 template<typename ValueType, typename ConstantType>

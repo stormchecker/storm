@@ -18,11 +18,11 @@ namespace storm {
 namespace analysis {
 /*** Constructor ***/
 template<typename ValueType, typename ConstantType>
-MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model,
+MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(Environment const& env, std::shared_ptr<models::sparse::Model<ValueType>> model,
                                                                 std::vector<std::shared_ptr<logic::Formula const>> formulas,
                                                                 std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples,
                                                                 double const& precision, bool dotOutput)
-    : assumptionMaker(model->getTransitionMatrix()) {
+    : env(env), assumptionMaker(model->getTransitionMatrix()) {
     STORM_LOG_ASSERT(model != nullptr, "Model should not be null.");
 
     this->model = model;
@@ -50,9 +50,9 @@ MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<
     if (numberOfSamples > 2) {
         // sampling
         if (model->isOfType(models::ModelType::Dtmc)) {
-            checkMonotonicityOnSamples(model->template as<models::sparse::Dtmc<ValueType>>(), numberOfSamples);
+            checkMonotonicityOnSamples(env, model->template as<models::sparse::Dtmc<ValueType>>(), numberOfSamples);
         } else if (model->isOfType(models::ModelType::Mdp)) {
-            checkMonotonicityOnSamples(model->template as<models::sparse::Mdp<ValueType>>(), numberOfSamples);
+            checkMonotonicityOnSamples(env, model->template as<models::sparse::Mdp<ValueType>>(), numberOfSamples);
         }
         checkSamples = true;
     } else {
@@ -83,7 +83,7 @@ std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<ty
 MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostream& outfile, bool usePLA, std::string dotOutfileName) {
     if (usePLA) {
         storm::utility::Stopwatch plaWatch(true);
-        this->extender->initializeMinMaxValues(region);
+        this->extender->initializeMinMaxValues(env, region);
         plaWatch.stop();
         STORM_LOG_STATISTICS("\nTotal time for pla checking: " << plaWatch << ".\n\n");
     }
@@ -275,7 +275,7 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
 }
 
 template<typename ValueType, typename ConstantType>
-void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Dtmc<ValueType>> model,
+void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(Environment const& env, std::shared_ptr<models::sparse::Dtmc<ValueType>> model,
                                                                              uint_fast64_t numberOfSamples) {
     STORM_LOG_ASSERT(numberOfSamples > 2, "Expected at least 3 samples.");
 
@@ -314,12 +314,12 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
             if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
                 const modelchecker::CheckTask<logic::UntilFormula, ConstantType> checkTask =
                     modelchecker::CheckTask<logic::UntilFormula, ConstantType>(formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula());
-                checkResult = checker.computeUntilProbabilities(Environment(), checkTask);
+                checkResult = checker.computeUntilProbabilities(env, checkTask);
             } else if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()) {
                 const modelchecker::CheckTask<logic::EventuallyFormula, ConstantType> checkTask =
                     modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>(
                         formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
-                checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
+                checkResult = checker.computeReachabilityProbabilities(env, checkTask);
             } else {
                 STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula.");
             }
@@ -351,7 +351,7 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
 }
 
 template<typename ValueType, typename ConstantType>
-void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model,
+void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(Environment const&, std::shared_ptr<models::sparse::Mdp<ValueType>> model,
                                                                              uint_fast64_t numberOfSamples) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Checking monotonicity on samples not implemented for mdps.");
 }

@@ -83,7 +83,7 @@ std::shared_ptr<FeasibilitySynthesisTask const> createFeasibilitySynthesisTaskFr
 }
 
 template<typename ValueType>
-void performFeasibility(std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
+void performFeasibility(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
                         std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                         boost::optional<std::set<RationalFunctionVariable>> omittedParameters, storm::api::MonotonicitySetting monotonicitySettings) {
     auto const& feasibilitySettings = storm::settings::getModule<storm::settings::modules::FeasibilitySettings>();
@@ -98,9 +98,9 @@ void performFeasibility(std::shared_ptr<storm::models::sparse::Model<ValueType>>
     STORM_PRINT_AND_LOG("\n");
 
     if (feasibilitySettings.getFeasibilityMethod() == storm::pars::FeasibilityMethod::GD) {
-        runFeasibilityWithGD(model, task, omittedParameters, monotonicitySettings);
+        runFeasibilityWithGD(env, model, task, omittedParameters, monotonicitySettings);
     } else if (feasibilitySettings.getFeasibilityMethod() == storm::pars::FeasibilityMethod::PLA) {
-        runFeasibilityWithPLA(model, task, omittedParameters, monotonicitySettings);
+        runFeasibilityWithPLA(env, model, task, omittedParameters, monotonicitySettings);
     } else {
         STORM_LOG_ASSERT(feasibilitySettings.getFeasibilityMethod() == storm::pars::FeasibilityMethod::SCP, "Remaining method must be SCP.");
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SCP is not yet implemented.");
@@ -108,7 +108,7 @@ void performFeasibility(std::shared_ptr<storm::models::sparse::Model<ValueType>>
 }
 
 template<typename ValueType>
-void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
+void runFeasibilityWithGD(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
                           std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                           boost::optional<std::set<RationalFunctionVariable>> omittedParameters, storm::api::MonotonicitySetting monotonicitySettings) {
     auto derSettings = storm::settings::getModule<storm::settings::modules::DerivativeSettings>();
@@ -173,10 +173,10 @@ void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType
     STORM_PRINT("Finding an extremum using Gradient Descent\n");
     storm::utility::Stopwatch derivativeWatch(true);
     storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> gdsearch(
-        Environment(), *dtmc, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(),
-        derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), startPoint, *constraintMethod, region, derSettings.isPrintJsonSet());
+        env, *dtmc, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(),
+        derSettings.getTerminationEpsilon(), startPoint, *constraintMethod, region, derSettings.isPrintJsonSet());
 
-    gdsearch.setup(Environment(), task);
+    gdsearch.setup(env, task);
     auto instantiationAndValue = gdsearch.gradientDescent();
     // TODO check what happens if no feasible solution is found
     if (!derSettings.areInconsequentialParametersOmitted() && omittedParameters) {
@@ -207,7 +207,7 @@ void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType
 }
 
 template<typename ValueType>
-void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+void runFeasibilityWithPLA(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
                            std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                            boost::optional<std::set<RationalFunctionVariable>> omittedParameters, storm::api::MonotonicitySetting monotonicitySettings) {
     STORM_LOG_THROW(task->isRegionSet(), storm::exceptions::NotSupportedException, "PLA requires an explicitly given region.");
@@ -229,7 +229,7 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
         storm::utility::Stopwatch watch(true);
         auto const& settings = storm::api::RefinementOptions<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
                                                                         engine, regionSplittingStrategy};
-        auto valueValuation = storm::api::computeExtremalValue<ValueType>(settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
+        auto valueValuation = storm::api::computeExtremalValue<ValueType>(env, settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
                                                                           !task->isMaxGapRelative(), task->getBound().getInvertedBound());
         watch.stop();
 
@@ -242,7 +242,7 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
         storm::utility::Stopwatch watch(true);
         auto const& settings = storm::api::RefinementOptions<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
                                                                         engine, regionSplittingStrategy};
-        auto valueValuation = storm::api::computeExtremalValue<ValueType>(settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
+        auto valueValuation = storm::api::computeExtremalValue<ValueType>(env, settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
                                                                           !task->isMaxGapRelative(), std::nullopt);
         watch.stop();
 
@@ -250,15 +250,15 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
     }
 }
 
-template void performFeasibility(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,
+template void performFeasibility(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,
                                  std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                                  boost::optional<std::set<RationalFunctionVariable>> omittedParameters, storm::api::MonotonicitySetting monotonicitySettings);
 
-template void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,
+template void runFeasibilityWithGD(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,
                                    std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                                    boost::optional<std::set<RationalFunctionVariable>> omittedParameters, storm::api::MonotonicitySetting monotonicitySettings);
 
-template void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model,
+template void runFeasibilityWithPLA(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model,
                                     std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                                     boost::optional<std::set<RationalFunctionVariable>> omittedParameters,
                                     storm::api::MonotonicitySetting monotonicitySettings);

@@ -42,13 +42,15 @@ class AssumptionMaker {
     /*!
      * Initializes the given number of sample points for a given model, formula and region.
      *
+     * @param env The environment used for checking the samples.
      * @param formula The formula to compute the samples for.
      * @param model The considered model.
      * @param region The region of the model's parameters.
      * @param numberOfSamples Number of sample points.
      */
-    void initializeCheckingOnSamples(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model,
-                                     storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
+    void initializeCheckingOnSamples(Environment const& env, std::shared_ptr<logic::Formula const> formula,
+                                     std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region,
+                                     uint_fast64_t numberOfSamples);
 
     /*!
      * Sets the sample values to the given vector.

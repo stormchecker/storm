@@ -10,6 +10,7 @@
 #include "storm-parsers/api/properties.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
+#include "storm/environment/Environment.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Model.h"
 
@@ -27,7 +28,7 @@ std::optional<storm::jani::Model> computeJaniCounterexample(std::string const& j
     options.setBuildChoiceOrigins(true);
     auto model = storm::api::buildSparseModel<double>(modelDescription, options);
 
-    auto counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(modelDescription, model, formula);
+    auto counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(storm::Environment(), modelDescription, model, formula);
     auto highLevelCounterexample = std::dynamic_pointer_cast<storm::counterexamples::HighLevelCounterexample>(counterexample);
     if (highLevelCounterexample != nullptr && highLevelCounterexample->isJaniHighLevelCounterexample()) {
         return highLevelCounterexample->getModelDescription().asJaniModel();

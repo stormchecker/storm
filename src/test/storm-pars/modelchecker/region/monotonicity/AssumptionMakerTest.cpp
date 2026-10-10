@@ -16,6 +16,7 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
+#include "storm/environment/Environment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -71,7 +72,7 @@ TEST_F(AssumptionMakerTest, Brp_without_bisimulation) {
         EXPECT_EQ(true, res.first->getSecondOperand()->isVariable());
     }
 
-    assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
+    assumptionMaker.initializeCheckingOnSamples(storm::Environment(), formulas[0], model, region, 10);
     result = assumptionMaker.createAndCheckAssumptions(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple), region);
     EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
@@ -118,7 +119,7 @@ TEST_F(AssumptionMakerTest, Simple1) {
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
     EXPECT_EQ(0ul, result.size());
-    assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
+    assumptionMaker.initializeCheckingOnSamples(storm::Environment(), formulas[0], model, region, 10);
     result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
     EXPECT_EQ(0ul, result.size());
 

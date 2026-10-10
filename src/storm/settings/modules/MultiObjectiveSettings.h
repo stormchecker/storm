@@ -42,6 +42,12 @@ class MultiObjectiveSettings : public ModuleSettings {
     double getPrecision() const;
 
     /**
+     * Retrieves whether the desired precision was set explicitly.
+     * @return true iff the desired precision was set explicitly.
+     */
+    bool isPrecisionSet() const;
+
+    /**
      * Retrieves whether the desired precision is considered to be absolute.
      */
     bool getPrecisionAbsolute() const;

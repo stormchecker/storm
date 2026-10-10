@@ -1,19 +1,14 @@
 #include "storm/environment/exploration/ExplorationEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/ExplorationSettings.h"
-
 namespace storm {
 
-ExplorationEnvironment::ExplorationEnvironment() {
-    auto const& explSettings = storm::settings::getModule<storm::settings::modules::ExplorationSettings>();
-    precomputationType = explSettings.getPrecomputationType();
-    stepsUntilPrecomputation = static_cast<uint64_t>(explSettings.getNumberOfExplorationStepsUntilPrecomputation());
-    if (explSettings.isNumberOfSampledPathsUntilPrecomputationSet()) {
-        sampledPathsUntilPrecomputation = explSettings.getNumberOfSampledPathsUntilPrecomputation();
-    }
-    nextStateHeuristic = explSettings.getNextStateHeuristic();
-    precision = explSettings.getPrecision();
+ExplorationEnvironment::ExplorationEnvironment()
+    : precomputationType(storm::modelchecker::exploration_detail::PrecomputationType::Global),
+      stepsUntilPrecomputation(100000),
+      sampledPathsUntilPrecomputation(std::nullopt),
+      nextStateHeuristic(storm::modelchecker::exploration_detail::NextStateHeuristic::DifferenceProbabilitySum),
+      precision(1e-06) {
+    // Intentionally left empty.
 }
 
 ExplorationEnvironment::~ExplorationEnvironment() {

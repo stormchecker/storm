@@ -32,7 +32,7 @@
 
 namespace storm::pars {
 template<typename ValueType>
-void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, cli::SymbolicInput const& input,
+void analyzeMonotonicity(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, cli::SymbolicInput const& input,
                          std::vector<storm::storage::ParameterRegion<ValueType>> const& regions) {
     std::ofstream outfile;
     auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
@@ -45,8 +45,8 @@ void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>
     STORM_LOG_THROW(regions.size() <= 1, storm::exceptions::InvalidArgumentException, "Monotonicity analysis only allowed on single region.");
     if (!monSettings.isMonSolutionSet()) {
         auto monotonicityHelper = storm::analysis::MonotonicityHelper<ValueType, double>(
-            model, formulas, regions, monSettings.getNumberOfSamples(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision(),
-            monSettings.isDotOutputSet());
+            env, model, formulas, regions, monSettings.getNumberOfSamples(),
+            storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision(), monSettings.isDotOutputSet());
         if (monSettings.isExportMonotonicitySet()) {
             monotonicityHelper.checkMonotonicityInBuild(outfile, monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
         } else {
@@ -66,7 +66,7 @@ void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>
         // Check the given set of regions with or without refinement
         verificationCallback = [&](std::shared_ptr<storm::logic::Formula const> const& formula) {
             std::unique_ptr<storm::modelchecker::CheckResult> result =
-                storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), preferEliminationChecker);
+                storm::api::verifyWithSparseEngine<ValueType>(env, model, storm::api::createTask<ValueType>(formula, true), preferEliminationChecker);
             return result;
         };
 
@@ -110,6 +110,6 @@ void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>
     STORM_PRINT("\nTotal time for monotonicity checking: " << monotonicityWatch << ".\n\n");
 }
 
-template void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model, cli::SymbolicInput const& input,
-                                  std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> const& regions);
+template void analyzeMonotonicity(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model,
+                                  cli::SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> const& regions);
 }  // namespace storm::pars

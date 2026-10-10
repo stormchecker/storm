@@ -76,6 +76,13 @@ class ExplorationSettings : public ModuleSettings {
      */
     double getPrecision() const;
 
+    /*!
+     * Retrieves whether the precision was set explicitly.
+     *
+     * @return true iff the precision was set explicitly.
+     */
+    bool isPrecisionSet() const;
+
     virtual bool check() const override;
 
     // The name of the module.

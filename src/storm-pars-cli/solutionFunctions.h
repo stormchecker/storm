@@ -8,6 +8,9 @@
 #include "storm/models/sparse/ModelForward.h"
 #include "storm/storage/dd/DdType.h"
 
+namespace storm {
+class Environment;
+}
 namespace storm::jani {
 class Property;
 }
@@ -34,10 +37,11 @@ void verifyProperties(
     std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const& postprocessingCallback);
 
 template<typename ValueType>
-void computeSolutionFunctionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::cli::SymbolicInput const& input);
+void computeSolutionFunctionsWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                              storm::cli::SymbolicInput const& input);
 
 template<storm::dd::DdType DdType, typename ValueType>
-void computeSolutionFunctionsWithSymbolicEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model,
+void computeSolutionFunctionsWithSymbolicEngine(storm::Environment const& env, std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model,
                                                 storm::cli::SymbolicInput const& input);
 
 extern template void verifyProperties<storm::RationalFunction>(
@@ -46,9 +50,10 @@ extern template void verifyProperties<storm::RationalFunction>(
     std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const&);
 
 extern template void computeSolutionFunctionsWithSparseEngine<storm::RationalFunction>(
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const&, storm::cli::SymbolicInput const&);
+    storm::Environment const&, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const&, storm::cli::SymbolicInput const&);
 
 extern template void computeSolutionFunctionsWithSymbolicEngine<storm::dd::DdType::Sylvan, storm::RationalFunction>(
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>> const&, storm::cli::SymbolicInput const&);
+    storm::Environment const&, std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>> const&,
+    storm::cli::SymbolicInput const&);
 
 }  // namespace storm::pars
