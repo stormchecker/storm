@@ -7,6 +7,9 @@
 // exprtk should be case sensitive in our case.
 #define exprtk_disable_caseinsensitivity
 
+// exprtk's template instantiations must not leak out of libstorm.
+#pragma GCC visibility push(hidden)
 #include "exprtk.hpp"
+#pragma GCC visibility pop
 
 #pragma clang diagnostic pop
