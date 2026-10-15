@@ -271,8 +271,6 @@ void EnvironmentBuilder::setDdEnvironment(storm::DdEnvironment& dd) {
         auto& cudd = dd.cudd();
         cudd.setConstantPrecision(cuddSettings.getConstantPrecision());
         cudd.setMaximalMemory(cuddSettings.getMaximalMemory());
-        cudd.setReorderingEnabled(cuddSettings.isReorderingEnabled());
-        cudd.setReorderingTechnique(cuddSettings.getReorderingTechnique());
     });
     applyIfRegistered<storm::settings::modules::SylvanSettings>([&](auto const& sylvanSettings) {
         auto& sylvan = dd.sylvan();
