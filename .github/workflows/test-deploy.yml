@@ -39,8 +39,17 @@ on:
 
 jobs:
   deploy:
-    name: Test and Deploy (${{ inputs.buildType }})
-    runs-on: ubuntu-latest
+    name: Test and Deploy (${{ inputs.buildType }}, ${{ matrix.platform.name }})
+    runs-on: ${{ matrix.platform.runner }}
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - {name: linux/amd64, suffix: amd64, runner: ubuntu-latest}
+          - {name: linux/arm64, suffix: arm64, runner: ubuntu-24.04-arm}
     env:
       NR_JOBS: ${{ inputs.nr_jobs }}
     steps:
@@ -93,16 +102,100 @@ jobs:
       - name: Restore build dir
         run: |
           docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
-      - name: Login into docker
+      - name: Login into GitHub Container Registry
         # Only login if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'stormchecker' && github.ref == 'refs/heads/master'
         uses: docker/login-action@v4
         with:
-          username: ${{ secrets.STORM_CI_DOCKER_USERNAME }}
-          password: ${{ secrets.STORM_CI_DOCKER_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Deploy storm
         # Only deploy if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'stormchecker' && github.ref == 'refs/heads/master'
         run: |
-          docker commit ci movesrwth/storm:${{ inputs.dockerTag }}
-          docker push movesrwth/storm:${{ inputs.dockerTag }}
+          # Per-commit images are staged on GHCR, tagged with the commit so concurrent master runs cannot overwrite each other
+          docker commit ci ghcr.io/stormchecker/storm:${{ inputs.dockerTag }}-${{ matrix.platform.suffix }}-${{ github.sha }}
+          docker push ghcr.io/stormchecker/storm:${{ inputs.dockerTag }}-${{ matrix.platform.suffix }}-${{ github.sha }}
+
+  merge:
+    name: Publish multi-arch image (${{ inputs.dockerTag }})
+    needs: deploy
+    # Only publish if using master on original repo (and not for pull requests or forks)
+    if: github.repository_owner == 'stormchecker' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    # Serialize promotion of the stable tag
+    concurrency:
+      group: storm-docker-promote-${{ inputs.dockerTag }}
+      cancel-in-progress: false
+    steps:
+      - name: Check that this commit is still the head of master
+        id: head
+        run: |
+          latest=$(git ls-remote "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" refs/heads/master | cut -f1)
+          if [ "$latest" = "${{ github.sha }}" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "A newer commit exists on master, not updating ${{ inputs.dockerTag }}"
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Login into GitHub Container Registry
+        if: steps.head.outputs.current == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login into Docker Hub
+        if: steps.head.outputs.current == 'true'
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.STORM_CI_DOCKER_USERNAME }}
+          password: ${{ secrets.STORM_CI_DOCKER_TOKEN }}
+      - name: Create multi-arch manifest and push
+        if: steps.head.outputs.current == 'true'
+        run: |
+          docker buildx imagetools create -t movesrwth/storm:${{ inputs.dockerTag }} \
+            ghcr.io/stormchecker/storm:${{ inputs.dockerTag }}-amd64-${{ github.sha }} \
+            ghcr.io/stormchecker/storm:${{ inputs.dockerTag }}-arm64-${{ github.sha }}
+      - name: Inspect image
+        if: steps.head.outputs.current == 'true'
+        run: docker buildx imagetools inspect movesrwth/storm:${{ inputs.dockerTag }}
+      - name: Delete per-commit images older than 7 days
+        # Cleanup must never fail the CI
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_PATTERN: ^${{ inputs.dockerTag }}-(amd64|arm64)-[0-9a-f]{40}$
+        run: |
+          python3 - <<'PY'
+          import json, os, re, urllib.request
+          from datetime import datetime, timedelta, timezone
+
+          URL = "https://api.github.com/orgs/stormchecker/packages/container/storm/versions"
+          HEADERS = {"Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                     "Accept": "application/vnd.github+json"}
+          pattern = re.compile(os.environ["TAG_PATTERN"])
+          cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+
+          def call(url, method="GET"):
+              req = urllib.request.Request(url, headers=HEADERS, method=method)
+              with urllib.request.urlopen(req) as resp:
+                  payload = resp.read()
+                  return json.loads(payload) if payload else None
+
+          page = 1
+          while True:
+              versions = call(f"{URL}?per_page=100&page={page}")
+              if not versions:
+                  break
+              for v in versions:
+                  tags = v["metadata"]["container"]["tags"]
+                  created = datetime.fromisoformat(v["created_at"].replace("Z", "+00:00"))
+                  if tags and all(pattern.match(t) for t in tags) and created < cutoff:
+                      print("Deleting", tags)
+                      call(f"{URL}/{v['id']}", "DELETE")
+              page += 1
+          PY

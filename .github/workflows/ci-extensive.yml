@@ -113,6 +113,9 @@ jobs:
           install: true
 
   deploy:
+    permissions:
+      contents: read
+      packages: write
     name: ${{ matrix.config.buildType }}
     strategy:
       fail-fast: false

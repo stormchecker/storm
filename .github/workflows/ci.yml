@@ -131,6 +131,9 @@ jobs:
   # Need to split deploy into two jobs
   # Otherwise the name is not correctly displayed when the job is skipped.
   deploy-debug:
+    permissions:
+      contents: read
+      packages: write
     name: Deploy (Debug)
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     uses: ./.github/workflows/test-deploy.yml
@@ -141,6 +144,9 @@ jobs:
     secrets: inherit
 
   deploy-release:
+    permissions:
+      contents: read
+      packages: write
     name: Deploy (Release)
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     uses: ./.github/workflows/test-deploy.yml
