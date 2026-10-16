@@ -53,6 +53,8 @@ FragmentSpecification pctlstar() {
     pctlstar.setNestedOperatorsAllowed(true);
     pctlstar.setNestedPathFormulasAllowed(true);
     pctlstar.setHOAPathFormulasAllowed(true);
+    pctlstar.setWeakUntilFormulasAllowed(true);
+    pctlstar.setReleaseFormulasAllowed(true);
 
     return pctlstar;
 }

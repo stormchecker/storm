@@ -155,6 +155,79 @@ TEST(FormulaParserTest, UntilOperatorTest) {
     EXPECT_EQ(3, nested5.asBoundedUntilFormula().getUpperBound().evaluateAsInt());
 }
 
+TEST(FormulaParserTest, WeakUntilOperatorTest) {
+    // API does not allow direct test of weak until, so we have to pack it in a probability operator.
+    storm::parser::FormulaParser formulaParser;
+
+    std::string input = "P<0.9 [\"a\" W \"b\"]";
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested1 = formula->asProbabilityOperatorFormula().getSubformula();
+    ASSERT_TRUE(nested1.isWeakUntilFormula());
+    EXPECT_FALSE(nested1.isUntilFormula());
+
+    // Nesting needs parentheses.
+    input = "P<0.9 [\"a\" W (\"b\" U \"c\")]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested2 = formula->asProbabilityOperatorFormula().getSubformula();
+    ASSERT_TRUE(nested2.isWeakUntilFormula());
+    EXPECT_TRUE(nested2.asBinaryPathFormula().getRightSubformula().isUntilFormula());
+
+    // Reject bounded weak until formula.
+    input = "P<0.9 [\"a\" W<=3 \"b\"]";
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+}
+
+TEST(FormulaParserTest, ReleaseOperatorTest) {
+    // API does not allow direct test of release, so we have to pack it in a probability operator.
+    storm::parser::FormulaParser formulaParser;
+
+    std::string input = "P<0.9 [\"a\" R \"b\"]";
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested1 = formula->asProbabilityOperatorFormula().getSubformula();
+    ASSERT_TRUE(nested1.isReleaseFormula());
+    EXPECT_FALSE(nested1.isUntilFormula());
+
+    // Nesting needs parentheses.
+    input = "P<0.9 [\"a\" R (\"b\" U \"c\")]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested2 = formula->asProbabilityOperatorFormula().getSubformula();
+    ASSERT_TRUE(nested2.isReleaseFormula());
+    EXPECT_TRUE(nested2.asBinaryPathFormula().getRightSubformula().isUntilFormula());
+
+    // Reject bounded release formula.
+    input = "P<0.9 [\"a\" R<=3 \"b\"]";
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+}
+
+TEST(FormulaParserTest, ReleaseVersusRewardOperatorTest) {
+    storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+
+    std::string input = "R=? [F \"a\"]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    EXPECT_TRUE(formula->isRewardOperatorFormula());
+
+    input = "R{\"rewardname\"}min=? [F \"a\"]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    EXPECT_TRUE(formula->isRewardOperatorFormula());
+
+    // A reward operator as the right operand of an until formula.
+    input = "P=? [\"a\" U R>=0.5 [F \"b\"]]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested1 = formula->asProbabilityOperatorFormula().getSubformula();
+    ASSERT_TRUE(nested1.isUntilFormula());
+    EXPECT_TRUE(nested1.asBinaryPathFormula().getRightSubformula().isRewardOperatorFormula());
+
+    // A reward operator as the right operand of an release formula.
+    input = "P=? [\"a\" R R>=0.5 [F \"b\"]]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested2 = formula->asProbabilityOperatorFormula().getSubformula();
+    ASSERT_TRUE(nested2.isReleaseFormula());
+    EXPECT_TRUE(nested2.asBinaryPathFormula().getRightSubformula().isRewardOperatorFormula());
+}
+
 TEST(FormulaParserTest, RewardOperatorTest) {
     storm::parser::FormulaParser formulaParser;
 
@@ -283,6 +356,18 @@ TEST(FormulaParserTest, WrongFormatTest) {
 
     input = "P<0.9 [\"a\" U \"b\" U \"c\"]";
     STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+
+    input = "P<0.9 [\"a\" W \"b\" W \"c\"]";
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+
+    input = "P<0.9 [\"a\" U \"b\" W \"c\"]";
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+
+    input = "P<0.9 [\"a\" R \"b\" U \"c\"]";
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+
+    input = "P<0.9 [(\"a\" W \"b\") W \"c\"]";
+    EXPECT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
 
     input = "P<0.9 [X \"a\" U G \"b\" U X \"c\"]";
     STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
