@@ -28,6 +28,8 @@ SolverEnvironment::SolverEnvironment() {
     smtSolverType = storm::solver::SmtSolverType::Z3;
 #elif defined STORM_DEFAULT_SMT_SOLVER_MATHSAT
     smtSolverType = storm::solver::SmtSolverType::Mathsat;
+#elif defined STORM_DEFAULT_SMT_SOLVER_CVC5
+    smtSolverType = storm::solver::SmtSolverType::Cvc5;
 #else
     smtSolverType = storm::solver::SmtSolverType::Z3;
 #endif

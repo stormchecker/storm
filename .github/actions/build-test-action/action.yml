@@ -104,6 +104,7 @@ runs:
         cmake -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
               -DSTORM_CARL_GIT_TAG="${{ env.CARL_TAG }}" \
               -DSTORM_DISABLE_CUDD=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DISABLE_CVC5=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
               -DSTORM_DISABLE_GLPK=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
               -DSTORM_DISABLE_GMM=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
               -DSTORM_DISABLE_GUROBI=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
