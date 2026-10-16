@@ -115,7 +115,6 @@ void processOptions() {
         janiOptions.addDeadlockProperties = exportSettings.isAddJaniPropertiesSet();
         janiOptions.janiConversionOptions = storm::settings::JaniConversionOptionsBuilder::buildJaniConversionOptions();
         janiOptions.compactJson = janiSettings.isCompactJsonSet();
-        janiOptions.smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>();
         storm::api::exportGspnToJani(*gspn, exportSettings.getWriteToJaniFilename(), janiOptions,
                                      [&](storm::builder::JaniGSPNBuilder const&) { return properties; });
     }

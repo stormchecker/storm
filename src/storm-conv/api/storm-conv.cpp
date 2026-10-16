@@ -62,10 +62,7 @@ void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Prope
     }
 
     if (options.flatten) {
-        if (!smtSolverFactory) {
-            smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
-        }
-        janiModel = janiModel.flattenComposition(smtSolverFactory);
+        janiModel = smtSolverFactory ? janiModel.flattenComposition(smtSolverFactory) : janiModel.flattenComposition();
     }
 
     if (!options.edgeAssignments) {

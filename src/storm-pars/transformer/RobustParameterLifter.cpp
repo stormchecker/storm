@@ -17,7 +17,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm/utility/Extremum.h"
@@ -190,8 +189,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
     RationalFunction function, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
     std::shared_ptr<storm::expressions::ExpressionManager> expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
 
-    utility::solver::Z3SmtSolverFactory factory;
-    auto smtSolver = factory.create(*expressionManager);
+    auto smtSolver = utility::solver::getSmtSolver(*expressionManager);
 
     expressions::RationalFunctionToExpression<storm::RationalFunction> rfte(expressionManager);
 
@@ -204,7 +202,8 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
         exprBounds = exprBounds && expressionManager->rational(0) <= var && var <= expressionManager->rational(1);
     }
 
-    smtSolver->setTimeout(50);
+    bool const timeoutSet = smtSolver->setTimeout(50);
+    STORM_LOG_WARN_COND(timeoutSet, "The SMT solver does not support timeouts, checking the region may take long.");
 
     smtSolver->add(exprBounds);
     smtSolver->add(expression);

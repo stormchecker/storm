@@ -8,13 +8,14 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 
-#include "storm/solver/Z3SmtSolver.h"
+#include "storm/solver/SmtSolver.h"
 
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 
 #include "storm/utility/constants.h"
+#include "storm/utility/solver.h"
 
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/region/monotonicity/Assumption.h"
