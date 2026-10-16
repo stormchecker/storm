@@ -6,6 +6,7 @@
 #include "storm/environment/solver/AllSolverEnvironments.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CertificationSettings.h"
 #include "storm/settings/modules/ConditionalSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/CuddSettings.h"
@@ -217,6 +218,14 @@ void EnvironmentBuilder::setModelcheckerEnvironment(storm::ModelCheckerEnvironme
         modelchecker.setSteadyStateDistributionAlgorithm(ioSettings.getSteadyStateDistributionAlgorithm());
         modelchecker.setExportCdf(ioSettings.isExportCdfSet());
         applyIfSet(ioSettings.isExportCdfSet(), [&]() { modelchecker.setExportCdfDirectory(ioSettings.getExportCdfDirectory()); });
+    });
+
+    applyIfRegistered<storm::settings::modules::CertificationSettings>([&](auto const& certificationSettings) {
+        auto& certificate = modelchecker.certificate();
+        certificate.setAlgorithm(certificationSettings.getAlgorithm());
+        certificate.setGamma(certificationSettings.getGamma());
+        certificate.setDelta(certificationSettings.getDelta());
+        certificate.setUseTopological(certificationSettings.isUseTopologicalSet());
     });
 
     applyIfRegistered<storm::settings::modules::ConditionalSettings>([&](auto const& conditionalSettings) {

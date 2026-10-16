@@ -1,5 +1,6 @@
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 
+#include "storm/environment/modelchecker/CertificateModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/ConditionalModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
@@ -22,6 +23,14 @@ ModelCheckerEnvironment::ModelCheckerEnvironment()
 
 ModelCheckerEnvironment::~ModelCheckerEnvironment() {
     // Intentionally left empty
+}
+
+CertificateModelCheckerEnvironment& ModelCheckerEnvironment::certificate() {
+    return certificateModelCheckerEnvironment.get();
+}
+
+CertificateModelCheckerEnvironment const& ModelCheckerEnvironment::certificate() const {
+    return certificateModelCheckerEnvironment.get();
 }
 
 ConditionalModelCheckerEnvironment& ModelCheckerEnvironment::conditional() {

@@ -11,9 +11,11 @@
 #include "storm-gamebased-ar/api/verification.h"
 #include "storm-parsers/parser/ExpressionParser.h"
 #include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/ExplicitCertificateCheckResult.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/settings/modules/AbstractionSettings.h"
+#include "storm/settings/modules/CertificationSettings.h"
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
@@ -179,6 +181,10 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
                 STORM_PRINT(".");
             }
         }
+    } else if (result->isExplicitCertificateCheckResult()) {
+        STORM_PRINT(*result);
+        STORM_LOG_WARN_COND(ft == storm::modelchecker::FilterType::VALUES,
+                            "\nIgnored non-default property filter " << storm::modelchecker::toString(ft) << " for certificate result.");
     } else {
         switch (ft) {
             case storm::modelchecker::FilterType::VALUES:
@@ -491,9 +497,10 @@ template<typename ValueType>
 void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& sparseModel, SymbolicInput const& input,
                  ModelProcessingInformation const& mpi) {
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+    bool const produceCertificate = storm::settings::getModule<storm::settings::modules::CertificationSettings>().isProduceCertificateSet();
     bool const preferEliminationChecker = storm::cli::preferEliminationChecker();
-    auto verificationCallback = [&sparseModel, &ioSettings, &mpi, preferEliminationChecker](std::shared_ptr<storm::logic::Formula const> const& formula,
-                                                                                            std::shared_ptr<storm::logic::Formula const> const& states) {
+    auto verificationCallback = [&sparseModel, &ioSettings, &mpi, preferEliminationChecker, produceCertificate](
+                                    std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
         auto createTask = [&ioSettings](auto const& f, bool onlyInitialStates) {
             if constexpr (storm::IsIntervalType<ValueType>) {
                 STORM_LOG_THROW(ioSettings.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
@@ -508,6 +515,9 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
         auto task = createTask(formula, filterForInitialStates);
         if (ioSettings.isExportSchedulerSet()) {
             task.setProduceSchedulers(true);
+        }
+        if (produceCertificate) {
+            task.setProduceCertificate(true);
         }
         std::unique_ptr<storm::modelchecker::CheckResult> result =
             storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, task, preferEliminationChecker);
@@ -526,6 +536,17 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
     };
     uint64_t exportCount = 0;  // this number will be prepended to the export file name of schedulers and/or check results in case of multiple properties.
     auto postprocessingCallback = [&sparseModel, &ioSettings, &input, &exportCount](std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
+        // Certificate validity check
+        if (result->isExplicitCertificateCheckResult()) {
+            if constexpr (storm::modelchecker::SupportsCertificates<ValueType>) {
+                STORM_PRINT_AND_LOG("Certificate validity check ... ");
+                storm::utility::Stopwatch chkValid(true);
+                bool const valid = result->template asExplicitCertificateCheckResult<ValueType>().checkValidity(*sparseModel);
+                chkValid.stop();
+                STORM_PRINT_AND_LOG((valid ? "valid" : "invalid") << " (time: " << chkValid << ")\n");
+            }
+        }
+
         // Scheduler export
         STORM_LOG_WARN_COND(!ioSettings.isExportSchedulerSet() || result->hasScheduler(), "Scheduler requested but could not be generated.");
         if (ioSettings.isExportSchedulerSet() && result->hasScheduler()) {

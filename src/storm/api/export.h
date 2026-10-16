@@ -7,7 +7,9 @@
 #include "storm/io/DDEncodingExporter.h"
 #include "storm/io/DirectEncodingExporter.h"
 #include "storm/io/file.h"
+#include "storm/modelchecker/certificates/Certificate.h"
 #include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/ExplicitCertificateCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/storage/Scheduler.h"
@@ -132,11 +134,18 @@ inline void exportCheckResultToJson(std::shared_ptr<storm::models::sparse::Model
         auto j = checkResult->template asExplicitQualitativeCheckResult<ValueType>().template toJson<storm::RationalNumber>(model->getOptionalStateValuations(),
                                                                                                                             model->getStateLabeling());
         stream << storm::dumpJson(j);
-    } else {
-        STORM_LOG_THROW(checkResult->isExplicitQuantitativeCheckResult(), storm::exceptions::NotSupportedException,
-                        "Export of check results is only supported for explicit check results (e.g. in the sparse engine).");
+    } else if (checkResult->isExplicitQuantitativeCheckResult()) {
         auto j = checkResult->template asExplicitQuantitativeCheckResult<ValueType>().toJson(model->getOptionalStateValuations(), model->getStateLabeling());
         stream << storm::dumpJson(j);
+    } else {
+        STORM_LOG_THROW(checkResult->isExplicitCertificateCheckResult(), storm::exceptions::NotSupportedException,
+                        "Export of check results is only supported for explicit check results and certificates (e.g. in the sparse engine).");
+        if constexpr (storm::modelchecker::SupportsCertificates<ValueType>) {
+            auto j = checkResult->template asExplicitCertificateCheckResult<ValueType>().getCertificate().toJson();
+            stream << storm::dumpJson(j);
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export of certificates is not supported for this value type.");
+        }
     }
     storm::io::closeFile(stream);
 }

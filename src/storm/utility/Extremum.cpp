@@ -127,6 +127,8 @@ void Extremum<Dir, ValueType>::reset() {
     extremalValue = baseValue();
 }
 
+template class Extremum<storm::OptimizationDirection::Minimize, uint64_t>;
+template class Extremum<storm::OptimizationDirection::Maximize, uint64_t>;
 template class Extremum<storm::OptimizationDirection::Minimize, double>;
 template class Extremum<storm::OptimizationDirection::Maximize, double>;
 

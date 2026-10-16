@@ -21,6 +21,7 @@ template class SubEnvironment<SylvanDdManagerEnvironment>;
 template class SubEnvironment<ExplorationEnvironment>;
 
 template class SubEnvironment<ModelCheckerEnvironment>;
+template class SubEnvironment<CertificateModelCheckerEnvironment>;
 template class SubEnvironment<ConditionalModelCheckerEnvironment>;
 template class SubEnvironment<MultiObjectiveModelCheckerEnvironment>;
 
