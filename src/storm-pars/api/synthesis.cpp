@@ -160,8 +160,9 @@ Result<double> checkFeasibilityImpl(storm::Environment const& env, std::shared_p
                 STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException,
                                 "Gradient descent supports DTMCs only.");
                 auto const [consideredRegion, graphStatus] = resolveRegion(*model, region, regionBound, true);
+                auto const& gdRegion = consideredRegion;
                 if (std::all_of(consideredRegion.getVariables().begin(), consideredRegion.getVariables().end(),
-                                [&](auto const& variable) { return storm::utility::isZero(consideredRegion.getDifference(variable)); })) {
+                                [&gdRegion](auto const& variable) { return storm::utility::isZero(gdRegion.getDifference(variable)); })) {
                     auto valuation = consideredRegion.getCenterPoint();
                     storm::modelchecker::SparseDtmcInstantiationModelChecker<Dtmc, double> checker(env, *model->as<Dtmc>());
                     checker.specifyFormula(createTask<storm::RationalFunction>(quantitativeFormula(*model, *formula), true));
