@@ -237,8 +237,8 @@ TEST(RegionConstraintCheckerTest, MissingVariableIsRejected) {
 }
 
 TEST(RegionConstraintCheckerTest, RealModelConstraintsAreDecidedExactly) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::clearRFVariablePool();
 
@@ -290,8 +290,8 @@ TEST(RegionConstraintCheckerTest, RealModelConstraintsAreDecidedExactly) {
 }
 
 TEST(RegionConstraintCheckerTest, NonAffineModelConstraintsAreNeverClaimedToHold) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::clearRFVariablePool();
 

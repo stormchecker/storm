@@ -125,7 +125,7 @@ ValueType checkFormula(std::shared_ptr<storm::models::sparse::Model<ValueType>> 
 
 /*!
  * The model built from the given PRISM file together with the formulas that the minimization has to preserve.
- * @note building from a PRISM program requires an SMT solver, so callers have to guard with STORM_HAVE_Z3.
+ * @note building from a PRISM program requires an SMT solver, so callers have to guard with STORM_HAVE_SMT_SOLVER.
  */
 template<typename ValueType>
 struct PrismInput {

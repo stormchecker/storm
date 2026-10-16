@@ -492,8 +492,8 @@ TEST(WeakBisimulationTest, RandomCtmcs) {
  */
 void testAgainstOriginal(std::string const& prismFile, std::string const& formulaString, uint64_t expectedModelStates, uint64_t expectedStrongStates,
                          uint64_t expectedWeakStates, uint64_t expectedWeakTransitions, BuildOptions const& buildOptions = {}, double const tolerance = 0.0) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     auto const [model, formulas] = buildFromPrism<ValueType>(prismFile, formulaString, buildOptions);
     ASSERT_EQ(expectedModelStates, model->getNumberOfStates());

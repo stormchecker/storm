@@ -261,8 +261,8 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
     LraCtmcCslModelCheckerTest() : _environment(TestType::createEnvironment()) {}
 
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
         if constexpr (TestType::engine == CtmcEngine::JaniHybrid) {
             TestType::checkLibraryAvailable();

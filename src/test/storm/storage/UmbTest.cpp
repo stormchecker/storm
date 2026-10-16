@@ -156,8 +156,8 @@ class UmbRoundTripTest : public ::testing::Test {
     }
 
     virtual void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
 #ifndef STORM_HAVE_LIBARCHIVE
         GTEST_SKIP() << "LibArchive not available.";

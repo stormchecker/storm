@@ -475,7 +475,7 @@ TEST(FormulaParserTest, ComplexPathFormulaTest) {
 }
 
 TEST(FormulaParserTest, HOAPathFormulaTest) {
-#if !defined(STORM_HAVE_Z3) && !defined(STORM_HAVE_MATHSAT) && !defined(STORM_HAVE_CVC5)
+#ifndef STORM_HAVE_SMT_SOLVER
     GTEST_SKIP() << "Parsing an HOA path formula requires an SMT solver.";
 #endif
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());

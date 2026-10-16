@@ -8,8 +8,8 @@
 #include "storm/transformer/AddUncertainty.h"
 
 TEST(AddUncertaintyTransformerTest, BrpTest) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm");
     std::string formulasString = "P=? [ F \"target\"]";
@@ -24,8 +24,8 @@ TEST(AddUncertaintyTransformerTest, BrpTest) {
 }
 
 TEST(AddUncertaintyTransformerTest, Coin22Test) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm");
     std::string formulasString = "Pmax=? [ F \"all_coins_equal_1\"]";
@@ -40,8 +40,8 @@ TEST(AddUncertaintyTransformerTest, Coin22Test) {
 }
 
 TEST(AddUncertaintyTransformerTest, BrpTestRational) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm");
     std::string formulasString = "P=? [ F \"target\"]";
@@ -56,8 +56,8 @@ TEST(AddUncertaintyTransformerTest, BrpTestRational) {
 }
 
 TEST(AddUncertaintyTransformerTest, Coin22TestRational) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm");
     std::string formulasString = "Pmax=? [ F \"all_coins_equal_1\"]";

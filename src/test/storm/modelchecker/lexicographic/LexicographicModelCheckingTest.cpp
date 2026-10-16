@@ -10,8 +10,8 @@
 #include "storm/modelchecker/results/LexicographicCheckResult.h"
 
 TEST(LexicographicModelCheckingTest, prob_sched1) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
 #ifndef STORM_HAVE_SPOT
     GTEST_SKIP() << "Spot not available.";
@@ -46,8 +46,8 @@ TEST(LexicographicModelCheckingTest, prob_sched1) {
 }
 
 TEST(LexicographicModelCheckingTest, prob_sched2) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
 #ifndef STORM_HAVE_SPOT
     GTEST_SKIP() << "Spot not available.";

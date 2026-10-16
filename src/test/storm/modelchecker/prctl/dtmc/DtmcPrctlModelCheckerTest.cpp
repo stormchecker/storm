@@ -527,8 +527,8 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
     DtmcPrctlModelCheckerTest() : _environment(TestType::createEnvironment()) {}
 
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
         if constexpr (TestType::engine == DtmcEngine::Hybrid || TestType::engine == DtmcEngine::PrismDd || TestType::engine == DtmcEngine::JaniDd) {
             TestType::checkLibraryAvailable();
@@ -833,8 +833,8 @@ TEST(DtmcPrctlModelCheckerTest, BoundedReachability) {
 }
 
 TEST(DtmcPrctlModelCheckerTest, AllUntilProbabilities) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     std::string formulasString = "P=? [F \"one\"]";
     formulasString += "; P=? [F \"two\"]";

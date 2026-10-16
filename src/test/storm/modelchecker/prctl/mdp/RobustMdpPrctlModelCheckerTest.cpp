@@ -228,8 +228,8 @@ void checkModelRational(std::string const& path, std::string const& formulaStrin
 }
 
 TEST(RobustMdpModelCheckerTest, RobotMinMaxTest) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     // Maxima reachability rewards using PRISM format.
     checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/imdp/robot.prism",
@@ -507,16 +507,16 @@ TEST(RobustRationalMDPModelCheckingTest, Tiny05maxmin) {
 }
 
 TEST(RobustMDPModelCheckingTest, AddUncertaintyCoin22max) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     makeUncertainAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", 0.1);
     makeUncertainAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", 0.2);
 }
 
 TEST(RobustRationalMDPModelCheckingTest, AddUncertaintyCoin22max) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", storm::RationalNumber("1/10"));
     makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", storm::RationalNumber("1/5"));

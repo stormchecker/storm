@@ -16,8 +16,8 @@
 #include "storm/storage/valuations/ValuationsStorage.h"
 
 TEST(ValuationTest, StateValuationConstruction) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::generator::NextStateGeneratorOptions generatorOptions;
@@ -65,8 +65,8 @@ TEST(ValuationTest, StateValuationConstruction) {
 }
 
 TEST(ValuationTest, StateValuationTransformation) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::generator::NextStateGeneratorOptions generatorOptions;

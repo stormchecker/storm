@@ -51,8 +51,8 @@ void checkChoiceMapping(storm::models::sparse::Model<ValueType> const& model, st
  */
 void testQuotient(std::string const& prismFile, std::string const& formulaString, uint64_t expectedModelStates, uint64_t expectedStates,
                   uint64_t expectedTransitions, uint64_t expectedChoices, Options const options = strongOptions(), BuildOptions buildOptions = {}) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     if (options.stateLabelPreservation == StateLabelPreservation::All) {
         buildOptions.allLabels = true;
@@ -612,8 +612,8 @@ TEST(StrongBisimulationTest, DiePropositionalSubformulas) {
  * The quotient carries the state valuations of the representative states.
  */
 TEST(StrongBisimulationTest, DieStateValuations) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     auto const input = buildFromPrism<ValueType>(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm", "P=? [F \"one\"]", {.stateValuations = true});
     ASSERT_TRUE(input.model->hasStateValuations());
@@ -666,8 +666,8 @@ TEST(StrongBisimulationTest, DtmcBrpChoiceLabelsAndOrigins) {
  * computed partition depended on the order in which the states happened to be stored, cf. the PermutationInvariance tests.
  */
 TEST(StrongBisimulationTest, CtmcEmbeddedExact) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     std::string const formulaString = "P=? [F<=10000 \"down\"]";
     auto const exactInput = buildFromPrism<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", formulaString, {.allLabels = true});
@@ -694,8 +694,8 @@ TEST(StrongBisimulationTest, CtmcEmbeddedExact) {
  * the one that the command line uses by default, the quotient coincides with the exact one computed in CtmcEmbeddedExact.
  */
 TEST(StrongBisimulationTest, CtmcEmbeddedWithTolerance) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     std::string const formulaString = "P=? [F<=10000 \"down\"]";
     auto const input = buildFromPrism<double>(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", formulaString, {.allLabels = true});
@@ -729,8 +729,8 @@ TEST(StrongBisimulationTest, MdpCoin) {
  * collapse the model.
  */
 TEST(StrongBisimulationTest, MdpCoinQuotientIsNotMeasureDriven) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     std::string const formulaString = "Pmax=? [F \"finished\"]";
     auto const input = buildFromPrism<ValueType>(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", formulaString);
@@ -785,8 +785,8 @@ TEST(StrongBisimulationTest, MdpCoinApproximative) {
  */
 template<typename VT>
 void testRefinementStrategiesAgree(std::string const& prismFile, std::string const& formulaString) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     auto const input = buildFromPrism<VT>(prismFile, formulaString);
 
@@ -822,8 +822,8 @@ TEST(StrongBisimulationTest, RefinementStrategiesAgreeOnCtmc) {
  * On a model whose transition values are exactly representable as doubles, the approximate computation has to yield the same quotient as the exact one.
  */
 void testExactAgreesWithApproximate(std::string const& prismFile, std::string const& formulaString) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     auto const doubleInput = buildFromPrism<double>(prismFile, formulaString);
     auto const exactInput = buildFromPrism<storm::RationalNumber>(prismFile, formulaString);
@@ -852,8 +852,8 @@ TEST(StrongBisimulationTest, ExactAgreesWithApproximateOnTwoDice) {
  */
 template<typename VT>
 void testPermutationInvariance(std::string const& prismFile, std::string const& formulaString, uint64_t const numSeeds, Options options = strongOptions()) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     options.stateLabelPreservation = StateLabelPreservation::All;
     auto const input = buildFromPrism<VT>(prismFile, formulaString, {.allLabels = true});

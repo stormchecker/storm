@@ -305,16 +305,16 @@ TEST(RobustDtmcModelCheckerTest, Tiny02GloballyMaxMinProbs) {
 }
 
 TEST(RobustDtmcModelCheckerTest, DieIntervalsMaxMin) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     // Maxima reachability probabilities using PRISM format.
     checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "P=? [ F \"one\"];P=? [ F \"one\"]", 9.0 / 189.0, 72.0 / 189.0);
 }
 
 TEST(RobustDtmcModelCheckerTest, BrpIntervalsMaxMin) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     // Maxima reachability probabilities using PRISM format.
     checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/brp-32-2-intervals.pm", "P=? [ F \"error\" ];P=? [ F \"error\" ]",
@@ -322,8 +322,8 @@ TEST(RobustDtmcModelCheckerTest, BrpIntervalsMaxMin) {
 }
 
 TEST(RobustDtmcModelCheckerTest, DieIntervalsMaxMinRewards) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     // Maxima reachability rewards using PRISM format.
     checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "R=? [ F \"done\"];R=? [ F \"done\"]", 3.25, 4.6);
@@ -489,16 +489,16 @@ TEST(RobustRationalDtmcModelCheckerTest, Tiny02GloballyMaxMinProbs) {
 }
 
 TEST(RobustRationalDtmcModelCheckerTest, DieIntervalsMaxMin) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     checkPrismModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "P=? [ F \"one\"];P=? [ F \"one\"]",
                                                  storm::RationalNumber("4483008223/94143178827"), storm::RationalNumber("35864065784/94143178827"));
 }
 
 TEST(RobustRationalDtmcModelCheckerTest, BrpIntervalsMaxMin) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     checkPrismModelForQuantitativeResultRational(
         STORM_TEST_RESOURCES_DIR "/idtmc/brp-32-2-intervals.pm", "P=? [ F \"error\" ];P=? [ F \"error\" ]",
@@ -518,8 +518,8 @@ TEST(RobustRationalDtmcModelCheckerTest, BrpIntervalsMaxMin) {
 }
 
 TEST(RobustRationalDtmcModelCheckerTest, DieIntervalsMaxMinRewards) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     checkPrismModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "R=? [ F \"done\"];R=? [ F \"done\"]",
                                                  storm::RationalNumber("15544649/4782969"), storm::RationalNumber("76715008330675523/16677181699666569"));
@@ -563,8 +563,8 @@ TEST(RobustRationalDtmcModelCheckerTest, ReachabilityTimes) {
 }
 
 TEST(RobustRationalDtmcModelCheckerTest, AddUncertaintyBrpMax) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", storm::RationalNumber("1/10"));
     makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", storm::RationalNumber("1/20"));
