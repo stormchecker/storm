@@ -5,6 +5,7 @@
 
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -23,6 +24,9 @@ namespace solver {
 namespace {
 
 constexpr double highInfinity = std::numeric_limits<double>::infinity();
+
+// LP solvers cannot represent strict inequalities. As for GLPK and Gurobi, they are approximated by shifting the right-hand side by this margin.
+constexpr double strictInequalityMargin = 1e-06;
 
 struct HighsConstraintData {
     std::vector<HighsInt> variableIndices;
@@ -62,6 +66,13 @@ HighsConstraintData createConstraintData(typename HighsLpSolver<ValueType, RawMo
             result.variableIndices.push_back(static_cast<HighsInt>(variableIndexPair->second));
             result.coefficients.push_back(storm::utility::convertNumber<double>(variableCoefficientPair.second));
         }
+    }
+    if (result.relationType == storm::expressions::RelationType::Less) {
+        result.relationType = storm::expressions::RelationType::LessOrEqual;
+        result.rhs -= strictInequalityMargin;
+    } else if (result.relationType == storm::expressions::RelationType::Greater) {
+        result.relationType = storm::expressions::RelationType::GreaterOrEqual;
+        result.rhs += strictInequalityMargin;
     }
     return result;
 }
@@ -149,10 +160,6 @@ void HighsLpSolver<ValueType, RawMode>::addConstraint(std::string const&, Constr
 
     double lower, upper;
     switch (constraintData.relationType) {
-        case storm::expressions::RelationType::Less:
-        case storm::expressions::RelationType::Greater:
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "HiGHS only supports nonstrict inequalities.");
-            break;
         case storm::expressions::RelationType::LessOrEqual:
             lower = -highInfinity;
             upper = constraintData.rhs;
@@ -183,9 +190,6 @@ void HighsLpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const
         STORM_LOG_ASSERT(constraint.getManager() == this->getManager(), "Constraint was not built over the proper variables.");
 
         auto constraintData = createConstraintData<ValueType, RawMode>(constraint, this->variableToIndexMap);
-        if (constraintData.relationType == storm::expressions::RelationType::Less || constraintData.relationType == storm::expressions::RelationType::Greater) {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "HiGHS only supports nonstrict inequalities.");
-        }
 
         // HiGHS does not support indicator constraints natively. Instead, we apply a big-M reformulation that reuses the binary indicator variable.
         // To this end, we compute bounds on the activity of the constraint's linear expression over the box given by the variable bounds.
@@ -363,12 +367,50 @@ void HighsLpSolver<ValueType, RawMode>::writeModelToFile(std::string const& file
 
 template<typename ValueType, bool RawMode>
 void HighsLpSolver<ValueType, RawMode>::push() {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Push/Pop not supported for HiGHS.");
+    if constexpr (RawMode) {
+        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Incremental LP solving not supported in raw mode.");
+    } else {
+        IncrementalLevel lvl;
+        lvl.firstRowIndex = highs.getNumRow();
+        lvl.firstVariableIndex = nextVariableIndex;
+        incrementalData.push_back(lvl);
+    }
 }
 
 template<typename ValueType, bool RawMode>
 void HighsLpSolver<ValueType, RawMode>::pop() {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Push/Pop not supported for HiGHS.");
+    if constexpr (RawMode) {
+        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Incremental LP solving not supported in raw mode.");
+    } else {
+        if (incrementalData.empty()) {
+            STORM_LOG_ERROR("Tried to pop from a solver without pushing before.");
+            return;
+        }
+        IncrementalLevel const lvl = incrementalData.back();
+        incrementalData.pop_back();
+        this->currentModelHasBeenOptimized = false;
+        // Remove the rows (including those encoding indicator constraints) added since the matching push.
+        // Rows must be removed before columns, as removing columns would otherwise shrink rows that refer to them.
+        HighsInt const numRows = highs.getNumRow();
+        if (numRows > lvl.firstRowIndex) {
+            HighsStatus status = highs.deleteRows(lvl.firstRowIndex, numRows - 1);
+            STORM_LOG_THROW(status != HighsStatus::kError, storm::exceptions::InvalidStateException, "Unable to delete constraints from HiGHS model.");
+        }
+        // Remove the variables added since the matching push.
+        if (nextVariableIndex > lvl.firstVariableIndex) {
+            HighsStatus status = highs.deleteCols(static_cast<HighsInt>(lvl.firstVariableIndex), static_cast<HighsInt>(nextVariableIndex - 1));
+            STORM_LOG_THROW(status != HighsStatus::kError, storm::exceptions::InvalidStateException, "Unable to delete variables from HiGHS model.");
+            for (auto it = variableToIndexMap.begin(); it != variableToIndexMap.end();) {
+                if (it->second >= lvl.firstVariableIndex) {
+                    it = variableToIndexMap.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+            variableBounds.resize(lvl.firstVariableIndex);
+            nextVariableIndex = lvl.firstVariableIndex;
+        }
+    }
 }
 
 template<typename ValueType, bool RawMode>

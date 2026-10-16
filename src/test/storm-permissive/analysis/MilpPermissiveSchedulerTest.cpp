@@ -13,12 +13,10 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
-#ifdef STORM_HAVE_GUROBI
+// The default LP solver (HiGHS, GLPK or Z3) must support MILP; SoPlex does not.
+#if defined STORM_HAVE_HIGHS || defined STORM_HAVE_GLPK || defined STORM_HAVE_Z3
 
 TEST(MilpPermissiveSchedulerTest, DieSelection) {
-    if (storm::test::noGurobi) {
-        GTEST_SKIP();
-    }
     storm::Environment env;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/die_c1.nm");

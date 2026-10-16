@@ -113,6 +113,13 @@ class HighsLpSolver : public LpSolver<ValueType, RawMode> {
     // This is used to compute big-M coefficients for indicator constraints.
     std::vector<std::pair<double, double>> variableBounds;
 
+    // Bookkeeping for push/pop: the sizes of the model when the corresponding push was called.
+    struct IncrementalLevel {
+        HighsInt firstRowIndex;
+        uint64_t firstVariableIndex;
+    };
+    std::vector<IncrementalLevel> incrementalData;
+
     // The model status after the last call to optimize().
     mutable HighsModelStatus modelStatus;
 #endif
