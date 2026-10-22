@@ -14,6 +14,7 @@
 #include "storm/solver/SolveGoal.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/transformer/zeroWeight/GlobalZeroWeightActionTransformer.h"
 #include "storm/transformer/zeroWeight/LocalZeroWeightActionEliminator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
@@ -150,6 +151,36 @@ void validateRewardAlmostSureReachability(storm::storage::SparseMatrix<ValueType
                     "CVaR SSP reward preprocessing currently requires all reachable states to reach a goal almost surely under all schedulers.");
 }
 
+/*!
+ * Applies a zero-weight transformation while keeping choice values aligned with matrix rows.
+ *
+ * @param env LP solver settings used by global collapse.
+ * @param transformation Selected mode; disabled leaves the inputs unchanged.
+ * @param transitionMatrix Input and output matrix.
+ * @param choiceValues Input and output per-row costs or rewards.
+ * @param targetStates Input and output target states.
+ * @param initialStates Input and output initial states.
+ */
+template<typename ValueType>
+void applyZeroWeightTransformation(Environment const& env, ZeroWeightTransformation transformation, storm::storage::SparseMatrix<ValueType>& transitionMatrix,
+                                   std::vector<ValueType>& choiceValues, storm::storage::BitVector& targetStates, storm::storage::BitVector& initialStates) {
+    if (transformation == ZeroWeightTransformation::GlobalCollapse) {
+        auto result =
+            storm::transformer::GlobalZeroWeightActionTransformer<ValueType>::collapse(env, transitionMatrix, choiceValues, targetStates, initialStates);
+        transitionMatrix = std::move(result.transitionMatrix);
+        choiceValues = std::move(result.actionWeights);
+        targetStates = std::move(result.targetStates);
+        initialStates = std::move(result.initialStates);
+    } else if (transformation == ZeroWeightTransformation::LocalElimination) {
+        auto result = storm::transformer::LocalZeroWeightActionEliminator<ValueType>::eliminate(transitionMatrix, choiceValues, targetStates, initialStates);
+        transitionMatrix = std::move(result.transitionMatrix);
+        choiceValues = std::move(result.actionWeights);
+        targetStates = std::move(result.targetStates);
+        initialStates = std::move(result.initialStates);
+    }
+    STORM_LOG_ASSERT(choiceValues.size() == transitionMatrix.getRowCount(), "Expected one value per transformed choice row.");
+}
+
 template<typename SparseMdpModelType>
 SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSspCvar(Environment const& env, SparseMdpModelType const& model,
                                                                                      CvarQueryInformation const& queryInformation,
@@ -182,16 +213,7 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
     auto choiceCosts = extractChoiceCostsForSsp(model, rewardModel, transformedTargetStates);
 
     auto const zeroWeightTransformation = env.modelchecker().cvar().getZeroWeightTransformation();
-    STORM_LOG_THROW(zeroWeightTransformation != ZeroWeightTransformation::GlobalCollapse, storm::exceptions::NotImplementedException,
-                    "Global zero-weight collapse for CVaR SSP preprocessing is not implemented yet.");
-    if (zeroWeightTransformation == ZeroWeightTransformation::LocalElimination) {
-        auto transformationResult = storm::transformer::LocalZeroWeightActionEliminator<ValueType>::eliminate(
-            transitionMatrix, choiceCosts, transformedTargetStates, transformedInitialStates);
-        transitionMatrix = std::move(transformationResult.transitionMatrix);
-        choiceCosts = std::move(transformationResult.actionWeights);
-        transformedTargetStates = std::move(transformationResult.targetStates);
-        transformedInitialStates = std::move(transformationResult.initialStates);
-    }
+    applyZeroWeightTransformation(env, zeroWeightTransformation, transitionMatrix, choiceCosts, transformedTargetStates, transformedInitialStates);
 
     auto backwardTransitions = transitionMatrix.transpose(true);
     auto reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, transformedInitialStates,
@@ -240,8 +262,6 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
 
     STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotImplementedException,
                     "CVaR SSP preprocessing does not support transition rewards.");
-    STORM_LOG_THROW(env.modelchecker().cvar().getZeroWeightTransformation() == ZeroWeightTransformation::Disabled, storm::exceptions::NotImplementedException,
-                    "CVaR SSP reward preprocessing does not support zero-weight transformations.");
 
     bool liftedStateRewardsToChoiceCosts = rewardModel.hasStateRewards() && !rewardModel.hasStateActionRewards();
     if (liftedStateRewardsToChoiceCosts) {
@@ -249,22 +269,32 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
     }
 
     auto transitionMatrix = model.getTransitionMatrix();
-    bool normalizedTargetStatesToAbsorbing = normalizeTargetStatesToAbsorbing(transitionMatrix, targetStates);
+    auto transformedTargetStates = targetStates;
+    auto transformedInitialStates = model.getInitialStates();
+    bool normalizedTargetStatesToAbsorbing = normalizeTargetStatesToAbsorbing(transitionMatrix, transformedTargetStates);
+    auto choiceRewards = extractChoiceCostsForSsp(model, rewardModel, transformedTargetStates);
+
+    auto const zeroWeightTransformation = env.modelchecker().cvar().getZeroWeightTransformation();
+    applyZeroWeightTransformation(env, zeroWeightTransformation, transitionMatrix, choiceRewards, transformedTargetStates, transformedInitialStates);
+
     auto backwardTransitions = transitionMatrix.transpose(true);
-    auto reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, model.getInitialStates(),
+    auto reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, transformedInitialStates,
                                                                      storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true),
                                                                      storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false));
 
-    uint64_t const initialState = *model.getInitialStates().begin();
-    validateRewardAlmostSureReachability(transitionMatrix, backwardTransitions, targetStates, reachableStates);
+    uint64_t const initialState = *transformedInitialStates.begin();
+    validateRewardAlmostSureReachability(transitionMatrix, backwardTransitions, transformedTargetStates, reachableStates);
 
-    auto choiceRewards = extractChoiceCostsForSsp(model, rewardModel, targetStates);
-    validatePositiveChoiceCostsOutsideGoals(transitionMatrix, targetStates, choiceRewards, "choice rewards");
-    uint64_t maximalChoiceReward = validateAndComputeMaximalChoiceCostOutsideGoals(transitionMatrix, targetStates, choiceRewards, "choice rewards");
+    if (zeroWeightTransformation == ZeroWeightTransformation::Disabled) {
+        validatePositiveChoiceCostsOutsideGoals(transitionMatrix, transformedTargetStates, choiceRewards, "choice rewards");
+    } else {
+        validatePositiveChoiceCostsOutsideGoals(transitionMatrix, transformedTargetStates, choiceRewards, reachableStates, "choice rewards");
+    }
+    uint64_t maximalChoiceReward = validateAndComputeMaximalChoiceCostOutsideGoals(transitionMatrix, transformedTargetStates, choiceRewards, "choice rewards");
 
     return {rewardModelName,
             initialState,
-            targetStates,
+            std::move(transformedTargetStates),
             std::move(reachableStates),
             liftedStateRewardsToChoiceCosts,
             normalizedTargetStatesToAbsorbing,

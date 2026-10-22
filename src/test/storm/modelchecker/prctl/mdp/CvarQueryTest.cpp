@@ -20,8 +20,10 @@
 #include "storm/modelchecker/cvar/CvarMethod.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/modelchecker/cvar/ZeroWeightTransformation.h"
+#include "storm/modelchecker/cvar/helper/SparseCvarComputationHelper.h"
 #include "storm/modelchecker/cvar/helper/SspParetoFront.h"
 #include "storm/modelchecker/cvar/helper/SspParetoValueIterationOperator.h"
+#include "storm/modelchecker/cvar/helper/SspZeroWeightComponentLpSolver.h"
 #include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessingResult.h"
 #include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessor.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
@@ -145,25 +147,31 @@ storm::modelchecker::cvar::preprocessing::SspCvarPreprocessingResult<double> bui
     return result;
 }
 
-storm::models::sparse::Mdp<double> buildZeroWeightSspMdp() {
-    storm::storage::SparseMatrixBuilder<double> builder(5, 4, 5, true, true, 4);
+template<typename ValueType>
+storm::models::sparse::Mdp<ValueType> buildZeroWeightSspMdp() {
+    storm::storage::SparseMatrixBuilder<ValueType> builder(5, 4, 5, true, true, 4);
     builder.newRowGroup(0);
-    builder.addNextValue(0, 1, 1.0);
+    builder.addNextValue(0, 1, storm::utility::one<ValueType>());
     builder.newRowGroup(1);
-    builder.addNextValue(1, 2, 1.0);
+    builder.addNextValue(1, 2, storm::utility::one<ValueType>());
     builder.newRowGroup(2);
-    builder.addNextValue(2, 3, 1.0);
-    builder.addNextValue(3, 3, 1.0);
+    builder.addNextValue(2, 3, storm::utility::one<ValueType>());
+    builder.addNextValue(3, 3, storm::utility::one<ValueType>());
     builder.newRowGroup(4);
-    builder.addNextValue(4, 3, 1.0);
+    builder.addNextValue(4, 3, storm::utility::one<ValueType>());
 
     storm::models::sparse::StateLabeling labeling(4);
     storm::storage::BitVector initialStates(4, false);
     initialStates.set(0);
     labeling.addLabel("init", initialStates);
-    std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<double>> rewardModels;
-    rewardModels.emplace("cost", storm::models::sparse::StandardRewardModel<double>(std::nullopt, std::vector<double>{5.0, 0.0, 0.0, 7.0, 0.0}, std::nullopt));
-    return storm::models::sparse::Mdp<double>(builder.build(), std::move(labeling), std::move(rewardModels));
+    std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
+    auto const zero = storm::utility::zero<ValueType>();
+    rewardModels.emplace(
+        "cost", storm::models::sparse::StandardRewardModel<ValueType>(std::nullopt,
+                                                                      std::vector<ValueType>{storm::utility::convertNumber<ValueType>(uint64_t{5}), zero, zero,
+                                                                                             storm::utility::convertNumber<ValueType>(uint64_t{7}), zero},
+                                                                      std::nullopt));
+    return storm::models::sparse::Mdp<ValueType>(builder.build(), std::move(labeling), std::move(rewardModels));
 }
 
 TEST(CvarSspParetoFrontTest, CanonicalizesDuplicateDominatedAndConvexRedundantPoints) {
@@ -226,6 +234,53 @@ TEST(CvarSspRewardParetoFrontTest, KeepsLowerLeftIncomparablePoints) {
     expectParetoFrontPoints(front, {{0.1, 0.9}, {0.5, 0.5}, {0.9, 0.2}});
 }
 
+TEST(CvarSspZeroWeightComponentLpSolverTest, SupportsCostAndRewardFronts) {
+    if (!hasExactLpSolver()) {
+        GTEST_SKIP() << "No exact LP solver available.";
+    }
+
+    using ValueType = storm::RationalNumber;
+    using CostSolver = storm::modelchecker::cvar::SspZeroWeightComponentLpSolver<ValueType>;
+    using RewardSolver = storm::modelchecker::cvar::SspZeroWeightComponentLpSolver<ValueType, storm::modelchecker::cvar::SspParetoFrontKind::RewardLowerTail>;
+    auto const zero = storm::utility::zero<ValueType>();
+    auto const one = storm::utility::one<ValueType>();
+    auto const quarter = ValueType("1/4");
+    auto const half = ValueType("1/2");
+    auto const threeQuarters = ValueType("3/4");
+
+    storm::storage::SparseMatrixBuilder<ValueType> builder(4, 3, 5, true, true, 3);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 1, one);
+    builder.addNextValue(1, 1, half);
+    builder.addNextValue(1, 2, half);
+    builder.newRowGroup(2);
+    builder.addNextValue(2, 1, one);
+    builder.newRowGroup(3);
+    builder.addNextValue(3, 2, one);
+    auto matrix = builder.build();
+    storm::transformer::ZeroWeightComponent component{{0}, {0}, {}, {1, 2}};
+    std::vector<ValueType> weights{zero, zero, zero, zero};
+    storm::Environment env;
+
+    CostSolver costSolver(env, matrix, weights, component);
+    CostSolver::FrontierLayer costFronts(3);
+    costFronts[1] = CostSolver::ParetoFront({{quarter, one}, {threeQuarters, one + one}});
+    costFronts[2] = CostSolver::ParetoFront::singleton(threeQuarters, one + half);
+    auto costResult = costSolver.support(0, costFronts, ValueType(4));
+    EXPECT_EQ((std::vector<ValueType>{half, half}), costResult.boundaryProbabilities);
+    EXPECT_EQ(threeQuarters, costResult.point.probability);
+    EXPECT_EQ(one + threeQuarters, costResult.point.expectedCost);
+
+    RewardSolver rewardSolver(env, matrix, weights, component);
+    RewardSolver::FrontierLayer rewardFronts(3);
+    rewardFronts[1] = RewardSolver::ParetoFront({{quarter, one + one}, {threeQuarters, one}});
+    rewardFronts[2] = RewardSolver::ParetoFront::singleton(quarter, one);
+    auto rewardResult = rewardSolver.support(0, rewardFronts, ValueType(8));
+    EXPECT_EQ((std::vector<ValueType>{half, half}), rewardResult.boundaryProbabilities);
+    EXPECT_EQ(quarter, rewardResult.point.probability);
+    EXPECT_EQ(one + half, rewardResult.point.expectedCost);
+}
+
 TEST(CvarSspRewardParetoValueIterationOperatorTest, AppliesRewardShiftsAndUnionsActionFronts) {
     using ParetoFront = storm::modelchecker::cvar::SspRewardParetoFront<double>;
     using ParetoViOperator = storm::modelchecker::cvar::SspParetoValueIterationOperator<double, storm::modelchecker::cvar::SspParetoFrontKind::RewardLowerTail>;
@@ -249,8 +304,8 @@ TEST(CvarSspRewardParetoValueIterationOperatorTest, AppliesRewardShiftsAndUnions
     expectParetoFrontPoints(outputLayer[2], {{1.0, 3.0}});
 }
 
-TEST(CvarSspPreprocessorTest, AppliesSelectedLocalZeroWeightElimination) {
-    auto const model = buildZeroWeightSspMdp();
+TEST(CvarSspPreprocessorTest, AppliesSelectedZeroWeightTransformationsToCosts) {
+    auto const model = buildZeroWeightSspMdp<double>();
     storm::storage::BitVector targetStates(4, false);
     targetStates.set(3);
     storm::modelchecker::cvar::CvarQueryInformation queryInformation{storm::RationalNumber("1/2"), storm::solver::OptimizationDirection::Minimize,
@@ -259,9 +314,6 @@ TEST(CvarSspPreprocessorTest, AppliesSelectedLocalZeroWeightElimination) {
 
     STORM_SILENT_EXPECT_THROW(storm::modelchecker::cvar::preprocessing::preprocessSspCvar(env, model, queryInformation, targetStates),
                               storm::exceptions::InvalidPropertyException);
-    env.modelchecker().cvar().setZeroWeightTransformation(storm::modelchecker::cvar::ZeroWeightTransformation::GlobalCollapse);
-    STORM_SILENT_EXPECT_THROW(storm::modelchecker::cvar::preprocessing::preprocessSspCvar(env, model, queryInformation, targetStates),
-                              storm::exceptions::NotImplementedException);
     env.modelchecker().cvar().setZeroWeightTransformation(storm::modelchecker::cvar::ZeroWeightTransformation::LocalElimination);
     auto const result = storm::modelchecker::cvar::preprocessing::preprocessSspCvar(env, model, queryInformation, targetStates);
 
@@ -285,6 +337,38 @@ TEST(CvarSspPreprocessorTest, AppliesSelectedLocalZeroWeightElimination) {
     EXPECT_NEAR(5.0, result.expectedCostsToGoal[0], 1e-10);
     EXPECT_NEAR(0.0, result.expectedCostsToGoal[1], 1e-10);
     EXPECT_NEAR(7.0, result.expectedCostsToGoal[2], 1e-10);
+
+    storm::modelchecker::cvar::SparseCvarComputationHelper<storm::models::sparse::Mdp<double>> helper(model, queryInformation, targetStates);
+    EXPECT_NEAR(5.0, helper.computeCvar(env).value, 1e-10);
+    if (hasLpSolver()) {
+        env.modelchecker().cvar().setZeroWeightTransformation(storm::modelchecker::cvar::ZeroWeightTransformation::GlobalCollapse);
+        auto const globalResult = storm::modelchecker::cvar::preprocessing::preprocessSspCvar(env, model, queryInformation, targetStates);
+        EXPECT_EQ(result.choiceCosts, globalResult.choiceCosts);
+        EXPECT_EQ(result.targetStates, globalResult.targetStates);
+        EXPECT_EQ(result.initialState, globalResult.initialState);
+        EXPECT_NEAR(5.0, helper.computeCvar(env).value, 1e-10);
+    }
+}
+
+TEST(CvarSspPreprocessorTest, AppliesSelectedZeroWeightTransformationsToRewards) {
+    auto const model = buildZeroWeightSspMdp<storm::RationalNumber>();
+    storm::storage::BitVector targetStates(4, false);
+    targetStates.set(3);
+    storm::modelchecker::cvar::CvarQueryInformation queryInformation{storm::RationalNumber("1/2"), storm::solver::OptimizationDirection::Maximize,
+                                                                     storm::modelchecker::cvar::CvarInterpretation::Reward, std::string("cost"), nullptr};
+    storm::Environment env;
+
+    STORM_SILENT_EXPECT_THROW(storm::modelchecker::cvar::preprocessing::preprocessSspRewardCvar(env, model, queryInformation, targetStates),
+                              storm::exceptions::InvalidPropertyException);
+    storm::modelchecker::cvar::SparseCvarComputationHelper<storm::models::sparse::Mdp<storm::RationalNumber>> helper(model, queryInformation, targetStates);
+    for (auto transformation :
+         {storm::modelchecker::cvar::ZeroWeightTransformation::GlobalCollapse, storm::modelchecker::cvar::ZeroWeightTransformation::LocalElimination}) {
+        if (transformation == storm::modelchecker::cvar::ZeroWeightTransformation::GlobalCollapse && !hasExactLpSolver()) {
+            continue;
+        }
+        env.modelchecker().cvar().setZeroWeightTransformation(transformation);
+        EXPECT_EQ(storm::RationalNumber(12), helper.computeCvar(env).value);
+    }
 }
 
 TEST_F(CvarQueryTest, SimpleMdp) {
