@@ -194,22 +194,11 @@ jobs:
 
   notify:
     name: Email notification
-    runs-on: ubuntu-latest
     needs: [linuxTests, macTests, deploy-debug, deploy-release]
     if: github.repository_owner == 'stormchecker' && (github.event_name == 'push' || github.event_name == 'schedule') && always()
-    steps:
-      - uses: technote-space/workflow-conclusion-action@v3
-      - uses: dawidd6/action-send-mail@v23
-        with:
-          server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
-          server_port: 587
-          username: ${{ secrets.STORM_CI_MAIL_USERNAME }}
-          password: ${{ secrets.STORM_CI_MAIL_PASSWORD }}
-          subject: "[You broke it] ${{ github.event_name == 'schedule' && 'CI Weekly' || 'CI' }} failed for ${{ github.repository }} on master"
-          body:
-            "CI job of ${{ github.repository }} has failed for commit ${{ github.sha }}.\n\
-            The error type is: ${{ env.WORKFLOW_CONCLUSION }}.\n\n\
-            For more information, see https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          to: ${{ secrets.STORM_CI_MAIL_RECIPIENTS }}
-          from: Github Actions <you-broke-it@stormchecker.org>
-        if: env.WORKFLOW_CONCLUSION != 'success'
+    uses: stormchecker/ci-workflows/.github/workflows/notify_email.yml@v1
+    with:
+      title: ${{ github.event_name == 'schedule' && 'CI Weekly' || 'CI' }}
+    secrets: inherit
+    permissions:
+      actions: read

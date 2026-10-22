@@ -112,3 +112,15 @@ jobs:
           body: |
             Auto-generated pull request triggered by a new Storm version.
             - Manually close and reopen this PR to trigger the CI.
+
+  notify:
+    name: Email notification
+    needs: [deploy_docker, update_stable, get_carl_tag, build_deb, upload_deb, update_stormpy, set_storm_dev]
+    # Only run in main repo and even if previous step failed
+    if: github.repository_owner == 'stormchecker' && always()
+    uses: stormchecker/ci-workflows/.github/workflows/notify_email.yml@v1
+    with:
+      title: Release
+    secrets: inherit
+    permissions:
+      actions: read
