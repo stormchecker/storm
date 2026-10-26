@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "storm/modelchecker/results/ParetoCurveCheckResult.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
 
 namespace storm {

@@ -1,13 +1,14 @@
 #pragma once
 
-#include "Order.h"
-#include "storm-pars/storage/ParameterRegion.h"
 #include "storm/environment/Environment.h"
 #include "storm/logic/Formula.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/expressions/BinaryRelationExpression.h"
+
+#include "storm-pars/modelchecker/region/monotonicity/Assumption.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
+#include "storm-pars/storage/ParameterRegion.h"
 
 namespace storm {
 namespace analysis {
@@ -46,13 +47,15 @@ class AssumptionChecker {
     /*!
      * Initializes the given number of sample points for a given model, formula and region.
      *
+     * @param env The environment used for checking the samples.
      * @param formula The formula to compute the samples for.
      * @param model The considered model.
      * @param region The region of the model's parameters.
      * @param numberOfSamples Number of sample points.
      */
-    void initializeCheckingOnSamples(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model,
-                                     storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
+    void initializeCheckingOnSamples(Environment const& env, std::shared_ptr<logic::Formula const> formula,
+                                     std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region,
+                                     uint_fast64_t numberOfSamples);
 
     /*!
      * Sets the sample values to the given vector and useSamples to true.
@@ -69,11 +72,9 @@ class AssumptionChecker {
      * @param region The region of the considered model.
      * @return AssumptionStatus::VALID, or AssumptionStatus::UNKNOWN, or AssumptionStatus::INVALID
      */
-    AssumptionStatus validateAssumption(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption,
-                                        std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues,
-                                        std::vector<ConstantType> const maxValue) const;
-    AssumptionStatus validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order,
-                                        storage::ParameterRegion<ValueType> region) const;
+    AssumptionStatus validateAssumption(Assumption const& assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
+                                        std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
+    AssumptionStatus validateAssumption(Assumption const& assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const;
 
    private:
     bool useSamples;
@@ -82,11 +83,10 @@ class AssumptionChecker {
 
     storage::SparseMatrix<ValueType> matrix;
 
-    AssumptionStatus validateAssumptionSMTSolver(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption,
-                                                 std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
+    AssumptionStatus validateAssumptionSMTSolver(Assumption const& assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
                                                  std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
 
-    AssumptionStatus checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
+    AssumptionStatus checkOnSamples(Assumption const& assumption) const;
 };
 }  // namespace analysis
 }  // namespace storm

@@ -6,6 +6,37 @@ add_custom_target(test-resources)
 
 include(FetchContent)
 
+# Applies the given patch to the given source directory unless it was already applied.
+function(storm_apply_patch name source_dir patch_file)
+    set(patch_args -p1 -s -F0 -i ${patch_file})
+    # The patch was already applied if it can be reversed
+    execute_process(
+            COMMAND patch -R --dry-run -f ${patch_args}
+            WORKING_DIRECTORY ${source_dir}
+            RESULT_VARIABLE reverse_result
+            OUTPUT_QUIET ERROR_QUIET
+    )
+    if(reverse_result EQUAL 0)
+        return()
+    endif()
+    # Dry run first to avoid leaving the sources partially patched
+    execute_process(
+            COMMAND patch --dry-run -N -f ${patch_args}
+            WORKING_DIRECTORY ${source_dir}
+            RESULT_VARIABLE patch_result
+    )
+    if(patch_result EQUAL 0)
+        execute_process(
+                COMMAND patch -N -f ${patch_args}
+                WORKING_DIRECTORY ${source_dir}
+                RESULT_VARIABLE patch_result
+        )
+    endif()
+    if(NOT patch_result EQUAL 0)
+        message(FATAL_ERROR "Storm - Failed to apply ${patch_file} to ${name} sources in ${source_dir}.")
+    endif()
+endfunction()
+
 message(STATUS "Storm - Building external resources with ${STORM_RESOURCES_BUILD_JOBCOUNT} job(s) in parallel.")
 
 #############################################################
@@ -83,11 +114,10 @@ if(NOT STORM_DISABLE_GMM)
     FetchContent_Declare(
             gmm
             URL https://download-mirror.savannah.gnu.org/releases/getfem/stable/gmm-${GMM_VERSION}.tar.gz
-            # Try to apply patch and otherwise check that patch was already applied
-            # Needed because while -N ignores already applied patches it still returns with exit code 1
-            PATCH_COMMAND patch -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch || patch --dry-run -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch | grep "Reversed (or previously applied) patch detected!"
     )
     FetchContent_MakeAvailable(gmm)
+    # Apply patch on downloaded/existing sources
+    storm_apply_patch(gmm ${gmm_SOURCE_DIR} ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch)
     add_library(gmm INTERFACE) # Not imported, we are in control of the sources.
     add_dependencies(storm_resources gmm)
     target_include_directories(gmm INTERFACE
@@ -115,20 +145,20 @@ set(STORM_EIGEN_GIT_TAG "bc3b39870ecb690a623a3f49149a358b95c5781d")
 message(STATUS "Storm - Including Eigen commit ${STORM_EIGEN_GIT_TAG} (Version 5.0.1).")
 FetchContent_Declare(
         eigen
-        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+        GIT_REPOSITORY https://github.com/eigen-mirror/eigen.git
         GIT_TAG ${STORM_EIGEN_GIT_TAG}
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/StormEigen/StormEigen
         # Eigen ships its own CMakeLists.txt, which we do not want to  process.
         # Pointing SOURCE_SUBDIR at a subdirectory with no CMakeLists.txt makes FetchContent_MakeAvailable() populate
         # the source without calling add_subdirectory() on it.
         SOURCE_SUBDIR do-not-add-as-subdirectory
-        # First check whether patch was already applied (--reverse --check), otherwise apply patch
-        PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch --reverse --check -q || git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch
 )
 FetchContent_MakeAvailable(eigen)
 # The include path exposes the parent of the checkout, whose directory is named "StormEigen".
 # This allows to #include <StormEigen/Eigen/Dense> and avoids name clashes with system-installed Eigen.
 cmake_path(GET eigen_SOURCE_DIR PARENT_PATH STORM_EIGEN_PARENT_DIR)
+# Apply patch on downloaded/existing sources
+storm_apply_patch(Eigen ${eigen_SOURCE_DIR} ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch)
 add_library(eigenstorm INTERFACE) # Not imported, we are in control of the sources.
 if(STORM_WARNING_AS_ERROR AND STORM_COMPILER_GCC)
         # Ignore warning in Eigen
@@ -270,17 +300,16 @@ if(NOT STORM_DISABLE_Z3)
     find_package(Z3 QUIET 4.8.12 NO_MODULE)
     # Notice that such old z3 versions do not provide config files, so we could bump this version ahead.
     if(TARGET z3::libz3)
-        set(STORM_HAVE_Z3 ON)
-        set(STORM_Z3_CONFIG ON) # For the config file, did we include z3 via a config (yes)
-
         set(Z3_VERSION "${Z3_VERSION_MAJOR}.${Z3_VERSION_MINOR}.${Z3_VERSION_PATCH}")
 
         if("${Z3_VERSION}" VERSION_EQUAL "4.10.1")
             message(WARNING "Storm cannot be linked against Z3 version 4.10.1, see issue 252.")
-            message(WARNING "Storm - Could not link with z3. Building of Prism/JANI models will not be supported.")
+            message(WARNING "Storm - Could not link with z3. Features that require Z3 will not be supported.")
             set(Z3_FOUND FALSE)
         else()
             message(STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}).")
+            set(STORM_HAVE_Z3 ON)
+            set(STORM_Z3_CONFIG ON) # For the config file, did we include z3 via a config (yes)
             list(APPEND STORM_DEP_IMP_TARGETS z3::libz3)
         endif()
     else()
@@ -289,16 +318,14 @@ if(NOT STORM_DISABLE_Z3)
         find_package(Z3 QUIET 4.8.12)
 
         if(Z3_FOUND)
-
-            set(STORM_HAVE_Z3 ON)
-            set(STORM_Z3_CONFIG OFF) # For the config file, did we include z3 via a config (no)
-
             if("${Z3_VERSION}" VERSION_EQUAL "4.10.1")
                 message(WARNING "Storm cannot be linked against Z3 version 4.10.1, see issue 252.")
-                message(WARNING "Storm - Could not link with z3. Building of Prism/JANI models will not be supported.")
+                message(WARNING "Storm - Could not link with z3. Features that require Z3 will not be supported.")
                 set(Z3_FOUND FALSE)
             else()
                 message(STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}).")
+                set(STORM_HAVE_Z3 ON)
+                set(STORM_Z3_CONFIG OFF) # For the config file, did we include z3 via a config (no)
 
                 add_library(z3 SHARED IMPORTED)
                 set_target_properties(
@@ -310,13 +337,61 @@ if(NOT STORM_DISABLE_Z3)
                 list(APPEND STORM_DEP_IMP_TARGETS z3)
             endif()
         else()
-            message(WARNING "Storm - Z3 not found. Building of Prism/JANI models will not be supported.")
+            message(WARNING "Storm - Z3 not found. Features that require Z3 will not be supported.")
         endif()
     endif()
 else()
-    message(WARNING "Storm - Not linking with Z3. Building of Prism/JANI models will not be supported.")
+    message(WARNING "Storm - Not linking with Z3. Features that require Z3 will not be supported.")
 endif()
 
+#############################################################
+##
+##	cvc5 (optional)
+##
+#############################################################
+
+# Storm builds terms through cvc5::TermManager, which it passes to the cvc5::Solver constructor.
+set(STORM_CVC5_MIN_VERSION "1.2")
+
+if(NOT STORM_DISABLE_CVC5)
+    # cvc5's own config file looks for the (lower case) cvc5_ROOT variable, whereas Storm uses upper case
+    # variable names for the roots of the different solvers.
+    if(CVC5_ROOT)
+        set(cvc5_ROOT "${CVC5_ROOT}")
+    endif()
+
+    # We rely on the CMake config file that cvc5 installs (since version 1.2), so cvc5 has to be installed with its own
+    # "make install". Note that we cannot request a minimum version here: cvc5's own version file uses the
+    # SamePatchVersion strategy and reports compatibility only for an exact major.minor.patch match, so requesting 1.2
+    # would reject an installed 1.4.0. We compare the version we find ourselves further below instead.
+    find_package(cvc5 QUIET NO_MODULE)
+    if(TARGET cvc5::cvc5)
+        set(cvc5_FOUND_VERSION "${cvc5_VERSION}")
+    endif()
+
+    if(NOT cvc5_FOUND_VERSION)
+        message(WARNING "Storm - cvc5 not found, or its version could not be determined."
+                " cvc5 will not be available as an SMT solver backend.")
+    elseif(cvc5_FOUND_VERSION VERSION_LESS STORM_CVC5_MIN_VERSION)
+        message(WARNING "Storm - Found cvc5 ${cvc5_FOUND_VERSION}, but ${STORM_CVC5_MIN_VERSION} or newer is required."
+                " cvc5 will not be available as an SMT solver backend.")
+    elseif(CVC5_SAFE_BUILD OR CVC5_STABLE_BUILD)
+        # cvc5 records its build type in the config file (since 1.3; older versions have no restricted modes). Safe and
+        # stable builds reject terms that Storm creates, e.g., the power operator, so we require an unrestricted build.
+        # Note that the unrestricted build sets both variables to IGNORE, which CMake considers to be false.
+        message(WARNING "Storm - Found cvc5 ${cvc5_FOUND_VERSION}, but it was built in safe or stable mode, which does not support all"
+                " features that Storm requires. Build cvc5 with './configure.sh unrestricted'."
+                " cvc5 will not be available as an SMT solver backend.")
+    else()
+        set(STORM_HAVE_CVC5 ON)
+        message(STATUS "Storm - Linking with cvc5 (version ${cvc5_FOUND_VERSION}).")
+
+        list(APPEND STORM_DEP_IMP_TARGETS cvc5::cvc5)
+    endif()
+else()
+    set(STORM_HAVE_CVC5 OFF)
+    message(STATUS "Storm - Not linking with cvc5.")
+endif()
 
 #############################################################
 ##

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm-gamebased-ar/abstraction/QualitativeResult.h"
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#include "storm/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm {
 namespace dd {

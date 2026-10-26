@@ -1,5 +1,6 @@
 #include "storm/storage/SparseMatrix.h"
 
+#include <algorithm>
 #include <iterator>
 
 #include "storm/adapters/IntervalAdapter.h"
@@ -150,6 +151,47 @@ SparseMatrixBuilder<ValueType>::SparseMatrixBuilder(SparseMatrix<ValueType>&& ma
     if (!rowIndications.empty()) {
         rowIndications.pop_back();
     }
+    // The (open) row indications always contain the start of the current row, which is the case also if the matrix did not have any rows.
+    if (rowIndications.empty()) {
+        rowIndications.push_back(0);
+    }
+}
+
+namespace {
+/*!
+ * Combines the value of an existing matrix entry with a value that is added for the same row and column according to the given accumulation mode.
+ *
+ * @return The value the entry should have afterwards. Throws if the accumulation mode forbids the combination.
+ */
+template<typename ValueType>
+ValueType accumulate(typename SparseMatrixBuilder<ValueType>::AccumulationMode mode, typename SparseMatrixBuilder<ValueType>::index_type row,
+                     typename SparseMatrixBuilder<ValueType>::index_type column, ValueType const& existingValue, ValueType const& newValue) {
+    using AccumulationMode = typename SparseMatrixBuilder<ValueType>::AccumulationMode;
+    switch (mode) {
+        case AccumulationMode::Sum:
+            return existingValue + newValue;
+        case AccumulationMode::ExpectSame:
+            STORM_LOG_THROW(existingValue == newValue, storm::exceptions::InvalidArgumentException,
+                            "Multiple different values (" << existingValue << " and " << newValue << ") added to matrix entry in row " << row << " and column "
+                                                          << column << ", but all values for the same entry are expected to be equal.");
+            return existingValue;
+        case AccumulationMode::ExpectNone:
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
+                            "Multiple values added to matrix entry in row " << row << " and column " << column << ", but no duplicate entries are expected.");
+    }
+    STORM_LOG_ASSERT(false, "Unhandled accumulation mode.");
+    return existingValue;
+}
+}  // namespace
+
+template<typename ValueType>
+void SparseMatrixBuilder<ValueType>::setAccumulationMode(AccumulationMode mode) {
+    accumulationMode = mode;
+}
+
+template<typename ValueType>
+typename SparseMatrixBuilder<ValueType>::AccumulationMode SparseMatrixBuilder<ValueType>::getAccumulationMode() const {
+    return accumulationMode;
 }
 
 template<typename ValueType>
@@ -164,86 +206,56 @@ void SparseMatrixBuilder<ValueType>::addNextValue(index_type row, index_type col
         index_type diagColumn = hasCustomRowGrouping ? currentRowGroupCount - 1 : lastRow;
         if (row > lastRow || column >= diagColumn) {
             ValueType diagValue = std::move(pendingDiagonalEntry.get());
-            pendingDiagonalEntry = boost::none;
-            // Add the pending diagonal value now
-            if (row == lastRow && column == diagColumn) {
-                // The currently added value coincides with the diagonal entry!
-                // We add up the values and repeat this call.
-                addNextValue(row, column, diagValue + value);
-                // We return here because the above call already did all the work.
-                return;
-            } else {
-                addNextValue(lastRow, diagColumn, diagValue);
-            }
-        }
-    }
-
-    // If the element is in the same row, but was not inserted in the correct order, we need to fix the row after
-    // the insertion.
-    bool fixCurrentRow = row == lastRow && column < lastColumn;
-    // If the element is in the same row and column as the previous entry, we add them up...
-    // unless there is no entry in this row yet, which might happen either for the very first entry or when only a diagonal value has been added
-    if (row == lastRow && column == lastColumn && rowIndications.back() < currentEntryCount) {
-        columnsAndValues.back().setValue(columnsAndValues.back().getValue() + value);
-    } else {
-        // If we switched to another row, we have to adjust the missing entries in the row indices vector.
-        if (row != lastRow) {
-            // Otherwise, we need to push the correct values to the vectors, which might trigger reallocations.
-            STORM_LOG_ASSERT(rowIndications.size() == lastRow + 1, "Row indications size mismatch.");
-            rowIndications.resize(row + 1, currentEntryCount);
-            lastRow = row;
-        }
-
-        lastColumn = column;
-
-        // Finally, set the element and increase the current size.
-        columnsAndValues.emplace_back(column, value);
-        highestColumn = std::max(highestColumn, column);
-        ++currentEntryCount;
-
-        // If we need to fix the row, do so now.
-        if (fixCurrentRow) {
-            // TODO we fix this row directly after the out-of-order insertion, but the code does not exploit that fact.
-            STORM_LOG_TRACE("Fix row " << row << " as column " << column << " is added out-of-order.");
-            // First, we sort according to columns.
-            std::sort(columnsAndValues.begin() + rowIndications.back(), columnsAndValues.end(),
-                      [](storm::storage::MatrixEntry<index_type, ValueType> const& a, storm::storage::MatrixEntry<index_type, ValueType> const& b) {
-                          return a.getColumn() < b.getColumn();
-                      });
-
-            auto insertIt = columnsAndValues.begin() + rowIndications.back();
-            uint64_t elementsToRemove = 0;
-            for (auto it = insertIt + 1; it != columnsAndValues.end(); ++it) {
-                // Iterate over all entries in this last row and detect duplicates.
-                if (it->getColumn() == insertIt->getColumn()) {
-                    // This entry is a duplicate of the column. Update the previous entry.
-                    insertIt->setValue(insertIt->getValue() + it->getValue());
-                    elementsToRemove++;
-                } else {
-                    insertIt = it;
-                }
-            }
-            // Then, we eliminate those duplicate entries.
-            // We cast the result of std::unique to void to silence a warning issued due to a [[nodiscard]] attribute
-            static_cast<void>(std::unique(columnsAndValues.begin() + rowIndications.back(), columnsAndValues.end(),
-                                          [](storm::storage::MatrixEntry<index_type, ValueType> const& a,
-                                             storm::storage::MatrixEntry<index_type, ValueType> const& b) { return a.getColumn() == b.getColumn(); }));
-
-            if (elementsToRemove > 0) {
-                STORM_LOG_WARN("Unordered insertion into matrix builder caused duplicate entries.");
-                currentEntryCount -= elementsToRemove;
-                columnsAndValues.resize(columnsAndValues.size() - elementsToRemove);
-            }
-            lastColumn = columnsAndValues.back().getColumn();
+            pendingDiagonalEntry = boost::none;  // clear now, so addNextValue works properly
+            // Add the pending diagonal value now. If the currently added value coincides with the diagonal entry,
+            // the two values are combined when the current value is added below.
+            addNextValue(lastRow, diagColumn, diagValue);
         }
     }
 
     // In case we did not expect this value, we throw an exception.
     if (forceInitialDimensions) {
-        STORM_LOG_THROW(!initialRowCountSet || lastRow < initialRowCount, storm::exceptions::OutOfRangeException,
-                        "Cannot insert value at illegal row " << lastRow << ".");
-        STORM_LOG_THROW(!initialColumnCountSet || lastColumn < initialColumnCount, storm::exceptions::OutOfRangeException,
-                        "Cannot insert value at illegal column " << lastColumn << ".");
+        STORM_LOG_THROW(!initialRowCountSet || row < initialRowCount, storm::exceptions::OutOfRangeException,
+                        "Cannot insert value at illegal row " << row << ".");
+        STORM_LOG_THROW(!initialColumnCountSet || column < initialColumnCount, storm::exceptions::OutOfRangeException,
+                        "Cannot insert value at illegal column " << column << ".");
+    }
+
+    // If we switched to another row, we have to adjust the missing entries in the row indices vector.
+    if (row != lastRow) {
+        STORM_LOG_ASSERT(rowIndications.size() == lastRow + 1, "Row indications size mismatch.");
+        rowIndications.resize(row + 1, currentEntryCount);
+        lastRow = row;
+    }
+
+    // The current row starts at rowIndications.back() and is kept sorted (without duplicates) at all times.
+    bool const rowHasEntries = rowIndications.back() < currentEntryCount;
+    if (!rowHasEntries || columnsAndValues.back().getColumn() < column) {
+        // The common case: The row is still empty or the column is larger than all columns in the row so far.
+        columnsAndValues.emplace_back(column, value);
+        ++currentEntryCount;
+    } else if (columnsAndValues.back().getColumn() == column) {
+        // The element is in the same column as the previous entry.
+        columnsAndValues.back().setValue(accumulate(accumulationMode, row, column, columnsAndValues.back().getValue(), value));
+    } else {
+        // The element was not inserted in the correct order. As the row is sorted, we find the correct position via binary search.
+        auto const rowBegin = columnsAndValues.begin() + rowIndications.back();
+        auto position =
+            std::lower_bound(rowBegin, columnsAndValues.end(), column,
+                             [](storm::storage::MatrixEntry<index_type, ValueType> const& entry, index_type col) { return entry.getColumn() < col; });
+        if (position != columnsAndValues.end() && position->getColumn() == column) {
+            position->setValue(accumulate(accumulationMode, row, column, position->getValue(), value));
+        } else {
+            STORM_LOG_TRACE("Column " << column << " is added out-of-order to row " << row << ".");
+            columnsAndValues.emplace(position, column, value);
+            ++currentEntryCount;
+        }
+    }
+    // Because the row is sorted, the last entry has the highest column.
+    lastColumn = columnsAndValues.back().getColumn();
+    highestColumn = std::max(highestColumn, column);
+
+    if (forceInitialDimensions) {
         STORM_LOG_THROW(!initialEntryCountSet || currentEntryCount <= initialEntryCount, storm::exceptions::OutOfRangeException,
                         "Too many entries in matrix, expected only " << initialEntryCount << ".");
     }
@@ -299,12 +311,15 @@ SparseMatrix<ValueType> SparseMatrixBuilder<ValueType>::build(index_type overrid
         }
     }
 
+    if (overriddenRowCount != 0) {
+        STORM_LOG_THROW(rowCount <= overriddenRowCount, storm::exceptions::InvalidStateException,
+                        "Expected not more than " << overriddenRowCount << " rows, but got " << rowCount << ".");
+    }
     if (initialRowCountSet && forceInitialDimensions) {
         STORM_LOG_THROW(rowCount <= initialRowCount, storm::exceptions::InvalidStateException,
                         "Expected not more than " << initialRowCount << " rows, but got " << rowCount << ".");
         rowCount = std::max(rowCount, initialRowCount);
     }
-
     rowCount = std::max(rowCount, overriddenRowCount);
 
     // If the current row count was overridden, we may need to add empty rows.
@@ -321,6 +336,10 @@ SparseMatrix<ValueType> SparseMatrixBuilder<ValueType>::build(index_type overrid
     STORM_LOG_ASSERT(rowCount == rowIndications.size() - 1,
                      "Wrong sizes of row indications vector: (Rowcount) " << rowCount << " != " << (rowIndications.size() - 1) << " (Vector).");
     uint_fast64_t columnCount = hasEntries ? highestColumn + 1 : 0;
+    if (overriddenColumnCount != 0) {
+        STORM_LOG_THROW(columnCount <= overriddenColumnCount, storm::exceptions::InvalidStateException,
+                        "Expected not more than " << overriddenColumnCount << " columns, but got " << columnCount << ".");
+    }
     if (initialColumnCountSet && forceInitialDimensions) {
         STORM_LOG_THROW(columnCount <= initialColumnCount, storm::exceptions::InvalidStateException,
                         "Expected not more than " << initialColumnCount << " columns, but got " << columnCount << ".");
@@ -337,6 +356,10 @@ SparseMatrix<ValueType> SparseMatrixBuilder<ValueType>::build(index_type overrid
     // Check whether row groups are missing some entries.
     if (hasCustomRowGrouping) {
         uint_fast64_t rowGroupCount = currentRowGroupCount;
+        if (overriddenRowGroupCount != 0) {
+            STORM_LOG_THROW(rowGroupCount <= overriddenRowGroupCount, storm::exceptions::InvalidStateException,
+                            "Expected not more than " << overriddenRowGroupCount << " row groups, but got " << rowGroupCount << ".");
+        }
         if (initialRowGroupCountSet && forceInitialDimensions) {
             STORM_LOG_THROW(rowGroupCount <= initialRowGroupCount, storm::exceptions::InvalidStateException,
                             "Expected not more than " << initialRowGroupCount << " row groups, but got " << rowGroupCount << ".");
@@ -435,8 +458,9 @@ void SparseMatrixBuilder<ValueType>::addDiagonalEntry(index_type row, ValueType 
                     "Adding a diagonal element in row " << row << ", but an element in row " << lastRow << " has already been added.");
     if (pendingDiagonalEntry) {
         if (row == lastRow) {
-            // Add the two diagonal entries, nothing else to be done.
-            pendingDiagonalEntry.get() += value;
+            // Combine the two diagonal entries, nothing else to be done.
+            index_type column = hasCustomRowGrouping ? currentRowGroupCount - 1 : lastRow;
+            pendingDiagonalEntry = accumulate(accumulationMode, row, column, pendingDiagonalEntry.get(), value);
             return;
         } else {
             // add the pending entry
@@ -2230,6 +2254,30 @@ bool SparseMatrix<ValueType>::hasOnlyPositiveEntries() const {
         }
     }
     return true;
+}
+
+template<typename ValueType>
+bool SparseMatrix<ValueType>::isProbabilisticGraphPreserving() const {
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        using BaseType = storm::IntervalBaseType<ValueType>;
+        for (index_type row = 0; row < this->getRowCount(); ++row) {
+            BaseType sumOfUpperBounds = storm::utility::zero<BaseType>();
+            for (auto const& entry : this->getRow(row)) {
+                sumOfUpperBounds += entry.getValue().upper();
+            }
+            for (auto const& entry : this->getRow(row)) {
+                // The lower bound after tightening is the maximum of the given lower bound and what is left if all other entries take their upper bound.
+                BaseType const tightenedLower =
+                    std::max<BaseType>(entry.getValue().lower(), storm::utility::one<BaseType>() - (sumOfUpperBounds - entry.getValue().upper()));
+                if (!storm::utility::isPositive(tightenedLower)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    } else {
+        return hasOnlyPositiveEntries();
+    }
 }
 
 template<typename ValueType>

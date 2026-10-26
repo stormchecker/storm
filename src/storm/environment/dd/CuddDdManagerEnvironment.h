@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "storm/storage/dd/cudd/CuddReorderingTechnique.h"
+#include "storm/dd/cudd/CuddReorderingTechnique.h"
 
 namespace storm {
 

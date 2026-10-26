@@ -28,7 +28,9 @@ runs:
         echo "GMM_VERSION=$GMM_VERSION" >> "$GITHUB_ENV"
         echo "EIGEN_TAG=$EIGEN_TAG" >> "$GITHUB_ENV"
         echo "GTEST_VERSION=$GTEST_VERSION" >> "$GITHUB_ENV"
-        echo "STORM_3RDPARTY_CACHE_DIR=${RUNNER_TEMP}/storm-3rdparty-cache" >> "$GITHUB_ENV"
+        # Relative path so the cache version is identical on all runners.
+        echo "STORM_3RDPARTY_CACHE_DIR=.ci-3rdparty-cache" >> "$GITHUB_ENV"
+        echo "STORM_3RDPARTY_CACHE_DIR_ABS=${GITHUB_WORKSPACE}/.ci-3rdparty-cache" >> "$GITHUB_ENV"
       shell: bash
     - name: Restore gmm source cache
       id: gmm-cache-restore
@@ -57,13 +59,13 @@ runs:
       run: |
         ARGS=""
         if [ "${{ steps.gmm-cache-restore.outputs.cache-hit }}" = "true" ]; then
-          ARGS="$ARGS -DFETCHCONTENT_SOURCE_DIR_GMM=${{ env.STORM_3RDPARTY_CACHE_DIR }}/gmm"
+          ARGS="$ARGS -DFETCHCONTENT_SOURCE_DIR_GMM=${{ env.STORM_3RDPARTY_CACHE_DIR_ABS }}/gmm"
         fi
         if [ "${{ steps.eigen-cache-restore.outputs.cache-hit }}" = "true" ]; then
-          ARGS="$ARGS -DFETCHCONTENT_SOURCE_DIR_EIGEN=${{ env.STORM_3RDPARTY_CACHE_DIR }}/StormEigen"
+          ARGS="$ARGS -DFETCHCONTENT_SOURCE_DIR_EIGEN=${{ env.STORM_3RDPARTY_CACHE_DIR_ABS }}/StormEigen"
         fi
         if [ "${{ steps.googletest-cache-restore.outputs.cache-hit }}" = "true" ]; then
-          ARGS="$ARGS -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=${{ env.STORM_3RDPARTY_CACHE_DIR }}/googletest"
+          ARGS="$ARGS -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=${{ env.STORM_3RDPARTY_CACHE_DIR_ABS }}/googletest"
         fi
         echo "cmake-args=$ARGS" >> "$GITHUB_OUTPUT"
         # Persisted via $GITHUB_ENV (not just as step outputs) so the later save: true invocation can reuse it.
@@ -76,21 +78,21 @@ runs:
       if: inputs.save == 'true'
       run: |
         if [ "${{ env.GMM_CACHE_HIT }}" != "true" ] && [ -d build/_deps/gmm-src ]; then
-          mkdir -p "${{ env.STORM_3RDPARTY_CACHE_DIR }}"
-          cp -a build/_deps/gmm-src "${{ env.STORM_3RDPARTY_CACHE_DIR }}/gmm"
+          mkdir -p "${{ env.STORM_3RDPARTY_CACHE_DIR_ABS }}"
+          cp -a build/_deps/gmm-src "${{ env.STORM_3RDPARTY_CACHE_DIR_ABS }}/gmm"
         fi
         if [ "${{ env.EIGEN_CACHE_HIT }}" != "true" ] && [ -d build/resources/3rdparty/StormEigen/StormEigen ]; then
-          mkdir -p "${{ env.STORM_3RDPARTY_CACHE_DIR }}"
-          cp -a build/resources/3rdparty/StormEigen/StormEigen "${{ env.STORM_3RDPARTY_CACHE_DIR }}/StormEigen"
+          mkdir -p "${{ env.STORM_3RDPARTY_CACHE_DIR_ABS }}"
+          cp -a build/resources/3rdparty/StormEigen/StormEigen "${{ env.STORM_3RDPARTY_CACHE_DIR_ABS }}/StormEigen"
         fi
         if [ "${{ env.GOOGLETEST_CACHE_HIT }}" != "true" ] && [ -d build/_deps/googletest-src ]; then
-          mkdir -p "${{ env.STORM_3RDPARTY_CACHE_DIR }}"
-          cp -a build/_deps/googletest-src "${{ env.STORM_3RDPARTY_CACHE_DIR }}/googletest"
+          mkdir -p "${{ env.STORM_3RDPARTY_CACHE_DIR_ABS }}"
+          cp -a build/_deps/googletest-src "${{ env.STORM_3RDPARTY_CACHE_DIR_ABS }}/googletest"
         fi
         # Only save if the directory actually exists (the dependency could be disabled).
-        echo "GMM_DIR_EXISTS=$([ -d "${{ env.STORM_3RDPARTY_CACHE_DIR }}/gmm" ] && echo true || echo false)" >> "$GITHUB_ENV"
-        echo "EIGEN_DIR_EXISTS=$([ -d "${{ env.STORM_3RDPARTY_CACHE_DIR }}/StormEigen" ] && echo true || echo false)" >> "$GITHUB_ENV"
-        echo "GOOGLETEST_DIR_EXISTS=$([ -d "${{ env.STORM_3RDPARTY_CACHE_DIR }}/googletest" ] && echo true || echo false)" >> "$GITHUB_ENV"
+        echo "GMM_DIR_EXISTS=$([ -d "${{ env.STORM_3RDPARTY_CACHE_DIR_ABS }}/gmm" ] && echo true || echo false)" >> "$GITHUB_ENV"
+        echo "EIGEN_DIR_EXISTS=$([ -d "${{ env.STORM_3RDPARTY_CACHE_DIR_ABS }}/StormEigen" ] && echo true || echo false)" >> "$GITHUB_ENV"
+        echo "GOOGLETEST_DIR_EXISTS=$([ -d "${{ env.STORM_3RDPARTY_CACHE_DIR_ABS }}/googletest" ] && echo true || echo false)" >> "$GITHUB_ENV"
       shell: bash
     - name: Save gmm source cache
       if: inputs.save == 'true' && env.GMM_CACHE_HIT != 'true' && env.GMM_DIR_EXISTS == 'true'

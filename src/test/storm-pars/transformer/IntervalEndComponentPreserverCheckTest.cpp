@@ -16,6 +16,7 @@
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -24,7 +25,6 @@
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"
-#include "storm/storage/prism/Program.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
@@ -101,8 +101,8 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
 class IntervalEndComponentPreserverCheckTest : public ::testing::Test {
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 };

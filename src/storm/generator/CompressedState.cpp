@@ -9,10 +9,10 @@
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/SimpleValuation.h"
 #include "storm/generator/VariableInformation.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/valuations/ValuationsStorage.h"
 
 namespace storm {

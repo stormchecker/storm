@@ -2,9 +2,9 @@
 
 #include <memory>
 
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/modelchecker/results/CheckResult.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
 

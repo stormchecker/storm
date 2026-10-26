@@ -64,11 +64,12 @@ typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results analy
  * @param chunksize The size of the chunks of doubles to work on at a time
  */
 template<typename ValueType>
-void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<ValueType>> const& dft, bool const exportToDot, std::string const& filename,
-                   bool const calculateMttf, double const mttfPrecision, double const mttfStepsize, std::string const mttfAlgorithmName,
-                   bool const calculateMCS, bool const calculateProbability, bool const useModularisation, std::string const importanceMeasureName,
-                   std::vector<double> const& timepoints, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
-                   std::vector<std::string> const& additionalRelevantEventNames, size_t const chunksize);
+void analyzeDFTBdd(storm::dft::DftEnvironment const& env, std::shared_ptr<storm::dft::storage::DFT<ValueType>> const& dft, bool const exportToDot,
+                   std::string const& filename, bool const calculateMttf, double const mttfPrecision, double const mttfStepsize,
+                   std::string const mttfAlgorithmName, bool const calculateMCS, bool const calculateProbability, bool const useModularisation,
+                   std::string const importanceMeasureName, std::vector<double> const& timepoints,
+                   std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, std::vector<std::string> const& additionalRelevantEventNames,
+                   size_t const chunksize);
 
 /*!
  * Analyze the DFT using the SMT encoding

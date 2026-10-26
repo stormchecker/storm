@@ -22,9 +22,10 @@ ARG no_threads=4
 ARG build_type=Release
 # Carl repo and tag to use
 ARG carl_repo="https://github.com/stormchecker/carl-storm.git"
-ARG carl_tag="14.36"
+ARG carl_tag="14.37"
 # Specify Storm configuration (ON/OFF)
 ARG disable_cudd="OFF"
+ARG disable_cvc5="OFF"
 ARG disable_glpk="OFF"
 ARG disable_gmm="OFF"
 ARG disable_gurobi="OFF"
@@ -62,6 +63,7 @@ RUN mkdir -p /opt/storm/build \
              -DSTORM_CARL_GIT_REPO=$carl_repo \
              -DSTORM_CARL_GIT_TAG=$carl_tag \
              -DSTORM_DISABLE_CUDD=$disable_cudd \
+             -DSTORM_DISABLE_CVC5=$disable_cvc5 \
              -DSTORM_DISABLE_GLPK=$disable_glpk \
              -DSTORM_DISABLE_GMM=$disable_gmm \
              -DSTORM_DISABLE_GUROBI=$disable_gurobi \

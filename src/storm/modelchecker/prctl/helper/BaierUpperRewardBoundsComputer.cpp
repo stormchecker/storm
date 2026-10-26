@@ -4,7 +4,7 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/Extremum.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"

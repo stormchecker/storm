@@ -47,13 +47,13 @@ void IterativePolicySearch<ValueType>::Statistics::print() const {
 }
 
 template<typename ValueType>
-IterativePolicySearch<ValueType>::IterativePolicySearch(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::BitVector const& targetStates,
-                                                        storm::storage::BitVector const& surelyReachSinkStates,
+IterativePolicySearch<ValueType>::IterativePolicySearch(storm::Environment const& env, storm::models::sparse::Pomdp<ValueType> const& pomdp,
+                                                        storm::storage::BitVector const& targetStates, storm::storage::BitVector const& surelyReachSinkStates,
                                                         std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory,
                                                         MemlessSearchOptions const& options)
     : pomdp(pomdp), surelyReachSinkStates(surelyReachSinkStates), targetStates(targetStates), options(options), smtSolverFactory(smtSolverFactory) {
     this->expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
-    smtSolver = smtSolverFactory->create(*expressionManager);
+    smtSolver = smtSolverFactory->create(env, *expressionManager);
     // Initialize states per observation.
     for (uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
         statesPerObservation.emplace_back();  // TODO Consider using bitvectors instead.

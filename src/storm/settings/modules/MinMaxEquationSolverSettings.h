@@ -63,7 +63,8 @@ class MinMaxEquationSolverSettings : public ModuleSettings {
     bool isPrecisionSet() const;
 
     /*!
-     * Retrieves the precision that is used for detecting convergence.
+     * Retrieves the precision that is used for detecting convergence; for sound methods, this bounds the
+     * returned midpoint's relative (or absolute) error.
      *
      * @return The precision to use for detecting convergence.
      */

@@ -6,11 +6,12 @@
 #include "storm-parsers/parser/ExpressionCreator.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/Type.h"
 #include "storm/io/file.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Type.h"
 #include "storm/utility/bitoperations.h"
+#include "storm/utility/solver.h"
 
 namespace storm::dft {
 namespace modelchecker {
@@ -542,7 +543,7 @@ void DFTASFChecker::toSolver() {
     convert();
 
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
-    solver = storm::utility::solver::SmtSolverFactory().create(*manager);
+    solver = storm::utility::solver::getSmtSolver(*manager);
     // Add variables to manager
     for (auto const &timeVarEntry : timePointVariables) {
         manager->declareIntegerVariable(varNames[timeVarEntry.second]);
@@ -597,7 +598,8 @@ storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithLeq(uint64
 
 void DFTASFChecker::setSolverTimeout(uint_fast64_t milliseconds) {
     STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, timeout cannot be set.");
-    solver->setTimeout(milliseconds);
+    bool timeoutSet = solver->setTimeout(milliseconds);
+    STORM_LOG_WARN_COND(timeoutSet, "The selected SMT solver does not support timeouts. Queries may take arbitrarily long.");
 }
 
 void DFTASFChecker::unsetSolverTimeout() {

@@ -2,11 +2,11 @@
 
 #include "storm/settings/modules/ModuleSettings.h"
 
-#include "storm/storage/dd/bisimulation/InitialPartitionMode.h"
-#include "storm/storage/dd/bisimulation/QuotientFormat.h"
-#include "storm/storage/dd/bisimulation/RefinementMode.h"
-#include "storm/storage/dd/bisimulation/ReuseMode.h"
-#include "storm/storage/dd/bisimulation/SignatureMode.h"
+#include "storm/transformer/bisimulation/dd/InitialPartitionMode.h"
+#include "storm/transformer/bisimulation/dd/QuotientFormat.h"
+#include "storm/transformer/bisimulation/dd/RefinementMode.h"
+#include "storm/transformer/bisimulation/dd/ReuseMode.h"
+#include "storm/transformer/bisimulation/dd/SignatureMode.h"
 
 namespace storm {
 namespace settings {

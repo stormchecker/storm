@@ -1,14 +1,15 @@
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbAchievabilityQuery.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/expressions/Expressions.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/expressions/Expressions.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/solver.h"
@@ -20,11 +21,11 @@ namespace multiobjective {
 
 template<class SparseModelType>
 SparseCbAchievabilityQuery<SparseModelType>::SparseCbAchievabilityQuery(
-    preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult)
+    Environment const& env, preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult)
     : SparseCbQuery<SparseModelType>(preprocessorResult) {
     STORM_LOG_ASSERT(preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability,
                      "Invalid query Type.");
-    solver = storm::utility::solver::SmtSolverFactory().create(*this->expressionManager);
+    solver = storm::utility::solver::getSmtSolver(env, *this->expressionManager);
 }
 
 template<class SparseModelType>

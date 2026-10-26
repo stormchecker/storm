@@ -7,13 +7,13 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm-pomdp/transformer/ObservationTraceUnfolder.h"
 #include "storm/api/storm.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/constants.h"
 
 TEST(ObservationTraceUnfolder, Simple) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism");
     program = program.preprocess("slippery=0.4");
@@ -41,8 +41,8 @@ TEST(ObservationTraceUnfolder, Simple) {
 
 TEST(ObservationTraceUnfolder, ExpressionManagerOutlivesConstructorArgument) {
     // This test captures an earlier bug where observationTraceUnfolder stores a reference to shared_ptr<ExpressionManager>
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism");
     program = program.preprocess("slippery=0.4");

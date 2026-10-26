@@ -27,7 +27,7 @@ const std::string FaultTreeSettings::approximationHeuristicOptionName = "approxi
 const std::string FaultTreeSettings::maxDepthOptionName = "maxdepth";
 const std::string FaultTreeSettings::firstDependencyOptionName = "firstdep";
 const std::string FaultTreeSettings::uniqueFailedBEOptionName = "uniquefailedbe";
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
 const std::string FaultTreeSettings::solveWithSmtOptionName = "smt";
 #endif
 const std::string FaultTreeSettings::chunksizeOptionName = "chunksize";
@@ -72,7 +72,7 @@ FaultTreeSettings::FaultTreeSettings() : ModuleSettings(moduleName) {
                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("depth", "The maximal depth.").build())
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, uniqueFailedBEOptionName, false, "Use a unique constantly failed BE.").build());
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
     this->addOption(storm::settings::OptionBuilder(moduleName, solveWithSmtOptionName, true, "Solve the DFT with SMT.").build());
 #endif
     this->addOption(storm::settings::OptionBuilder(moduleName, chunksizeOptionName, false, "Calculate probabilies in chunks.")
@@ -173,7 +173,7 @@ bool FaultTreeSettings::isUniqueFailedBE() const {
     return this->getOption(uniqueFailedBEOptionName).getHasOptionBeenSet();
 }
 
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
 
 bool FaultTreeSettings::solveWithSMT() const {
     return this->getOption(solveWithSmtOptionName).getHasOptionBeenSet();

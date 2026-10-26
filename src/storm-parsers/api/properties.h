@@ -24,7 +24,7 @@ class Expression;
 namespace prism {
 class Program;
 }
-namespace storage {
+namespace languages {
 class SymbolicModelDescription;
 }
 namespace logic {
@@ -44,7 +44,7 @@ STORM_PARSERS_API std::vector<storm::jani::Property> parsePropertiesForPrismProg
 STORM_PARSERS_API std::vector<storm::jani::Property> parsePropertiesForJaniModel(std::string const& inputString, storm::jani::Model const& model,
                                                                                  boost::optional<std::set<std::string>> const& propertyFilter = boost::none);
 STORM_PARSERS_API std::vector<storm::jani::Property> parsePropertiesForSymbolicModelDescription(
-    std::string const& inputString, storm::storage::SymbolicModelDescription const& modelDescription,
+    std::string const& inputString, storm::languages::SymbolicModelDescription const& modelDescription,
     boost::optional<std::set<std::string>> const& propertyFilter = boost::none);
 
 }  // namespace api

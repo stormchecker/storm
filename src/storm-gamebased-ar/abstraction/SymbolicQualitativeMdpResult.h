@@ -2,7 +2,7 @@
 
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeResult.h"
 
-#include "storm/storage/dd/Bdd.h"
+#include "storm/dd/Bdd.h"
 
 namespace storm::gbar {
 namespace abstraction {

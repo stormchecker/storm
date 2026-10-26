@@ -9,7 +9,7 @@
 #include "storm-parsers/parser/DirectEncodingParser.h"
 #include "storm-parsers/parser/ImcaMarkovAutomatonParser.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/storage/umb/Umb.h"
+#include "storm/io/umb/Umb.h"
 #include "storm/utility/macros.h"
 
 namespace storm::api {

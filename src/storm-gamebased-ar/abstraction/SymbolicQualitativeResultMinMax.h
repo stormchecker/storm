@@ -2,7 +2,7 @@
 
 #include "storm/solver/OptimizationDirection.h"
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm-gamebased-ar/abstraction/QualitativeResultMinMax.h"
 

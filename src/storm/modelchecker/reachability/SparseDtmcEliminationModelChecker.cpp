@@ -18,7 +18,7 @@
 #include "storm/solver/stateelimination/PrioritizedStateEliminator.h"
 #include "storm/solver/stateelimination/StateEliminationUtility.h"
 #include "storm/solver/stateelimination/StaticStatePriorityQueue.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"

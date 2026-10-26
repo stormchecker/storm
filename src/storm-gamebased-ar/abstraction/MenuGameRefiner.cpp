@@ -5,20 +5,17 @@
 #include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/MenuGameAbstractor.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/DdManager.h"
+#include "storm/dd/Odd.h"
 #include "storm/exceptions/InvalidStateException.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/solver/MathsatSmtSolver.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/ExplicitGameStrategyPair.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/Odd.h"
+#include "storm/storage/scheduler/ExplicitGameStrategyPair.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/shortestPaths.h"
 
 namespace storm::gbar {
 namespace abstraction {
-
-using storm::settings::modules::AbstractionSettings;
 
 RefinementPredicates::RefinementPredicates(Source const& source, std::vector<storm::expressions::Expression> const& predicates)
     : source(source), predicates(predicates) {
@@ -61,28 +58,20 @@ SymbolicPivotStateResult<Type, ValueType>::SymbolicPivotStateResult(
 
 template<storm::dd::DdType Type, typename ValueType>
 MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver,
-                                                  MenuGameRefinerOptions const& options)
+                                                  AbstractionOptions const& options)
     : abstractor(abstractor),
-      useInterpolation(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseInterpolationSet()),
-      splitAll(false),
-      splitPredicates(false),
-      rankPredicates(false),
+      useInterpolation(options.useInterpolation),
+      splitAll(options.splitMode == SplitMode::All),
+      splitPredicates(options.splitMode == SplitMode::NonGuard),
+      rankPredicates(options.rankRefinementPredicates),
+      addPredicatesEagerly(options.useEagerRefinement),
       addedAllGuardsFlag(false),
-      refinementPredicatesToInject(options.refinementPredicates),
-      pivotSelectionHeuristic(),
+      refinementPredicatesToInject(options.injectedRefinementPredicates),
+      pivotSelectionHeuristic(options.pivotSelectionHeuristic),
       splitter(),
       equivalenceChecker(std::move(smtSolver)) {
-    auto const& abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
-
-    pivotSelectionHeuristic = abstractionSettings.getPivotSelectionHeuristic();
-    AbstractionSettings::SplitMode splitMode = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSplitMode();
-    splitAll = splitMode == AbstractionSettings::SplitMode::All;
-    splitPredicates = splitMode == AbstractionSettings::SplitMode::NonGuard;
-    rankPredicates = abstractionSettings.isRankRefinementPredicatesSet();
-    addPredicatesEagerly = abstractionSettings.isUseEagerRefinementSet();
-
     equivalenceChecker.addConstraints(abstractor.getAbstractionInformation().getConstraints());
-    if (abstractionSettings.isAddAllGuardsSet()) {
+    if (options.addAllGuards) {
         std::vector<storm::expressions::Expression> guards;
 
         std::pair<uint64_t, uint64_t> player1Choices = this->abstractor.get().getPlayer1ChoiceRange();
@@ -97,7 +86,7 @@ MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, Value
         this->abstractor.get().notifyGuardsArePredicates();
         addedAllGuardsFlag = true;
     }
-    if (abstractionSettings.isAddAllInitialExpressionsSet()) {
+    if (options.addAllInitialExpressions) {
         storm::expressions::Expression initialExpression = this->abstractor.get().getInitialExpression();
         performRefinement(createGlobalRefinement(preprocessPredicates({initialExpression}, RefinementPredicates::Source::InitialExpression)));
     }
@@ -149,7 +138,7 @@ SymbolicMostProbablePathsResult<Type, ValueType> getMostProbablePathSpanningTree
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-SymbolicPivotStateResult<Type, ValueType> pickPivotState(AbstractionSettings::PivotSelectionHeuristic const& heuristic,
+SymbolicPivotStateResult<Type, ValueType> pickPivotState(PivotSelectionHeuristic const& heuristic,
                                                          storm::gbar::abstraction::MenuGame<Type, ValueType> const& game,
                                                          PivotStateCandidatesResult<Type> const& pivotStateCandidateResult,
                                                          boost::optional<SymbolicQualitativeGameResultMinMax<Type>> const& qualitativeResult,
@@ -175,7 +164,7 @@ SymbolicPivotStateResult<Type, ValueType> pickPivotState(AbstractionSettings::Pi
 
     storm::dd::Bdd<Type> pivotStates = pivotStateCandidateResult.pivotStates;
 
-    if (heuristic == AbstractionSettings::PivotSelectionHeuristic::NearestMaximalDeviation) {
+    if (heuristic == PivotSelectionHeuristic::NearestMaximalDeviation) {
         // Set up used variables.
         storm::dd::Bdd<Type> initialStates = game.getInitialStates();
         std::set<storm::expressions::Variable> const& rowVariables = game.getRowVariables();
@@ -263,7 +252,7 @@ SymbolicPivotStateResult<Type, ValueType> pickPivotState(AbstractionSettings::Pi
         storm::dd::Add<Type, ValueType> score = pivotStates.template toAdd<ValueType>() * minSymbolicMostProbablePathsResult.maxProbabilities.maximum(
                                                                                               maxSymbolicMostProbablePathsResult.maxProbabilities);
 
-        if (heuristic == AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation && quantitativeResult) {
+        if (heuristic == PivotSelectionHeuristic::MaxWeightedDeviation && quantitativeResult) {
             score = score * (quantitativeResult.get().max.values - quantitativeResult.get().min.values);
         }
         selectedPivotState = score.maxAbstractRepresentative(game.getRowVariables());
@@ -1176,11 +1165,11 @@ void performDijkstraStep(std::set<ExplicitDijkstraQueueElement<ValueType>, Expli
 
 template<typename ValueType>
 boost::optional<ExplicitPivotStateResult<ValueType>> pickPivotState(
-    bool generatePredecessors, AbstractionSettings::PivotSelectionHeuristic pivotSelectionHeuristic,
-    storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Labeling,
-    storm::storage::BitVector const& initialStates, storm::storage::BitVector const& relevantStates, storm::storage::BitVector const& targetStates,
-    storage::ExplicitGameStrategyPair const& minStrategyPair, storage::ExplicitGameStrategyPair const& maxStrategyPair,
-    std::vector<ValueType> const* lowerValues = nullptr, std::vector<ValueType> const* upperValues = nullptr) {
+    bool generatePredecessors, PivotSelectionHeuristic pivotSelectionHeuristic, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+    std::vector<uint64_t> const& player1Labeling, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& relevantStates,
+    storm::storage::BitVector const& targetStates, storage::ExplicitGameStrategyPair const& minStrategyPair,
+    storage::ExplicitGameStrategyPair const& maxStrategyPair, std::vector<ValueType> const* lowerValues = nullptr,
+    std::vector<ValueType> const* upperValues = nullptr) {
     // The method used to have an unused player1Grouping.
     STORM_LOG_ASSERT(!lowerValues || upperValues, "Expected none or both value results.");
     STORM_LOG_ASSERT(!upperValues || lowerValues, "Expected none or both value results.");
@@ -1190,7 +1179,7 @@ boost::optional<ExplicitPivotStateResult<ValueType>> pickPivotState(
     // To guarantee that the pivot state is reachable by either of the strategies, we do a parallel Dijkstra
     // search in both the lower and upper strategy.
 
-    bool probabilityDistances = pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MostProbablePath;
+    bool probabilityDistances = pivotSelectionHeuristic == PivotSelectionHeuristic::MostProbablePath;
     uint64_t numberOfStates = initialStates.size();
     // The distance of a state that has not been reached yet, i.e. one that any real distance improves upon. With
     // probability distances that is zero. With hop distances no reachable state is more than numberOfStates - 1 hops
@@ -1227,8 +1216,8 @@ boost::optional<ExplicitPivotStateResult<ValueType>> pickPivotState(
     }
 
     // For some heuristics, we need to potentially find more than just one pivot.
-    bool considerDeviation = (pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::NearestMaximalDeviation ||
-                              pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation) &&
+    bool considerDeviation = (pivotSelectionHeuristic == PivotSelectionHeuristic::NearestMaximalDeviation ||
+                              pivotSelectionHeuristic == PivotSelectionHeuristic::MaxWeightedDeviation) &&
                              lowerValues && upperValues;
     bool foundPivotState = false;
 
@@ -1245,7 +1234,7 @@ boost::optional<ExplicitPivotStateResult<ValueType>> pickPivotState(
         dijkstraQueue.erase(dijkstraQueue.begin());
 
         if (foundPivotState && (probabilityDistances ? currentDistance < pivotState.distance : currentDistance > pivotState.distance)) {
-            if (pivotSelectionHeuristic != storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation) {
+            if (pivotSelectionHeuristic != PivotSelectionHeuristic::MaxWeightedDeviation) {
                 // For the nearest maximal deviation and most probable path heuristics, future pivot states are
                 // not important any more, because their distance will be strictly larger, so we can return the
                 // current pivot state.
@@ -1287,7 +1276,7 @@ boost::optional<ExplicitPivotStateResult<ValueType>> pickPivotState(
                 if (deviationOfCurrentState > pivotStateDeviation) {
                     pivotState = currentDijkstraElement;
                     pivotStateDeviation = deviationOfCurrentState;
-                    if (pivotSelectionHeuristic == storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation) {
+                    if (pivotSelectionHeuristic == PivotSelectionHeuristic::MaxWeightedDeviation) {
                         // Scale the deviation with the distance (probability) for this heuristic.
                         pivotStateDeviation *= currentDistance;
                     }

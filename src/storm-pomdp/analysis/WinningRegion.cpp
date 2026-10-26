@@ -5,9 +5,9 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/io/file.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/constants.h"
 
 namespace storm {

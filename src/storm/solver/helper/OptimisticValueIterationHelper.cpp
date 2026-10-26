@@ -290,9 +290,11 @@ SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
             solutionBounds->upper = vu.second;
         }
     }
-    auto two = storm::utility::convertNumber<ValueType>(2.0);
-    storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
-        vu.first, vu.second, vu.first, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+    if (status == SolverStatus::Converged) {
+        auto two = storm::utility::convertNumber<ValueType>(2.0);
+        storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
+            vu.first, vu.second, vu.first, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+    }
     // Swap operand and aux vector back to original positions.
     vu.first.swap(operand);
     vu.second.swap(auxVector);

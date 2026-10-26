@@ -15,7 +15,7 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/ModelType.h"
-#include "storm/transformer/bisimulation/Options.h"
+#include "storm/transformer/bisimulation/sparse/Options.h"
 #include "storm/utility/bitoperations.h"
 
 namespace storm::dft {

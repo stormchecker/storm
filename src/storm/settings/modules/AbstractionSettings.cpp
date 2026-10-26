@@ -12,6 +12,67 @@ namespace storm {
 namespace settings {
 namespace modules {
 
+namespace {
+// The defaults of the options are taken from the library's default-constructed options.
+storm::gbar::abstraction::AbstractionOptions const defaultOptions;
+
+std::string flagToString(bool value) {
+    return value ? "on" : "off";
+}
+
+std::string toString(storm::gbar::abstraction::SplitMode mode) {
+    switch (mode) {
+        case storm::gbar::abstraction::SplitMode::All:
+            return "all";
+        case storm::gbar::abstraction::SplitMode::None:
+            return "none";
+        case storm::gbar::abstraction::SplitMode::NonGuard:
+            return "non-guard";
+    }
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown split mode.");
+}
+
+std::string toString(storm::gbar::abstraction::SolveMode mode) {
+    switch (mode) {
+        case storm::gbar::abstraction::SolveMode::Dd:
+            return "dd";
+        case storm::gbar::abstraction::SolveMode::Sparse:
+            return "sparse";
+    }
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown solve mode.");
+}
+
+std::string toString(storm::gbar::abstraction::PivotSelectionHeuristic heuristic) {
+    switch (heuristic) {
+        case storm::gbar::abstraction::PivotSelectionHeuristic::NearestMaximalDeviation:
+            return "nearest-max-dev";
+        case storm::gbar::abstraction::PivotSelectionHeuristic::MostProbablePath:
+            return "most-prob-path";
+        case storm::gbar::abstraction::PivotSelectionHeuristic::MaxWeightedDeviation:
+            return "max-weighted-dev";
+    }
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown pivot selection heuristic.");
+}
+
+std::string toString(storm::gbar::abstraction::ReuseMode mode) {
+    switch (mode) {
+        case storm::gbar::abstraction::ReuseMode::All:
+            return "all";
+        case storm::gbar::abstraction::ReuseMode::None:
+            return "none";
+        case storm::gbar::abstraction::ReuseMode::Qualitative:
+            return "qualitative";
+        case storm::gbar::abstraction::ReuseMode::Quantitative:
+            return "quantitative";
+    }
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown reuse mode.");
+}
+
+std::string validBlockModeToString(bool restrictToValidBlocks) {
+    return restrictToValidBlocks ? "blockenum" : "morepreds";
+}
+}  // namespace
+
 const std::string AbstractionSettings::methodOptionName = "method";
 const std::string AbstractionSettings::moduleName = "abstraction";
 const std::string AbstractionSettings::useDecompositionOptionName = "decomposition";
@@ -49,7 +110,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                                                    "The maximal number of abstraction to perform before solving is aborted.")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal abstraction count.")
-                                         .setDefaultValueUnsignedInteger(20000)
+                                         .setDefaultValueUnsignedInteger(defaultOptions.maximalNumberOfAbstractions)
                                          .build())
                         .build());
 
@@ -59,7 +120,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
-                                         .setDefaultValueString("on")
+                                         .setDefaultValueString(flagToString(defaultOptions.useDecomposition))
                                          .build())
                         .build());
 
@@ -68,7 +129,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(splitModes))
-                                         .setDefaultValueString("all")
+                                         .setDefaultValueString(toString(defaultOptions.splitMode))
                                          .build())
                         .build());
 
@@ -77,7 +138,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(solveModes))
-                                         .setDefaultValueString("sparse")
+                                         .setDefaultValueString(toString(defaultOptions.solveMode))
                                          .build())
                         .build());
 
@@ -85,7 +146,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
-                                         .setDefaultValueString("on")
+                                         .setDefaultValueString(flagToString(defaultOptions.addAllGuards))
                                          .build())
                         .build());
 
@@ -94,7 +155,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
-                                         .setDefaultValueString("on")
+                                         .setDefaultValueString(flagToString(defaultOptions.addAllInitialExpressions))
                                          .build())
                         .build());
 
@@ -103,14 +164,14 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
-                                         .setDefaultValueString("on")
+                                         .setDefaultValueString(flagToString(defaultOptions.useInterpolation))
                                          .build())
                         .build());
 
     this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The precision used for detecting convergence.")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.")
-                                         .setDefaultValueDouble(1e-03)
+                                         .setDefaultValueDouble(defaultOptions.precision)
                                          .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0))
                                          .build())
                         .build());
@@ -119,7 +180,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
-                                         .setDefaultValueString("off")
+                                         .setDefaultValueString(flagToString(defaultOptions.relativeTerminationCriterion))
                                          .build())
                         .build());
 
@@ -128,7 +189,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available heuristic.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(pivotHeuristic))
-                                         .setDefaultValueString("nearest-max-dev")
+                                         .setDefaultValueString(toString(defaultOptions.pivotSelectionHeuristic))
                                          .build())
                         .build());
 
@@ -137,7 +198,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reuseModes))
-                                         .setDefaultValueString("all")
+                                         .setDefaultValueString(toString(defaultOptions.reuseMode))
                                          .build())
                         .build());
 
@@ -146,7 +207,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
-                                         .setDefaultValueString("on")
+                                         .setDefaultValueString(flagToString(defaultOptions.restrictToRelevantStates))
                                          .build())
                         .build());
 
@@ -155,7 +216,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
-                                         .setDefaultValueString("off")
+                                         .setDefaultValueString(flagToString(defaultOptions.rankRefinementPredicates))
                                          .build())
                         .build());
 
@@ -163,7 +224,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
-                                         .setDefaultValueString("off")
+                                         .setDefaultValueString(flagToString(defaultOptions.useEagerRefinement))
                                          .build())
                         .build());
 
@@ -186,7 +247,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
-                                         .setDefaultValueString("on")
+                                         .setDefaultValueString(flagToString(defaultOptions.fixPlayer1Strategy))
                                          .build())
                         .build());
 
@@ -194,7 +255,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
-                                         .setDefaultValueString("on")
+                                         .setDefaultValueString(flagToString(defaultOptions.fixPlayer2Strategy))
                                          .build())
                         .build());
 
@@ -202,7 +263,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
-                                         .setDefaultValueString("off")
+                                         .setDefaultValueString(flagToString(defaultOptions.debug))
                                          .build())
                         .build());
 
@@ -211,7 +272,7 @@ AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(validModes))
-                                         .setDefaultValueString("morepreds")
+                                         .setDefaultValueString(validBlockModeToString(defaultOptions.restrictToValidBlocks))
                                          .build())
                         .build());
 }

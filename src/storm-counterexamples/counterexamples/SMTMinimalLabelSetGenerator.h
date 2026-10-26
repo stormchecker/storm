@@ -9,13 +9,18 @@
 #include <sstream>
 #include <utility>
 
+#include "storm-counterexamples/counterexamples/CounterexampleOptions.h"
 #include "storm-counterexamples/counterexamples/GuaranteedLabelSet.h"
 #include "storm-counterexamples/counterexamples/HighLevelCounterexample.h"
+#include "storm/environment/Environment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/expressions/Expression.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
@@ -24,29 +29,21 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Model.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CounterexampleGeneratorSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/solver/Z3SmtSolver.h"
+#include "storm/solver/SmtSolver.h"
 #include "storm/storage/BoostTypes.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/prism/Program.h"
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
 
-namespace storm {
-
-class Environment;
-
-namespace counterexamples {
+namespace storm::counterexamples {
 
 /**
  * Helper to avoid case disticinot between prism and jani
  * Returns the number of edges/commands in a symbolic model description.
  */
-inline size_t nrCommands(storm::storage::SymbolicModelDescription const& descr) {
+inline size_t nrCommands(storm::languages::SymbolicModelDescription const& descr) {
     if (descr.isJaniModel()) {
         return descr.asJaniModel().getNumberOfEdges();
     } else {
@@ -61,7 +58,7 @@ inline size_t nrCommands(storm::storage::SymbolicModelDescription const& descr) 
  */
 template<class T>
 class SMTMinimalLabelSetGenerator {
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
    private:
     struct RelevancyInformation {
         // The set of relevant states in the model.
@@ -376,7 +373,7 @@ class SMTMinimalLabelSetGenerator {
      * Returns an expression characterizing the initial states of the given model, where for JANI models the initial
      * locations of the automata are taken into account as well.
      */
-    static storm::expressions::Expression getInitialStatesExpression(storm::storage::SymbolicModelDescription const& symbolicModel) {
+    static storm::expressions::Expression getInitialStatesExpression(storm::languages::SymbolicModelDescription const& symbolicModel) {
         if (symbolicModel.isPrismProgram()) {
             return symbolicModel.asPrismProgram().getInitialStatesExpression();
         }
@@ -400,12 +397,19 @@ class SMTMinimalLabelSetGenerator {
      * Asserts cuts that are derived from the explicit representation of the model and rule out a lot of
      * suboptimal solutions.
      *
+     * @param env The environment determining the SMT solver to use for local checks.
      * @param symbolicModel The symbolic model description used to build the model.
      * @param model The labeled model for which to compute the cuts.
-     * @param context The Z3 context in which to build the expressions.
+     * @param labelSets The label sets of the choices of the model.
+     * @param psiStates A bit vector characterizing all psi states in the model.
+     * @param variableInformation A structure with information about the variables of the solver.
+     * @param relevancyInformation A structure with information about the relevant states, choices and labels.
      * @param solver The solver to use for the satisfiability evaluation.
+     * @param addBackwardImplications Whether to also assert backward implications derived from the symbolic model.
+     * @return The time spent on asserting the cuts.
      */
-    static std::chrono::milliseconds assertCuts(storm::storage::SymbolicModelDescription const& symbolicModel, storm::models::sparse::Model<T> const& model,
+    static std::chrono::milliseconds assertCuts(Environment const& env, storm::languages::SymbolicModelDescription const& symbolicModel,
+                                                storm::models::sparse::Model<T> const& model,
                                                 std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets,
                                                 storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation,
                                                 RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver,
@@ -512,7 +516,7 @@ class SMTMinimalLabelSetGenerator {
             std::unique_ptr<storm::solver::SmtSolver> localSolver;
             if (symbolicModel.isPrismProgram()) {
                 storm::prism::Program const& program = symbolicModel.asPrismProgram();
-                localSolver = std::make_unique<storm::solver::Z3SmtSolver>(program.getManager());
+                localSolver = storm::utility::solver::getSmtSolver(env, program.getManager());
 
                 // Then add the constraints for bounds of the integer variables.
                 for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
@@ -525,7 +529,7 @@ class SMTMinimalLabelSetGenerator {
                 }
             } else {
                 storm::jani::Model const& janiModel = symbolicModel.asJaniModel();
-                localSolver = std::make_unique<storm::solver::Z3SmtSolver>(janiModel.getManager());
+                localSolver = storm::utility::solver::getSmtSolver(env, janiModel.getManager());
 
                 for (auto const& integerVariable : janiModel.getGlobalVariables().getBoundedIntegerVariables()) {
                     if (integerVariable.isTransient()) {
@@ -1748,8 +1752,10 @@ class SMTMinimalLabelSetGenerator {
             } else {
                 for (auto const& rewName : rewardName.get()) {
                     results.push_back(storm::utility::zero<T>());
-                    allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeReachabilityRewards(
-                        env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), model.getRewardModel(rewName), psiStates, false);
+                    allStatesResult =
+                        storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeReachabilityRewards(
+                            env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), model.getRewardModel(rewName), psiStates, false)
+                            .values;
                     for (auto state : model.getInitialStates()) {
                         results.back() = std::max(results.back(), allStatesResult[state]);
                     }
@@ -1777,16 +1783,11 @@ class SMTMinimalLabelSetGenerator {
 
    public:
     struct Options {
-        Options(bool checkThresholdFeasible = false) : checkThresholdFeasible(checkThresholdFeasible) {
-            auto const& settings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
-
-            encodeReachability = settings.isEncodeReachabilitySet();
-            useDynamicConstraints = settings.isUseDynamicConstraintsSet();
-        }
+        Options(bool checkThresholdFeasible = false) : checkThresholdFeasible(checkThresholdFeasible) {}
 
         bool checkThresholdFeasible;
-        bool encodeReachability;
-        bool useDynamicConstraints;
+        bool encodeReachability = CounterexampleOptions().encodeReachability;
+        bool useDynamicConstraints = CounterexampleOptions().useDynamicConstraints;
         bool silent = false;
         bool addBackwardImplicationCuts = true;
         uint64_t continueAfterFirstCounterexampleUntil = 0;
@@ -1817,11 +1818,11 @@ class SMTMinimalLabelSetGenerator {
      * @param options A set of options for customization.
      */
     static std::vector<storm::storage::FlatSet<uint_fast64_t>> getMinimalLabelSet(
-        Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel,
+        Environment const& env, GeneratorStats& stats, storm::languages::SymbolicModelDescription const& symbolicModel,
         storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
         std::vector<double> propertyThreshold, boost::optional<std::vector<std::string>> const& rewardName, bool strictBound,
         storm::storage::FlatSet<uint_fast64_t> const& dontCareLabels = storm::storage::FlatSet<uint_fast64_t>(), Options const& options = Options()) {
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
         STORM_LOG_THROW(propertyThreshold.size() > 0, storm::exceptions::InvalidArgumentException, "At least one threshold has to be specified.");
         STORM_LOG_THROW(propertyThreshold.size() == 1 || (rewardName && rewardName.get().size() == propertyThreshold.size()),
                         storm::exceptions::InvalidArgumentException, "Multiple thresholds is only supported for multiple reward structures.");
@@ -1885,7 +1886,7 @@ class SMTMinimalLabelSetGenerator {
 
         // (3) Create a solver.
         std::shared_ptr<storm::expressions::ExpressionManager> manager = std::make_shared<storm::expressions::ExpressionManager>();
-        std::unique_ptr<storm::solver::SmtSolver> solver = std::make_unique<storm::solver::Z3SmtSolver>(*manager);
+        std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::getSmtSolver(env, *manager);
 
         // (4) Create the variables for the relevant commands.
         VariableInformation variableInformation = createVariables(manager, model, psiStates, relevancyInformation, options.encodeReachability);
@@ -1903,7 +1904,7 @@ class SMTMinimalLabelSetGenerator {
         // (6) Add constraints that cut off a lot of suboptimal solutions.
         STORM_LOG_DEBUG("Asserting cuts.");
         stats.cutTime =
-            assertCuts(symbolicModel, model, labelSets, psiStates, variableInformation, relevancyInformation, *solver, options.addBackwardImplicationCuts);
+            assertCuts(env, symbolicModel, model, labelSets, psiStates, variableInformation, relevancyInformation, *solver, options.addBackwardImplicationCuts);
         STORM_LOG_DEBUG("Asserted cuts.");
         if (options.encodeReachability) {
             assertReachabilityCuts(model, labelSets, psiStates, variableInformation, relevancyInformation, *solver);
@@ -1934,7 +1935,7 @@ class SMTMinimalLabelSetGenerator {
         std::vector<double> maximalPropertyValue;
         uint_fast64_t zeroProbabilityCount = 0;
         size_t smallestCounterexampleSize = model.getNumberOfChoices();  // Definitive upper bound
-        uint64_t progressDelay = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getShowProgressDelay();
+        uint64_t progressDelay = env.solver().getShowProgressDelay();
         do {
             ++iterations;
 
@@ -2088,7 +2089,7 @@ class SMTMinimalLabelSetGenerator {
         return result;
 #else
         STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
-                        "This functionality is unavailable since storm has been compiled without support for Z3.");
+                        "This functionality is unavailable since storm has been compiled without support for an SMT solver.");
 #endif
     }
 
@@ -2194,7 +2195,7 @@ class SMTMinimalLabelSetGenerator {
         }
     };
 
-    static CexInput precompute(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel,
+    static CexInput precompute(Environment const& env, storm::languages::SymbolicModelDescription const& symbolicModel,
                                storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
         CexInput result;
         STORM_LOG_THROW(formula->isProbabilityOperatorFormula() || formula->isRewardOperatorFormula(), storm::exceptions::InvalidPropertyException,
@@ -2288,7 +2289,7 @@ class SMTMinimalLabelSetGenerator {
     }
 
     static std::vector<storm::storage::FlatSet<uint_fast64_t>> computeCounterexampleLabelSet(
-        Environment const& env, GeneratorStats& stats, storm::storage::SymbolicModelDescription const& symbolicModel,
+        Environment const& env, GeneratorStats& stats, storm::languages::SymbolicModelDescription const& symbolicModel,
         storm::models::sparse::Model<T> const& model, CexInput const& counterexInput,
         storm::storage::FlatSet<uint_fast64_t> const& dontCareLabels = storm::storage::FlatSet<uint_fast64_t>(), Options const& options = Options(true)) {
         STORM_LOG_THROW(model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Mdp),
@@ -2316,17 +2317,19 @@ class SMTMinimalLabelSetGenerator {
         return labelSets;
     }
 
-    static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel,
+    static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env,
+                                                                          storm::languages::SymbolicModelDescription const& symbolicModel,
                                                                           storm::models::sparse::Model<T> const& model,
-                                                                          std::shared_ptr<storm::logic::Formula const> const& formula) {
-#ifdef STORM_HAVE_Z3
+                                                                          std::shared_ptr<storm::logic::Formula const> const& formula,
+                                                                          Options const& options = Options(true)) {
+#ifdef STORM_HAVE_SMT_SOLVER
         std::cout << "\nGenerating minimal label counterexample for formula " << *formula << '\n';
         GeneratorStats stats;
         CexInput prec = precompute(env, symbolicModel, model, formula);
         if (prec.lowerBoundedFormula) {
             STORM_LOG_WARN("Generating counterexample for lower-bounded property. The resulting command set need not be minimal.");
         }
-        auto labelSets = computeCounterexampleLabelSet(env, stats, symbolicModel, model, prec);
+        auto labelSets = computeCounterexampleLabelSet(env, stats, symbolicModel, model, prec, storm::storage::FlatSet<uint_fast64_t>(), options);
 
         if (symbolicModel.isPrismProgram()) {
             storm::prism::Program program = symbolicModel.asPrismProgram().restrictCommands(labelSets[0]);
@@ -2340,11 +2343,10 @@ class SMTMinimalLabelSetGenerator {
         }
 #else
         STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
-                        "This functionality is unavailable since storm has been compiled without support for Z3.");
+                        "This functionality is unavailable since storm has been compiled without support for an SMT solver.");
         return nullptr;
 #endif
     }
 };
 
-}  // namespace counterexamples
-}  // namespace storm
+}  // namespace storm::counterexamples

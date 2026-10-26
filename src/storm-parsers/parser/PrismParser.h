@@ -3,7 +3,7 @@
 #include <string>
 
 #include "storm-parsers/storm-parsers-api.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 
 namespace storm::parser {
 

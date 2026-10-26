@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/storage/dd/Bdd.h"
+#include "storm/dd/Bdd.h"
 
 namespace storm::gbar {
 namespace abstraction {

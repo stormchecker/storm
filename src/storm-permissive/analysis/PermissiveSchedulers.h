@@ -82,7 +82,8 @@ boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMILP
                                                                                  storm::logic::ProbabilityOperatorFormula const& safeProp);
 
 template<typename RM>
-boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaSMT(storm::models::sparse::Mdp<double, RM> const& mdp,
+boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaSMT(storm::Environment const& env,
+                                                                                storm::models::sparse::Mdp<double, RM> const& mdp,
                                                                                 storm::logic::ProbabilityOperatorFormula const& safeProp);
 }  // namespace ps
 }  // namespace storm

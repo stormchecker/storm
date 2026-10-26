@@ -10,10 +10,10 @@
 #include <sstream>
 #include <typeinfo>
 
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Variable.h"
-#include "storm/storage/umb/model/StringEncoding.h"
-#include "storm/storage/umb/model/UmbModel.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/Variable.h"
+#include "storm/languages/umb/StringEncoding.h"
+#include "storm/languages/umb/UmbModel.h"
 #include "storm/storage/valuations/ValuationDescription.h"
 #include "storm/utility/macros.h"
 

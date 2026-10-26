@@ -3,8 +3,8 @@
 
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/logic/FragmentChecker.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 TEST(FragmentCheckerTest, Propositional) {
     auto expManager = std::make_shared<storm::expressions::ExpressionManager>();

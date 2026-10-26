@@ -5,13 +5,13 @@
 #include <unordered_map>
 
 #include "storm/adapters/RationalFunctionForward.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdType.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/Variable.h"
 #include "storm/models/Model.h"
 #include "storm/models/ModelRepresentation.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdType.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace dd {

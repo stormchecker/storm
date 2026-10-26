@@ -10,13 +10,13 @@
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeGameResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQuantitativeGameResultMinMax.h"
 
-#include "storm/storage/expressions/EquivalenceChecker.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/FullPredicateSplitter.h"
+#include "storm/expressions/EquivalenceChecker.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/FullPredicateSplitter.h"
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
-#include "storm/settings/modules/AbstractionSettings.h"
+#include "storm-gamebased-ar/abstraction/AbstractionOptions.h"
 
 #include "storm/utility/solver.h"
 
@@ -100,17 +100,6 @@ class ExplicitQualitativeGameResultMinMax;
 template<typename ValueType>
 class ExplicitQuantitativeResultMinMax;
 
-struct MenuGameRefinerOptions {
-    MenuGameRefinerOptions() = default;
-
-    MenuGameRefinerOptions(std::vector<std::vector<storm::expressions::Expression>>&& refinementPredicates)
-        : refinementPredicates(std::move(refinementPredicates)) {
-        // Intentionally left empty.
-    }
-
-    std::vector<std::vector<storm::expressions::Expression>> refinementPredicates;
-};
-
 template<storm::dd::DdType Type, typename ValueType>
 class MenuGameRefiner {
    public:
@@ -118,7 +107,7 @@ class MenuGameRefiner {
      * Creates a refiner for the provided abstractor.
      */
     MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver,
-                    MenuGameRefinerOptions const& options = MenuGameRefinerOptions());
+                    AbstractionOptions const& options = AbstractionOptions());
 
     /*!
      * Refines the abstractor with the given predicates.
@@ -252,7 +241,7 @@ class MenuGameRefiner {
     mutable std::vector<std::vector<storm::expressions::Expression>> refinementPredicatesToInject;
 
     /// The heuristic to use for pivot block selection.
-    storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic pivotSelectionHeuristic;
+    PivotSelectionHeuristic pivotSelectionHeuristic;
 
     /// An object that can be used for splitting predicates.
     mutable storm::expressions::FullPredicateSplitter splitter;

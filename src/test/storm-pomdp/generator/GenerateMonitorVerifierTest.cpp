@@ -4,12 +4,12 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 
 #include "storm-pomdp/generator/GenerateMonitorVerifier.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/sparse/ModelComponents.h"
 
 namespace {

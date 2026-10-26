@@ -1,7 +1,7 @@
 #pragma once
 
+#include "storm/dd/cudd/CuddReorderingTechnique.h"
 #include "storm/settings/modules/ModuleSettings.h"
-#include "storm/storage/dd/cudd/CuddReorderingTechnique.h"
 
 namespace storm {
 namespace settings {

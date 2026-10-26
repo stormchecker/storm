@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.25)
 
 # Set project name
 project(storm
-	VERSION 1.14.0.1
+	VERSION 2.0.0.1
 	# Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
 	LANGUAGES CXX C
 	DESCRIPTION "Storm - A Modern Probabilistic Model Checker"
@@ -83,7 +83,7 @@ MARK_AS_ADVANCED(STORM_QVBS_ROOT)
 
 ## Configuring dependencies
 set(STORM_CARL_GIT_REPO "https://github.com/stormchecker/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
-set(STORM_CARL_GIT_TAG_DEFAULT "14.36")
+set(STORM_CARL_GIT_TAG_DEFAULT "14.37")
 set(STORM_CARL_GIT_TAG "${STORM_CARL_GIT_TAG_DEFAULT}" CACHE STRING "For fetching carl: which git tag to use")
 
 # Correct a non-STRING cache entry, while leaving a tag that was set deliberately untouched.
@@ -123,7 +123,10 @@ mark_as_advanced(XERCESC_ROOT)
 option(STORM_DISABLE_Z3  "Sets whether linking with Z3 should be disabled." OFF)
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3.")
 mark_as_advanced(Z3_ROOT)
-set(STORM_DEFAULT_SMT_SOLVER "Auto" CACHE STRING "The default SMT solver to use (Auto, Z3 or Mathsat). Must be available at compile time.")
+option(STORM_DISABLE_CVC5 "Sets whether linking with cvc5 should be disabled." OFF)
+set(CVC5_ROOT "" CACHE STRING "A hint to the root directory of cvc5.")
+mark_as_advanced(CVC5_ROOT)
+set(STORM_DEFAULT_SMT_SOLVER "Auto" CACHE STRING "The default SMT solver to use (Auto, Z3, Mathsat or cvc5). Must be available at compile time.")
 MARK_AS_ADVANCED(STORM_DEFAULT_SMT_SOLVER)
 
 option(STORM_DEBUG_CUDD "Build CUDD in debug mode." OFF)
@@ -465,6 +468,13 @@ else()
 	set(STORM_HAVE_LP_SOLVER OFF)
 	message(WARNING "Storm - Compiled without an LP solver. This may yield errors at run time.")
 endif()
+if(STORM_HAVE_CVC5 OR STORM_HAVE_MATHSAT OR STORM_HAVE_Z3)
+	set(STORM_HAVE_SMT_SOLVER ON)
+	message(STATUS "Storm - Compiled with an SMT solver.")
+else()
+	# A warning is issued when determining the default SMT solver below.
+	set(STORM_HAVE_SMT_SOLVER OFF)
+endif()
 if(STORM_HAVE_CUDD OR STORM_HAVE_SYLVAN)
 	set(STORM_HAVE_DD_LIBRARY ON)
 	message(STATUS "Storm - Compiled with a DD library.")
@@ -474,6 +484,7 @@ else()
 endif()
 
 export_option(STORM_HAVE_CUDD)
+export_option(STORM_HAVE_CVC5)
 export_option(STORM_HAVE_GMM)
 export_option(STORM_HAVE_GLPK)
 export_option(STORM_HAVE_GUROBI)
@@ -485,6 +496,40 @@ export_option(STORM_HAVE_SYLVAN)
 export_option(STORM_HAVE_XERCES)
 export_option(STORM_HAVE_Z3)
 export_option(STORM_HAVE_LP_SOLVER)
+export_option(STORM_HAVE_SMT_SOLVER)
+
+# Determine the compile-time default SMT solver from the STORM_DEFAULT_SMT_SOLVER option.
+set(STORM_DEFAULT_SMT_SOLVER_Z3 OFF)
+set(STORM_DEFAULT_SMT_SOLVER_MATHSAT OFF)
+set(STORM_DEFAULT_SMT_SOLVER_CVC5 OFF)
+if(STORM_DEFAULT_SMT_SOLVER STREQUAL "Z3")
+	if(NOT STORM_HAVE_Z3)
+		message(FATAL_ERROR "STORM_DEFAULT_SMT_SOLVER=Z3 requested, but Z3 is not available.")
+	endif()
+	set(STORM_DEFAULT_SMT_SOLVER_Z3 ON)
+elseif(STORM_DEFAULT_SMT_SOLVER STREQUAL "Mathsat")
+	if(NOT STORM_HAVE_MATHSAT)
+		message(FATAL_ERROR "STORM_DEFAULT_SMT_SOLVER=Mathsat requested, but MathSAT is not available.")
+	endif()
+	set(STORM_DEFAULT_SMT_SOLVER_MATHSAT ON)
+elseif(STORM_DEFAULT_SMT_SOLVER STREQUAL "cvc5")
+	if(NOT STORM_HAVE_CVC5)
+		message(FATAL_ERROR "STORM_DEFAULT_SMT_SOLVER=cvc5 requested, but cvc5 is not available.")
+	endif()
+	set(STORM_DEFAULT_SMT_SOLVER_CVC5 ON)
+elseif(STORM_DEFAULT_SMT_SOLVER STREQUAL "Auto")
+	if(STORM_HAVE_Z3)
+		set(STORM_DEFAULT_SMT_SOLVER_Z3 ON)
+	elseif(STORM_HAVE_MATHSAT)
+		set(STORM_DEFAULT_SMT_SOLVER_MATHSAT ON)
+	elseif(STORM_HAVE_CVC5)
+		set(STORM_DEFAULT_SMT_SOLVER_CVC5 ON)
+	else()
+		message(WARNING "Storm - No SMT solver (Z3, MathSAT or cvc5) available; SMT-based features will fail at run time.")
+	endif()
+else()
+	message(FATAL_ERROR "STORM_DEFAULT_SMT_SOLVER must be one of Auto, Z3, Mathsat or cvc5, but was '${STORM_DEFAULT_SMT_SOLVER}'.")
+endif()
 
 if(PROJECT_IS_TOP_LEVEL)
 	# Include Doxygen
@@ -550,31 +595,6 @@ endif()
 message(STATUS "Storm - Version is ${STORM_VERSION_STRING}.")
 export_option(STORM_VERSION) # We want this information also in the more accessible stormOptions.cmake
 export_option(STORM_VERSION_DEV) # We want this information also in the more accessible stormOptions.cmake
-
-# Determine the compile-time default SMT solver from the STORM_DEFAULT_SMT_SOLVER option.
-set(STORM_DEFAULT_SMT_SOLVER_Z3 OFF)
-set(STORM_DEFAULT_SMT_SOLVER_MATHSAT OFF)
-if(STORM_DEFAULT_SMT_SOLVER STREQUAL "Z3")
-	if(NOT STORM_HAVE_Z3)
-		message(FATAL_ERROR "STORM_DEFAULT_SMT_SOLVER=Z3 requested, but Z3 is not available.")
-	endif()
-	set(STORM_DEFAULT_SMT_SOLVER_Z3 ON)
-elseif(STORM_DEFAULT_SMT_SOLVER STREQUAL "Mathsat")
-	if(NOT STORM_HAVE_MATHSAT)
-		message(FATAL_ERROR "STORM_DEFAULT_SMT_SOLVER=Mathsat requested, but MathSAT is not available.")
-	endif()
-	set(STORM_DEFAULT_SMT_SOLVER_MATHSAT ON)
-elseif(STORM_DEFAULT_SMT_SOLVER STREQUAL "Auto")
-	if(STORM_HAVE_Z3)
-		set(STORM_DEFAULT_SMT_SOLVER_Z3 ON)
-	elseif(STORM_HAVE_MATHSAT)
-		set(STORM_DEFAULT_SMT_SOLVER_MATHSAT ON)
-	else()
-		message(WARNING "Storm - No SMT solver (Z3 or Mathsat) available; SMT-based features will fail at run time.")
-	endif()
-else()
-	message(FATAL_ERROR "STORM_DEFAULT_SMT_SOLVER must be one of Auto, Z3 or Mathsat, but was '${STORM_DEFAULT_SMT_SOLVER}'.")
-endif()
 
 # Configure a header file to pass some of the CMake settings to the source code
 configure_file (

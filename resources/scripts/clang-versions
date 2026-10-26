@@ -1,7 +1,7 @@
 # Clang toolchain versions pinned for the whole project.
 # Read by the CI workflows and the local scripts (auto-format.sh, clang-tidy.sh).
 # Do not use inline comments or quoting; values are parsed line-wise.
-# CLANG_FORMAT_VERSION must be supported by DoozyX/clang-format-lint-action
+# CLANG_FORMAT_VERSION is read by auto-format.sh and installed as clang-format-<version> in the formatcheck/apply-code-format workflows.
 # CLANG_TIDY_VERSION must be supported by cpp-linter-action
 CLANG_FORMAT_VERSION=20
 CLANG_TIDY_VERSION=22

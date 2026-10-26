@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
+#include "storm/dd/DdType.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/SubEnvironment.h"
-#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 

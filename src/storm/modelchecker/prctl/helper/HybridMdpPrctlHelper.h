@@ -2,8 +2,8 @@
 
 #include "storm/models/symbolic/NondeterministicModel.h"
 
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"

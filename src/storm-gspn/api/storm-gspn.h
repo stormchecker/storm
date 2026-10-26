@@ -6,7 +6,7 @@
 #include "storm-conv/converter/options/JaniConversionOptions.h"
 #include "storm-gspn/builder/JaniGSPNBuilder.h"
 #include "storm-gspn/storage/gspn/GSPN.h"
-#include "storm/storage/jani/Model.h"
+#include "storm/languages/jani/Model.h"
 
 namespace storm {
 namespace utility::solver {

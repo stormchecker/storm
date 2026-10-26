@@ -9,7 +9,7 @@
 #include "storm/api/properties.h"
 #include "storm/api/verification.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/utility/constants.h"
 
 namespace {
@@ -57,8 +57,8 @@ class SparseDtmcParameterLiftingTest : public ::testing::Test {
         return _environment;
     }
     virtual void SetUp() {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
         storm::clearRFVariablePool();
     }

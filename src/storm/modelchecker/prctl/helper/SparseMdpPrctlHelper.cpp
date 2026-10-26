@@ -17,13 +17,11 @@
 #include "storm/modelchecker/prctl/helper/SparseMdpEndComponentInformation.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/multiplier/Multiplier.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
@@ -57,8 +55,9 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
         std::vector<ValueType> x, b;
         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
 
-        ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(
-            initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
+        // The MinMax solver environment always carries a precision.
+        ValueType precision =
+            rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
         Environment preciseEnv = env;
         preciseEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
 
@@ -321,7 +320,7 @@ SparseMdpHintType<SolutionType> computeHints(Environment const& env, SemanticSol
                                              storm::OptimizationDirection const& dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                              storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates,
                                              storm::storage::BitVector const& phiStates, storm::storage::BitVector const& targetStates, bool produceScheduler,
-                                             boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none) {
+                                             boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none, bool hasUniqueSolution = false) {
     SparseMdpHintType<SolutionType> result;
 
     // There are no end components if we minimize until probabilities or
@@ -332,7 +331,7 @@ SparseMdpHintType<SolutionType> computeHints(Environment const& env, SemanticSol
 
     // If there are no end components, the solution is unique. (Note that the other direction does not hold,
     // e.g., end components in which infinite reward is collected.
-    result.uniqueSolution = result.hasNoEndComponents();
+    result.uniqueSolution = result.hasNoEndComponents() || hasUniqueSolution;
 
     // Check for requirements of the solver.
     bool hasSchedulerHint = hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasSchedulerHint();
@@ -772,12 +771,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                         ecInformation.get().setValues(bound, qualitativeStateSets.maybeStates, boundInEcQuotient);
                         return bound;
                     };
-                    if (resultForMaybeStates.solutionBounds.hasLower()) {
-                        resultBounds.lower = liftBound(*resultForMaybeStates.solutionBounds.lower);
-                    }
-                    if (resultForMaybeStates.solutionBounds.hasUpper()) {
-                        resultBounds.upper = liftBound(*resultForMaybeStates.solutionBounds.upper);
-                    }
+                    resultBounds = resultForMaybeStates.solutionBounds.transform(liftBound);
                     ecInformation.get().setValues(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                     if (produceScheduler) {
                         ecInformation.get().setScheduler(*scheduler, qualitativeStateSets.maybeStates, transitionMatrix, backwardTransitions,
@@ -794,17 +788,13 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                         storm::utility::vector::setVectorValues<SolutionType>(bound, qualitativeStateSets.maybeStates, boundForMaybeStates);
                         return bound;
                     };
-                    if (resultForMaybeStates.solutionBounds.hasLower()) {
-                        resultBounds.lower = embedBound(*resultForMaybeStates.solutionBounds.lower);
-                    }
-                    if (resultForMaybeStates.solutionBounds.hasUpper()) {
-                        resultBounds.upper = embedBound(*resultForMaybeStates.solutionBounds.upper);
-                    }
+                    resultBounds = resultForMaybeStates.solutionBounds.transform(embedBound);
                     storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                 } else {
                     // For interval models, the result for maybe states indeed also holds values for all qualitative states.
                     STORM_LOG_ASSERT(resultForMaybeStates.getValues().size() == transitionMatrix.getColumnCount(), "Dimensions do not match.");
                     result = resultForMaybeStates.getValues();
+                    resultBounds = std::move(resultForMaybeStates.solutionBounds);
                 }
                 if (produceScheduler) {
                     extractSchedulerChoices<SolutionType, !storm::IsIntervalType<ValueType>>(*scheduler, resultForMaybeStates.getScheduler(),
@@ -892,23 +882,25 @@ template<typename RewardModelType>
 std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeCumulativeRewards(
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     RewardModelType const& rewardModel, uint_fast64_t stepBound) {
+    // Only compute the result if the model has at least one reward this->getModel().
+    STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
     if constexpr (storm::IsIntervalType<ValueType>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support cumulative rewards with interval models.");
-    } else {
-        // Only compute the result if the model has at least one reward this->getModel().
-        STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-
-        // Compute the reward vector to add in each step based on the available reward models.
-        std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix);
-
-        // Initialize result to the zero vector.
-        std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
-
-        auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
-        multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, &totalRewardVector, stepBound, goal.getUncertaintyResolutionMode());
-
-        return result;
+        STORM_LOG_ASSERT(storm::solver::isSet(goal.getUncertaintyResolutionMode()), "Interval model given, but no uncertainty resolution mode is specified.");
+        STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException,
+                        "Cumulative rewards on interval models do not support transition rewards.");
     }
+
+    // Compute the reward vector to add in each step based on the available reward models.
+    // For interval models, this vector may contain intervals. The multiplier picks the bound that is consistent with the uncertainty resolution mode.
+    std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix);
+
+    // Initialize result to the zero vector.
+    std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
+
+    auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, transitionMatrix);
+    multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, &totalRewardVector, stepBound, goal.getUncertaintyResolutionMode());
+
+    return result;
 }
 
 template<typename ValueType, typename SolutionType>
@@ -1004,9 +996,14 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
                     return newChoicesWithoutReward;
                 });
 
-            std::vector<ExtendedSolutionType> resultInEcQuotient = std::move(result.values);
-            result.values.resize(ecElimResult.oldToNewStateMapping.size());
-            storm::utility::vector::selectVectorValues(result.values, ecElimResult.oldToNewStateMapping, resultInEcQuotient);
+            // All states of an eliminated end component share their quotient state's value, and its bounds.
+            auto liftFromEcQuotient = [&ecElimResult](std::vector<ExtendedSolutionType> const& valuesInEcQuotient) {
+                std::vector<ExtendedSolutionType> lifted(ecElimResult.oldToNewStateMapping.size());
+                storm::utility::vector::selectVectorValues(lifted, ecElimResult.oldToNewStateMapping, valuesInEcQuotient);
+                return lifted;
+            };
+            result.solutionBounds = result.solutionBounds.transform(liftFromEcQuotient);
+            result.values = liftFromEcQuotient(result.values);
             return result;
         }
     }
@@ -1258,6 +1255,35 @@ void computeFixedPointSystemReachabilityRewards(
     std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const&
         totalStateRewardVectorGetter,
     storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b, std::vector<ValueType>* oneStepTargetProbabilities = nullptr) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        // For interval models, we must not remove the columns of states whose reward values are already known (i.e., target states): the probability
+        // mass that is moved to these states is constrained by the transition intervals, which is relevant for resolving the uncertainty at predecessors.
+        // We thus keep all columns (so the system has one row group for every state) and drop all outgoing transitions of non-maybe states.
+        // The values of non-maybe states are then 0 by construction (no transitions, no reward), which is the correct value for target states.
+        // Infinity states are never reached via the choices we keep.
+        submatrix = transitionMatrix.filterEntries(transitionMatrix.getRowFilter(qualitativeStateSets.maybeStates));
+        // The rows of non-maybe states carry no reward. Note that b must be indexed by the rows of the original matrix, so we compute the rewards for all
+        // states and set the entries of non-maybe states to zero.
+        b = totalStateRewardVectorGetter(transitionMatrix.getRowCount(), transitionMatrix,
+                                         storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true));
+        storm::utility::vector::setVectorValues(b, ~transitionMatrix.getRowFilter(qualitativeStateSets.maybeStates), storm::utility::zero<ValueType>());
+        if (!qualitativeStateSets.infinityStates.empty()) {
+            // Remove the choices of maybe states that lead to infinity states. The (empty) rows of non-maybe states are kept.
+            storm::storage::BitVector const rowsToKeep = *selectedChoices | transitionMatrix.getRowFilter(~qualitativeStateSets.maybeStates);
+            submatrix = submatrix.restrictRows(rowsToKeep);
+            storm::utility::vector::filterVectorInPlace(b, rowsToKeep);
+        }
+        if (oneStepTargetProbabilities) {
+            if (qualitativeStateSets.infinityStates.empty()) {
+                (*oneStepTargetProbabilities) =
+                    transitionMatrix.getConstrainedRowGroupSumVector(qualitativeStateSets.maybeStates, qualitativeStateSets.rewardZeroStates);
+            } else {
+                (*oneStepTargetProbabilities) = transitionMatrix.getConstrainedRowSumVector(*selectedChoices, qualitativeStateSets.rewardZeroStates);
+            }
+        }
+        // Note that the solution vector has an entry for each state, so the relevant values of the solve goal are not restricted to the maybe states.
+        return;
+    }
     // Remove rows and columns from the original transition probability matrix for states whose reward values are already known.
     // If there are infinity states, we additionally have to remove choices of maybeState that lead to infinity.
     if (qualitativeStateSets.infinityStates.empty()) {
@@ -1395,6 +1421,7 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
     ModelCheckerHint const& hint) {
     // Prepare resulting vector.
     std::vector<ExtendedSolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ExtendedSolutionType>());
+    storm::solver::SolutionBounds<ExtendedSolutionType> resultBounds;
 
     // Determine which states have a reward that is infinity or less than infinity.
     QualitativeStateSetsReachabilityRewards qualitativeStateSets = getQualitativeStateSetsReachabilityRewards(
@@ -1438,9 +1465,23 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
             }
 
             // Obtain proper hint information either from the provided hint or from requirements of the solver.
+            bool hasUniqueSolution = goal.direction() == storm::solver::OptimizationDirection::Maximize;
+            if constexpr (storm::IsIntervalType<ValueType>) {
+                // For interval models, it is worth checking if the solution is unique, since we have no support for upper-bounds computation.
+                if (!hasUniqueSolution) {
+                    auto zeroRewardChoices = zeroRewardChoicesGetter();
+                    auto oneStepZeroRewardStates = qualitativeStateSets.maybeStates & transitionMatrix.getRowGroupFilter(zeroRewardChoices, false);
+                    // The solution is not unique iff there is a 0-reward EC iff there is a state from which we always stay inside oneStepZeroRewardStates
+                    // while taking only zeroRewardChoices.
+                    hasUniqueSolution =
+                        storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions,
+                                                                    oneStepZeroRewardStates, ~oneStepZeroRewardStates, false, 0, std::move(zeroRewardChoices))
+                            .full();
+                }
+            }
             SparseMdpHintType<SolutionType> hintInformation = computeHints<ValueType, SolutionType>(
                 env, SemanticSolutionType::ExpectedRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates,
-                ~qualitativeStateSets.rewardZeroStates, qualitativeStateSets.rewardZeroStates, produceScheduler, selectedChoices);
+                ~qualitativeStateSets.rewardZeroStates, qualitativeStateSets.rewardZeroStates, produceScheduler, selectedChoices, hasUniqueSolution);
 
             // Declare the components of the equation system we will solve.
             storm::storage::SparseMatrix<ValueType> submatrix;
@@ -1492,8 +1533,29 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
                     }
                 }
             } else {
+                // The copy of result supplies the exact values outside the maybe states.
+                auto embedBound = [&result, &qualitativeStateSets](std::vector<SolutionType> const& boundForMaybeStates) {
+                    std::vector<ExtendedSolutionType> bound(result);
+                    if constexpr (storm::IsIntervalType<ValueType>) {
+                        // For interval models, the bounds (like the solution) have an entry for every state. We only take the bounds of the maybe states.
+                        storm::utility::vector::setVectorValues(bound, qualitativeStateSets.maybeStates,
+                                                                storm::utility::vector::filterVector(boundForMaybeStates, qualitativeStateSets.maybeStates));
+                    } else {
+                        storm::utility::vector::setVectorValues(bound, qualitativeStateSets.maybeStates, boundForMaybeStates);
+                    }
+                    return bound;
+                };
+                resultBounds = resultForMaybeStates.solutionBounds.transform(embedBound);
                 // Set values of resulting vector according to result.
-                storm::utility::vector::setVectorValues(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                if constexpr (storm::IsIntervalType<ValueType>) {
+                    // For interval models, the solution has an entry for every state. We only take the values of the maybe states.
+                    STORM_LOG_ASSERT(resultForMaybeStates.getValues().size() == transitionMatrix.getRowGroupCount(), "Dimensions do not match.");
+                    storm::utility::vector::setVectorValues(
+                        result, qualitativeStateSets.maybeStates,
+                        storm::utility::vector::filterVector(resultForMaybeStates.getValues(), qualitativeStateSets.maybeStates));
+                } else {
+                    storm::utility::vector::setVectorValues(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                }
                 if (produceScheduler) {
                     extractSchedulerChoices(*scheduler, transitionMatrix, resultForMaybeStates.getScheduler(), qualitativeStateSets.maybeStates,
                                             selectedChoices);
@@ -1513,10 +1575,19 @@ typename SparseMdpPrctlHelper<ValueType, SolutionType>::ExtendedReturnType Spars
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler.");
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler.");
 
+    if (qualitativeStateSets.maybeStates.empty()) {
+        // The qualitative precomputation already decided every state, so all values are exact.
+        resultBounds.setExact(result);
+    }
+
     if constexpr (storm::IsIntervalType<ValueType>) {
-        return ExtendedReturnType(std::move(result));
+        ExtendedReturnType returnValue(std::move(result));
+        returnValue.solutionBounds = std::move(resultBounds);
+        return returnValue;
     } else {
-        return ExtendedReturnType(std::move(result), std::move(scheduler));
+        ExtendedReturnType returnValue(std::move(result), std::move(scheduler));
+        returnValue.solutionBounds = std::move(resultBounds);
+        return returnValue;
     }
 }
 

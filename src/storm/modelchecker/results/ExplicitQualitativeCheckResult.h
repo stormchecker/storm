@@ -6,7 +6,7 @@
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/valuations/Valuations.h"
 

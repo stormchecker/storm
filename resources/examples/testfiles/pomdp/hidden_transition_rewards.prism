@@ -1,0 +1,20 @@
+pomdp
+
+observable "start" = s=0;
+observable "hidden" = s=1 | s=2;
+observable "done" = s=3;
+
+module main
+    s : [0..3] init 0;
+    [draw] s=0 -> 0.5: (s'=1) + 0.5: (s'=2);
+    [finish] s=1 | s=2 -> (s'=3);
+    [wait] s=3 -> (s'=3);
+endmodule
+
+rewards "cost"
+    [finish] s=1 : 1;
+    [finish] s=2 : 2;
+    [wait] true : 1;
+endrewards
+
+label "goal" = s=3;

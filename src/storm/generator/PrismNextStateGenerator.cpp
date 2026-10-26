@@ -8,14 +8,15 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionEvaluator.h"
 #include "storm/generator/Distribution.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
 #include "storm/utility/combinatorics.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -218,8 +219,7 @@ std::vector<StateType> PrismNextStateGenerator<ValueType, StateType>::getInitial
         STORM_LOG_DEBUG("Enumerated " << initialStateIndices.size() << " initial states using brute force enumeration.");
     } else {
         // Prepare an SMT solver to enumerate all initial states.
-        storm::utility::solver::SmtSolverFactory factory;
-        std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(program.getManager());
+        std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::getSmtSolver(program.getManager());
 
         std::vector<storm::expressions::Expression> rangeExpressions = program.getAllRangeExpressions();
         for (auto const& expression : rangeExpressions) {

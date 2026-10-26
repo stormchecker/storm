@@ -4,7 +4,7 @@
 
 #include "storm/logic/Formulas.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 
 namespace storm {
 namespace transformer {

@@ -1,8 +1,8 @@
 #pragma once
 
+#include "storm/dd/Add.h"
+#include "storm/dd/DdType.h"
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 namespace modelchecker {

@@ -12,7 +12,7 @@
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/LpMinMaxLinearEquationSolver.h"
 #include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/utility/macros.h"
 
 namespace storm::solver {
@@ -42,7 +42,11 @@ bool MinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquations(Environ
                               "as checked (if applicable).");
     // A reused solver must not report bounds that a previous call computed.
     this->clearSolutionBounds();
-    return internalSolveEquations(env, d, x, b);
+    bool const result = internalSolveEquations(env, d, x, b);
+    if (result) {
+        this->finalizeSolutionBounds(x);
+    }
+    return result;
 }
 
 template<typename ValueType, typename SolutionType>

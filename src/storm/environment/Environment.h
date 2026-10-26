@@ -34,6 +34,13 @@ class Environment {
     SolverEnvironment& solver();
     SolverEnvironment const& solver() const;
 
+    /*!
+     * The default tolerance up to which probabilities and rates are considered equal. This is the
+     * initial value of modelTolerance() as well as the stochastic tolerance a sparse model falls
+     * back to when its components do not specify one.
+     */
+    static constexpr double DefaultModelTolerance = 1e-09;
+
     double modelTolerance() const;
     void setModelTolerance(double value);
 

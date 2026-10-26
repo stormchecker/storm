@@ -1,214 +1,673 @@
 {
+  "defaults": {
+    "cache": false,
+    "carl_tag": "master",
+    "starterProjectCommand": "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'",
+    "disable_all": false,
+    "ClnExact": false,
+    "ClnRatfunc": true,
+    "AllSanitizers": false,
+    "expectNotHave": []
+  },
   "linuxTests": [
     {
       "name": "All dependencies",
-      "scope": [
-        "quick",
-        "normal"
-      ],
-      "buildType": "Debug",
-      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest"
-    },
-    {
-      "name": "All dependencies",
-      "scope": [
-        "quick",
-        "normal"
-      ],
-      "buildType": "Release",
-      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest"
-    },
-    {
-      "name": "All dependencies",
-      "scope": [
-        "extensive"
-      ],
+      "cache": true,
+      "buildTypes": {
+        "quick": [
+          "Debug",
+          "Release"
+        ],
+        "normal": [
+          "Debug",
+          "Release"
+        ],
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "baseImg": "movesrwth/storm-dependencies:latest"
     },
     {
       "name": "Minimal dependencies",
-      "scope": [
-        "quick",
-        "normal",
-        "extensive"
-      ],
-      "buildType": "Release",
+      "cache": true,
+      "buildTypes": {
+        "quick": [
+          "Release"
+        ],
+        "normal": [
+          "Release"
+        ],
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "baseImg": "movesrwth/storm-basesystem:minimal_dependencies",
       "disable_all": true,
       "ClnExact": false,
       "ClnRatfunc": false,
-      "starterProjectCommand": "--help"
+      "starterProjectCommand": "--help",
+      "expectNotHave": [
+        "CUDD",
+        "CVC5",
+        "GLPK",
+        "GMM",
+        "GUROBI",
+        "HIGHS",
+        "LIBARCHIVE",
+        "MATHSAT",
+        "SOPLEX",
+        "SPOT",
+        "SYLVAN",
+        "XERCES",
+        "Z3"
+      ]
     },
     {
       "name": "GMP; GMP; Required dependencies",
-      "scope": [
-        "normal",
-        "extensive"
-      ],
-      "buildType": "Release",
+      "buildTypes": {
+        "normal": [
+          "Release"
+        ],
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "baseImg": "movesrwth/storm-basesystem:latest",
       "ClnExact": false,
-      "ClnRatfunc": false
+      "ClnRatfunc": false,
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "CLN; GMP; Required dependencies",
-      "scope": [
-        "extensive"
-      ],
+      "buildTypes": {
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "baseImg": "movesrwth/storm-basesystem:latest",
       "ClnExact": true,
-      "ClnRatfunc": false
+      "ClnRatfunc": false,
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "GMP; CLN; Required dependencies",
-      "scope": [
-        "extensive"
-      ],
+      "buildTypes": {
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "baseImg": "movesrwth/storm-basesystem:latest",
       "ClnExact": false,
-      "ClnRatfunc": true
+      "ClnRatfunc": true,
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "CLN; CLN; Required dependencies",
-      "scope": [
-        "normal",
-        "extensive"
-      ],
-      "buildType": "Release",
+      "buildTypes": {
+        "normal": [
+          "Release"
+        ],
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "baseImg": "movesrwth/storm-basesystem:latest",
       "ClnExact": true,
-      "ClnRatfunc": true
+      "ClnRatfunc": true,
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "All dependencies (disabled)",
-      "scope": [
-        "extensive"
-      ],
+      "buildTypes": {
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "baseImg": "movesrwth/storm-dependencies:latest",
       "disable_all": true,
       "ClnExact": false,
       "ClnRatfunc": false,
-      "starterProjectCommand": "--help"
+      "starterProjectCommand": "--help",
+      "expectNotHave": [
+        "CUDD",
+        "CVC5",
+        "GLPK",
+        "GMM",
+        "GUROBI",
+        "HIGHS",
+        "LIBARCHIVE",
+        "MATHSAT",
+        "SOPLEX",
+        "SPOT",
+        "SYLVAN",
+        "XERCES",
+        "Z3"
+      ]
+    },
+    {
+      "name": "Only Z3 (SMT)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CVC5=ON -DSTORM_DISABLE_MATHSAT=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "CVC5",
+        "MATHSAT"
+      ]
+    },
+    {
+      "name": "Only MathSAT (SMT)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CVC5=ON -DSTORM_DISABLE_Z3=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "CVC5",
+        "Z3"
+      ]
+    },
+    {
+      "name": "Only cvc5 (SMT)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_MATHSAT=ON -DSTORM_DISABLE_Z3=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "MATHSAT",
+        "Z3"
+      ]
+    },
+    {
+      "name": "No SMT solver",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CVC5=ON -DSTORM_DISABLE_MATHSAT=ON -DSTORM_DISABLE_Z3=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "CVC5",
+        "MATHSAT",
+        "Z3"
+      ]
+    },
+    {
+      "name": "cvc5 as default SMT solver",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DEFAULT_SMT_SOLVER=cvc5",
+      "baseImg": "movesrwth/storm-dependencies:latest"
+    },
+    {
+      "name": "Only GLPK (LP)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_HIGHS=ON -DSTORM_DISABLE_SOPLEX=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "GUROBI",
+        "HIGHS",
+        "SOPLEX"
+      ]
+    },
+    {
+      "name": "Only HiGHS (LP)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GLPK=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_SOPLEX=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "GLPK",
+        "GUROBI",
+        "SOPLEX"
+      ]
+    },
+    {
+      "name": "Only SoPlex (LP)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GLPK=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_HIGHS=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "GLPK",
+        "GUROBI",
+        "HIGHS"
+      ]
+    },
+    {
+      "name": "Only Z3 (LP)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GLPK=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_HIGHS=ON -DSTORM_DISABLE_SOPLEX=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "GLPK",
+        "GUROBI",
+        "HIGHS",
+        "SOPLEX"
+      ]
+    },
+    {
+      "name": "No LP solver",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GLPK=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_HIGHS=ON -DSTORM_DISABLE_SOPLEX=ON -DSTORM_DISABLE_Z3=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "GLPK",
+        "GUROBI",
+        "HIGHS",
+        "SOPLEX",
+        "Z3"
+      ]
+    },
+    {
+      "name": "Only CUDD (DD)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_SYLVAN=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "SYLVAN"
+      ]
+    },
+    {
+      "name": "Only Sylvan (DD)",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CUDD=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "CUDD"
+      ]
+    },
+    {
+      "name": "No DD library",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CUDD=ON -DSTORM_DISABLE_SYLVAN=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "CUDD",
+        "SYLVAN"
+      ]
+    },
+    {
+      "name": "No Spot",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_SPOT=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "SPOT"
+      ]
+    },
+    {
+      "name": "No Xerces",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_XERCES=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "XERCES"
+      ]
+    },
+    {
+      "name": "No LibArchive",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_LIBARCHIVE=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "LIBARCHIVE"
+      ]
+    },
+    {
+      "name": "No GMM",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GMM=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest",
+      "expectNotHave": [
+        "GMM"
+      ]
     },
     {
       "name": "GCC",
-      "scope": [
-        "quick",
-        "normal",
-        "extensive"
-      ],
-      "buildType": "Debug",
+      "cache": true,
+      "buildTypes": {
+        "quick": [
+          "Debug"
+        ],
+        "normal": [
+          "Debug"
+        ],
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "setup": "pacman -Syu --noconfirm && pacman -S --noconfirm base-devel ccache cmake git boost cln ginac glpk gmp highs hwloc libarchive xerces-c z3",
-      "baseImg": "archlinux:latest"
+      "baseImg": "archlinux:latest",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "Clang",
-      "scope": [
-        "quick",
-        "normal",
-        "extensive"
-      ],
-      "buildType": "Debug",
+      "cache": true,
+      "buildTypes": {
+        "quick": [
+          "Debug"
+        ],
+        "normal": [
+          "Debug"
+        ],
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
       "setup": "pacman -Syu --noconfirm && pacman -S --noconfirm base-devel ccache cmake git boost cln ginac glpk gmp highs hwloc libarchive xerces-c z3 clang llvm",
-      "baseImg": "archlinux:latest"
+      "baseImg": "archlinux:latest",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "musl",
-      "scope": [
-        "extensive"
-      ],
-      "buildType": "Debug",
+      "buildTypes": {
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_HIGHS=ON",
       "setup": "apk add --no-cache bash ccache cmake make gcc g++ git autoconf automake libc-dev linux-headers patch boost-dev gmp-dev cln-dev ginac-dev glpk-dev libarchive-dev z3-dev ",
-      "baseImg": "alpine:edge"
+      "baseImg": "alpine:edge",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX",
+        "XERCES"
+      ]
     },
     {
       "name": "Debian 12",
-      "scope": [
-        "quick",
-        "normal",
-        "extensive"
-      ],
-      "buildType": "Release",
+      "cache": true,
+      "buildTypes": {
+        "quick": [
+          "Release"
+        ],
+        "normal": [
+          "Release"
+        ],
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:debian-12"
+      "baseImg": "movesrwth/storm-basesystem:debian-12",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "Debian 13",
-      "scope": [
-        "normal",
-        "extensive"
-      ],
-      "buildType": "Release",
+      "buildTypes": {
+        "normal": [
+          "Release"
+        ],
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:debian-13"
+      "baseImg": "movesrwth/storm-basesystem:debian-13",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "Ubuntu 24.04",
-      "scope": [
-        "quick",
-        "normal",
-        "extensive"
-      ],
-      "buildType": "Release",
+      "cache": true,
+      "buildTypes": {
+        "quick": [
+          "Release"
+        ],
+        "normal": [
+          "Release"
+        ],
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:ubuntu-24.04"
+      "baseImg": "movesrwth/storm-basesystem:ubuntu-24.04",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
+    },
+    {
+      "name": "Ubuntu 26.04",
+      "buildTypes": {
+        "normal": [
+          "Release"
+        ],
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
+      "baseImg": "movesrwth/storm-basesystem:ubuntu-26.04",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "HIGHS",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     }
   ],
   "macTests": [
     {
-      "name": "Mac 14 ARM",
-      "scope": [
-        "extensive"
-      ],
-      "buildType": "Release",
-      "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
-      "distro": "macos-14",
-      "xcode": "15.4"
-    },
-    {
       "name": "Mac 15 ARM",
-      "scope": [
-        "normal",
-        "extensive"
-      ],
-      "buildType": "Release",
+      "buildTypes": {
+        "normal": [
+          "Release"
+        ],
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
       "distro": "macos-15",
-      "xcode": "16.4"
+      "xcode": "16.4",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "Mac 26 ARM",
-      "scope": [
-        "quick",
-        "normal",
-        "extensive"
-      ],
-      "buildType": "Release",
+      "cache": true,
+      "buildTypes": {
+        "quick": [
+          "Release"
+        ],
+        "normal": [
+          "Release"
+        ],
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
       "distro": "macos-26",
-      "xcode": "latest-stable"
+      "xcode": "latest-stable",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     },
     {
       "name": "Mac 26 Intel",
-      "scope": [
-        "extensive"
-      ],
-      "buildType": "Release",
+      "buildTypes": {
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
       "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
       "distro": "macos-26-intel",
-      "xcode": "latest-stable"
+      "xcode": "latest-stable",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "MATHSAT",
+        "SOPLEX"
+      ]
+    },
+    {
+      "name": "Mac 27 ARM",
+      "buildTypes": {
+        "normal": [
+          "Release"
+        ],
+        "extensive": [
+          "Debug",
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
+      "distro": "xcode-27",
+      "xcode": "latest-stable",
+      "expectNotHave": [
+        "CVC5",
+        "GUROBI",
+        "MATHSAT",
+        "SOPLEX"
+      ]
     }
   ]
 }

@@ -7,15 +7,15 @@
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/generator/JaniNextStateGenerator.h"
+#include "storm/languages/SymbolicModelDescription.h"
+#include "storm/languages/jani/Model.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/Model.h"
 
 namespace {
 
 storm::jani::Model getJaniModelFromPrism(std::string const& pathInTestResourcesDir, bool prismCompatability = false) {
-    storm::storage::SymbolicModelDescription modelDescription =
+    storm::languages::SymbolicModelDescription modelDescription =
         storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/" + pathInTestResourcesDir, prismCompatability);
     auto m = modelDescription.toJani().preprocess().asJaniModel();
     auto unsupportedFeatures = m.restrictToFeatures(storm::generator::JaniNextStateGenerator<double>::getSupportedJaniFeatures());
@@ -26,8 +26,8 @@ storm::jani::Model getJaniModelFromPrism(std::string const& pathInTestResourcesD
 class ExplicitJaniModelBuilderTest : public ::testing::Test {
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 };
@@ -70,7 +70,7 @@ TEST_F(ExplicitJaniModelBuilderTest, Dtmc) {
     EXPECT_EQ(2505ul, model->getNumberOfTransitions());
 
     janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/test_trigonometry.jani").first;
-    auto constants = storm::storage::parseConstantDefinitionString(janiModel.getManager(), "step_size_rad=0.523599");  // step_size = 30 deg
+    auto constants = storm::languages::parseConstantDefinitionString(janiModel.getManager(), "step_size_rad=0.523599");  // step_size = 30 deg
     janiModel = janiModel.defineUndefinedConstants(constants);
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(5ul, model->getNumberOfStates());
@@ -198,7 +198,7 @@ TEST_F(ExplicitJaniModelBuilderTest, Ma) {
     EXPECT_EQ(7ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
 
     janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/ma/ftwc.jani").first;
-    auto constants = storm::storage::parseConstantDefinitionString(janiModel.getManager(), "N=2,TIME_BOUND=1");
+    auto constants = storm::languages::parseConstantDefinitionString(janiModel.getManager(), "N=2,TIME_BOUND=1");
     janiModel = janiModel.defineUndefinedConstants(constants);
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(1536ul, model->getNumberOfStates());

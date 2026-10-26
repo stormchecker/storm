@@ -6,7 +6,7 @@
 
 #include "storm-parsers/storm-parsers-api.h"
 #include "storm/adapters/RationalFunctionForward.h"
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace expressions {

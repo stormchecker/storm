@@ -1,13 +1,13 @@
 #include "storm/logic/LiftableTransitionRewardsVisitor.h"
 #include <boost/any.hpp>
 
+#include "storm/languages/jani/traverser/RewardModelInformation.h"
 #include "storm/logic/Formulas.h"
-#include "storm/storage/jani/traverser/RewardModelInformation.h"
 
 namespace storm {
 namespace logic {
 
-LiftableTransitionRewardsVisitor::LiftableTransitionRewardsVisitor(storm::storage::SymbolicModelDescription const& symbolicModelDescription)
+LiftableTransitionRewardsVisitor::LiftableTransitionRewardsVisitor(storm::languages::SymbolicModelDescription const& symbolicModelDescription)
     : symbolicModelDescription(symbolicModelDescription) {
     // Intentionally left empty.
 }

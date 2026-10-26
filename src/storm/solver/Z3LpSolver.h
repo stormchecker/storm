@@ -4,8 +4,8 @@
 
 #include "storm-config.h"  // To detect whether the usage of Z3 is possible, this include is necessary.
 #include "storm/adapters/Z3ExpressionAdapter.h"
+#include "storm/expressions/Expressions.h"
 #include "storm/solver/LpSolver.h"
-#include "storm/storage/expressions/Expressions.h"
 
 #ifdef STORM_HAVE_Z3
 #include <z3++.h>

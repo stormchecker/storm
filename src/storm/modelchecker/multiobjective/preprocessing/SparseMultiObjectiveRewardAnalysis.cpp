@@ -3,10 +3,10 @@
 #include <algorithm>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"

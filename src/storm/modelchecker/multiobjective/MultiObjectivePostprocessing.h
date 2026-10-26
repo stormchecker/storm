@@ -4,9 +4,9 @@
 #include <vector>
 
 #include "storm/modelchecker/multiobjective/Objective.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/storage/geometry/Polytope.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
+#include "storm/storage/scheduler/Scheduler.h"
 
 namespace storm {
 namespace modelchecker {

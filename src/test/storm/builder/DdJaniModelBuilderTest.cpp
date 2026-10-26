@@ -6,15 +6,15 @@
 #include "storm-parsers/parser/JaniParser.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdJaniModelBuilder.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/languages/SymbolicModelDescription.h"
+#include "storm/languages/jani/Compositions.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/jani/Compositions.h"
 
 namespace {
 
@@ -48,7 +48,7 @@ class DdJaniModelBuilderTest : public ::testing::Test {
     }
 
     storm::jani::Model getJaniModelFromPrism(std::string const& pathInTestResourcesDir, bool prismCompatability = false) {
-        storm::storage::SymbolicModelDescription modelDescription =
+        storm::languages::SymbolicModelDescription modelDescription =
             storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/" + pathInTestResourcesDir, prismCompatability);
         auto m = modelDescription.toJani(true).preprocess().asJaniModel();
         auto unsupportedFeatures = m.restrictToFeatures(storm::builder::DdJaniModelBuilder<DdType, double>::getSupportedJaniFeatures());

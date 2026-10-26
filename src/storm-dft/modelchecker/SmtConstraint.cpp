@@ -1,6 +1,6 @@
 #include "storm-dft/modelchecker/SmtConstraint.h"
 
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/ExpressionManager.h"
 
 namespace storm::dft {
 namespace modelchecker {

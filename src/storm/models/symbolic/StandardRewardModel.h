@@ -3,7 +3,7 @@
 #include <boost/optional.hpp>
 #include <set>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 namespace storm {
 namespace dd {

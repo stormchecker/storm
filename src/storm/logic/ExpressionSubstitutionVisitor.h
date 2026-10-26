@@ -5,7 +5,7 @@
 
 #include "storm/logic/CloneVisitor.h"
 
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 
 namespace storm {
 

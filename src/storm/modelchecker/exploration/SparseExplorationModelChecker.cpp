@@ -9,14 +9,14 @@
 #include "storm/modelchecker/exploration/StateGeneration.h"
 #include "storm/modelchecker/exploration/Statistics.h"
 
-#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionEvaluator.h"
 
 #include "storm/generator/CompressedState.h"
 
-#include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 
 #include "storm/logic/FragmentSpecification.h"
 

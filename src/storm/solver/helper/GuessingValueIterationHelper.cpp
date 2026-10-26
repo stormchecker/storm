@@ -52,17 +52,29 @@ IndexType IterationHelper<ValueType>::selectRowGroupToGuess(const std::vector<Va
 }
 
 template<typename ValueType>
-ValueType IterationHelper<ValueType>::getMaxLength(std::vector<ValueType>& lower, std::vector<ValueType>& upper) const {
+bool IterationHelper<ValueType>::checkConvergence(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper, bool relative,
+                                                  ValueType const& precision) const {
     auto itL = lower.begin();
     const auto itLEnd = lower.end();
     auto itU = upper.begin();
 
-    ValueType result = *itU - *itL;
-    for (++itL, ++itU; itL != itLEnd; ++itL, ++itU) {
-        ValueType length = *itU - *itL;
-        result = std::max(result, length);
+    for (; itL != itLEnd; ++itL, ++itU) {
+        ValueType threshold = 2 * precision;
+        if (relative) {
+            // Scaling by the endpoint closest to zero bounds the relative error of the midpoint.
+            if (*itL > 0) {
+                threshold *= *itL;
+            } else if (*itU < 0) {
+                threshold *= -*itU;
+            } else if (*itL != *itU) {
+                return false;
+            }
+        }
+        if (*itU - *itL > threshold) {
+            return false;
+        }
     }
-    return result;
+    return true;
 }
 
 template<typename ValueType>
@@ -147,7 +159,7 @@ template<typename ValueType, bool TrivialRowGrouping>
 template<OptimizationDirection Dir>
 std::pair<gviinternal::VerifyResult, SolverStatus> GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::tryVerify(
     std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations,
-    gviinternal::IndexType rowGroupToGuess, ValueType guessValue, ValueType precision,
+    gviinternal::IndexType rowGroupToGuess, ValueType guessValue, bool relative, ValueType precision,
     std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
     guessLower = lowerX;
     guessUpper = upperX;
@@ -181,7 +193,7 @@ std::pair<gviinternal::VerifyResult, SolverStatus> GuessingValueIterationHelper<
         }
         sumLengthBefore = sumLength;
 
-        if (iterationHelper.getMaxLength(lowerX, upperX) < 2 * precision) {
+        if (iterationHelper.checkConvergence(lowerX, upperX, relative, precision)) {
             return {gviinternal::VerifyResult::Converged, status};
         }
 
@@ -194,22 +206,23 @@ std::pair<gviinternal::VerifyResult, SolverStatus> GuessingValueIterationHelper<
 
 template<typename ValueType, bool TrivialRowGrouping>
 SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::solveEquations(
-    std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations, ValueType precision,
-    std::optional<storm::solver::OptimizationDirection> dir, std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
+    std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations, bool relative,
+    ValueType precision, std::optional<storm::solver::OptimizationDirection> dir,
+    std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
     if (!dir.has_value() || minimize(dir.value())) {
-        return solveEquations<OptimizationDirection::Minimize>(lowerX, upperX, b, numIterations, precision, iterationCallback);
+        return solveEquations<OptimizationDirection::Minimize>(lowerX, upperX, b, numIterations, relative, precision, iterationCallback);
     } else {
-        return solveEquations<OptimizationDirection::Maximize>(lowerX, upperX, b, numIterations, precision, iterationCallback);
+        return solveEquations<OptimizationDirection::Maximize>(lowerX, upperX, b, numIterations, relative, precision, iterationCallback);
     }
 }
 
 template<typename ValueType, bool TrivialRowGrouping>
 template<OptimizationDirection Dir>
 SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::solveEquations(
-    std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations, ValueType precision,
-    std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
+    std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations, bool relative,
+    ValueType precision, std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
     // do n iterations first
-    auto status = doIterations<Dir>(lowerX, upperX, b, numIterations, lowerX.size(), precision, iterationCallback);
+    auto status = doIterations<Dir>(lowerX, upperX, b, numIterations, lowerX.size(), relative, precision, iterationCallback);
     if (status != SolverStatus::InProgress) {
         return status;
     }
@@ -223,7 +236,8 @@ SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::solveE
                     continue;
                 }
                 auto guessValue = (lowerX[rowGroupToGuess] * num + upperX[rowGroupToGuess] * (den - num)) / den;
-                auto [verifyResult, verifyStatus] = tryVerify<Dir>(lowerX, upperX, b, numIterations, rowGroupToGuess, guessValue, precision, iterationCallback);
+                auto [verifyResult, verifyStatus] =
+                    tryVerify<Dir>(lowerX, upperX, b, numIterations, rowGroupToGuess, guessValue, relative, precision, iterationCallback);
                 status = verifyStatus;
                 if (verifyResult == gviinternal::VerifyResult::Verified || verifyResult == gviinternal::VerifyResult::Converged) {
                     didVerify = true;
@@ -232,7 +246,7 @@ SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::solveE
             }
         }
         if (didVerify) {
-            if (iterationHelper.getMaxLength(lowerX, upperX) < 2 * precision) {
+            if (iterationHelper.checkConvergence(lowerX, upperX, relative, precision)) {
                 return SolverStatus::Converged;
             }
         } else {
@@ -241,7 +255,7 @@ SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::solveE
     }
 
     // verification has failed. iterate until convergence
-    return doIterations<Dir>(lowerX, upperX, b, numIterations, {}, precision, iterationCallback);
+    return doIterations<Dir>(lowerX, upperX, b, numIterations, {}, relative, precision, iterationCallback);
 }
 
 template<typename ValueType, bool TrivialRowGrouping>
@@ -255,7 +269,8 @@ template<typename ValueType, bool TrivialRowGrouping>
 template<OptimizationDirection Dir>
 SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::doIterations(
     std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations,
-    std::optional<uint64_t> maxIterations, const ValueType& precision, std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
+    std::optional<uint64_t> maxIterations, bool relative, const ValueType& precision,
+    std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
     ValueType sumLengthBefore = 0;
     uint64_t localIterations = 0;
     GVIBackend<ValueType, Dir> iiBackend;
@@ -272,7 +287,7 @@ SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::doIter
         }
         sumLengthBefore = sumLength;
 
-        if (iterationHelper.getMaxLength(lowerX, upperX) < 2 * precision) {
+        if (iterationHelper.checkConvergence(lowerX, upperX, relative, precision)) {
             return SolverStatus::Converged;
         }
         if (iterationCallback) {
@@ -280,7 +295,7 @@ SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::doIter
         }
     }
 
-    if (iterationHelper.getMaxLength(lowerX, upperX) < 2 * precision) {
+    if (iterationHelper.checkConvergence(lowerX, upperX, relative, precision)) {
         return SolverStatus::Converged;
     }
     return status;

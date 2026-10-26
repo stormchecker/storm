@@ -9,7 +9,9 @@
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
@@ -24,7 +26,6 @@
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/storage/jani/Property.h"
 
 namespace {
 
@@ -687,6 +688,21 @@ class MdpPrctlModelCheckerTest : public ::testing::Test {
         }
     }
 
+    /*!
+     * Expects the value at the initial states to be the given one and the result to report it as exact.
+     */
+    void expectExactResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
+                                         std::unique_ptr<storm::modelchecker::CheckResult>& result, ValueType const& expected) {
+        expectQuantitativeResultAtInitialState(model, result, expected);
+        if (!result->isExplicitQuantitativeCheckResult()) {
+            return;  // Only explicit results carry bounds.
+        }
+        auto const& explicitResult = result->template asExplicitQuantitativeCheckResult<ValueType>();
+        ASSERT_TRUE(explicitResult.hasLowerBounds()) << "No lower bound was reported although the values are exact.";
+        ASSERT_TRUE(explicitResult.hasUpperBounds()) << "No upper bound was reported although the values are exact.";
+        EXPECT_EQ(explicitResult.getLowerBoundVector(), explicitResult.getUpperBoundVector()) << "The bounds do not pin the values down.";
+    }
+
    private:
     storm::Environment _environment;
 
@@ -787,10 +803,10 @@ STORM_EXPENSIVE_TYPED_TEST(MdpPrctlModelCheckerTest, AsynchronousLeader) {
         this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1"));
 
         result = checker->check(this->env(), tasks[2]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/16"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/16"));
 
         result = checker->check(this->env(), tasks[3]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/16"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/16"));
 
         result = checker->check(this->env(), tasks[4]);
         this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("30/7"));
@@ -803,9 +819,6 @@ STORM_EXPENSIVE_TYPED_TEST(MdpPrctlModelCheckerTest, AsynchronousLeader) {
 TYPED_TEST(MdpPrctlModelCheckerTest, MaybeStateEndComponent) {
     // The best scheduler leaves x=0 and x=1 through their probabilistic choices, reaching the target with
     // probability 1/2 * 1/2.
-    if (!this->isSparseModel()) {
-        GTEST_SKIP() << "The sound methods of the symbolic engines answer 1/2 on this model.";
-    }
     auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/maybe_state_end_component.nm", "Pmax=? [F \"target\"]");
     auto model = std::move(modelFormulas.first);
     auto tasks = this->getTasks(modelFormulas.second);
@@ -1132,9 +1145,9 @@ TYPED_TEST(MdpPrctlModelCheckerTest, OneStateDiscounting) {
         std::unique_ptr<storm::modelchecker::CheckResult> result = checker->check(this->env(), tasks[0]);
         this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1000"));
         result = checker->check(this->env(), tasks[1]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("40951/100"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("40951/100"));
         result = checker->check(this->env(), tasks[2]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("6513215599/10000000"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("6513215599/10000000"));
     } else {
         EXPECT_FALSE(checker->canHandle(tasks[0]));
         EXPECT_FALSE(checker->canHandle(tasks[1]));
@@ -1163,25 +1176,131 @@ TYPED_TEST(MdpPrctlModelCheckerTest, StepBoundedReachability) {
 
     if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse) {
         std::unique_ptr<storm::modelchecker::CheckResult> result = checker->check(this->env(), tasks[0]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("0"));
         result = checker->check(this->env(), tasks[1]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/2"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/2"));
         result = checker->check(this->env(), tasks[2]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("3/4"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("3/4"));
         result = checker->check(this->env(), tasks[3]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/4"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/4"));
         result = checker->check(this->env(), tasks[4]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("3/8"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("3/8"));
         result = checker->check(this->env(), tasks[5]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("0"));
         result = checker->check(this->env(), tasks[6]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/4"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/4"));
         result = checker->check(this->env(), tasks[7]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/4"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/4"));
         result = checker->check(this->env(), tasks[8]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/4"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("1/4"));
         result = checker->check(this->env(), tasks[9]);
-        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("7/8"));
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("7/8"));
     }
 }
+
+TYPED_TEST(MdpPrctlModelCheckerTest, SimpleCommProtocol) {
+    // see simple_comm_protocol.props
+    std::string formulasString = "Pmax=? [ F (s = 3) ]; ";
+    formulasString += "Pmax=? [ (s<=1) U (s=3) ]; ";
+    formulasString += "Pmin=? [ (s<=1) U (s=3) ]; ";
+    formulasString += "Pmax=? [ !(s=3) U (!(s<=1) & !(s=3)) ]; ";
+
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/simple_comm_protocol.prism", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+
+    ASSERT_EQ(4ul, tasks.size());
+    this->execute(model, [&]() {
+        EXPECT_EQ(4ul, model->getNumberOfStates());
+        EXPECT_EQ(6ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        result = checker->check(this->env(), tasks[2]);
+        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        // guard against #1136
+        if (!(TypeParam::engine == MdpEngine::PrismDd && this->env().solver().minMax().getMethod() == storm::solver::MinMaxMethod::RationalSearch)) {
+            result = checker->check(this->env(), tasks[1]);
+            EXPECT_NEAR(this->parseNumber("99/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[3]);
+            EXPECT_NEAR(this->parseNumber("1/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+    });
+}
+
+TYPED_TEST(MdpPrctlModelCheckerTest, SimpleCommProtocolLTL) {
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
+    // see simple_comm_protocol.props
+    std::string formulasString = "Pmax=? [ (s<=1) W (s=3) ]; ";
+    formulasString += "Pmin=? [ (s<=1) W (s=3) ]; ";
+    formulasString += "Pmax=? [ !(s=3) U (!(s<=1) & !(s=3)) ]; ";
+    formulasString += "Pmax=? [ !(s=2) W ((s=3 & !(s=2))) ]; ";
+    formulasString += "Pmin=? [ !(s=2) W ((s=3 & !(s=2))) ]; ";
+    formulasString += "Pmax=? [(!(s=2) W ((s=2) W (!(s=2) W ((s=2) W G !(s=2)))))]; ";
+    formulasString += "Pmin=? [(!(s=2) W ((s=2) W (!(s=2) W ((s=2) W G !(s=2)))))]; ";
+    formulasString += "Pmax=? [ (s=2) R !(s=3) ]; ";
+    formulasString += "Pmin=? [ (s=2) R !(s=3) ]; ";
+
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/simple_comm_protocol.prism", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+
+    ASSERT_EQ(9ul, tasks.size());
+    this->execute(model, [&]() {
+        EXPECT_EQ(4ul, model->getNumberOfStates());
+        EXPECT_EQ(6ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
+        if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[1]);
+            auto const weakUntil = this->getQuantitativeResultAtInitialState(model, result);
+            EXPECT_NEAR(this->parseNumber("99/100"), weakUntil, this->precision());
+
+            result = checker->check(this->env(), tasks[2]);
+            auto const weakUntilDual = this->getQuantitativeResultAtInitialState(model, result);
+            EXPECT_NEAR(this->parseNumber("1/100"), weakUntilDual, this->precision());
+
+            EXPECT_NEAR(this->parseNumber("1"), weakUntil + weakUntilDual, this->precision());
+
+            result = checker->check(this->env(), tasks[3]);
+            EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[4]);
+            EXPECT_NEAR(this->parseNumber("99/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[5]);
+            EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[6]);
+            EXPECT_NEAR(this->parseNumber("999999/1000000"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[7]);
+            EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[8]);
+            EXPECT_NEAR(this->parseNumber("1/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        } else {
+            EXPECT_FALSE(checker->canHandle(tasks[0]));
+            STORM_SILENT_EXPECT_THROW(checker->check(this->env(), tasks[0]), storm::exceptions::InvalidArgumentException);
+            EXPECT_FALSE(checker->canHandle(tasks[8]));
+            STORM_SILENT_EXPECT_THROW(checker->check(this->env(), tasks[8]), storm::exceptions::InvalidArgumentException);
+        }
+    });
+#else
+    GTEST_SKIP() << "Spot not available.";
+#endif
+}
+
 }  // namespace

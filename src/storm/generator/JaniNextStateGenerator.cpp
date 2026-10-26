@@ -8,21 +8,21 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/SimpleValuation.h"
 #include "storm/generator/Distribution.h"
+#include "storm/languages/jani/Automaton.h"
+#include "storm/languages/jani/AutomatonComposition.h"
+#include "storm/languages/jani/Edge.h"
+#include "storm/languages/jani/EdgeDestination.h"
+#include "storm/languages/jani/Location.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/ParallelComposition.h"
+#include "storm/languages/jani/traverser/AssignmentLevelFinder.h"
+#include "storm/languages/jani/traverser/RewardModelInformation.h"
+#include "storm/languages/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/storage/expressions/SimpleValuation.h"
-#include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/AutomatonComposition.h"
-#include "storm/storage/jani/Edge.h"
-#include "storm/storage/jani/EdgeDestination.h"
-#include "storm/storage/jani/Location.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/traverser/AssignmentLevelFinder.h"
-#include "storm/storage/jani/traverser/RewardModelInformation.h"
-#include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
 #include "storm/utility/combinatorics.h"
@@ -283,8 +283,7 @@ std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialS
 
     if (this->model.hasNonTrivialInitialStates()) {
         // Prepare an SMT solver to enumerate all initial states.
-        storm::utility::solver::SmtSolverFactory factory;
-        std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(model.getExpressionManager());
+        std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::getSmtSolver(model.getExpressionManager());
 
         std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions(this->parallelAutomata);
         for (auto const& expression : rangeExpressions) {

@@ -7,16 +7,16 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/builder/DdPrismModelBuilder.h"
+#include "storm/languages/SymbolicModelDescription.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "storm/models/symbolic/Dtmc.h"
-#include "storm/storage/SymbolicModelDescription.h"
 
 TEST(SymbolicDtmcPrctlModelCheckerTest, Die_RationalFunction_Sylvan) {
 #ifdef STORM_HAVE_SYLVAN
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die.pm");
+    storm::languages::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
 
     // A parser that we use for conveniently constructing the formulas.

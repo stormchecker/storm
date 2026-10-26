@@ -5,10 +5,10 @@
 #include <random>
 #include <vector>
 
+#include "storm/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/generator/CompressedState.h"
 #include "storm/generator/VariableInformation.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace {
 

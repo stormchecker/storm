@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/utility/ExtendedNumber.h"
 
 namespace storm {

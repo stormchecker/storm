@@ -1,8 +1,8 @@
 #include "storm/solver/SymbolicEliminationLinearEquationSolver.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/DdManager.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/DdManager.h"
 #include "storm/utility/dd.h"
 
 namespace storm {

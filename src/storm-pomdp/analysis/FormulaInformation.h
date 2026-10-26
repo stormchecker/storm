@@ -3,6 +3,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include "storm/logic/TimeBoundType.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 
@@ -39,11 +40,13 @@ class FormulaInformation {
     bool isNonNestedReachabilityProbability() const;
     bool isNonNestedExpectedRewardFormula() const;
     bool isDiscountedTotalRewardFormula() const;
+    bool isBounded() const;
     bool isUnsupported() const;
     StateSet const& getTargetStates() const;
     StateSet const& getSinkStates() const;          // Shall not be called for reward formulas
     std::string const& getRewardModelName() const;  // Shall not be called for probability formulas
     storm::solver::OptimizationDirection const& getOptimizationDirection() const;
+    std::vector<logic::TimeBoundReference> const& getRewardBoundReferences() const;
     bool minimize() const;
     bool maximize() const;
 
@@ -53,12 +56,18 @@ class FormulaInformation {
     template<typename PomdpType>
     void updateSinkStates(PomdpType const& pomdp, storm::storage::BitVector&& newSinkStates);
 
+    void setRewardBounded(bool newValue);
+
+    void setRewardBoundReferences(std::vector<logic::TimeBoundReference>& newRewardBoundReferences);
+
    private:
     Type type;
     storm::solver::OptimizationDirection optimizationDirection;
     std::optional<StateSet> targetStates;
     std::optional<StateSet> sinkStates;
     std::optional<std::string> rewardModelName;
+    std::vector<logic::TimeBoundReference> rewardBoundReferences;
+    bool rewardBounded = false;
 };
 
 template<typename PomdpType>

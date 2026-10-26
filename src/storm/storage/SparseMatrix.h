@@ -137,6 +137,18 @@ class SparseMatrixBuilder {
     typedef ValueType value_type;
 
     /*!
+     * Specifies how values that are added for the same row and column are combined.
+     */
+    enum class AccumulationMode {
+        /// The values are summed up.
+        Sum,
+        /// All values added for the same row and column must be equal. The (single) entry keeps this value.
+        ExpectSame,
+        /// There must not be multiple values for the same row and column.
+        ExpectNone
+    };
+
+    /*!
      * Constructs a sparse matrix builder producing a matrix with the given number of rows, columns and entries.
      * The number of rows, columns and entries is reserved upon creation. If more rows/columns or entries are
      * added, this will possibly lead to a reallocation.
@@ -167,15 +179,34 @@ class SparseMatrixBuilder {
      * a call to finalize(false) is mandatory.
      *
      * Note: this is a linear setter. That is, it must be called consecutively for each entry, row by row and
-     * column by column. As multiple entries per column are admitted, consecutive calls to this method are
-     * admitted to mention the same row-column-pair. If rows are skipped entirely, the corresponding rows are
-     * treated as empty. If these constraints are not met, an exception is thrown.
+     * column by column. If rows are skipped entirely, the corresponding rows are treated as empty. Within a
+     * row, columns may be added in arbitrary order (the builder keeps the row sorted), but adding a column
+     * that is smaller than the previous one is slower than adding in order. If a row-column-pair is added
+     * multiple times, the values are combined according to the accumulation mode (by default, they are summed up).
+     * If these constraints are not met, an exception is thrown.
      *
      * @param row The row in which the matrix entry is to be set.
      * @param column The column in which the matrix entry is to be set.
      * @param value The value that is to be set at the specified row and column.
      */
     void addNextValue(index_type row, index_type column, value_type const& value);
+
+    /*!
+     * Sets how values that are added for the same row and column are combined. The default is AccumulationMode::Sum.
+     * If the mode is not AccumulationMode::Sum, adding a value that violates the mode makes addNextValue throw an
+     * InvalidArgumentException. This also applies to values added via addDiagonalEntry.
+     * The mode should be set before adding any values.
+     *
+     * @param mode The new accumulation mode.
+     */
+    void setAccumulationMode(AccumulationMode mode);
+
+    /*!
+     * Retrieves how values that are added for the same row and column are combined.
+     *
+     * @return The current accumulation mode.
+     */
+    AccumulationMode getAccumulationMode() const;
 
     /*!
      * Starts a new row group in the matrix. Note that this needs to be called before any entries in the new row
@@ -189,20 +220,18 @@ class SparseMatrixBuilder {
      * Finalizes the sparse matrix to indicate that initialization process has been completed and the matrix
      * may now be used. This must be called after all entries have been added to the matrix via addNextValue.
      *
-     * @param overriddenRowCount If this is set to a value that is greater than the current number of rows,
-     * this will cause the finalize method to add empty rows at the end of the matrix until the given row count
-     * has been matched. Note that this will *not* override the row count that has been given upon construction
-     * (if any), but will only take effect if the matrix has been created without the number of rows given.
-     * @param overriddenColumnCount If this is set to a value that is greater than the current number of columns,
-     * this will cause the finalize method to set the number of columns to the given value. Note that this will
-     * *not* override the column count that has been given upon construction (if any), but will only take effect
-     * if the matrix has been created without the number of columns given. By construction, the matrix will have
-     * no entries in the columns that have been added this way.
-     * @param overriddenRowGroupCount If this is set to a value that is greater than the current number of row
-     * groups, this will cause the method to set the number of row groups to the given value. Note that this will
-     * *not* override the row group count that has been given upon construction (if any), but will only take
-     * effect if the matrix has been created without the number of row groups given. By construction, the row
-     * groups added this way will be empty.
+     * @param overriddenRowCount If this is set to a nonzero value, the resulting matrix will have exactly this many rows.
+     * If there are fewer rows than that, empty rows are added at the end of the matrix. If rows beyond that
+     * count were already added, an exception is thrown. Note that this will *not* override the row count that has
+     * been given upon construction (if any).
+     * @param overriddenColumnCount If this is set to a nonzero value, the resulting matrix will have exactly this many
+     * columns. By construction, the matrix will have no entries in the columns that have been added this way.
+     * If entries beyond that column count were already added, an exception is thrown. Note that this will *not*
+     * override the column count that has been given upon construction (if any).
+     * @param overriddenRowGroupCount If this is set to a nonzero value, the resulting matrix will have exactly this
+     * many row groups. The row groups added this way are empty. If more row groups were already started, an
+     * exception is thrown. Note that this will *not* override the row group count that has been given upon
+     * construction (if any).
      */
     SparseMatrix<value_type> build(index_type overriddenRowCount = 0, index_type overriddenColumnCount = 0, index_type overriddenRowGroupCount = 0);
 
@@ -242,7 +271,8 @@ class SparseMatrixBuilder {
      * All other entries of this row must be set immediately after calling this (without setting values at other rows in between)
      * The provided row must not be smaller than the row of the most recent insertion.
      * If there is a row grouping, the column of the diagonal entry will correspond to the current row group.
-     * If addNextValue is called on the given row and the diagonal column, we take the sum of the two values provided to addDiagonalEntry and addNextValue
+     * If addNextValue is called on the given row and the diagonal column (or addDiagonalEntry is called again for the same row), the two values are
+     * combined according to the accumulation mode (by default, we take their sum).
      */
     void addDiagonalEntry(index_type row, ValueType const& value);
 
@@ -309,6 +339,9 @@ class SparseMatrixBuilder {
     index_type currentRowGroupCount;
 
     boost::optional<ValueType> pendingDiagonalEntry;
+
+    // Specifies how multiple values for the same row and column are combined.
+    AccumulationMode accumulationMode{AccumulationMode::Sum};
 };
 
 /*!
@@ -1041,6 +1074,17 @@ class SparseMatrix {
      * Checks whether each present entry is strictly positive (omitted entries are not considered).
      */
     bool hasOnlyPositiveEntries() const;
+
+    /*!
+     * Checks whether the support graph of the matrix is preserved by every way of resolving the uncertainty, i.e., whether each present entry is
+     * strictly positive no matter how the (probabilistic) rows are instantiated.
+     * For non-interval matrices, this is equivalent to hasOnlyPositiveEntries().
+     * For interval matrices, the intervals are implicitly tightened first:
+     * As every row must sum to one, the lower bound of an entry is at least 1 minus the sum of the upper bounds of the other entries in the row.
+     * For example, the row [0, 0.5], [0.5, 0.5] is graph preserving, since the lower bound of the first entry is tightened to 0.5.
+     * Note that the matrix is expected to represent probabilistic rows.
+     */
+    bool isProbabilisticGraphPreserving() const;
 
     /*!
      * Checks if the current matrix is a submatrix of the given matrix, where a matrix A is called a submatrix

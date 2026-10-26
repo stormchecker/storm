@@ -108,6 +108,8 @@ bool AcyclicMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Enviro
         }
     }
 
+    this->setSolutionBoundsExact(x);
+
     if (!this->isCachingEnabled()) {
         this->clearCache();
     }

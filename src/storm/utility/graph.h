@@ -3,13 +3,13 @@
 #include <limits>
 #include <set>
 
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdType.h"
 #include "storm/models/sparse/DeterministicModel.h"
 #include "storm/models/sparse/NondeterministicModel.h"
 #include "storm/solver/OptimizationDirection.h"
-#include "storm/storage/Scheduler.h"
-#include "storm/storage/StronglyConnectedComponent.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdType.h"
+#include "storm/storage/decomposition/StronglyConnectedComponent.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
 
 namespace storm {

@@ -6,7 +6,7 @@
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/JsonSerializationAdapter.h"
-#include "storm/storage/umb/model/Type.h"
+#include "storm/languages/umb/Type.h"
 
 namespace storm::storage::sparse {
 /*!

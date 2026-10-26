@@ -116,7 +116,7 @@ class FaultTreeSettings : public storm::settings::modules::ModuleSettings {
      */
     bool isUniqueFailedBE() const;
 
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
 
     /*!
      * Retrieves whether the DFT should be checked via SMT.
@@ -189,7 +189,7 @@ class FaultTreeSettings : public storm::settings::modules::ModuleSettings {
     static const std::string maxDepthOptionName;
     static const std::string firstDependencyOptionName;
     static const std::string uniqueFailedBEOptionName;
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
     static const std::string solveWithSmtOptionName;
 #endif
     static const std::string chunksizeOptionName;

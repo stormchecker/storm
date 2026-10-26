@@ -9,7 +9,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/solver/SolverSelectionOptions.h"
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm/exceptions/IllegalArgumentValueException.h"
 #include "storm/exceptions/InvalidOptionException.h"

@@ -121,6 +121,10 @@ double ExplorationSettings::getPrecision() const {
     return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
 }
 
+bool ExplorationSettings::isPrecisionSet() const {
+    return this->getOption(precisionOptionName).getHasOptionBeenSet();
+}
+
 bool ExplorationSettings::check() const {
     bool optionsSet = this->getOption(precomputationTypeOptionName).getHasOptionBeenSet() ||
                       this->getOption(numberOfExplorationStepsUntilPrecomputationOptionName).getHasOptionBeenSet() ||

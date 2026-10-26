@@ -5,8 +5,8 @@
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Expressions.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/Expressions.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

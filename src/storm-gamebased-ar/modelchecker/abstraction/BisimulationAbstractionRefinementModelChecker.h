@@ -26,7 +26,8 @@ class BisimulationAbstractionRefinementModelChecker : public AbstractAbstraction
     /*!
      * Constructs a model checker for the given model.
      */
-    explicit BisimulationAbstractionRefinementModelChecker(ModelType const& model);
+    explicit BisimulationAbstractionRefinementModelChecker(ModelType const& model,
+                                                           abstraction::AbstractionOptions const& options = abstraction::AbstractionOptions());
 
     virtual ~BisimulationAbstractionRefinementModelChecker();
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "storm/environment/Environment.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/ModelFeatures.h"
+#include "storm/languages/SymbolicModelDescription.h"
+#include "storm/languages/jani/ModelFeatures.h"
 
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
@@ -35,7 +35,7 @@ inline storm::jani::ModelFeatures getSupportedJaniFeatures(storm::builder::Build
 
 template<storm::dd::DdType LibraryType, typename ValueType>
 std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(
-    storm::Environment const& env, storm::storage::SymbolicModelDescription const& model,
+    storm::Environment const& env, storm::languages::SymbolicModelDescription const& model,
     std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel = false, bool applyMaximumProgress = true,
     bool fixDeadlocks = true) {
     if (model.isPrismProgram()) {
@@ -61,7 +61,8 @@ std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSym
             options.applyMaximumProgressAssumption = false;
             options.terminalStates.clear();
         } else {
-            options.applyMaximumProgressAssumption = (model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA && applyMaximumProgress);
+            options.applyMaximumProgressAssumption =
+                (model.getModelType() == storm::languages::SymbolicModelDescription::ModelType::MA && applyMaximumProgress);
         }
 
         storm::builder::DdJaniModelBuilder<LibraryType, ValueType> builder;
@@ -71,14 +72,14 @@ std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSym
 
 template<>
 inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalNumber>> buildSymbolicModel(
-    storm::Environment const&, storm::storage::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool,
+    storm::Environment const&, storm::languages::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool,
     bool) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational numbers.");
 }
 
 template<>
 inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalFunction>> buildSymbolicModel(
-    storm::Environment const&, storm::storage::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool,
+    storm::Environment const&, storm::languages::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool,
     bool) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational functions.");
 }
@@ -93,7 +94,7 @@ inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, s
  */
 template<typename ValueType>
 storm::builder::ExplicitModelBuilder<ValueType> makeExplicitModelBuilder(
-    storm::storage::SymbolicModelDescription const& model, storm::builder::BuilderOptions const& options,
+    storm::languages::SymbolicModelDescription const& model, storm::builder::BuilderOptions const& options,
     std::shared_ptr<storm::generator::ActionMask<ValueType>> actionMask = nullptr,
     typename storm::builder::ExplicitModelBuilder<ValueType>::Options const& explorationOptions =
         typename storm::builder::ExplicitModelBuilder<ValueType>::Options()) {
@@ -115,7 +116,7 @@ storm::builder::ExplicitModelBuilder<ValueType> makeExplicitModelBuilder(
 
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(
-    storm::storage::SymbolicModelDescription const& model, storm::builder::BuilderOptions const& options,
+    storm::languages::SymbolicModelDescription const& model, storm::builder::BuilderOptions const& options,
     typename storm::builder::ExplicitModelBuilder<ValueType>::Options const& explorationOptions =
         typename storm::builder::ExplicitModelBuilder<ValueType>::Options()) {
     storm::builder::ExplicitModelBuilder<ValueType> builder = makeExplicitModelBuilder<ValueType>(model, options, nullptr, explorationOptions);
@@ -123,7 +124,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(
 }
 
 template<typename ValueType>
-std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model,
+std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::languages::SymbolicModelDescription const& model,
                                                                           std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
     storm::builder::BuilderOptions options(formulas, model);
     return buildSparseModel<ValueType>(model, options);

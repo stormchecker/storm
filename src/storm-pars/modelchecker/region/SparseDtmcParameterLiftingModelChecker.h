@@ -12,7 +12,7 @@
 #include "storm-pars/transformer/RobustParameterLifter.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 
 namespace storm {
 namespace modelchecker {
@@ -48,11 +48,11 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel,
                            CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const override;
 
-    virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
-                         CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-                         std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
-                         std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
-                         bool graphPreserving = true) override;
+    virtual void specify(
+        Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
+        std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
+        std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
+        storm::pars::analysis::GraphPreservationStatus graphPreservationStatus = storm::pars::analysis::GraphPreservationStatus::GraphPreserving) override;
 
     std::optional<storm::storage::Scheduler<ConstantType>> getCurrentMinScheduler();
     std::optional<storm::storage::Scheduler<ConstantType>> getCurrentMaxScheduler();
@@ -110,7 +110,7 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     std::unique_ptr<SolverFactoryType<ConstantType, Robust>> solverFactory;
     bool solvingRequiresUpperRewardBounds;
 
-    bool graphPreserving;
+    storm::pars::analysis::GraphPreservationStatus graphPreservationStatus;
 
     // Results from the most recent solver call.
     std::optional<std::vector<uint64_t>> minSchedChoices, maxSchedChoices;

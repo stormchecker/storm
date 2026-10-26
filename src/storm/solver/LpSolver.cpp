@@ -1,8 +1,8 @@
 #include "storm/solver/LpSolver.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

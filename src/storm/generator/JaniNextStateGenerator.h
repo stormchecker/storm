@@ -5,10 +5,10 @@
 #include "storm/generator/NextStateGenerator.h"
 #include "storm/generator/TransientVariableInformation.h"
 
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/OrderedAssignments.h"
+#include "storm/languages/jani/eliminator/ArrayEliminator.h"
 #include "storm/storage/BoostTypes.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/OrderedAssignments.h"
-#include "storm/storage/jani/eliminator/ArrayEliminator.h"
 
 namespace storm {
 namespace jani {

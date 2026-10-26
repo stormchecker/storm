@@ -7,6 +7,7 @@
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -14,8 +15,6 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/SparseMatrixOperations.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/rationalfunction.h"
@@ -26,6 +25,34 @@ namespace models {
 namespace sparse {
 
 template<typename ValueType, typename RewardModelType>
+Model<ValueType, RewardModelType>::Model(Model<ValueType, RewardModelType> const& other)
+    : storm::models::Model<ValueType>(other),
+      transitionMatrix(other.transitionMatrix),
+      stateLabeling(other.stateLabeling),
+      rewardModels(other.rewardModels),
+      choiceLabeling(other.choiceLabeling),
+      stateValuations(other.stateValuations),
+      choiceOrigins(other.choiceOrigins),
+      stochasticTolerance(other.stochasticTolerance ? std::make_unique<ValueType>(*other.stochasticTolerance) : nullptr) {
+    // Intentionally left empty.
+}
+
+template<typename ValueType, typename RewardModelType>
+Model<ValueType, RewardModelType>& Model<ValueType, RewardModelType>::operator=(Model<ValueType, RewardModelType> const& other) {
+    if (this != &other) {
+        storm::models::Model<ValueType>::operator=(other);
+        transitionMatrix = other.transitionMatrix;
+        stateLabeling = other.stateLabeling;
+        rewardModels = other.rewardModels;
+        choiceLabeling = other.choiceLabeling;
+        stateValuations = other.stateValuations;
+        choiceOrigins = other.choiceOrigins;
+        stochasticTolerance = other.stochasticTolerance ? std::make_unique<ValueType>(*other.stochasticTolerance) : nullptr;
+    }
+    return *this;
+}
+
+template<typename ValueType, typename RewardModelType>
 Model<ValueType, RewardModelType>::Model(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components)
     : storm::models::Model<ValueType>(modelType),
       transitionMatrix(components.transitionMatrix),
@@ -34,6 +61,8 @@ Model<ValueType, RewardModelType>::Model(ModelType modelType, storm::storage::sp
       choiceLabeling(components.choiceLabeling),
       stateValuations(components.stateValuations),
       choiceOrigins(components.choiceOrigins) {
+    stochasticTolerance = std::make_unique<ValueType>(components.stochasticTolerance.value_or(
+        isExact() ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(storm::Environment::DefaultModelTolerance)));
     assertValidityOfComponents(components);
 }
 
@@ -46,6 +75,8 @@ Model<ValueType, RewardModelType>::Model(ModelType modelType, storm::storage::sp
       choiceLabeling(std::move(components.choiceLabeling)),
       stateValuations(std::move(components.stateValuations)),
       choiceOrigins(std::move(components.choiceOrigins)) {
+    stochasticTolerance = std::make_unique<ValueType>(components.stochasticTolerance.value_or(
+        isExact() ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(storm::Environment::DefaultModelTolerance)));
     assertValidityOfComponents(components);
 }
 
@@ -53,9 +84,6 @@ template<typename ValueType, typename RewardModelType>
 void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) const {
     // More costly checks are only asserted to avoid doing them in release mode.
-    [[maybe_unused]] ValueType const stochasticTolerance =
-        isExact() ? storm::utility::zero<ValueType>()
-                  : storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
     uint64_t stateCount = this->getNumberOfStates();
     uint64_t choiceCount = this->getTransitionMatrix().getRowCount();
@@ -65,7 +93,7 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
                     "Invalid column count of transition matrix.");
     {
         [[maybe_unused]] std::string reasonNotProbabilistic;
-        STORM_LOG_ASSERT(components.rateTransitions || this->getTransitionMatrix().isProbabilistic(stochasticTolerance, reasonNotProbabilistic),
+        STORM_LOG_ASSERT(components.rateTransitions || this->getTransitionMatrix().isProbabilistic(*this->stochasticTolerance, reasonNotProbabilistic),
                          "The matrix is not probabilistic. " << reasonNotProbabilistic);
     }
     STORM_LOG_THROW(this->getStateLabeling().getNumberOfItems() == stateCount, storm::exceptions::IllegalArgumentException,
@@ -679,6 +707,16 @@ bool Model<ValueType, RewardModelType>::hasUncertainty() const {
 template<typename ValueType, typename RewardModelType>
 bool Model<ValueType, RewardModelType>::isExact() const {
     return storm::NumberTraits<ValueType>::IsExact && storm::NumberTraits<typename RewardModelType::ValueType>::IsExact;
+}
+
+template<typename ValueType, typename RewardModelType>
+ValueType const& Model<ValueType, RewardModelType>::getStochasticTolerance() const {
+    return *this->stochasticTolerance;
+}
+
+template<typename ValueType, typename RewardModelType>
+void Model<ValueType, RewardModelType>::setStochasticTolerance(ValueType const& tolerance) {
+    *this->stochasticTolerance = tolerance;
 }
 
 template<typename ValueType, typename RewardModelType>

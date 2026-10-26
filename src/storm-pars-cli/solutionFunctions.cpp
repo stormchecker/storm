@@ -1,10 +1,11 @@
 #include "storm-pars-cli/solutionFunctions.h"
 
+#include "storm-cli-utilities/SettingsUtils.h"
 #include "storm-cli-utilities/model-handling.h"
 #include "storm-pars-cli/print.h"
+#include "storm-pars/analysis/ConstraintCollector.h"
 #include "storm-pars/api/export.h"
 #include "storm-pars/settings/modules/ParametricSettings.h"
-#include "storm/analysis/GraphConditions.h"
 #include "storm/api/verification.h"
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -58,12 +59,14 @@ void verifyProperties(
 }
 
 template<typename ValueType>
-void computeSolutionFunctionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::cli::SymbolicInput const& input) {
+void computeSolutionFunctionsWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                              storm::cli::SymbolicInput const& input) {
+    bool const preferEliminationChecker = storm::cli::preferEliminationChecker();
     verifyProperties<ValueType>(
         input.properties,
-        [&model](std::shared_ptr<storm::logic::Formula const> const& formula) {
+        [&env, &model, preferEliminationChecker](std::shared_ptr<storm::logic::Formula const> const& formula) {
             std::unique_ptr<storm::modelchecker::CheckResult> result =
-                storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true));
+                storm::api::verifyWithSparseEngine<ValueType>(env, model, storm::api::createTask<ValueType>(formula, true), preferEliminationChecker);
             if (result) {
                 result->filter(storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>(model->getInitialStates()));
             }
@@ -75,26 +78,26 @@ void computeSolutionFunctionsWithSparseEngine(std::shared_ptr<storm::models::spa
                 auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
                 std::optional<ValueType> rationalFunction =
                     asSolutionFunction<ValueType>(result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()]);
-                auto constraintCollector = storm::analysis::ConstraintCollector<ValueType>(*dtmc);
+                auto constraintCollector = storm::pars::analysis::ConstraintCollector(*dtmc);
                 api::exportParametricResultToFile<ValueType>(rationalFunction, constraintCollector, parametricSettings.exportResultPath());
             } else if (parametricSettings.exportResultToFile() && model->isOfType(storm::models::ModelType::Ctmc)) {
                 auto ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
                 std::optional<ValueType> rationalFunction =
                     asSolutionFunction<ValueType>(result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()]);
-                auto constraintCollector = storm::analysis::ConstraintCollector<ValueType>(*ctmc);
+                auto constraintCollector = storm::pars::analysis::ConstraintCollector(*ctmc);
                 api::exportParametricResultToFile<ValueType>(rationalFunction, constraintCollector, parametricSettings.exportResultPath());
             }
         });
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-void computeSolutionFunctionsWithSymbolicEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model,
+void computeSolutionFunctionsWithSymbolicEngine(storm::Environment const& env, std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model,
                                                 storm::cli::SymbolicInput const& input) {
     verifyProperties<ValueType>(
         input.properties,
-        [&model](std::shared_ptr<storm::logic::Formula const> const& formula) {
+        [&env, &model](std::shared_ptr<storm::logic::Formula const> const& formula) {
             std::unique_ptr<storm::modelchecker::CheckResult> result =
-                storm::api::verifyWithDdEngine<DdType, ValueType>(model, storm::api::createTask<ValueType>(formula, true));
+                storm::api::verifyWithDdEngine<DdType, ValueType>(env, model, storm::api::createTask<ValueType>(formula, true));
             if (result) {
                 result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(model->getReachableStates(), model->getInitialStates()));
             }
@@ -115,10 +118,12 @@ template void verifyProperties<storm::RationalFunction>(
     std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const&)> const&,
     std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const&);
 
-template void computeSolutionFunctionsWithSparseEngine<storm::RationalFunction>(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const&,
+template void computeSolutionFunctionsWithSparseEngine<storm::RationalFunction>(storm::Environment const&,
+                                                                                std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const&,
                                                                                 storm::cli::SymbolicInput const&);
 
 template void computeSolutionFunctionsWithSymbolicEngine<storm::dd::DdType::Sylvan, storm::RationalFunction>(
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>> const&, storm::cli::SymbolicInput const&);
+    storm::Environment const&, std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>> const&,
+    storm::cli::SymbolicInput const&);
 
 }  // namespace storm::pars

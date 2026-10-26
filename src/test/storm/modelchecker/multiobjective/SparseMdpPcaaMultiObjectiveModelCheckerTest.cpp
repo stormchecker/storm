@@ -6,16 +6,16 @@
 #include "storm/environment/Environment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/modelchecker/multiobjective/MultiObjectiveModelChecking.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/storage/geometry/Hyperrectangle.h"
 #include "storm/storage/geometry/Polytope.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/storage/scheduler/Scheduler.h"
 
 template<typename ValueType>
 bool expectPointConained(std::vector<std::vector<ValueType>> const& pointset, std::vector<ValueType> const& point, ValueType precision) {

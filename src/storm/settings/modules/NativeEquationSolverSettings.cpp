@@ -49,7 +49,9 @@ NativeEquationSolverSettings::NativeEquationSolverSettings() : ModuleSettings(mo
                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").build())
                         .build());
 
-    this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.")
+    this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false,
+                                                   "The precision used for detecting convergence of iterative methods; for sound methods, this bounds the "
+                                                   "returned midpoint's relative (or absolute) error.")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.")
                                          .setDefaultValueDouble(1e-06)

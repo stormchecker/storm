@@ -41,9 +41,14 @@ storm::Environment TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType
                                        env.solver().topological().isUnderlyingMinMaxMethodSetFromDefault());
     if (adaptPrecision) {
         STORM_LOG_ASSERT(this->longestSccChainSize, "Did not compute the longest SCC chain size although it is needed.");
-        storm::RationalNumber subEnvPrec =
-            subEnv.solver().minMax().getPrecision() / storm::utility::convertNumber<storm::RationalNumber>(this->longestSccChainSize.get());
-        subEnv.solver().minMax().setPrecision(subEnvPrec);
+        storm::RationalNumber const prec = subEnv.solver().minMax().getPrecision();
+        storm::RationalNumber divisor = storm::utility::convertNumber<storm::RationalNumber>(this->longestSccChainSize.get());
+        if (subEnv.solver().minMax().getRelativeTerminationCriterion()) {
+            // Relative errors compose multiplicatively along a chain, so dividing by its length alone leaves
+            // (1 + prec/k)^k - 1 > prec. Dividing by k(1 + prec) as well brings the product back below prec.
+            divisor *= storm::utility::one<storm::RationalNumber>() + prec;
+        }
+        subEnv.solver().minMax().setPrecision(prec / divisor);
     }
     return subEnv;
 }
@@ -79,6 +84,11 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
     }
 
     bool returnValue = true;
+    bool aborted = false;
+    // Trivial SCCs are settled by substitution, so they only ever inherit the error of their successors. SCCs come
+    // in topological order, so conjoining as we go is enough.
+    bool allSccsExact = true;
+    bool allSccsPrecise = true;
     if (this->sortedSccDecomposition->size() == 1 && (!this->choiceFixedForRowGroup || this->choiceFixedForRowGroup.get().empty())) {
         // Handle the case where there is just one large SCC, as there are no fixed choices for states, we solve it like this
         if (auto const& scc = *this->sortedSccDecomposition->begin(); scc.size() == 1) {
@@ -89,6 +99,8 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
             returnValue = solveTrivialScc(*scc.begin(), dir, x, b);
         } else {
             returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, dir, x, b);
+            allSccsExact = this->sccSolver->hasExactSolutionBounds();
+            allSccsPrecise = lastSccMetPrecision(sccSolverEnvironment, x);
         }
     } else {
         // Solve each SCC individually
@@ -127,7 +139,10 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
                 for (auto const& state : scc) {
                     sccAsBitVector.set(state, true);
                 }
-                returnValue = solveScc(sccSolverEnvironment, dir, scc, sccAsBitVector, x, b, newRelevantValues) && returnValue;
+                bool sccMetPrecision = false;
+                returnValue = solveScc(sccSolverEnvironment, dir, scc, sccAsBitVector, x, b, newRelevantValues, sccMetPrecision) && returnValue;
+                allSccsExact = allSccsExact && this->sccSolver->hasExactSolutionBounds();
+                allSccsPrecise = allSccsPrecise && sccMetPrecision;
                 // clear sccAsBitVector, either by clearing all bits or by clearing the bits of the current SCC (if its small)
                 if (scc.size() * 64 < sccAsBitVector.size()) {
                     for (auto const& state : scc) {
@@ -141,9 +156,14 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
             progress.updateProgress(sccIndex);
             if (storm::utility::resources::isTerminate()) {
                 STORM_LOG_WARN("Topological solver aborted after analyzing " << sccIndex << "/" << this->sortedSccDecomposition->size() << " SCCs.");
+                aborted = true;
                 break;
             }
         }
+    }
+
+    if (returnValue && !aborted) {
+        trySetSolutionBounds(env, x, allSccsExact, allSccsPrecise && needAdaptPrecision);
     }
 
     if (!this->isCachingEnabled()) {
@@ -151,6 +171,28 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
     }
 
     return returnValue;
+}
+
+template<typename ValueType, typename SolutionType>
+void TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::trySetSolutionBounds(Environment const& env, std::vector<SolutionType> const& x,
+                                                                                          bool allSccsExact, bool allSccsPrecise) const {
+    if (allSccsExact) {
+        this->setSolutionBoundsExact(x);
+        return;
+    }
+    if (!allSccsPrecise) {
+        return;
+    }
+    this->setSolutionBoundsFromPrecision(x, storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()),
+                                         env.solver().minMax().getRelativeTerminationCriterion());
+}
+
+template<typename ValueType, typename SolutionType>
+bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::lastSccMetPrecision(Environment const& sccSolverEnvironment,
+                                                                                         std::vector<SolutionType> const& sccValues) const {
+    return this->sccSolver->getSolutionBounds().isWithinPrecision(
+        sccValues, storm::utility::convertNumber<SolutionType>(sccSolverEnvironment.solver().minMax().getPrecision()),
+        sccSolverEnvironment.solver().minMax().getRelativeTerminationCriterion());
 }
 
 template<typename ValueType, typename SolutionType>
@@ -300,7 +342,8 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveScc(st
                                                                               storm::storage::StronglyConnectedComponent const& scc,
                                                                               storm::storage::BitVector const& sccAsBitVector,
                                                                               std::vector<SolutionType>& globalX, std::vector<ValueType> const& globalB,
-                                                                              std::optional<storm::storage::BitVector> const& globalRelevantValues) const {
+                                                                              std::optional<storm::storage::BitVector> const& globalRelevantValues,
+                                                                              bool& metPrecision) const {
     // Restricts a vector indexed by row groups to the states of the scc
     auto restrictToScc = [&scc](auto const& globalVector) {
         std::vector<std::decay_t<decltype(globalVector[0])>> result;
@@ -429,6 +472,7 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveScc(st
 
     // Invoke scc solver
     bool res = this->sccSolver->solveEquations(sccSolverEnvironment, dir, sccX, sccB);
+    metPrecision = lastSccMetPrecision(sccSolverEnvironment, sccX);
 
     // Set Scheduler choices and solution
     if (this->isTrackSchedulerSet()) {

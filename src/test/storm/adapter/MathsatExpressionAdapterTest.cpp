@@ -4,10 +4,10 @@
 #ifdef STORM_HAVE_MATHSAT
 #include <mathsat.h>
 #include "storm/adapters/MathsatExpressionAdapter.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/Expressions.h"
+#include "storm/expressions/OperatorType.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Expressions.h"
-#include "storm/storage/expressions/OperatorType.h"
 
 TEST(MathsatExpressionAdapter, StormToMathsatBasic) {
     msat_config config = msat_create_config();

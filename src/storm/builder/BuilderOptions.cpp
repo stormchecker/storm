@@ -55,13 +55,13 @@ BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels)
     // Intentionally left empty.
 }
 
-BuilderOptions::BuilderOptions(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription)
+BuilderOptions::BuilderOptions(storm::logic::Formula const& formula, storm::languages::SymbolicModelDescription const& modelDescription)
     : BuilderOptions({formula.asSharedPointer()}, modelDescription) {
     // Intentionally left empty.
 }
 
 BuilderOptions::BuilderOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
-                               storm::storage::SymbolicModelDescription const& modelDescription)
+                               storm::languages::SymbolicModelDescription const& modelDescription)
     : BuilderOptions() {
     if (!formulas.empty()) {
         for (auto const& formula : formulas) {
@@ -73,13 +73,13 @@ BuilderOptions::BuilderOptions(std::vector<std::shared_ptr<storm::logic::Formula
     }
 
     if (modelDescription.hasModel()) {
-        this->setApplyMaximalProgressAssumption(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
-        this->setBuildChoiceOrigins(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP);
-        this->setBuildChoiceLabels(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP);
+        this->setApplyMaximalProgressAssumption(modelDescription.getModelType() == storm::languages::SymbolicModelDescription::ModelType::MA);
+        this->setBuildChoiceOrigins(modelDescription.getModelType() == storm::languages::SymbolicModelDescription::ModelType::POMDP);
+        this->setBuildChoiceLabels(modelDescription.getModelType() == storm::languages::SymbolicModelDescription::ModelType::POMDP);
     }
 }
 
-void BuilderOptions::preserveFormula(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription) {
+void BuilderOptions::preserveFormula(storm::logic::Formula const& formula, storm::languages::SymbolicModelDescription const& modelDescription) {
     // If we already had terminal states, we need to erase them.
     if (hasTerminalStates()) {
         clearTerminalStates();

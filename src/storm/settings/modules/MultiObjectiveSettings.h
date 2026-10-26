@@ -2,7 +2,7 @@
 
 #include "storm/modelchecker/multiobjective/MultiObjectiveModelCheckingMethod.h"
 #include "storm/settings/modules/ModuleSettings.h"
-#include "storm/storage/SchedulerClass.h"
+#include "storm/storage/scheduler/SchedulerClass.h"
 
 namespace storm {
 namespace settings {
@@ -40,6 +40,12 @@ class MultiObjectiveSettings : public ModuleSettings {
      * @return the desired precision for quantitative- and pareto queries.
      */
     double getPrecision() const;
+
+    /**
+     * Retrieves whether the desired precision was set explicitly.
+     * @return true iff the desired precision was set explicitly.
+     */
+    bool isPrecisionSet() const;
 
     /**
      * Retrieves whether the desired precision is considered to be absolute.

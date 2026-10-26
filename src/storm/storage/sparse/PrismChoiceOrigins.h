@@ -3,8 +3,8 @@
 #include <memory>
 #include <string>
 
+#include "storm/languages/prism/Program.h"
 #include "storm/storage/BoostTypes.h"
-#include "storm/storage/prism/Program.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
 
 namespace storm {

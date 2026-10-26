@@ -4,7 +4,7 @@
 #include <memory>
 #include <set>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm/solver/SmtSolver.h"
 #include "storm/utility/solver.h"

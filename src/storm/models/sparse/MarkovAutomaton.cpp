@@ -5,7 +5,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 #include "storm/transformer/SubsystemBuilder.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"

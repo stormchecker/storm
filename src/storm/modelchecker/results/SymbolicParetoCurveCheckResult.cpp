@@ -1,9 +1,9 @@
 #include "storm/modelchecker/results/SymbolicParetoCurveCheckResult.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

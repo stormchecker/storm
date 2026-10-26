@@ -14,12 +14,12 @@
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
 #include "storm/environment/Environment.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/solver/OptimizationDirection.h"
-#include "storm/storage/prism/Program.h"
 #include "storm/utility/constants.h"
 
 void testModelB(std::string programFile, std::string formulaAsString, std::string constantsAsString) {
@@ -103,10 +103,20 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
             ASSERT_TRUE(variables.size() == 1);
             auto parameter = *variables.begin();
 
+            // Build the expected values with the cache of the model, just like the transformer does.
+            std::shared_ptr<storm::RawPolynomialCache> cache;
+            for (auto const& entry : row) {
+                if (!entry.getValue().isConstant()) {
+                    cache = entry.getValue().nominator().pCache();
+                    break;
+                }
+            }
+            ASSERT_TRUE(cache != nullptr);
+
             auto parameterPol = storm::RawPolynomial(parameter);
-            auto parameterRational = storm::RationalFunction(carl::makePolynomial<storm::Polynomial>(parameterPol));
+            auto parameterRational = storm::RationalFunction(storm::Polynomial(parameterPol, cache));
             auto oneMinusParameter = storm::RawPolynomial(1) - parameterPol;
-            auto oneMinusParameterRational = storm::RationalFunction(carl::makePolynomial<storm::Polynomial>(oneMinusParameter));
+            auto oneMinusParameterRational = storm::RationalFunction(storm::Polynomial(oneMinusParameter, cache));
 
             uint64_t seenP = 0;
             uint64_t seenOneMinusP = 0;
@@ -131,8 +141,8 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
 class BinaryDtmcTransformerTest : public ::testing::Test {
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 };

@@ -6,7 +6,14 @@ namespace l3pp {
 using carl::operator<<;
 }
 
+// Set visibility such that libraries built with hidden visibility (e.g., storm-parsers) do not get their own root logger
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC visibility push(default)
+#endif
 #include <l3pp.h>
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC visibility pop
+#endif
 
 #include <sstream>
 #include <type_traits>

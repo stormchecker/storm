@@ -26,7 +26,7 @@ See the list below for the steps.
 - Adapt the settings to support the new library. This will typically be `CoreSettings`.
 - Add a dedicated class in Storm:
   - solvers are defined in `storm/solver`
-  - dd libraries are defined in `storm/storage/dd`
+  - dd libraries are defined in `storm/dd`
   - some libraries are defined in `storm/adapters`
 - Add output to `printVersion()` in `src/storm-cli-utilities/print.cpp` which prints information about the library.
 - Add tests for the new library.
@@ -44,18 +44,41 @@ See the list below for the steps.
 New versions of third-party resources should be supported by Storm.
 In the following, we list the steps for specific resources.
 
+### cvc5
+cvc5 is an optional SMT solver (`storm/solver/Cvc5SmtSolver`). It is not shipped with Storm and has to be installed separately.
+
+- Storm finds cvc5 via the CMake config file that cvc5 installs with its own `make install` (available since cvc5 1.2).
+  A non-default installation location can be given via `CVC5_ROOT`.
+  The minimal supported version is `STORM_CVC5_MIN_VERSION` in `$STORM_DIR/resources/3rdparty/CMakeLists.txt`.
+- **cvc5 must be built in unrestricted mode.**
+  The `safe` and `stable` build types of recent cvc5 versions (restricted modes do not exist in cvc5 1.2) reject terms that Storm creates, for example the power operator, with a run-time exception.
+  cvc5 records its build type in its CMake config file (`CVC5_SAFE_BUILD` and `CVC5_STABLE_BUILD`).
+  If one of them is set, CMake prints a warning and Storm is built without cvc5.
+  An unrestricted build is obtained with the following commands (in older cvc5 versions, the build type `production` is the unrestricted one):
+  ```
+  ./configure.sh unrestricted --auto-download --poly
+  cd build && make && make install
+  ```
+- To support a new cvc5 version, build Storm against it and run the tests of the solver and the expression adapter (`Cvc5SmtSolverTest`, `Cvc5ExpressionAdapterTest`).
+  Storm uses `cvc5::TermManager` and `cvc5::Solver`, so check API changes there.
+  Also update `CVC5_VERSION` in the `storm-dependencies` Dockerfile of [docker-storm](https://github.com/stormchecker/docker-storm/).
+
 ### Eigen
 In Eigen, we have adapted `SparseLU` to work with scalar types that do not default construct from a double (like CLN numbers) or that do not have an operator< or std::abs
 
 To update the Eigen version, just change the corresponding commit hash in `$STORM_DIR/resources/3rdparty/CMakeLists.txt`.
 Check whether the patch located at `$STORM_DIR/resources/3rdparty/patches/eigen501.patch` can be applied without issues (in particular check for changes in `Eigen/src/SparseLU/`).
+The patch is applied during CMake configuration; it is skipped if it was already applied.
+
+Eigen is fetched from the GitHub mirror `https://github.com/eigen-mirror/eigen.git` rather than from the upstream GitLab repository, because the mirror is more reliably available (in particular in CI).
+The mirror contains the same commits, so the pinned commit hash is identical for both.
 
 The commit hash is forwarded to carl-storm via the `CARL_EIGEN_GIT_TAG` variable to ensure that carl-storm and Storm check out the same Eigen version.
 It might be reasonable to update the default value of `CARL_EIGEN_GIT_TAG` in carl-storm as well.
 
 In case a new patch needs to be created follow these steps:
 
-1. Clone `https://gitlab.com/libeigen/eigen.git` somewhere and checkout the previously shipped version
+1. Clone `https://github.com/eigen-mirror/eigen.git` somewhere and checkout the previously shipped version
 2. Checkout a new branch e.g., `git branch storm-patch; git checkout storm-patch`
 3. Apply the old patch via `git apply $STORM_DIR/resources/3rdparty/patches/eigen501.patch`. At this point, `git diff` shows you all the changes we apply to Eigen
 4. Make a commit, e.g., `git commit -a -m "Storm patch"`
@@ -70,6 +93,7 @@ To update ExprTk, download the latest version from the [website](https://www.par
 ### GMM
 To update GMM, change the corresponding version in `$STORM_DIR/resources/3rdparty/CMakeLists.txt`.
 Check whether the patch located at `$STORM_DIR/resources/3rdparty/patches/gmm55.patch` still applies to the new version; update or rename it (and adjust the patch path in the CMake file) if it does not.
+The patch is applied during CMake configuration; it is skipped if it was already applied.
 
 ### googletest / gtest
 To update gtest, bump the `GTEST_VERSION` number.

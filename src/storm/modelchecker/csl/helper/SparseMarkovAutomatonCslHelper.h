@@ -7,7 +7,7 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolveGoal.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/MaximalEndComponent.h"
+#include "storm/storage/decomposition/MaximalEndComponent.h"
 #include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/numerical.h"

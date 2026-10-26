@@ -2,8 +2,8 @@
 
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/expressions/Expression.h"
 #include "storm/logic/ComparisonType.h"
-#include "storm/storage/expressions/Expression.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

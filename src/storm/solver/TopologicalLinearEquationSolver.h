@@ -4,8 +4,8 @@
 
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/multiplier/NativeMultiplier.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/SubmatrixBuilder.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 
 namespace storm {
 
@@ -40,6 +40,14 @@ class TopologicalLinearEquationSolver : public LinearEquationSolver<ValueType> {
     // Creates an SCC decomposition and sorts the SCCs according to a topological sort.
     void createSortedSccDecomposition(bool needLongestChainSize) const;
 
+    // Reports what the SCC-wise solve established about the solution: the values themselves if every SCC was
+    // solved exactly, otherwise the precision they were solved with, if every SCC was solved that accurately.
+    void trySetSolutionBounds(Environment const& env, std::vector<ValueType> const& x, bool allSccsExact, bool allSccsPrecise) const;
+
+    // Retrieves whether the SCC solver met the precision the given environment asked of it for the given values it
+    // just produced. Adding up the errors of the SCCs relies on that.
+    bool lastSccMetPrecision(Environment const& sccSolverEnvironment, std::vector<ValueType> const& sccValues) const;
+
     // Solves the SCC with the given index
     // ... for the case that the SCC is trivial
     bool solveTrivialScc(uint64_t const& sccState, std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB) const;
@@ -48,7 +56,7 @@ class TopologicalLinearEquationSolver : public LinearEquationSolver<ValueType> {
     // ... for the remaining cases (1 < scc.size() < x.size())
     bool solveScc(storm::Environment const& sccSolverEnvironment, storm::storage::StronglyConnectedComponent const& scc,
                   storm::storage::BitVector const& sccAsBitVector, std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB,
-                  std::optional<storm::storage::BitVector> const& globalRelevantValues) const;
+                  std::optional<storm::storage::BitVector> const& globalRelevantValues, bool& metPrecision) const;
 
     // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
     // when the solver is destructed.

@@ -4,8 +4,8 @@
 #include <memory>
 #include <optional>
 
+#include "storm/dd/DdType.h"
 #include "storm/models/ModelType.h"
-#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 namespace models {

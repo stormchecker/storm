@@ -9,8 +9,8 @@
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/solver/SolveGoal.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 
 namespace storm {
 namespace modelchecker {

@@ -3,7 +3,7 @@
 
 #include "storm/logic/Formulas.h"
 
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"

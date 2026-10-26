@@ -195,7 +195,30 @@ TEST(ExportCheckResultTest, RangeOutputShowsBounds) {
 
     std::stringstream out;
     result.writeToStream(out);
-    EXPECT_EQ("[0.25, 0.5] (range) [0.2, ?] (bounds)", out.str());
+    EXPECT_EQ("[0.25, 0.5] (range). Solution bounds: [0.2, ?].", out.str());
+}
+
+/*!
+ * Bounds that coincide with the values leave nothing to report but the fact that they do.
+ */
+TEST(ExportCheckResultTest, ExactSolutionIsAnnouncedInsteadOfItsBounds) {
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> result(std::vector<double>{0.25});
+    result.setValuesExact();
+
+    std::stringstream out;
+    result.writeToStream(out);
+    EXPECT_EQ("0.25. Exact solution.", out.str());
+}
+
+TEST(ExportCheckResultTest, RangeOutputAnnouncesAnExactSolution) {
+    std::vector<double> values(10, 0.5);
+    values.front() = 0.25;
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> result(values);
+    result.setValuesExact();
+
+    std::stringstream out;
+    result.writeToStream(out);
+    EXPECT_EQ("[0.25, 0.5] (range). Exact solution.", out.str());
 }
 
 TEST(ExportCheckResultTest, InfiniteRewardDouble) {

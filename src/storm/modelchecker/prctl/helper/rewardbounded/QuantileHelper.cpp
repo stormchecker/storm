@@ -8,13 +8,13 @@
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/Expressions.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 #include "storm/utility/vector.h"
 
 #include "storm/logic/BoundedUntilFormula.h"

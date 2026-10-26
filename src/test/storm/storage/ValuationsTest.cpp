@@ -8,16 +8,16 @@
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/generator/PrismNextStateGenerator.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/sparse/ValuationTransformer.h"
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
+#include "storm/storage/valuations/ValuationTransformer.h"
 #include "storm/storage/valuations/Valuations.h"
 #include "storm/storage/valuations/ValuationsStorage.h"
 
 TEST(ValuationTest, StateValuationConstruction) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::generator::NextStateGeneratorOptions generatorOptions;
@@ -65,8 +65,8 @@ TEST(ValuationTest, StateValuationConstruction) {
 }
 
 TEST(ValuationTest, StateValuationTransformation) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::generator::NextStateGeneratorOptions generatorOptions;

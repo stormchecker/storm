@@ -8,7 +8,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionEvaluator.h"
 #include "storm/utility/constants.h"
 
 namespace storm {

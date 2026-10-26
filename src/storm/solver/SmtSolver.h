@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Expressions.h"
-#include "storm/storage/expressions/SimpleValuation.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/Expressions.h"
+#include "storm/expressions/SimpleValuation.h"
 
 #include <functional>
 #include <initializer_list>

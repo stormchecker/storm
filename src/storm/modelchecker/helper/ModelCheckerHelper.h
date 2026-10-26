@@ -3,8 +3,8 @@
 #include <boost/optional.hpp>
 #include <type_traits>
 
+#include "storm/dd/Bdd.h"
 #include "storm/models/ModelRepresentation.h"
-#include "storm/storage/dd/Bdd.h"
 
 #include "storm/storage/BitVector.h"
 

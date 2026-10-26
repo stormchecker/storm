@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 #include "storm/solver/SolutionBounds.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 
 namespace storm {
 namespace storage {

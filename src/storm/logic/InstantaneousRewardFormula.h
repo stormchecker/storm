@@ -2,8 +2,8 @@
 
 #include "storm/logic/PathFormula.h"
 
+#include "storm/expressions/Expression.h"
 #include "storm/logic/TimeBoundType.h"
-#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
 namespace logic {

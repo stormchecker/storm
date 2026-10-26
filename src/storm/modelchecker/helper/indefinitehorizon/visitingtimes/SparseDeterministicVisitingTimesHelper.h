@@ -4,7 +4,7 @@
 #include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/OptionalRef.h"
 

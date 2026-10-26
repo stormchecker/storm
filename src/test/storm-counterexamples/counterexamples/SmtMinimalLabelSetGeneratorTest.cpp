@@ -3,15 +3,16 @@
 
 #include <optional>
 
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
 
 #include "storm-counterexamples/api/counterexamples.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/Model.h"
+#include "storm/environment/Environment.h"
+#include "storm/languages/SymbolicModelDescription.h"
+#include "storm/languages/jani/Model.h"
 
 namespace {
 
@@ -19,7 +20,7 @@ namespace {
  * Computes a minimal edge set counterexample for the given JANI file and property and returns the restricted model.
  */
 std::optional<storm::jani::Model> computeJaniCounterexample(std::string const& janiFile, std::string const& formulaString) {
-    storm::storage::SymbolicModelDescription modelDescription(storm::api::parseJaniModel(janiFile).first);
+    storm::languages::SymbolicModelDescription modelDescription(storm::api::parseJaniModel(janiFile).first);
     auto properties = storm::api::parsePropertiesForSymbolicModelDescription(formulaString, modelDescription);
     auto formula = storm::api::extractFormulasFromProperties(properties).front();
 
@@ -27,7 +28,7 @@ std::optional<storm::jani::Model> computeJaniCounterexample(std::string const& j
     options.setBuildChoiceOrigins(true);
     auto model = storm::api::buildSparseModel<double>(modelDescription, options);
 
-    auto counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(modelDescription, model, formula);
+    auto counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(storm::Environment(), modelDescription, model, formula);
     auto highLevelCounterexample = std::dynamic_pointer_cast<storm::counterexamples::HighLevelCounterexample>(counterexample);
     if (highLevelCounterexample != nullptr && highLevelCounterexample->isJaniHighLevelCounterexample()) {
         return highLevelCounterexample->getModelDescription().asJaniModel();

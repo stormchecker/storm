@@ -9,10 +9,10 @@
 #include "storm-gamebased-ar/abstraction/LocalExpressionInformation.h"
 #include "storm-gamebased-ar/abstraction/StateSetAbstractor.h"
 
-#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionEvaluator.h"
 
-#include "storm/storage/dd/DdType.h"
-#include "storm/storage/expressions/Expression.h"
+#include "storm/dd/DdType.h"
+#include "storm/expressions/Expression.h"
 
 #include "storm/solver/SmtSolver.h"
 

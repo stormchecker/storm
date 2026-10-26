@@ -7,7 +7,7 @@
 
 #include "storm-gamebased-ar/abstraction/SymbolicStateSet.h"
 
-#include "storm/storage/dd/bisimulation/BisimulationDecomposition.h"
+#include "storm/transformer/bisimulation/dd/BisimulationDecomposition.h"
 
 #include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
@@ -22,7 +22,9 @@ template<typename ModelType>
 const std::string BisimulationAbstractionRefinementModelChecker<ModelType>::name = "bisimulation-based astraction refinement";
 
 template<typename ModelType>
-BisimulationAbstractionRefinementModelChecker<ModelType>::BisimulationAbstractionRefinementModelChecker(ModelType const& model) : model(model) {
+BisimulationAbstractionRefinementModelChecker<ModelType>::BisimulationAbstractionRefinementModelChecker(ModelType const& model,
+                                                                                                        abstraction::AbstractionOptions const& options)
+    : AbstractAbstractionRefinementModelChecker<ModelType>(options), model(model) {
     // Intentionally left empty.
 }
 

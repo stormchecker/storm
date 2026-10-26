@@ -1,3 +1,8 @@
+#include <map>
+#include <random>
+#include <utility>
+#include <vector>
+
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
@@ -106,6 +111,337 @@ TEST(SparseMatrixBuilder, AddNextValue) {
     ASSERT_NO_THROW(matrixBuilder4.addNextValue(1, 2, 1.2));
     ASSERT_NO_THROW(matrixBuilder4.addNextValue(2, 4, 0.5));
     ASSERT_NO_THROW(matrixBuilder4.addNextValue(3, 1, 0.2));
+}
+
+namespace {
+using RowEntries = std::vector<std::pair<uint64_t, double>>;
+using AccumulationMode = storm::storage::SparseMatrixBuilder<double>::AccumulationMode;
+
+RowEntries getRowEntries(storm::storage::SparseMatrix<double> const& matrix, uint64_t row) {
+    RowEntries result;
+    for (auto const& entry : matrix.getRow(row)) {
+        result.emplace_back(entry.getColumn(), entry.getValue());
+    }
+    return result;
+}
+}  // namespace
+
+TEST(SparseMatrixBuilder, AccumulationModeSetterGetter) {
+    storm::storage::SparseMatrixBuilder<double> builder;
+    EXPECT_EQ(AccumulationMode::Sum, builder.getAccumulationMode());
+    builder.setAccumulationMode(AccumulationMode::ExpectSame);
+    EXPECT_EQ(AccumulationMode::ExpectSame, builder.getAccumulationMode());
+    builder.setAccumulationMode(AccumulationMode::ExpectNone);
+    EXPECT_EQ(AccumulationMode::ExpectNone, builder.getAccumulationMode());
+    builder.setAccumulationMode(AccumulationMode::Sum);
+    EXPECT_EQ(AccumulationMode::Sum, builder.getAccumulationMode());
+}
+
+TEST(SparseMatrixBuilder, AccumulationSum) {
+    storm::storage::SparseMatrixBuilder<double> builder(2, 3);
+    // Duplicates that are added consecutively
+    ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.25));
+    ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.25));
+    ASSERT_NO_THROW(builder.addNextValue(0, 2, 0.5));
+    // Duplicates that are added out of order
+    ASSERT_NO_THROW(builder.addNextValue(1, 2, 0.25));
+    ASSERT_NO_THROW(builder.addNextValue(1, 0, 0.5));
+    ASSERT_NO_THROW(builder.addNextValue(1, 2, 0.125));
+    ASSERT_NO_THROW(builder.addNextValue(1, 0, 0.25));
+
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = builder.build());
+    ASSERT_EQ(2ul, matrix.getRowCount());
+    ASSERT_EQ(3ul, matrix.getColumnCount());
+    ASSERT_EQ(4ul, matrix.getEntryCount());
+    EXPECT_EQ((RowEntries{{1, 0.5}, {2, 0.5}}), getRowEntries(matrix, 0));
+    EXPECT_EQ((RowEntries{{0, 0.75}, {2, 0.375}}), getRowEntries(matrix, 1));
+}
+
+TEST(SparseMatrixBuilder, AccumulationExpectSame) {
+    storm::storage::SparseMatrixBuilder<double> builder(2, 3);
+    builder.setAccumulationMode(AccumulationMode::ExpectSame);
+    ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.25));
+    // Same entry again (consecutive)
+    ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.25));
+    ASSERT_NO_THROW(builder.addNextValue(0, 2, 0.5));
+    // Same entry again (out of order)
+    ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.25));
+    ASSERT_NO_THROW(builder.addNextValue(0, 2, 0.5));
+    // Different values for the same entry
+    STORM_SILENT_ASSERT_THROW(builder.addNextValue(0, 2, 0.25), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(builder.addNextValue(0, 1, 0.5), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(builder.addNextValue(1, 0, 1.0));
+
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = builder.build());
+    ASSERT_EQ(2ul, matrix.getRowCount());
+    ASSERT_EQ(3ul, matrix.getColumnCount());
+    ASSERT_EQ(3ul, matrix.getEntryCount());
+    // The values must not have been summed up
+    EXPECT_EQ((RowEntries{{1, 0.25}, {2, 0.5}}), getRowEntries(matrix, 0));
+    EXPECT_EQ((RowEntries{{0, 1.0}}), getRowEntries(matrix, 1));
+}
+
+TEST(SparseMatrixBuilder, AccumulationExpectNone) {
+    storm::storage::SparseMatrixBuilder<double> builder(2, 3);
+    builder.setAccumulationMode(AccumulationMode::ExpectNone);
+    // Out of order insertion is fine as long as there are no duplicates
+    ASSERT_NO_THROW(builder.addNextValue(0, 2, 0.5));
+    ASSERT_NO_THROW(builder.addNextValue(0, 0, 0.25));
+    ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.25));
+    // Duplicates are not fine, even if the values are the same
+    STORM_SILENT_ASSERT_THROW(builder.addNextValue(0, 1, 0.25), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(builder.addNextValue(0, 2, 0.5), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(builder.addNextValue(0, 0, 0.25), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(builder.addNextValue(1, 1, 1.0));
+    STORM_SILENT_ASSERT_THROW(builder.addNextValue(1, 1, 1.0), storm::exceptions::InvalidArgumentException);
+
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = builder.build());
+    ASSERT_EQ(4ul, matrix.getEntryCount());
+    EXPECT_EQ((RowEntries{{0, 0.25}, {1, 0.25}, {2, 0.5}}), getRowEntries(matrix, 0));
+    EXPECT_EQ((RowEntries{{1, 1.0}}), getRowEntries(matrix, 1));
+}
+
+TEST(SparseMatrixBuilder, AccumulationDiagonalEntries) {
+    {
+        // Sum
+        storm::storage::SparseMatrixBuilder<double> builder(1, 2);
+        ASSERT_NO_THROW(builder.addDiagonalEntry(0, 0.25));
+        ASSERT_NO_THROW(builder.addDiagonalEntry(0, 0.25));
+        ASSERT_NO_THROW(builder.addNextValue(0, 0, 0.125));
+        ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.5));
+        auto matrix = builder.build();
+        EXPECT_EQ((RowEntries{{0, 0.625}, {1, 0.5}}), getRowEntries(matrix, 0));
+    }
+    {
+        // ExpectSame
+        storm::storage::SparseMatrixBuilder<double> builder(2, 2);
+        builder.setAccumulationMode(AccumulationMode::ExpectSame);
+        ASSERT_NO_THROW(builder.addDiagonalEntry(0, 0.5));
+        ASSERT_NO_THROW(builder.addNextValue(0, 0, 0.5));
+        ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.5));
+        ASSERT_NO_THROW(builder.addDiagonalEntry(1, 0.5));
+        ASSERT_NO_THROW(builder.addDiagonalEntry(1, 0.5));
+        auto matrix = builder.build();
+        EXPECT_EQ((RowEntries{{0, 0.5}, {1, 0.5}}), getRowEntries(matrix, 0));
+        EXPECT_EQ((RowEntries{{1, 0.5}}), getRowEntries(matrix, 1));
+
+        storm::storage::SparseMatrixBuilder<double> failingBuilder1(1, 1);
+        failingBuilder1.setAccumulationMode(AccumulationMode::ExpectSame);
+        ASSERT_NO_THROW(failingBuilder1.addDiagonalEntry(0, 0.5));
+        STORM_SILENT_ASSERT_THROW(failingBuilder1.addNextValue(0, 0, 0.25), storm::exceptions::InvalidArgumentException);
+
+        storm::storage::SparseMatrixBuilder<double> failingBuilder2(1, 1);
+        failingBuilder2.setAccumulationMode(AccumulationMode::ExpectSame);
+        ASSERT_NO_THROW(failingBuilder2.addDiagonalEntry(0, 0.5));
+        STORM_SILENT_ASSERT_THROW(failingBuilder2.addDiagonalEntry(0, 0.25), storm::exceptions::InvalidArgumentException);
+    }
+    {
+        // ExpectNone
+        storm::storage::SparseMatrixBuilder<double> builder(1, 2);
+        builder.setAccumulationMode(AccumulationMode::ExpectNone);
+        ASSERT_NO_THROW(builder.addDiagonalEntry(0, 0.5));
+        ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.5));
+        auto matrix = builder.build();
+        EXPECT_EQ((RowEntries{{0, 0.5}, {1, 0.5}}), getRowEntries(matrix, 0));
+
+        storm::storage::SparseMatrixBuilder<double> failingBuilder1(1, 1);
+        failingBuilder1.setAccumulationMode(AccumulationMode::ExpectNone);
+        ASSERT_NO_THROW(failingBuilder1.addDiagonalEntry(0, 0.5));
+        STORM_SILENT_ASSERT_THROW(failingBuilder1.addNextValue(0, 0, 0.5), storm::exceptions::InvalidArgumentException);
+
+        storm::storage::SparseMatrixBuilder<double> failingBuilder2(1, 1);
+        failingBuilder2.setAccumulationMode(AccumulationMode::ExpectNone);
+        ASSERT_NO_THROW(failingBuilder2.addDiagonalEntry(0, 0.5));
+        STORM_SILENT_ASSERT_THROW(failingBuilder2.addDiagonalEntry(0, 0.5), storm::exceptions::InvalidArgumentException);
+    }
+}
+
+TEST(SparseMatrixBuilder, DuplicateEntriesWithoutForcedEntryCount) {
+    // The announced number of entries is only a hint if we do not force the dimensions.
+    storm::storage::SparseMatrixBuilder<double> builder(2, 2, 4, false);
+    ASSERT_NO_THROW(builder.addNextValue(0, 0, 0.25));
+    ASSERT_NO_THROW(builder.addNextValue(0, 0, 0.25));
+    ASSERT_NO_THROW(builder.addNextValue(1, 1, 0.5));
+    ASSERT_NO_THROW(builder.addNextValue(1, 1, 0.5));
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = builder.build(2, 2));
+    EXPECT_EQ(2ul, matrix.getRowCount());
+    EXPECT_EQ(2ul, matrix.getColumnCount());
+    EXPECT_EQ(2ul, matrix.getEntryCount());
+
+    storm::storage::SparseMatrixBuilder<double> forcingBuilder(2, 2, 4, true);
+    ASSERT_NO_THROW(forcingBuilder.addNextValue(0, 0, 0.25));
+    ASSERT_NO_THROW(forcingBuilder.addNextValue(0, 0, 0.25));
+    ASSERT_NO_THROW(forcingBuilder.addNextValue(1, 1, 0.5));
+    ASSERT_NO_THROW(forcingBuilder.addNextValue(1, 1, 0.5));
+    STORM_SILENT_ASSERT_THROW(forcingBuilder.build(), storm::exceptions::InvalidStateException);
+}
+
+TEST(SparseMatrixBuilder, OutOfOrderInsertion) {
+    {
+        // Rows are filled in descending or zig-zag order
+        storm::storage::SparseMatrixBuilder<double> builder(3, 10);
+        storm::storage::SparseMatrixBuilder<double> orderedBuilder(3, 10);
+        for (uint64_t column = 10; column-- > 0;) {
+            ASSERT_NO_THROW(builder.addNextValue(0, column, column + 1.0));
+            ASSERT_NO_THROW(orderedBuilder.addNextValue(0, 9 - column, 10.0 - column));
+        }
+        for (uint64_t column : {5, 3, 7, 1, 9, 0, 4}) {
+            ASSERT_NO_THROW(builder.addNextValue(1, column, column + 1.0));
+        }
+        for (uint64_t column : {0, 1, 3, 4, 5, 7, 9}) {
+            ASSERT_NO_THROW(orderedBuilder.addNextValue(1, column, column + 1.0));
+        }
+        // Row 2 is empty
+        EXPECT_EQ(orderedBuilder.build(3, 10), builder.build(3, 10));
+    }
+    {
+        // The last column of the builder is the highest column of the current row
+        storm::storage::SparseMatrixBuilder<double> builder;
+        builder.addNextValue(0, 5, 1.0);
+        EXPECT_EQ(5ul, builder.getLastColumn());
+        builder.addNextValue(0, 3, 1.0);
+        EXPECT_EQ(5ul, builder.getLastColumn());
+        builder.addNextValue(0, 7, 1.0);
+        EXPECT_EQ(7ul, builder.getLastColumn());
+        builder.addNextValue(1, 2, 1.0);
+        EXPECT_EQ(2ul, builder.getLastColumn());
+    }
+    {
+        // With row groups and empty rows
+        storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
+        builder.newRowGroup(0);
+        ASSERT_NO_THROW(builder.addNextValue(0, 3, 4.0));
+        ASSERT_NO_THROW(builder.addNextValue(0, 1, 2.0));
+        ASSERT_NO_THROW(builder.addNextValue(0, 2, 3.0));
+        builder.newRowGroup(2);
+        ASSERT_NO_THROW(builder.addNextValue(2, 2, 3.0));
+        ASSERT_NO_THROW(builder.addNextValue(2, 0, 1.0));
+        builder.newRowGroup(4);
+        ASSERT_NO_THROW(builder.addNextValue(4, 1, 2.0));
+        auto matrix = builder.build();
+
+        ASSERT_EQ(5ul, matrix.getRowCount());
+        ASSERT_EQ(4ul, matrix.getColumnCount());
+        ASSERT_EQ(3ul, matrix.getRowGroupCount());
+        EXPECT_EQ((RowEntries{{1, 2.0}, {2, 3.0}, {3, 4.0}}), getRowEntries(matrix, 0));
+        EXPECT_EQ((RowEntries{}), getRowEntries(matrix, 1));
+        EXPECT_EQ((RowEntries{{0, 1.0}, {2, 3.0}}), getRowEntries(matrix, 2));
+        EXPECT_EQ((RowEntries{}), getRowEntries(matrix, 3));
+        EXPECT_EQ((RowEntries{{1, 2.0}}), getRowEntries(matrix, 4));
+    }
+}
+
+TEST(SparseMatrixBuilder, OutOfOrderInsertionRandomized) {
+    std::mt19937 gen(42);
+    for (uint64_t iteration = 0; iteration < 50; ++iteration) {
+        uint64_t const numRows = 1 + gen() % 8;
+        uint64_t const numColumns = 1 + gen() % 50;
+        std::map<std::pair<uint64_t, uint64_t>, double> expectedEntries;
+        storm::storage::SparseMatrixBuilder<double> builder;
+        for (uint64_t row = 0; row < numRows; ++row) {
+            uint64_t const numInsertions = gen() % 120;
+            for (uint64_t i = 0; i < numInsertions; ++i) {
+                uint64_t const column = gen() % numColumns;
+                double const value = 1.0 + gen() % 8;  // small integers, so sums are exact
+                expectedEntries[{row, column}] += value;
+                ASSERT_NO_THROW(builder.addNextValue(row, column, value));
+            }
+        }
+        storm::storage::SparseMatrixBuilder<double> orderedBuilder;
+        for (auto const& [position, value] : expectedEntries) {
+            orderedBuilder.addNextValue(position.first, position.second, value);
+        }
+        auto const expectedMatrix = orderedBuilder.build(numRows, numColumns);
+        auto const matrix = builder.build(numRows, numColumns);
+        EXPECT_EQ(expectedMatrix, matrix) << "Matrices differ in iteration " << iteration;
+        EXPECT_EQ(expectedEntries.size(), matrix.getEntryCount()) << "Unexpected number of entries in iteration " << iteration;
+    }
+}
+
+TEST(SparseMatrixBuilder, OverriddenDimensionsTooSmall) {
+    auto createBuilder = []() {
+        // A matrix with 3 rows, 4 columns, and 2 row groups
+        storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
+        builder.newRowGroup(0);
+        builder.addNextValue(0, 3, 1.0);
+        builder.newRowGroup(1);
+        builder.addNextValue(2, 0, 1.0);
+        return builder;
+    };
+    // rows
+    STORM_SILENT_ASSERT_THROW(createBuilder().build(2), storm::exceptions::InvalidStateException);
+    // columns
+    STORM_SILENT_ASSERT_THROW(createBuilder().build(0, 3), storm::exceptions::InvalidStateException);
+    // row groups
+    STORM_SILENT_ASSERT_THROW(createBuilder().build(0, 0, 1), storm::exceptions::InvalidStateException);
+
+    // Exact dimensions are fine
+    {
+        auto matrix = createBuilder().build(3, 4, 2);
+        EXPECT_EQ(3ul, matrix.getRowCount());
+        EXPECT_EQ(4ul, matrix.getColumnCount());
+        EXPECT_EQ(2ul, matrix.getRowGroupCount());
+    }
+    // Larger dimensions pad the matrix
+    {
+        auto matrix = createBuilder().build(5, 6, 4);
+        EXPECT_EQ(5ul, matrix.getRowCount());
+        EXPECT_EQ(6ul, matrix.getColumnCount());
+        EXPECT_EQ(4ul, matrix.getRowGroupCount());
+        EXPECT_EQ(2ul, matrix.getEntryCount());
+    }
+    // Zero means that the dimension is not overridden
+    {
+        auto matrix = createBuilder().build(0, 0, 0);
+        EXPECT_EQ(3ul, matrix.getRowCount());
+        EXPECT_EQ(4ul, matrix.getColumnCount());
+        EXPECT_EQ(2ul, matrix.getRowGroupCount());
+    }
+    // Also applies if the dimensions were announced (but not forced) upon construction
+    {
+        storm::storage::SparseMatrixBuilder<double> builder(2, 2, 2, false);
+        builder.addNextValue(0, 0, 1.0);
+        builder.addNextValue(1, 1, 1.0);
+        builder.addNextValue(2, 2, 1.0);
+        STORM_SILENT_ASSERT_THROW(builder.build(2, 2), storm::exceptions::InvalidStateException);
+    }
+}
+
+TEST(SparseMatrixBuilder, ContinueFromEmptyMatrix) {
+    // A matrix without any rows can be extended via a new builder
+    storm::storage::SparseMatrixBuilder<double> emptyBuilder;
+    storm::storage::SparseMatrix<double> emptyMatrix = emptyBuilder.build();
+    storm::storage::SparseMatrixBuilder<double> builder(std::move(emptyMatrix));
+    ASSERT_NO_THROW(builder.addNextValue(0, 2, 0.5));
+    ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.5));
+    ASSERT_NO_THROW(builder.addNextValue(1, 0, 1.0));
+    auto result = builder.build();
+    ASSERT_EQ(2ul, result.getRowCount());
+    ASSERT_EQ(3ul, result.getColumnCount());
+    EXPECT_EQ((RowEntries{{1, 0.5}, {2, 0.5}}), getRowEntries(result, 0));
+    EXPECT_EQ((RowEntries{{0, 1.0}}), getRowEntries(result, 1));
+}
+
+TEST(SparseMatrixBuilder, TrailingEmptyRowGroup) {
+    // A row group that is started but never filled still counts as one (empty) row.
+    auto createBuilder = []() {
+        storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
+        builder.newRowGroup(0);
+        builder.addNextValue(0, 0, 1.0);
+        builder.newRowGroup(1);
+        return builder;
+    };
+    auto matrix = createBuilder().build();
+    EXPECT_EQ(2ul, matrix.getRowCount());
+    EXPECT_EQ(2ul, matrix.getRowGroupCount());
+    EXPECT_EQ(1ul, matrix.getEntryCount());
+    // Hence, the matrix does not fit into one row
+    STORM_SILENT_ASSERT_THROW(createBuilder().build(1), storm::exceptions::InvalidStateException);
+    EXPECT_EQ(2ul, createBuilder().build(2).getRowCount());
 }
 
 TEST(SparseMatrix, Build) {

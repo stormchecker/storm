@@ -4,12 +4,12 @@
 #include "storm/api/properties.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
+#include "storm/languages/SymbolicModelDescription.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/Property.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/logic/Formula.h"
 #include "storm/logic/RewardAccumulationEliminationVisitor.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/Property.h"
-#include "storm/storage/prism/Program.h"
 #include "storm/utility/string.h"
 
 namespace storm {
@@ -75,7 +75,7 @@ std::vector<storm::jani::Property> parsePropertiesForPrismProgram(std::string co
 }
 
 std::vector<storm::jani::Property> parsePropertiesForSymbolicModelDescription(std::string const& inputString,
-                                                                              storm::storage::SymbolicModelDescription const& modelDescription,
+                                                                              storm::languages::SymbolicModelDescription const& modelDescription,
                                                                               boost::optional<std::set<std::string>> const& propertyFilter) {
     std::vector<storm::jani::Property> result;
     if (modelDescription.isPrismProgram()) {

@@ -3,6 +3,7 @@
 #include <memory>
 #include <optional>
 
+#include "storm-pars/analysis/GraphPreservationStatus.h"
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
@@ -39,11 +40,11 @@ class RegionModelChecker {
     virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel,
                            CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const = 0;
 
-    virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
-                         CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-                         std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
-                         std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
-                         bool graphPreserving = true) = 0;
+    virtual void specify(
+        Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
+        std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
+        std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
+        storm::pars::analysis::GraphPreservationStatus graphPreservationStatus = storm::pars::analysis::GraphPreservationStatus::GraphPreserving) = 0;
 
     /*!
      * Analyzes the given region. Assumes that a property with a threshold was specified.

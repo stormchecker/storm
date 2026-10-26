@@ -3,11 +3,11 @@
 
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/solver/SolverSelectionOptions.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/solver.h"
 
 #ifdef STORM_HAVE_MATHSAT
@@ -17,10 +17,10 @@
 #include "storm/solver/Z3SmtSolver.h"
 #endif
 
-TEST(SmtSolverFactory, EnvironmentIsSeededFromSettings) {
+TEST(SmtSolverFactory, EnvironmentDefaultMatchesSettingsDefault) {
     storm::Environment env;
 
-    // The environment picks up the SMT solver that is selected in the core settings.
+    // The default environment should pick up the same SMT solver as the default in the settings.
     EXPECT_EQ(env.solver().getSmtSolverType(), storm::settings::getModule<storm::settings::modules::CoreSettings>().getSmtSolver());
     EXPECT_EQ(env.solver().isSmtSolverTypeSetFromDefaultValue(),
               storm::settings::getModule<storm::settings::modules::CoreSettings>().isSmtSolverSetFromDefaultValue());

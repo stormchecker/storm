@@ -2,6 +2,7 @@
 #include <sstream>
 #include "storm/logic/Formulas.h"
 
+#include "storm/languages/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/logic/ExpressionSubstitutionVisitor.h"
 #include "storm/logic/FormulaInformationVisitor.h"
 #include "storm/logic/FragmentChecker.h"
@@ -10,7 +11,6 @@
 #include "storm/logic/ToExpressionVisitor.h"
 #include "storm/logic/ToPrefixStringVisitor.h"
 #include "storm/logic/TraverseFormulaVisitor.h"
-#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {
 namespace logic {

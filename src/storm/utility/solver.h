@@ -96,6 +96,12 @@ template<typename ValueType>
 std::unique_ptr<storm::solver::LpSolver<ValueType, true>> getRawLpSolver(
     storm::Environment const& env, std::string const& name, storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS);
 
+/*!
+ * Factory for SMT solvers.
+ *
+ * To obtain a single SMT solver, prefer the free functions getSmtSolver (below) over creating a factory.
+ * Pass a (shared pointer to a) factory if the caller should be able to choose a specific SMT solver backend.
+ */
 class SmtSolverFactory {
    public:
     virtual ~SmtSolverFactory() = default;
@@ -138,10 +144,30 @@ class MathsatSmtSolverFactory : public SmtSolverFactory {
     virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::Environment const& env, storm::expressions::ExpressionManager& manager) const;
 };
 
+class Cvc5SmtSolverFactory : public SmtSolverFactory {
+   public:
+    virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;
+    virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::Environment const& env, storm::expressions::ExpressionManager& manager) const;
+};
+
+/*!
+ * Creates a new SMT solver instance.
+ *
+ * The SMT solver is the one that was selected at compile time (see CMake option STORM_DEFAULT_SMT_SOLVER).
+ * In particular, the SMT solver selected by the user via the ``smtsolver`` core setting is NOT taken into account.
+ * Only use this function if no environment is available. Otherwise, use getSmtSolver(env, manager).
+ *
+ * @param manager The expression manager responsible for the expressions that will be given to the SMT
+ * solver.
+ * @return A pointer to the newly created solver.
+ */
 std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::expressions::ExpressionManager& manager);
 
 /*!
  * Creates a new SMT solver instance, honoring an SMT solver selected in the given environment.
+ *
+ * This is the preferred way to obtain an SMT solver whenever an environment is available, as the environment
+ * reflects the SMT solver selected by the user (``smtsolver`` core setting).
  *
  * @param env The environment determining the SMT solver to use.
  * @param manager The expression manager responsible for the expressions that will be given to the SMT

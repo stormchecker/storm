@@ -15,8 +15,9 @@ jobs:
       id: clang-versions
       run: |
         echo "FORMAT_VERSION=$(grep '^CLANG_FORMAT_VERSION=' resources/scripts/clang-versions | cut -d= -f2)" >> "$GITHUB_OUTPUT"
-    - uses: DoozyX/clang-format-lint-action@v0.20
-      with:
-        source: './src'
-        clangFormatVersion: ${{ steps.clang-versions.outputs.FORMAT_VERSION }}
-        style: file
+    - name: Install clang-format
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format-${{ steps.clang-versions.outputs.FORMAT_VERSION }}
+    - name: Check code format
+      run: bash resources/scripts/auto-format.sh --check

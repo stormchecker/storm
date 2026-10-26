@@ -13,7 +13,7 @@ inputs:
     description: >
       JSON-encoded config object (e.g. from ci-configs.json, resolved by the calling job)
       providing: buildType, cmakeArgs, Developer, carl_tag, starterProjectCommand, disable_all,
-      ClnExact, ClnRatfunc, AllSanitizers.
+      ClnExact, ClnRatfunc, AllSanitizers, expectHave, expectNotHave.
     type: string
     required: true
   restore_cache:
@@ -61,6 +61,8 @@ runs:
         echo "CLN_RATFUNC=$(echo "$CONFIG" | jq -r '.ClnRatfunc')" >> "$GITHUB_ENV"
         echo "ALL_SANITIZERS=$(echo "$CONFIG" | jq -r '.AllSanitizers')" >> "$GITHUB_ENV"
         echo "STARTER_PROJECT_COMMAND=$(echo "$CONFIG" | jq -r '.starterProjectCommand')" >> "$GITHUB_ENV"
+        echo "EXPECT_HAVE=$(echo "$CONFIG" | jq -r '(.expectHave // []) | join(" ")')" >> "$GITHUB_ENV"
+        echo "EXPECT_NOT_HAVE=$(echo "$CONFIG" | jq -r '(.expectNotHave // []) | join(" ")')" >> "$GITHUB_ENV"
       shell: bash
     - name: Ensure ccache directory exists
       if: inputs.restore_cache == 'true'
@@ -104,6 +106,7 @@ runs:
         cmake -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
               -DSTORM_CARL_GIT_TAG="${{ env.CARL_TAG }}" \
               -DSTORM_DISABLE_CUDD=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
+              -DSTORM_DISABLE_CVC5=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
               -DSTORM_DISABLE_GLPK=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
               -DSTORM_DISABLE_GMM=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
               -DSTORM_DISABLE_GUROBI=${{ env.DISABLE_ALL == 'true' && 'ON' || 'OFF' }} \
@@ -121,6 +124,28 @@ runs:
               -DSTORM_COMPILE_WITH_ALL_SANITIZERS=${{ env.ALL_SANITIZERS == 'true' && 'ON' || 'OFF' }} \
               ${{ steps.cache-3rdparty-restore.outputs.cmake-args }} \
               ${{ env.CMAKE_ARGS }} ..
+      shell: bash
+
+    # Ensure that the configuration contains exactly the expected optional libraries.
+    - name: Check expected configuration
+      if: env.EXPECT_HAVE != '' || env.EXPECT_NOT_HAVE != ''
+      working-directory: ./build
+      run: |
+        CONFIG_HEADER=include/storm-config.h
+        FAILED=0
+        for define in ${EXPECT_HAVE}; do
+          if ! grep -qE "^#define ${define}([[:space:]]|$)" "${CONFIG_HEADER}"; then
+            echo "::error::Expected ${define} to be set, but it is not."
+            FAILED=1
+          fi
+        done
+        for define in ${EXPECT_NOT_HAVE}; do
+          if grep -qE "^#define ${define}([[:space:]]|$)" "${CONFIG_HEADER}"; then
+            echo "::error::Expected ${define} to be unset, but it is set."
+            FAILED=1
+          fi
+        done
+        exit ${FAILED}
       shell: bash
 
     - name: Save 3rdparty source cache

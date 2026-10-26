@@ -2,9 +2,9 @@
 
 #include <vector>
 
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdType.h"
 #include "storm/modelchecker/results/ParetoCurveCheckResult.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 namespace modelchecker {

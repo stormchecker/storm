@@ -4,11 +4,11 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/builder.h"
 #include "storm/api/verification.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/languages/SymbolicModelDescription.h"
+#include "storm/languages/jani/Model.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Model.h"
 
 namespace storm {
 namespace pomdp {
@@ -187,7 +187,7 @@ void JaniBeliefSupportMdpGenerator<ValueType>::generate(storm::storage::BitVecto
 
 template<typename ValueType>
 void JaniBeliefSupportMdpGenerator<ValueType>::verifySymbolic(storm::Environment const& env, bool onlyInitial) {
-    storage::SymbolicModelDescription symdesc(model);
+    storm::languages::SymbolicModelDescription symdesc(model);
     // This trick only works because we do not explictly check that the model is stochastic!
     symdesc = symdesc.preprocess("posProb=0.1");
     auto property = storm::api::parsePropertiesForJaniModel("Pmax>=1 [!\"bad\" U \"target\"]", model)[0];

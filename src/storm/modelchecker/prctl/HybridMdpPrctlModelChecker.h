@@ -1,9 +1,9 @@
 #pragma once
 
+#include "storm/dd/DdType.h"
 #include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"
-#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 namespace models {

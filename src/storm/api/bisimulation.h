@@ -2,12 +2,12 @@
 
 #include <optional>
 
+#include "storm/dd/DdType.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/sparse/Model.h"
-#include "storm/storage/dd/DdType.h"
-#include "storm/storage/dd/bisimulation/BisimulationDecomposition.h"
-#include "storm/storage/dd/bisimulation/BisimulationOptions.h"
-#include "storm/transformer/bisimulation/Bisimulation.h"
+#include "storm/transformer/bisimulation/dd/BisimulationDecomposition.h"
+#include "storm/transformer/bisimulation/dd/BisimulationOptions.h"
+#include "storm/transformer/bisimulation/sparse/Bisimulation.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

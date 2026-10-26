@@ -2,8 +2,8 @@
 
 #include "storm/modelchecker/helper/infinitehorizon/internal/ComponentUtility.h"
 
-#include "storm/storage/MaximalEndComponent.h"
-#include "storm/storage/StronglyConnectedComponent.h"
+#include "storm/storage/decomposition/MaximalEndComponent.h"
+#include "storm/storage/decomposition/StronglyConnectedComponent.h"
 
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"

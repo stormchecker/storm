@@ -1,5 +1,6 @@
 #include "storm-pars/modelchecker/region/RegionRefinementChecker.h"
 
+#include <algorithm>
 #include <functional>
 #include <iterator>
 #include <queue>
@@ -39,11 +40,11 @@ void RegionRefinementChecker<ParametricType>::specify(Environment const& env, st
                                                       CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
                                                       RegionSplittingStrategy splittingStrategy, std::set<VariableType> const& discreteVariables,
                                                       std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend, bool allowModelSimplifications,
-                                                      bool graphPreserving) {
+                                                      storm::pars::analysis::GraphPreservationStatus graphPreservationStatus) {
     this->monotonicityBackend = monotonicityBackend ? monotonicityBackend : std::make_shared<MonotonicityBackend<ParametricType>>();
     this->regionSplittingStrategy = std::move(splittingStrategy);
     this->discreteVariables = std::move(discreteVariables);
-    this->graphPreserving = graphPreserving;
+    this->graphPreservationStatus = graphPreservationStatus;
     if (this->regionSplittingStrategy.heuristic == RegionSplittingStrategy::Heuristic::Default) {
         regionSplittingStrategy.heuristic = RegionSplittingStrategy::Heuristic::EstimateBased;
     }
@@ -62,7 +63,7 @@ void RegionRefinementChecker<ParametricType>::specify(Environment const& env, st
     }
 
     regionChecker->specify(env, parametricModel, checkTask, regionSplittingStrategy.estimateKind, monotonicityBackend, allowModelSimplifications,
-                           graphPreserving);
+                           graphPreservationStatus);
 }
 
 template<typename T>
@@ -170,7 +171,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
             progress.addAllViolatedArea(currentRegion.region.area());
         } else if (currentRegion.result == RegionResult::AllIllDefined) {
             // ill defined region => not graph-preserving
-            STORM_LOG_THROW(!this->graphPreserving, storm::exceptions::NotImplementedException,
+            STORM_LOG_THROW(!storm::pars::analysis::isGraphPreserving(this->graphPreservationStatus), storm::exceptions::NotImplementedException,
                             "The region is not graph-preserving, but the selected region verification engine requires this assumption. Please use "
                             "--assume-graph-preserving false.");
             progress.addAllIllDefinedArea(currentRegion.region.area());
@@ -242,6 +243,11 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(
         return valueValuation;
     }
 
+    if (std::all_of(region.getVariables().begin(), region.getVariables().end(),
+                    [&](auto const& variable) { return storm::utility::isZero(region.getDifference(variable)); })) {
+        return valueValuation;
+    }
+
     // Helper functions to check if a given result is better than the currently known result
     auto isBetterThanValue = [&value, &dir](auto const& newValue) { return storm::solver::minimize(dir) ? newValue < value : newValue > value; };
     // acceptGlobalBound is the opposite of this
@@ -289,6 +295,16 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(
         if (!acceptGlobalBound(value, currentBound)) {
             monotonicityBackend->updateMonotonicityBeforeSplitting(env, currentRegion);
             auto splittingVariables = getSplittingVariables(currentRegion, Context::ExtremalValue);
+            for (auto it = splittingVariables.begin(); it != splittingVariables.end();) {
+                if (storm::utility::isZero(currentRegion.region.getDifference(*it))) {
+                    it = splittingVariables.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+            STORM_LOG_THROW(
+                !splittingVariables.empty(), storm::exceptions::NotSupportedException,
+                "getSplittingVariables returned no parameter with non-zero width for region " << currentRegion.region << "; refinement cannot proceed.");
             STORM_LOG_INFO("Splitting on variables " << splittingVariables);
             currentRegion.splitLeafNodeAtCenter(splittingVariables, this->discreteVariables, true);
             for (auto& child : currentRegion.subRegions) {
@@ -331,7 +347,6 @@ template<typename ParametricType>
 bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environment& env, const storm::storage::ParameterRegion<ParametricType>& region,
                                                            const storm::logic::Bound& bound) {
     // Use the bound from the formula.
-    CoefficientType valueToCheck = storm::utility::convertNumber<CoefficientType>(bound.threshold.evaluateAsRational());
     // We will try to violate the bound.
     storm::solver::OptimizationDirection dir =
         isLowerBound(bound.comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
@@ -342,7 +357,7 @@ bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environm
 
     auto res = computeExtremalValueHelper(env, region, dir, acceptGlobalBound, rejectInstance).first;
     STORM_LOG_INFO("Extremal value: " << res);
-    return storm::solver::minimize(dir) ? res >= valueToCheck : res <= valueToCheck;
+    return bound.isSatisfied(res);
 }
 
 template<typename ParametricType>

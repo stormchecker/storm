@@ -1,9 +1,9 @@
 #include "storm/utility/dd.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdManager.h"
 
 namespace storm {
 namespace utility {

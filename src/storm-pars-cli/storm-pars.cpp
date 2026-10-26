@@ -1,12 +1,21 @@
-#include "storm-pars/api/storm-pars.h"
+#include <memory>
+#include <optional>
+#include <sstream>
+#include <type_traits>
+
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
 #include "storm-pars-cli/feasibility.h"
+#include "storm-pars-cli/graphPreservation.h"
 #include "storm-pars-cli/monotonicity.h"
 #include "storm-pars-cli/print.h"
 #include "storm-pars-cli/sampling.h"
 #include "storm-pars-cli/solutionFunctions.h"
+#include "storm-pars/analysis/ConstraintCollector.h"
+#include "storm-pars/analysis/GraphPreservationStatus.h"
+#include "storm-pars/analysis/RegionConstraintChecker.h"
 #include "storm-pars/api/region.h"
+#include "storm-pars/api/storm-pars.h"
 #include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
@@ -32,7 +41,7 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/Engine.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/initialize.h"
@@ -58,23 +67,6 @@ std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared
         result = storm::api::parseRegions<ValueType>(regionSettings.getRegionString(), *model);
     } else if (regionSettings.isRegionBoundSet()) {
         result = storm::api::createRegion<ValueType>(regionSettings.getRegionBoundString(), *model);
-    }
-    if (regionSettings.isAssumeGraphPreservingSet()) {
-        // We want to warn the user in case the model is actually not graph preserving.
-        // However, determining graph-preservingness precisely is hard.
-        // As an approximation, we only check if the region intersects 0 or 1.
-        for (auto const& region : result) {
-            for (auto const& variable : region.getVariables()) {
-                if (region.getLowerBoundary(variable) <= storm::utility::zero<typename storm::utility::parametric::CoefficientType<ValueType>::type>() ||
-                    region.getUpperBoundary(variable) >= storm::utility::one<typename storm::utility::parametric::CoefficientType<ValueType>::type>()) {
-                    STORM_LOG_WARN(
-                        "Region "
-                        << region
-                        << " appears to not preserve the graph structure of the parametric model. If this is the case, set --assume-graph-preserving false.");
-                    break;
-                }
-            }
-        }
     }
     return result;
 }
@@ -314,8 +306,8 @@ PreprocessResult preprocessModel(std::shared_ptr<storm::models::ModelBase> const
 }
 
 template<typename ValueType>
-void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, cli::SymbolicInput const& input,
-                                  std::vector<storm::storage::ParameterRegion<ValueType>> const& regions,
+void verifyRegionWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                  cli::SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions,
                                   storm::api::MonotonicitySetting monotonicitySettings = storm::api::MonotonicitySetting()) {
     STORM_LOG_THROW(regions.size() == 1, storm::exceptions::NotSupportedException, "Region verification is supported for a (single) region only.");
     storm::storage::ParameterRegion<ValueType> const& region = regions.front();
@@ -326,11 +318,8 @@ void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<V
     auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     auto engine = rvs.getRegionCheckEngine();
-    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet();
-
-    STORM_LOG_THROW(graphPreserving || engine == storm::modelchecker::RegionCheckEngine::RobustParameterLifting, storm::exceptions::NotSupportedException,
-                    "Selected region verification engine (--regionverif:engine) requires the assumption that the region is graph-preserving "
-                    "(--assume-graph-preserving true).");
+    auto const graphPreservationStatus =
+        storm::pars::establishGraphPreservation<ValueType>(model, regions, engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
 
     auto splittingStrategy = storm::modelchecker::RegionSplittingStrategy();
 
@@ -353,11 +342,11 @@ void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<V
         monotonicitySettings,
         discreteVariables,
         true,  // allow model simplification
-        graphPreserving,
+        graphPreservationStatus,
         false  // preconditions not yet validated
     };
 
-    if (storm::api::verifyRegion<ValueType>(settings, region)) {
+    if (storm::api::verifyRegion<ValueType>(env, settings, region)) {
         STORM_PRINT_AND_LOG("Formula is satisfied by all parameter instantiations.\n");
     } else {
         STORM_PRINT_AND_LOG("Formula is not satisfied by all parameter instantiations.\n");
@@ -366,8 +355,8 @@ void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<V
 }
 
 template<typename ValueType>
-void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, cli::SymbolicInput const& input,
-                                                std::vector<storm::storage::ParameterRegion<ValueType>> const& regions,
+void parameterSpacePartitioningWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                                cli::SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions,
                                                 storm::api::MonotonicitySetting monotonicitySettings = storm::api::MonotonicitySetting(),
                                                 uint64_t monThresh = 0) {
     STORM_LOG_ASSERT(!regions.empty(), "Can not analyze an empty set of regions.");
@@ -400,7 +389,8 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
         splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
     }
 
-    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet();
+    auto const graphPreservationStatus =
+        storm::pars::establishGraphPreservation<ValueType>(model, regions, engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
 
     auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
     std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());
@@ -425,11 +415,11 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
         monotonicitySettings,
         discreteVariables,
         true,  // allow model simplification
-        graphPreserving,
+        graphPreservationStatus,
         false  // preconditions not yet validated
     };
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(
-        settings, regions.front(), refinementThreshold, optionalDepthLimit, storm::modelchecker::RegionResultHypothesis::Unknown, monThresh);
+        env, settings, regions.front(), refinementThreshold, optionalDepthLimit, storm::modelchecker::RegionResultHypothesis::Unknown, monThresh);
     watch.stop();
     printInitialStatesResult<ValueType>(result, &watch);
 
@@ -517,14 +507,14 @@ void processInput(cli::SymbolicInput&& input, storm::cli::ModelProcessingInforma
         STORM_LOG_ERROR_COND(!regionSettings.isAssumeGraphPreservingSet(), "Solution function computations assume graph preservation.");
 
         if (model->isSparseModel()) {
-            computeSolutionFunctionsWithSparseEngine(model->as<storm::models::sparse::Model<ValueType>>(), input);
+            computeSolutionFunctionsWithSparseEngine(mpi.env, model->as<storm::models::sparse::Model<ValueType>>(), input);
         } else {
-            computeSolutionFunctionsWithSymbolicEngine(model->as<storm::models::symbolic::Model<DdType, ValueType>>(), input);
+            computeSolutionFunctionsWithSymbolicEngine(mpi.env, model->as<storm::models::symbolic::Model<DdType, ValueType>>(), input);
         }
     } else if (mode == storm::pars::utility::ParametricMode::Monotonicity) {
         STORM_LOG_INFO("Monotonicity mode started.");
         STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Monotonicity analysis is only supported on sparse models.");
-        analyzeMonotonicity(model->as<storm::models::sparse::Model<ValueType>>(), input, regions);
+        analyzeMonotonicity(mpi.env, model->as<storm::models::sparse::Model<ValueType>>(), input, regions);
     } else if (mode == storm::pars::utility::ParametricMode::Feasibility) {
         STORM_LOG_INFO("Feasibility mode started.");
         STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Feasibility analysis is only supported on sparse models.");
@@ -532,14 +522,14 @@ void processInput(cli::SymbolicInput&& input, storm::cli::ModelProcessingInforma
         STORM_LOG_THROW(formulas.size() == 1, storm::exceptions::InvalidSettingsException,
                         "Feasibility analysis is only supported for single-objective properties.");
         auto formula = formulas[0];
-        storm::pars::performFeasibility<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(),
+        storm::pars::performFeasibility<ValueType>(mpi.env, model->as<storm::models::sparse::Model<ValueType>>(),
                                                    createFeasibilitySynthesisTaskFromSettings(formula, regions), omittedParameters, monotonicitySettings);
     } else if (mode == storm::pars::utility::ParametricMode::Verification) {
         STORM_LOG_INFO("Verification mode started.");
         STORM_LOG_THROW(input.properties.size() == 1, storm::exceptions::InvalidSettingsException,
                         "Verification analysis is only supported for single-objective properties.");
         STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Verification analysis is only supported on sparse models.");
-        verifyRegionWithSparseEngine(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, monotonicitySettings);
+        verifyRegionWithSparseEngine(mpi.env, model->as<storm::models::sparse::Model<ValueType>>(), input, regions, monotonicitySettings);
 
     } else if (mode == storm::pars::utility::ParametricMode::Partitioning) {
         STORM_LOG_INFO("Partition mode started.");
@@ -552,8 +542,8 @@ void processInput(cli::SymbolicInput&& input, storm::cli::ModelProcessingInforma
 
         STORM_LOG_ASSERT(!monotonicitySettings.useOnlyGlobalMonotonicity, "Unexpected setting of only using global monotonicity.");
         STORM_LOG_ASSERT(!monotonicitySettings.useBoundsFromPLA, "Unexpected setting of using bounds from PLA.");
-        storm::pars::parameterSpacePartitioningWithSparseEngine(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, monotonicitySettings,
-                                                                monThresh);
+        storm::pars::parameterSpacePartitioningWithSparseEngine(mpi.env, model->as<storm::models::sparse::Model<ValueType>>(), input, regions,
+                                                                monotonicitySettings, monThresh);
     } else if (mode == storm::pars::utility::ParametricMode::Sampling) {
         STORM_LOG_INFO("Sampling mode started.");
         STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Sampling analysis is currently only supported on sparse models.");
@@ -571,17 +561,18 @@ void processInput(cli::SymbolicInput&& input, storm::cli::ModelProcessingInforma
             if (sampleSettings.isSampleDerivativeSet()) {
                 if (samples.exact) {
                     verifyPropertiesAtSamplePointsWithSparseEngineDerivatives<ValueType, storm::RationalNumber>(
-                        model->as<storm::models::sparse::Model<ValueType>>(), input, samples);
+                        mpi.env, model->as<storm::models::sparse::Model<ValueType>>(), input, samples);
                 } else {
-                    verifyPropertiesAtSamplePointsWithSparseEngineDerivatives<ValueType, double>(model->as<storm::models::sparse::Model<ValueType>>(), input,
-                                                                                                 samples);
+                    verifyPropertiesAtSamplePointsWithSparseEngineDerivatives<ValueType, double>(mpi.env, model->as<storm::models::sparse::Model<ValueType>>(),
+                                                                                                 input, samples);
                 }
             } else {
                 if (samples.exact) {
-                    verifyPropertiesAtSamplePointsWithSparseEngine<ValueType, storm::RationalNumber>(model->as<storm::models::sparse::Model<ValueType>>(),
-                                                                                                     input, samples);
+                    verifyPropertiesAtSamplePointsWithSparseEngine<ValueType, storm::RationalNumber>(
+                        mpi.env, model->as<storm::models::sparse::Model<ValueType>>(), input, samples);
                 } else {
-                    verifyPropertiesAtSamplePointsWithSparseEngine<ValueType, double>(model->as<storm::models::sparse::Model<ValueType>>(), input, samples);
+                    verifyPropertiesAtSamplePointsWithSparseEngine<ValueType, double>(mpi.env, model->as<storm::models::sparse::Model<ValueType>>(), input,
+                                                                                      samples);
                 }
             }
         }

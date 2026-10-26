@@ -1,11 +1,6 @@
 #pragma once
 
 #include <map>
-#include "AssumptionMaker.h"
-#include "LocalMonotonicityResult.h"
-#include "MonotonicityResult.h"
-#include "Order.h"
-#include "OrderExtender.h"
 
 #include "storm/logic/Formula.h"
 
@@ -13,16 +8,22 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 
-#include "storm/solver/Z3SmtSolver.h"
+#include "storm/solver/SmtSolver.h"
 
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/RationalFunctionToExpression.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/expressions/BinaryRelationExpression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/RationalFunctionToExpression.h"
 
 #include "storm/utility/constants.h"
+#include "storm/utility/solver.h"
 
 #include "storm-pars/api/region.h"
+#include "storm-pars/modelchecker/region/monotonicity/Assumption.h"
+#include "storm-pars/modelchecker/region/monotonicity/AssumptionMaker.h"
+#include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
+#include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
 
 namespace storm {
 namespace analysis {
@@ -36,8 +37,19 @@ class MonotonicityHelper {
     typedef typename storage::ParameterRegion<ValueType> Region;
 
     /*!
+     * The result of the order-based monotonicity analysis for one reachability order: the order
+     * itself, the monotonicity result computed from it, and the assumptions the order was built on.
+     */
+    struct ExpectedMonotonicityResult {
+        std::shared_ptr<Order> order;
+        std::shared_ptr<MonotonicityResult<VariableType>> monotonicityResult;
+        std::vector<Assumption> assumptions;
+    };
+
+    /*!
      * Constructor of MonotonicityHelper.
      *
+     * @param env The environment used for checking the samples.
      * @param model The model considered.
      * @param formulas The formulas considered.
      * @param regions The regions to consider.
@@ -46,9 +58,9 @@ class MonotonicityHelper {
      * @param precision Precision on which the samples are compared
      * @param dotOutput Whether or not dot output should be generated for the ROs.
      */
-    MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<logic::Formula const>> formulas,
-                       std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples = 0, double const& precision = 0.000001,
-                       bool dotOutput = false);
+    MonotonicityHelper(Environment const& env, std::shared_ptr<models::sparse::Model<ValueType>> model,
+                       std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions,
+                       uint_fast64_t numberOfSamples = 0, double const& precision = 0.000001, bool dotOutput = false);
 
     /*!
      * Checks if a derivative >=0 or/and <=0
@@ -57,47 +69,7 @@ class MonotonicityHelper {
      * @return pair of bools, >= 0 and <= 0
      */
     static std::pair<bool, bool> checkDerivative(ValueType derivative, storage::ParameterRegion<ValueType> reg) {
-        bool monIncr = false;
-        bool monDecr = false;
-
-        if (derivative.isZero()) {
-            monIncr = true;
-            monDecr = true;
-        } else if (derivative.isConstant()) {
-            monIncr = derivative.constantPart() >= 0;
-            monDecr = derivative.constantPart() <= 0;
-        } else {
-            std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
-            std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
-            solver::Z3SmtSolver s(*manager);
-            std::set<VariableType> variables = derivative.gatherVariables();
-
-            expressions::Expression exprBounds = manager->boolean(true);
-            for (auto variable : variables) {
-                auto managerVariable = manager->declareRationalVariable(variable.name());
-                auto lb = utility::convertNumber<RationalNumber>(reg.getLowerBoundary(variable));
-                auto ub = utility::convertNumber<RationalNumber>(reg.getUpperBoundary(variable));
-                exprBounds = exprBounds && manager->rational(lb) < managerVariable && managerVariable < manager->rational(ub);
-            }
-
-            auto converter = expressions::RationalFunctionToExpression<ValueType>(manager);
-
-            // < 0, so not monotone increasing. If this is unsat, then it should be monotone increasing.
-            expressions::Expression exprToCheck = converter.toExpression(derivative) < manager->rational(0);
-            s.add(exprBounds);
-            s.add(exprToCheck);
-            monIncr = s.check() == solver::SmtSolver::CheckResult::Unsat;
-
-            // > 0, so not monotone decreasing. If this is unsat it should be monotone decreasing.
-            exprToCheck = converter.toExpression(derivative) > manager->rational(0);
-            s.reset();
-            s.add(exprBounds);
-            s.add(exprToCheck);
-            monDecr = s.check() == solver::SmtSolver::CheckResult::Unsat;
-        }
-        STORM_LOG_ASSERT(!(monIncr && monDecr) || derivative.isZero(), "Monotonicity both increasing and decreasing but derivative not zero.");
-
-        return std::pair<bool, bool>(monIncr, monDecr);
+        return MonotonicityChecker<ValueType>::checkDerivative(derivative, reg);
     }
 
     /*!
@@ -105,11 +77,9 @@ class MonotonicityHelper {
      *
      * @param outfile Outfile to which results are written.
      * @param dotOutfileName Name for the files of the dot outputs should they be generated
-     * @return Map which maps each order to its Reachability Order and used assumptions.
+     * @return The reachability orders built, together with the monotonicity result and the assumptions used for each.
      */
-    std::map<std::shared_ptr<Order>,
-             std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>
-    checkMonotonicityInBuild(std::ostream& outfile, bool usePLA = false, std::string dotOutfileName = "dotOutput");
+    std::vector<ExpectedMonotonicityResult> checkMonotonicityInBuild(std::ostream& outfile, bool usePLA = false, std::string dotOutfileName = "dotOutput");
 
     /*!
      * Builds Reachability Orders for the given model and simultaneously uses them to check for Monotonicity.
@@ -121,12 +91,11 @@ class MonotonicityHelper {
    private:
     void createOrder();
 
-    void checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
+    void checkMonotonicityOnSamples(Environment const& env, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
 
-    void checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
+    void checkMonotonicityOnSamples(Environment const& env, std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
 
-    void extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2,
-                                    std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions,
+    void extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2, std::vector<Assumption> assumptions,
                                     std::shared_ptr<MonotonicityResult<VariableType>> monRes);
 
     std::shared_ptr<models::ModelBase> model;
@@ -143,11 +112,9 @@ class MonotonicityHelper {
 
     std::map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;
 
-    std::map<std::shared_ptr<Order>,
-             std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>
-        monResults;
+    std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<Assumption>>> monResults;
 
-    OrderExtender<ValueType, ConstantType>* extender;
+    std::unique_ptr<OrderExtender<ValueType, ConstantType>> extender;
 
     ConstantType precision;
 
@@ -156,6 +123,9 @@ class MonotonicityHelper {
     storage::SparseMatrix<ValueType> matrix;
 
     std::unordered_map<ValueType, std::unordered_map<VariableType, ValueType>> derivatives;
+
+    // Environment used for all model checking calls.
+    Environment env;
 
     AssumptionMaker<ValueType, ConstantType> assumptionMaker;
 };

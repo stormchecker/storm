@@ -1,7 +1,7 @@
 #include "storm/simulator/PrismProgramSimulator.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionEvaluator.h"
 
 using namespace storm::generator;
 

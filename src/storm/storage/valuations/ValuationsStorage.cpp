@@ -8,9 +8,9 @@
 
 #include <boost/functional/hash.hpp>
 
+#include "storm/expressions/ExpressionEvaluator.h"
+#include "storm/languages/umb/ValueEncoding.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/storage/umb/model/ValueEncoding.h"
 #include "storm/utility/bitoperations.h"
 
 #include "storm/exceptions/IllegalFunctionCallException.h"

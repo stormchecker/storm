@@ -5,13 +5,13 @@
 #include <set>
 #include <vector>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
-#include "storm/storage/dd/Bdd.h"
+#include "storm/dd/Bdd.h"
 
 #include "storm/solver/SmtSolver.h"
 
-#include "storm/storage/expressions/EquivalenceChecker.h"
+#include "storm/expressions/EquivalenceChecker.h"
 
 namespace storm {
 namespace expressions {

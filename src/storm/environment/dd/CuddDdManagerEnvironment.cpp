@@ -1,20 +1,12 @@
 #include "storm/environment/dd/CuddDdManagerEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CuddSettings.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 
 CuddDdManagerEnvironment::CuddDdManagerEnvironment()
     : constantPrecision(1e-15), maximalMemory(4096), reorderingEnabled(false), reorderingTechnique(storm::dd::CuddReorderingTechnique::GroupSift) {
-    if (storm::settings::hasModule<storm::settings::modules::CuddSettings>()) {
-        auto const& cuddSettings = storm::settings::getModule<storm::settings::modules::CuddSettings>();
-        constantPrecision = cuddSettings.getConstantPrecision();
-        maximalMemory = cuddSettings.getMaximalMemory();
-        reorderingEnabled = cuddSettings.isReorderingEnabled();
-        reorderingTechnique = cuddSettings.getReorderingTechnique();
-    }
+    // Intentionally left empty.
 }
 
 CuddDdManagerEnvironment::~CuddDdManagerEnvironment() {

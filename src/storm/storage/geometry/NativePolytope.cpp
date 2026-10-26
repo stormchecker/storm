@@ -3,9 +3,9 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/solver/Z3LpSolver.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/geometry/nativepolytopeconversion/HyperplaneEnumeration.h"
 #include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
 #include "storm/utility/macros.h"
@@ -120,7 +120,7 @@ template<typename ValueType>
 bool NativePolytope<ValueType>::isEmpty() const {
     if (emptyStatus == EmptyStatus::Unknown) {
         std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
-        std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::SmtSolverFactory().create(*manager);
+        std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::getSmtSolver(*manager);
         std::vector<storm::expressions::Expression> constraints = getConstraints(*manager, declareVariables(*manager, "x"));
         for (auto const& constraint : constraints) {
             solver->add(constraint);
@@ -167,7 +167,7 @@ bool NativePolytope<ValueType>::contains(std::shared_ptr<Polytope<ValueType>> co
     } else {
         // Check whether there is one point in other that is not in this
         std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
-        std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::SmtSolverFactory().create(*manager);
+        std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::getSmtSolver(*manager);
         std::vector<storm::expressions::Variable> variables = declareVariables(*manager, "x");
         std::vector<storm::expressions::Expression> constraints = getConstraints(*manager, variables);
         storm::expressions::Expression constraintsThis = manager->boolean(true);
@@ -417,7 +417,7 @@ std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::clean() {
         return create(boost::none, {});
     }
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
-    std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::SmtSolverFactory().create(*manager);
+    std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::getSmtSolver(*manager);
     auto variables = declareVariables(*manager, "x");
     std::vector<storm::expressions::Expression> constraints = getConstraints(*manager, variables);
     for (auto const& constraint : constraints) {

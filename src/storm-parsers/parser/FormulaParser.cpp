@@ -4,7 +4,7 @@
 
 #include "storm-parsers/parser/SpiritErrorHandler.h"
 
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 
 #include "storm/logic/Formulas.h"
 
@@ -12,9 +12,9 @@
 #include "storm/exceptions/WrongFormatException.h"
 
 #include "FormulaParserGrammar.h"
+#include "storm/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/io/file.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace parser {

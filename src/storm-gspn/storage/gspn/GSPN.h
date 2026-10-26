@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/ExpressionManager.h"
 
 #include "storm-gspn/storage/gspn/ImmediateTransition.h"
 #include "storm-gspn/storage/gspn/Marking.h"

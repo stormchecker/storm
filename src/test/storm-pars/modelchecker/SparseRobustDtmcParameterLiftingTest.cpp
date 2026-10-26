@@ -10,7 +10,7 @@
 #include "storm/api/properties.h"
 #include "storm/api/verification.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/utility/constants.h"
 
 namespace {
@@ -23,8 +23,8 @@ class IsGraphPreserving {
         env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
         return env;
     }
-    static bool graphPreserving() {
-        return true;
+    static storm::pars::analysis::GraphPreservationStatus graphPreserving() {
+        return storm::pars::analysis::GraphPreservationStatus::GraphPreserving;
     }
 };
 
@@ -37,8 +37,8 @@ class AssumeGraphPreserving {
         env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
         return env;
     }
-    static bool graphPreserving() {
-        return false;
+    static storm::pars::analysis::GraphPreservationStatus graphPreserving() {
+        return storm::pars::analysis::GraphPreservationStatus::None;
     }
 };
 
@@ -50,13 +50,13 @@ class SparseRobustDtmcParameterLiftingTest : public ::testing::Test {
     storm::Environment const& env() const {
         return _environment;
     }
-    bool const& graphPreserving() const {
+    storm::pars::analysis::GraphPreservationStatus const& graphPreserving() const {
         return _graphPreserving;
     }
     virtual void SetUp() {
         storm::clearRFVariablePool();
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
     virtual void TearDown() {
@@ -65,10 +65,10 @@ class SparseRobustDtmcParameterLiftingTest : public ::testing::Test {
 
    private:
     storm::Environment _environment;
-    bool _graphPreserving;
+    storm::pars::analysis::GraphPreservationStatus _graphPreserving;
 };
 
-void checkBrpProb(storm::Environment const& env, bool graphPreserving) {
+void checkBrpProb(storm::Environment const& env, storm::pars::analysis::GraphPreservationStatus graphPreservationStatus) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P<=0.84 [F s=5 ]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
@@ -87,7 +87,7 @@ void checkBrpProb(storm::Environment const& env, bool graphPreserving) {
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
         env, model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true,
-        graphPreserving);
+        graphPreservationStatus);
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.7<=pL<=0.9,0.75<=pK<=0.95", modelParameters);
@@ -102,7 +102,7 @@ void checkBrpProb(storm::Environment const& env, bool graphPreserving) {
               regionChecker->analyzeRegion(env, allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown, true));
 }
 
-void checkBrpRew(storm::Environment const& env, bool graphPreserving) {
+void checkBrpRew(storm::Environment const& env, storm::pars::analysis::GraphPreservationStatus graphPreservationStatus) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp_rewards16_2.pm";
     std::string formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
     std::string constantsAsString = "pL=0.9,TOAck=0.5";
@@ -120,7 +120,7 @@ void checkBrpRew(storm::Environment const& env, bool graphPreserving) {
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
         env, model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true,
-        graphPreserving);
+        graphPreservationStatus);
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.7<=pK<=0.875,0.75<=TOMsg<=0.95", modelParameters);
@@ -135,7 +135,7 @@ void checkBrpRew(storm::Environment const& env, bool graphPreserving) {
               regionChecker->analyzeRegion(env, allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown, true));
 }
 
-void checkBrpRew4Par(storm::Environment const& env, bool graphPreserving) {
+void checkBrpRew4Par(storm::Environment const& env, storm::pars::analysis::GraphPreservationStatus graphPreservationStatus) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp_rewards16_2.pm";
     std::string formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
     std::string constantsAsString = "";  //!! this model will have 4 parameters
@@ -152,7 +152,7 @@ void checkBrpRew4Par(storm::Environment const& env, bool graphPreserving) {
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
         env, model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true,
-        graphPreserving);
+        graphPreservationStatus);
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.7<=pK<=0.9,0.6<=pL<=0.85,0.9<=TOMsg<=0.95,0.85<=TOAck<=0.9", modelParameters);
@@ -167,7 +167,7 @@ void checkBrpRew4Par(storm::Environment const& env, bool graphPreserving) {
               regionChecker->analyzeRegion(env, allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown, true));
 }
 
-void checkCrowdsProb(storm::Environment const& env, bool graphPreserving) {
+void checkCrowdsProb(storm::Environment const& env, storm::pars::analysis::GraphPreservationStatus graphPreservationStatus) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P<0.5 [F \"observe0Greater1\" ]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
@@ -185,7 +185,7 @@ void checkCrowdsProb(storm::Environment const& env, bool graphPreserving) {
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
         env, model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true,
-        graphPreserving);
+        graphPreservationStatus);
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.1<=PF<=0.75,0.15<=badC<=0.2", modelParameters);
@@ -203,7 +203,7 @@ void checkCrowdsProb(storm::Environment const& env, bool graphPreserving) {
               regionChecker->analyzeRegion(env, allVioHardRegion, storm::modelchecker::RegionResultHypothesis::Unknown, true));
 }
 
-void checkCrowdsProb1Par(storm::Environment const& env, bool graphPreserving) {
+void checkCrowdsProb1Par(storm::Environment const& env, storm::pars::analysis::GraphPreservationStatus graphPreservationStatus) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P>0.75 [F \"observe0Greater1\" ]";
     std::string constantsAsString = "badC=0.3";  // e.g. pL=0.9,TOACK=0.5
@@ -221,7 +221,7 @@ void checkCrowdsProb1Par(storm::Environment const& env, bool graphPreserving) {
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
         env, model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true,
-        graphPreserving);
+        graphPreservationStatus);
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.9<=PF<=0.99", modelParameters);
@@ -236,7 +236,7 @@ void checkCrowdsProb1Par(storm::Environment const& env, bool graphPreserving) {
               regionChecker->analyzeRegion(env, allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown, true));
 }
 
-void checkCrowdsProbConst(storm::Environment const& env, bool graphPreserving) {
+void checkCrowdsProbConst(storm::Environment const& env, storm::pars::analysis::GraphPreservationStatus graphPreservationStatus) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P>0.6 [F \"observe0Greater1\" ]";
     std::string constantsAsString = "PF=0.9,badC=0.2";
@@ -254,7 +254,7 @@ void checkCrowdsProbConst(storm::Environment const& env, bool graphPreserving) {
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
         env, model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true,
-        graphPreserving);
+        graphPreservationStatus);
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("", modelParameters);
@@ -263,7 +263,7 @@ void checkCrowdsProbConst(storm::Environment const& env, bool graphPreserving) {
               regionChecker->analyzeRegion(env, allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, true));
 }
 
-void checkZeroConf(storm::Environment const& env, bool graphPreserving) {
+void checkZeroConf(storm::Environment const& env, storm::pars::analysis::GraphPreservationStatus graphPreservationStatus) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/zeroconf4.pm";
     std::string formulaAsString = "P>0.5 [F s=5 ]";
     std::string constantsAsString = " n = 4";  // e.g. pL=0.9,TOACK=0.5
@@ -282,7 +282,7 @@ void checkZeroConf(storm::Environment const& env, bool graphPreserving) {
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
         env, model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true,
-        graphPreserving);
+        graphPreservationStatus);
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.8<=pL<=0.95,0.8<=pK<=0.95", modelParameters);

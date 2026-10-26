@@ -1,8 +1,8 @@
 #include "storm/builder/TerminalStatesGetter.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/expressions/Expression.h"
 #include "storm/logic/Formulas.h"
-#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
 namespace builder {

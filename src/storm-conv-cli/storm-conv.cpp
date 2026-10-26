@@ -2,6 +2,7 @@
 #include "storm-conv/api/storm-conv.h"
 
 #include "storm-conv/settings/ConvSettings.h"
+#include "storm-conv/settings/JaniConversionOptionsBuilder.h"
 #include "storm-conv/settings/modules/ConversionGeneralSettings.h"
 #include "storm-conv/settings/modules/ConversionInputSettings.h"
 #include "storm-conv/settings/modules/ConversionOutputSettings.h"
@@ -15,9 +16,9 @@
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
 
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/SymbolicModelDescription.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/Property.h"
 
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/print.h"
@@ -60,8 +61,7 @@ void processPrismInputJaniOutput(storm::prism::Program const& prismProg, std::ve
     storm::converter::PrismToJaniConverterOptions options;
     options.allVariablesGlobal = jani.isGlobalVarsSet();
     options.suffix = "";
-    options.janiOptions = storm::converter::JaniConversionOptions(jani);
-    options.janiOptions.substituteConstants = true;
+    options.janiOptions = storm::settings::JaniConversionOptionsBuilder::buildJaniConversionOptions();
 
     // Get the name of the output file
     std::string outputFilename = "";
@@ -159,7 +159,7 @@ void processPrismInput() {
     auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
 
     // Parse the prism program
-    storm::storage::SymbolicModelDescription prismProg = storm::api::parseProgram(input.getPrismInputFilename(), input.isPrismCompatibilityEnabled(), false);
+    storm::languages::SymbolicModelDescription prismProg = storm::api::parseProgram(input.getPrismInputFilename(), input.isPrismCompatibilityEnabled(), false);
 
     // Parse properties (if available)
     std::vector<storm::jani::Property> properties;
@@ -171,7 +171,7 @@ void processPrismInput() {
     // Set constant definitions in program
     std::string constantDefinitionString = input.getConstantDefinitionString();
     auto constantDefinitions = prismProg.parseConstantDefinitions(constantDefinitionString);
-    prismProg = storm::storage::SymbolicModelDescription(prismProg.asPrismProgram().defineUndefinedConstants(constantDefinitions));
+    prismProg = storm::languages::SymbolicModelDescription(prismProg.asPrismProgram().defineUndefinedConstants(constantDefinitions));
     // Substitution of constants can only be done after conversion in order to preserve formula definitions in which
     // constants appear that are renamed in some modules...
 
@@ -196,7 +196,7 @@ void processJaniInputJaniOutput(storm::jani::Model const& janiModel, std::vector
     auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
     auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
 
-    storm::converter::JaniConversionOptions options(jani);
+    auto options = storm::settings::JaniConversionOptionsBuilder::buildJaniConversionOptions();
 
     // Get the name of the output file
     std::string outputFilename = "";
@@ -271,7 +271,7 @@ void processJaniInput() {
         properties.insert(properties.end(), additionalProperties.begin(), additionalProperties.end());
     }
 
-    storm::storage::SymbolicModelDescription symbDescr(janiModelProperties.first);
+    storm::languages::SymbolicModelDescription symbDescr(janiModelProperties.first);
 
     // Substitute constant definitions in model and properties.
     std::string constantDefinitionString = input.getConstantDefinitionString();

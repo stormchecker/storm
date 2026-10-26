@@ -5,13 +5,13 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/languages/SymbolicModelDescription.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
-#include "storm/storage/SymbolicModelDescription.h"
 
 class Cudd {
    public:
@@ -51,7 +51,7 @@ TYPED_TEST_SUITE(DdPrismModelBuilderTest, TestingTypes, );
 TYPED_TEST(DdPrismModelBuilderTest, Dtmc) {
     const storm::dd::DdType DdType = TestFixture::DdType;
     storm::Environment env;
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
+    storm::languages::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
 
     std::shared_ptr<storm::models::symbolic::Model<DdType>> model = storm::builder::DdPrismModelBuilder<DdType>().build(env, program);
@@ -86,7 +86,7 @@ TYPED_TEST(DdPrismModelBuilderTest, Dtmc) {
 TYPED_TEST(DdPrismModelBuilderTest, Ctmc) {
     const storm::dd::DdType DdType = TestFixture::DdType;
     storm::Environment env;
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", true);
+    storm::languages::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", true);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
 
     std::shared_ptr<storm::models::symbolic::Model<DdType>> model = storm::builder::DdPrismModelBuilder<DdType>().build(env, program);
@@ -121,7 +121,7 @@ TYPED_TEST(DdPrismModelBuilderTest, Ctmc) {
 TYPED_TEST(DdPrismModelBuilderTest, Mdp) {
     const storm::dd::DdType DdType = TestFixture::DdType;
     storm::Environment env;
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
+    storm::languages::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::symbolic::Model<DdType>> model = storm::builder::DdPrismModelBuilder<DdType>().build(env, program);
 
@@ -197,7 +197,7 @@ TYPED_TEST(DdPrismModelBuilderTest, Composition) {
     const storm::dd::DdType DdType = TestFixture::DdType;
     storm::Environment env;
 
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition.nm");
+    storm::languages::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition.nm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
 
     std::shared_ptr<storm::models::symbolic::Model<DdType>> model = storm::builder::DdPrismModelBuilder<DdType>().build(env, program);
@@ -222,7 +222,7 @@ TYPED_TEST(DdPrismModelBuilderTest, Composition) {
 
 TYPED_TEST(DdPrismModelBuilderTest, UnboundedMdp) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/unbounded.nm");
+    storm::languages::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/unbounded.nm");
     storm::prism::Program program = modelDescription.preprocess("N=1").asPrismProgram();
     EXPECT_FALSE(storm::builder::DdPrismModelBuilder<DdType>().canHandle(program));
 }

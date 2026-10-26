@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"

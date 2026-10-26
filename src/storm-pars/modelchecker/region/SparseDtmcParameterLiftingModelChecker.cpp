@@ -76,12 +76,12 @@ template<typename SparseModelType, typename ConstantType, bool Robust>
 void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::specify(
     Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
     std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates, std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
-    bool allowModelSimplifications, bool graphPreserving) {
+    bool allowModelSimplifications, storm::pars::analysis::GraphPreservationStatus graphPreservationStatus) {
     STORM_LOG_THROW(this->canHandle(parametricModel, checkTask), storm::exceptions::NotSupportedException,
                     "Combination of model " << parametricModel->getType() << " and formula '" << checkTask.getFormula() << "' is not supported.");
     this->specifySplitEstimates(generateRegionSplitEstimates, checkTask);
     this->specifyMonotonicity(monotonicityBackend, checkTask);
-    this->graphPreserving = graphPreserving;
+    this->graphPreservationStatus = graphPreservationStatus;
     auto dtmc = parametricModel->template as<SparseModelType>();
     if (isOrderBasedMonotonicityBackend()) {
         STORM_LOG_WARN_COND(!(allowModelSimplifications),
@@ -92,7 +92,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
     reset();
 
-    if (allowModelSimplifications && graphPreserving) {
+    if (allowModelSimplifications && storm::pars::analysis::isGraphPreserving(graphPreservationStatus)) {
         auto simplifier = storm::transformer::SparseParametricModelSimplifier<SparseModelType>(*dtmc);
         simplifier.setPreserveParametricTransitions(true);
         STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
@@ -215,7 +215,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
             std::vector<ParametricType> target(this->parametricModel->getNumberOfStates(), storm::utility::zero<ParametricType>());
             storm::storage::BitVector allTrue(maybeStates.size(), true);
 
-            if (!graphPreserving) {
+            if (!storm::pars::analysis::isGraphPreserving(this->graphPreservationStatus)) {
                 storm::utility::vector::setVectorValues(target, psiStates, storm::utility::one<ParametricType>());
                 maybeStates = ~statesWithProbability01.first & ~psiStates;
             } else {
@@ -292,7 +292,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
         if constexpr (Robust) {
             storm::storage::BitVector allTrue(maybeStates.size(), true);
-            if (!graphPreserving) {
+            if (!storm::pars::analysis::isGraphPreserving(this->graphPreservationStatus)) {
                 maybeStates = ~targetStates;
             }
             auto rowFilter = this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates);
@@ -369,7 +369,7 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::g
             std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(env, *this->parametricModel);
         instantiationCheckerSAT->specifyFormula(quantitative ? *this->currentCheckTaskNoBound
                                                              : this->currentCheckTask->template convertValueType<ParametricType>());
-        instantiationCheckerSAT->setInstantiationsAreGraphPreserving(true);
+        instantiationCheckerSAT->setInstantiationsAreGraphPreserving(storm::pars::analysis::isGraphPreserving(this->graphPreservationStatus));
     }
     return *instantiationCheckerSAT;
 }
@@ -382,7 +382,7 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::g
             std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(env, *this->parametricModel);
         instantiationCheckerVIO->specifyFormula(quantitative ? *this->currentCheckTaskNoBound
                                                              : this->currentCheckTask->template convertValueType<ParametricType>());
-        instantiationCheckerVIO->setInstantiationsAreGraphPreserving(true);
+        instantiationCheckerVIO->setInstantiationsAreGraphPreserving(storm::pars::analysis::isGraphPreserving(this->graphPreservationStatus));
     }
     return *instantiationCheckerVIO;
 }
@@ -395,7 +395,7 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::g
             std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(env, *this->parametricModel);
         instantiationChecker->specifyFormula(quantitative ? *this->currentCheckTaskNoBound
                                                           : this->currentCheckTask->template convertValueType<ParametricType>());
-        instantiationChecker->setInstantiationsAreGraphPreserving(true);
+        instantiationChecker->setInstantiationsAreGraphPreserving(storm::pars::analysis::isGraphPreserving(this->graphPreservationStatus));
     }
     return *instantiationChecker;
 }
@@ -416,7 +416,7 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::c
         if (parameterLifter->isCurrentRegionAllIllDefined()) {
             return std::vector<ExtendedConstantType>();
         }
-        if (!graphPreserving) {
+        if (!storm::pars::analysis::isGraphPreserving(this->graphPreservationStatus)) {
             transformer::IntervalEndComponentPreserver endComponentPreserver;
             auto const& result = endComponentPreserver.eliminateMECs(liftedMatrix, liftedVector);
             if (result) {

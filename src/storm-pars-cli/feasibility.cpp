@@ -9,22 +9,27 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/utility/constants.h"
 
+#include "storm-pars-cli/graphPreservation.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
 #include "storm-pars/derivative/GradientDescentMethod.h"
+#include "storm-pars/scp/SparseScpInstantiationSearcher.h"
 #include "storm-pars/settings/modules/DerivativeSettings.h"
 #include "storm-pars/settings/modules/RegionVerificationSettings.h"
+#include "storm-pars/settings/modules/ScpSettings.h"
+#include "storm-pars/utility/FeasibilityResult.h"
 #include "storm-pars/utility/FeasibilitySynthesisTask.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Mdp.h"
 
 namespace storm::pars {
 
-template<typename VT1>
-void printFeasibilityResult(bool success,
-                            std::pair<VT1, typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation> const& valueValuationPair,
-                            storm::utility::Stopwatch const& watch) {
+template<typename ConstantType>
+void printFeasibilityResult(bool success, storm::pars::FeasibilityResult<ConstantType> const& result, storm::utility::Stopwatch const& watch) {
     std::stringstream valuationStr;
     bool first = true;
-    for (auto const& v : valueValuationPair.second) {
+    for (auto const& v : result.valuation) {
         if (first) {
             first = false;
         } else {
@@ -33,9 +38,8 @@ void printFeasibilityResult(bool success,
         valuationStr << v.first << "=" << v.second;
     }
     if (success) {
-        STORM_PRINT_AND_LOG("Result at initial state: " << valueValuationPair.first << " ( approx. "
-                                                        << storm::utility::convertNumber<double>(valueValuationPair.first) << ") at [" << valuationStr.str()
-                                                        << "].\n");
+        STORM_PRINT_AND_LOG("Result at initial state: " << result.value << " ( approx. " << storm::utility::convertNumber<double>(result.value) << ") at ["
+                                                        << valuationStr.str() << "].\n");
     } else {
         STORM_PRINT_AND_LOG("No satisfying result found.\n");
     }
@@ -83,7 +87,7 @@ std::shared_ptr<FeasibilitySynthesisTask const> createFeasibilitySynthesisTaskFr
 }
 
 template<typename ValueType>
-void performFeasibility(std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
+void performFeasibility(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
                         std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                         boost::optional<std::set<RationalFunctionVariable>> omittedParameters, storm::api::MonotonicitySetting monotonicitySettings) {
     auto const& feasibilitySettings = storm::settings::getModule<storm::settings::modules::FeasibilitySettings>();
@@ -98,17 +102,17 @@ void performFeasibility(std::shared_ptr<storm::models::sparse::Model<ValueType>>
     STORM_PRINT_AND_LOG("\n");
 
     if (feasibilitySettings.getFeasibilityMethod() == storm::pars::FeasibilityMethod::GD) {
-        runFeasibilityWithGD(model, task, omittedParameters, monotonicitySettings);
+        runFeasibilityWithGD(env, model, task, omittedParameters, monotonicitySettings);
     } else if (feasibilitySettings.getFeasibilityMethod() == storm::pars::FeasibilityMethod::PLA) {
-        runFeasibilityWithPLA(model, task, omittedParameters, monotonicitySettings);
+        runFeasibilityWithPLA(env, model, task, omittedParameters, monotonicitySettings);
     } else {
         STORM_LOG_ASSERT(feasibilitySettings.getFeasibilityMethod() == storm::pars::FeasibilityMethod::SCP, "Remaining method must be SCP.");
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SCP is not yet implemented.");
+        runFeasibilityWithSCP(env, model, task, omittedParameters, monotonicitySettings);
     }
 }
 
 template<typename ValueType>
-void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
+void runFeasibilityWithGD(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
                           std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                           boost::optional<std::set<RationalFunctionVariable>> omittedParameters, storm::api::MonotonicitySetting monotonicitySettings) {
     auto derSettings = storm::settings::getModule<storm::settings::modules::DerivativeSettings>();
@@ -154,60 +158,43 @@ void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType
     std::optional<storage::ParameterRegion<storm::RationalFunction>> region;
     if (task->isRegionSet()) {
         region = task->getRegion();
-        // Check if the region includes bounds at 0 or 1
-        bool hasZeroBound = false;
-        for (auto const& var : region->getVariables()) {
-            auto lowerBound = region->getLowerBoundary(var);
-            auto upperBound = region->getUpperBoundary(var);
-            if (storm::utility::isZero(lowerBound) || storm::utility::isOne(upperBound)) {
-                hasZeroBound = true;
-                break;
-            }
-        }
-        if (hasZeroBound) {
-            STORM_LOG_WARN(
-                "The region includes bounds at 0 or 1, which is not supported by Gradient Descent. Continuing anyway, but results may be incorrect.");
-        }
+        // Gradient descent requires a graph-preserving region.
+        establishGraphPreservation<ValueType>(model, {*region}, true);
     }
 
     STORM_PRINT("Finding an extremum using Gradient Descent\n");
     storm::utility::Stopwatch derivativeWatch(true);
     storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> gdsearch(
-        Environment(), *dtmc, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(),
-        derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), startPoint, *constraintMethod, region, derSettings.isPrintJsonSet());
+        env, *dtmc, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(),
+        derSettings.getTerminationEpsilon(), startPoint, *constraintMethod, region, derSettings.isPrintJsonSet());
 
-    gdsearch.setup(Environment(), task);
-    auto instantiationAndValue = gdsearch.gradientDescent();
+    gdsearch.setup(env, task);
+    auto result = gdsearch.gradientDescent();
     // TODO check what happens if no feasible solution is found
     if (!derSettings.areInconsequentialParametersOmitted() && omittedParameters) {
         for (RationalFunctionVariable const& param : *omittedParameters) {
             if (startPoint) {
-                instantiationAndValue.first[param] = startPoint->at(param);
+                result.valuation[param] = startPoint->at(param);
             } else {
-                instantiationAndValue.first[param] = utility::convertNumber<RationalFunction::CoeffType>(0.5);
+                result.valuation[param] = utility::convertNumber<RationalFunction::CoeffType>(0.5);
             }
         }
     }
     derivativeWatch.stop();
-
-    // TODO refactor this such that the order is globally fixed.
-    std::pair<double, typename storm::storage::ParameterRegion<ValueType>::Valuation> valueValuationPair;
-    valueValuationPair.first = instantiationAndValue.second;
-    valueValuationPair.second = instantiationAndValue.first;
 
     if (derSettings.isPrintJsonSet()) {
         gdsearch.printRunAsJson();
     }
 
     if (task->isBoundSet()) {
-        printFeasibilityResult(task->getBound().isSatisfied(valueValuationPair.first), valueValuationPair, derivativeWatch);
+        printFeasibilityResult(task->getBound().isSatisfied(result.value), result, derivativeWatch);
     } else {
-        printFeasibilityResult(true, valueValuationPair, derivativeWatch);
+        printFeasibilityResult(true, result, derivativeWatch);
     }
 }
 
 template<typename ValueType>
-void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+void runFeasibilityWithPLA(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
                            std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                            boost::optional<std::set<RationalFunctionVariable>> omittedParameters, storm::api::MonotonicitySetting monotonicitySettings) {
     STORM_LOG_THROW(task->isRegionSet(), storm::exceptions::NotSupportedException, "PLA requires an explicitly given region.");
@@ -216,6 +203,9 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
     // TODO handle omittedParameterss
     auto regionVerificationSettings = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>();
     auto engine = regionVerificationSettings.getRegionCheckEngine();
+
+    auto const graphPreservationStatus =
+        establishGraphPreservation<ValueType>(model, {task->getRegion()}, engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
 
     auto regionSplittingStrategy = storm::modelchecker::RegionSplittingStrategy();
 
@@ -227,22 +217,34 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
 
     if (task->isBoundSet()) {
         storm::utility::Stopwatch watch(true);
-        auto const& settings = storm::api::RefinementOptions<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
-                                                                        engine, regionSplittingStrategy};
-        auto valueValuation = storm::api::computeExtremalValue<ValueType>(settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
+        auto const& settings = storm::api::RefinementOptions<ValueType>{model,
+                                                                        storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
+                                                                        engine,
+                                                                        regionSplittingStrategy,
+                                                                        storm::api::MonotonicitySetting(),
+                                                                        {},
+                                                                        true,
+                                                                        graphPreservationStatus};
+        auto valueValuation = storm::api::computeExtremalValue<ValueType>(env, settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
                                                                           !task->isMaxGapRelative(), task->getBound().getInvertedBound());
         watch.stop();
 
-        printFeasibilityResult(task->getBound().isSatisfied(valueValuation.first), valueValuation, watch);
+        printFeasibilityResult(task->getBound().isSatisfied(valueValuation.value), valueValuation, watch);
     } else {
         STORM_LOG_THROW(task->getMaximalAllowedGap() != std::nullopt, storm::exceptions::NotSupportedException,
                         "Without a bound, PLA requires an explicit target in form of a guarantee.");
 
         ValueType precision = storm::utility::convertNumber<ValueType>(task->getMaximalAllowedGap().value());
         storm::utility::Stopwatch watch(true);
-        auto const& settings = storm::api::RefinementOptions<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
-                                                                        engine, regionSplittingStrategy};
-        auto valueValuation = storm::api::computeExtremalValue<ValueType>(settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
+        auto const& settings = storm::api::RefinementOptions<ValueType>{model,
+                                                                        storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
+                                                                        engine,
+                                                                        regionSplittingStrategy,
+                                                                        storm::api::MonotonicitySetting(),
+                                                                        {},
+                                                                        true,
+                                                                        graphPreservationStatus};
+        auto valueValuation = storm::api::computeExtremalValue<ValueType>(env, settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
                                                                           !task->isMaxGapRelative(), std::nullopt);
         watch.stop();
 
@@ -250,15 +252,62 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
     }
 }
 
-template void performFeasibility(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,
+template<typename ValueType>
+void runFeasibilityWithSCP(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
+                           std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
+                           boost::optional<std::set<RationalFunctionVariable>> omittedParameters, storm::api::MonotonicitySetting monotonicitySettings) {
+    // Formula and bound checks are done by SparseScpInstantiationSearcher::run().
+    STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Mdp) || model->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException,
+                    "SCP is only supported for MDPs and DTMCs.");
+    // TODO handle omittedParameters.
+    STORM_LOG_THROW(task->isRegionSet(), storm::exceptions::NotSupportedException, "SCP requires an explicitly given region.");
+    // SCP requires a graph-preserving region.
+    establishGraphPreservation<ValueType>(model, {task->getRegion()}, true);
+
+    auto const& scpSettings = storm::settings::getModule<storm::settings::modules::ScpSettings>();
+    storm::pars::scp::ScpOptions options;
+    options.trustRegionInitial = scpSettings.getTrustRegionInitial();
+    options.trustRegionFactor = scpSettings.getTrustRegionFactor();
+    options.trustRegionMax = scpSettings.getTrustRegionMax();
+    options.trustRegionMinExcess = scpSettings.getTrustRegionMinExcess();
+    options.maxIterations = scpSettings.getMaxIterations();
+    options.initialStateBias = scpSettings.getInitialStateBias();
+    options.useMaxViolationObjective = !scpSettings.isSumViolationObjectiveSet();
+
+    auto run = [&]<typename ConstantType>() {
+        storm::utility::Stopwatch watch(true);
+        storm::pars::scp::ScpResult<ConstantType> result;
+        if (model->isOfType(storm::models::ModelType::Mdp)) {
+            auto mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
+            result = storm::pars::scp::SparseScpInstantiationSearcher<storm::models::sparse::Mdp<ValueType>, ConstantType>(*mdp, options).run(env, task);
+        } else {
+            auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
+            result = storm::pars::scp::SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<ValueType>, ConstantType>(*dtmc, options).run(env, task);
+        }
+        watch.stop();
+        printFeasibilityResult(result.status == storm::pars::scp::ScpStatus::Feasible, result, watch);
+    };
+    if (scpSettings.isExactSet()) {
+        run.template operator()<storm::RationalNumber>();
+    } else {
+        run.template operator()<double>();
+    }
+}
+
+template void performFeasibility(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,
                                  std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                                  boost::optional<std::set<RationalFunctionVariable>> omittedParameters, storm::api::MonotonicitySetting monotonicitySettings);
 
-template void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,
+template void runFeasibilityWithGD(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,
                                    std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                                    boost::optional<std::set<RationalFunctionVariable>> omittedParameters, storm::api::MonotonicitySetting monotonicitySettings);
 
-template void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model,
+template void runFeasibilityWithPLA(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model,
+                                    std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
+                                    boost::optional<std::set<RationalFunctionVariable>> omittedParameters,
+                                    storm::api::MonotonicitySetting monotonicitySettings);
+
+template void runFeasibilityWithSCP(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,
                                     std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                                     boost::optional<std::set<RationalFunctionVariable>> omittedParameters,
                                     storm::api::MonotonicitySetting monotonicitySettings);

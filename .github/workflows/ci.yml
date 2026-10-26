@@ -2,30 +2,46 @@ name: CI
 # Build Storm and perform checks (run tests, check compiler flags, build starter project)
 
 # on every pull request commit: run "quick" configs
-# for every PR labeled "ready for review", on every master push, or on a manual run: run "normal" configs
+# for every PR when labeled "ready for review" (other labels are ignored), on every master push: run "normal" configs
+# every week: run "extensive" configs (no cache, not fail-fast, including deploy)
+# on a manual run: run the configs of the selected mode
 # Configurations are defined in ci-configs.json.
 # This CI then calls the tests in build-test-action and test-deploy with the given configurations.
-# Cache is restored everywhere but only saved on master pushes.
+# Cache is restored everywhere (except for extensive) but only saved on master pushes.
 
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
   push:
     branches: [master]
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Which configs to run"
+        type: choice
+        options: [quick, normal, extensive]
+        default: normal
 
 # On PRs a newer run cancels the running one.
 # On master pushes each run is its own group (via run_id) so CI is never canceled.
+# Adding other labels than "ready for review" also uses its own group so it does not cancel the running CI.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  group: ${{ github.workflow }}-${{ (github.event.action == 'labeled' && github.event.label.name != 'ready for review') && github.run_id || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  # Load configurations and filter according to scope (quick/normal)
+  # Load configurations and filter according to mode (quick/normal/extensive)
   prepare:
+    # Skip if a label other than "ready for review" was added (all other jobs depend on prepare)
+    if: github.event.action != 'labeled' || github.event.label.name == 'ready for review'
     uses: ./.github/workflows/ci-prepare-configs.yml
     with:
-      mode: ${{ (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready for review')) && 'quick' || 'normal' }}
+      mode: ${{ github.event_name == 'schedule' && 'extensive'
+                || github.event_name == 'workflow_dispatch' && inputs.mode
+                || (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready for review')) && 'quick'
+                || 'normal' }}
 
   linuxTests:
     needs: prepare
@@ -33,7 +49,8 @@ jobs:
     runs-on: ubuntu-latest
     container: ${{ matrix.config.baseImg }}
     strategy:
-      fail-fast: true
+      # Extensive runs all configs to see all failures
+      fail-fast: ${{ needs.prepare.outputs.mode != 'extensive' }}
       matrix:
         config: ${{ fromJson(needs.prepare.outputs.linuxTests) }}
     steps:
@@ -64,7 +81,7 @@ jobs:
           CONFIG: ${{ toJson(matrix.config) }}
         # Update config: disable PCH when using caching, set developer mode for debug.
         run: |
-          if [ "${{ contains(matrix.config.scope, 'quick') }}" = "true" ]; then
+          if [ "${{ matrix.config.cache }}" = "true" ]; then
             RESOLVED=$(echo "$CONFIG" | jq -c '.cmakeArgs += " -DSTORM_COMPILE_WITH_PCH=OFF" | .Developer = (.buildType == "Debug")')
           else
             RESOLVED=$(echo "$CONFIG" | jq -c '.Developer = (.buildType == "Debug")')
@@ -76,20 +93,21 @@ jobs:
           nr_jobs: "4"
           name: ${{ matrix.config.name }}
           config: ${{ steps.resolve-config.outputs.config }}
-          # ccache is only cached for configs in "quick" scope: caching everything would exceed GitHub's 10GB limit
-          restore_cache: ${{ contains(matrix.config.scope, 'quick') }}
-          save_cache: ${{ contains(matrix.config.scope, 'quick') && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          # ccache is only used for configs with "cache" set: caching everything would exceed GitHub's 10GB limit
+          restore_cache: ${{ matrix.config.cache }}
+          save_cache: ${{ matrix.config.cache && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           restore_3rdparty_cache: true
           save_3rdparty_cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-          # Skip install steps for a quick PR push
-          install: ${{ !(github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready for review')) }}
+          # Skip install steps for quick mode
+          install: ${{ needs.prepare.outputs.mode != 'quick' }}
 
   macTests:
     needs: prepare
     name: ${{ matrix.config.name }} (${{ matrix.config.buildType }})
     runs-on: ${{ matrix.config.distro }}
     strategy:
-      fail-fast: true
+      # Extensive runs all configs to see all failures
+      fail-fast: ${{ needs.prepare.outputs.mode != 'extensive' }}
       matrix:
         config: ${{ fromJson(needs.prepare.outputs.macTests) }}
     steps:
@@ -98,24 +116,23 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: ${{ matrix.config.xcode }}
-      - name: Cache Homebrew downloads
-        uses: actions/cache@v6
-        with:
-          path: ~/Library/Caches/Homebrew
-          key: buildtest-brew-${{ matrix.config.name }}-${{ hashFiles('.github/actions/build-test-action/action.yml') }}
-          restore-keys: |
-            buildtest-brew-${{ matrix.config.name }}-
       - name: Install dependencies
+        env:
+          USE_CCACHE: ${{ matrix.config.cache }}
         run: |
           brew update
-          brew install automake boost ccache cln ginac glpk highs hwloc libarchive xerces-c z3
+          PACKAGES=(automake boost cln ginac glpk highs hwloc libarchive xerces-c z3)
+          if [ "$USE_CCACHE" = "true" ]; then
+            PACKAGES+=(ccache)
+          fi
+          brew install "${PACKAGES[@]}"
       - name: Resolve config
         id: resolve-config
         env:
           CONFIG: ${{ toJson(matrix.config) }}
         # Update config: disable PCH when using caching, set developer mode for debug.
         run: |
-          if [ "${{ contains(matrix.config.scope, 'quick') }}" = "true" ]; then
+          if [ "${{ matrix.config.cache }}" = "true" ]; then
             RESOLVED=$(echo "$CONFIG" | jq -c '.cmakeArgs += " -DSTORM_COMPILE_WITH_PCH=OFF" | .Developer = (.buildType == "Debug")')
           else
             RESOLVED=$(echo "$CONFIG" | jq -c '.Developer = (.buildType == "Debug")')
@@ -127,19 +144,21 @@ jobs:
           nr_jobs: "4"
           name: ${{ matrix.config.name }}
           config: ${{ steps.resolve-config.outputs.config }}
-          # ccache is only cached for configs in "quick" scope: caching everything would exceed GitHub's 10GB limit.
-          restore_cache: ${{ contains(matrix.config.scope, 'quick') }}
-          save_cache: ${{ contains(matrix.config.scope, 'quick') && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          # ccache is only used for configs with "cache" set: caching everything would exceed GitHub's 10GB limit.
+          restore_cache: ${{ matrix.config.cache }}
+          save_cache: ${{ matrix.config.cache && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           restore_3rdparty_cache: true
           save_3rdparty_cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-          # Skip install steps for a quick PR push
-          install: ${{ !(github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready for review')) }}
+          # Skip install steps for quick mode
+          install: ${{ needs.prepare.outputs.mode != 'quick' }}
 
   # Need to split deploy into two jobs
   # Otherwise the name is not correctly displayed when the job is skipped.
+  # Deploy on master pushes and in extensive mode.
   deploy-debug:
     name: Deploy (Debug)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: prepare
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || needs.prepare.outputs.mode == 'extensive'
     uses: ./.github/workflows/test-deploy.yml
     with:
       nr_jobs: "4"
@@ -149,7 +168,8 @@ jobs:
 
   deploy-release:
     name: Deploy (Release)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: prepare
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || needs.prepare.outputs.mode == 'extensive'
     uses: ./.github/workflows/test-deploy.yml
     with:
       nr_jobs: "4"
@@ -161,7 +181,7 @@ jobs:
     name: Email notification
     runs-on: ubuntu-latest
     needs: [linuxTests, macTests, deploy-debug, deploy-release]
-    if: github.repository_owner == 'stormchecker' && github.event_name == 'push' && always()
+    if: github.repository_owner == 'stormchecker' && (github.event_name == 'push' || github.event_name == 'schedule') && always()
     steps:
       - uses: technote-space/workflow-conclusion-action@v3
       - uses: dawidd6/action-send-mail@v22
@@ -170,7 +190,7 @@ jobs:
           server_port: 587
           username: ${{ secrets.STORM_CI_MAIL_USERNAME }}
           password: ${{ secrets.STORM_CI_MAIL_PASSWORD }}
-          subject: "[You broke it] CI failed for ${{ github.repository }} on master"
+          subject: "[You broke it] ${{ github.event_name == 'schedule' && 'CI Weekly' || 'CI' }} failed for ${{ github.repository }} on master"
           body:
             "CI job of ${{ github.repository }} has failed for commit ${{ github.sha }}.\n\
             The error type is: ${{ env.WORKFLOW_CONCLUSION }}.\n\n\

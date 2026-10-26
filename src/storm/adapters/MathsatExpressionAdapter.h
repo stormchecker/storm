@@ -9,8 +9,8 @@
 #include <mathsat.h>
 #endif
 
-#include "storm/storage/expressions/ExpressionVisitor.h"
-#include "storm/storage/expressions/Variable.h"
+#include "storm/expressions/ExpressionVisitor.h"
+#include "storm/expressions/Variable.h"
 
 #ifdef STORM_HAVE_MATHSAT
 namespace std {

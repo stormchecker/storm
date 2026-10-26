@@ -2,12 +2,12 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Pomdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -50,6 +50,10 @@ bool FormulaInformation::isUnsupported() const {
     return type == Type::Unsupported;
 }
 
+bool FormulaInformation::isBounded() const {
+    return rewardBounded;
+}
+
 typename FormulaInformation::StateSet const& FormulaInformation::getTargetStates() const {
     STORM_LOG_ASSERT(this->type == Type::NonNestedExpectedRewardFormula || this->type == Type::NonNestedReachabilityProbability,
                      "Target states requested for unexpected formula type.");
@@ -71,12 +75,19 @@ storm::solver::OptimizationDirection const& FormulaInformation::getOptimizationD
     return optimizationDirection;
 }
 
+std::vector<storm::logic::TimeBoundReference> const& FormulaInformation::getRewardBoundReferences() const {
+    return rewardBoundReferences;
+}
+
 bool FormulaInformation::minimize() const {
     return storm::solver::minimize(optimizationDirection);
 }
 
 bool FormulaInformation::maximize() const {
     return storm::solver::maximize(optimizationDirection);
+}
+void FormulaInformation::setRewardBounded(bool newValue) {
+    rewardBounded = newValue;
 }
 
 template<typename PomdpType>
@@ -109,6 +120,10 @@ void FormulaInformation::updateSinkStates(PomdpType const& pomdp, storm::storage
     STORM_LOG_ASSERT(this->type == Type::NonNestedReachabilityProbability, "Sink states requested for unexpected formula type.");
     sinkStates = getStateSet(pomdp, std::move(newSinkStates));
 }
+void FormulaInformation::setRewardBoundReferences(std::vector<logic::TimeBoundReference>& newRewardBoundReferences) {
+    STORM_LOG_ASSERT(this->type == Type::NonNestedReachabilityProbability && this->isBounded(), "RewardBoundReference requested for unexpected formula type.");
+    rewardBoundReferences = newRewardBoundReferences;
+}
 
 template<typename PomdpType>
 storm::storage::BitVector getStates(storm::logic::Formula const& propositionalFormula, bool formulaInverted, PomdpType const& pomdp) {
@@ -123,10 +138,19 @@ storm::storage::BitVector getStates(storm::logic::Formula const& propositionalFo
 
 template<typename PomdpType>
 FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::ProbabilityOperatorFormula const& formula) {
+    if (formula.hasBound()) {
+        auto const threshold = formula.getThresholdAs<storm::RationalNumber>();
+        STORM_LOG_THROW(threshold == 0 || threshold == 1, storm::exceptions::InvalidPropertyException,
+                        "The probability threshold in '" << formula
+                                                         << "' is not supported by storm-pomdp. Only thresholds of exactly 0 or 1 are supported for "
+                                                            "qualitative analysis; use a Pmin=? or Pmax=? query for quantitative analysis.");
+    }
     STORM_LOG_THROW(formula.hasOptimalityType(), storm::exceptions::InvalidPropertyException,
                     "The property does not specify an optimization direction (min/max).");
-    STORM_LOG_WARN_COND(!formula.hasBound(), "The probability threshold for the given property will be ignored.");
     auto const& subformula = formula.getSubformula();
+    bool bounded = false;
+    std::vector<storm::logic::TimeBoundReference> rewardBoundReferences;
+
     std::shared_ptr<storm::logic::Formula const> targetStatesFormula, constraintsStatesFormula;
     if (subformula.isEventuallyFormula()) {
         targetStatesFormula = subformula.asEventuallyFormula().getSubformula().asSharedPointer();
@@ -135,12 +159,36 @@ FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::P
         storm::logic::UntilFormula const& untilFormula = subformula.asUntilFormula();
         targetStatesFormula = untilFormula.getRightSubformula().asSharedPointer();
         constraintsStatesFormula = untilFormula.getLeftSubformula().asSharedPointer();
+    } else if (subformula.isBoundedUntilFormula()) {
+        storm::logic::BoundedUntilFormula const& boundedUntilFormula = subformula.asBoundedUntilFormula();
+        STORM_LOG_THROW(!boundedUntilFormula.hasMultiDimensionalSubformulas(), storm::exceptions::NotSupportedException,
+                        "Reward-bounded POMDP properties with dimension-specific state subformulas are not supported.");
+        for (uint64_t i = 0; i < boundedUntilFormula.getDimension(); ++i) {
+            STORM_LOG_THROW(boundedUntilFormula.getLeftSubformula(i).isTrueFormula(), storm::exceptions::NotSupportedException,
+                            "Reward-bounded until properties for POMDPs currently require 'true' as the left-hand side, i.e., they must be reward-bounded "
+                            "reachability properties.");
+        }
+        targetStatesFormula = boundedUntilFormula.getRightSubformula().asSharedPointer();
+        constraintsStatesFormula = boundedUntilFormula.getLeftSubformula().asSharedPointer();
+        bounded = true;
+        for (uint64_t i = 0; i < boundedUntilFormula.getDimension(); ++i) {
+            auto const& boundReference = boundedUntilFormula.getTimeBoundReference(i);
+            STORM_LOG_THROW(boundReference.isRewardBound() && !boundReference.hasRewardAccumulation(), storm::exceptions::NotSupportedException,
+                            "For POMDPs, only plain reward bounds are supported.");
+            STORM_LOG_THROW(boundReference.hasRewardModelName(), storm::exceptions::NotSupportedException,
+                            "For POMDPs, reward-bounded formulae must explicitly name a reward model for each bound.");
+            rewardBoundReferences.push_back(boundReference);
+        }
     }
     if (targetStatesFormula && targetStatesFormula->isInFragment(storm::logic::propositional()) && constraintsStatesFormula &&
         constraintsStatesFormula->isInFragment(storm::logic::propositional())) {
         FormulaInformation result(FormulaInformation::Type::NonNestedReachabilityProbability, formula.getOptimalityType());
         result.updateTargetStates(pomdp, getStates(*targetStatesFormula, false, pomdp));
         result.updateSinkStates(pomdp, getStates(*constraintsStatesFormula, true, pomdp));
+        result.setRewardBounded(bounded);
+        if (bounded) {
+            result.setRewardBoundReferences(rewardBoundReferences);
+        }
         return result;
     }
     return FormulaInformation();
@@ -148,9 +196,10 @@ FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::P
 
 template<typename PomdpType>
 FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::RewardOperatorFormula const& formula) {
+    STORM_LOG_THROW(!formula.hasBound(), storm::exceptions::InvalidPropertyException,
+                    "The reward threshold in '" << formula << "' is not supported by storm-pomdp. Use an Rmin=? or Rmax=? query instead.");
     STORM_LOG_THROW(formula.hasOptimalityType(), storm::exceptions::InvalidPropertyException,
                     "The property does not specify an optimization direction (min/max).");
-    STORM_LOG_WARN_COND(!formula.hasBound(), "The reward threshold for the given property will be ignored.");
     std::string rewardModelName = "";
     if (formula.hasRewardModelName()) {
         rewardModelName = formula.getRewardModelName();
@@ -162,6 +211,10 @@ FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::R
         rewardModelName = pomdp.getUniqueRewardModelName();
     }
     auto const& subformula = formula.getSubformula();
+    if (subformula.isDiscountedTotalRewardFormula()) {
+        FormulaInformation result(FormulaInformation::Type::DiscountedTotalRewardFormula, formula.getOptimalityType(), rewardModelName);
+        return result;
+    }
     std::shared_ptr<storm::logic::Formula const> targetStatesFormula;
     if (subformula.isEventuallyFormula()) {
         targetStatesFormula = subformula.asEventuallyFormula().getSubformula().asSharedPointer();

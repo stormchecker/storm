@@ -246,7 +246,8 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(size_t iteration,
     STORM_LOG_DEBUG("Model is " << (generator.isDeterministicModel() ? "deterministic" : "non-deterministic"));
 
     // Build transition matrix
-    modelComponents.transitionMatrix = matrixBuilder.builder.build(stateSize, stateSize);
+    // Nondeterministic models can have more rows than states
+    modelComponents.transitionMatrix = matrixBuilder.builder.build(generator.isDeterministicModel() ? stateSize : 0, stateSize);
     if (stateSize <= 15) {
         STORM_LOG_TRACE("Transition matrix: \n" << modelComponents.transitionMatrix);
     } else {

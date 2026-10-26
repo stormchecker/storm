@@ -13,19 +13,15 @@ jobs:
         id: clang-versions
         run: |
           echo "FORMAT_VERSION=$(grep '^CLANG_FORMAT_VERSION=' resources/scripts/clang-versions | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-${{ steps.clang-versions.outputs.FORMAT_VERSION }}
       # apply the formatting twice as a workaround for a clang-format bug
-      - uses: DoozyX/clang-format-lint-action@v0.20
-        with:
-          source: './src'
-          clangFormatVersion: ${{ steps.clang-versions.outputs.FORMAT_VERSION }}
-          style: file
-          inplace: True
-      - uses: DoozyX/clang-format-lint-action@v0.20
-        with:
-          source: './src'
-          clangFormatVersion: ${{ steps.clang-versions.outputs.FORMAT_VERSION }}
-          style: file
-          inplace: True
+      - name: Apply formatting
+        run: |
+          bash resources/scripts/auto-format.sh
+          bash resources/scripts/auto-format.sh
       - name: Commit Formatting
         run: |
           git config user.name 'Auto Format'

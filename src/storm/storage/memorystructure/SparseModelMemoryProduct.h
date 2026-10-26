@@ -7,9 +7,9 @@
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
+#include "storm/storage/scheduler/Scheduler.h"
 
 namespace storm {
 namespace storage {

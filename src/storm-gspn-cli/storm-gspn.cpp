@@ -4,6 +4,7 @@
 #include <string>
 
 #include "storm-cli-utilities/cli.h"
+#include "storm-conv/settings/JaniConversionOptionsBuilder.h"
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-gspn/api/storm-gspn.h"
 #include "storm-gspn/builder/JaniGSPNBuilder.h"
@@ -16,14 +17,15 @@
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/api/storm.h"
 #include "storm/exceptions/FileIoException.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/visitor/JSONExporter.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/visitor/JSONExporter.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
@@ -111,9 +113,8 @@ void processOptions() {
         auto const& janiSettings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
         storm::api::GspnJaniExportOptions janiOptions;
         janiOptions.addDeadlockProperties = exportSettings.isAddJaniPropertiesSet();
-        janiOptions.janiConversionOptions = storm::converter::JaniConversionOptions(janiSettings);
+        janiOptions.janiConversionOptions = storm::settings::JaniConversionOptionsBuilder::buildJaniConversionOptions();
         janiOptions.compactJson = janiSettings.isCompactJsonSet();
-        janiOptions.smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>();
         storm::api::exportGspnToJani(*gspn, exportSettings.getWriteToJaniFilename(), janiOptions,
                                      [&](storm::builder::JaniGSPNBuilder const&) { return properties; });
     }

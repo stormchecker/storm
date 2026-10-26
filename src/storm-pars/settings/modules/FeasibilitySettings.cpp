@@ -16,7 +16,7 @@ const std::string directionOptionName = "direction";
 const std::string guaranteeOptionName = "guarantee";
 
 FeasibilitySettings::FeasibilitySettings() : ModuleSettings(moduleName) {
-    std::vector<std::string> methodChoice = {"gd", "pla"};
+    std::vector<std::string> methodChoice = {"gd", "pla", "scp"};
     this->addOption(OptionBuilder(moduleName, methodOptionName, true, "Which method to use")
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "The method")
                                          .addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator(methodChoice))
@@ -46,9 +46,11 @@ storm::pars::FeasibilityMethod FeasibilitySettings::getFeasibilityMethod() const
     auto str = this->getOption(methodOptionName).getArgumentByName("method").getValueAsString();
     if (str == "gd") {
         return storm::pars::FeasibilityMethod::GD;
-    } else {
-        STORM_LOG_ASSERT(str == "pla", "Only remaining option is PLA.");
+    } else if (str == "pla") {
         return storm::pars::FeasibilityMethod::PLA;
+    } else {
+        STORM_LOG_ASSERT(str == "scp", "Only remaining option is SCP.");
+        return storm::pars::FeasibilityMethod::SCP;
     }
 }
 

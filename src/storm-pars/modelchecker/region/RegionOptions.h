@@ -4,6 +4,7 @@
 #include <optional>
 #include <set>
 
+#include "storm-pars/analysis/GraphPreservationStatus.h"
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
 #include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/storage/ParameterRegion.h"
@@ -37,7 +38,7 @@ struct RegionRefinementOptions {
     MonotonicityOptions monotonicitySetting;
     std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& discreteVariables;
     bool allowModelSimplification;
-    bool graphPreserving;
+    storm::pars::analysis::GraphPreservationStatus graphPreservationStatus;
     bool preconditionsValidated;
     std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
                             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
@@ -53,19 +54,21 @@ struct RegionRefinementOptions {
      * @param monotonicitySetting The options for monotonicity (default is a default-constructed MonotonicityOptions).
      * @param discreteVariables A set of discrete variables (default is an empty set).
      * @param allowModelSimplification A flag indicating whether model simplification is allowed (default is true).
-     * @param graphPreserving A flag indicating whether the graph should be preserved (default is true).
+     * @param graphPreservationStatus The degree to which the graph structure of the model is known to be
+     * preserved (default is GraphPreservationStatus::GraphPreserving).
      * @param preconditionsValidated A flag indicating whether preconditions have been validated (default is false).
      * @param monotoneParameters An optional pair of sets of monotone parameters (default is std::nullopt).
      */
-    RegionRefinementOptions(std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
-                            storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task, storm::modelchecker::RegionCheckEngine engine,
-                            storm::modelchecker::RegionSplittingStrategy regionSplittingStrategy,
-                            MonotonicityOptions monotonicitySetting = MonotonicityOptions(),
-                            std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& discreteVariables = {},
-                            bool allowModelSimplification = true, bool graphPreserving = true, bool preconditionsValidated = false,
-                            std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
-                                                    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
-                                monotoneParameters = std::nullopt)
+    RegionRefinementOptions(
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task,
+        storm::modelchecker::RegionCheckEngine engine, storm::modelchecker::RegionSplittingStrategy regionSplittingStrategy,
+        MonotonicityOptions monotonicitySetting = MonotonicityOptions(),
+        std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& discreteVariables = {}, bool allowModelSimplification = true,
+        storm::pars::analysis::GraphPreservationStatus graphPreservationStatus = storm::pars::analysis::GraphPreservationStatus::GraphPreserving,
+        bool preconditionsValidated = false,
+        std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
+                                std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
+            monotoneParameters = std::nullopt)
         : model(std::move(model)),
           task(std::move(task)),
           engine(engine),
@@ -73,7 +76,7 @@ struct RegionRefinementOptions {
           monotonicitySetting(std::move(monotonicitySetting)),
           discreteVariables(discreteVariables),
           allowModelSimplification(allowModelSimplification),
-          graphPreserving(graphPreserving),
+          graphPreservationStatus(graphPreservationStatus),
           preconditionsValidated(preconditionsValidated),
           monotoneParameters(std::move(monotoneParameters)) {}
 };

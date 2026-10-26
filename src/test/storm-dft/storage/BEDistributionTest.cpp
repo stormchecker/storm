@@ -9,7 +9,7 @@
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/api/properties.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 
 namespace {
 

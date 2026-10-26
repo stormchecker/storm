@@ -72,8 +72,8 @@ class ExpectedVisitingTimesCtmcCslModelCheckerTest : public ::testing::Test {
     ExpectedVisitingTimesCtmcCslModelCheckerTest() : _environment(TestType::createEnvironment()) {}
 
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 
@@ -96,7 +96,7 @@ class ExpectedVisitingTimesCtmcCslModelCheckerTest : public ::testing::Test {
     template<typename MT = typename TestType::ModelType>
     typename std::enable_if<std::is_same<MT, SparseModelType>::value, std::shared_ptr<MT>>::type buildJaniModel(
         std::string const& pathToJaniModel, std::string const& constantDefinitionString = "") const {
-        auto janiDescr = storm::storage::SymbolicModelDescription(storm::api::parseJaniModel(pathToJaniModel).first);
+        auto janiDescr = storm::languages::SymbolicModelDescription(storm::api::parseJaniModel(pathToJaniModel).first);
         janiDescr = janiDescr.preprocess(constantDefinitionString);
         return storm::api::buildSparseModel<ValueType>(janiDescr, storm::builder::BuilderOptions())->template as<MT>();
     }

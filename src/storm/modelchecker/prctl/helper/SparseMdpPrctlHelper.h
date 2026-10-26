@@ -8,8 +8,8 @@
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/solver/SolveGoal.h"
 #include "storm/solver/UncertaintyResolutionMode.h"
-#include "storm/storage/MaximalEndComponent.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/decomposition/MaximalEndComponent.h"
 #include "storm/utility/ExtendedNumber.h"
 
 namespace storm {

@@ -4,12 +4,12 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 
-#include "storm/storage/dd/DdType.h"
-#include "storm/storage/dd/Odd.h"
+#include "storm/dd/DdType.h"
+#include "storm/dd/Odd.h"
 
-#include "storm/storage/SymbolicModelDescription.h"
+#include "storm/languages/SymbolicModelDescription.h"
 
 #include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResult.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeGameResult.h"
@@ -17,7 +17,7 @@
 
 #include "storm/logic/Bound.h"
 
-#include "storm/settings/modules/AbstractionSettings.h"
+#include "storm-gamebased-ar/abstraction/AbstractionOptions.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"
@@ -77,18 +77,6 @@ struct PreviousExplicitResult {
 };
 }  // namespace detail
 
-struct GameBasedMdpModelCheckerOptions {
-    GameBasedMdpModelCheckerOptions() = default;
-    GameBasedMdpModelCheckerOptions(std::vector<storm::expressions::Expression> const& constraints,
-                                    std::vector<std::vector<storm::expressions::Expression>> const& injectedRefinementPredicates)
-        : constraints(constraints), injectedRefinementPredicates(injectedRefinementPredicates) {
-        // Intentionally left empty.
-    }
-
-    std::vector<storm::expressions::Expression> constraints;
-    std::vector<std::vector<storm::expressions::Expression>> injectedRefinementPredicates;
-};
-
 template<storm::dd::DdType Type, typename ModelType>
 class GameBasedMdpModelChecker : public storm::modelchecker::AbstractModelChecker<ModelType> {
    public:
@@ -102,8 +90,8 @@ class GameBasedMdpModelChecker : public storm::modelchecker::AbstractModelChecke
      * @param options Additional options for the abstraction-refinement process.
      * @param smtSolverFactory A factory used to create SMT solver when necessary.
      */
-    explicit GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model,
-                                      GameBasedMdpModelCheckerOptions const& options = GameBasedMdpModelCheckerOptions(),
+    explicit GameBasedMdpModelChecker(storm::languages::SymbolicModelDescription const& model,
+                                      abstraction::AbstractionOptions const& options = abstraction::AbstractionOptions(),
                                       std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory =
                                           std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
 
@@ -173,11 +161,11 @@ class GameBasedMdpModelChecker : public storm::modelchecker::AbstractModelChecke
     storm::expressions::Expression getExpression(storm::logic::Formula const& formula);
 
     /// The options customizing the abstraction-refinement process.
-    GameBasedMdpModelCheckerOptions options;
+    abstraction::AbstractionOptions options;
 
     /// The preprocessed model that contains only one module/automaton and otherwhise corresponds to the semantics
     /// of the original model description.
-    storm::storage::SymbolicModelDescription preprocessedModel;
+    storm::languages::SymbolicModelDescription preprocessedModel;
 
     /// A factory that is used for creating SMT solvers when needed.
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
@@ -195,7 +183,7 @@ class GameBasedMdpModelChecker : public storm::modelchecker::AbstractModelChecke
     uint64_t maximalNumberOfAbstractions;
 
     /// The mode selected for solving the abstraction.
-    storm::settings::modules::AbstractionSettings::SolveMode solveMode;
+    abstraction::SolveMode solveMode;
 
     /// The currently used abstractor.
     std::shared_ptr<storm::gbar::abstraction::MenuGameAbstractor<Type, ValueType>> abstractor;

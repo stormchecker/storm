@@ -5,16 +5,16 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdManager.h"
+#include "storm/languages/SymbolicModelDescription.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/graph.h"
 
 class Cudd {
@@ -48,8 +48,8 @@ class GraphTestSymbolic : public ::testing::Test {
 
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Library Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
         TestType::checkLibraryAvailable();
     }
@@ -58,8 +58,8 @@ class GraphTestSymbolic : public ::testing::Test {
 class GraphTestExplicit : public ::testing::Test {
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Library Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 };
@@ -69,7 +69,7 @@ TYPED_TEST_SUITE(GraphTestSymbolic, TestingTypes, );
 
 TYPED_TEST(GraphTestSymbolic, SymbolicProb01) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
+    storm::languages::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::symbolic::Model<DdType>> model = storm::builder::DdPrismModelBuilder<DdType>().build(this->env, program);
 
@@ -98,7 +98,7 @@ TYPED_TEST(GraphTestSymbolic, SymbolicProb01) {
 
 TYPED_TEST(GraphTestSymbolic, SymbolicProb01MinMax) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm");
+    storm::languages::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::symbolic::Model<DdType>> model = storm::builder::DdPrismModelBuilder<DdType>().build(this->env, program);
 
@@ -175,7 +175,7 @@ TYPED_TEST(GraphTestSymbolic, SymbolicProb01MinMax) {
 }
 
 TEST_F(GraphTestExplicit, ExplicitProb01) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
+    storm::languages::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::sparse::Model<double>> model =
         storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
@@ -204,7 +204,7 @@ TEST_F(GraphTestExplicit, ExplicitProb01) {
 }
 
 TEST_F(GraphTestExplicit, ExplicitProb01MinMax) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm");
+    storm::languages::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::sparse::Model<double>> model =
         storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();

@@ -93,6 +93,8 @@ bool AcyclicLinearEquationSolver<ValueType>::internalSolveEquations(Environment 
         }
     }
 
+    this->setSolutionBoundsExact(x);
+
     if (!this->isCachingEnabled()) {
         this->clearCache();
     }

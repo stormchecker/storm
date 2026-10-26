@@ -8,6 +8,9 @@
 #include "storm-version-info/storm-version.h"
 #include "storm/utility/macros.h"
 
+#ifdef STORM_HAVE_CVC5
+#include <cvc5/cvc5.h>
+#endif
 #ifdef STORM_HAVE_GLPK
 #include <glpk.h>
 #endif
@@ -98,6 +101,13 @@ void printVersion() {
     STORM_PRINT("Linked with CUDD.\n");
 #else
     STORM_PRINT("Not linked with CUDD.\n");
+#endif
+#ifdef STORM_HAVE_CVC5
+    cvc5::TermManager cvc5TermManager;
+    cvc5::Solver cvc5Solver(cvc5TermManager);
+    STORM_PRINT("Linked with cvc5 v" << cvc5Solver.getVersion() << ".\n");
+#else
+    STORM_PRINT("Not linked with cvc5.\n");
 #endif
 #ifdef STORM_HAVE_GLPK
     STORM_PRINT("Linked with GLPK v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << ".\n");

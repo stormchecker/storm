@@ -5,12 +5,12 @@
 
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidAccessException.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/Variable.h"
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/solver/OptimizationDirection.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
 
