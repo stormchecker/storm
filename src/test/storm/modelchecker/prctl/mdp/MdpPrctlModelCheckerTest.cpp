@@ -576,6 +576,28 @@ class MdpPrctlModelCheckerTest : public ::testing::Test {
         return std::is_same<typename TestType::ModelType, SymbolicModelType>::value;
     }
 
+    /*!
+     * Whether the environment requires a unique fixed point but cannot establish it by eliminating end components.
+     * Such environments are expected to reject tasks whose equation system has no unique solution.
+     */
+    bool requiresUniqueFixedPointWithoutEcElimination() const {
+        return TestType::engine == MdpEngine::PrismDd && env().solver().minMax().getMethod() == storm::solver::MinMaxMethod::RationalSearch;
+    }
+
+    /*!
+     * Checks a task whose equation system does not have a unique solution (i.e., there are end components among the maybe states).
+     * Environments that cannot handle this are expected to throw an UncheckedRequirementException; all others have to yield the expected value.
+     */
+    template<typename ModelPtr, typename CheckerPtr, typename TaskType>
+    void checkTaskWithoutUniqueFixedPoint(ModelPtr const& model, CheckerPtr& checker, TaskType const& task, std::string const& expected) {
+        if (requiresUniqueFixedPointWithoutEcElimination()) {
+            STORM_SILENT_EXPECT_THROW(checker->check(env(), task), storm::exceptions::UncheckedRequirementException);
+        } else {
+            auto result = checker->check(env(), task);
+            expectQuantitativeResultAtInitialState(model, result, parseNumber(expected));
+        }
+    }
+
     template<typename MT = typename TestType::ModelType>
     typename std::enable_if<std::is_same<MT, SparseModelType>::value,
                             std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>>>::type
@@ -826,8 +848,7 @@ TYPED_TEST(MdpPrctlModelCheckerTest, MaybeStateEndComponent) {
     ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
 
     auto checker = this->createModelChecker(model);
-    auto result = checker->check(this->env(), tasks[0]);
-    this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/4"));
+    this->checkTaskWithoutUniqueFixedPoint(model, checker, tasks[0], "1/4");
 }
 
 STORM_EXPENSIVE_TYPED_TEST(MdpPrctlModelCheckerTest, consensus) {
@@ -886,17 +907,27 @@ TYPED_TEST(MdpPrctlModelCheckerTest, TinyRewards) {
         EXPECT_EQ(4ul, model->getNumberOfTransitions());
         ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
         auto checker = this->createModelChecker(model);
-        std::unique_ptr<storm::modelchecker::CheckResult> result;
 
         // This example considers a zero-reward end component that does not reach the target
         // For some methods this requires end-component elimination which is (currently) not supported in the Dd engine
+        this->checkTaskWithoutUniqueFixedPoint(model, checker, tasks[0], "1");
+    });
+}
 
-        if (TypeParam::engine == MdpEngine::PrismDd && this->env().solver().minMax().getMethod() == storm::solver::MinMaxMethod::RationalSearch) {
-            STORM_SILENT_EXPECT_THROW(checker->check(this->env(), tasks[0]), storm::exceptions::UncheckedRequirementException);
-        } else {
-            result = checker->check(this->env(), tasks[0]);
-            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1"));
-        }
+TYPED_TEST(MdpPrctlModelCheckerTest, SimpleProtocolMaybeStateEndComponent) {
+    // State 1 has a self-loop, so the maybe states contain an end component and the fixed point is not unique.
+    std::string formulasString = "Pmax=? [ (s<=1) U (s=3) ]";
+    formulasString += "; Pmax=? [ !(s=3) U (!(s<=1) & !(s=3)) ]";
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/simple_protocol.nm", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    this->execute(model, [&]() {
+        EXPECT_EQ(4ul, model->getNumberOfStates());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+        auto checker = this->createModelChecker(model);
+
+        this->checkTaskWithoutUniqueFixedPoint(model, checker, tasks[0], "99/100");
+        this->checkTaskWithoutUniqueFixedPoint(model, checker, tasks[1], "1/100");
     });
 }
 
