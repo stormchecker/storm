@@ -7,9 +7,9 @@
 
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/results/FilterType.h"
-#include "storm/languages/jani/Property.h"
 
 namespace {
 
@@ -107,15 +107,19 @@ TEST(PropertyTest, FilterTypeKeywordsRoundTrip) {
     }
 }
 
-// 'values' is not a valid PRISM filter keyword (see 'printall')
-TEST(PropertyTest, FilterKeywordNonExistent) {
+// 'values' is accepted along with 'printall' but output as 'printall'
+TEST(PropertyTest, FilterKeywordValuesAlias) {
     std::string const name = "p";
     std::string const formula = "P=? [F \"a\"]";
     std::string const statesFormula = "\"b\"";
     std::string const input = "\"" + name + "\": filter(values, " + formula + ", " + statesFormula + ");";
+    std::string const expected = "\"" + name + "\": filter(printall, " + formula + ", " + statesFormula + ");";
 
     storm::parser::FormulaParser parser;
-    STORM_SILENT_EXPECT_THROW(parser.parseFromString(input), storm::exceptions::WrongFormatException);
+    auto const properties = parser.parseFromString(input);
+    ASSERT_EQ(1ull, properties.size());
+    EXPECT_EQ(storm::modelchecker::FilterType::VALUES, properties.front().getFilter().getFilterType());
+    EXPECT_EQ(expected, properties.front().asPrismSyntax());
 }
 
 TEST(PropertyTest, CommentIsSeparate) {
