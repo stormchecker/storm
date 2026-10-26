@@ -9,7 +9,7 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/results/FilterType.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 
 namespace {
 
