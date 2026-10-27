@@ -5,8 +5,10 @@
 
 #ifdef STORM_HAVE_Z3
 #include "storm/adapters/Z3ExpressionAdapter.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/expressions/ExpressionManager.h"
 #include "storm/expressions/OperatorType.h"
+#include "storm/expressions/SimpleValuation.h"
 #include "storm/settings/SettingsManager.h"
 
 TEST(Z3ExpressionAdapter, StormToZ3Basic) {
@@ -182,5 +184,48 @@ TEST(Z3ExpressionAdapter, Z3ToStormBasic) {
     ASSERT_EQ("x", exprNor.getOperand(0).getOperand(0).getIdentifier());
     ASSERT_TRUE(exprNor.getOperand(0).getOperand(1).isVariable());
     ASSERT_EQ("y", exprNor.getOperand(0).getOperand(1).getIdentifier());
+}
+
+TEST(Z3ExpressionAdapter, Z3ToStormNaryArithmetic) {
+    z3::context ctx;
+
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    storm::expressions::Variable x = manager->declareIntegerVariable("x");
+    storm::expressions::Variable y = manager->declareIntegerVariable("y");
+    storm::expressions::Variable z = manager->declareIntegerVariable("z");
+    storm::adapters::Z3ExpressionAdapter adapter(*manager, ctx);
+
+    storm::expressions::SimpleValuation valuation(manager);
+    valuation.setIntegerValue(x, 2);
+    valuation.setIntegerValue(y, 3);
+    valuation.setIntegerValue(z, 5);
+
+    // Keep the z3::expr objects alive while the raw ASTs are used.
+    z3::expr const xExpr = ctx.int_const("x");
+    z3::expr const yExpr = ctx.int_const("y");
+    z3::expr const zExpr = ctx.int_const("z");
+    Z3_ast args[] = {xExpr, yExpr, zExpr};
+    z3::expr z3Sum(ctx, Z3_mk_add(ctx, 3, args));
+    z3::expr z3Product(ctx, Z3_mk_mul(ctx, 3, args));
+    ASSERT_EQ(3u, z3Sum.num_args());
+    ASSERT_EQ(3u, z3Product.num_args());
+
+    storm::expressions::Expression sum = adapter.translateExpression(z3Sum);
+    storm::expressions::Expression product = adapter.translateExpression(z3Product);
+    EXPECT_EQ(10, sum.evaluateAsInt(&valuation));
+    EXPECT_EQ(30, product.evaluateAsInt(&valuation));
+}
+
+TEST(Z3ExpressionAdapter, Z3ToStormIntegerDivision) {
+    z3::context ctx;
+
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    manager->declareIntegerVariable("x");
+    manager->declareIntegerVariable("y");
+    storm::adapters::Z3ExpressionAdapter adapter(*manager, ctx);
+
+    z3::expr idiv = ctx.int_const("x") / ctx.int_const("y");
+    ASSERT_EQ(Z3_OP_IDIV, idiv.decl().decl_kind());
+    EXPECT_THROW(adapter.translateExpression(idiv), storm::exceptions::NotImplementedException);
 }
 #endif

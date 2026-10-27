@@ -129,17 +129,26 @@ storm::expressions::Expression Z3ExpressionAdapter::translateExpression(z3::expr
             case Z3_OP_GT:
                 return this->translateExpression(expr.arg(0)) > this->translateExpression(expr.arg(1));
             case Z3_OP_ADD:
-                return this->translateExpression(expr.arg(0)) + this->translateExpression(expr.arg(1));
+            case Z3_OP_MUL: {
+                // These operators may have more than two arguments. We build a balanced expression to avoid deep recursion on large terms.
+                std::vector<storm::expressions::Expression> operands;
+                operands.reserve(expr.num_args());
+                for (unsigned i = 0; i < expr.num_args(); ++i) {
+                    operands.push_back(this->translateExpression(expr.arg(i)));
+                }
+                STORM_LOG_THROW(!operands.empty(), storm::exceptions::ExpressionEvaluationException,
+                                "Failed to convert Z3 expression. Encountered an addition or multiplication without arguments.");
+                return expr.decl().decl_kind() == Z3_OP_ADD ? storm::expressions::sum(operands) : storm::expressions::product(operands);
+            }
             case Z3_OP_SUB:
                 return this->translateExpression(expr.arg(0)) - this->translateExpression(expr.arg(1));
             case Z3_OP_UMINUS:
                 return -this->translateExpression(expr.arg(0));
-            case Z3_OP_MUL:
-                return this->translateExpression(expr.arg(0)) * this->translateExpression(expr.arg(1));
             case Z3_OP_DIV:
                 return this->translateExpression(expr.arg(0)) / this->translateExpression(expr.arg(1));
             case Z3_OP_IDIV:
-                return this->translateExpression(expr.arg(0)) / this->translateExpression(expr.arg(1));
+                // Storm has no integer division, and translating this to Storm's division would silently change the semantics.
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Failed to convert Z3 expression. Integer division is not supported.");
             case Z3_OP_ANUM:
                 // Arithmetic numeral.
                 if (expr.is_int() && expr.is_const()) {
