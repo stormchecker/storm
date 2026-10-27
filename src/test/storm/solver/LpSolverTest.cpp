@@ -5,6 +5,7 @@
 
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidAccessException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/expressions/Expression.h"
 #include "storm/expressions/Variable.h"
 #include "storm/solver/GlpkLpSolver.h"
@@ -21,10 +22,28 @@ class DefaultEnvironment {
     typedef double ValueType;
     static const bool isExact = false;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::FROMSETTINGS;
+// The default solver is HiGHS if available, otherwise GLPK or a fallback.
+#ifdef STORM_HAVE_HIGHS
+    static const bool IntegerSupport = true;
+    static const bool IncrementalSupport = true;
+    static const bool strictRelationSupport = true;
+    static const bool IndicatorSupport = true;
+#elif defined STORM_HAVE_GLPK
     static const bool IntegerSupport = true;
     static const bool IncrementalSupport = true;
     static const bool strictRelationSupport = true;
     static const bool IndicatorSupport = false;
+#elif defined STORM_HAVE_SOPLEX
+    static const bool IntegerSupport = false;
+    static const bool IncrementalSupport = false;
+    static const bool strictRelationSupport = false;
+    static const bool IndicatorSupport = false;
+#else
+    static const bool IntegerSupport = true;
+    static const bool IncrementalSupport = true;
+    static const bool strictRelationSupport = true;
+    static const bool IndicatorSupport = true;
+#endif
 
     static bool skip() {
 #ifdef STORM_HAVE_LP_SOLVER
@@ -121,8 +140,8 @@ class HighsEnvironment {
     static const bool isExact = false;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Highs;
     static const bool IntegerSupport = true;
-    static const bool IncrementalSupport = false;
-    static const bool strictRelationSupport = false;
+    static const bool IncrementalSupport = true;
+    static const bool strictRelationSupport = true;
     static const bool IndicatorSupport = true;
 
     static bool skip() {
@@ -667,6 +686,16 @@ TYPED_TEST(LpSolverTest, Incremental) {
     ASSERT_FALSE(solver->isOptimal());
     ASSERT_TRUE(solver->isUnbounded());
     ASSERT_FALSE(solver->isInfeasible());
+}
+
+TYPED_TEST(LpSolverTest, StrictRelationUnsupportedThrows) {
+    if (this->supportsStrictRelation()) {
+        GTEST_SKIP();
+    }
+    auto solver = this->factory()->create(this->env(), "");
+    storm::expressions::Variable x = solver->addBoundedContinuousVariable("x", 0, this->parseNumber("5"), 1);
+    EXPECT_THROW(solver->addConstraint("", x < solver->getConstant(this->parseNumber("3"))), storm::exceptions::NotSupportedException);
+    EXPECT_THROW(solver->addConstraint("", x > solver->getConstant(this->parseNumber("1"))), storm::exceptions::NotSupportedException);
 }
 
 TYPED_TEST(LpSolverTest, IndicatorConstraintLeq) {

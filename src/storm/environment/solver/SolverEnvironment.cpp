@@ -16,7 +16,9 @@ SolverEnvironment::SolverEnvironment() {
     forceExact = false;
     linearEquationSolverType = storm::solver::EquationSolverType::Topological;
     linearEquationSolverTypeSetFromDefault = true;
-#if defined STORM_HAVE_GLPK
+#if defined STORM_HAVE_HIGHS
+    lpSolverType = storm::solver::LpSolverType::Highs;
+#elif defined STORM_HAVE_GLPK
     lpSolverType = storm::solver::LpSolverType::Glpk;
 #elif defined STORM_HAVE_SOPLEX
     lpSolverType = storm::solver::LpSolverType::Soplex;

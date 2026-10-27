@@ -239,7 +239,8 @@ void GlpkLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Co
 
 template<typename ValueType, bool RawMode>
 void GlpkLpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const&, Variable, bool, Constraint const&) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Indicator constraints are not supported for GLPK.");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                    "Indicator constraints are not supported by GLPK. Use an LP solver that supports them (e.g. via --lpsolver highs or --lpsolver gurobi).");
 }
 
 #ifdef STORM_HAVE_GLPK

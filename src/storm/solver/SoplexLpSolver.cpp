@@ -145,14 +145,18 @@ void SoplexLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, 
     SoplexValueType l, r;
     switch (relationType) {
         case storm::expressions::RelationType::Less:
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex only supports nonstrict inequalities.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                            "Strict inequalities are not supported by SoPlex. Use an LP solver that supports them (e.g. via --lpsolver highs, --lpsolver glpk "
+                            "or --lpsolver gurobi), or use nonstrict inequalities.");
             break;
         case storm::expressions::RelationType::LessOrEqual:
             l = -soplex::infinity;
             r = rhs;
             break;
         case storm::expressions::RelationType::Greater:
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex only supports nonstrict inequalities.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                            "Strict inequalities are not supported by SoPlex. Use an LP solver that supports them (e.g. via --lpsolver highs, --lpsolver glpk "
+                            "or --lpsolver gurobi), or use nonstrict inequalities.");
             break;
         case storm::expressions::RelationType::GreaterOrEqual:
             l = rhs;
