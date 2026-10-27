@@ -66,14 +66,16 @@ TEST_F(MonotonicityCheckerTest, Simple1_larger_region) {
     storm::storage::SparseMatrix<storm::RationalFunction> matrix = model->getTransitionMatrix();
     auto orderExtender = storm::analysis::OrderExtender<storm::RationalFunction, double>(topStates, bottomStates, matrix);
     // Order
-    auto order = std::get<0>(orderExtender.toOrder(region, nullptr));
+    auto order = std::get<0>(orderExtender.toOrder(storm::Environment(), region, nullptr));
     // monchecker
     auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(model->getTransitionMatrix());
 
     // start testing
     auto var = modelParameters.begin();
-    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 1, *var, region));
-    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Decr, monChecker->checkLocalMonotonicity(order, 2, *var, region));
+    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr,
+              monChecker->checkLocalMonotonicity(storm::Environment(), order, 1, *var, region));
+    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Decr,
+              monChecker->checkLocalMonotonicity(storm::Environment(), order, 2, *var, region));
 }
 
 TEST_F(MonotonicityCheckerTest, Simple1_small_region) {
@@ -115,15 +117,18 @@ TEST_F(MonotonicityCheckerTest, Simple1_small_region) {
     storm::storage::SparseMatrix<storm::RationalFunction> matrix = model->getTransitionMatrix();
     auto orderExtender = storm::analysis::OrderExtender<storm::RationalFunction, double>(topStates, bottomStates, matrix);
     // Order
-    auto order = std::get<0>(orderExtender.toOrder(region, nullptr));
+    auto order = std::get<0>(orderExtender.toOrder(storm::Environment(), region, nullptr));
     // monchecker
     auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(model->getTransitionMatrix());
 
     // start testing
     auto var = modelParameters.begin();
-    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 0, *var, region));
-    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 1, *var, region));
-    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Decr, monChecker->checkLocalMonotonicity(order, 2, *var, region));
+    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr,
+              monChecker->checkLocalMonotonicity(storm::Environment(), order, 0, *var, region));
+    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr,
+              monChecker->checkLocalMonotonicity(storm::Environment(), order, 1, *var, region));
+    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Decr,
+              monChecker->checkLocalMonotonicity(storm::Environment(), order, 2, *var, region));
 }
 
 TEST_F(MonotonicityCheckerTest, Casestudy1) {
@@ -165,7 +170,7 @@ TEST_F(MonotonicityCheckerTest, Casestudy1) {
     storm::storage::SparseMatrix<storm::RationalFunction> matrix = model->getTransitionMatrix();
     auto orderExtender = storm::analysis::OrderExtender<storm::RationalFunction, double>(topStates, bottomStates, matrix);
     // Order
-    auto res = orderExtender.extendOrder(nullptr, region);
+    auto res = orderExtender.extendOrder(storm::Environment(), nullptr, region);
     auto order = std::get<0>(res);
     ASSERT_TRUE(order->getDoneBuilding());
 
@@ -176,7 +181,7 @@ TEST_F(MonotonicityCheckerTest, Casestudy1) {
     auto var = modelParameters.begin();
     for (uint_fast64_t i = 0; i < 3; i++) {
         EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr,
-                  monChecker->checkLocalMonotonicity(order, i, *var, region));
+                  monChecker->checkLocalMonotonicity(storm::Environment(), order, i, *var, region));
     }
 }
 
@@ -219,7 +224,7 @@ TEST_F(MonotonicityCheckerTest, Casestudy2) {
     storm::storage::SparseMatrix<storm::RationalFunction> matrix = model->getTransitionMatrix();
     auto orderExtender = storm::analysis::OrderExtender<storm::RationalFunction, double>(topStates, bottomStates, matrix);
     // Order
-    auto res = orderExtender.extendOrder(nullptr, region);
+    auto res = orderExtender.extendOrder(storm::Environment(), nullptr, region);
     auto order = std::get<0>(res);
     order->addRelation(1, 3);
     order->addRelation(3, 2);
@@ -231,7 +236,7 @@ TEST_F(MonotonicityCheckerTest, Casestudy2) {
     auto var = modelParameters.begin();
     for (uint_fast64_t i = 0; i < 3; i++) {
         EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr,
-                  monChecker->checkLocalMonotonicity(order, i, *var, region));
+                  monChecker->checkLocalMonotonicity(storm::Environment(), order, i, *var, region));
     }
 }
 
@@ -274,7 +279,7 @@ TEST_F(MonotonicityCheckerTest, Casestudy3) {
     storm::storage::SparseMatrix<storm::RationalFunction> matrix = model->getTransitionMatrix();
     auto orderExtender = storm::analysis::OrderExtender<storm::RationalFunction, double>(topStates, bottomStates, matrix);
     // Order
-    auto res = orderExtender.extendOrder(nullptr, region);
+    auto res = orderExtender.extendOrder(storm::Environment(), nullptr, region);
     auto order = std::get<0>(res);
     ASSERT_TRUE(order->getDoneBuilding());
 
@@ -283,12 +288,18 @@ TEST_F(MonotonicityCheckerTest, Casestudy3) {
 
     // start testing
     auto var = modelParameters.begin();
-    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Not, monChecker->checkLocalMonotonicity(order, 0, *var, region));
-    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 1, *var, region));
-    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 2, *var, region));
+    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Not,
+              monChecker->checkLocalMonotonicity(storm::Environment(), order, 0, *var, region));
+    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr,
+              monChecker->checkLocalMonotonicity(storm::Environment(), order, 1, *var, region));
+    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr,
+              monChecker->checkLocalMonotonicity(storm::Environment(), order, 2, *var, region));
 
     region = storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
-    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Decr, monChecker->checkLocalMonotonicity(order, 0, *var, region));
-    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 1, *var, region));
-    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 2, *var, region));
+    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Decr,
+              monChecker->checkLocalMonotonicity(storm::Environment(), order, 0, *var, region));
+    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr,
+              monChecker->checkLocalMonotonicity(storm::Environment(), order, 1, *var, region));
+    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr,
+              monChecker->checkLocalMonotonicity(storm::Environment(), order, 2, *var, region));
 }

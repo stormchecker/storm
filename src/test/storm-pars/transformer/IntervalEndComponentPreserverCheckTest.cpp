@@ -50,8 +50,8 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
     storm::storage::BitVector allTrue(model->getNumberOfStates(), true);
 
     // Lift parameters for region [0,1]
-    storm::transformer::RobustParameterLifter<storm::RationalFunction, double> parameterLifter(dtmc->getTransitionMatrix().filterEntries(~psiStates), target,
-                                                                                               allTrue, allTrue);
+    storm::transformer::RobustParameterLifter<storm::RationalFunction, double> parameterLifter(
+        storm::Environment(), dtmc->getTransitionMatrix().filterEntries(~psiStates), target, allTrue, allTrue);
 
     storm::storage::ParameterRegion<storm::RationalFunction> region = storm::api::createRegion<storm::RationalFunction>("0", *dtmc)[0];
 

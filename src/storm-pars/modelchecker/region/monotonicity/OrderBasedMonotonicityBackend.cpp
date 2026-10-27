@@ -13,9 +13,9 @@ namespace storm::modelchecker {
 namespace detail {
 
 template<typename ParametricType, typename ConstantType>
-std::shared_ptr<storm::analysis::Order> extendOrder(storm::analysis::OrderExtender<ParametricType, ConstantType>& orderExtender,
+std::shared_ptr<storm::analysis::Order> extendOrder(storm::Environment const& env, storm::analysis::OrderExtender<ParametricType, ConstantType>& orderExtender,
                                                     std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region) {
-    auto [orderPtr, unknState1, unknState2] = orderExtender.extendOrder(order, region);
+    auto [orderPtr, unknState1, unknState2] = orderExtender.extendOrder(env, order, region);
     order = orderPtr;
     // An inconsistent order carries the same "done" sentinel as a successfully built one, so the
     // sentinel alone must not be trusted. Refuse to derive monotonicity from a contradictory order.
@@ -28,7 +28,7 @@ std::shared_ptr<storm::analysis::Order> extendOrder(storm::analysis::OrderExtend
 
 template<typename ParametricType, typename ConstantType>
 void extendLocalMonotonicityResult(
-    storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> const& order,
+    storm::Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> const& order,
     storm::analysis::LocalMonotonicityResult<typename storm::storage::ParameterRegion<ParametricType>::VariableType>& localMonotonicityResult,
     storm::analysis::MonotonicityChecker<ParametricType>& monotonicityChecker,
     storm::transformer::ParameterLifter<ParametricType, ConstantType> const& parameterLifter) {
@@ -43,7 +43,7 @@ void extendLocalMonotonicityResult(
                 for (auto const& var : variables) {
                     auto monotonicity = localMonotonicityResult.getMonotonicity(state, var);
                     if (!storm::analysis::isMonotone(monotonicity)) {
-                        monotonicity = monotonicityChecker.checkLocalMonotonicity(order, state, var, region);
+                        monotonicity = monotonicityChecker.checkLocalMonotonicity(env, order, state, var, region);
                         if (storm::analysis::isMonotone(monotonicity)) {
                             localMonotonicityResult.setMonotonicity(state, var, monotonicity);
                         } else {
@@ -109,7 +109,7 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::initializeMono
         orderExtender->setMinValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Minimize));
     }
     typename MonotonicityAnnotation<ParametricType>::OrderBasedMonotonicityAnnotation annotation;
-    annotation.stateOrder = detail::extendOrder(*this->orderExtender, nullptr, region.region);
+    annotation.stateOrder = detail::extendOrder(env, *this->orderExtender, nullptr, region.region);
     annotation.localMonotonicityResult = std::make_shared<storm::analysis::LocalMonotonicityResult<VariableType>>(annotation.stateOrder->getNumberOfStates());
 
     for (auto& [var, kind] : this->globallyKnownMonotonicityInformation) {
@@ -120,7 +120,7 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::initializeMono
         }
     }
 
-    detail::extendLocalMonotonicityResult(region.region, annotation.stateOrder, *annotation.localMonotonicityResult, *this->monotonicityChecker,
+    detail::extendLocalMonotonicityResult(env, region.region, annotation.stateOrder, *annotation.localMonotonicityResult, *this->monotonicityChecker,
                                           *this->parameterLifterRef);
     region.monotonicityAnnotation.data = annotation;
 }
@@ -139,7 +139,7 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::updateMonotoni
         annotation->stateOrder = newOrder;
     }
     if (changeOrder) {
-        detail::extendOrder(*this->orderExtender, annotation->stateOrder, region.region);
+        detail::extendOrder(env, *this->orderExtender, annotation->stateOrder, region.region);
     }
     // Similarly handle local monotonicity result
     bool const changeLocalMonotonicity = changeOrder && !annotation->localMonotonicityResult->isDone();
@@ -148,7 +148,7 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::updateMonotoni
         annotation->localMonotonicityResult = annotation->localMonotonicityResult->copy();
     }
     if (changeLocalMonotonicity) {
-        detail::extendLocalMonotonicityResult(region.region, annotation->stateOrder, *annotation->localMonotonicityResult, *this->monotonicityChecker,
+        detail::extendLocalMonotonicityResult(env, region.region, annotation->stateOrder, *annotation->localMonotonicityResult, *this->monotonicityChecker,
                                               *this->parameterLifterRef);
     }
 }

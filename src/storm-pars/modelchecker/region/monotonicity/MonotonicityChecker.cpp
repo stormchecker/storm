@@ -13,7 +13,8 @@ MonotonicityChecker<ValueType>::MonotonicityChecker(storage::SparseMatrix<ValueT
 
 template<typename ValueType>
 typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueType>::checkLocalMonotonicity(
-    std::shared_ptr<Order> const& order, uint_fast64_t state, VariableType const& var, storage::ParameterRegion<ValueType> const& region) {
+    Environment const& env, std::shared_ptr<Order> const& order, uint_fast64_t state, VariableType const& var,
+    storage::ParameterRegion<ValueType> const& region) {
     // Create + fill Vector containing the Monotonicity of the transitions to the succs
     auto row = matrix.getRow(state);
     // Ignore if all entries are constant
@@ -26,7 +27,7 @@ typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueT
     bool checkAllow = true;
     for (auto entry : row) {
         auto succState = entry.getColumn();
-        auto mon = checkTransitionMonRes(entry.getValue(), var, region);
+        auto mon = checkTransitionMonRes(env, entry.getValue(), var, region);
         succsMonUnsorted.push_back(mon);
         succs.push_back(succState);
         ignore &= entry.getValue().isConstant();
@@ -118,7 +119,8 @@ typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueT
 }
 
 template<typename ValueType>
-std::pair<bool, bool> MonotonicityChecker<ValueType>::checkDerivative(ValueType const& derivative, storage::ParameterRegion<ValueType> const& reg) {
+std::pair<bool, bool> MonotonicityChecker<ValueType>::checkDerivative(Environment const& env, ValueType const& derivative,
+                                                                      storage::ParameterRegion<ValueType> const& reg) {
     if (derivative.isZero()) {
         return std::pair<bool, bool>(true, true);
     }
@@ -131,7 +133,7 @@ std::pair<bool, bool> MonotonicityChecker<ValueType>::checkDerivative(ValueType 
     bool monDecr = false;
 
     std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
-    auto s = utility::solver::getSmtSolver(*manager);
+    auto s = utility::solver::getSmtSolver(env, *manager);
     std::set<VariableType> variables = derivative.gatherVariables();
 
     expressions::Expression exprBounds = manager->boolean(true);
@@ -165,8 +167,9 @@ std::pair<bool, bool> MonotonicityChecker<ValueType>::checkDerivative(ValueType 
 /*** Private methods ***/
 template<typename ValueType>
 typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueType>::checkTransitionMonRes(
-    ValueType function, typename MonotonicityChecker<ValueType>::VariableType param, typename MonotonicityChecker<ValueType>::Region region) {
-    std::pair<bool, bool> res = MonotonicityChecker<ValueType>::checkDerivative(getDerivative(function, param), region);
+    Environment const& env, ValueType function, typename MonotonicityChecker<ValueType>::VariableType param,
+    typename MonotonicityChecker<ValueType>::Region region) {
+    std::pair<bool, bool> res = MonotonicityChecker<ValueType>::checkDerivative(env, getDerivative(function, param), region);
     if (res.first && !res.second) {
         return Monotonicity::Incr;
     } else if (!res.first && res.second) {

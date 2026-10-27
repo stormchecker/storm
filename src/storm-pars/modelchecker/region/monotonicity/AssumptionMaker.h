@@ -24,6 +24,7 @@ class AssumptionMaker {
      * If one assumption is VALID, this assumption will be returned as only assumption.
      * Possible results: AssumptionStatus::VALID, AssumptionStatus::UNKNOWN.
      *
+     * @param env The environment (selecting the SMT solver).
      * @param val1 First state number.
      * @param val2 Second state number.
      * @param order The order on which the assumptions are checked.
@@ -31,10 +32,11 @@ class AssumptionMaker {
      * @return At most three (assumption, status) candidates, in the order they were tried
      *         (val1 > val2, val2 > val1, val1 == val2).
      */
-    std::vector<std::pair<Assumption, AssumptionStatus>> createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order,
+    std::vector<std::pair<Assumption, AssumptionStatus>> createAndCheckAssumptions(Environment const& env, uint_fast64_t val1, uint_fast64_t val2,
+                                                                                   std::shared_ptr<Order> order,
                                                                                    storage::ParameterRegion<ValueType> region) const;
-    std::vector<std::pair<Assumption, AssumptionStatus>> createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order,
-                                                                                   storage::ParameterRegion<ValueType> region,
+    std::vector<std::pair<Assumption, AssumptionStatus>> createAndCheckAssumptions(Environment const& env, uint_fast64_t val1, uint_fast64_t val2,
+                                                                                   std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
                                                                                    std::vector<ConstantType> const minValues,
                                                                                    std::vector<ConstantType> const maxValue) const;
 
@@ -59,9 +61,10 @@ class AssumptionMaker {
     void setSampleValues(std::vector<std::vector<ConstantType>> const& samples);
 
    private:
-    std::pair<Assumption, AssumptionStatus> createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, AssumptionRelation relationType,
-                                                                     std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
-                                                                     std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
+    std::pair<Assumption, AssumptionStatus> createAndCheckAssumption(Environment const& env, uint_fast64_t val1, uint_fast64_t val2,
+                                                                     AssumptionRelation relationType, std::shared_ptr<Order> order,
+                                                                     storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues,
+                                                                     std::vector<ConstantType> const maxValue) const;
 
     AssumptionChecker<ValueType, ConstantType> assumptionChecker;
 };

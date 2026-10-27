@@ -44,24 +44,26 @@ class OrderExtender {
     /*!
      * Creates an order based on the given formula.
      *
+     * @param env The environment (selecting the SMT solver).
      * @param monRes The monotonicity result so far.
      * @return A triple with a pointer to the order and two states of which the current place in the order
      *         is unknown but needed. When the states have as number the number of states, no states are
      *         unplaced but needed.
      */
-    std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region,
+    std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(Environment const& env, storage::ParameterRegion<ValueType> region,
                                                                              std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr);
 
     /*!
      * Extends the order for the given region.
      *
+     * @param env The environment (selecting the SMT solver).
      * @param order pointer to the order.
      * @param region The region on which the order needs to be extended.
      * @return Two states of which the current place in the order
      *         is unknown but needed. When the states have as number the number of states, no states are
      *         unplaced or needed.
      */
-    std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order,
+    std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(Environment const& env, std::shared_ptr<Order> order,
                                                                                  storm::storage::ParameterRegion<ValueType> region,
                                                                                  std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr,
                                                                                  std::optional<Assumption> assumption = std::nullopt);
@@ -77,7 +79,8 @@ class OrderExtender {
     std::pair<uint_fast64_t, uint_fast64_t> getUnknownStates(std::shared_ptr<Order> order) const;
     void copyContext(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
     void initializeMinMaxValues(Environment const& env, storage::ParameterRegion<ValueType> region);
-    void checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param,
+    void checkParOnStateMonRes(Environment const& env, uint_fast64_t s, std::shared_ptr<Order> order,
+                               typename OrderExtender<ValueType, ConstantType>::VariableType param,
                                std::shared_ptr<MonotonicityResult<VariableType>> monResult);
 
     bool isHope(std::shared_ptr<Order> order);
@@ -87,7 +90,7 @@ class OrderExtender {
 
    private:
     Order::NodeComparison addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const;
-    std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order,
+    std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(Environment const& env, std::shared_ptr<Order> order,
                                                                                  std::shared_ptr<MonotonicityResult<VariableType>> monRes,
                                                                                  std::optional<Assumption> assumption = std::nullopt);
     std::pair<uint_fast64_t, uint_fast64_t> extendNormal(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors,
@@ -96,7 +99,7 @@ class OrderExtender {
                                                                       std::vector<uint_fast64_t> const& successors, bool allowMerge);
     std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState,
                                                                      std::vector<uint_fast64_t> const& successors, bool allowMerge);
-    bool extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2);
+    bool extendByAssumption(Environment const& env, std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2);
 
     void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor);
     void handleAssumption(std::shared_ptr<Order> order, Assumption const& assumption) const;

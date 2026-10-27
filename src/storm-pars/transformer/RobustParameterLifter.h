@@ -9,6 +9,7 @@
 #include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionForward.h"
+#include "storm/environment/Environment.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
@@ -45,14 +46,15 @@ class RobustParameterLifter {
 
     /*!
      * Lifts the parameter choices to nondeterminisim. The computation is performed on the submatrix specified by the selected rows and columns
+     * @param env the environment (selecting the SMT solver)
      * @param pMatrix the parametric matrix
      * @param pVector the parametric vector (the vector size should equal the row count of the matrix)
      * @param selectedRows a Bitvector that specifies which rows of the matrix and the vector are considered.
      * @param selectedColumns a Bitvector that specifies which columns of the matrix are considered.
      */
-    RobustParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector,
-                          storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns, bool generateRowLabels = false,
-                          bool useMonotonicity = false);
+    RobustParameterLifter(storm::Environment const& env, storm::storage::SparseMatrix<ParametricType> const& pMatrix,
+                          std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows,
+                          storm::storage::BitVector const& selectedColumns, bool generateRowLabels = false, bool useMonotonicity = false);
 
     void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
 
@@ -85,7 +87,7 @@ class RobustParameterLifter {
 
         storm::RationalFunction const& getTransition() const;
 
-        void initialize();
+        void initialize(storm::Environment const& env);
 
         std::optional<std::map<VariableType, std::set<CoefficientType>>> const& getExtrema() const;
 
@@ -94,7 +96,7 @@ class RobustParameterLifter {
        private:
         std::set<CoefficientType> cubicEquationZeroes(RawPolynomial polynomial, VariableType parameter);
 
-        std::optional<std::set<CoefficientType>> zeroesSMT(RationalFunction function, VariableType parameter);
+        std::optional<std::set<CoefficientType>> zeroesSMT(storm::Environment const& env, RationalFunction function, VariableType parameter);
 
         std::optional<std::set<CoefficientType>> zeroesCarl(UniPoly polynomial, VariableType parameter);
 
@@ -123,7 +125,7 @@ class RobustParameterLifter {
          * Adds the provided function and valuation.
          * Returns a reference to a placeholder in which the evaluation result will be written upon calling evaluateCollectedFunctions)
          */
-        Interval& add(RobustAbstractValuation& valuation);
+        Interval& add(storm::Environment const& env, RobustAbstractValuation& valuation);
 
         bool evaluateCollectedFunctions(storm::storage::ParameterRegion<ParametricType> const& region,
                                         storm::solver::OptimizationDirection const& dirForUnspecifiedParameters);
