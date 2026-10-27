@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sys/types.h>
 #include <unistd.h>
 #include <cstdint>
 #include <cstdlib>
@@ -114,6 +115,52 @@ inline void resetTimeoutAlarm() {
 inline bool isTerminate() {
     return SignalInformation::infos().isTerminate();
 }
+
+/*!
+ * Registers a child process that was spawned by Storm (for example an external tool) such that it is killed
+ * as soon as Storm terminates due to a received signal. Registration is thread-safe.
+ *
+ * @param pid The process id of the child process.
+ */
+void registerChildProcess(pid_t pid);
+
+/*!
+ * Unregisters a previously registered child process, for example after it has been waited for.
+ * Registration is thread-safe.
+ *
+ * @param pid The process id of the child process.
+ */
+void unregisterChildProcess(pid_t pid);
+
+/*!
+ * Kills all currently registered child processes. This function is async-signal-safe and is invoked right
+ * before Storm terminates after having received a second signal (or its waiting time having elapsed).
+ */
+void terminateChildProcesses();
+
+/*!
+ * RAII guard that registers a child process upon construction and unregisters it upon destruction.
+ * In particular, the registered process is killed if Storm is terminated by a signal while the guard is alive.
+ */
+class ChildProcessGuard {
+   public:
+    explicit ChildProcessGuard(pid_t pid);
+
+    ChildProcessGuard(ChildProcessGuard const&) = delete;
+    ChildProcessGuard& operator=(ChildProcessGuard const&) = delete;
+
+    ~ChildProcessGuard();
+
+    /*!
+     * Retrieves the process id of the guarded child process.
+     *
+     * @return The process id of the guarded child process.
+     */
+    pid_t getPid() const;
+
+   private:
+    pid_t pid;
+};
 
 /*!
  * Register some signal handlers to detect and correctly handle abortion (due to timeout for example).
