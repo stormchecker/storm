@@ -73,7 +73,8 @@ The patch is applied during CMake configuration; it is skipped if it was already
 Eigen is fetched from the GitHub mirror `https://github.com/eigen-mirror/eigen.git` rather than from the upstream GitLab repository, because the mirror is more reliably available (in particular in CI).
 The mirror contains the same commits, so the pinned commit hash is identical for both.
 
-The commit hash is forwarded to carl-storm via the `CARL_EIGEN_GIT_TAG` variable to ensure that carl-storm and Storm check out the same Eigen version.
+Storm passes its Eigen checkout to carl-storm via the `CARL_EIGEN_SOURCE_DIR` variable, so carl-storm uses the same (patched) Eigen and does not download its own.
+The commit hash is additionally forwarded via `CARL_EIGEN_GIT_TAG`, which carl-storm only uses when `CARL_EIGEN_SOURCE_DIR` is not set.
 It might be reasonable to update the default value of `CARL_EIGEN_GIT_TAG` in carl-storm as well.
 
 In case a new patch needs to be created follow these steps:
