@@ -529,6 +529,12 @@ SET(CARL_LIB_INSTALL_DIR ${STORM_RESOURCE_LIBRARY_INSTALL_DIR})
 SET(CARL_INCLUDE_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR})
 SET(CARL_CMAKE_INSTALL_DIR ${STORM_CMAKE_INSTALL_DIR}/resources/carl)
 
+# carl reuses reuses Storm's (patched) Eigen and Eigen must be available before carl.
+FetchContent_GetProperties(eigen)
+if(NOT eigen_POPULATED)
+    message(FATAL_ERROR "Storm - Eigen must be made available before carl.")
+endif()
+
 FETCHCONTENT_MAKEAVAILABLE(carl)
 include(${carl_BINARY_DIR}/carlConfig.cmake)
 
