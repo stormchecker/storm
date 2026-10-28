@@ -132,10 +132,20 @@ std::pair<std::shared_ptr<models::sparse::Mdp<BeliefMdpValueType>>, std::unorder
     constexpr bool clippingUsed = std::is_same_v<ExplorationInformation<BeliefMdpValueType, BeliefType, ExtraTransitionData...>,
                                                  ClippingExplorationInformation<BeliefMdpValueType, BeliefType>>;
 
+    // Terminal beliefs and cut-offs with infinite expected reward lead to the bottom state, which never reaches the target and thus has infinite
+    // expected reward. The model checker does not handle infinite rewards on choices.
+    auto const isInfiniteValue = [](auto const& keyAndValue) { return storm::utility::isInfinity(keyAndValue.second); };
+    bool const hasInfiniteValue =
+        isTotRew && (std::any_of(explorationInformation.terminalBeliefValues.begin(), explorationInformation.terminalBeliefValues.end(), isInfiniteValue) ||
+                     std::any_of(cutOffInformationMap.begin(), cutOffInformationMap.end(), [&isInfiniteValue](auto const& beliefAndCutOffs) {
+                         return std::any_of(beliefAndCutOffs.second.begin(), beliefAndCutOffs.second.end(), isInfiniteValue);
+                     }));
+
     // Reachability probabilities and reward-bounded cut-offs get dedicated target and bottom states.
     // The target state used for reward-bounded cut-offs is distinct from ordinary target beliefs, which are not terminal
     // (e.g. because of lower reward bounds).
-    uint64_t const numBottomTargetStates = isReachProb || isRewBndReachProb || clippingUsed ? 2ull : 1ull;
+    bool const hasBottomState = isReachProb || isRewBndReachProb || clippingUsed || hasInfiniteValue;
+    uint64_t const numBottomTargetStates = hasBottomState ? 2ull : 1ull;
     uint64_t const numInitialTerminalStates = initialBeliefIsTerminal ? 1ull : 0ull;
     uint64_t const numExtraStates = numBottomTargetStates + frontierBeliefs.size() + numInitialTerminalStates;
     uint64_t const numStates = explorationInformation.matrix.groups() + numExtraStates;
@@ -217,11 +227,16 @@ std::pair<std::shared_ptr<models::sparse::Mdp<BeliefMdpValueType>>, std::unorder
                     if (auto terminalIt = explorationInformation.terminalBeliefValues.find(entry.targetBelief);
                         // Transition to terminal belief
                         terminalIt != explorationInformation.terminalBeliefValues.end()) {
-                        successorValue = entry.probability * terminalIt->second;  // terminal value determined during exploration
                         if (isReachProb) {
+                            successorValue = entry.probability * terminalIt->second;  // terminal value determined during exploration
                             probabilityToTarget += successorValue;
                             probabilityToBottom += entry.probability - successorValue;
+                        } else if (storm::utility::isInfinity(terminalIt->second)) {
+                            STORM_LOG_THROW(isTotRew, storm::exceptions::UnexpectedException,
+                                            "Infinite terminal values require an expected total reachability reward property.");
+                            probabilityToBottom += entry.probability;
                         } else {
+                            successorValue = entry.probability * terminalIt->second;
                             STORM_LOG_THROW(isTotRew, storm::exceptions::UnexpectedException,
                                             "Terminal reward accumulation requires an expected total reachability reward property.");
                             probabilityToTarget += entry.probability;
@@ -314,6 +329,8 @@ std::pair<std::shared_ptr<models::sparse::Mdp<BeliefMdpValueType>>, std::unorder
                 if (!storm::utility::isZero(probabilityToBottom)) {
                     transitionBuilder.addNextValue(choice, bottomState, probabilityToBottom);
                 }
+            } else if (isTotRew && storm::utility::isInfinity(entry.second)) {
+                transitionBuilder.addNextValue(choice, bottomState, storm::utility::one<BeliefMdpValueType>());
             } else {
                 transitionBuilder.addNextValue(choice, targetState, storm::utility::one<BeliefMdpValueType>());
                 if (isTotRew) {
@@ -342,8 +359,12 @@ std::pair<std::shared_ptr<models::sparse::Mdp<BeliefMdpValueType>>, std::unorder
             }
         } else {
             STORM_LOG_ASSERT(isTotRew, "Unexpected terminal initial belief for this property type.");
-            transitionBuilder.addNextValue(choice, targetState, storm::utility::one<BeliefMdpValueType>());
-            actionRewards[choice] += terminalValue;
+            if (storm::utility::isInfinity(terminalValue)) {
+                transitionBuilder.addNextValue(choice, bottomState, storm::utility::one<BeliefMdpValueType>());
+            } else {
+                transitionBuilder.addNextValue(choice, targetState, storm::utility::one<BeliefMdpValueType>());
+                actionRewards[choice] += terminalValue;
+            }
         }
         ++choice;
     }
@@ -366,7 +387,7 @@ std::pair<std::shared_ptr<models::sparse::Mdp<BeliefMdpValueType>>, std::unorder
             transitionRewardBuilder.addNextValue(numChoices - numBottomTargetStates, targetState, storm::utility::one<BeliefMdpValueType>());
         }
     }
-    if (isReachProb || isRewBndReachProb || clippingUsed) {
+    if (hasBottomState) {
         transitionBuilder.newRowGroup(numChoices - 1);
         transitionBuilder.addNextValue(numChoices - 1, bottomState, storm::utility::one<BeliefMdpValueType>());
         for (auto& transitionRewardBuilder : transitionRewardBuilderVector) {
@@ -416,7 +437,7 @@ std::pair<std::shared_ptr<models::sparse::Mdp<BeliefMdpValueType>>, std::unorder
         stateLabeling.addLabelToState("truncated", state);
     }
 
-    if (isReachProb || isRewBndReachProb || clippingUsed) {
+    if (hasBottomState) {
         stateLabeling.addLabel("bottom");
         stateLabeling.addLabelToState("bottom", bottomState);
     }
