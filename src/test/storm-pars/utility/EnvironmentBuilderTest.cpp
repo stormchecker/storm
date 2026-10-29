@@ -20,5 +20,4 @@ TEST(EnvironmentBuilderTest, MissingModulesKeepDefaults) {
     ASSERT_NO_THROW(builtEnv = storm::settings::EnvironmentBuilder::buildEnvironment());
     EXPECT_EQ(defaultEnv.modelchecker().multi().getMethod(), builtEnv.modelchecker().multi().getMethod());
     EXPECT_EQ(defaultEnv.modelchecker().multi().getPrecision(), builtEnv.modelchecker().multi().getPrecision());
-    EXPECT_EQ(defaultEnv.dd().cudd().isReorderingEnabled(), builtEnv.dd().cudd().isReorderingEnabled());
 }

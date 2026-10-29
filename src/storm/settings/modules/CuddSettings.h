@@ -1,6 +1,5 @@
 #pragma once
 
-#include "storm/dd/cudd/CuddReorderingTechnique.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
@@ -31,20 +30,6 @@ class CuddSettings : public ModuleSettings {
      */
     uint_fast64_t getMaximalMemory() const;
 
-    /*!
-     * Retrieves whether dynamic reordering is enabled.
-     *
-     * @return True iff dynamic reordering is enabled.
-     */
-    bool isReorderingEnabled() const;
-
-    /*!
-     * Retrieves the reordering technique that CUDD is supposed to use.
-     *
-     * @return The reordering technique to use.
-     */
-    storm::dd::CuddReorderingTechnique getReorderingTechnique() const;
-
     // The name of the module.
     static const std::string moduleName;
 
@@ -52,8 +37,6 @@ class CuddSettings : public ModuleSettings {
     // Define the string names of the options as constants.
     static const std::string precisionOptionName;
     static const std::string maximalMemoryOptionName;
-    static const std::string reorderOptionName;
-    static const std::string reorderTechniqueOptionName;
 };
 
 }  // namespace modules

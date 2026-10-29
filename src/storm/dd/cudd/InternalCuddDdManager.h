@@ -174,9 +174,6 @@ class InternalDdManager<DdType::CUDD> {
     // The manager responsible for the DDs created/modified with this DdManager.
     cudd::Cudd cuddManager;
 
-    // The technique that is used for dynamic reordering.
-    Cudd_ReorderingType reorderingTechnique;
-
     // Keeps track of the number of registered DD variables.
     uint_fast64_t numberOfDdVariables;
 #endif
