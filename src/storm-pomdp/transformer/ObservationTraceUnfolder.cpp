@@ -1,5 +1,6 @@
 #include "storm-pomdp/transformer/ObservationTraceUnfolder.h"
 #include <algorithm>
+#include <map>
 
 #include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -58,8 +59,9 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
         stateValuations.emplaceBack<false, int64_t>([this, s, t](auto, auto const& var, auto& value) { value = var == svvar ? s : t; });
     };
 
-    std::unordered_map<uint64_t, uint64_t> unfoldedToOld;
-    std::unordered_map<uint64_t, uint64_t> unfoldedToOldNextStep;
+    // Row groups are created by iterating over these maps, so they must iterate in ascending order of the unfolded state index.
+    std::map<uint64_t, uint64_t> unfoldedToOld;
+    std::map<uint64_t, uint64_t> unfoldedToOldNextStep;
     std::unordered_map<uint64_t, uint64_t> oldToUnfolded;
 
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
