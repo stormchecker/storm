@@ -270,6 +270,14 @@ TEST(CvarSspZeroWeightComponentLpSolverTest, SupportsCostAndRewardFronts) {
     EXPECT_EQ((std::vector<ValueType>{half, half}), costResult.boundaryProbabilities);
     EXPECT_EQ(threeQuarters, costResult.point.probability);
     EXPECT_EQ(one + threeQuarters, costResult.point.expectedCost);
+    auto costFront = costSolver.frontier(0, costFronts);
+    ASSERT_EQ(3ull, costFront.size());
+    EXPECT_EQ(quarter, costFront.getPoints()[0].probability);
+    EXPECT_EQ(one, costFront.getPoints()[0].expectedCost);
+    EXPECT_EQ(half, costFront.getPoints()[1].probability);
+    EXPECT_EQ(one + quarter, costFront.getPoints()[1].expectedCost);
+    EXPECT_EQ(threeQuarters, costFront.getPoints()[2].probability);
+    EXPECT_EQ(one + threeQuarters, costFront.getPoints()[2].expectedCost);
 
     RewardSolver rewardSolver(env, matrix, weights, component);
     RewardSolver::FrontierLayer rewardFronts(3);
@@ -279,6 +287,39 @@ TEST(CvarSspZeroWeightComponentLpSolverTest, SupportsCostAndRewardFronts) {
     EXPECT_EQ((std::vector<ValueType>{half, half}), rewardResult.boundaryProbabilities);
     EXPECT_EQ(quarter, rewardResult.point.probability);
     EXPECT_EQ(one + half, rewardResult.point.expectedCost);
+    auto rewardFront = rewardSolver.frontier(0, rewardFronts);
+    ASSERT_EQ(2ull, rewardFront.size());
+    EXPECT_EQ(quarter, rewardFront.getPoints()[0].probability);
+    EXPECT_EQ(one + half, rewardFront.getPoints()[0].expectedCost);
+    EXPECT_EQ(half, rewardFront.getPoints()[1].probability);
+    EXPECT_EQ(one, rewardFront.getPoints()[1].expectedCost);
+}
+
+TEST(CvarSspZeroWeightComponentLpSolverTest, ReconstructsFloatingFront) {
+    if (!hasLpSolver()) {
+        GTEST_SKIP() << "No LP solver available.";
+    }
+
+    using Solver = storm::modelchecker::cvar::SspZeroWeightComponentLpSolver<double>;
+    storm::storage::SparseMatrixBuilder<double> builder(4, 3, 4, true, true, 3);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 1, 1.0);
+    builder.addNextValue(1, 2, 1.0);
+    builder.newRowGroup(2);
+    builder.addNextValue(2, 1, 1.0);
+    builder.newRowGroup(3);
+    builder.addNextValue(3, 2, 1.0);
+    auto matrix = builder.build();
+    storm::transformer::ZeroWeightComponent component{{0}, {0}, {}, {1, 2}};
+    storm::Environment env;
+    Solver solver(env, matrix, std::vector<double>(4, 0.0), component);
+    Solver::FrontierLayer fronts(3);
+    fronts[1] = Solver::ParetoFront::singleton(0.25, 1.0);
+    fronts[2] = Solver::ParetoFront::singleton(0.75, 2.0);
+
+    expectParetoFrontPoints(solver.frontier(0, fronts), {{0.25, 1.0}, {0.75, 2.0}});
+    fronts[2] = fronts[1];
+    expectParetoFrontPoints(solver.frontier(0, fronts), {{0.25, 1.0}});
 }
 
 TEST(CvarSspRewardParetoValueIterationOperatorTest, AppliesRewardShiftsAndUnionsActionFronts) {

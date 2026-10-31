@@ -163,7 +163,9 @@ std::unique_ptr<typename ZeroWeightComponentLp<ValueType>::SolverSession> ZeroWe
 
 template<typename ValueType>
 typename ZeroWeightComponentLp<ValueType>::Result ZeroWeightComponentLp<ValueType>::solve(SolverSession& session, uint64_t entryState,
-                                                                                          std::vector<ValueType> const& direction, bool reuse) {
+                                                                                          std::vector<ValueType> const& direction, bool reuse,
+                                                                                          std::vector<ValueType> const* fixedDirection,
+                                                                                          ValueType const* fixedScore) {
     auto& solver = *session.solver;
     if (reuse) {
         solver.push();
@@ -180,6 +182,15 @@ typename ZeroWeightComponentLp<ValueType>::Result ZeroWeightComponentLp<ValueTyp
             }
         }
         solver.addConstraint("score_direction", score == solver.getConstant(storm::utility::zero<ValueType>()));
+        if (fixedDirection != nullptr) {
+            auto fixed = solver.getConstant(storm::utility::zero<ValueType>());
+            for (uint64_t index = 0; index < boundaryStates.size(); ++index) {
+                if (!storm::utility::isZero((*fixedDirection)[index])) {
+                    fixed = fixed + session.boundaryVariables[index].getExpression() * solver.getConstant((*fixedDirection)[index]);
+                }
+            }
+            solver.addConstraint("fixed_score", fixed == solver.getConstant(*fixedScore));
+        }
         solver.optimize();
         STORM_LOG_THROW(solver.isOptimal(), storm::exceptions::UnexpectedException, "The zero-weight component LP has no finite optimum.");
         Result result;
@@ -223,6 +234,22 @@ typename ZeroWeightComponentLp<ValueType>::Result ZeroWeightComponentLp<ValueTyp
         supportsReuse = dynamic_cast<storm::solver::SoplexLpSolver<ValueType>*>(solverSession->solver.get()) == nullptr;
     }
     return solve(*solverSession, entryState, direction, supportsReuse);
+}
+
+template<typename ValueType>
+typename ZeroWeightComponentLp<ValueType>::Result ZeroWeightComponentLp<ValueType>::maximizeWithFixedScore(uint64_t entryState,
+                                                                                                           std::vector<ValueType> const& direction,
+                                                                                                           std::vector<ValueType> const& fixedDirection,
+                                                                                                           ValueType const& fixedScore) {
+    STORM_LOG_THROW(std::binary_search(entryStates.begin(), entryStates.end(), entryState), storm::exceptions::InvalidArgumentException,
+                    "Expected an entry state of the zero-weight component.");
+    STORM_LOG_THROW(direction.size() == boundaryStates.size() && fixedDirection.size() == boundaryStates.size(), storm::exceptions::InvalidArgumentException,
+                    "Expected one objective coefficient per component boundary state.");
+    if (!solverSession || !supportsReuse) {
+        solverSession = buildSolver();
+        supportsReuse = dynamic_cast<storm::solver::SoplexLpSolver<ValueType>*>(solverSession->solver.get()) == nullptr;
+    }
+    return solve(*solverSession, entryState, direction, supportsReuse, &fixedDirection, &fixedScore);
 }
 
 template<typename ValueType>
