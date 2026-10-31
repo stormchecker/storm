@@ -11,6 +11,7 @@
 #include "storm/modelchecker/cvar/CvarComputationResult.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/modelchecker/cvar/helper/SspParetoValueIterationOperator.h"
+#include "storm/modelchecker/cvar/helper/SspZeroWeightParetoViOperator.h"
 #include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessingResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -23,7 +24,7 @@ namespace cvar {
  * Implements Pareto-front value iteration for lower-tail CVaR on an SSP-style total-reward objective.
  *
  * The helper assumes that preprocessing has normalized the model to terminal-goal semantics and validated
- * strictly positive integer per-choice rewards outside goal states. The computed frontier stores tuples
+ * nonnegative integer per-choice rewards outside goal states. The computed frontier stores tuples
  * (p, e), where p is the probability of accumulating reward at most the current threshold and e is the
  * expected shortfall below that threshold.
  */
@@ -32,21 +33,24 @@ class SparseSspRewardCvarParetoViHelper {
    public:
     using ParetoFront = SspRewardParetoFront<ValueType>;
     using ParetoViOperator = SspParetoValueIterationOperator<ValueType, SspParetoFrontKind::RewardLowerTail>;
+    using ZeroWeightOperator = SspZeroWeightParetoViOperator<ValueType, SspParetoFrontKind::RewardLowerTail>;
     using FrontierLayer = std::vector<ParetoFront>;
     using FrontierWindow = std::vector<FrontierLayer>;
 
     SparseSspRewardCvarParetoViHelper(CvarQueryInformation const& queryInformation,
                                       preprocessing::SspCvarPreprocessingResult<ValueType> const& preprocessingResult)
-        : queryInformation(queryInformation), preprocessingResult(preprocessingResult), paretoViOperator(preprocessingResult) {
-        // Intentionally left empty.
-    }
+        : queryInformation(queryInformation), preprocessingResult(preprocessingResult), paretoViOperator(preprocessingResult) {}
 
-    CvarComputationResult<ValueType> computeCvar(Environment const&, bool produceScheduler = false) const {
+    CvarComputationResult<ValueType> computeCvar(Environment const& environment, bool produceScheduler = false) const {
         STORM_LOG_THROW(!produceScheduler, storm::exceptions::NotImplementedException,
                         "Scheduler extraction for CVaR SSP value iteration is not implemented yet.");
 
         ValueType const alpha = storm::utility::convertNumber<ValueType>(queryInformation.alpha);
-        FrontierWindow frontierWindow = initializeFrontierWindow();
+        std::optional<ZeroWeightOperator> zeroWeightOperator;
+        if (preprocessingResult.zeroWeightAnalysis.has_value()) {
+            zeroWeightOperator.emplace(environment, preprocessingResult);
+        }
+        FrontierWindow frontierWindow = initializeFrontierWindow(zeroWeightOperator ? &zeroWeightOperator.value() : nullptr);
         auto bestCandidate = extractBestCvarCandidateFromInitialFrontier(frontierWindow[0][preprocessingResult.initialState], 0, alpha);
         if (initialFrontierHasReachedAlpha(frontierWindow[0][preprocessingResult.initialState], alpha)) {
             STORM_LOG_THROW(bestCandidate.has_value(), storm::exceptions::UnexpectedException,
@@ -56,7 +60,11 @@ class SparseSspRewardCvarParetoViHelper {
 
         FrontierLayer currentLayer(paretoViOperator.getStateCount());
         for (uint64_t rewardThreshold = 1;; ++rewardThreshold) {
-            paretoViOperator.apply(rewardThreshold, frontierWindow, currentLayer);
+            if (zeroWeightOperator) {
+                zeroWeightOperator->apply(rewardThreshold, frontierWindow, currentLayer);
+            } else {
+                paretoViOperator.apply(rewardThreshold, frontierWindow, currentLayer);
+            }
             auto currentCandidate = extractBestCvarCandidateFromInitialFrontier(currentLayer[preprocessingResult.initialState], rewardThreshold, alpha);
             if (currentCandidate.has_value() && (!bestCandidate.has_value() || bestCandidate.value() < currentCandidate.value())) {
                 bestCandidate = currentCandidate;
@@ -95,11 +103,18 @@ class SparseSspRewardCvarParetoViHelper {
         return baseLayer;
     }
 
-    FrontierWindow initializeFrontierWindow() const {
+    FrontierWindow initializeFrontierWindow(ZeroWeightOperator* zeroWeightOperator) const {
         STORM_LOG_ASSERT(preprocessingResult.maximalChoiceCost > 0, "Expected a strictly positive maximal choice reward.");
         FrontierWindow frontierWindow(preprocessingResult.maximalChoiceCost, FrontierLayer(paretoViOperator.getStateCount()));
-        for (int64_t rewardThreshold = 1 - static_cast<int64_t>(preprocessingResult.maximalChoiceCost); rewardThreshold <= 0; ++rewardThreshold) {
+        int64_t const firstThreshold = (zeroWeightOperator == nullptr ? 1 : 0) - static_cast<int64_t>(preprocessingResult.maximalChoiceCost);
+        int64_t const lastThreshold = zeroWeightOperator == nullptr ? 0 : -1;
+        for (int64_t rewardThreshold = firstThreshold; rewardThreshold <= lastThreshold; ++rewardThreshold) {
             frontierWindow[ParetoViOperator::getWindowIndex(rewardThreshold, frontierWindow.size())] = createInitialFrontierLayer(rewardThreshold);
+        }
+        if (zeroWeightOperator != nullptr) {
+            FrontierLayer zeroLayer(paretoViOperator.getStateCount());
+            zeroWeightOperator->apply(0, frontierWindow, zeroLayer);
+            swapFrontierLayerIntoWindow(0, zeroLayer, frontierWindow);
         }
         return frontierWindow;
     }

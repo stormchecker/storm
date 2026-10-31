@@ -11,6 +11,7 @@
 #include "storm/modelchecker/cvar/CvarComputationResult.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/modelchecker/cvar/helper/SspParetoValueIterationOperator.h"
+#include "storm/modelchecker/cvar/helper/SspZeroWeightParetoViOperator.h"
 #include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessingResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -26,7 +27,7 @@ namespace cvar {
  *   storm --prism model.nm --prop 'R{"reward"}min/max=? [ F "target" ]' --cvar <alpha> --cvar:method ssp
  *
  * The helper assumes that SSP-specific preprocessing has already normalized the sparse MDP to terminal-goal
- * semantics, validated integer-valued positive choice costs outside goal states, and computed the classical
+ * semantics, validated nonnegative integer-valued choice costs outside goal states, and computed the classical
  * expected cost-to-go vector used in the base layer.
  *
  * @see https://doi.org/10.1609/aaai.v36i9.21222 for the Pareto-front value iteration on which this implementation is based.
@@ -36,25 +37,32 @@ class SparseSspCvarParetoViHelper {
    public:
     using ParetoFront = SspParetoFront<ValueType>;
     using ParetoViOperator = SspParetoValueIterationOperator<ValueType>;
+    using ZeroWeightOperator = SspZeroWeightParetoViOperator<ValueType>;
     using FrontierLayer = std::vector<ParetoFront>;
     using FrontierWindow = std::vector<FrontierLayer>;
 
     SparseSspCvarParetoViHelper(CvarQueryInformation const& queryInformation, preprocessing::SspCvarPreprocessingResult<ValueType> const& preprocessingResult)
-        : queryInformation(queryInformation), preprocessingResult(preprocessingResult), paretoViOperator(preprocessingResult) {
-        // Intentionally left empty.
-    }
+        : queryInformation(queryInformation), preprocessingResult(preprocessingResult), paretoViOperator(preprocessingResult) {}
 
-    CvarComputationResult<ValueType> computeCvar(Environment const&, bool produceScheduler = false) const {
+    CvarComputationResult<ValueType> computeCvar(Environment const& environment, bool produceScheduler = false) const {
         STORM_LOG_THROW(!produceScheduler, storm::exceptions::NotImplementedException,
                         "Scheduler extraction for CVaR SSP value iteration is not implemented yet.");
 
-        FrontierWindow frontierWindow = initializeFrontierWindow();
+        std::optional<ZeroWeightOperator> zeroWeightOperator;
+        if (preprocessingResult.zeroWeightAnalysis.has_value()) {
+            zeroWeightOperator.emplace(environment, preprocessingResult);
+        }
+        FrontierWindow frontierWindow = initializeFrontierWindow(zeroWeightOperator ? &zeroWeightOperator.value() : nullptr);
         std::optional<ValueType> bestCandidate =
             extractCvarCandidateFromInitialFrontier(frontierWindow[0][preprocessingResult.initialState], 0, queryInformation.alpha);
         FrontierLayer currentLayer(paretoViOperator.getStateCount());
 
         for (uint64_t costBound = 1; !bestCandidate.has_value() || storm::utility::convertNumber<ValueType>(costBound) <= bestCandidate.value(); ++costBound) {
-            paretoViOperator.apply(costBound, frontierWindow, currentLayer);
+            if (zeroWeightOperator) {
+                zeroWeightOperator->apply(costBound, frontierWindow, currentLayer);
+            } else {
+                paretoViOperator.apply(costBound, frontierWindow, currentLayer);
+            }
             auto currentCandidate = extractCvarCandidateFromInitialFrontier(currentLayer[preprocessingResult.initialState], costBound, queryInformation.alpha);
             if (currentCandidate.has_value() && (!bestCandidate.has_value() || currentCandidate.value() < bestCandidate.value())) {
                 bestCandidate = currentCandidate;
@@ -94,11 +102,18 @@ class SparseSspCvarParetoViHelper {
         return baseLayer;
     }
 
-    FrontierWindow initializeFrontierWindow() const {
+    FrontierWindow initializeFrontierWindow(ZeroWeightOperator* zeroWeightOperator) const {
         STORM_LOG_ASSERT(preprocessingResult.maximalChoiceCost > 0, "Expected a strictly positive maximal choice cost.");
         FrontierWindow frontierWindow(preprocessingResult.maximalChoiceCost, FrontierLayer(paretoViOperator.getStateCount()));
-        for (int64_t costBound = 1 - static_cast<int64_t>(preprocessingResult.maximalChoiceCost); costBound <= 0; ++costBound) {
+        int64_t const firstBound = (zeroWeightOperator == nullptr ? 1 : 0) - static_cast<int64_t>(preprocessingResult.maximalChoiceCost);
+        int64_t const lastBound = zeroWeightOperator == nullptr ? 0 : -1;
+        for (int64_t costBound = firstBound; costBound <= lastBound; ++costBound) {
             frontierWindow[ParetoViOperator::getWindowIndex(costBound, frontierWindow.size())] = createInitialFrontierLayer(costBound);
+        }
+        if (zeroWeightOperator != nullptr) {
+            FrontierLayer zeroLayer(paretoViOperator.getStateCount());
+            zeroWeightOperator->apply(0, frontierWindow, zeroLayer);
+            swapFrontierLayerIntoWindow(0, zeroLayer, frontierWindow);
         }
         return frontierWindow;
     }
