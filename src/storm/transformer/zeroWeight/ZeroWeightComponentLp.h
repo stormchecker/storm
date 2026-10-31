@@ -59,6 +59,9 @@ class ZeroWeightComponentLp {
     Result maximizeWithFixedScore(uint64_t entryState, std::vector<ValueType> const& direction, std::vector<ValueType> const& fixedDirection,
                                   ValueType const& fixedScore);
 
+    /*! Finishes a query batch and releases backend resources when needed. */
+    void finishQueryBatch();
+
     std::vector<uint64_t> const& getStates() const;
     std::vector<uint64_t> const& getEntryStates() const;
     std::vector<uint64_t> const& getBoundaryStates() const;

@@ -7,6 +7,7 @@
 
 #include "storm/modelchecker/cvar/helper/SspParetoFront.h"
 #include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessingResult.h"
+#include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -35,18 +36,14 @@ class SspParetoValueIterationOperator {
           reachableNonTargetStates(collectReachableStates(preprocessingResult, false)) {}
 
     void apply(uint64_t costBound, FrontierWindow const& frontierWindow, FrontierLayer& outputLayer) const {
-        prepareOutputLayer(outputLayer);
+        applyWithZeroWeightStates(costBound, frontierWindow, outputLayer, nullptr);
+    }
 
-        ParetoFront const targetFront = createTargetFrontier(costBound);
-        for (auto state : reachableTargetStates) {
-            outputLayer[state] = targetFront;
-        }
-
-        std::vector<ParetoFront> actionFrontStorage;
-        ActionFrontReducer actionFrontReducer(actionFrontStorage);
-        for (auto state : reachableNonTargetStates) {
-            applyRowGroup(state, costBound, frontierWindow, outputLayer, actionFrontReducer);
-        }
+    /*! Computes target and positive-choice fronts while leaving zero-weight states for component solving. */
+    void applyPositiveStates(uint64_t costBound, FrontierWindow const& frontierWindow, FrontierLayer& outputLayer,
+                             storm::storage::BitVector const& zeroWeightStates) const {
+        STORM_LOG_ASSERT(zeroWeightStates.size() == getStateCount(), "Expected one zero-weight-state bit per state.");
+        applyWithZeroWeightStates(costBound, frontierWindow, outputLayer, &zeroWeightStates);
     }
 
     std::size_t getStateCount() const {
@@ -84,6 +81,24 @@ class SspParetoValueIterationOperator {
     }
 
    private:
+    void applyWithZeroWeightStates(uint64_t costBound, FrontierWindow const& frontierWindow, FrontierLayer& outputLayer,
+                                   storm::storage::BitVector const* zeroWeightStates) const {
+        prepareOutputLayer(outputLayer);
+
+        ParetoFront const targetFront = createTargetFrontier(costBound);
+        for (auto state : reachableTargetStates) {
+            outputLayer[state] = targetFront;
+        }
+
+        std::vector<ParetoFront> actionFrontStorage;
+        ActionFrontReducer actionFrontReducer(actionFrontStorage);
+        for (auto state : reachableNonTargetStates) {
+            if (zeroWeightStates == nullptr || !zeroWeightStates->get(state)) {
+                applyRowGroup(state, costBound, frontierWindow, outputLayer, actionFrontReducer);
+            }
+        }
+    }
+
     class ActionFrontReducer {
        public:
         explicit ActionFrontReducer(std::vector<ParetoFront>& actionFrontStorage) : actionFrontStorage(actionFrontStorage) {}

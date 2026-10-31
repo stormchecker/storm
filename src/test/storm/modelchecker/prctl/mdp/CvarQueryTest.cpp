@@ -24,6 +24,7 @@
 #include "storm/modelchecker/cvar/helper/SspParetoFront.h"
 #include "storm/modelchecker/cvar/helper/SspParetoValueIterationOperator.h"
 #include "storm/modelchecker/cvar/helper/SspZeroWeightComponentLpSolver.h"
+#include "storm/modelchecker/cvar/helper/SspZeroWeightParetoViOperator.h"
 #include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessingResult.h"
 #include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessor.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
@@ -31,6 +32,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/StateLabeling.h"
+#include "storm/transformer/zeroWeight/MixedWeightStateSplitter.h"
 #include "storm/utility/constants.h"
 
 namespace {
@@ -320,6 +322,68 @@ TEST(CvarSspZeroWeightComponentLpSolverTest, ReconstructsFloatingFront) {
     expectParetoFrontPoints(solver.frontier(0, fronts), {{0.25, 1.0}, {0.75, 2.0}});
     fronts[2] = fronts[1];
     expectParetoFrontPoints(solver.frontier(0, fronts), {{0.25, 1.0}});
+}
+
+TEST(CvarSspZeroWeightParetoViOperatorTest, ComputesZeroThresholdEntryFronts) {
+    if (!hasLpSolver()) {
+        GTEST_SKIP() << "No LP solver available.";
+    }
+
+    storm::storage::SparseMatrixBuilder<double> builder(5, 4, 5, true, true, 4);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 1, 1.0);
+    builder.addNextValue(1, 2, 1.0);
+    builder.newRowGroup(2);
+    builder.addNextValue(2, 3, 1.0);
+    builder.newRowGroup(3);
+    builder.addNextValue(3, 3, 1.0);
+    builder.newRowGroup(4);
+    builder.addNextValue(4, 3, 1.0);
+    storm::storage::BitVector targets(4, false);
+    targets.set(3);
+    storm::storage::BitVector initials(4, false);
+    initials.set(0);
+    auto split = storm::transformer::MixedWeightStateSplitter<double>::split(builder.build(), {1.0, 1.0, 0.0, 0.0, 0.0}, targets, initials);
+    storm::transformer::ZeroWeightAnalysis<double>::analyzeComponentInterfaces(split.transitionMatrix, split.analysis);
+
+    storm::modelchecker::cvar::preprocessing::SspCvarPreprocessingResult<double> preprocessingResult;
+    preprocessingResult.transitionMatrix = std::move(split.transitionMatrix);
+    preprocessingResult.choiceCosts = std::move(split.actionWeights);
+    preprocessingResult.targetStates = std::move(split.targetStates);
+    preprocessingResult.reachableStates = storm::storage::BitVector(4, true);
+    storm::Environment env;
+
+    {
+        using CostOperator = storm::modelchecker::cvar::SspZeroWeightParetoViOperator<double>;
+        CostOperator costOperator(env, preprocessingResult, split.analysis);
+        CostOperator::FrontierWindow costWindow(2, CostOperator::FrontierLayer(4));
+        costWindow[1][1] = CostOperator::PositiveOperator::ParetoFront::singleton(0.0, 1.0);
+        costWindow[1][2] = costWindow[1][1];
+        CostOperator::FrontierLayer costLayer;
+        costOperator.apply(0, costWindow, costLayer);
+        expectParetoFrontPoints(costLayer[0], {{0.0, 1.0}});
+        expectParetoFrontPoints(costLayer[1], {{1.0, 0.0}});
+        expectParetoFrontPoints(costLayer[2], {{1.0, 0.0}});
+        costWindow[0] = costLayer;
+        costOperator.apply(1, costWindow, costLayer);
+        expectParetoFrontPoints(costLayer[0], {{1.0, 0.0}});
+    }
+
+    {
+        using RewardOperator = storm::modelchecker::cvar::SspZeroWeightParetoViOperator<double, storm::modelchecker::cvar::SspParetoFrontKind::RewardLowerTail>;
+        RewardOperator rewardOperator(env, preprocessingResult, split.analysis);
+        RewardOperator::FrontierWindow rewardWindow(2, RewardOperator::FrontierLayer(4));
+        rewardWindow[1][1] = RewardOperator::PositiveOperator::ParetoFront::singleton(0.0, 0.0);
+        rewardWindow[1][2] = rewardWindow[1][1];
+        RewardOperator::FrontierLayer rewardLayer;
+        rewardOperator.apply(0, rewardWindow, rewardLayer);
+        expectParetoFrontPoints(rewardLayer[0], {{0.0, 0.0}});
+        expectParetoFrontPoints(rewardLayer[1], {{1.0, 0.0}});
+        expectParetoFrontPoints(rewardLayer[2], {{1.0, 0.0}});
+        rewardWindow[0] = rewardLayer;
+        rewardOperator.apply(1, rewardWindow, rewardLayer);
+        expectParetoFrontPoints(rewardLayer[0], {{1.0, 0.0}});
+    }
 }
 
 TEST(CvarSspRewardParetoValueIterationOperatorTest, AppliesRewardShiftsAndUnionsActionFronts) {

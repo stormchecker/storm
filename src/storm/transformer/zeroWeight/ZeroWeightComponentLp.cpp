@@ -8,6 +8,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/solver/SoplexLpSolver.h"
 #include "storm/storage/expressions/Expression.h"
@@ -250,6 +251,13 @@ typename ZeroWeightComponentLp<ValueType>::Result ZeroWeightComponentLp<ValueTyp
         supportsReuse = dynamic_cast<storm::solver::SoplexLpSolver<ValueType>*>(solverSession->solver.get()) == nullptr;
     }
     return solve(*solverSession, entryState, direction, supportsReuse, &fixedDirection, &fixedScore);
+}
+
+template<typename ValueType>
+void ZeroWeightComponentLp<ValueType>::finishQueryBatch() {
+    if (solverSession && dynamic_cast<storm::solver::GlpkLpSolver<ValueType>*>(solverSession->solver.get()) != nullptr) {
+        solverSession.reset();
+    }
 }
 
 template<typename ValueType>

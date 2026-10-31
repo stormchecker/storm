@@ -139,6 +139,11 @@ class SspZeroWeightComponentLpSolver {
         return ParetoFront(std::move(points));
     }
 
+    /*! Finishes the component's entry queries at the current threshold. */
+    void finishQueryBatch() {
+        componentLp.finishQueryBatch();
+    }
+
    private:
     Point supportLexicographic(uint64_t entryState, FrontierLayer const& frontierLayer, ValueType const& primaryProbability,
                                ValueType const& primaryExpectedCost, ValueType const& secondaryProbability, ValueType const& secondaryExpectedCost) {
