@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "storm/environment/Environment.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/modelchecker/cvar/helper/SspParetoValueIterationOperator.h"
 #include "storm/modelchecker/cvar/helper/SspZeroWeightComponentLpSolver.h"
 #include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessingResult.h"
@@ -24,12 +25,14 @@ class SspZeroWeightParetoViOperator {
 
     /*! Prepares the positive-state update and the validated split components.
      * @param environment LP solver settings.
-     * @param preprocessingResult Split matrix, action weights, targets, and reachable states.
-     * @param analysis Classification with populated component interfaces.
+     * @param preprocessingResult Split matrix, values, states, and component analysis.
      */
-    SspZeroWeightParetoViOperator(storm::Environment const& environment, preprocessing::SspCvarPreprocessingResult<ValueType> const& preprocessingResult,
-                                  typename storm::transformer::ZeroWeightAnalysis<ValueType>::Result const& analysis)
-        : positiveOperator(preprocessingResult), zeroWeightStates(analysis.statesWithZeroWeightChoices) {
+    SspZeroWeightParetoViOperator(storm::Environment const& environment, preprocessing::SspCvarPreprocessingResult<ValueType> const& preprocessingResult)
+        : positiveOperator(preprocessingResult) {
+        STORM_LOG_THROW(preprocessingResult.zeroWeightAnalysis.has_value(), storm::exceptions::InvalidArgumentException,
+                        "Expected validated zero-weight component analysis.");
+        auto const& analysis = preprocessingResult.zeroWeightAnalysis.value();
+        zeroWeightStates = analysis.statesWithZeroWeightChoices;
         STORM_LOG_ASSERT(zeroWeightStates.size() == positiveOperator.getStateCount(), "Expected zero-weight analysis of the split matrix.");
         for (auto const& component : analysis.weakComponents) {
             STORM_LOG_ASSERT(!component.entryStates.empty(), "Expected validated zero-weight component entries.");

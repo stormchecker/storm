@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -16,6 +17,7 @@
 #include "storm/storage/SparseMatrix.h"
 #include "storm/transformer/zeroWeight/GlobalZeroWeightActionTransformer.h"
 #include "storm/transformer/zeroWeight/LocalZeroWeightActionEliminator.h"
+#include "storm/transformer/zeroWeight/MixedWeightStateSplitter.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/logging.h"
@@ -181,6 +183,23 @@ void applyZeroWeightTransformation(Environment const& env, ZeroWeightTransformat
     STORM_LOG_ASSERT(choiceValues.size() == transitionMatrix.getRowCount(), "Expected one value per transformed choice row.");
 }
 
+/*!
+ * Prepares a normalized SSP matrix for on-the-fly zero-weight PFVI.
+ * @param transitionMatrix Matrix with absorbing targets.
+ * @param choiceValues One cost or reward per choice row.
+ * @param targetStates Target states.
+ * @param initialStates Initial states.
+ * @return Split matrix, aligned weights, and validated component analysis.
+ */
+template<typename ValueType>
+typename storm::transformer::MixedWeightStateSplitter<ValueType>::Result prepareOnTheFlyZeroWeightModel(
+    storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& choiceValues, storm::storage::BitVector const& targetStates,
+    storm::storage::BitVector const& initialStates) {
+    auto split = storm::transformer::MixedWeightStateSplitter<ValueType>::split(transitionMatrix, choiceValues, targetStates, initialStates);
+    storm::transformer::ZeroWeightAnalysis<ValueType>::analyzeComponentInterfaces(split.transitionMatrix, split.analysis);
+    return split;
+}
+
 template<typename SparseMdpModelType>
 SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSspCvar(Environment const& env, SparseMdpModelType const& model,
                                                                                      CvarQueryInformation const& queryInformation,
@@ -240,7 +259,8 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
             maximalChoiceCost,
             std::move(choiceCosts),
             std::move(expectedCostsToGoal),
-            std::move(transitionMatrix)};
+            std::move(transitionMatrix),
+            std::nullopt};
 }
 
 template<typename SparseMdpModelType>
@@ -301,7 +321,8 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
             maximalChoiceReward,
             std::move(choiceRewards),
             std::vector<ValueType>(),
-            std::move(transitionMatrix)};
+            std::move(transitionMatrix),
+            std::nullopt};
 }
 
 }  // namespace preprocessing

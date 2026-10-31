@@ -32,7 +32,6 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/StateLabeling.h"
-#include "storm/transformer/zeroWeight/MixedWeightStateSplitter.h"
 #include "storm/utility/constants.h"
 
 namespace {
@@ -343,19 +342,19 @@ TEST(CvarSspZeroWeightParetoViOperatorTest, ComputesZeroThresholdEntryFronts) {
     targets.set(3);
     storm::storage::BitVector initials(4, false);
     initials.set(0);
-    auto split = storm::transformer::MixedWeightStateSplitter<double>::split(builder.build(), {1.0, 1.0, 0.0, 0.0, 0.0}, targets, initials);
-    storm::transformer::ZeroWeightAnalysis<double>::analyzeComponentInterfaces(split.transitionMatrix, split.analysis);
+    auto split = storm::modelchecker::cvar::preprocessing::prepareOnTheFlyZeroWeightModel(builder.build(), {1.0, 1.0, 0.0, 0.0, 0.0}, targets, initials);
 
     storm::modelchecker::cvar::preprocessing::SspCvarPreprocessingResult<double> preprocessingResult;
     preprocessingResult.transitionMatrix = std::move(split.transitionMatrix);
     preprocessingResult.choiceCosts = std::move(split.actionWeights);
     preprocessingResult.targetStates = std::move(split.targetStates);
     preprocessingResult.reachableStates = storm::storage::BitVector(4, true);
+    preprocessingResult.zeroWeightAnalysis = std::move(split.analysis);
     storm::Environment env;
 
     {
         using CostOperator = storm::modelchecker::cvar::SspZeroWeightParetoViOperator<double>;
-        CostOperator costOperator(env, preprocessingResult, split.analysis);
+        CostOperator costOperator(env, preprocessingResult);
         CostOperator::FrontierWindow costWindow(2, CostOperator::FrontierLayer(4));
         costWindow[1][1] = CostOperator::PositiveOperator::ParetoFront::singleton(0.0, 1.0);
         costWindow[1][2] = costWindow[1][1];
@@ -371,7 +370,7 @@ TEST(CvarSspZeroWeightParetoViOperatorTest, ComputesZeroThresholdEntryFronts) {
 
     {
         using RewardOperator = storm::modelchecker::cvar::SspZeroWeightParetoViOperator<double, storm::modelchecker::cvar::SspParetoFrontKind::RewardLowerTail>;
-        RewardOperator rewardOperator(env, preprocessingResult, split.analysis);
+        RewardOperator rewardOperator(env, preprocessingResult);
         RewardOperator::FrontierWindow rewardWindow(2, RewardOperator::FrontierLayer(4));
         rewardWindow[1][1] = RewardOperator::PositiveOperator::ParetoFront::singleton(0.0, 0.0);
         rewardWindow[1][2] = rewardWindow[1][1];
