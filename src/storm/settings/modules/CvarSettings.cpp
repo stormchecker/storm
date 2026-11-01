@@ -19,7 +19,7 @@ std::string const CvarSettings::zeroWeightTransformationOptionName = "zero-weigh
 CvarSettings::CvarSettings() : ModuleSettings(moduleName) {
     std::vector<std::string> methods = {"auto", "wr", "weighted-reachability", "ssp"};
     std::vector<std::string> interpretations = {"auto", "cost", "reward"};
-    std::vector<std::string> zeroWeightTransformations = {"disabled", "global-collapse", "local-elimination"};
+    std::vector<std::string> zeroWeightTransformations = {"disabled", "global-collapse", "local-elimination", "on-the-fly-lp"};
     this->addOption(storm::settings::OptionBuilder(moduleName, methodOptionName, true, "The method to be used for CVaR model checking.")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.")
@@ -35,9 +35,9 @@ CvarSettings::CvarSettings() : ModuleSettings(moduleName) {
                                          .build())
                         .build());
     this->addOption(
-        storm::settings::OptionBuilder(moduleName, zeroWeightTransformationOptionName, true, "The transformation for zero-weight choices in CVaR SSP models.")
+        storm::settings::OptionBuilder(moduleName, zeroWeightTransformationOptionName, true, "The method for zero-weight choices in CVaR SSP models.")
             .setIsAdvanced()
-            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The transformation to use.")
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The method to use.")
                              .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(zeroWeightTransformations))
                              .setDefaultValueString("disabled")
                              .build())
@@ -76,6 +76,8 @@ storm::modelchecker::cvar::ZeroWeightTransformation CvarSettings::getZeroWeightT
         return storm::modelchecker::cvar::ZeroWeightTransformation::GlobalCollapse;
     } else if (transformation == "local-elimination") {
         return storm::modelchecker::cvar::ZeroWeightTransformation::LocalElimination;
+    } else if (transformation == "on-the-fly-lp") {
+        return storm::modelchecker::cvar::ZeroWeightTransformation::OnTheFlyLp;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown zero-weight transformation '" << transformation << "'.");
 }

@@ -469,7 +469,13 @@ TEST(CvarSspPreprocessorTest, AppliesSelectedZeroWeightTransformationsToCosts) {
         EXPECT_EQ(result.choiceCosts, globalResult.choiceCosts);
         EXPECT_EQ(result.targetStates, globalResult.targetStates);
         EXPECT_EQ(result.initialState, globalResult.initialState);
-        EXPECT_NEAR(5.0, helper.computeCvar(env).value, 1e-10);
+        double const globalCvar = helper.computeCvar(env).value;
+        EXPECT_NEAR(5.0, globalCvar, 1e-10);
+        env.modelchecker().cvar().setZeroWeightTransformation(storm::modelchecker::cvar::ZeroWeightTransformation::OnTheFlyLp);
+        auto const onTheFlyResult = storm::modelchecker::cvar::preprocessing::preprocessSspCvar(env, model, queryInformation, targetStates);
+        ASSERT_TRUE(onTheFlyResult.zeroWeightAnalysis.has_value());
+        EXPECT_EQ(onTheFlyResult.transitionMatrix.getRowCount(), onTheFlyResult.choiceCosts.size());
+        EXPECT_NEAR(globalCvar, helper.computeCvar(env).value, 1e-10);
     }
 }
 
@@ -485,8 +491,9 @@ TEST(CvarSspPreprocessorTest, AppliesSelectedZeroWeightTransformationsToRewards)
                               storm::exceptions::InvalidPropertyException);
     storm::modelchecker::cvar::SparseCvarComputationHelper<storm::models::sparse::Mdp<storm::RationalNumber>> helper(model, queryInformation, targetStates);
     for (auto transformation :
-         {storm::modelchecker::cvar::ZeroWeightTransformation::GlobalCollapse, storm::modelchecker::cvar::ZeroWeightTransformation::LocalElimination}) {
-        if (transformation == storm::modelchecker::cvar::ZeroWeightTransformation::GlobalCollapse && !hasExactLpSolver()) {
+         {storm::modelchecker::cvar::ZeroWeightTransformation::GlobalCollapse, storm::modelchecker::cvar::ZeroWeightTransformation::LocalElimination,
+          storm::modelchecker::cvar::ZeroWeightTransformation::OnTheFlyLp}) {
+        if (transformation != storm::modelchecker::cvar::ZeroWeightTransformation::LocalElimination && !hasExactLpSolver()) {
             continue;
         }
         env.modelchecker().cvar().setZeroWeightTransformation(transformation);

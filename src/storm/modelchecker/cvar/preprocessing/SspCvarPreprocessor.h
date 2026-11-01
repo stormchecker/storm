@@ -154,36 +154,6 @@ void validateRewardAlmostSureReachability(storm::storage::SparseMatrix<ValueType
 }
 
 /*!
- * Applies a zero-weight transformation while keeping choice values aligned with matrix rows.
- *
- * @param env LP solver settings used by global collapse.
- * @param transformation Selected mode; disabled leaves the inputs unchanged.
- * @param transitionMatrix Input and output matrix.
- * @param choiceValues Input and output per-row costs or rewards.
- * @param targetStates Input and output target states.
- * @param initialStates Input and output initial states.
- */
-template<typename ValueType>
-void applyZeroWeightTransformation(Environment const& env, ZeroWeightTransformation transformation, storm::storage::SparseMatrix<ValueType>& transitionMatrix,
-                                   std::vector<ValueType>& choiceValues, storm::storage::BitVector& targetStates, storm::storage::BitVector& initialStates) {
-    if (transformation == ZeroWeightTransformation::GlobalCollapse) {
-        auto result =
-            storm::transformer::GlobalZeroWeightActionTransformer<ValueType>::collapse(env, transitionMatrix, choiceValues, targetStates, initialStates);
-        transitionMatrix = std::move(result.transitionMatrix);
-        choiceValues = std::move(result.actionWeights);
-        targetStates = std::move(result.targetStates);
-        initialStates = std::move(result.initialStates);
-    } else if (transformation == ZeroWeightTransformation::LocalElimination) {
-        auto result = storm::transformer::LocalZeroWeightActionEliminator<ValueType>::eliminate(transitionMatrix, choiceValues, targetStates, initialStates);
-        transitionMatrix = std::move(result.transitionMatrix);
-        choiceValues = std::move(result.actionWeights);
-        targetStates = std::move(result.targetStates);
-        initialStates = std::move(result.initialStates);
-    }
-    STORM_LOG_ASSERT(choiceValues.size() == transitionMatrix.getRowCount(), "Expected one value per transformed choice row.");
-}
-
-/*!
  * Prepares a normalized SSP matrix for on-the-fly zero-weight PFVI.
  * @param transitionMatrix Matrix with absorbing targets.
  * @param choiceValues One cost or reward per choice row.
@@ -198,6 +168,47 @@ typename storm::transformer::MixedWeightStateSplitter<ValueType>::Result prepare
     auto split = storm::transformer::MixedWeightStateSplitter<ValueType>::split(transitionMatrix, choiceValues, targetStates, initialStates);
     storm::transformer::ZeroWeightAnalysis<ValueType>::analyzeComponentInterfaces(split.transitionMatrix, split.analysis);
     return split;
+}
+
+/*!
+ * Prepares the selected zero-weight method while keeping choice values aligned with matrix rows.
+ *
+ * @param env LP solver settings used by global collapse.
+ * @param transformation Selected method.
+ * @param transitionMatrix Input and output matrix.
+ * @param choiceValues Input and output per-row costs or rewards.
+ * @param targetStates Input and output target states.
+ * @param initialStates Input and output initial states.
+ * @return Component analysis for on-the-fly PFVI, if selected.
+ */
+template<typename ValueType>
+std::optional<typename storm::transformer::ZeroWeightAnalysis<ValueType>::Result> applyZeroWeightTransformation(
+    Environment const& env, ZeroWeightTransformation transformation, storm::storage::SparseMatrix<ValueType>& transitionMatrix,
+    std::vector<ValueType>& choiceValues, storm::storage::BitVector& targetStates, storm::storage::BitVector& initialStates) {
+    std::optional<typename storm::transformer::ZeroWeightAnalysis<ValueType>::Result> analysis;
+    if (transformation == ZeroWeightTransformation::GlobalCollapse) {
+        auto result =
+            storm::transformer::GlobalZeroWeightActionTransformer<ValueType>::collapse(env, transitionMatrix, choiceValues, targetStates, initialStates);
+        transitionMatrix = std::move(result.transitionMatrix);
+        choiceValues = std::move(result.actionWeights);
+        targetStates = std::move(result.targetStates);
+        initialStates = std::move(result.initialStates);
+    } else if (transformation == ZeroWeightTransformation::LocalElimination) {
+        auto result = storm::transformer::LocalZeroWeightActionEliminator<ValueType>::eliminate(transitionMatrix, choiceValues, targetStates, initialStates);
+        transitionMatrix = std::move(result.transitionMatrix);
+        choiceValues = std::move(result.actionWeights);
+        targetStates = std::move(result.targetStates);
+        initialStates = std::move(result.initialStates);
+    } else if (transformation == ZeroWeightTransformation::OnTheFlyLp) {
+        auto result = prepareOnTheFlyZeroWeightModel(transitionMatrix, choiceValues, targetStates, initialStates);
+        transitionMatrix = std::move(result.transitionMatrix);
+        choiceValues = std::move(result.actionWeights);
+        targetStates = std::move(result.targetStates);
+        initialStates = std::move(result.initialStates);
+        analysis.emplace(std::move(result.analysis));
+    }
+    STORM_LOG_ASSERT(choiceValues.size() == transitionMatrix.getRowCount(), "Expected one value per transformed choice row.");
+    return analysis;
 }
 
 template<typename SparseMdpModelType>
@@ -232,7 +243,8 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
     auto choiceCosts = extractChoiceCostsForSsp(model, rewardModel, transformedTargetStates);
 
     auto const zeroWeightTransformation = env.modelchecker().cvar().getZeroWeightTransformation();
-    applyZeroWeightTransformation(env, zeroWeightTransformation, transitionMatrix, choiceCosts, transformedTargetStates, transformedInitialStates);
+    auto zeroWeightAnalysis =
+        applyZeroWeightTransformation(env, zeroWeightTransformation, transitionMatrix, choiceCosts, transformedTargetStates, transformedInitialStates);
 
     auto backwardTransitions = transitionMatrix.transpose(true);
     auto reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, transformedInitialStates,
@@ -244,7 +256,7 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
                     "CVaR SSP preprocessing currently requires a proper policy from every reachable state.");
     if (zeroWeightTransformation == ZeroWeightTransformation::Disabled) {
         validatePositiveChoiceCostsOutsideGoals(transitionMatrix, transformedTargetStates, choiceCosts);
-    } else {
+    } else if (zeroWeightTransformation != ZeroWeightTransformation::OnTheFlyLp) {
         validatePositiveChoiceCostsOutsideGoals(transitionMatrix, transformedTargetStates, choiceCosts, reachableStates);
     }
     uint64_t maximalChoiceCost = validateAndComputeMaximalChoiceCostOutsideGoals(transitionMatrix, transformedTargetStates, choiceCosts);
@@ -260,7 +272,7 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
             std::move(choiceCosts),
             std::move(expectedCostsToGoal),
             std::move(transitionMatrix),
-            std::nullopt};
+            std::move(zeroWeightAnalysis)};
 }
 
 template<typename SparseMdpModelType>
@@ -295,7 +307,8 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
     auto choiceRewards = extractChoiceCostsForSsp(model, rewardModel, transformedTargetStates);
 
     auto const zeroWeightTransformation = env.modelchecker().cvar().getZeroWeightTransformation();
-    applyZeroWeightTransformation(env, zeroWeightTransformation, transitionMatrix, choiceRewards, transformedTargetStates, transformedInitialStates);
+    auto zeroWeightAnalysis =
+        applyZeroWeightTransformation(env, zeroWeightTransformation, transitionMatrix, choiceRewards, transformedTargetStates, transformedInitialStates);
 
     auto backwardTransitions = transitionMatrix.transpose(true);
     auto reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, transformedInitialStates,
@@ -307,7 +320,7 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
 
     if (zeroWeightTransformation == ZeroWeightTransformation::Disabled) {
         validatePositiveChoiceCostsOutsideGoals(transitionMatrix, transformedTargetStates, choiceRewards, "choice rewards");
-    } else {
+    } else if (zeroWeightTransformation != ZeroWeightTransformation::OnTheFlyLp) {
         validatePositiveChoiceCostsOutsideGoals(transitionMatrix, transformedTargetStates, choiceRewards, reachableStates, "choice rewards");
     }
     uint64_t maximalChoiceReward = validateAndComputeMaximalChoiceCostOutsideGoals(transitionMatrix, transformedTargetStates, choiceRewards, "choice rewards");
@@ -322,7 +335,7 @@ SspCvarPreprocessingResult<typename SparseMdpModelType::ValueType> preprocessSsp
             std::move(choiceRewards),
             std::vector<ValueType>(),
             std::move(transitionMatrix),
-            std::nullopt};
+            std::move(zeroWeightAnalysis)};
 }
 
 }  // namespace preprocessing
