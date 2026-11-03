@@ -1553,9 +1553,9 @@ void Model::pushEdgeAssignmentsToDestinations() {
     }
 }
 
-void Model::liftTransientEdgeDestinationAssignments(int64_t maxLevel) {
+void Model::liftTransientEdgeDestinationAssignments(int64_t maxLevel, std::set<storm::expressions::Variable> const& excludedVariables) {
     for (auto& automaton : this->getAutomata()) {
-        automaton.liftTransientEdgeDestinationAssignments(maxLevel);
+        automaton.liftTransientEdgeDestinationAssignments(maxLevel, excludedVariables);
     }
 }
 

@@ -1,0 +1,154 @@
+{
+ "jani-version": 1,
+ "name": "write_two_levels",
+ "type": "mdp",
+ "features": [],
+ "actions": [
+  {
+   "name": "s"
+  }
+ ],
+ "variables": [
+  {
+   "name": "xa",
+   "type": {
+    "kind": "bounded",
+    "base": "int",
+    "lower-bound": 0,
+    "upper-bound": 2
+   },
+   "initial-value": 0
+  },
+  {
+   "name": "xb",
+   "type": {
+    "kind": "bounded",
+    "base": "int",
+    "lower-bound": 0,
+    "upper-bound": 2
+   },
+   "initial-value": 0
+  }
+ ],
+ "properties": [],
+ "automata": [
+  {
+   "name": "A",
+   "locations": [
+    {
+     "name": "l"
+    }
+   ],
+   "initial-locations": [
+    "l"
+   ],
+   "variables": [],
+   "edges": [
+    {
+     "location": "l",
+     "action": "s",
+     "guard": {
+      "exp": {
+       "op": "=",
+       "left": "xa",
+       "right": 0
+      }
+     },
+     "destinations": [
+      {
+       "location": "l",
+       "assignments": [
+        {
+         "ref": "xa",
+         "value": 1
+        }
+       ],
+       "probability": {
+        "exp": 0.5
+       }
+      },
+      {
+       "location": "l",
+       "assignments": [
+        {
+         "ref": "xa",
+         "value": 2
+        }
+       ],
+       "probability": {
+        "exp": 0.5
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "B",
+   "locations": [
+    {
+     "name": "l"
+    }
+   ],
+   "initial-locations": [
+    "l"
+   ],
+   "variables": [],
+   "edges": [
+    {
+     "location": "l",
+     "action": "s",
+     "guard": {
+      "exp": true
+     },
+     "destinations": [
+      {
+       "location": "l",
+       "assignments": [
+        {
+         "ref": "xb",
+         "value": "xa",
+         "index": 1
+        }
+       ],
+       "probability": {
+        "exp": 0.5
+       }
+      },
+      {
+       "location": "l",
+       "assignments": [
+        {
+         "ref": "xb",
+         "value": 2
+        }
+       ],
+       "probability": {
+        "exp": 0.5
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "system": {
+  "elements": [
+   {
+    "automaton": "A"
+   },
+   {
+    "automaton": "B"
+   }
+  ],
+  "syncs": [
+   {
+    "synchronise": [
+     "s",
+     "s"
+    ],
+    "result": "s"
+   }
+  ]
+ }
+}

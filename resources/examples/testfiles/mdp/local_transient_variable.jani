@@ -1,0 +1,188 @@
+{
+ "jani-version": 1,
+ "name": "local_transient_variable",
+ "type": "mdp",
+ "actions": [
+  {
+   "name": "a"
+  }
+ ],
+ "variables": [
+  {
+   "name": "x",
+   "type": {
+    "kind": "bounded",
+    "base": "int",
+    "lower-bound": 0,
+    "upper-bound": 1
+   },
+   "initial-value": 0
+  },
+  {
+   "name": "y",
+   "type": {
+    "kind": "bounded",
+    "base": "int",
+    "lower-bound": 0,
+    "upper-bound": 1
+   },
+   "initial-value": 0
+  }
+ ],
+ "properties": [],
+ "automata": [
+  {
+   "name": "A",
+   "locations": [
+    {
+     "name": "l"
+    }
+   ],
+   "initial-locations": [
+    "l"
+   ],
+   "edges": [
+    {
+     "location": "l",
+     "action": "a",
+     "guard": {
+      "exp": true
+     },
+     "destinations": [
+      {
+       "location": "l",
+       "assignments": []
+      }
+     ]
+    },
+    {
+     "location": "l",
+     "action": "a",
+     "guard": {
+      "exp": true
+     },
+     "destinations": [
+      {
+       "location": "l",
+       "assignments": [
+        {
+         "ref": "x",
+         "value": 1
+        },
+        {
+         "ref": "done",
+         "value": true
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "variables": [
+    {
+     "name": "done",
+     "type": "bool",
+     "initial-value": false,
+     "transient": true
+    }
+   ]
+  },
+  {
+   "name": "B",
+   "locations": [
+    {
+     "name": "l"
+    }
+   ],
+   "initial-locations": [
+    "l"
+   ],
+   "edges": [
+    {
+     "location": "l",
+     "action": "a",
+     "guard": {
+      "exp": true
+     },
+     "destinations": [
+      {
+       "location": "l",
+       "assignments": [
+        {
+         "ref": "y",
+         "value": 1
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "C",
+   "locations": [
+    {
+     "name": "l"
+    }
+   ],
+   "initial-locations": [
+    "l"
+   ],
+   "edges": [
+    {
+     "location": "l",
+     "action": "a",
+     "guard": {
+      "exp": {
+       "op": "=",
+       "left": "x",
+       "right": 1
+      }
+     },
+     "destinations": [
+      {
+       "location": "l",
+       "assignments": []
+      }
+     ]
+    },
+    {
+     "location": "l",
+     "action": "a",
+     "guard": {
+      "exp": true
+     },
+     "destinations": [
+      {
+       "location": "l",
+       "assignments": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "system": {
+  "elements": [
+   {
+    "automaton": "A"
+   },
+   {
+    "automaton": "B"
+   },
+   {
+    "automaton": "C"
+   }
+  ],
+  "syncs": [
+   {
+    "synchronise": [
+     "a",
+     "a",
+     "a"
+    ],
+    "result": "a"
+   }
+  ]
+ }
+}
