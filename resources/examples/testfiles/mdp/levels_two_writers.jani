@@ -1,0 +1,175 @@
+{
+ "jani-version": 1,
+ "name": "two_writers",
+ "type": "mdp",
+ "features": [],
+ "actions": [
+  {
+   "name": "s"
+  }
+ ],
+ "variables": [
+  {
+   "name": "xa",
+   "type": {
+    "kind": "bounded",
+    "base": "int",
+    "lower-bound": 0,
+    "upper-bound": 1
+   },
+   "initial-value": 0
+  },
+  {
+   "name": "xc",
+   "type": {
+    "kind": "bounded",
+    "base": "int",
+    "lower-bound": 0,
+    "upper-bound": 2
+   },
+   "initial-value": 0
+  },
+  {
+   "name": "t",
+   "type": {
+    "kind": "bounded",
+    "base": "int",
+    "lower-bound": 0,
+    "upper-bound": 2
+   },
+   "initial-value": 0,
+   "transient": true
+  }
+ ],
+ "properties": [],
+ "automata": [
+  {
+   "name": "A",
+   "locations": [
+    {
+     "name": "l"
+    }
+   ],
+   "initial-locations": [
+    "l"
+   ],
+   "variables": [],
+   "edges": [
+    {
+     "location": "l",
+     "action": "s",
+     "guard": {
+      "exp": {
+       "op": "=",
+       "left": "xa",
+       "right": 0
+      }
+     },
+     "destinations": [
+      {
+       "location": "l",
+       "assignments": [
+        {
+         "ref": "t",
+         "value": 1
+        },
+        {
+         "ref": "xa",
+         "value": 1
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "B",
+   "locations": [
+    {
+     "name": "l"
+    }
+   ],
+   "initial-locations": [
+    "l"
+   ],
+   "variables": [],
+   "edges": [
+    {
+     "location": "l",
+     "action": "s",
+     "guard": {
+      "exp": true
+     },
+     "destinations": [
+      {
+       "location": "l",
+       "assignments": [
+        {
+         "ref": "t",
+         "value": 2
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "C",
+   "locations": [
+    {
+     "name": "l"
+    }
+   ],
+   "initial-locations": [
+    "l"
+   ],
+   "variables": [],
+   "edges": [
+    {
+     "location": "l",
+     "action": "s",
+     "guard": {
+      "exp": true
+     },
+     "destinations": [
+      {
+       "location": "l",
+       "assignments": [
+        {
+         "ref": "xc",
+         "value": "t",
+         "index": 1
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "system": {
+  "elements": [
+   {
+    "automaton": "A"
+   },
+   {
+    "automaton": "B"
+   },
+   {
+    "automaton": "C"
+   }
+  ],
+  "syncs": [
+   {
+    "synchronise": [
+     "s",
+     "s",
+     "s"
+    ],
+    "result": "s"
+   }
+  ]
+ }
+}

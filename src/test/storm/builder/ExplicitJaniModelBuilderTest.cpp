@@ -267,7 +267,8 @@ TEST_F(ExplicitJaniModelBuilderTest, AssignmentLevels) {
                                                                      {"levels_next_state_read", {{"agree1", 0.5}, {"mismatch", 0.0}}},
                                                                      {"levels_receiver_flips", {{"a1b2", 0.125}, {"a2b3", 0.375}, {"a1b3", 0.0}}},
                                                                      {"levels_three_levels", {{"xc=3", 1.0}}},
-                                                                     {"levels_edge_assignment", {{"agree1", 0.5}, {"mismatch", 0.0}}}};
+                                                                     {"levels_edge_assignment", {{"agree1", 0.5}, {"mismatch", 0.0}}},
+                                                                     {"levels_bool_transient", {{"agree1", 0.5}, {"mismatch", 0.0}}}};
     for (auto const& [file, expectedValues] : expected) {
         auto modelAndProperties = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/" + file + ".jani");
         auto formulas = storm::api::extractFormulasFromProperties(modelAndProperties.second);
