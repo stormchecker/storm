@@ -321,8 +321,10 @@ class Automaton {
 
     /*!
      * Lifts the common edge destination assignments to edge assignments.
+     * @param maxLevel the maximum level of assignments that are to be lifted.
+     * @param excludedVariables assignments to these variables are not lifted.
      */
-    void liftTransientEdgeDestinationAssignments(int64_t maxLevel = 0);
+    void liftTransientEdgeDestinationAssignments(int64_t maxLevel = 0, std::set<storm::expressions::Variable> const& excludedVariables = {});
 
     /*!
      * Retrieves whether the automaton uses an assignment level other than zero.

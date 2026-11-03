@@ -537,8 +537,8 @@ bool Automaton::hasTransientEdgeDestinationAssignments() const {
     return false;
 }
 
-void Automaton::liftTransientEdgeDestinationAssignments(int64_t maxLevel) {
-    edges.liftTransientDestinationAssignments(maxLevel);
+void Automaton::liftTransientEdgeDestinationAssignments(int64_t maxLevel, std::set<storm::expressions::Variable> const& excludedVariables) {
+    edges.liftTransientDestinationAssignments(maxLevel, excludedVariables);
 }
 
 bool Automaton::validate() const {

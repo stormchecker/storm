@@ -88,9 +88,9 @@ void EdgeContainer::clearConcreteEdges() {
     edges.clear();
 }
 
-void EdgeContainer::liftTransientDestinationAssignments(int64_t maxLevel) {
+void EdgeContainer::liftTransientDestinationAssignments(int64_t maxLevel, std::set<storm::expressions::Variable> const& excludedVariables) {
     for (auto& templateEdge : templates) {
-        templateEdge->liftTransientDestinationAssignments(maxLevel);
+        templateEdge->liftTransientDestinationAssignments(maxLevel, excludedVariables);
     }
 }
 
