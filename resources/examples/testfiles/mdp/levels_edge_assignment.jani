@@ -1,0 +1,218 @@
+{
+ "jani-version": 1,
+ "name": "edge_assignment",
+ "type": "mdp",
+ "features": [],
+ "actions": [
+  {
+   "name": "s"
+  }
+ ],
+ "variables": [
+  {
+   "name": "xa",
+   "type": {
+    "kind": "bounded",
+    "base": "int",
+    "lower-bound": 0,
+    "upper-bound": 2
+   },
+   "initial-value": 0
+  },
+  {
+   "name": "xb",
+   "type": {
+    "kind": "bounded",
+    "base": "int",
+    "lower-bound": 0,
+    "upper-bound": 2
+   },
+   "initial-value": 0
+  },
+  {
+   "name": "t",
+   "type": {
+    "kind": "bounded",
+    "base": "int",
+    "lower-bound": 0,
+    "upper-bound": 2
+   },
+   "initial-value": 0,
+   "transient": true
+  }
+ ],
+ "properties": [
+  {
+   "name": "agree1",
+   "expression": {
+    "op": "filter",
+    "fun": "max",
+    "states": {
+     "op": "initial"
+    },
+    "values": {
+     "op": "Pmax",
+     "exp": {
+      "op": "U",
+      "left": true,
+      "right": {
+       "op": "∧",
+       "left": {
+        "op": "=",
+        "left": "xa",
+        "right": 1
+       },
+       "right": {
+        "op": "=",
+        "left": "xb",
+        "right": 1
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "name": "mismatch",
+   "expression": {
+    "op": "filter",
+    "fun": "max",
+    "states": {
+     "op": "initial"
+    },
+    "values": {
+     "op": "Pmax",
+     "exp": {
+      "op": "U",
+      "left": true,
+      "right": {
+       "op": "∧",
+       "left": {
+        "op": "=",
+        "left": "xa",
+        "right": 1
+       },
+       "right": {
+        "op": "=",
+        "left": "xb",
+        "right": 2
+       }
+      }
+     }
+    }
+   }
+  }
+ ],
+ "automata": [
+  {
+   "name": "A",
+   "locations": [
+    {
+     "name": "l"
+    }
+   ],
+   "initial-locations": [
+    "l"
+   ],
+   "variables": [],
+   "edges": [
+    {
+     "location": "l",
+     "action": "s",
+     "guard": {
+      "exp": {
+       "op": "=",
+       "left": "xa",
+       "right": 0
+      }
+     },
+     "destinations": [
+      {
+       "location": "l",
+       "assignments": [
+        {
+         "ref": "xa",
+         "value": 1
+        }
+       ],
+       "probability": {
+        "exp": 0.5
+       }
+      },
+      {
+       "location": "l",
+       "assignments": [
+        {
+         "ref": "xa",
+         "value": 2
+        }
+       ],
+       "probability": {
+        "exp": 0.5
+       }
+      }
+     ],
+     "assignments": [
+      {
+       "ref": "t",
+       "value": "xa",
+       "index": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "B",
+   "locations": [
+    {
+     "name": "l"
+    }
+   ],
+   "initial-locations": [
+    "l"
+   ],
+   "variables": [],
+   "edges": [
+    {
+     "location": "l",
+     "action": "s",
+     "guard": {
+      "exp": true
+     },
+     "destinations": [
+      {
+       "location": "l",
+       "assignments": [
+        {
+         "ref": "xb",
+         "value": "t",
+         "index": 2
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "system": {
+  "elements": [
+   {
+    "automaton": "A"
+   },
+   {
+    "automaton": "B"
+   }
+  ],
+  "syncs": [
+   {
+    "synchronise": [
+     "s",
+     "s"
+    ],
+    "result": "s"
+   }
+  ]
+ }
+}
