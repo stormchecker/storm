@@ -1007,7 +1007,7 @@ void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribut
                 auto locationVarIt = locationVars.begin();
                 for (auto const& destPtr : destinations) {
                     applyUpdate(successorState, *destPtr, **locationVarIt, assignmentLevel, *this->evaluator);
-                    applyTransientUpdate(transientVariableValuation, destinations.back()->getOrderedAssignments().getTransientAssignments(assignmentLevel),
+                    applyTransientUpdate(transientVariableValuation, destPtr->getOrderedAssignments().getTransientAssignments(assignmentLevel),
                                          *this->evaluator);
                     ++locationVarIt;
                 }
