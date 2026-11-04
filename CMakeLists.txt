@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.25)
 
 # Set project name
 project(storm
-	VERSION 2.0.0.1
+	VERSION 2.0.0.2
 	# Version x.y.z.N (N > 0) should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
 	# Increase N for changes on master which downstream tools such as stormpy need to detect.
 	LANGUAGES CXX C
