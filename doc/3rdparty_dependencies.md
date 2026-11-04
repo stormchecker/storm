@@ -73,10 +73,22 @@ The patch is applied during CMake configuration; it is skipped if it was already
 Eigen is fetched from the GitHub mirror `https://github.com/eigen-mirror/eigen.git` rather than from the upstream GitLab repository, because the mirror is more reliably available (in particular in CI).
 The mirror contains the same commits, so the pinned commit hash is identical for both.
 
-The commit hash is forwarded to carl-storm via the `CARL_EIGEN_GIT_TAG` variable to ensure that carl-storm and Storm check out the same Eigen version.
-It might be reasonable to update the default value of `CARL_EIGEN_GIT_TAG` in carl-storm as well.
+#### Sharing Eigen with carl-storm
+Storm and carl-storm use **the same Eigen sources**: carl-storm does not download its own copy but reuses Storm's patched Eigen.
+As a consequence, any change to the Eigen commit hash or to the patch also affects carl-storm, which must build with the revised version as well.
 
-In case a new patch needs to be created follow these steps:
+Storm declares and populates Eigen via `FetchContent` under the name `eigen`.
+carl-storm declares Eigen under the same name `eigen`.
+As `FetchContent` only respects the first declaration of a name, carl-storm uses the already populated (and patched) checkout from Storm.
+Therefore, Eigen must be made available before carl-storm, i.e., the Eigen section must stay above the carl-storm section in `$STORM_DIR/resources/3rdparty/CMakeLists.txt`.
+Otherwise, our internal CMake check fails and CMake stops with an error.
+
+Storm also sets `CARL_EIGEN_GIT_TAG` to `STORM_EIGEN_GIT_TAG`.
+This ensures backwards-compatibility for cases where carl-storm fetches Eigen on its own instead of reusing Storm's checkout.
+For standalone builds of carl-storm, consider updating its default `CARL_EIGEN_GIT_TAG` as well.
+
+#### Creating a new patch
+In case a new patch for Eigen needs to be created follow these steps:
 
 1. Clone `https://github.com/eigen-mirror/eigen.git` somewhere and checkout the previously shipped version
 2. Checkout a new branch e.g., `git branch storm-patch; git checkout storm-patch`
