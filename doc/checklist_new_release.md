@@ -27,7 +27,8 @@ At this point, all relevant pull requests should have been merged into Storm and
      git log last_tag..HEAD
      ```
 
-5. Set new Storm version in `CMakeList.cmake`.
+5. Set new Storm version `X.Y.Z` in `project(storm VERSION ...)` in `CMakeLists.txt`.
+   Remove the development counter `.N` (see [Versioning](developers.md#versioning)).
 
 6. Create a new pull request with the changes of steps 4 and 5.
    When the CI checks are successful, stash and merge the pull request into the master branch.

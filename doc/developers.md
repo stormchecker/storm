@@ -83,6 +83,19 @@ The resources are defined in `resources/3rdparty/CMakeLists.txt` and shipped res
 See the dedicated documentation on [third-party dependencies](3rdparty_dependencies.md).
 
 
+## Versioning
+- Releases have version `X.Y.Z`.
+- Development versions on master have version `X.Y.Z.N` with a development counter `N > 0`.
+  Version `X.Y.Z.N` should be read as: this is an updated version of `X.Y.Z` that has not been released as the next version yet.
+  After a release, the CI automatically opens a PR that sets the version to `X.Y.Z.1`.
+- Increase `N` by one for changes on master which downstream tools such as stormpy need to detect, for example API changes.
+  Downstream tools can then require a specific development version:
+  ```cmake
+  find_package(storm 2.0.0.1 REQUIRED)
+  ```
+- CMake variable `STORM_VERSION` provides the release version information `X.Y.Z`, `STORM_VERSION_DEV` provides the development counter `N` (which is `0` for releases), and `STORM_VERSION_FULL` provides the full version `X.Y.Z.N`.
+
+
 ## Coding conventions
 
 ### Templates and `ValueType`
