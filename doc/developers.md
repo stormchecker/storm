@@ -93,7 +93,7 @@ See the dedicated documentation on [third-party dependencies](3rdparty_dependenc
   ```cmake
   find_package(storm 2.0.0.1 REQUIRED)
   ```
-- CMake variable `STORM_VERSION` provides the release version information `X.Y.Z`, `STORM_VERSION_DEV` provides the development counter `N` (which is `0` for releases), and `STORM_VERSION_FULL` provides the full version `X.Y.Z.N`.
+- CMake variable `STORM_VERSION` provides the release version information `X.Y.Z`, `STORM_VERSION_DEV` provides the development counter `N` (which is `0` for releases), and `STORM_VERSION_FULL_DEV` provides the full version `X.Y.Z.N`.
 
 
 ## Coding conventions

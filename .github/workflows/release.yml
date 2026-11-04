@@ -1,5 +1,6 @@
 name: Release new version
 # Triggered by new a release on GitHub
+# - checks that the release tag and the Storm version are X.Y.Z
 # - deploys Docker containers
 # - updates stable branch
 # - updates Storm version in stormpy via PR
@@ -12,8 +13,31 @@ on:
     types: [published]
 
 jobs:
+  get_version:
+    # Get Storm version from CMakeLists of the release
+    uses: ./.github/workflows/get-version.yml
+
+  check_version:
+    # Check that the release has a version X.Y.Z without development counter
+    needs: get_version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check version
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          if ! [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag '$TAG' is not of the form X.Y.Z" >&2
+            exit 1
+          fi
+          VERSION="${{ needs.get_version.outputs.full_version }}"
+          if [ "$VERSION" != "$TAG" ]; then
+            echo "Storm version '$VERSION' in CMakeLists.txt does not match release tag '$TAG'" >&2
+            exit 1
+          fi
+
   deploy_docker:
     # Create Docker images for tag
+    needs: check_version
     uses: ./.github/workflows/release_docker.yml
     with:
       # Use the tag from the release
@@ -22,6 +46,7 @@ jobs:
 
   update_stable:
     # Update stable branch
+    needs: check_version
     runs-on: ubuntu-latest
     permissions:
       contents: write
