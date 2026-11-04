@@ -13,8 +13,9 @@ endforeach()
 
 include(CMakePackageConfigHelpers)
 
+# Export full version x.y.z.N (including the development counter N) to allow downstream tools to require unreleased versions
 write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/stormConfigVersion.cmake
-     VERSION ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}
+     VERSION ${PROJECT_VERSION}
      COMPATIBILITY SameMinorVersion )
 
 configure_package_config_file(
