@@ -388,4 +388,18 @@ TYPED_TEST(DdJaniModelBuilderTest, InputEnabling) {
     EXPECT_EQ(5ul, model->getNumberOfTransitions());
 }
 
+TYPED_TEST(DdJaniModelBuilderTest, SynchronizationNondeterminismOffset) {
+    // A and C both have two edges labeled with the synchronizing action, B (between them) has one. The local
+    // nondeterminism variables of C must not overlap with those of A, otherwise A's choice to set x and C's
+    // unguarded edge can no longer be combined and the state with x=1 is unreachable.
+    const storm::dd::DdType DdType = TestFixture::DdType;
+    storm::Environment env;
+    auto janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/sync_nondeterminism_offset.jani").first;
+    storm::builder::DdJaniModelBuilder<DdType, double> builder;
+    auto model = builder.build(env, janiModel);
+    EXPECT_EQ(3ul, model->getNumberOfStates());
+    EXPECT_EQ(8ul, model->getNumberOfTransitions());
+    EXPECT_EQ(8ul, model->getNumberOfChoices());
+}
+
 }  // namespace

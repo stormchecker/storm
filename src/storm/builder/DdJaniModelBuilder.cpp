@@ -1779,7 +1779,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
         return result;
     }
 
-    ActionDd combineEdgesBySummation(storm::dd::Bdd<Type> const& guard, std::vector<EdgeDd> const& edges) {
+    ActionDd combineEdgesBySummation(storm::dd::Bdd<Type> const& guard, std::vector<EdgeDd> const& edges, uint64_t localNondeterminismVariableOffset) {
         storm::dd::Add<Type, ValueType> transitions = this->variables.manager->template getAddZero<ValueType>();
         std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> globalVariableToWritingFragment;
         std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
@@ -1794,8 +1794,9 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
             }
         }
 
-        return ActionDd(guard, transitions, transientEdgeAssignments, std::make_pair<uint64_t, uint64_t>(0, 0), globalVariableToWritingFragment,
-                        this->variables.manager->getBddZero());
+        // No nondeterminism variables are used, but subsequent synchronizing actions need to start at the given offset.
+        return ActionDd(guard, transitions, transientEdgeAssignments, std::make_pair(localNondeterminismVariableOffset, localNondeterminismVariableOffset),
+                        globalVariableToWritingFragment, this->variables.manager->getBddZero());
     }
 
     ActionDd combineEdgesToActionNondeterministic(std::vector<EdgeDd> const& edges, uint64_t localNondeterminismVariableOffset) {
@@ -1812,7 +1813,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
 
         // Depending on the maximal number of nondeterminstic choices, we need to use some variables to encode the nondeterminism.
         if (maxChoices <= 1) {
-            return combineEdgesBySummation(allGuards, edges);
+            return combineEdgesBySummation(allGuards, edges, localNondeterminismVariableOffset);
         } else {
             // Calculate number of required variables to encode the nondeterminism.
             uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(std::log2(maxChoices)));
