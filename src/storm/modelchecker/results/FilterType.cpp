@@ -23,7 +23,7 @@ std::string toString(FilterType ft) {
         case FilterType::MAX:
             return "the maximum";
         case FilterType::MIN:
-            return "the minumum";
+            return "the minimum";
         case FilterType::SUM:
             return "the sum";
         case FilterType::VALUES:
