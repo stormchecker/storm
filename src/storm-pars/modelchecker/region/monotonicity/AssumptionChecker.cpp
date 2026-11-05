@@ -71,8 +71,8 @@ AssumptionChecker<ValueType, ConstantType>::AssumptionChecker(std::shared_ptr<lo
 }
 
 template<typename ValueType, typename ConstantType>
-AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(Assumption const& assumption, std::shared_ptr<Order> order,
-                                                                                storage::ParameterRegion<ValueType> region,
+AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(Environment const& env, Assumption const& assumption,
+                                                                                std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
                                                                                 std::vector<ConstantType> const minValues,
                                                                                 std::vector<ConstantType> const maxValues) const {
     // First check if based on sample points the assumption can be discharged
@@ -106,7 +106,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
 
     if (result == AssumptionStatus::UNKNOWN) {
         // If result from sample checking was unknown, the assumption might hold
-        result = validateAssumptionSMTSolver(assumption, order, region, minValues, maxValues);
+        result = validateAssumptionSMTSolver(env, assumption, order, region, minValues, maxValues);
     }
     return result;
 }
@@ -126,7 +126,8 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(Assu
 }
 
 template<typename ValueType, typename ConstantType>
-AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(Assumption const& assumption, std::shared_ptr<Order> order,
+AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(Environment const& env, Assumption const& assumption,
+                                                                                         std::shared_ptr<Order> order,
                                                                                          storage::ParameterRegion<ValueType> region,
                                                                                          std::vector<ConstantType> const minValues,
                                                                                          std::vector<ConstantType> const maxValues) const {
@@ -216,7 +217,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
     }
 
     if (orderKnown) {
-        auto s = utility::solver::getSmtSolver(*manager);
+        auto s = utility::solver::getSmtSolver(env, *manager);
         auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
         expressions::Expression expr1 = manager->rational(0);
         for (auto itr1 = row1.begin(); itr1 != row1.end(); ++itr1) {
@@ -295,10 +296,11 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
 }
 
 template<typename ValueType, typename ConstantType>
-AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(Assumption const& assumption, std::shared_ptr<Order> order,
+AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(Environment const& env, Assumption const& assumption,
+                                                                                std::shared_ptr<Order> order,
                                                                                 storage::ParameterRegion<ValueType> region) const {
     std::vector<ConstantType> vals;
-    return validateAssumption(assumption, order, region, vals, vals);
+    return validateAssumption(env, assumption, order, region, vals, vals);
 }
 
 template class AssumptionChecker<RationalFunction, double>;

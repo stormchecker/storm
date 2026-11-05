@@ -33,11 +33,9 @@ namespace transformer {
 typedef storm::utility::parametric::CoefficientType<storm::RationalFunction>::type CoefficientType;
 
 template<typename ParametricType, typename ConstantType>
-RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix,
-                                                                           std::vector<ParametricType> const& pVector,
-                                                                           storm::storage::BitVector const& selectedRows,
-                                                                           storm::storage::BitVector const& selectedColumns, bool generateRowLabels,
-                                                                           bool useMonotonicity) {
+RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(
+    storm::Environment const& env, storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector,
+    storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns, bool generateRowLabels, bool useMonotonicity) {
     oldToNewColumnIndexMapping = std::vector<uint64_t>(selectedColumns.size(), selectedColumns.size());
     uint64_t newIndexColumns = 0;
     for (uint64_t oldColumn : selectedColumns) {
@@ -84,7 +82,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
                 nonConstMatrixEntries.set(pMatrixEntryCount, true);
                 auto valuation = RobustAbstractValuation(transition);
                 builder.addNextValue(oldToNewColumnIndexMapping[row], oldToNewColumnIndexMapping[column], Interval());
-                Interval& placeholder = functionValuationCollector.add(valuation);
+                Interval& placeholder = functionValuationCollector.add(env, valuation);
                 matrixAssignment.push_back(std::pair<typename storm::storage::SparseMatrix<Interval>::iterator, Interval&>(
                     typename storm::storage::SparseMatrix<Interval>::iterator(), placeholder));
             }
@@ -109,7 +107,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
             nonConstVectorEntries.set(pVectorEntryCount, true);
             auto valuation = RobustAbstractValuation(transition);
             vector.push_back(Interval());
-            Interval& placeholder = functionValuationCollector.add(valuation);
+            Interval& placeholder = functionValuationCollector.add(env, valuation);
             vectorAssignment.push_back(std::pair<typename std::vector<Interval>::iterator, Interval&>(typename std::vector<Interval>::iterator(), placeholder));
             for (auto const& var : valuation.getParameters()) {
                 occuringStatesAtVariable[var].insert(i);
@@ -186,10 +184,10 @@ RobustParameterLifter<ParametricType, ConstantType>::getOccuringStatesAtVariable
 template<typename ParametricType, typename ConstantType>
 std::optional<std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>>
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::zeroesSMT(
-    RationalFunction function, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
+    storm::Environment const& env, RationalFunction function, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
     std::shared_ptr<storm::expressions::ExpressionManager> expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
 
-    auto smtSolver = utility::solver::getSmtSolver(*expressionManager);
+    auto smtSolver = utility::solver::getSmtSolver(env, *expressionManager);
 
     expressions::RationalFunctionToExpression<storm::RationalFunction> rfte(expressionManager);
 
@@ -410,7 +408,7 @@ storm::RationalFunction const& RobustParameterLifter<ParametricType, ConstantTyp
 }
 
 template<typename ParametricType, typename ConstantType>
-void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::initialize() {
+void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::initialize(storm::Environment const& env) {
     // TODO This function is a mess
     if (this->extrema || this->annotation) {
         // Extrema already initialized
@@ -466,7 +464,7 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
             if (derivative.nominator().totalDegree() < 4) {
                 zeroes = cubicEquationZeroes(RawPolynomial(derivative.nominator()), p);
             } else {
-                zeroes = zeroesSMT(derivative, p);
+                zeroes = zeroesSMT(env, derivative, p);
                 if (!zeroes) {
                     // The SMT solver could not find the zeroes, e.g., because of a timeout. Fall back to carl's root finder.
                     zeroes = zeroesCarl(nominatorAsUnivariate, p);
@@ -502,10 +500,11 @@ std::size_t RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractV
 }
 
 template<typename ParametricType, typename ConstantType>
-Interval& RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::add(RobustAbstractValuation& valuation) {
+Interval& RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::add(storm::Environment const& env,
+                                                                                               RobustAbstractValuation& valuation) {
     // If no valuation like this is present in the collectedValuations, initialize the extrema
     if (!collectedValuations.count(valuation)) {
-        valuation.initialize();
+        valuation.initialize(env);
         this->regionsAndBounds.emplace(valuation, std::vector<std::pair<Interval, Interval>>());
     }
     // insert the function and the valuation

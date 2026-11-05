@@ -48,10 +48,11 @@ class SparseMdpParameterLiftingModelChecker : public SparseParameterLiftingModel
                                          CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const override;
 
    protected:
-    virtual void specifyBoundedUntilFormula(const CheckTask<storm::logic::BoundedUntilFormula, ConstantType>& checkTask) override;
+    virtual void specifyBoundedUntilFormula(Environment const& env, const CheckTask<storm::logic::BoundedUntilFormula, ConstantType>& checkTask) override;
     virtual void specifyUntilFormula(Environment const& env, CheckTask<storm::logic::UntilFormula, ConstantType> const& checkTask) override;
     virtual void specifyReachabilityRewardFormula(Environment const& env, CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) override;
-    virtual void specifyCumulativeRewardFormula(const CheckTask<storm::logic::CumulativeRewardFormula, ConstantType>& checkTask) override;
+    virtual void specifyCumulativeRewardFormula(Environment const& env,
+                                                const CheckTask<storm::logic::CumulativeRewardFormula, ConstantType>& checkTask) override;
 
     virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationChecker(Environment const& env,
                                                                                                                          bool quantitative) override;

@@ -65,11 +65,12 @@ class MonotonicityHelper {
     /*!
      * Checks if a derivative >=0 or/and <=0
      *
+     * @param env The environment (selecting the SMT solver)
      * @param derivative The derivative you want to check
      * @return pair of bools, >= 0 and <= 0
      */
-    static std::pair<bool, bool> checkDerivative(ValueType derivative, storage::ParameterRegion<ValueType> reg) {
-        return MonotonicityChecker<ValueType>::checkDerivative(derivative, reg);
+    static std::pair<bool, bool> checkDerivative(Environment const& env, ValueType derivative, storage::ParameterRegion<ValueType> reg) {
+        return MonotonicityChecker<ValueType>::checkDerivative(env, derivative, reg);
     }
 
     /*!

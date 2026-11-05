@@ -182,8 +182,8 @@ typename OrderExtender<ValueType, ConstantType>::Context const& OrderExtender<Va
 
 template<typename ValueType, typename ConstantType>
 std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::toOrder(
-    storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-    return this->extendOrder(nullptr, region, monRes, std::nullopt);
+    Environment const& env, storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+    return this->extendOrder(env, nullptr, region, monRes, std::nullopt);
 }
 
 template<typename ValueType, typename ConstantType>
@@ -223,8 +223,8 @@ void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Or
 
 template<typename ValueType, typename ConstantType>
 std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendOrder(
-    std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes,
-    std::optional<Assumption> assumption) {
+    Environment const& env, std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
+    std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::optional<Assumption> assumption) {
     this->region = region;
     if (order == nullptr) {
         order = getBottomTopOrder();
@@ -288,7 +288,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
     }
     auto& ctx = context(order);
     if (ctx.continueExtending || assumption.has_value()) {
-        return extendOrder(order, monRes, assumption);
+        return extendOrder(env, order, monRes, assumption);
     } else {
         auto res = ctx.unknownStates;
         ctx.continueExtending = false;
@@ -298,7 +298,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
 
 template<typename ValueType, typename ConstantType>
 std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendOrder(
-    std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::optional<Assumption> assumption) {
+    Environment const& env, std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::optional<Assumption> assumption) {
     if (assumption.has_value()) {
         STORM_LOG_INFO("Handling assumption " << *assumption << '\n');
         handleAssumption(order, *assumption);
@@ -349,7 +349,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
 
             if (monRes != nullptr) {
                 for (auto& param : occuringVariablesAtState[currentState]) {
-                    checkParOnStateMonRes(currentState, order, param, monRes);
+                    checkParOnStateMonRes(env, currentState, order, param, monRes);
                 }
             }
             // Get the next state
@@ -360,7 +360,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
             STORM_LOG_ASSERT(order->compare(result.first, result.second) == Order::UNKNOWN, "Expected the unresolved pair to indeed be unordered.");
             STORM_LOG_ASSERT(order->compare(result.second, result.first) == Order::UNKNOWN, "Expected the unresolved pair to indeed be unordered.");
             // Try to add states based on min/max and assumptions, only if we are not in statesToHandle mode
-            if (currentStateMode.second && extendByAssumption(order, result.first, result.second)) {
+            if (currentStateMode.second && extendByAssumption(env, order, result.first, result.second)) {
                 if (order->isInvalid()) {
                     return std::make_tuple(order, numberOfStates, numberOfStates);
                 }
@@ -628,13 +628,14 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
 }
 
 template<typename ValueType, typename ConstantType>
-bool OrderExtender<ValueType, ConstantType>::extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) {
+bool OrderExtender<ValueType, ConstantType>::extendByAssumption(Environment const& env, std::shared_ptr<Order> order, uint_fast64_t state1,
+                                                                uint_fast64_t state2) {
     auto& ctx = context(order);
     STORM_LOG_ASSERT(order->compare(state1, state2) == Order::UNKNOWN, "Expected the given pair to indeed be unordered.");
     STORM_LOG_ASSERT(!ctx.usePLA || (ctx.minValues.size() == numberOfStates && ctx.maxValues.size() == numberOfStates),
                      "The PLA path requires both bound vectors to be available.");
-    auto assumptions = ctx.usePLA ? assumptionMaker->createAndCheckAssumptions(state1, state2, order, region, ctx.minValues, ctx.maxValues)
-                                  : assumptionMaker->createAndCheckAssumptions(state1, state2, order, region);
+    auto assumptions = ctx.usePLA ? assumptionMaker->createAndCheckAssumptions(env, state1, state2, order, region, ctx.minValues, ctx.maxValues)
+                                  : assumptionMaker->createAndCheckAssumptions(env, state1, state2, order, region);
     if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
         handleAssumption(order, assumptions.begin()->first);
         // Assumptions worked, we continue
@@ -789,10 +790,10 @@ void OrderExtender<ValueType, ConstantType>::setMaxValuesInit(std::vector<Consta
 }
 
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order,
+void OrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(Environment const& env, uint_fast64_t s, std::shared_ptr<Order> order,
                                                                    typename OrderExtender<ValueType, ConstantType>::VariableType param,
                                                                    std::shared_ptr<MonotonicityResult<VariableType>> monResult) {
-    auto mon = monotonicityChecker.checkLocalMonotonicity(order, s, param, region);
+    auto mon = monotonicityChecker.checkLocalMonotonicity(env, order, s, param, region);
     monResult->updateMonotonicityResult(param, mon);
 }
 
