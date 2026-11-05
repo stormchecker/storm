@@ -465,6 +465,20 @@ endif()
 
 if(NOT STORM_DISABLE_HIGHS)
     set(STORM_HAVE_HIGHS OFF)
+    if(MACOSX AND NOT highs_DIR AND NOT highs_ROOT)
+        # Homebrew's prefix is not on the default search path for Apple Silicon (/opt/homebrew).
+        # We try to get a hint where HiGHS is located, if installed via homebrew.
+        find_program(_highs_BREW_EXECUTABLE brew)
+        if (_highs_BREW_EXECUTABLE)
+            execute_process(
+                    COMMAND "${_highs_BREW_EXECUTABLE}" --prefix highs
+                    ERROR_QUIET # Ignore any error, e.g. if highs is not installed via brew.
+                    OUTPUT_VARIABLE highs_ROOT
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+        endif ()
+        unset(_highs_BREW_EXECUTABLE)
+    endif()
     find_package(highs CONFIG QUIET)
 
     if(TARGET highs::highs)
