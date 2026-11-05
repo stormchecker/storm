@@ -2,8 +2,9 @@ cmake_minimum_required (VERSION 3.25)
 
 # Set project name
 project(storm
-	VERSION 2.0.0.1
-	# Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
+	VERSION 2.0.0.2
+	# Version x.y.z.N (N > 0) should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
+	# Increase N for changes on master which downstream tools such as stormpy need to detect.
 	LANGUAGES CXX C
 	DESCRIPTION "Storm - A Modern Probabilistic Model Checker"
 	HOMEPAGE_URL "https://www.stormchecker.org"
@@ -581,20 +582,21 @@ set(STORM_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(STORM_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(STORM_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 set(STORM_VERSION "${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}")
-if(PROJECT_VERSION_TWEAK GREATER 0)
-	set(STORM_VERSION_DEV 1)
-else()
-	set(STORM_VERSION_DEV 0)
+set(STORM_VERSION_DEV ${PROJECT_VERSION_TWEAK}) # Development counter N of version x.y.z.N
+if(NOT STORM_VERSION_DEV)
+	set(STORM_VERSION_DEV 0) # Released versions x.y.z have no development counter
 endif()
 
 set(STORM_VERSION_STRING "${STORM_VERSION}")
 if(STORM_VERSION_DEV GREATER 0)
-	set(STORM_VERSION_STRING "${STORM_VERSION_STRING} (dev)")
+	set(STORM_VERSION_STRING "${STORM_VERSION}.${STORM_VERSION_DEV} (dev)")
 endif()
 
 message(STATUS "Storm - Version is ${STORM_VERSION_STRING}.")
 export_option(STORM_VERSION) # We want this information also in the more accessible stormOptions.cmake
-export_option(STORM_VERSION_DEV) # We want this information also in the more accessible stormOptions.cmake
+export_option(STORM_VERSION_DEV) # Development counter N (0 for releases); we want this information also in the more accessible stormOptions.cmake
+set(STORM_VERSION_FULL_DEV "${STORM_VERSION}.${STORM_VERSION_DEV}") # Full version x.y.z.N, intended for development purposes
+export_option(STORM_VERSION_FULL_DEV) # We want this information also in the more accessible stormOptions.cmake
 
 # Configure a header file to pass some of the CMake settings to the source code
 configure_file (
