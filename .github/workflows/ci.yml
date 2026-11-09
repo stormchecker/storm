@@ -45,19 +45,8 @@ jobs:
                 || (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready for review')) && 'quick'
                 || 'normal' }}
 
-  # Storm versions of this commit and of the base branch of the PR (used by the stormpy compatibility check)
-  version:
-    needs: prepare
-    uses: ./.github/workflows/get-version.yml
-  baseVersion:
-    needs: prepare
-    uses: ./.github/workflows/get-version.yml
-    with:
-      # Outside of PRs, base_ref is empty and the version of this commit is used
-      ref: ${{ github.base_ref }}
-
   linuxTests:
-    needs: [prepare, version, baseVersion]
+    needs: prepare
     name: ${{ matrix.config.name }} (${{ matrix.config.buildType }})
     runs-on: ubuntu-latest
     container: ${{ matrix.config.baseImg }}
@@ -120,8 +109,6 @@ jobs:
         with:
           nr_jobs: "4"
           build_type: ${{ matrix.config.buildType }}
-          storm_version: ${{ needs.version.outputs.full_version }}
-          storm_base_version: ${{ needs.baseVersion.outputs.full_version }}
 
   macTests:
     needs: prepare
