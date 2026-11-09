@@ -9,6 +9,8 @@
 #include "storm/generator/JaniNextStateGenerator.h"
 #include "storm/languages/SymbolicModelDescription.h"
 #include "storm/languages/jani/Model.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -256,4 +258,28 @@ TEST_F(ExplicitJaniModelBuilderTest, SynchronizationVectorOutputActionIndex) {
     }
     EXPECT_EQ(std::set<std::string>({"d", "e", "f"}), actionNames);
 }
+
+TEST_F(ExplicitJaniModelBuilderTest, AssignmentLevels) {
+    // Transient values passed between automata over several assignment levels. In levels_three_levels and
+    // levels_edge_assignment, the transient assignments of a level used to be taken from the last automaton only.
+    std::map<std::string, std::map<std::string, double>> expected = {{"levels_det_transient", {{"xb=2", 1.0}}},
+                                                                     {"levels_random_transient", {{"agree1", 0.5}, {"mismatch", 0.0}, {"agree2", 0.5}}},
+                                                                     {"levels_next_state_read", {{"agree1", 0.5}, {"mismatch", 0.0}}},
+                                                                     {"levels_receiver_flips", {{"a1b2", 0.125}, {"a2b3", 0.375}, {"a1b3", 0.0}}},
+                                                                     {"levels_three_levels", {{"xc=3", 1.0}}},
+                                                                     {"levels_edge_assignment", {{"agree1", 0.5}, {"mismatch", 0.0}}}};
+    for (auto const& [file, expectedValues] : expected) {
+        auto modelAndProperties = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/" + file + ".jani");
+        auto formulas = storm::api::extractFormulasFromProperties(modelAndProperties.second);
+        auto model = storm::api::buildSparseModel<double>(modelAndProperties.first, formulas);
+        ASSERT_EQ(expectedValues.size(), formulas.size()) << file;
+        for (uint64_t i = 0; i < formulas.size(); ++i) {
+            auto result = storm::api::verifyWithSparseEngine<double>(model, storm::api::createTask<double>(formulas[i], true));
+            result->filter(storm::modelchecker::ExplicitQualitativeCheckResult<double>(model->getInitialStates()));
+            EXPECT_NEAR(expectedValues.at(modelAndProperties.second[i].getName()), result->asQuantitativeCheckResult<double>().getMax(), 1e-6)
+                << file << " " << modelAndProperties.second[i].getName();
+        }
+    }
+}
+
 }  // namespace
