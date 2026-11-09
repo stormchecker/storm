@@ -24,6 +24,7 @@ namespace {
 
 /*!
  * Grows a hull from feasible exit laws and checks each facet with an LP support query.
+ * Reconstructs floating-point sample vertices with exact geometry to avoid rounding in the halfspaces.
  * Based on inner-approximation method: https://doi.org/10.48550/arXiv.1808.01786.
  */
 template<typename ValueType>
@@ -95,8 +96,32 @@ std::vector<std::vector<ValueType>> enumerateExitLaws(ZeroWeightComponentLp<Valu
             continue;
         }
 
+        std::vector<std::vector<ValueType>> projectedVertices;
+        if constexpr (std::is_same_v<ValueType, double>) {
+            std::vector<std::vector<storm::RationalNumber>> exactPoints;
+            exactPoints.reserve(projectedPoints.size());
+            for (auto const& point : projectedPoints) {
+                std::vector<storm::RationalNumber> exactPoint;
+                exactPoint.reserve(point.size());
+                for (auto const& coordinate : point) {
+                    exactPoint.push_back(storm::utility::convertNumber<storm::RationalNumber>(coordinate));
+                }
+                exactPoints.push_back(std::move(exactPoint));
+            }
+            storm::storage::geometry::NativePolytope<storm::RationalNumber> exactHull(exactPoints);
+            for (auto const& vertex : exactHull.getVertices()) {
+                std::vector<ValueType> point;
+                point.reserve(vertex.size());
+                for (auto const& coordinate : vertex) {
+                    point.push_back(storm::utility::convertNumber<ValueType>(coordinate));
+                }
+                projectedVertices.push_back(std::move(point));
+            }
+        } else {
+            projectedVertices = hull.getVertices();
+        }
         std::vector<std::vector<ValueType>> vertices;
-        for (auto const& vertex : hull.getVertices()) {
+        for (auto const& vertex : projectedVertices) {
             bool found = false;
             for (uint64_t index = 0; index < projectedPoints.size(); ++index) {
                 bool equal = true;

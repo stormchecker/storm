@@ -1,6 +1,9 @@
 #pragma once
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include <limits>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -103,8 +106,24 @@ class SspZeroWeightComponentLpSolver {
         }
 
         typename ParetoFront::container_type points{left};
-        if (left.probability == right.probability) {
+        bool sameProbability = left.probability == right.probability;
+        if constexpr (std::is_floating_point_v<ValueType>) {
+            sameProbability = storm::utility::isAlmostZero(left.probability - right.probability);
+        }
+        if (sameProbability) {
+            if (right.expectedCost < left.expectedCost) {
+                points.front() = right;
+            }
             return ParetoFront(std::move(points));
+        }
+        if (left.probability > right.probability) {
+            if (left.getDominance(right) == Point::DominanceResult::Dominates) {
+                return ParetoFront(std::move(points));
+            }
+            if (right.getDominance(left) == Point::DominanceResult::Dominates) {
+                points.front() = right;
+                return ParetoFront(std::move(points));
+            }
         }
         STORM_LOG_THROW(left.probability < right.probability, storm::exceptions::UnexpectedException, "Invalid zero-weight entry frontier endpoints.");
         points.push_back(right);
@@ -145,6 +164,7 @@ class SspZeroWeightComponentLpSolver {
     }
 
    private:
+    /*! Allows a small primary-score loss for floating-point lexicographic queries because the reported optimum is rounded. */
     Point supportLexicographic(uint64_t entryState, FrontierLayer const& frontierLayer, ValueType const& primaryProbability,
                                ValueType const& primaryExpectedCost, ValueType const& secondaryProbability, ValueType const& secondaryExpectedCost) {
         auto const& boundaryStates = componentLp.getBoundaryStates();
@@ -179,7 +199,15 @@ class SspZeroWeightComponentLpSolver {
         }
 
         auto const primaryResult = componentLp.maximize(entryState, primaryDirections);
-        auto const result = componentLp.maximizeWithFixedScore(entryState, secondaryDirections, primaryDirections, primaryResult.objectiveValue);
+        ValueType minimumScore = primaryResult.objectiveValue;
+        if constexpr (std::is_floating_point_v<ValueType>) {
+            ValueType scale = std::max(storm::utility::one<ValueType>(), std::abs(minimumScore));
+            for (auto const& coefficient : primaryDirections) {
+                scale = std::max(scale, std::abs(coefficient));
+            }
+            minimumScore -= ValueType(16) * std::numeric_limits<ValueType>::epsilon() * scale * primaryDirections.size();
+        }
+        auto const result = componentLp.maximizeWithMinimumScore(entryState, secondaryDirections, primaryDirections, minimumScore);
         Point point{storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>()};
         for (uint64_t index = 0; index < boundaryStates.size(); ++index) {
             point.probability += result.boundaryProbabilities[index] * selectedPoints[index].probability;

@@ -48,16 +48,16 @@ class ZeroWeightComponentLp {
     Result maximize(uint64_t entryState, std::vector<ValueType> const& direction);
 
     /*!
-     * Maximizes a boundary score while fixing another score to a given value.
+     * Maximizes a boundary score while preserving a lower bound on another score.
      *
      * @param entryState An entry state of the component.
      * @param direction Objective coefficients in boundary-state order.
-     * @param fixedDirection Coefficients of the fixed score in the same order.
-     * @param fixedScore Required value of the fixed score.
+     * @param fixedDirection Coefficients of the bounded score in the same order.
+     * @param minimumScore Lower bound on that score.
      * @return The optimal score, boundary probabilities, and action flows.
      */
-    Result maximizeWithFixedScore(uint64_t entryState, std::vector<ValueType> const& direction, std::vector<ValueType> const& fixedDirection,
-                                  ValueType const& fixedScore);
+    Result maximizeWithMinimumScore(uint64_t entryState, std::vector<ValueType> const& direction, std::vector<ValueType> const& fixedDirection,
+                                    ValueType const& minimumScore);
 
     /*! Finishes a query batch and releases backend resources when needed. */
     void finishQueryBatch();
@@ -72,7 +72,7 @@ class ZeroWeightComponentLp {
 
     std::unique_ptr<SolverSession> buildSolver() const;
     Result solve(SolverSession& session, uint64_t entryState, std::vector<ValueType> const& direction, bool reuse,
-                 std::vector<ValueType> const* fixedDirection = nullptr, ValueType const* fixedScore = nullptr);
+                 std::vector<ValueType> const* fixedDirection = nullptr, ValueType const* minimumScore = nullptr);
 
     storm::Environment environment;
     std::vector<uint64_t> states;
