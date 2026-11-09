@@ -215,18 +215,35 @@ Workflows are in `.github/workflows/`:
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `buildtest.yml` | PR, daily, manual | Full build+test matrix (Debug/Release, GMP/CLN combos, with/without optional deps) |
+| `ci.yml` | PR, push to master, weekly, manual | Full build+test matrix (Debug/Release, GMP/CLN combos, with/without optional deps), stormpy compatibility check |
 | `formatcheck.yml` | push, PR, manual | Checks `src/` with clang-format 20 |
 | `formatapply.yml` | manual | Auto-applies formatting and commits |
-| `doxygen.yml` | push to master | Publishes API docs |
-| `release.yml` | tag push | Publishes GitHub releases |
+| `lint-check.yml` | PR, manual | Runs clang-format and clang-tidy on the changed lines of a PR |
+| `lint-full.yml` | weekly, manual | Runs clang-format and clang-tidy on the full codebase |
+| `doxygen.yml` | daily, manual | Publishes API docs |
+| `release.yml` | GitHub release published | Checks the version, deploys Docker images, updates the `stable` branch and triggers follow-up PRs |
 
-`buildtest.yml` covers multiple configurations including GMP/CLN combinations and a sanitizer build. A CI failure is most commonly caused by a formatting error (fix with `make format`) or a missing template instantiation for one of the `ValueType` variants.
+`ci.yml` covers multiple configurations including GMP/CLN combinations and a sanitizer build.
+The configurations are defined in `.github/workflows/ci-configs.json`.
+On every commit of a PR, a quick subset of the configurations is run (mode "quick").
+When the PR is labeled "ready for review" and on pushes to master, more configurations are run (mode "normal").
+The weekly run uses all configurations (mode "extensive").
+In the modes "normal" and "extensive", the CI also checks whether stormpy (master) still builds and passes its tests with the changed Storm.
+A CI failure is most commonly caused by a formatting error (fix with `make format`) or a missing template instantiation for one of the `ValueType` variants.
 
 
 ## Contributing
-- Check that all tests run successfully: `make test`.
-- Check that the code is properly formatted: `make format`.
-  There is also a CI job which can provide automated code formatting.
-- New code should be submitted by opening a [pull request](https://github.com/stormchecker/storm/pulls).
-  Our continuous integration automatically checks that the code in the PR is properly formatted and all tests run successfully. 
+1. Check locally that all tests run successfully: `make test`.
+2. Format the code locally: `make format`.
+   There is also a CI job which can provide automated code formatting.
+3. New code should be submitted by opening a [pull request](https://github.com/stormchecker/storm/pulls).
+4. Our continuous integration (see [CI](#ci--continuous-integration)) then automatically checks that
+   - the code in the PR is properly formatted,
+   - clang-tidy does not report any issues,
+   - the quick configurations build Storm and all tests pass.
+5. If the PR is ready to be reviewed, add the label "ready for review".
+   This label automatically triggers the CI checks with a wider set of configurations, including the stormpy compatibility check.
+6. If the changes break stormpy (as reported by the CI), increase the development counter `N` of the Storm version in `CMakeLists.txt` (see [Versioning](#versioning)) and later adapt stormpy accordingly.
+7. Run (if possible) the Copilot review on the PR.
+8. Wait for a review by one of the Storm maintainers and revise the PR according to potential comments.
+9. If the PR review was positive and the CI was successful, the PR can be merged by *squash and merge*.
