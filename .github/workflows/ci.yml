@@ -7,6 +7,8 @@ name: CI
 # on a manual run: run the configs of the selected mode
 # Configurations are defined in ci-configs.json.
 # This CI then calls the tests in build-test-action and test-deploy with the given configurations.
+# The installation steps are not executed in quick mode.
+# Configs with "stormpyCheck" additionally build and test stormpy against Storm (see stormpy-check-action) (only runs in normal/extensive mode).
 # Cache is restored everywhere (except for extensive) but only saved on master pushes.
 
 on:
@@ -43,8 +45,19 @@ jobs:
                 || (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready for review')) && 'quick'
                 || 'normal' }}
 
-  linuxTests:
+  # Storm versions of this commit and of the base branch of the PR (used by the stormpy compatibility check)
+  version:
     needs: prepare
+    uses: ./.github/workflows/get-version.yml
+  baseVersion:
+    needs: prepare
+    uses: ./.github/workflows/get-version.yml
+    with:
+      # Outside of PRs, base_ref is empty and the version of this commit is used
+      ref: ${{ github.base_ref }}
+
+  linuxTests:
+    needs: [prepare, version, baseVersion]
     name: ${{ matrix.config.name }} (${{ matrix.config.buildType }})
     runs-on: ubuntu-latest
     container: ${{ matrix.config.baseImg }}
@@ -100,6 +113,15 @@ jobs:
           save_3rdparty_cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           # Skip install steps for quick mode
           install: ${{ needs.prepare.outputs.mode != 'quick' }}
+      - name: Check stormpy compatibility
+        # Build and test stormpy against the installed Storm (not in quick mode)
+        if: matrix.config.stormpyCheck && needs.prepare.outputs.mode != 'quick'
+        uses: ./.github/actions/stormpy-check-action
+        with:
+          nr_jobs: "4"
+          build_type: ${{ matrix.config.buildType }}
+          storm_version: ${{ needs.version.outputs.full_version }}
+          storm_base_version: ${{ needs.baseVersion.outputs.full_version }}
 
   macTests:
     needs: prepare

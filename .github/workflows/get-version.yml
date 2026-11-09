@@ -1,6 +1,11 @@
 name: Get Storm version
 on:
   workflow_call:
+    inputs:
+      ref:
+        description: "Git ref to get the version from (default: commit of the calling workflow)"
+        type: string
+        default: ''
     outputs:
       version:
         description: Version X.Y.Z from CMakeLists (without development counter)
@@ -23,7 +28,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: ${{ job.workflow_repository }}
-          ref: ${{ job.workflow_sha }}
+          ref: ${{ inputs.ref || job.workflow_sha }}
           fetch-depth: 1
           sparse-checkout: CMakeLists.txt
 
