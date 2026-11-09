@@ -1,7 +1,7 @@
 # Copilot Instructions for Storm
 
 Storm is a modern probabilistic model checker written in C++20.
-Before making changes, read [doc/developers.md](../doc/developers.md) for the full developer reference (structure, build system, coding conventions, CI, contributing guidelines).
+Before making changes, read [doc/developers.md](../doc/developers.md) for the full developer reference (structure, build system, coding conventions, CI) and [CONTRIBUTING.md](../CONTRIBUTING.md) for the contribution workflow (pull requests, CI labels, stormpy compatibility, review).
 
 The sections below cover agent-specific context that complements that document.
 

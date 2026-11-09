@@ -26,6 +26,7 @@ Developers
 -----------------------------
 We welcome contributions to Storm.
 Our [information for developers](doc/developers.md) contains general information to get started with the development on Storm.
+The [contribution guidelines](CONTRIBUTING.md) describe how to submit changes.
 Feel free to contact us in case you need any pointers or help.
 
 
