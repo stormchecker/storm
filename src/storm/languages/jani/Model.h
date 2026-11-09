@@ -605,8 +605,9 @@ class Model {
     /*!
      * Lifts the common edge destination assignments of transient variables to edge assignments.
      * @param maxLevel the maximum level of assignments that are to be lifted.
+     * @param excludedVariables assignments to these variables are not lifted.
      */
-    void liftTransientEdgeDestinationAssignments(int64_t maxLevel = 0);
+    void liftTransientEdgeDestinationAssignments(int64_t maxLevel = 0, std::set<storm::expressions::Variable> const& excludedVariables = {});
 
     /*!
      * Retrieves whether there is any transient edge destination assignment in the model.

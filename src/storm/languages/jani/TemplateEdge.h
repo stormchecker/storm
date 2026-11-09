@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <vector>
 
 #include "storm/expressions/Expression.h"
@@ -66,8 +67,10 @@ class TemplateEdge {
      * Finds the transient assignments common to all destinations and lifts them to the edge. Afterwards, these
      * assignments are no longer contained in the destination. Note that this may modify the semantics of the
      * model if assignment levels are being used somewhere in the model.
+     * @param maxLevel the maximum level of assignments that are to be lifted.
+     * @param excludedVariables assignments to these variables are not lifted.
      */
-    void liftTransientDestinationAssignments(int64_t maxLevel = 0);
+    void liftTransientDestinationAssignments(int64_t maxLevel = 0, std::set<storm::expressions::Variable> const& excludedVariables = {});
 
     /**
      * Shifts the assingments from the edges to the destinations.

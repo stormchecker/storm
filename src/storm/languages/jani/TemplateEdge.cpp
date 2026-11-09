@@ -105,7 +105,7 @@ void TemplateEdge::changeAssignmentVariables(std::map<Variable const*, std::refe
     assignments.changeAssignmentVariables(remapping);
 }
 
-void TemplateEdge::liftTransientDestinationAssignments(int64_t maxLevel) {
+void TemplateEdge::liftTransientDestinationAssignments(int64_t maxLevel, std::set<storm::expressions::Variable> const& excludedVariables) {
     if (!destinations.empty()) {
         auto const& destination = *destinations.begin();
 
@@ -113,7 +113,7 @@ void TemplateEdge::liftTransientDestinationAssignments(int64_t maxLevel) {
 
         for (auto const& assignment : destination.getOrderedAssignments().getTransientAssignments()) {
             // Check if we can lift the assignment to the edge.
-            bool canBeLifted = assignment.getLevel() <= maxLevel;
+            bool canBeLifted = assignment.getLevel() <= maxLevel && excludedVariables.count(assignment.getExpressionVariable()) == 0;
             if (canBeLifted) {
                 for (auto const& destination : destinations) {
                     if (!destination.hasAssignment(assignment)) {

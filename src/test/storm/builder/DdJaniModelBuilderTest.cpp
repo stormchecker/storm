@@ -5,12 +5,16 @@
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/parser/JaniParser.h"
 #include "storm-parsers/parser/PrismParser.h"
+#include "storm/api/storm.h"
 #include "storm/builder/DdJaniModelBuilder.h"
 #include "storm/dd/Add.h"
 #include "storm/dd/Bdd.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/languages/SymbolicModelDescription.h"
 #include "storm/languages/jani/Compositions.h"
+#include "storm/modelchecker/results/QuantitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
@@ -400,6 +404,74 @@ TYPED_TEST(DdJaniModelBuilderTest, SynchronizationNondeterminismOffset) {
     EXPECT_EQ(3ul, model->getNumberOfStates());
     EXPECT_EQ(8ul, model->getNumberOfTransitions());
     EXPECT_EQ(8ul, model->getNumberOfChoices());
+}
+
+template<storm::dd::DdType DdType>
+std::map<std::string, double> checkJaniPropertiesWithDdEngine(std::string const& pathInTestResourcesDir) {
+    auto modelAndProperties = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/" + pathInTestResourcesDir);
+    auto formulas = storm::api::extractFormulasFromProperties(modelAndProperties.second);
+    storm::Environment env;
+    auto model = storm::api::buildSymbolicModel<DdType, double>(env, modelAndProperties.first, formulas);
+    std::map<std::string, double> result;
+    for (uint64_t i = 0; i < formulas.size(); ++i) {
+        auto checkResult = storm::api::verifyWithDdEngine<DdType, double>(env, model, storm::api::createTask<double>(formulas[i], true));
+        checkResult->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(model->getReachableStates(), model->getInitialStates()));
+        result[modelAndProperties.second[i].getName()] = checkResult->template asQuantitativeCheckResult<double>().getMax();
+    }
+    return result;
+}
+
+TYPED_TEST(DdJaniModelBuilderTest, LocalTransientVariable) {
+    // A transient variable that is local to an automaton and only assigned in some destinations.
+    const storm::dd::DdType DdType = TestFixture::DdType;
+    storm::Environment env;
+    auto janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/local_transient_variable.jani").first;
+    storm::builder::DdJaniModelBuilder<DdType, double> builder;
+    auto model = builder.build(env, janiModel);
+    EXPECT_EQ(3ul, model->getNumberOfStates());
+    EXPECT_EQ(8ul, model->getNumberOfChoices());
+}
+
+TYPED_TEST(DdJaniModelBuilderTest, AssignmentLevels) {
+    const storm::dd::DdType DdType = TestFixture::DdType;
+    std::map<std::string, std::map<std::string, double>> expected = {{"levels_det_transient", {{"xb=2", 1.0}}},
+                                                                     {"levels_random_transient", {{"agree1", 0.5}, {"mismatch", 0.0}, {"agree2", 0.5}}},
+                                                                     {"levels_next_state_read", {{"agree1", 0.5}, {"mismatch", 0.0}}},
+                                                                     {"levels_receiver_flips", {{"a1b2", 0.125}, {"a2b3", 0.375}, {"a1b3", 0.0}}},
+                                                                     {"levels_three_levels", {{"xc=3", 1.0}}},
+                                                                     {"levels_edge_assignment", {{"agree1", 0.5}, {"mismatch", 0.0}}},
+                                                                     {"levels_bool_transient", {{"agree1", 0.5}, {"mismatch", 0.0}}}};
+    for (auto const& [file, expectedValues] : expected) {
+        auto janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/" + file + ".jani").first;
+        EXPECT_TRUE((storm::builder::DdJaniModelBuilder<DdType, double>::canHandle(janiModel))) << file;
+        auto values = checkJaniPropertiesWithDdEngine<DdType>("mdp/" + file + ".jani");
+        ASSERT_EQ(expectedValues.size(), values.size()) << file;
+        for (auto const& [property, value] : expectedValues) {
+            EXPECT_NEAR(value, values.at(property), 1e-6) << file << " " << property;
+        }
+    }
+}
+
+TYPED_TEST(DdJaniModelBuilderTest, AssignmentLevelsUnsupported) {
+    const storm::dd::DdType DdType = TestFixture::DdType;
+    auto build = [](std::string const& file) { return checkJaniPropertiesWithDdEngine<DdType>("mdp/" + file + ".jani"); };
+
+    // A variable that is written at two different levels.
+    auto janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/levels_write_two_levels.jani").first;
+    EXPECT_FALSE((storm::builder::DdJaniModelBuilder<DdType, double>::canHandle(janiModel)));
+    STORM_SILENT_EXPECT_THROW(build("levels_write_two_levels"), storm::exceptions::NotSupportedException);
+
+    // Two synchronizing automata write the same passed transient variable.
+    STORM_SILENT_EXPECT_THROW(build("levels_two_writers"), storm::exceptions::WrongFormatException);
+
+    // A reward variable whose value depends on a value passed within the step.
+    STORM_SILENT_EXPECT_THROW(build("levels_reward_depends_on_passed"), storm::exceptions::NotSupportedException);
+
+    // A reward model that refers to a passed transient variable.
+    STORM_SILENT_EXPECT_THROW(build("levels_reward_is_passed"), storm::exceptions::NotSupportedException);
+
+    // An edge assignment to a reward variable at a level above the lowest one.
+    STORM_SILENT_EXPECT_THROW(build("levels_edge_reward_level"), storm::exceptions::NotSupportedException);
 }
 
 }  // namespace
