@@ -31,7 +31,9 @@ std::string getDefaultLpSolverAsString() {
     // TODO: We currently never set Gurobi as a default LP solver as
     // its availability is depending on the license, which may be confusing.
     // We track this item in #issue 680.
-#if defined STORM_HAVE_GLPK
+#if defined STORM_HAVE_HIGHS
+    return "highs";
+#elif defined STORM_HAVE_GLPK
     return "glpk";
 #elif defined STORM_HAVE_SOPLEX
     return "soplex";
