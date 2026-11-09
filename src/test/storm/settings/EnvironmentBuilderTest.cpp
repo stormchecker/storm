@@ -178,8 +178,6 @@ TEST(EnvironmentBuilderTest, DdAndExplorationEnvironmentMatchDefault) {
 
     EXPECT_DOUBLE_EQ(defaultEnv.dd().cudd().getConstantPrecision(), builtEnv.dd().cudd().getConstantPrecision());
     EXPECT_EQ(defaultEnv.dd().cudd().getMaximalMemory(), builtEnv.dd().cudd().getMaximalMemory());
-    EXPECT_EQ(defaultEnv.dd().cudd().isReorderingEnabled(), builtEnv.dd().cudd().isReorderingEnabled());
-    EXPECT_EQ(defaultEnv.dd().cudd().getReorderingTechnique(), builtEnv.dd().cudd().getReorderingTechnique());
 
     EXPECT_EQ(defaultEnv.dd().sylvan().getMaximalMemory(), builtEnv.dd().sylvan().getMaximalMemory());
     EXPECT_EQ(defaultEnv.dd().sylvan().getNumberOfThreads(), builtEnv.dd().sylvan().getNumberOfThreads());

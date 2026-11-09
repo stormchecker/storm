@@ -2,8 +2,6 @@
 
 #include <cstdint>
 
-#include "storm/dd/cudd/CuddReorderingTechnique.h"
-
 namespace storm {
 
 class CuddDdManagerEnvironment {
@@ -23,16 +21,8 @@ class CuddDdManagerEnvironment {
     uint64_t getMaximalMemory() const;
     void setMaximalMemory(uint64_t value);
 
-    bool isReorderingEnabled() const;
-    void setReorderingEnabled(bool value);
-
-    storm::dd::CuddReorderingTechnique getReorderingTechnique() const;
-    void setReorderingTechnique(storm::dd::CuddReorderingTechnique value);
-
    private:
     double constantPrecision;
     uint64_t maximalMemory;
-    bool reorderingEnabled;
-    storm::dd::CuddReorderingTechnique reorderingTechnique;
 };
 }  // namespace storm

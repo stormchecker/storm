@@ -8,71 +8,13 @@ namespace storm {
 namespace dd {
 
 #ifdef STORM_HAVE_CUDD
-InternalDdManager<DdType::CUDD>::InternalDdManager(storm::CuddDdManagerEnvironment const& environment)
-    : cuddManager(), reorderingTechnique(CUDD_REORDER_NONE), numberOfDdVariables(0) {
+InternalDdManager<DdType::CUDD>::InternalDdManager(storm::CuddDdManagerEnvironment const& environment) : cuddManager(), numberOfDdVariables(0) {
     this->cuddManager.SetMaxMemory(static_cast<unsigned long>(environment.getMaximalMemory() * 1024ul * 1024ul));
     this->cuddManager.SetEpsilon(environment.getConstantPrecision());
 
-    // Now set the selected reordering technique.
-    storm::dd::CuddReorderingTechnique reorderingTechniqueAsSetting = environment.getReorderingTechnique();
-    switch (reorderingTechniqueAsSetting) {
-        case storm::dd::CuddReorderingTechnique::None:
-            this->reorderingTechnique = CUDD_REORDER_NONE;
-            break;
-        case storm::dd::CuddReorderingTechnique::Random:
-            this->reorderingTechnique = CUDD_REORDER_RANDOM;
-            break;
-        case storm::dd::CuddReorderingTechnique::RandomPivot:
-            this->reorderingTechnique = CUDD_REORDER_RANDOM_PIVOT;
-            break;
-        case storm::dd::CuddReorderingTechnique::Sift:
-            this->reorderingTechnique = CUDD_REORDER_SIFT;
-            break;
-        case storm::dd::CuddReorderingTechnique::SiftConv:
-            this->reorderingTechnique = CUDD_REORDER_SIFT_CONVERGE;
-            break;
-        case storm::dd::CuddReorderingTechnique::SymmetricSift:
-            this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT;
-            break;
-        case storm::dd::CuddReorderingTechnique::SymmetricSiftConv:
-            this->reorderingTechnique = CUDD_REORDER_SYMM_SIFT_CONV;
-            break;
-        case storm::dd::CuddReorderingTechnique::GroupSift:
-            this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT;
-            break;
-        case storm::dd::CuddReorderingTechnique::GroupSiftConv:
-            this->reorderingTechnique = CUDD_REORDER_GROUP_SIFT_CONV;
-            break;
-        case storm::dd::CuddReorderingTechnique::Win2:
-            this->reorderingTechnique = CUDD_REORDER_WINDOW2;
-            break;
-        case storm::dd::CuddReorderingTechnique::Win2Conv:
-            this->reorderingTechnique = CUDD_REORDER_WINDOW2_CONV;
-            break;
-        case storm::dd::CuddReorderingTechnique::Win3:
-            this->reorderingTechnique = CUDD_REORDER_WINDOW3;
-            break;
-        case storm::dd::CuddReorderingTechnique::Win3Conv:
-            this->reorderingTechnique = CUDD_REORDER_WINDOW3_CONV;
-            break;
-        case storm::dd::CuddReorderingTechnique::Win4:
-            this->reorderingTechnique = CUDD_REORDER_WINDOW4;
-            break;
-        case storm::dd::CuddReorderingTechnique::Win4Conv:
-            this->reorderingTechnique = CUDD_REORDER_WINDOW4_CONV;
-            break;
-        case storm::dd::CuddReorderingTechnique::Annealing:
-            this->reorderingTechnique = CUDD_REORDER_ANNEALING;
-            break;
-        case storm::dd::CuddReorderingTechnique::Genetic:
-            this->reorderingTechnique = CUDD_REORDER_GENETIC;
-            break;
-        case storm::dd::CuddReorderingTechnique::Exact:
-            this->reorderingTechnique = CUDD_REORDER_EXACT;
-            break;
-    }
-
-    this->allowDynamicReordering(environment.isReorderingEnabled());
+    // Dynamic reordering is currently broken with CUDD, as several places (most notably the construction of DDs) rely on
+    // the variable order not changing. We therefore disable it unconditionally. See stormchecker/storm#119.
+    this->getCuddManager().AutodynDisable();
 }
 
 InternalDdManager<DdType::CUDD>::~InternalDdManager() {
@@ -178,20 +120,15 @@ bool InternalDdManager<DdType::CUDD>::supportsOrderedInsertion() const {
 }
 
 void InternalDdManager<DdType::CUDD>::allowDynamicReordering(bool value) {
-    if (value) {
-        this->getCuddManager().AutodynEnable(this->reorderingTechnique);
-    } else {
-        this->getCuddManager().AutodynDisable();
-    }
+    STORM_LOG_THROW(!value, storm::exceptions::NotSupportedException, "Dynamic reordering is not supported for CUDD.");
 }
 
 bool InternalDdManager<DdType::CUDD>::isDynamicReorderingAllowed() const {
-    Cudd_ReorderingType type;
-    return this->getCuddManager().ReorderingStatus(&type);
+    return false;
 }
 
 void InternalDdManager<DdType::CUDD>::triggerReordering() {
-    this->getCuddManager().ReduceHeap(this->reorderingTechnique, 0);
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Dynamic reordering is not supported for CUDD.");
 }
 
 void InternalDdManager<DdType::CUDD>::debugCheck() const {
