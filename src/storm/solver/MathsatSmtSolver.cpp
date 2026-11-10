@@ -559,20 +559,18 @@ storm::expressions::Expression MathsatSmtSolver::getInterpolant(std::vector<uint
 #endif
 }
 
-bool MathsatSmtSolver::setTimeout(uint_fast64_t milliseconds) {
+void MathsatSmtSolver::setTimeout(uint_fast64_t milliseconds) {
 #ifdef STORM_HAVE_MATHSAT
     timeout = std::chrono::milliseconds(milliseconds);
-    return true;
 #else
     (void)milliseconds;
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without MathSAT support.");
 #endif
 }
 
-bool MathsatSmtSolver::unsetTimeout() {
+void MathsatSmtSolver::unsetTimeout() {
 #ifdef STORM_HAVE_MATHSAT
     timeout.reset();
-    return true;
 #else
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without MathSAT support.");
 #endif

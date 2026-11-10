@@ -106,9 +106,9 @@ class MathsatSmtSolver : public SmtSolver {
 
     virtual storm::expressions::Expression getInterpolant(std::vector<uint_fast64_t> const& groupsA) override;
 
-    virtual bool setTimeout(uint_fast64_t milliseconds) override;
+    virtual void setTimeout(uint_fast64_t milliseconds) override;
 
-    virtual bool unsetTimeout() override;
+    virtual void unsetTimeout() override;
 
    private:
     storm::expressions::SimpleValuation convertMathsatModelToValuation();

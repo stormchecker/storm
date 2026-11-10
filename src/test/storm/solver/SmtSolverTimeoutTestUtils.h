@@ -47,14 +47,14 @@ inline storm::expressions::Expression pigeonholeFormula(storm::expressions::Expr
  * Checks that the given solver aborts a hard query once the timeout is exceeded and remains usable afterwards.
  */
 inline void checkSmtSolverTimeout(storm::solver::SmtSolver& solver, storm::expressions::ExpressionManager& manager) {
-    ASSERT_TRUE(solver.setTimeout(10));
+    solver.setTimeout(10);
     solver.add(pigeonholeFormula(manager, 12));
     auto start = std::chrono::steady_clock::now();
     EXPECT_EQ(storm::solver::SmtSolver::CheckResult::Unknown, solver.check());
     EXPECT_LT(std::chrono::steady_clock::now() - start, std::chrono::seconds(10));
 
     // After unsetting the timeout, the solver can be used again.
-    ASSERT_TRUE(solver.unsetTimeout());
+    solver.unsetTimeout();
     solver.reset();
     storm::expressions::Variable x = manager.declareBooleanVariable("x");
     solver.add(x);

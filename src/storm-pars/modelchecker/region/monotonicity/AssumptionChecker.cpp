@@ -273,8 +273,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
 
         s->add(exprOrderSucc);
         s->add(exprBounds);
-        bool const timeoutSet = s->setTimeout(100);
-        STORM_LOG_WARN_COND(timeoutSet, "The SMT solver does not support timeouts, validating assumptions may take long.");
+        s->setTimeout(100);
         // assert that sorting of successors in the order and the bounds on the expression are at least satisfiable
         // when this is not the case, the order is invalid
         // however, it could be that the sat solver didn't finish in time, in that case we just continue.
