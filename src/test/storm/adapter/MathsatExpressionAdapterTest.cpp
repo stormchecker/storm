@@ -153,6 +153,14 @@ TEST(MathsatExpressionAdapter, StormToMathsatPower) {
     ASSERT_TRUE(msat_solve(env) == msat_result::MSAT_UNSAT);
     msat_reset_env(env);
 
+    // Larger odd exponent to test exponentiation by squaring
+    storm::expressions::Expression exprFifthPow = storm::expressions::pow(x, manager->integer(5));
+    msat_term msatFifth = msat_make_times(env, msat_make_times(env, msatSquare, msatSquare), xVar);
+    ASSERT_NO_THROW(conjecture = msat_make_not(env, msat_make_equal(env, adapter.translateExpression(exprFifthPow), msatFifth)));
+    msat_assert_formula(env, conjecture);
+    ASSERT_TRUE(msat_solve(env) == msat_result::MSAT_UNSAT);
+    msat_reset_env(env);
+
     // Exponent zero.
     storm::expressions::Expression exprZeroPow = storm::expressions::pow(x, manager->integer(0));
     ASSERT_NO_THROW(conjecture = msat_make_not(env, msat_make_equal(env, adapter.translateExpression(exprZeroPow), msat_make_number(env, "1"))));

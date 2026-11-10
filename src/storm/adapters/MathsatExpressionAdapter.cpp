@@ -126,10 +126,19 @@ boost::any MathsatExpressionAdapter::visit(storm::expressions::BinaryNumericalFu
             if (exponent == 0) {
                 return msat_make_number(env, "1");
             }
-            --exponent;
-            if (exponent > 0) {
-                for (; exponent > 0; --exponent) {
-                    result = msat_make_times(env, result, leftResult);
+            {
+                // Exponentiation by squaring
+                msat_term power = leftResult;
+                bool resultSet = false;
+                while (exponent > 0) {
+                    if (exponent & 1) {
+                        result = resultSet ? msat_make_times(env, result, power) : power;
+                        resultSet = true;
+                    }
+                    exponent >>= 1;
+                    if (exponent > 0) {
+                        power = msat_make_times(env, power, power);
+                    }
                 }
             }
             return result;
