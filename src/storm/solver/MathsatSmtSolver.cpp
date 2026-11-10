@@ -380,12 +380,20 @@ class AllsatValuationCallbackUserData {
             valuation.setBooleanValue(stormVariable, currentTermValue);
         }
 
+        ++user->numberOfModels;
         if (user->callback(valuation)) {
             return 1;
         } else {
+            user->abortedByCallback = true;
             return 0;
         }
     }
+
+    // The number of models that were passed to the callback.
+    uint_fast64_t numberOfModels = 0;
+
+    // Whether the callback aborted the enumeration.
+    bool abortedByCallback = false;
 
    protected:
     // The manager responsible for the expression.s
@@ -413,12 +421,20 @@ class AllsatModelReferenceCallbackUserData {
     static int allsatModelReferenceCallback(msat_term* model, int, void* user_data) {
         AllsatModelReferenceCallbackUserData* user = reinterpret_cast<AllsatModelReferenceCallbackUserData*>(user_data);
         MathsatSmtSolver::MathsatAllsatModelReference modelReference(user->manager, user->env, model, user->atomToSlotMapping);
+        ++user->numberOfModels;
         if (user->callback(modelReference)) {
             return 1;
         } else {
+            user->abortedByCallback = true;
             return 0;
         }
     }
+
+    // The number of models that were passed to the callback.
+    uint_fast64_t numberOfModels = 0;
+
+    // Whether the callback aborted the enumeration.
+    bool abortedByCallback = false;
 
    protected:
     // The manager responsible for the expression.s
@@ -451,12 +467,11 @@ uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable>
 
     AllsatValuationCallbackUserData allSatUserData(this->getManager(), *expressionAdapter, env, callback);
     startTimeoutClock();
-    int numberOfModels =
-        msat_all_sat(env, msatImportant.data(), msatImportant.size(), &AllsatValuationCallbackUserData::allsatValuationsCallback, &allSatUserData);
+    int result = msat_all_sat(env, msatImportant.data(), msatImportant.size(), &AllsatValuationCallbackUserData::allsatValuationsCallback, &allSatUserData);
 
     // Restore original assertion stack and return.
     this->pop();
-    return static_cast<uint_fast64_t>(numberOfModels);
+    return processAllSatResult(result, allSatUserData.numberOfModels, allSatUserData.abortedByCallback);
 #else
     (void)important;
     (void)callback;
@@ -482,12 +497,12 @@ uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable>
 
     AllsatModelReferenceCallbackUserData allSatUserData(this->getManager(), env, atomToSlotMapping, callback);
     startTimeoutClock();
-    int numberOfModels =
+    int result =
         msat_all_sat(env, msatImportant.data(), msatImportant.size(), &AllsatModelReferenceCallbackUserData::allsatModelReferenceCallback, &allSatUserData);
 
     // Restore original assertion stack and return.
     this->pop();
-    return static_cast<uint_fast64_t>(numberOfModels);
+    return processAllSatResult(result, allSatUserData.numberOfModels, allSatUserData.abortedByCallback);
 #else
     (void)important;
     (void)callback;
@@ -583,12 +598,23 @@ void MathsatSmtSolver::startTimeoutClock() {
     }
 }
 
+bool MathsatSmtSolver::isTimeoutExceeded() const {
+    return timeout && std::chrono::steady_clock::now() >= deadline;
+}
+
 int MathsatSmtSolver::terminationTest(void* userData) {
-    MathsatSmtSolver const* solver = static_cast<MathsatSmtSolver const*>(userData);
-    if (solver->timeout && std::chrono::steady_clock::now() >= solver->deadline) {
-        return 1;
+    return static_cast<MathsatSmtSolver const*>(userData)->isTimeoutExceeded() ? 1 : 0;
+}
+
+uint_fast64_t MathsatSmtSolver::processAllSatResult(int result, uint_fast64_t numberOfModels, bool abortedByCallback) const {
+    if (result < 0) {
+        // MathSAT reports an error if the enumeration was aborted, either by the callback or by the termination test.
+        bool const timedOut = isTimeoutExceeded();
+        STORM_LOG_THROW(timedOut || abortedByCallback, storm::exceptions::UnexpectedException, "MathSAT failed to perform AllSat.");
+        STORM_LOG_WARN_COND(!timedOut || abortedByCallback, "AllSat was aborted because of the timeout. Only " << numberOfModels << " models were found.");
     }
-    return 0;
+    // Return the number of models passed to the callback, which is the number of models found so far even if the enumeration was aborted.
+    return numberOfModels;
 }
 #endif
 }  // namespace solver

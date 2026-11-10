@@ -120,6 +120,22 @@ class MathsatSmtSolver : public SmtSolver {
     void startTimeoutClock();
 
     /*!
+     * @return True iff a timeout is set and the deadline of the current query has passed.
+     */
+    bool isTimeoutExceeded() const;
+
+    /*!
+     * Processes the result of a call to msat_all_sat.
+     *
+     * @param result The value returned by msat_all_sat.
+     * @param numberOfModels The number of models that were passed to the callback.
+     * @param abortedByCallback Whether the callback aborted the enumeration.
+     * @return The number of models found. If the enumeration was aborted (by the callback or because of the timeout),
+     * these are the models found until then.
+     */
+    uint_fast64_t processAllSatResult(int result, uint_fast64_t numberOfModels, bool abortedByCallback) const;
+
+    /*!
      * Termination test that is periodically called by MathSAT during search.
      *
      * @param userData A pointer to the solver.
