@@ -236,6 +236,7 @@
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CVC5=ON -DSTORM_DISABLE_MATHSAT=ON -DSTORM_DISABLE_Z3=ON",
       "baseImg": "movesrwth/storm-dependencies:latest",
+      "starterProjectCommand": "--help",
       "expectNotHave": [
         "CVC5",
         "MATHSAT",
