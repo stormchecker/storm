@@ -80,6 +80,7 @@ class SoplexLpSolver : public LpSolver<ValueType, RawMode> {
     // MILP related methods not supported by SoPlex
     //////////////////
     virtual void setMaximalMILPGap(ValueType const& gap, bool relative) override;
+    virtual void setTolerance(double tolerance) override;
     virtual ValueType getMILPGap(bool relative) const override;
     virtual int_fast64_t getIntegerValue(Variable const& name) const override;
     virtual bool getBinaryValue(Variable const& name) const override;

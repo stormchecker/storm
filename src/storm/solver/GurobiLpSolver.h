@@ -119,6 +119,7 @@ class GurobiLpSolver : public LpSolver<ValueType, RawMode> {
     virtual void pop() override;
 
     virtual void setMaximalMILPGap(ValueType const& gap, bool relative) override;
+    virtual void setTolerance(double tolerance) override;
     virtual ValueType getMILPGap(bool relative) const override;
 
     // Methods to retrieve values of sub-optimal solutions found along the way.

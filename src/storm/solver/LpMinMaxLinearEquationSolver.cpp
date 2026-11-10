@@ -161,6 +161,12 @@ bool LpMinMaxLinearEquationSolver<ValueType>::solveEquationsLp(Environment const
     // Set up the LP solver
     auto solver = lpSolverFactory->createRaw(env, "");
     solver->setOptimizationDirection(invert(dir));
+    if constexpr (!storm::NumberTraits<ValueType>::IsExact) {
+        // Derive the LP solver's tolerance from the requested precision.
+        double const toleranceFactor = 1e-2;  // Account for errors propagating
+        double const precision = storm::utility::convertNumber<double>(env.solver().minMax().getPrecision());
+        solver->setTolerance(precision * toleranceFactor);
+    }
     using VariableIndex = typename LpSolver<ValueType, true>::Variable;
     std::map<VariableIndex, ValueType> constantRowGroups;  // Keep track of the rows that are known to be constants
 

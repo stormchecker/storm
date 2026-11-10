@@ -283,6 +283,28 @@ TYPED_TEST(LpSolverTest, LPOptimizeMax) {
     EXPECT_NEAR(this->parseNumber("59/4"), solver->getObjectiveValue(), this->precision());
 }
 
+TYPED_TEST(LpSolverTest, Tolerance) {
+    auto solver = this->factory()->create(this->env(), "");
+    solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
+    ASSERT_NO_THROW(solver->setTolerance(1e-9));
+    storm::expressions::Variable x;
+    storm::expressions::Variable y;
+    storm::expressions::Variable z;
+    ASSERT_NO_THROW(x = solver->addBoundedContinuousVariable("x", 0, 1, -1));
+    ASSERT_NO_THROW(y = solver->addLowerBoundedContinuousVariable("y", 0, 2));
+    ASSERT_NO_THROW(z = solver->addLowerBoundedContinuousVariable("z", 0, 1));
+    ASSERT_NO_THROW(solver->update());
+
+    ASSERT_NO_THROW(solver->addConstraint("", x + y + z <= solver->getConstant(12)));
+    ASSERT_NO_THROW(solver->addConstraint("", solver->getConstant(this->parseNumber("1/2")) * y + z - x == solver->getConstant(5)));
+    ASSERT_NO_THROW(solver->addConstraint("", y - x <= solver->getConstant(this->parseNumber("11/2"))));
+    ASSERT_NO_THROW(solver->update());
+
+    ASSERT_NO_THROW(solver->optimize());
+    ASSERT_TRUE(solver->isOptimal());
+    EXPECT_NEAR(this->parseNumber("59/4"), solver->getObjectiveValue(), this->precision());
+}
+
 TYPED_TEST(LpSolverTest, LPOptimizeMaxRaw) {
     typedef typename TestFixture::ValueType ValueType;
     auto solver = this->factory()->createRaw(this->env(), "");

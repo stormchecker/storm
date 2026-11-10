@@ -305,6 +305,12 @@ void Z3LpSolver<ValueType, RawMode>::pop() {
 }
 
 template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::setTolerance(double) {
+    // Since the solver is always exact, setting a tolerance has no effect.
+    // Intentionally left empty.
+}
+
+template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::setMaximalMILPGap(ValueType const&, bool) {
     // Since the solver is always exact, setting a gap has no effect.
     // Intentionally left empty.
@@ -456,6 +462,13 @@ void Z3LpSolver<ValueType, RawMode>::push() {
 
 template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::pop() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
+                    "requires this support.");
+}
+
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::setTolerance(double) {
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
                     "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that "
                     "requires this support.");

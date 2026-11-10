@@ -273,6 +273,14 @@ void GlpkLpSolver<ValueType, RawMode>::optimize() const {
     // Start by setting the model sense.
     glp_set_obj_dir(this->lp, this->getOptimizationDirection() == OptimizationDirection::Minimize ? GLP_MIN : GLP_MAX);
 
+    // Parameters for the simplex method.
+    glp_smcp simplexParameters;
+    glp_init_smcp(&simplexParameters);
+    if (this->tolerance) {
+        simplexParameters.tol_bnd = *this->tolerance;
+        simplexParameters.tol_dj = *this->tolerance;
+    }
+
     int error = 0;
     if (this->modelContainsIntegerVariables) {
         glp_iocp* parameters = new glp_iocp();
@@ -284,7 +292,7 @@ void GlpkLpSolver<ValueType, RawMode>::optimize() const {
         } else {
             // Without presolving, we solve the relaxed model first. This is required because
             // glp_intopt requires that either presolving is enabled or an optimal initial basis is provided.
-            error = glp_simplex(this->lp, nullptr);
+            error = glp_simplex(this->lp, &simplexParameters);
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to optimize relaxed glpk model (" << error << ").");
             // If the relaxed model is already not feasible, we don't have to solve the actual model.
             if (glp_get_status(this->lp) == GLP_INFEAS || glp_get_status(this->lp) == GLP_NOFEAS) {
@@ -332,7 +340,7 @@ void GlpkLpSolver<ValueType, RawMode>::optimize() const {
             }
         }
     } else {
-        error = glp_simplex(this->lp, nullptr);
+        error = glp_simplex(this->lp, &simplexParameters);
     }
 
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to optimize glpk model (" << error << ").");
@@ -590,6 +598,13 @@ void GlpkLpSolver<ValueType, RawMode>::pop() {
                     "This version of storm was compiled without support for GLPK. Yet, a method was called that requires this support. Please choose a "
                     "version with GLPK support.");
 #endif
+}
+
+template<typename ValueType, bool RawMode>
+void GlpkLpSolver<ValueType, RawMode>::setTolerance(double tolerance) {
+    STORM_LOG_THROW(tolerance > 0.0 && tolerance < 1.0, storm::exceptions::InvalidArgumentException,
+                    "GLPK requires a tolerance in the open interval (0, 1), but " << tolerance << " was given.");
+    this->tolerance = tolerance;
 }
 
 template<typename ValueType, bool RawMode>

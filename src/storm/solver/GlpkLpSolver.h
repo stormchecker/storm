@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <optional>
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/solver/LpSolver.h"
 
@@ -91,6 +92,7 @@ class GlpkLpSolver : public LpSolver<ValueType, RawMode> {
     virtual void pop() override;
 
     virtual void setMaximalMILPGap(ValueType const& gap, bool relative) override;
+    virtual void setTolerance(double tolerance) override;
     virtual ValueType getMILPGap(bool relative) const override;
 
    private:
@@ -118,6 +120,9 @@ class GlpkLpSolver : public LpSolver<ValueType, RawMode> {
     mutable double maxMILPGap;
     mutable bool maxMILPGapRelative;
     mutable double actualRelativeMILPGap;
+
+    // If set, the feasibility and optimality tolerance used by the simplex method.
+    std::optional<double> tolerance;
 
     struct IncrementalLevel {
         std::vector<Variable> variables;

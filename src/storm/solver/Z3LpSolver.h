@@ -92,6 +92,7 @@ class Z3LpSolver : public LpSolver<ValueType, RawMode> {
     virtual void pop() override;
 
     virtual void setMaximalMILPGap(ValueType const& gap, bool relative) override;
+    virtual void setTolerance(double tolerance) override;
     virtual ValueType getMILPGap(bool relative) const override;
 
    private:
