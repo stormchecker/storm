@@ -514,8 +514,7 @@ class PragmaOnceCheck(Check):
 
 class RawThrowCheck(Check):
     name = "raw-throw"
-
-    THROW_RE = re.compile(r"\bthrow\s+([A-Za-z_]\w*(?:::[A-Za-z_]\w*)*)\s*[({]")
+    THROW_RE = re.compile(r"\bthrow\b")
 
     def __init__(self, src_dir, repo_root, ignore_sections):
         super().__init__(src_dir, repo_root, ignore_sections)
@@ -525,14 +524,14 @@ class RawThrowCheck(Check):
         rel = self.rel_path(path)
         code_lines = strip_comments(lines)
         for idx, line in enumerate(code_lines):
-            for m in self.THROW_RE.finditer(line):
-                self.raw_throws.append((path, idx + 1, m.group(0).strip()))
+            if self.THROW_RE.search(line):
+                self.raw_throws.append((rel, idx + 1, line.strip()))
 
     def report(self):
         print("\n=== raw-throw ===")
         if self.raw_throws:
             print(
-                "\n[raw_throw] {} occurrence(s): use STORM_LOG_THROW instead of throwing directly".format(
+                "\n[raw_throw] {} occurrence(s): use STORM_LOG_THROW instead of 'throw'".format(
                     len(self.raw_throws)
                 )
             )
@@ -551,10 +550,17 @@ class StdoutUsageCheck(Check):
     name = "stdout-usage"
 
     STD_COUT_RE = re.compile(r"\bstd::cout\b")
+    # CLI code may write to stdout: src/storm*-cli/ and src/storm-cli-utilities/
+    CLI_DIR_RE = re.compile(r"^src/storm[\w-]*-cli(-utilities)?/")
 
     def __init__(self, src_dir, repo_root, ignore_sections):
         super().__init__(src_dir, repo_root, ignore_sections)
         self.violations = []
+
+    def should_skip(self, path):
+        return bool(self.CLI_DIR_RE.match(self.rel_path(path))) or super().should_skip(
+            path
+        )
 
     def check_file(self, path, lines):
         rel = self.rel_path(path)
