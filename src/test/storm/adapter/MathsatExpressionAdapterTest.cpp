@@ -4,6 +4,7 @@
 #ifdef STORM_HAVE_MATHSAT
 #include <mathsat.h>
 #include "storm/adapters/MathsatExpressionAdapter.h"
+#include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/expressions/ExpressionManager.h"
 #include "storm/expressions/Expressions.h"
 #include "storm/expressions/OperatorType.h"
@@ -122,6 +123,46 @@ TEST(MathsatExpressionAdapter, StormToMathsatReal) {
     msat_assert_formula(env, conjecture);
     ASSERT_TRUE(msat_solve(env) == msat_result::MSAT_UNSAT);
     msat_reset_env(env);
+}
+
+TEST(MathsatExpressionAdapter, StormToMathsatPower) {
+    msat_config config = msat_create_config();
+    msat_env env = msat_create_env(config);
+    ASSERT_FALSE(MSAT_ERROR_ENV(env));
+    msat_destroy_config(config);
+
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    storm::adapters::MathsatExpressionAdapter adapter(*manager, env);
+
+    storm::expressions::Variable x = manager->declareRationalVariable("x");
+    msat_term xVar = msat_make_constant(env, msat_declare_function(env, "x", msat_get_rational_type(env)));
+    msat_term msatSquare = msat_make_times(env, xVar, xVar);
+    msat_term conjecture;
+
+    // Integer exponent.
+    storm::expressions::Expression exprIntPow = storm::expressions::pow(x, manager->integer(2));
+    ASSERT_NO_THROW(conjecture = msat_make_not(env, msat_make_equal(env, adapter.translateExpression(exprIntPow), msatSquare)));
+    msat_assert_formula(env, conjecture);
+    ASSERT_TRUE(msat_solve(env) == msat_result::MSAT_UNSAT);
+    msat_reset_env(env);
+
+    // Rational-typed but integral exponent
+    storm::expressions::Expression exprRationalPow = storm::expressions::pow(x, manager->rational(2));
+    ASSERT_NO_THROW(conjecture = msat_make_not(env, msat_make_equal(env, adapter.translateExpression(exprRationalPow), msatSquare)));
+    msat_assert_formula(env, conjecture);
+    ASSERT_TRUE(msat_solve(env) == msat_result::MSAT_UNSAT);
+    msat_reset_env(env);
+
+    // Exponent zero.
+    storm::expressions::Expression exprZeroPow = storm::expressions::pow(x, manager->integer(0));
+    ASSERT_NO_THROW(conjecture = msat_make_not(env, msat_make_equal(env, adapter.translateExpression(exprZeroPow), msat_make_number(env, "1"))));
+    msat_assert_formula(env, conjecture);
+    ASSERT_TRUE(msat_solve(env) == msat_result::MSAT_UNSAT);
+    msat_reset_env(env);
+
+    // Non-integral exponent is rejected.
+    STORM_SILENT_ASSERT_THROW(adapter.translateExpression(storm::expressions::pow(x, manager->rational(0.5))),
+                              storm::exceptions::ExpressionEvaluationException);
 }
 
 TEST(MathsatExpressionAdapter, StormToMathsatFloorCeil) {
