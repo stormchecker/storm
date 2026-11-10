@@ -49,9 +49,9 @@ inline storm::expressions::Expression pigeonholeFormula(storm::expressions::Expr
 inline void checkSmtSolverTimeout(storm::solver::SmtSolver& solver, storm::expressions::ExpressionManager& manager) {
     solver.setTimeout(10);
     solver.add(pigeonholeFormula(manager, 12));
-    auto start = std::chrono::steady_clock::now();
+    auto const start = std::chrono::steady_clock::now();
     EXPECT_EQ(storm::solver::SmtSolver::CheckResult::Unknown, solver.check());
-    EXPECT_LT(std::chrono::steady_clock::now() - start, std::chrono::seconds(10));
+    EXPECT_LT(std::chrono::steady_clock::now() - start, std::chrono::seconds(1));
 
     // After unsetting the timeout, the solver can be used again.
     solver.unsetTimeout();
