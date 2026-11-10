@@ -1,6 +1,7 @@
 #include "SignalHandler.h"
 
 #include <csignal>
+#include <cstddef>
 #include <iostream>
 
 namespace storm {
@@ -21,6 +22,60 @@ SignalInformation& SignalInformation::infos() {
     return signalInfo;
 }
 
+bool SignalInformation::isTerminate() {
+    // Fast path: flag already latched by a signal, a timeout, or a previous callback invocation.
+    if (terminate.load(std::memory_order_relaxed)) {
+        return true;
+    }
+
+    // Reentrancy guard: if a registered callback (transitively) calls isTerminate() again on this
+    // thread, do not re-invoke the callback a second time. Just report the current flag value.
+    thread_local bool invokingCallback = false;
+    if (invokingCallback) {
+        return terminate.load(std::memory_order_relaxed);
+    }
+
+    // Copy the callback out from under the lock before invoking it: arbitrary user code (e.g. acquiring
+    // the GIL, constructing/destroying further ScopedTerminationCallback guards) must never run while
+    // callbackMutex is held.
+    std::function<bool()> callback;
+    {
+        std::lock_guard<std::mutex> lock(callbackMutex);
+        callback = currentCallback;
+    }
+    if (!callback) {
+        return false;
+    }
+
+    invokingCallback = true;
+    bool result;
+    try {
+        result = callback();
+    } catch (...) {
+        invokingCallback = false;
+        throw;
+    }
+    invokingCallback = false;
+
+    if (result) {
+        terminate.store(true, std::memory_order_relaxed);
+        return true;
+    }
+    return false;
+}
+
+std::function<bool()> SignalInformation::installCallback(std::function<bool()> callback) {
+    std::lock_guard<std::mutex> lock(callbackMutex);
+    std::function<bool()> previous = std::move(currentCallback);
+    currentCallback = std::move(callback);
+    return previous;
+}
+
+void SignalInformation::restoreCallback(std::function<bool()> previous) {
+    std::lock_guard<std::mutex> lock(callbackMutex);
+    currentCallback = std::move(previous);
+}
+
 /*!
  * Signal handler for aborts, etc.
  * After the first signal the handler waits a number of seconds to let the program print preliminary results
@@ -30,7 +85,8 @@ SignalInformation& SignalInformation::infos() {
  * @param signal Exit code of signal.
  */
 void signalHandler(int signal) {
-    if (!isTerminate()) {
+    // Use isTerminateFlagOnly() to not invoke the registered termination callback.
+    if (!SignalInformation::infos().isTerminateFlagOnly()) {
         // First time we get an abort signal
         // We give the program a number of seconds to print results obtained so far before termination
         std::cerr << "ERROR: The program received signal " << signal << " and will be aborted in " << maxWaitTime << "s.\n";
