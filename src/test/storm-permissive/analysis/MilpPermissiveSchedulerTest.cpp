@@ -17,6 +17,9 @@
 #if defined STORM_HAVE_HIGHS || defined STORM_HAVE_GLPK || defined STORM_HAVE_Z3
 
 TEST(MilpPermissiveSchedulerTest, DieSelection) {
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
+#endif
     storm::Environment env;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/die_c1.nm");
