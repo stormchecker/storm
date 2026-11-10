@@ -113,8 +113,19 @@ boost::any MathsatExpressionAdapter::visit(storm::expressions::BinaryNumericalFu
         case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Max:
             return msat_make_term_ite(env, msat_make_leq(env, leftResult, rightResult), rightResult, leftResult);
         case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Power:
-            exponent = expression.getSecondOperand()->evaluateAsInt();
+            // MathSAT has no native power operator, so the exponent must be a constant non-negative integer
+            if (expression.getSecondOperand()->hasIntegerType()) {
+                exponent = expression.getSecondOperand()->evaluateAsInt();
+            } else {
+                storm::RationalNumber rationalExponent = expression.getSecondOperand()->evaluateAsRational();
+                STORM_LOG_THROW(storm::utility::isInteger(rationalExponent), storm::exceptions::ExpressionEvaluationException,
+                                "Cannot evaluate expression with non-integral exponent " << rationalExponent << ".");
+                exponent = storm::utility::convertNumber<int_fast64_t>(rationalExponent);
+            }
             STORM_LOG_THROW(exponent >= 0, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression with negative exponent.");
+            if (exponent == 0) {
+                return msat_make_number(env, "1");
+            }
             --exponent;
             if (exponent > 0) {
                 for (; exponent > 0; --exponent) {
