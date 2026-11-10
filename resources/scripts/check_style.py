@@ -25,6 +25,9 @@ import sys
 from abc import ABC, abstractmethod
 from collections import defaultdict
 
+# Repository root, derived from this script's location
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # Regex for a .h file's leading pragma
 PRAGMA_ONCE_RE = re.compile(r"^\s*#\s*pragma\s+once\b")
 
@@ -87,15 +90,18 @@ class Check(ABC):
         self.ignore_set = ignore_sections.get(self.name, set())
         self.skipped = 0
 
+    def rel_path(self, path):
+        """Path relative to the repository root, with '/' separators."""
+        return os.path.relpath(os.path.abspath(path), self.repo_root).replace(
+            os.sep, "/"
+        )
+
     def should_skip(self, path):
         """Default: skip files listed in .check-style-ignore under this
         check's own section. Subclasses with a structural exemption (e.g.
-        "CLI code is always exempt") extend this rather than replacing it,
-        so an ignore-file entry still works even for check-only checks."""
-        return (
-            os.path.relpath(os.path.abspath(path), self.repo_root).replace(os.sep, "/")
-            in self.ignore_set
-        )
+        stdout-usage exempting all CLI code) extend this rather than
+        replacing it, so an ignore-file entry still works for them."""
+        return self.rel_path(path) in self.ignore_set
 
     @abstractmethod
     def check_file(self, path, lines):
@@ -130,7 +136,7 @@ class DoxygenStyleCheck(Check):
         triple_slash = sum(1 for line in lines if self.TRIPLE_SLASH_RE.match(line))
 
         if javadoc or triple_slash:
-            self.by_file[path] = (javadoc, triple_slash)
+            self.by_file[self.rel_path(path)] = (javadoc, triple_slash)
             self.total_javadoc += javadoc
             self.total_triple_slash += triple_slash
 
@@ -287,12 +293,13 @@ class IncludeOrderCheck(Check):
 
         own_idx = []
         if header_path:
-            rel_path = os.path.relpath(header_path, self.src_dir).replace(os.sep, "/")
+            # Full include path of the own header, i.e., relative to src/
+            include_path = self.rel_path(header_path).removeprefix("src/")
             for idx, line in enumerate(lines):
                 m = self.INCLUDE_RE.match(line)
                 if m:
                     path = m.group(2).strip()
-                    if path == basename or path == rel_path:
+                    if path == basename or path == include_path:
                         own_idx.append(idx)
 
         # Conditional-nesting depth in effect *at* each line index.
@@ -435,10 +442,11 @@ class IncludeOrderCheck(Check):
         if violation is None:
             self.compliant += 1
         else:
+            rel = self.rel_path(path)
             for issue in violation.issues:
-                self.by_issue[issue].append(path)
+                self.by_issue[issue].append(rel)
             if "bare_include" in violation.issues:
-                self.bare_details[path] = violation.details.get("bare_include", [])
+                self.bare_details[rel] = violation.details.get("bare_include", [])
 
     def report(self):
         print("\n=== include-order ===")
@@ -482,7 +490,7 @@ class PragmaOnceCheck(Check):
             if line.strip() != "":
                 # First line with code should be #pragma once
                 if not PRAGMA_ONCE_RE.match(lines[i]):
-                    self.missing_pragma_once.append((path, i + 1))
+                    self.missing_pragma_once.append((self.rel_path(path), i + 1))
                 break
 
     def report(self):
@@ -514,6 +522,7 @@ class RawThrowCheck(Check):
         self.raw_throws = []
 
     def check_file(self, path, lines):
+        rel = self.rel_path(path)
         code_lines = strip_comments(lines)
         for idx, line in enumerate(code_lines):
             for m in self.THROW_RE.finditer(line):
@@ -548,10 +557,11 @@ class StdoutUsageCheck(Check):
         self.violations = []
 
     def check_file(self, path, lines):
+        rel = self.rel_path(path)
         code_lines = strip_comments(lines)
         for idx, line in enumerate(code_lines):
             if self.STD_COUT_RE.search(line):
-                self.violations.append((path, idx + 1, line))
+                self.violations.append((rel, idx + 1, line))
 
     def report(self):
         print("\n=== stdout-usage ===")
@@ -640,7 +650,7 @@ def main():
         )
         return 2
 
-    repo_root = os.path.dirname(os.path.abspath(args.src_dir.rstrip(os.sep)))
+    repo_root = REPO_ROOT
     ignore_sections = load_ignore_sections(repo_root, ".check-style-ignore")
 
     checks = [
