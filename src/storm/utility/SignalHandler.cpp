@@ -158,10 +158,6 @@ void installSignalHandler(int maximalWaitTime) {
     if (sigaction(SIGXCPU, &sa, nullptr) == -1) {
         std::cerr << "FATAL: Installing a signal handler failed.\n";
     }
-    // Memory out
-    if (sigaction(ENOMEM, &sa, nullptr) == -1) {
-        std::cerr << "FATAL: Installing a signal handler failed.\n";
-    }
     if (sigaction(SIGSEGV, &sa, nullptr) == -1) {
         std::cerr << "FATAL: Installing a signal handler failed.\n";
     }
