@@ -51,7 +51,14 @@ SignalInformation& SignalInformation::infos() {
     return signalInfo;
 }
 
-bool SignalInformation::isTerminate() {
+#if defined(__clang__)
+// Suppress warning in thread safety analysis: the lock_guard below is scoped to just the copy, not the invocation, so there is no actual deadlock.
+#define STORM_NO_THREAD_SAFETY_ANALYSIS __attribute__((no_thread_safety_analysis))
+#else
+#define STORM_NO_THREAD_SAFETY_ANALYSIS
+#endif
+
+bool SignalInformation::isTerminate() STORM_NO_THREAD_SAFETY_ANALYSIS {
     // Fast path: flag already latched by a signal, a timeout, or a previous callback invocation.
     if (terminate.load(std::memory_order_relaxed)) {
         return true;
@@ -93,17 +100,19 @@ bool SignalInformation::isTerminate() {
     return false;
 }
 
-std::function<bool()> SignalInformation::installCallback(std::function<bool()> callback) {
+std::function<bool()> SignalInformation::installCallback(std::function<bool()> callback) STORM_NO_THREAD_SAFETY_ANALYSIS {
     std::lock_guard<std::mutex> lock(callbackMutex);
     std::function<bool()> previous = std::move(currentCallback);
     currentCallback = std::move(callback);
     return previous;
 }
 
-void SignalInformation::restoreCallback(std::function<bool()> previous) {
+void SignalInformation::restoreCallback(std::function<bool()> previous) STORM_NO_THREAD_SAFETY_ANALYSIS {
     std::lock_guard<std::mutex> lock(callbackMutex);
     currentCallback = std::move(previous);
 }
+
+#undef STORM_NO_THREAD_SAFETY_ANALYSIS
 
 /*!
  * Signal handler for aborts, etc.
