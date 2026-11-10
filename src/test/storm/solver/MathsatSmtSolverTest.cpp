@@ -3,6 +3,7 @@
 
 #ifdef STORM_HAVE_MATHSAT
 #include "storm/solver/MathsatSmtSolver.h"
+#include "test/storm/solver/SmtSolverTimeoutTestUtils.h"
 
 TEST(MathsatSmtSolver, CheckSat) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
@@ -254,6 +255,12 @@ TEST(MathsatSmtSolver, InterpolationTest) {
     ASSERT_NO_THROW(s2.add(interpol && exprFormula3));
     ASSERT_NO_THROW(result = s2.check());
     ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
+}
+
+TEST(MathsatSmtSolver, Timeout) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    storm::solver::MathsatSmtSolver s(*manager);
+    storm::test::checkSmtSolverTimeout(s, *manager);
 }
 
 #endif

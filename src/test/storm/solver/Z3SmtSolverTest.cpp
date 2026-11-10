@@ -2,8 +2,6 @@
 #include "test/storm_gtest.h"
 
 #ifdef STORM_HAVE_Z3
-#include "storm/solver/Z3SmtSolver.h"
-
 #include <cerrno>
 #include <chrono>
 #include <csignal>
@@ -16,7 +14,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "storm/solver/Z3SmtSolver.h"
 #include "storm/utility/SignalHandler.h"
+#include "test/storm/solver/SmtSolverTimeoutTestUtils.h"
 
 TEST(Z3SmtSolver, CheckSat) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
@@ -312,6 +312,12 @@ TEST(Z3SmtSolver, SignalInterruptsRunningSolver) {
     ASSERT_TRUE(exited) << "Storm did not terminate while a z3 solver was running.";
     ASSERT_TRUE(WIFEXITED(status));
     EXPECT_EQ(WEXITSTATUS(status), SIGINT) << "The interrupt did not reach Storm's signal handler (z3 swallowed it).";
+}
+
+TEST(Z3SmtSolver, Timeout) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    storm::solver::Z3SmtSolver s(*manager);
+    storm::test::checkSmtSolverTimeout(s, *manager);
 }
 
 #endif
