@@ -2,25 +2,24 @@
 
 #include <chrono>
 
+#include "storm-counterexamples/counterexamples/CounterexampleOptions.h"
 #include "storm-counterexamples/counterexamples/GuaranteedLabelSet.h"
 #include "storm-counterexamples/counterexamples/HighLevelCounterexample.h"
-#include "storm/settings/modules/CounterexampleGeneratorSettings.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/storage/BoostTypes.h"
-#include "storm/storage/prism/Program.h"
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
 #include "storm/utility/graph.h"
@@ -985,10 +984,13 @@ class MILPMinimalLabelSetGenerator {
      * @param mdp An MDP that is the model in which to generate the counterexample.
      * @param formulaPtr A pointer to a safety formula. The outermost operator must be a probabilistic bound operator with a strict upper bound. The nested
      * formula can be either an unbounded until formula or an eventually formula.
+     * @param includeSchedulerCuts Indicates whether the scheduler cuts are added to the MILP.
      */
-    static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel,
+    static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env,
+                                                                          storm::languages::SymbolicModelDescription const& symbolicModel,
                                                                           storm::models::sparse::Mdp<T> const& mdp,
-                                                                          std::shared_ptr<storm::logic::Formula const> const& formula) {
+                                                                          std::shared_ptr<storm::logic::Formula const> const& formula,
+                                                                          bool includeSchedulerCuts = CounterexampleOptions().useSchedulerCuts) {
         std::cout << "\nGenerating minimal label counterexample for formula " << *formula << '\n';
 
         // Check whether there are choice origins available
@@ -1057,8 +1059,7 @@ class MILPMinimalLabelSetGenerator {
         // Delegate the actual computation work to the function of equal name.
         auto startTime = std::chrono::high_resolution_clock::now();
         storm::storage::FlatSet<uint_fast64_t> usedLabelSet =
-            getMinimalLabelSet(env, mdp, labelSets, phiStates, psiStates, threshold, strictBound, true,
-                               storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseSchedulerCutsSet());
+            getMinimalLabelSet(env, mdp, labelSets, phiStates, psiStates, threshold, strictBound, true, includeSchedulerCuts);
         auto endTime = std::chrono::high_resolution_clock::now();
         std::cout << "\nComputed minimal command set of size " << usedLabelSet.size() << " in "
                   << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms.\n";

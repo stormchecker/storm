@@ -2,7 +2,7 @@
 #include "test/storm_gtest.h"
 
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 #include "storm-pars/utility/FeasibilitySynthesisTask.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/PrismParser.h"
@@ -78,13 +78,13 @@ class GradientDescentInstantiationSearcherTest : public ::testing::Test {
         return _environment;
     }
     virtual void SetUp() {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
-        carl::VariablePool::getInstance().clear();
+        storm::clearRFVariablePool();
     }
     virtual void TearDown() {
-        carl::VariablePool::getInstance().clear();
+        storm::clearRFVariablePool();
     }
 
    private:
@@ -115,7 +115,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Simple) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*formulas[0]));
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
@@ -130,7 +130,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Simple) {
     std::shared_ptr<FeasibilitySynthesisTask const> feasibilityTask = std::make_shared<FeasibilitySynthesisTask const>(std::move(*t));
 
     checker.setup(this->env(), feasibilityTask);
-    typename TestFixture::ConstantType doubleInstantiation = checker.gradientDescent().second;
+    typename TestFixture::ConstantType doubleInstantiation = checker.gradientDescent().value;
     ASSERT_NEAR(doubleInstantiation * 4, 1, 1e-6);
 }
 
@@ -147,7 +147,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*formulas[0]));
     model = simplifier.getSimplifiedModel();
 
@@ -170,8 +170,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     auto doubleInstantiation = adamChecker.gradientDescent();
     auto walk = adamChecker.getVisualizationWalk();
 
-    carl::Variable badCVar;
-    carl::Variable pfVar;
+    storm::RationalFunctionVariable badCVar;
+    storm::RationalFunctionVariable pfVar;
     for (auto parameter : storm::models::sparse::getProbabilityParameters(*dtmc)) {
         if (parameter.name() == "badC") {
             badCVar = parameter;
@@ -271,7 +271,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
         ASSERT_NEAR(storm::utility::convertNumber<double>(walk[i].position[pfVar]), pfValues[i], 1e-4);
     }
 
-    ASSERT_NEAR(storm::utility::convertNumber<double>(doubleInstantiation.second), 0, 1e-6);
+    ASSERT_NEAR(storm::utility::convertNumber<double>(doubleInstantiation.value), 0, 1e-6);
 
     // Same thing with RAdam
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> radamChecker(

@@ -8,9 +8,9 @@
 #include "storm/solver/AbstractEquationSolver.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/BoostTypes.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/vector.h"
 

@@ -3,10 +3,10 @@
 #include <map>
 
 #include "storm/adapters/sylvan.h"
+#include "storm/dd/sylvan/InternalSylvanDdManager.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/dd/DdEnvironment.h"
 #include "storm/io/file.h"
-#include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm::dft {

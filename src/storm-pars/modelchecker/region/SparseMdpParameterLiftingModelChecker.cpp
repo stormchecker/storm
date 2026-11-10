@@ -2,7 +2,7 @@
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
-#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -53,22 +53,21 @@ bool SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::canHa
 }
 
 template<typename SparseModelType, typename ConstantType>
-void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env,
-                                                                                   std::shared_ptr<storm::models::ModelBase> parametricModel,
-                                                                                   CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-                                                                                   std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates,
-                                                                                   std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
-                                                                                   bool allowModelSimplifications, bool graphPreserving) {
+void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(
+    Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
+    std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates, std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
+    bool allowModelSimplifications, storm::pars::analysis::GraphPreservationStatus graphPreservationStatus) {
     STORM_LOG_THROW(this->canHandle(parametricModel, checkTask), storm::exceptions::NotSupportedException,
                     "Combination of model " << parametricModel->getType() << " and formula '" << checkTask.getFormula() << "' is not supported.");
-    STORM_LOG_THROW(graphPreserving, storm::exceptions::NotImplementedException, "Non-graph-preserving regions not implemented for MDPs.");
+    STORM_LOG_THROW(storm::pars::analysis::isGraphPreserving(graphPreservationStatus), storm::exceptions::NotImplementedException,
+                    "Non-graph-preserving regions not implemented for MDPs.");
     this->specifySplitEstimates(generateRegionSplitEstimates, checkTask);
     this->specifyMonotonicity(monotonicityBackend, checkTask);
     auto mdp = parametricModel->template as<SparseModelType>();
     reset();
 
     if (allowModelSimplifications) {
-        auto simplifier = storm::transformer::SparseParametricMdpSimplifier<SparseModelType>(*mdp);
+        auto simplifier = storm::transformer::SparseParametricModelSimplifier<SparseModelType>(*mdp);
         STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         this->parametricModel = simplifier.getSimplifiedModel();
         this->specifyFormula(env, checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));

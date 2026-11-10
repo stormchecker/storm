@@ -4,7 +4,7 @@
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionEvaluator.h"
 #include "storm/storage/valuations/ValuationsStorage.h"
 
 namespace storm::storage::sparse {

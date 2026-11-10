@@ -30,7 +30,7 @@ runs:
     - name: Configure and make starter project (intree Storm)
       if: ${{ (inputs.docker == 'true') && (inputs.stormDir != '') }}
       run: |
-        docker exec ci bash -c "cd /opt/storm-starter; mkdir build-intree; cd build-intree; cmake -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT='/opt/storm/build' .."
+        docker exec ci bash -c "cd /opt/storm-starter; mkdir build-intree; cd build-intree; cmake -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT='${{ inputs.stormDir }}' .."
         docker exec ci bash -c "cd /opt/storm-starter/build-intree; make -j ${NR_JOBS}"
         docker exec ci bash -c "/opt/storm-starter/build-intree/bin/starter-project ${{ inputs.command }}"
       shell: bash
@@ -41,8 +41,8 @@ runs:
         docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
         docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project ${{ inputs.command }}"
       shell: bash
-   
-    # macOS
+
+    # Native (bare runner or GitHub Actions container)
     - name: Checkout starter-project
       if: ${{ (inputs.docker == 'false') && (inputs.stormDir != '') }}
       run: |
@@ -52,7 +52,7 @@ runs:
     - name: Configure and make starter project (intree Storm)
       if: ${{ (inputs.docker == 'false') && (inputs.stormDir != '') }}
       run: |
-        cd ../storm-starter; mkdir build-intree; cd build-intree; cmake -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT="${GITHUB_WORKSPACE}/build"  ..
+        cd ../storm-starter; mkdir build-intree; cd build-intree; cmake -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT="${{ inputs.stormDir }}"  ..
         make -j ${NR_JOBS}
         ./bin/starter-project ${{ inputs.command }}
       shell: bash

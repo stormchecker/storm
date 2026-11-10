@@ -1,4 +1,5 @@
 add_subdirectory(storm)
+add_subdirectory(storm-counterexamples)
 add_subdirectory(storm-dft)
 add_subdirectory(storm-gamebased-ar)
 add_subdirectory(storm-pars)

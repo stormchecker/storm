@@ -5,8 +5,8 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/graph.h"
 

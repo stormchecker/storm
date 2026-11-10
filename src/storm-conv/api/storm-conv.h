@@ -20,7 +20,7 @@ class SmtSolverFactory;
 
 namespace api {
 
-// If smtSolverFactory is null, a Z3-based factory is used (independent of any globally configured SMT solver).
+// If smtSolverFactory is null, flattening uses the default SMT solver factory.
 void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Property>& properties, storm::converter::JaniConversionOptions const& options,
                    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = nullptr);
 

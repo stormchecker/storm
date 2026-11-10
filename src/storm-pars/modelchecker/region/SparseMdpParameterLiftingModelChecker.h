@@ -10,8 +10,8 @@
 
 #include "storm/solver/GameSolver.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
 
 namespace storm::modelchecker {
@@ -31,11 +31,11 @@ class SparseMdpParameterLiftingModelChecker : public SparseParameterLiftingModel
 
     virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel,
                            CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const override;
-    virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
-                         CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-                         std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
-                         std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
-                         bool graphPreserving = true) override;
+    virtual void specify(
+        Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
+        std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
+        std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
+        storm::pars::analysis::GraphPreservationStatus graphPreservationStatus = storm::pars::analysis::GraphPreservationStatus::GraphPreserving) override;
 
     std::optional<storm::storage::Scheduler<ConstantType>> getCurrentMinScheduler();
     std::optional<storm::storage::Scheduler<ConstantType>> getCurrentMaxScheduler();

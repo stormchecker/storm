@@ -4,8 +4,8 @@
 #include <vector>
 
 #include "storm/builder/BuilderType.h"
+#include "storm/dd/DdType.h"
 #include "storm/models/ModelType.h"
-#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 
@@ -21,7 +21,7 @@ namespace modelchecker {
 template<typename FormulaType, typename ValueType>
 class CheckTask;
 }
-namespace storage {
+namespace languages {
 class SymbolicModelDescription;
 }
 
@@ -74,6 +74,6 @@ storm::builder::BuilderType getBuilderType(storm::utility::Engine const& engine)
  */
 template<typename ValueType>
 bool canHandle(storm::utility::Engine const& engine, std::vector<storm::jani::Property> const& properties,
-               storm::storage::SymbolicModelDescription const& modelDescription);
+               storm::languages::SymbolicModelDescription const& modelDescription);
 }  // namespace utility
 }  // namespace storm

@@ -183,6 +183,19 @@ boost::any ToPrefixStringVisitor::visit(UntilFormula const& f, boost::any const&
     return std::string("U ") + left + " " + right;
 }
 
+boost::any ToPrefixStringVisitor::visit(WeakUntilFormula const& f, boost::any const& data) const {
+    std::string left = boost::any_cast<std::string>(f.getLeftSubformula().accept(*this, data));
+    std::string right = boost::any_cast<std::string>(f.getRightSubformula().accept(*this, data));
+    return std::string("W ") + left + " " + right;
+}
+
+boost::any ToPrefixStringVisitor::visit(ReleaseFormula const& f, boost::any const& data) const {
+    std::string left = boost::any_cast<std::string>(f.getLeftSubformula().accept(*this, data));
+    std::string right = boost::any_cast<std::string>(f.getRightSubformula().accept(*this, data));
+    // Write as weak release (V), see https://spot.lre.epita.fr/ioltl.html
+    return std::string("V ") + left + " " + right;
+}
+
 boost::any ToPrefixStringVisitor::visit(HOAPathFormula const&, boost::any const&) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string.");
 }

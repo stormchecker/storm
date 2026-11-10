@@ -1,7 +1,7 @@
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/visitor/JSONExporter.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/visitor/JSONExporter.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"

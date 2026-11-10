@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm-gamebased-ar/abstraction/AbstractionOptions.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
@@ -13,15 +14,17 @@ class AbstractionSettings : public ModuleSettings {
    public:
     enum class Method { Games, Bisimulation };
 
-    enum class PivotSelectionHeuristic { NearestMaximalDeviation, MostProbablePath, MaxWeightedDeviation };
+    // The remaining enums are defined by the game-based abstraction library (see AbstractionOptions.h) and are merely
+    // aliased here so that the settings module stays consistent with the library's option types.
+    using PivotSelectionHeuristic = storm::gbar::abstraction::PivotSelectionHeuristic;
 
-    enum class SplitMode { All, None, NonGuard };
+    using SplitMode = storm::gbar::abstraction::SplitMode;
 
-    enum class ReuseMode { All, None, Qualitative, Quantitative };
+    using ReuseMode = storm::gbar::abstraction::ReuseMode;
 
-    enum class SolveMode { Dd, Sparse };
+    using SolveMode = storm::gbar::abstraction::SolveMode;
 
-    enum class ValidBlockMode { MorePredicates, BlockEnumeration };
+    using ValidBlockMode = storm::gbar::abstraction::ValidBlockMode;
 
     /*!
      * Creates a new set of abstraction settings.

@@ -13,6 +13,8 @@ class OviSolverEnvironment {
     ~OviSolverEnvironment() = default;
 
     std::optional<storm::RationalNumber> const& getUpperBoundGuessingFactor() const;
+    void setUpperBoundGuessingFactor(storm::RationalNumber value);
+    void unsetUpperBoundGuessingFactor();
 
    private:
     std::optional<storm::RationalNumber> upperBoundGuessingFactor;

@@ -41,9 +41,14 @@ storm::Environment TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType
                                        env.solver().topological().isUnderlyingMinMaxMethodSetFromDefault());
     if (adaptPrecision) {
         STORM_LOG_ASSERT(this->longestSccChainSize, "Did not compute the longest SCC chain size although it is needed.");
-        storm::RationalNumber subEnvPrec =
-            subEnv.solver().minMax().getPrecision() / storm::utility::convertNumber<storm::RationalNumber>(this->longestSccChainSize.get());
-        subEnv.solver().minMax().setPrecision(subEnvPrec);
+        storm::RationalNumber const prec = subEnv.solver().minMax().getPrecision();
+        storm::RationalNumber divisor = storm::utility::convertNumber<storm::RationalNumber>(this->longestSccChainSize.get());
+        if (subEnv.solver().minMax().getRelativeTerminationCriterion()) {
+            // Relative errors compose multiplicatively along a chain, so dividing by its length alone leaves
+            // (1 + prec/k)^k - 1 > prec. Dividing by k(1 + prec) as well brings the product back below prec.
+            divisor *= storm::utility::one<storm::RationalNumber>() + prec;
+        }
+        subEnv.solver().minMax().setPrecision(prec / divisor);
     }
     return subEnv;
 }
@@ -79,6 +84,11 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
     }
 
     bool returnValue = true;
+    bool aborted = false;
+    // Trivial SCCs are settled by substitution, so they only ever inherit the error of their successors. SCCs come
+    // in topological order, so conjoining as we go is enough.
+    bool allSccsExact = true;
+    bool allSccsPrecise = true;
     if (this->sortedSccDecomposition->size() == 1 && (!this->choiceFixedForRowGroup || this->choiceFixedForRowGroup.get().empty())) {
         // Handle the case where there is just one large SCC, as there are no fixed choices for states, we solve it like this
         if (auto const& scc = *this->sortedSccDecomposition->begin(); scc.size() == 1) {
@@ -89,6 +99,8 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
             returnValue = solveTrivialScc(*scc.begin(), dir, x, b);
         } else {
             returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, dir, x, b);
+            allSccsExact = this->sccSolver->hasExactSolutionBounds();
+            allSccsPrecise = lastSccMetPrecision(sccSolverEnvironment, x);
         }
     } else {
         // Solve each SCC individually
@@ -114,8 +126,7 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
                 }
             }
         }
-        storm::storage::BitVector sccRowGroupsAsBitVector(x.size(), false);
-        storm::storage::BitVector sccRowsAsBitVector(b.size(), false);
+        storm::storage::BitVector sccAsBitVector(x.size(), false);
         uint64_t sccIndex = 0;
         storm::utility::ProgressMeasurement progress("states", env.solver().getShowProgressDelay());
         progress.setMaxCount(x.size());
@@ -125,30 +136,34 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
                 returnValue = solveTrivialScc(*scc.begin(), dir, x, b) && returnValue;
             } else {
                 STORM_LOG_TRACE("Solving SCC of size " << scc.size() << ".");
-                sccRowGroupsAsBitVector.clear();
-                sccRowsAsBitVector.clear();
-                for (auto const& group : scc) {  // Group refers to state
-                    sccRowGroupsAsBitVector.set(group, true);
-
-                    if (!this->choiceFixedForRowGroup || !this->choiceFixedForRowGroup.get()[group]) {
-                        for (uint64_t row = this->A->getRowGroupIndices()[group]; row < this->A->getRowGroupIndices()[group + 1]; ++row) {
-                            sccRowsAsBitVector.set(row, true);
-                        }
-                    } else {
-                        auto row = this->A->getRowGroupIndices()[group] + this->getInitialScheduler()[group];
-                        sccRowsAsBitVector.set(row, true);
-                        STORM_LOG_TRACE("Fixing state " << group << " to choice " << this->getInitialScheduler()[group] << ".");
-                    }
+                for (auto const& state : scc) {
+                    sccAsBitVector.set(state, true);
                 }
-                returnValue = solveScc(sccSolverEnvironment, dir, sccRowGroupsAsBitVector, sccRowsAsBitVector, x, b, newRelevantValues) && returnValue;
+                bool sccMetPrecision = false;
+                returnValue = solveScc(sccSolverEnvironment, dir, scc, sccAsBitVector, x, b, newRelevantValues, sccMetPrecision) && returnValue;
+                allSccsExact = allSccsExact && this->sccSolver->hasExactSolutionBounds();
+                allSccsPrecise = allSccsPrecise && sccMetPrecision;
+                // clear sccAsBitVector, either by clearing all bits or by clearing the bits of the current SCC (if its small)
+                if (scc.size() * 64 < sccAsBitVector.size()) {
+                    for (auto const& state : scc) {
+                        sccAsBitVector.set(state, false);
+                    }
+                } else {
+                    sccAsBitVector.clear();
+                }
             }
             ++sccIndex;
             progress.updateProgress(sccIndex);
             if (storm::utility::resources::isTerminate()) {
                 STORM_LOG_WARN("Topological solver aborted after analyzing " << sccIndex << "/" << this->sortedSccDecomposition->size() << " SCCs.");
+                aborted = true;
                 break;
             }
         }
+    }
+
+    if (returnValue && !aborted) {
+        trySetSolutionBounds(env, x, allSccsExact, allSccsPrecise && needAdaptPrecision);
     }
 
     if (!this->isCachingEnabled()) {
@@ -156,6 +171,28 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
     }
 
     return returnValue;
+}
+
+template<typename ValueType, typename SolutionType>
+void TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::trySetSolutionBounds(Environment const& env, std::vector<SolutionType> const& x,
+                                                                                          bool allSccsExact, bool allSccsPrecise) const {
+    if (allSccsExact) {
+        this->setSolutionBoundsExact(x);
+        return;
+    }
+    if (!allSccsPrecise) {
+        return;
+    }
+    this->setSolutionBoundsFromPrecision(x, storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()),
+                                         env.solver().minMax().getRelativeTerminationCriterion());
+}
+
+template<typename ValueType, typename SolutionType>
+bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::lastSccMetPrecision(Environment const& sccSolverEnvironment,
+                                                                                         std::vector<SolutionType> const& sccValues) const {
+    return this->sccSolver->getSolutionBounds().isWithinPrecision(
+        sccValues, storm::utility::convertNumber<SolutionType>(sccSolverEnvironment.solver().minMax().getPrecision()),
+        sccSolverEnvironment.solver().minMax().getRelativeTerminationCriterion());
 }
 
 template<typename ValueType, typename SolutionType>
@@ -302,63 +339,106 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveFullyC
 
 template<typename ValueType, typename SolutionType>
 bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveScc(storm::Environment const& sccSolverEnvironment, OptimizationDirection dir,
-                                                                              storm::storage::BitVector const& sccRowGroups,
-                                                                              storm::storage::BitVector const& sccRows, std::vector<SolutionType>& globalX,
-                                                                              std::vector<ValueType> const& globalB,
-                                                                              std::optional<storm::storage::BitVector> const& globalRelevantValues) const {
+                                                                              storm::storage::StronglyConnectedComponent const& scc,
+                                                                              storm::storage::BitVector const& sccAsBitVector,
+                                                                              std::vector<SolutionType>& globalX, std::vector<ValueType> const& globalB,
+                                                                              std::optional<storm::storage::BitVector> const& globalRelevantValues,
+                                                                              bool& metPrecision) const {
+    // Restricts a vector indexed by row groups to the states of the scc
+    auto restrictToScc = [&scc](auto const& globalVector) {
+        std::vector<std::decay_t<decltype(globalVector[0])>> result;
+        result.reserve(scc.size());
+        for (uint64_t const state : scc) {
+            result.push_back(globalVector[state]);
+        }
+        return result;
+    };
+
     // Set up the SCC solver
     if (!this->sccSolver) {
         this->sccSolver = GeneralMinMaxLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
         this->sccSolver->setCachingEnabled(true);
     }
+    if (!this->sccSubmatrixBuilder) {
+        this->sccSubmatrixBuilder = std::make_unique<storm::storage::SubmatrixBuilder<ValueType>>(*this->A);
+    }
     this->sccSolver->setHasUniqueSolution(this->hasUniqueSolution());
     this->sccSolver->setHasNoEndComponents(this->hasNoEndComponents());
     this->sccSolver->setTrackScheduler(this->isTrackSchedulerSet());
     if (globalRelevantValues) {
-        this->sccSolver->setRelevantValues((*globalRelevantValues) % sccRowGroups);
+        storm::storage::BitVector sccRelevantValues(scc.size(), false);
+        uint64_t sccState = 0;
+        for (uint64_t const state : scc) {
+            sccRelevantValues.set(sccState++, globalRelevantValues->get(state));
+        }
+        this->sccSolver->setRelevantValues(std::move(sccRelevantValues));
     }
 
-    storm::storage::SparseMatrix<ValueType> sccA;
-    if (this->choiceFixedForRowGroup) {
-        // Obtain choiceFixedForState bitvector containing only the states of the scc.
-        storm::storage::BitVector choiceFixedForStateSCC = this->choiceFixedForRowGroup.get() % sccRowGroups;
-        sccA = this->A->getSubmatrix(false, sccRows, sccRowGroups);
+    auto const& rowGroupIndices = this->A->getRowGroupIndices();
+    bool const hasFixedChoices = this->choiceFixedForRowGroup && !this->choiceFixedForRowGroup->empty();
+    auto const isChoiceFixed = [&](uint64_t state) { return hasFixedChoices && (*this->choiceFixedForRowGroup)[state]; };
 
-        // initial scheduler
-        if (this->hasInitialScheduler()) {
-            std::vector<uint_fast64_t> sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
+    // Rows (of the global matrix) that are considered for the given state: all of its rows, or just the fixed one.
+    auto const rowRange = [&](uint64_t state) {
+        if (isChoiceFixed(state)) {
+            auto const row = rowGroupIndices[state] + this->getInitialScheduler()[state];
+            STORM_LOG_TRACE("Fixing state " << state << " to choice " << this->getInitialScheduler()[state] << ".");
+            return std::make_pair(row, row + 1);
+        } else {
+            return std::make_pair(rowGroupIndices[state], rowGroupIndices[state + 1]);
+        }
+    };
+
+    // Set up the matrix and the initial scheduler
+    std::vector<uint64_t> sccRows;  // only used if there are fixed choices
+    uint64_t sccRowCount = 0;
+    for (uint64_t const state : scc) {
+        auto const [rowBegin, rowEnd] = rowRange(state);
+        sccRowCount += rowEnd - rowBegin;
+        if (hasFixedChoices) {
+            for (uint64_t row = rowBegin; row < rowEnd; ++row) {
+                sccRows.push_back(row);
+            }
+        }
+    }
+    if (hasFixedChoices) {
+        this->sccSolver->setMatrix(this->sccSubmatrixBuilder->getByRowConstraint(sccRows, scc, false));
+    } else {
+        this->sccSolver->setMatrix(this->sccSubmatrixBuilder->getByRowGroupConstraint(scc, scc, false));
+    }
+    if (this->hasInitialScheduler()) {
+        auto sccInitChoices = restrictToScc(this->getInitialScheduler());
+        if (hasFixedChoices) {
             // As we removed the entries where the choice was fixed, we need to change the scheduler.
             // We set the scheduler to 0 for those states.
-            storm::utility::vector::setVectorValues<uint_fast64_t>(sccInitChoices, choiceFixedForStateSCC, 0);
-            this->sccSolver->setInitialScheduler(std::move(sccInitChoices));
+            uint64_t sccState = 0;
+            for (uint64_t const state : scc) {
+                if (isChoiceFixed(state)) {
+                    sccInitChoices[sccState] = 0;
+                }
+                ++sccState;
+            }
         }
-
-    } else {
-        sccA = this->A->getSubmatrix(true, sccRowGroups, sccRowGroups);
-
-        // initial scheduler
-        if (this->hasInitialScheduler()) {
-            auto sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
-            this->sccSolver->setInitialScheduler(std::move(sccInitChoices));
-        }
+        this->sccSolver->setInitialScheduler(std::move(sccInitChoices));
     }
 
-    this->sccSolver->setMatrix(std::move(sccA));
-
     // x Vector
-    auto sccX = storm::utility::vector::filterVector(globalX, sccRowGroups);
+    auto sccX = restrictToScc(globalX);
 
     // b Vector
     std::vector<ValueType> sccB;
-    sccB.reserve(sccRows.getNumberOfSetBits());
-    for (uint64_t row : sccRows) {
-        ValueType bi = globalB[row];
-        for (auto const& entry : this->A->getRow(row)) {
-            if (!sccRowGroups.get(entry.getColumn())) {
-                bi += entry.getValue() * globalX[entry.getColumn()];
+    sccB.reserve(sccRowCount);
+    for (uint64_t const state : scc) {
+        auto const [rowBegin, rowEnd] = rowRange(state);
+        for (uint64_t row = rowBegin; row < rowEnd; ++row) {
+            ValueType bi = globalB[row];
+            for (auto const& entry : this->A->getRow(row)) {
+                if (!sccAsBitVector.get(entry.getColumn())) {
+                    bi += entry.getValue() * globalX[entry.getColumn()];
+                }
             }
+            sccB.push_back(std::move(bi));
         }
-        sccB.push_back(std::move(bi));
     }
 
     auto req = this->sccSolver->getRequirements(sccSolverEnvironment, dir);
@@ -368,14 +448,14 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveScc(st
         this->sccSolver->setLowerBound(this->getLowerBound());
         req.clearLowerBounds();
     } else if (this->hasLowerBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Local)) {
-        this->sccSolver->setLowerBounds(storm::utility::vector::filterVector(this->getLowerBounds(), sccRowGroups));
+        this->sccSolver->setLowerBounds(restrictToScc(this->getLowerBounds()));
         req.clearLowerBounds();
     }
     if (this->hasUpperBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Global)) {
         this->sccSolver->setUpperBound(this->getUpperBound());
         req.clearUpperBounds();
     } else if (this->hasUpperBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Local)) {
-        this->sccSolver->setUpperBounds(storm::utility::vector::filterVector(this->getUpperBounds(), sccRowGroups));
+        this->sccSolver->setUpperBounds(restrictToScc(this->getUpperBounds()));
         req.clearUpperBounds();
     }
 
@@ -392,14 +472,20 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveScc(st
 
     // Invoke scc solver
     bool res = this->sccSolver->solveEquations(sccSolverEnvironment, dir, sccX, sccB);
+    metPrecision = lastSccMetPrecision(sccSolverEnvironment, sccX);
 
-    // Set Scheduler choices
+    // Set Scheduler choices and solution
     if (this->isTrackSchedulerSet()) {
-        storm::utility::vector::setVectorValues(this->schedulerChoices.get(), sccRowGroups, this->sccSolver->getSchedulerChoices());
+        auto const& sccChoices = this->sccSolver->getSchedulerChoices();
+        uint64_t sccState = 0;
+        for (uint64_t const state : scc) {
+            this->schedulerChoices.get()[state] = sccChoices[sccState++];
+        }
     }
-
-    // Set solution
-    storm::utility::vector::setVectorValues(globalX, sccRowGroups, sccX);
+    uint64_t sccState = 0;
+    for (uint64_t const state : scc) {
+        globalX[state] = std::move(sccX[sccState++]);
+    }
 
     return res;
 }
@@ -418,6 +504,7 @@ void TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::clearCache(
     sortedSccDecomposition.reset();
     longestSccChainSize = boost::none;
     sccSolver.reset();
+    sccSubmatrixBuilder.reset();
     auxiliaryRowGroupVector.reset();
     StandardMinMaxLinearEquationSolver<ValueType, SolutionType>::clearCache();
 }

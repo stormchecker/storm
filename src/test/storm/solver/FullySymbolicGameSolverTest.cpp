@@ -1,11 +1,11 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm/dd/DdManager.h"
 #include "storm/environment/Environment.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm/solver/SymbolicGameSolver.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/solver.h"
 
 class Cudd {

@@ -43,7 +43,7 @@ All macros are defined in `src/storm/utility/macros.h`.
 Use the GitHub Actions MCP tools to read job logs directly. Common causes:
 - **Format failure** (`style-check.yml`): run `make format` locally and push.
 - **Coding style failure** (`style-check.yml`): run `resources/scripts/check_style.py` locally and fix all indicated issues. See the Coding conventions in `doc/developers.md`.
-- **Build/test failure** (`buildtest.yml`): usually a missing template instantiation for one `ValueType` variant, or a preprocessor-guarded optional dependency being used unconditionally.
+- **Build/test failure** (in any `test-*.yml`, via any `ci-*.yml`): usually a missing template instantiation for one `ValueType` variant, or a preprocessor-guarded optional dependency being used unconditionally.
 
 ---
 

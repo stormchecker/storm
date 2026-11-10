@@ -2,6 +2,7 @@
 
 #include "storm-parsers/parser/ExplicitModelParserOptions.h"
 #include "storm-parsers/parser/MarkovAutomatonSparseTransitionParser.h"
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 
 namespace storm {
@@ -14,7 +15,7 @@ namespace parser {
  * it loads the files, parses them and returns the desired model.
  */
 template<typename ValueType = double, typename RewardValueType = double>
-class MarkovAutomatonParser {
+class STORM_PARSERS_API MarkovAutomatonParser {
    public:
     /*!
      * Parses the given Markov automaton and returns an object representing the automaton.

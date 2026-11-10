@@ -1,5 +1,6 @@
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
 
+#include "storm-counterexamples/counterexamples/CounterexampleOptions.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"
@@ -11,6 +12,11 @@
 namespace storm {
 namespace settings {
 namespace modules {
+
+namespace {
+// The defaults of the options are taken from the library's default-constructed options.
+storm::counterexamples::CounterexampleOptions const defaultOptions;
+}  // namespace
 
 const std::string CounterexampleGeneratorSettings::moduleName = "counterexample";
 const std::string CounterexampleGeneratorSettings::counterexampleOptionName = "counterexample";
@@ -38,9 +44,8 @@ CounterexampleGeneratorSettings::CounterexampleGeneratorSettings() : ModuleSetti
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, shortestPathMaxKOptionName, false, "Maximal number K of shortest paths to generate.")
                         .setIsAdvanced()
-                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument(
-                                         "maxk", "Upper bound on number of generated paths. Default value is 10.")
-                                         .setDefaultValueUnsignedInteger(10)
+                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxk", "Upper bound on number of generated paths.")
+                                         .setDefaultValueUnsignedInteger(defaultOptions.shortestPathMaxK)
                                          .build())
                         .build());
     std::vector<std::string> method = {"maxsat", "milp"};

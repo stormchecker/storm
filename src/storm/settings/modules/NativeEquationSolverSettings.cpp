@@ -49,7 +49,9 @@ NativeEquationSolverSettings::NativeEquationSolverSettings() : ModuleSettings(mo
                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").build())
                         .build());
 
-    this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.")
+    this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false,
+                                                   "The precision used for detecting convergence of iterative methods; for sound methods, this bounds the "
+                                                   "returned midpoint's relative (or absolute) error.")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.")
                                          .setDefaultValueDouble(1e-06)
@@ -118,8 +120,8 @@ storm::solver::NativeLinearEquationSolverMethod NativeEquationSolverSettings::ge
     } else if (linearEquationSystemTechniqueAsString == "ratsearch") {
         return storm::solver::NativeLinearEquationSolverMethod::RationalSearch;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
 }
 
 bool NativeEquationSolverSettings::isMaximalIterationCountSet() const {
@@ -158,7 +160,7 @@ storm::solver::MultiplicationStyle NativeEquationSolverSettings::getPowerMethodM
     } else if (multiplicationStyleString == "regular" || multiplicationStyleString == "r") {
         return storm::solver::MultiplicationStyle::Regular;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
 }
 
 bool NativeEquationSolverSettings::isForceIntervalIterationSymmetricUpdatesSet() const {

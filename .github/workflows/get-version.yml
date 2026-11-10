@@ -3,8 +3,11 @@ on:
   workflow_call:
     outputs:
       version:
-        description: Version from CMakeLists
+        description: Version X.Y.Z from CMakeLists (without development counter)
         value: ${{ jobs.get-version.outputs.version }}
+      full_version:
+        description: Full version from CMakeLists as given (X.Y.Z or X.Y.Z.N with development counter N)
+        value: ${{ jobs.get-version.outputs.full_version }}
       sha:
         description: Storm commit SHA
         value: ${{ jobs.get-version.outputs.sha }}
@@ -14,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
+      full_version: ${{ steps.version.outputs.full_version }}
       sha: ${{ steps.sha.outputs.sha }}
     steps:
       - uses: actions/checkout@v7
@@ -35,3 +39,4 @@ jobs:
             exit 1
           fi
           echo "version=$BASE" >> "$GITHUB_OUTPUT"
+          echo "full_version=$VERSION" >> "$GITHUB_OUTPUT"

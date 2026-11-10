@@ -18,7 +18,7 @@ class BddModularizerTest : public testing::TestWithParam<ModularizerTestData> {
 #ifdef STORM_HAVE_SYLVAN
         auto const &param{TestWithParam::GetParam()};
         auto dft{storm::dft::api::loadDFTGalileoFile<double>(param.filepath)};
-        checker = std::make_shared<storm::dft::modelchecker::DftModularizationChecker<double>>(dft);
+        checker = std::make_shared<storm::dft::modelchecker::DftModularizationChecker<double>>(storm::dft::DftEnvironment{}, dft);
 #else
         GTEST_SKIP() << "Library Sylvan not available.";
 #endif

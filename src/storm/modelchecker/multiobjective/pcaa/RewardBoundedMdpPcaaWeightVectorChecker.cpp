@@ -9,7 +9,6 @@
 #include "storm/io/export.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/utility/ProgressMeasurement.h"

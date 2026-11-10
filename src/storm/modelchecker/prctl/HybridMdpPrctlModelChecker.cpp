@@ -1,6 +1,7 @@
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -14,7 +15,6 @@
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/transformer/SymbolicToSparseTransformer.h"
 #include "storm/utility/FilteredRewardModel.h"
 

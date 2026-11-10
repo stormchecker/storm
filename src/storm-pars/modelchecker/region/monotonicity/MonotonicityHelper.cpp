@@ -18,11 +18,11 @@ namespace storm {
 namespace analysis {
 /*** Constructor ***/
 template<typename ValueType, typename ConstantType>
-MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model,
+MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(Environment const& env, std::shared_ptr<models::sparse::Model<ValueType>> model,
                                                                 std::vector<std::shared_ptr<logic::Formula const>> formulas,
                                                                 std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples,
                                                                 double const& precision, bool dotOutput)
-    : assumptionMaker(model->getTransitionMatrix()) {
+    : env(env), assumptionMaker(model->getTransitionMatrix()) {
     STORM_LOG_ASSERT(model != nullptr, "Model should not be null.");
 
     this->model = model;
@@ -50,9 +50,9 @@ MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<
     if (numberOfSamples > 2) {
         // sampling
         if (model->isOfType(models::ModelType::Dtmc)) {
-            checkMonotonicityOnSamples(model->template as<models::sparse::Dtmc<ValueType>>(), numberOfSamples);
+            checkMonotonicityOnSamples(env, model->template as<models::sparse::Dtmc<ValueType>>(), numberOfSamples);
         } else if (model->isOfType(models::ModelType::Mdp)) {
-            checkMonotonicityOnSamples(model->template as<models::sparse::Mdp<ValueType>>(), numberOfSamples);
+            checkMonotonicityOnSamples(env, model->template as<models::sparse::Mdp<ValueType>>(), numberOfSamples);
         }
         checkSamples = true;
     } else {
@@ -62,7 +62,7 @@ MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<
         checkSamples = false;
     }
 
-    this->extender = new analysis::OrderExtender<ValueType, ConstantType>(model, formulas[0]);
+    this->extender = std::make_unique<analysis::OrderExtender<ValueType, ConstantType>>(model, formulas[0]);
 
     for (uint_fast64_t i = 0; i < matrix.getRowCount(); ++i) {
         std::set<VariableType> occurringVariables;
@@ -78,12 +78,11 @@ MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<
 
 /*** Public methods ***/
 template<typename ValueType, typename ConstantType>
-std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>>,
-                                           std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>
+std::vector<typename MonotonicityHelper<ValueType, ConstantType>::ExpectedMonotonicityResult>
 MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostream& outfile, bool usePLA, std::string dotOutfileName) {
     if (usePLA) {
         storm::utility::Stopwatch plaWatch(true);
-        this->extender->initializeMinMaxValues(region);
+        this->extender->initializeMinMaxValues(env, region);
         plaWatch.stop();
         STORM_LOG_STATISTICS("\nTotal time for pla checking: " << plaWatch << ".\n\n");
     }
@@ -111,7 +110,7 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostre
                         << "    ";
                 first = false;
             }
-            outfile << *assumption;
+            outfile << assumption;
         }
         if (!first) {
             outfile << '\n';
@@ -152,7 +151,12 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostre
             orderItr++;
         }
     }
-    return monResults;
+    std::vector<ExpectedMonotonicityResult> result;
+    result.reserve(monResults.size());
+    for (auto const& [order, entry] : monResults) {
+        result.push_back({order, entry.first, entry.second});
+    }
+    return result;
 }
 
 template<typename ValueType, typename ConstantType>
@@ -177,24 +181,24 @@ void MonotonicityHelper<ValueType, ConstantType>::createOrder() {
     // Create initial order
     auto monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
     criticalTuple = extender->toOrder(region, monRes);
+    auto order = std::get<0>(criticalTuple);
+    if (order->isInvalid()) {
+        // The initial order already turned out to be inconsistent. It carries the same "done"
+        // sentinel as a successfully built order, so we must discard it explicitly: deriving
+        // monotonicity from a contradictory order would be unsound.
+        STORM_LOG_INFO("    The initial order is invalid, so no monotonicity results are produced");
+        return;
+    }
     // Continue based on not (yet) sorted states
-    std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
-
     auto val1 = std::get<1>(criticalTuple);
     auto val2 = std::get<2>(criticalTuple);
     auto numberOfStates = model->getNumberOfStates();
-    std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions;
+    std::vector<Assumption> assumptions;
 
     if (val1 == numberOfStates && val2 == numberOfStates) {
-        auto resAssumptionPair =
-            std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes,
-                                                                                                                                              assumptions);
-        monResults.insert(
-            std::pair<std::shared_ptr<Order>,
-                      std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(
-                std::get<0>(criticalTuple), resAssumptionPair));
+        monResults.insert({order, {monRes, assumptions}});
     } else if (val1 != numberOfStates && val2 != numberOfStates) {
-        extendOrderWithAssumptions(std::get<0>(criticalTuple), val1, val2, assumptions, monRes);
+        extendOrderWithAssumptions(order, val1, val2, assumptions, monRes);
     } else {
         STORM_LOG_ASSERT(false, "Unreachable code reached.");
     }
@@ -202,80 +206,102 @@ void MonotonicityHelper<ValueType, ConstantType>::createOrder() {
 
 template<typename ValueType, typename ConstantType>
 void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2,
-                                                                             std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions,
+                                                                             std::vector<Assumption> assumptions,
                                                                              std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-    std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
-    if (order->isInvalid()) {
-        // We don't add anything as the order we created with assumptions turns out to be invalid
-        STORM_LOG_INFO("    The order was invalid, so we stop here");
-        return;
-    }
-    auto numberOfStates = model->getNumberOfStates();
-    if (val1 == numberOfStates || val2 == numberOfStates) {
-        STORM_LOG_ASSERT(val1 == val2, "Values should be equal when reaching numberOfStates.");
-        STORM_LOG_ASSERT(order->getNumberOfAddedStates() == order->getNumberOfStates(), "Added states count mismatch.");
-        auto resAssumptionPair =
-            std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes,
-                                                                                                                                              assumptions);
-        monResults.insert(
-            std::pair<std::shared_ptr<Order>,
-                      std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(
-                std::move(order), std::move(resAssumptionPair)));
-    } else {
+    // Algorithm 2 spawns up to three branches per unresolved (val1, val2) pair, one per candidate
+    // assumption. The worklist keeps this iterative so that pMCs chaining many such ambiguities
+    // cannot overflow the call stack. Branches are pushed in reverse so popping (LIFO) visits
+    // them depth-first, left to right.
+    struct PendingBranch {
+        std::shared_ptr<Order> order;
+        uint_fast64_t val1;
+        uint_fast64_t val2;
+        std::vector<Assumption> assumptions;
+        std::shared_ptr<MonotonicityResult<VariableType>> monRes;
+    };
+    std::vector<PendingBranch> worklist;
+    worklist.push_back({std::move(order), val1, val2, std::move(assumptions), std::move(monRes)});
+
+    auto const numberOfStates = model->getNumberOfStates();
+    while (!worklist.empty()) {
+        PendingBranch current = std::move(worklist.back());
+        worklist.pop_back();
+
+        if (current.order->isInvalid()) {
+            // We don't add anything as the order we created with assumptions turns out to be invalid
+            STORM_LOG_INFO("    The order was invalid, so we stop here");
+            continue;
+        }
+        if (current.val1 == numberOfStates || current.val2 == numberOfStates) {
+            STORM_LOG_ASSERT(current.val1 == current.val2, "The order is done, so both states must be unset.");
+            STORM_LOG_ASSERT(current.order->getNumberOfAddedStates() == current.order->getNumberOfStates(), "All states must have been added.");
+            monResults.insert({current.order, {current.monRes, current.assumptions}});
+            continue;
+        }
+
         // Make the three assumptions
-        STORM_LOG_INFO("Creating assumptions for " << val1 << " and " << val2 << ". ");
-        auto newAssumptions = assumptionMaker.createAndCheckAssumptions(val1, val2, order, region);
-        STORM_LOG_ASSERT(newAssumptions.size() <= 3, "Expected at most 3 assumptions.");
-        auto itr = newAssumptions.begin();
-        if (newAssumptions.size() == 0) {
-            monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
+        STORM_LOG_INFO("Creating assumptions for " << current.val1 << " and " << current.val2 << ". ");
+        auto newAssumptions = assumptionMaker.createAndCheckAssumptions(current.val1, current.val2, current.order, region);
+        STORM_LOG_ASSERT(newAssumptions.size() <= 3, "At most three candidate assumptions can be created.");
+
+        if (newAssumptions.empty()) {
+            auto fallbackMonRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
             for (auto& entry : occuringStatesAtVariable) {
                 for (auto& state : entry.second) {
-                    extender->checkParOnStateMonRes(state, order, entry.first, monRes);
-                    if (monRes->getMonotonicity(entry.first) == Monotonicity::Unknown) {
+                    extender->checkParOnStateMonRes(state, current.order, entry.first, fallbackMonRes);
+                    if (fallbackMonRes->getMonotonicity(entry.first) == Monotonicity::Unknown) {
                         break;
                     }
                 }
-                monRes->setDoneForVar(entry.first);
+                fallbackMonRes->setDoneForVar(entry.first);
             }
-            monResults.insert({order, {monRes, assumptions}});
+            monResults.insert({current.order, {fallbackMonRes, current.assumptions}});
             STORM_LOG_INFO("    None of the assumptions were valid, we stop exploring the current order");
-        } else {
-            STORM_LOG_INFO("    Created " << newAssumptions.size() << " assumptions, we continue extending the current order");
+            continue;
         }
+        STORM_LOG_INFO("    Created " << newAssumptions.size() << " assumptions, we continue extending the current order");
 
-        while (itr != newAssumptions.end()) {
-            auto assumption = *itr;
-            ++itr;
-            if (assumption.second != AssumptionStatus::INVALID) {
-                if (itr != newAssumptions.end()) {
-                    // We make a copy of the order and the assumptions
-                    auto orderCopy = order->copy();
-                    auto assumptionsCopy = std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>(assumptions);
-                    auto monResCopy = monRes->copy();
+        // Candidates 0..size-2 each get an independent copy of current.order/monRes, so extending
+        // one cannot affect another; the last candidate reuses current.order/monRes in place.
+        // That in-place mutation must happen last, after every other candidate has already taken
+        // its copy from the still-pristine original.
+        std::vector<PendingBranch> preparedBranches;
+        preparedBranches.reserve(newAssumptions.size());
+        for (size_t i = 0; i < newAssumptions.size(); ++i) {
+            auto const& assumption = newAssumptions[i];
+            bool const isLastCandidate = (i == newAssumptions.size() - 1);
 
-                    if (assumption.second == AssumptionStatus::UNKNOWN) {
-                        // only add assumption to the set of assumptions if it is unknown whether it holds or not
-                        assumptionsCopy.push_back(std::move(assumption.first));
-                    }
-                    auto criticalTuple = extender->extendOrder(orderCopy, region, monResCopy, assumption.first);
-                    extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, monResCopy);
-                } else {
-                    // It is the last one, so we don't need to create a copy.
-                    if (assumption.second == AssumptionStatus::UNKNOWN) {
-                        // only add assumption to the set of assumptions if it is unknown whether it holds or not
-                        assumptions.push_back(std::move(assumption.first));
-                    }
-                    auto criticalTuple = extender->extendOrder(order, region, monRes, assumption.first);
-                    extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions, monRes);
-                }
+            std::shared_ptr<Order> branchOrder;
+            if (isLastCandidate) {
+                branchOrder = current.order;
+            } else {
+                branchOrder = current.order->copy();
+                // The copy must inherit the extender's per-order bookkeeping (PLA bounds, usePLA,
+                // continuation state); otherwise extending it would start from a fresh default
+                // context and silently drop those values.
+                extender->copyContext(current.order, branchOrder);
             }
+            std::shared_ptr<MonotonicityResult<VariableType>> branchMonRes = isLastCandidate ? current.monRes : current.monRes->copy();
+            std::vector<Assumption> branchAssumptions = current.assumptions;
+
+            if (assumption.second == AssumptionStatus::UNKNOWN) {
+                // only add assumption to the set of assumptions if it is unknown whether it holds or not
+                branchAssumptions.push_back(assumption.first);
+            }
+            auto criticalTuple = extender->extendOrder(branchOrder, region, branchMonRes, assumption.first);
+            preparedBranches.push_back(
+                {std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::move(branchAssumptions), branchMonRes});
+        }
+        // Pushed in reverse so the first-prepared branch ends up on top of the stack and is
+        // explored first, i.e., depth-first, left to right.
+        for (auto it = preparedBranches.rbegin(); it != preparedBranches.rend(); ++it) {
+            worklist.push_back(std::move(*it));
         }
     }
 }
 
 template<typename ValueType, typename ConstantType>
-void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Dtmc<ValueType>> model,
+void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(Environment const& env, std::shared_ptr<models::sparse::Dtmc<ValueType>> model,
                                                                              uint_fast64_t numberOfSamples) {
     STORM_LOG_ASSERT(numberOfSamples > 2, "Expected at least 3 samples.");
 
@@ -314,14 +340,14 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
             if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
                 const modelchecker::CheckTask<logic::UntilFormula, ConstantType> checkTask =
                     modelchecker::CheckTask<logic::UntilFormula, ConstantType>(formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula());
-                checkResult = checker.computeUntilProbabilities(Environment(), checkTask);
+                checkResult = checker.computeUntilProbabilities(env, checkTask);
             } else if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()) {
                 const modelchecker::CheckTask<logic::EventuallyFormula, ConstantType> checkTask =
                     modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>(
                         formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
-                checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
+                checkResult = checker.computeReachabilityProbabilities(env, checkTask);
             } else {
-                STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula.");
+                STORM_LOG_THROW_UNCONDITIONALLY(exceptions::NotSupportedException, "Expecting until or eventually formula.");
             }
 
             auto const& quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<ConstantType>();
@@ -351,9 +377,9 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
 }
 
 template<typename ValueType, typename ConstantType>
-void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model,
+void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(Environment const&, std::shared_ptr<models::sparse::Mdp<ValueType>> model,
                                                                              uint_fast64_t numberOfSamples) {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Checking monotonicity on samples not implemented for mdps.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::NotImplementedException, "Checking monotonicity on samples not implemented for mdps.");
 }
 
 template class MonotonicityHelper<RationalFunction, double>;

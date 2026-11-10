@@ -1,7 +1,7 @@
 #pragma once
 
-#include "storm/storage/MaximalEndComponent.h"
-#include "storm/storage/StronglyConnectedComponent.h"
+#include "storm/storage/decomposition/MaximalEndComponent.h"
+#include "storm/storage/decomposition/StronglyConnectedComponent.h"
 
 namespace storm {
 namespace modelchecker {

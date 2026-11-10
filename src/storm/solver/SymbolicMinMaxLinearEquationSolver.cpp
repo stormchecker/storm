@@ -1,9 +1,9 @@
 #include "storm/solver/SymbolicMinMaxLinearEquationSolver.h"
 
-#include "storm/storage/dd/DdManager.h"
+#include "storm/dd/DdManager.h"
 
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
 
 #include "storm/utility/constants.h"
 
@@ -534,7 +534,9 @@ MinMaxLinearEquationSolverRequirements SymbolicMinMaxLinearEquationSolver<DdType
         }
     } else if (method == MinMaxMethod::RationalSearch) {
         requirements.requireLowerBounds();
-        if (!this->hasUniqueSolution() && (!direction || direction.get() == storm::solver::OptimizationDirection::Minimize)) {
+        // RationalSearch guesses and verifies a fixpoint and terminates once a fixpoint is found. To ensure that the guessed fixpoint is the
+        // correct one, we enforce uniqueness.
+        if (!this->hasUniqueSolution()) {
             requirements.requireUniqueSolution();
         }
     } else {

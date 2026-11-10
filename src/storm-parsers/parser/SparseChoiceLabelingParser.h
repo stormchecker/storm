@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/storage/BoostTypes.h"
 
 namespace storm {
@@ -11,7 +12,7 @@ namespace parser {
 /*!
  * A class providing the functionality to parse a choice labeling.
  */
-class SparseChoiceLabelingParser {
+class STORM_PARSERS_API SparseChoiceLabelingParser {
    public:
     /*!
      * Parses the given file and returns the resulting choice labeling.

@@ -1,7 +1,7 @@
 #include "storm-parsers/parser/PrismParserGrammar.h"
 
 #include <unordered_set>
-#include "storm/storage/prism/Compositions.h"
+#include "storm/languages/prism/Compositions.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
@@ -10,9 +10,9 @@
 #include "storm/io/file.h"
 #include "storm/utility/macros.h"
 
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/VariableExpression.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/VariableExpression.h"
 
 #include "storm-parsers/parser/ExpressionParser.h"
 

@@ -2,7 +2,7 @@
 
 #include <ostream>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 namespace storm {
 namespace models {

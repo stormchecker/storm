@@ -5,32 +5,32 @@
 
 #include "storm/adapters/AddExpressionAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/Variable.h"
+#include "storm/languages/jani/Automaton.h"
+#include "storm/languages/jani/AutomatonComposition.h"
+#include "storm/languages/jani/Edge.h"
+#include "storm/languages/jani/EdgeDestination.h"
+#include "storm/languages/jani/Location.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/ParallelComposition.h"
+#include "storm/languages/jani/Variable.h"
+#include "storm/languages/jani/eliminator/ArrayEliminator.h"
+#include "storm/languages/jani/types/AllJaniTypes.h"
+#include "storm/languages/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Variable.h"
-#include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/AutomatonComposition.h"
-#include "storm/storage/jani/Edge.h"
-#include "storm/storage/jani/EdgeDestination.h"
-#include "storm/storage/jani/Location.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/Variable.h"
-#include "storm/storage/jani/eliminator/ArrayEliminator.h"
-#include "storm/storage/jani/types/AllJaniTypes.h"
-#include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
 
@@ -188,7 +188,7 @@ class ParameterCreator<Type, storm::RationalFunction> {
     void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter) {
         for (auto const& constant : model.getConstants()) {
             if (!constant.isDefined()) {
-                storm::RationalFunctionVariable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
+                storm::RationalFunctionVariable carlVariable = storm::createRFVariable(constant.getExpressionVariable().getName());
                 parameters.insert(carlVariable);
                 auto rf = convertVariableToPolynomial(carlVariable);
                 rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
@@ -1643,7 +1643,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
                     return combineEdgesToActionNondeterministic(edgeDds, localNondeterminismVariableOffset);
                 }
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Cannot translate model of type " << modelType << ".");
+                STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::WrongFormatException, "Cannot translate model of type " << modelType << ".");
             }
         } else {
             return ActionDd(this->variables.manager->getBddZero(), this->variables.manager->template getAddZero<ValueType>(), {},
@@ -1779,7 +1779,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
         return result;
     }
 
-    ActionDd combineEdgesBySummation(storm::dd::Bdd<Type> const& guard, std::vector<EdgeDd> const& edges) {
+    ActionDd combineEdgesBySummation(storm::dd::Bdd<Type> const& guard, std::vector<EdgeDd> const& edges, uint64_t localNondeterminismVariableOffset) {
         storm::dd::Add<Type, ValueType> transitions = this->variables.manager->template getAddZero<ValueType>();
         std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> globalVariableToWritingFragment;
         std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
@@ -1794,8 +1794,9 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
             }
         }
 
-        return ActionDd(guard, transitions, transientEdgeAssignments, std::make_pair<uint64_t, uint64_t>(0, 0), globalVariableToWritingFragment,
-                        this->variables.manager->getBddZero());
+        // No nondeterminism variables are used, but subsequent synchronizing actions need to start at the given offset.
+        return ActionDd(guard, transitions, transientEdgeAssignments, std::make_pair(localNondeterminismVariableOffset, localNondeterminismVariableOffset),
+                        globalVariableToWritingFragment, this->variables.manager->getBddZero());
     }
 
     ActionDd combineEdgesToActionNondeterministic(std::vector<EdgeDd> const& edges, uint64_t localNondeterminismVariableOffset) {
@@ -1812,7 +1813,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
 
         // Depending on the maximal number of nondeterminstic choices, we need to use some variables to encode the nondeterminism.
         if (maxChoices <= 1) {
-            return combineEdgesBySummation(allGuards, edges);
+            return combineEdgesBySummation(allGuards, edges, localNondeterminismVariableOffset);
         } else {
             // Calculate number of required variables to encode the nondeterminism.
             uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(std::log2(maxChoices)));

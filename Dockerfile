@@ -22,9 +22,10 @@ ARG no_threads=4
 ARG build_type=Release
 # Carl repo and tag to use
 ARG carl_repo="https://github.com/stormchecker/carl-storm.git"
-ARG carl_tag="14.36"
+ARG carl_tag="14.37"
 # Specify Storm configuration (ON/OFF)
 ARG disable_cudd="OFF"
+ARG disable_cvc5="OFF"
 ARG disable_glpk="OFF"
 ARG disable_gmm="OFF"
 ARG disable_gurobi="OFF"
@@ -43,6 +44,11 @@ ARG all_sanitizers="OFF"
 
 # Specify additional CMake arguments for Storm
 ARG cmake_args=""
+ARG ccache_size="3G"
+
+# Check for ccache
+ENV CCACHE_DIR=/root/.ccache
+RUN command -v ccache >/dev/null 2>&1 || { echo "ERROR: ccache not found in the base image"; exit 1; }
 
 
 # Build Storm
@@ -52,6 +58,10 @@ WORKDIR /opt/storm
 
 # Copy the content of the current local Storm repository into the Docker image
 COPY . .
+
+# Seed ccache from the workflow cache directory if available.
+RUN mkdir -p "$CCACHE_DIR" && \
+    if [ -d "/opt/storm/.ci-ccache" ]; then cp -a /opt/storm/.ci-ccache/. "$CCACHE_DIR"/; fi
 
 # Switch to build directory
 RUN mkdir -p /opt/storm/build
@@ -63,6 +73,7 @@ RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
           -DSTORM_CARL_GIT_REPO=$carl_repo \
           -DSTORM_CARL_GIT_TAG=$carl_tag \
           -DSTORM_DISABLE_CUDD=$disable_cudd \
+          -DSTORM_DISABLE_CVC5=$disable_cvc5 \
           -DSTORM_DISABLE_GLPK=$disable_glpk \
           -DSTORM_DISABLE_GMM=$disable_gmm \
           -DSTORM_DISABLE_GUROBI=$disable_gurobi \
@@ -82,6 +93,6 @@ RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
 
 # Build Storm
 # (This can be adapted to only build 'storm' or 'binaries' depending on custom needs)
-RUN make -j $no_threads
+RUN ccache --max-size=$ccache_size && ccache --zero-stats && make -j $no_threads && ccache --show-stats --verbose
 
 WORKDIR /opt/storm

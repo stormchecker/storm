@@ -1,13 +1,13 @@
 #include "storm/logic/LiftableTransitionRewardsVisitor.h"
 #include <boost/any.hpp>
 
+#include "storm/languages/jani/traverser/RewardModelInformation.h"
 #include "storm/logic/Formulas.h"
-#include "storm/storage/jani/traverser/RewardModelInformation.h"
 
 namespace storm {
 namespace logic {
 
-LiftableTransitionRewardsVisitor::LiftableTransitionRewardsVisitor(storm::storage::SymbolicModelDescription const& symbolicModelDescription)
+LiftableTransitionRewardsVisitor::LiftableTransitionRewardsVisitor(storm::languages::SymbolicModelDescription const& symbolicModelDescription)
     : symbolicModelDescription(symbolicModelDescription) {
     // Intentionally left empty.
 }
@@ -137,6 +137,14 @@ boost::any LiftableTransitionRewardsVisitor::visit(UnaryBooleanPathFormula const
 }
 
 boost::any LiftableTransitionRewardsVisitor::visit(UntilFormula const& f, boost::any const& data) const {
+    return boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data)) && boost::any_cast<bool>(f.getRightSubformula().accept(*this));
+}
+
+boost::any LiftableTransitionRewardsVisitor::visit(WeakUntilFormula const& f, boost::any const& data) const {
+    return boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data)) && boost::any_cast<bool>(f.getRightSubformula().accept(*this));
+}
+
+boost::any LiftableTransitionRewardsVisitor::visit(ReleaseFormula const& f, boost::any const& data) const {
     return boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data)) && boost::any_cast<bool>(f.getRightSubformula().accept(*this));
 }
 

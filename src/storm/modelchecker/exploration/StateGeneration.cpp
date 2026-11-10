@@ -1,5 +1,5 @@
 #include "storm/modelchecker/exploration/StateGeneration.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionEvaluator.h"
 
 #include "storm/modelchecker/exploration/ExplorationInformation.h"
 
@@ -41,7 +41,7 @@ std::vector<StateType> StateGeneration<StateType, ValueType>::getInitialStates()
 }
 
 template<typename StateType, typename ValueType>
-storm::generator::StateBehavior<ValueType, StateType> StateGeneration<StateType, ValueType>::expand() {
+storm::generator::StateBehavior<ValueType, StateType> const& StateGeneration<StateType, ValueType>::expand() {
     return generator.expand(stateToIdCallback);
 }
 

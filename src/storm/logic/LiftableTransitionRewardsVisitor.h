@@ -1,8 +1,8 @@
 #pragma once
 
+#include "storm/languages/SymbolicModelDescription.h"
 #include "storm/logic/FormulaInformation.h"
 #include "storm/logic/FormulaVisitor.h"
-#include "storm/storage/SymbolicModelDescription.h"
 
 namespace storm {
 
@@ -10,7 +10,7 @@ namespace logic {
 
 class LiftableTransitionRewardsVisitor : public FormulaVisitor {
    public:
-    LiftableTransitionRewardsVisitor(storm::storage::SymbolicModelDescription const& symbolicModelDescription = storm::storage::SymbolicModelDescription());
+    LiftableTransitionRewardsVisitor(storm::languages::SymbolicModelDescription const& symbolicModelDescription = storm::languages::SymbolicModelDescription());
 
     /*!
      * Returns true, when lifting transition rewards to action rewards (by scaling with the transition probability) preserves the given formula
@@ -41,12 +41,14 @@ class LiftableTransitionRewardsVisitor : public FormulaVisitor {
     virtual boost::any visit(UnaryBooleanStateFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(UnaryBooleanPathFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(UntilFormula const& f, boost::any const& data) const override;
+    virtual boost::any visit(WeakUntilFormula const& f, boost::any const& data) const override;
+    virtual boost::any visit(ReleaseFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(HOAPathFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(DiscountedCumulativeRewardFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(DiscountedTotalRewardFormula const& f, boost::any const& data) const override;
 
    private:
-    storm::storage::SymbolicModelDescription const& symbolicModelDescription;
+    storm::languages::SymbolicModelDescription const& symbolicModelDescription;
     bool rewardModelHasTransitionRewards(std::string const& rewardModelName) const;
 };
 

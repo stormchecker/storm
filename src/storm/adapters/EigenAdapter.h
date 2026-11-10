@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/functional/hash.hpp>
 #include <memory>
 
 #include "storm/adapters/RationalNumberAdapter.h"
@@ -34,7 +35,7 @@ struct hash<Eigen::Matrix<ValueType, Eigen::Dynamic, 1>> {
     std::size_t operator()(Eigen::Matrix<ValueType, Eigen::Dynamic, 1> const& vector) const {
         size_t seed = 0;
         for (uint_fast64_t i = 0; i < static_cast<uint_fast64_t>(vector.rows()); ++i) {
-            carl::hash_add(seed, std::hash<ValueType>()(vector(i)));
+            boost::hash_combine(seed, std::hash<ValueType>()(vector(i)));
         }
         return seed;
     }

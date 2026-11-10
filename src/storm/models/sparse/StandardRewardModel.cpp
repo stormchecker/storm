@@ -256,9 +256,11 @@ void StandardRewardModel<ValueType>::reduceToStateBasedRewards(storm::storage::S
 template<typename ValueType>
 template<typename MatrixValueType>
 std::vector<ValueType> StandardRewardModel<ValueType>::getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const {
-    std::vector<ValueType> result = this->hasTransitionRewards() ? transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix())
-                                                                 : (this->hasStateActionRewards() ? this->getStateActionRewardVector()
-                                                                                                  : std::vector<ValueType>(transitionMatrix.getRowCount()));
+    std::vector<ValueType> result =
+        this->hasTransitionRewards()
+            ? transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix())
+            : (this->hasStateActionRewards() ? this->getStateActionRewardVector()
+                                             : std::vector<ValueType>(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>()));
     if (this->hasStateActionRewards() && this->hasTransitionRewards()) {
         storm::utility::vector::addVectors(result, this->getStateActionRewardVector(), result);
     }
@@ -281,7 +283,7 @@ std::vector<ValueType> StandardRewardModel<ValueType>::getTotalRewardVector(stor
                 return weight * (resultElement + rewardElement);
             });
     } else {
-        result = std::vector<ValueType>(transitionMatrix.getRowCount());
+        result = std::vector<ValueType>(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
         if (this->hasStateActionRewards()) {
             storm::utility::vector::applyPointwise<MatrixValueType, ValueType, ValueType>(
                 weights, this->getStateActionRewardVector(), result,
@@ -323,7 +325,7 @@ std::vector<ValueType> StandardRewardModel<ValueType>::getTotalActionRewardVecto
     if (this->hasTransitionRewards()) {
         result = transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix());
     } else {
-        result = std::vector<ValueType>(transitionMatrix.getRowCount());
+        result = std::vector<ValueType>(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
     }
     if (this->hasStateActionRewards()) {
         storm::utility::vector::addVectors(result, this->getStateActionRewardVector(), result);

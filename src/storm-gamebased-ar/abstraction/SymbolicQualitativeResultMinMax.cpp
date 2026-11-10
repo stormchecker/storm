@@ -1,5 +1,5 @@
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeResultMinMax.h"
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#include "storm/dd/sylvan/InternalSylvanBdd.h"
 
 #include "storm-gamebased-ar/abstraction/QualitativeResult.h"
 

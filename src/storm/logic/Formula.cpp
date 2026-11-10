@@ -2,6 +2,7 @@
 #include <sstream>
 #include "storm/logic/Formulas.h"
 
+#include "storm/languages/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/logic/ExpressionSubstitutionVisitor.h"
 #include "storm/logic/FormulaInformationVisitor.h"
 #include "storm/logic/FragmentChecker.h"
@@ -9,12 +10,17 @@
 #include "storm/logic/RewardModelNameSubstitutionVisitor.h"
 #include "storm/logic/ToExpressionVisitor.h"
 #include "storm/logic/ToPrefixStringVisitor.h"
-#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
+#include "storm/logic/TraverseFormulaVisitor.h"
 
 namespace storm {
 namespace logic {
 boost::any Formula::accept(FormulaVisitor const& visitor) const {
     return accept(visitor, boost::any());
+}
+
+void Formula::traverse(std::function<bool(Formula const&)> const& callback) const {
+    TraverseFormulaVisitor const visitor(callback);
+    visitor.traverse(*this);
 }
 
 bool Formula::isPathFormula() const {
@@ -82,6 +88,14 @@ bool Formula::isUntilFormula() const {
 }
 
 bool Formula::isBoundedUntilFormula() const {
+    return false;
+}
+
+bool Formula::isWeakUntilFormula() const {
+    return false;
+}
+
+bool Formula::isReleaseFormula() const {
     return false;
 }
 
@@ -328,6 +342,22 @@ UntilFormula& Formula::asUntilFormula() {
 
 UntilFormula const& Formula::asUntilFormula() const {
     return dynamic_cast<UntilFormula const&>(*this);
+}
+
+WeakUntilFormula& Formula::asWeakUntilFormula() {
+    return dynamic_cast<WeakUntilFormula&>(*this);
+}
+
+WeakUntilFormula const& Formula::asWeakUntilFormula() const {
+    return dynamic_cast<WeakUntilFormula const&>(*this);
+}
+
+ReleaseFormula& Formula::asReleaseFormula() {
+    return dynamic_cast<ReleaseFormula&>(*this);
+}
+
+ReleaseFormula const& Formula::asReleaseFormula() const {
+    return dynamic_cast<ReleaseFormula const&>(*this);
 }
 
 BoundedUntilFormula& Formula::asBoundedUntilFormula() {

@@ -1,10 +1,10 @@
 #include "storm/modelchecker/helper/ltl/internal/SparseLTLSchedulerHelper.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/storage/SchedulerChoice.h"
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#include "storm/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
+#include "storm/storage/scheduler/SchedulerChoice.h"
 #include "storm/transformer/DAProductBuilder.h"
 #include "storm/utility/graph.h"
 

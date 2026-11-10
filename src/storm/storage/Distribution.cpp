@@ -25,6 +25,11 @@ void Distribution<ValueType, StateType>::reserve(uint64_t size) {
 }
 
 template<typename ValueType, typename StateType>
+void Distribution<ValueType, StateType>::clear() {
+    this->distribution.clear();
+}
+
+template<typename ValueType, typename StateType>
 void Distribution<ValueType, StateType>::add(Distribution const& other) {
     container_type newDistribution;
     std::set_union(this->distribution.begin(), this->distribution.end(), other.distribution.begin(), other.distribution.end(),

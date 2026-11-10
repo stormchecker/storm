@@ -2,10 +2,10 @@
 
 #include <boost/optional.hpp>
 
+#include "storm/expressions/Expression.h"
 #include "storm/logic/Bound.h"
 #include "storm/logic/UnaryStateFormula.h"
 #include "storm/solver/OptimizationDirection.h"
-#include "storm/storage/expressions/Expression.h"
 
 #include "storm/utility/constants.h"
 

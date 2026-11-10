@@ -7,12 +7,12 @@
 #include "storm/logic/Formulas.h"
 #include "storm/utility/macros.h"
 
+#include "storm/expressions/Expressions.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/storage/expressions/Expressions.h"
 
 #include "storm/transformer/EndComponentEliminator.h"
 

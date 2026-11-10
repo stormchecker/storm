@@ -7,6 +7,9 @@
 #include "storm/automata/DeterministicAutomaton.h"
 
 TEST(DeterministicAutomaton, ParseAutomaton) {
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "Parsing this HOA automaton requires an SMT solver.";
+#endif
     std::string aUb =
         "HOA: v1\n"
         "States: 3\n"

@@ -2,9 +2,9 @@
 
 #include <boost/optional.hpp>
 
+#include "storm/expressions/Expression.h"
 #include "storm/logic/RewardAccumulation.h"
 #include "storm/logic/TotalRewardFormula.h"
-#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
 namespace logic {

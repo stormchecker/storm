@@ -9,11 +9,11 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/LinearCoefficientVisitor.h"
+#include "storm/expressions/OperatorType.h"
 #include "storm/io/file.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/LinearCoefficientVisitor.h"
-#include "storm/storage/expressions/OperatorType.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -29,6 +29,11 @@ Z3LpSolver<ValueType, RawMode>::Z3LpSolver(std::string const& name, Optimization
     config.set("model", true);
     context = std::make_unique<z3::context>(config);
     solver = std::make_unique<z3::optimize>(*context);
+    // Do not let z3 install its own SIGINT handler (the "ctrl_c" parameter): if we did, z3 would swallow interrupts
+    // during check() and just return "unknown" instead of letting Storm's signal handler abort the computation.
+    z3::params params(*context);
+    params.set("ctrl_c", false);
+    solver->set(params);
     expressionAdapter = std::make_unique<storm::adapters::Z3ExpressionAdapter>(*this->manager, *context);
 }
 

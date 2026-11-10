@@ -6,8 +6,8 @@
 #include "storm/simulator/PrismProgramSimulator.h"
 
 TEST(PrismProgramSimulatorTest, KnuthYaoDieTest) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::Environment env;
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/die_c1.nm");

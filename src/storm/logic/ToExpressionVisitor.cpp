@@ -3,7 +3,7 @@
 
 #include "storm/logic/Formulas.h"
 
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"
@@ -129,6 +129,14 @@ boost::any ToExpressionVisitor::visit(UnaryBooleanPathFormula const&, boost::any
 }
 
 boost::any ToExpressionVisitor::visit(UntilFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+}
+
+boost::any ToExpressionVisitor::visit(WeakUntilFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+}
+
+boost::any ToExpressionVisitor::visit(ReleaseFormula const&, boost::any const&) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
 }
 

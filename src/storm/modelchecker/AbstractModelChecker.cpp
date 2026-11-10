@@ -5,6 +5,7 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/Add.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/exceptions/InternalTypeErrorException.h"
@@ -28,7 +29,6 @@
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-#include "storm/storage/dd/Add.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -489,9 +489,11 @@ template class AbstractModelChecker<storm::models::sparse::Mdp<storm::RationalFu
 template class AbstractModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>;
 template class AbstractModelChecker<storm::models::sparse::Smg<storm::RationalFunction>>;
 
+template class AbstractModelChecker<storm::models::sparse::Model<storm::Interval>>;
 template class AbstractModelChecker<storm::models::sparse::Mdp<storm::Interval>>;
 template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::Interval>>;
 
+template class AbstractModelChecker<storm::models::sparse::Model<storm::RationalInterval>>;
 template class AbstractModelChecker<storm::models::sparse::Mdp<storm::RationalInterval>>;
 template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::RationalInterval>>;
 

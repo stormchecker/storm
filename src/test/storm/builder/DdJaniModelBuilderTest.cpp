@@ -6,15 +6,15 @@
 #include "storm-parsers/parser/JaniParser.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdJaniModelBuilder.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/languages/SymbolicModelDescription.h"
+#include "storm/languages/jani/Compositions.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/jani/Compositions.h"
 
 namespace {
 
@@ -48,7 +48,7 @@ class DdJaniModelBuilderTest : public ::testing::Test {
     }
 
     storm::jani::Model getJaniModelFromPrism(std::string const& pathInTestResourcesDir, bool prismCompatability = false) {
-        storm::storage::SymbolicModelDescription modelDescription =
+        storm::languages::SymbolicModelDescription modelDescription =
             storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/" + pathInTestResourcesDir, prismCompatability);
         auto m = modelDescription.toJani(true).preprocess().asJaniModel();
         auto unsupportedFeatures = m.restrictToFeatures(storm::builder::DdJaniModelBuilder<DdType, double>::getSupportedJaniFeatures());
@@ -386,6 +386,20 @@ TYPED_TEST(DdJaniModelBuilderTest, InputEnabling) {
     std::shared_ptr<storm::models::symbolic::Model<DdType>> model = builder.build(env, janiModel);
     EXPECT_EQ(4ul, model->getNumberOfStates());
     EXPECT_EQ(5ul, model->getNumberOfTransitions());
+}
+
+TYPED_TEST(DdJaniModelBuilderTest, SynchronizationNondeterminismOffset) {
+    // A and C both have two edges labeled with the synchronizing action, B (between them) has one. The local
+    // nondeterminism variables of C must not overlap with those of A, otherwise A's choice to set x and C's
+    // unguarded edge can no longer be combined and the state with x=1 is unreachable.
+    const storm::dd::DdType DdType = TestFixture::DdType;
+    storm::Environment env;
+    auto janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/sync_nondeterminism_offset.jani").first;
+    storm::builder::DdJaniModelBuilder<DdType, double> builder;
+    auto model = builder.build(env, janiModel);
+    EXPECT_EQ(3ul, model->getNumberOfStates());
+    EXPECT_EQ(8ul, model->getNumberOfTransitions());
+    EXPECT_EQ(8ul, model->getNumberOfChoices());
 }
 
 }  // namespace

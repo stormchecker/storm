@@ -1,10 +1,10 @@
 #pragma once
 #include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
 
-#include "storm/storage/Decomposition.h"
-#include "storm/storage/MaximalEndComponent.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/StronglyConnectedComponent.h"
+#include "storm/storage/decomposition/Decomposition.h"
+#include "storm/storage/decomposition/MaximalEndComponent.h"
+#include "storm/storage/decomposition/StronglyConnectedComponent.h"
 
 namespace storm {
 class Environment;

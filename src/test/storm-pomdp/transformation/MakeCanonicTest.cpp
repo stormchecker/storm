@@ -11,8 +11,8 @@
 #include "storm/transformer/MakePOMDPCanonic.h"
 
 TEST(MakeCanonic, Simple) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism");
     program = program.preprocess("slippery=0.4");

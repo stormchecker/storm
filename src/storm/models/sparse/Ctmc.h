@@ -1,5 +1,8 @@
 #pragma once
 
+#include "storm/adapters/IntervalForward.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/models/sparse/DeterministicModel.h"
 
 namespace storm {
@@ -79,6 +82,15 @@ class Ctmc : public DeterministicModel<ValueType, RewardModelType> {
     // A vector containing the exit rates of all states.
     std::vector<ValueType> exitRates;
 };
+
+// Instantiated in Ctmc.cpp; prevents hidden consumers from duplicating the vtable/RTTI.
+extern template class Ctmc<double>;
+extern template class Ctmc<storm::RationalNumber>;
+extern template class Ctmc<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+extern template class Ctmc<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
+extern template class Ctmc<storm::RationalFunction>;
+extern template class Ctmc<storm::Interval>;
+extern template class Ctmc<storm::RationalInterval>;
 
 }  // namespace sparse
 }  // namespace models

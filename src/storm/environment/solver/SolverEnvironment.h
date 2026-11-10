@@ -12,18 +12,34 @@ namespace storm {
 
 // Forward declare subenvironments
 class EigenSolverEnvironment;
+class EliminationSolverEnvironment;
+class GameSolverEnvironment;
+class GlpkSolverEnvironment;
 class GmmxxSolverEnvironment;
-class NativeSolverEnvironment;
+class GurobiSolverEnvironment;
 class LongRunAverageSolverEnvironment;
-class TimeBoundedSolverEnvironment;
 class MinMaxSolverEnvironment;
 class MultiplierEnvironment;
-class GameSolverEnvironment;
-class TopologicalSolverEnvironment;
+class NativeSolverEnvironment;
 class OviSolverEnvironment;
-class GurobiSolverEnvironment;
-class GlpkSolverEnvironment;
-class EliminationSolverEnvironment;
+class TimeBoundedSolverEnvironment;
+class TopologicalSolverEnvironment;
+
+// Explicitly instantiated once in CoreEnvironments.cpp
+// Avoids redundant re-instantiation elsewhere
+extern template class SubEnvironment<EigenSolverEnvironment>;
+extern template class SubEnvironment<EliminationSolverEnvironment>;
+extern template class SubEnvironment<GameSolverEnvironment>;
+extern template class SubEnvironment<GlpkSolverEnvironment>;
+extern template class SubEnvironment<GmmxxSolverEnvironment>;
+extern template class SubEnvironment<GurobiSolverEnvironment>;
+extern template class SubEnvironment<LongRunAverageSolverEnvironment>;
+extern template class SubEnvironment<MinMaxSolverEnvironment>;
+extern template class SubEnvironment<MultiplierEnvironment>;
+extern template class SubEnvironment<NativeSolverEnvironment>;
+extern template class SubEnvironment<OviSolverEnvironment>;
+extern template class SubEnvironment<TimeBoundedSolverEnvironment>;
+extern template class SubEnvironment<TopologicalSolverEnvironment>;
 
 class SolverEnvironment {
    public:
@@ -32,30 +48,66 @@ class SolverEnvironment {
 
     EigenSolverEnvironment& eigen();
     EigenSolverEnvironment const& eigen() const;
-    GmmxxSolverEnvironment& gmmxx();
-    GmmxxSolverEnvironment const& gmmxx() const;
-    NativeSolverEnvironment& native();
-    NativeSolverEnvironment const& native() const;
-    LongRunAverageSolverEnvironment& lra();
-    LongRunAverageSolverEnvironment const& lra() const;
-    TimeBoundedSolverEnvironment& timeBounded();
-    TimeBoundedSolverEnvironment const& timeBounded() const;
-    MinMaxSolverEnvironment& minMax();
-    MinMaxSolverEnvironment const& minMax() const;
-    MultiplierEnvironment& multiplier();
-    MultiplierEnvironment const& multiplier() const;
-    OviSolverEnvironment const& ovi() const;
-    OviSolverEnvironment& ovi();
-    GameSolverEnvironment& game();
-    GameSolverEnvironment const& game() const;
-    TopologicalSolverEnvironment& topological();
-    TopologicalSolverEnvironment const& topological() const;
-    GurobiSolverEnvironment& gurobi();
-    GurobiSolverEnvironment const& gurobi() const;
-    GlpkSolverEnvironment& glpk();
-    GlpkSolverEnvironment const& glpk() const;
+
     EliminationSolverEnvironment& elimination();
     EliminationSolverEnvironment const& elimination() const;
+
+    GameSolverEnvironment& game();
+    GameSolverEnvironment const& game() const;
+
+    GlpkSolverEnvironment& glpk();
+    GlpkSolverEnvironment const& glpk() const;
+
+    GmmxxSolverEnvironment& gmmxx();
+    GmmxxSolverEnvironment const& gmmxx() const;
+
+    GurobiSolverEnvironment& gurobi();
+    GurobiSolverEnvironment const& gurobi() const;
+
+    LongRunAverageSolverEnvironment& lra();
+    LongRunAverageSolverEnvironment const& lra() const;
+
+    MinMaxSolverEnvironment& minMax();
+    MinMaxSolverEnvironment const& minMax() const;
+
+    MultiplierEnvironment& multiplier();
+    MultiplierEnvironment const& multiplier() const;
+
+    NativeSolverEnvironment& native();
+    NativeSolverEnvironment const& native() const;
+
+    OviSolverEnvironment& ovi();
+    OviSolverEnvironment const& ovi() const;
+
+    TimeBoundedSolverEnvironment& timeBounded();
+    TimeBoundedSolverEnvironment const& timeBounded() const;
+
+    TopologicalSolverEnvironment& topological();
+    TopologicalSolverEnvironment const& topological() const;
+
+    storm::solver::EquationSolverType const& getLinearEquationSolverType() const;
+    void setLinearEquationSolverType(storm::solver::EquationSolverType const& value, bool isSetFromDefault = false);
+    bool isLinearEquationSolverTypeSetFromDefaultValue() const;
+
+    storm::solver::LpSolverType const& getLpSolverType() const;
+    void setLpSolverType(storm::solver::LpSolverType const& value, bool isSetFromDefault = false);
+    bool isLpSolverTypeSetFromDefaultValue() const;
+
+    /*!
+     * Retrieves the SMT solver that is currently selected. The value is initialized from the
+     * ``smtsolver`` core setting when the environment is constructed and can be overridden
+     * afterwards, e.g., in order to run a sub-computation with a different backend.
+     *
+     * @return The selected SMT solver.
+     */
+    storm::solver::SmtSolverType const& getSmtSolverType() const;
+    void setSmtSolverType(storm::solver::SmtSolverType const& value, bool isSetFromDefault = false);
+    bool isSmtSolverTypeSetFromDefaultValue() const;
+
+    std::pair<boost::optional<storm::RationalNumber>, boost::optional<bool>> getPrecisionOfLinearEquationSolver(
+        storm::solver::EquationSolverType const& solverType) const;
+    void setLinearEquationSolverPrecision(boost::optional<storm::RationalNumber> const& newPrecision,
+                                          boost::optional<bool> const& relativePrecision = boost::none);
 
     bool isForceSoundness() const;
     void setForceSoundness(bool value);
@@ -68,38 +120,27 @@ class SolverEnvironment {
     uint64_t getShowProgressDelay() const;
     void setShowProgressDelay(uint64_t delay);
 
-    storm::solver::EquationSolverType const& getLinearEquationSolverType() const;
-    void setLinearEquationSolverType(storm::solver::EquationSolverType const& value, bool isSetFromDefault = false);
-    bool isLinearEquationSolverTypeSetFromDefaultValue() const;
-
-    storm::solver::LpSolverType const& getLpSolverType() const;
-    void setLpSolverType(storm::solver::LpSolverType const& value, bool isSetFromDefault = false);
-    bool isLpSolverTypeSetFromDefaultValue() const;
-
-    std::pair<boost::optional<storm::RationalNumber>, boost::optional<bool>> getPrecisionOfLinearEquationSolver(
-        storm::solver::EquationSolverType const& solverType) const;
-    void setLinearEquationSolverPrecision(boost::optional<storm::RationalNumber> const& newPrecision,
-                                          boost::optional<bool> const& relativePrecision = boost::none);
-
    private:
     SubEnvironment<EigenSolverEnvironment> eigenSolverEnvironment;
-    SubEnvironment<GmmxxSolverEnvironment> gmmxxSolverEnvironment;
-    SubEnvironment<NativeSolverEnvironment> nativeSolverEnvironment;
+    SubEnvironment<EliminationSolverEnvironment> eliminationSolverEnvironment;
     SubEnvironment<GameSolverEnvironment> gameSolverEnvironment;
-    SubEnvironment<TopologicalSolverEnvironment> topologicalSolverEnvironment;
+    SubEnvironment<GlpkSolverEnvironment> glpkSolverEnvironment;
+    SubEnvironment<GmmxxSolverEnvironment> gmmxxSolverEnvironment;
+    SubEnvironment<GurobiSolverEnvironment> gurobiSolverEnvironment;
     SubEnvironment<LongRunAverageSolverEnvironment> longRunAverageSolverEnvironment;
-    SubEnvironment<TimeBoundedSolverEnvironment> timeBoundedSolverEnvironment;
     SubEnvironment<MinMaxSolverEnvironment> minMaxSolverEnvironment;
     SubEnvironment<MultiplierEnvironment> multiplierEnvironment;
+    SubEnvironment<NativeSolverEnvironment> nativeSolverEnvironment;
     SubEnvironment<OviSolverEnvironment> oviSolverEnvironment;
-    SubEnvironment<GurobiSolverEnvironment> gurobiSolverEnvironment;
-    SubEnvironment<GlpkSolverEnvironment> glpkSolverEnvironment;
-    SubEnvironment<EliminationSolverEnvironment> eliminationSolverEnvironment;
+    SubEnvironment<TimeBoundedSolverEnvironment> timeBoundedSolverEnvironment;
+    SubEnvironment<TopologicalSolverEnvironment> topologicalSolverEnvironment;
 
     storm::solver::EquationSolverType linearEquationSolverType;
     bool linearEquationSolverTypeSetFromDefault;
     storm::solver::LpSolverType lpSolverType;
     bool lpSolverTypeSetFromDefault;
+    storm::solver::SmtSolverType smtSolverType;
+    bool smtSolverTypeSetFromDefault;
     bool forceSoundness;
     bool forceExact;
     bool debug;

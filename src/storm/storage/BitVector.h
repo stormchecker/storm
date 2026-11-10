@@ -398,13 +398,23 @@ class BitVector {
     BitVector& operator|=(BitVector const& other);
 
     /*!
-     * Performs a logical "xor" with the given bit vector. In case the sizes of the bit vectors do not match,
-     * only the matching portion is considered and the overlapping bits are set to 0.
+     * Performs a logical "xor" with the given bit vector.
+     * The given bit vector has to have the same size as the current one.
      *
      * @param other A reference to the bit vector to use for the operation.
      * @return A bit vector corresponding to the logical "xor" of the two bit vectors.
      */
     BitVector operator^(BitVector const& other) const;
+
+    /*!
+     * Performs a logical "xor" with the given bit vector and assigns the result to the current bit vector.
+     * The given bit vector has to have the same size as the current one.
+     *
+     * @param other A reference to the bit vector to use for the operation.
+     * @return A reference to the current bit vector corresponding to the logical "xor"
+     * of the two bit vectors.
+     */
+    BitVector& operator^=(BitVector const& other);
 
     /*!
      * Computes a bit vector that contains only the values of the bits given by the filter.

@@ -2,8 +2,8 @@
 
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/storage/MaximalEndComponent.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/decomposition/MaximalEndComponent.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/transformer/DAProductBuilder.h"
 
 namespace storm {

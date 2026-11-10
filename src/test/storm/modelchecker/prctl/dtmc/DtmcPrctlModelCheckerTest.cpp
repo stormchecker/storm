@@ -13,12 +13,15 @@
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
@@ -28,7 +31,6 @@
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/EigenLinearEquationSolver.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace {
 
@@ -277,6 +279,7 @@ class SparseNativeGuessingValueIterationEnvironment {
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
         env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::GuessingValueIteration);
         env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().native().setRelativeTerminationCriterion(false);
         return env;
     }
 };
@@ -525,8 +528,8 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
     DtmcPrctlModelCheckerTest() : _environment(TestType::createEnvironment()) {}
 
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
         if constexpr (TestType::engine == DtmcEngine::Hybrid || TestType::engine == DtmcEngine::PrismDd || TestType::engine == DtmcEngine::JaniDd) {
             TestType::checkLibraryAvailable();
@@ -587,6 +590,30 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
         return result;
     }
 
+    // buildModelFormulas for JANI file input
+    template<typename MT = typename TestType::ModelType>
+    typename std::enable_if<std::is_same<MT, SparseModelType>::value,
+                            std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>>>::type
+    buildJaniModelFormulas(std::string const& pathToJaniFile) const {
+        std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
+        auto janiData = storm::api::parseJaniModel(pathToJaniFile);
+        result.second = storm::api::extractFormulasFromProperties(janiData.second);
+        result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second)->template as<MT>();
+        return result;
+    }
+
+    template<typename MT = typename TestType::ModelType>
+    typename std::enable_if<std::is_same<MT, SymbolicModelType>::value,
+                            std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>>>::type
+    buildJaniModelFormulas(std::string const& pathToJaniFile) const {
+        std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
+        auto janiData = storm::api::parseJaniModel(pathToJaniFile);
+        janiData.first.substituteFunctions();
+        result.second = storm::api::extractFormulasFromProperties(janiData.second);
+        result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(this->env(), janiData.first, result.second)->template as<MT>();
+        return result;
+    }
+
     std::vector<storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>> getTasks(
         std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) const {
         std::vector<storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>> result;
@@ -640,6 +667,42 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
         return result->asQuantitativeCheckResult<ValueType>().getMin();
     }
 
+    /*!
+     * Expects the value at the initial states to be the given one. Where the configuration reports sound bounds on
+     * the solution, they must enclose that value as well.
+     */
+    void expectQuantitativeResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
+                                                std::unique_ptr<storm::modelchecker::CheckResult>& result, ValueType const& expected) {
+        EXPECT_NEAR(expected, this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        if (!result->isExplicitQuantitativeCheckResult()) {
+            return;  // Only explicit results carry bounds.
+        }
+        // The result is filtered to the initial states at this point, so the first entry belongs to the first initial state.
+        auto const& explicitResult = result->template asExplicitQuantitativeCheckResult<ValueType>();
+        ValueType const tolerance = TestType::isExact ? this->parseNumber("0") : this->parseNumber("1e-12");
+        if (explicitResult.hasLowerBounds()) {
+            EXPECT_LE(explicitResult.getLowerBoundVector().front(), expected + tolerance) << "The lower bound exceeds the expected value.";
+        }
+        if (explicitResult.hasUpperBounds()) {
+            EXPECT_LE(expected, explicitResult.getUpperBoundVector().front() + tolerance) << "The upper bound falls below the expected value.";
+        }
+    }
+
+    /*!
+     * Expects the value at the initial states to be the given one and the result to report it as exact.
+     */
+    void expectExactResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
+                                         std::unique_ptr<storm::modelchecker::CheckResult>& result, ValueType const& expected) {
+        expectQuantitativeResultAtInitialState(model, result, expected);
+        if (!result->isExplicitQuantitativeCheckResult()) {
+            return;  // Only explicit results carry bounds.
+        }
+        auto const& explicitResult = result->template asExplicitQuantitativeCheckResult<ValueType>();
+        ASSERT_TRUE(explicitResult.hasLowerBounds()) << "No lower bound was reported although the values are exact.";
+        ASSERT_TRUE(explicitResult.hasUpperBounds()) << "No upper bound was reported although the values are exact.";
+        EXPECT_EQ(explicitResult.getLowerBoundVector(), explicitResult.getUpperBoundVector()) << "The bounds do not pin the values down.";
+    }
+
    private:
     storm::Environment _environment;
 
@@ -685,16 +748,16 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, Die) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
 
         result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/6"));
 
         result = checker->check(this->env(), tasks[1]);
-        EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/6"));
 
         result = checker->check(this->env(), tasks[2]);
-        EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/6"));
 
         result = checker->check(this->env(), tasks[3]);
-        EXPECT_NEAR(this->parseNumber("11/3"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("11/3"));
     });
 }
 
@@ -714,13 +777,13 @@ STORM_EXPENSIVE_TYPED_TEST(DtmcPrctlModelCheckerTest, Crowds) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
 
         result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("78686542099694893/1268858272000000000"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("78686542099694893/1268858272000000000"));
 
         result = checker->check(this->env(), tasks[1]);
-        EXPECT_NEAR(this->parseNumber("40300855878315123/1268858272000000000"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("40300855878315123/1268858272000000000"));
 
         result = checker->check(this->env(), tasks[2]);
-        EXPECT_NEAR(this->parseNumber("13433618626105041/1268858272000000000"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("13433618626105041/1268858272000000000"));
     });
 }
 
@@ -740,13 +803,13 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, SynchronousLeader) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
 
         result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1"));
 
         result = checker->check(this->env(), tasks[1]);
-        EXPECT_NEAR(this->parseNumber("24/25"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectExactResultAtInitialState(model, result, this->parseNumber("24/25"));
 
         result = checker->check(this->env(), tasks[2]);
-        EXPECT_NEAR(this->parseNumber("25/24"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("25/24"));
     });
 }
 
@@ -764,30 +827,39 @@ TEST(DtmcPrctlModelCheckerTest, BoundedReachability) {
     ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
     auto task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
 
+    // Unrolling a step bound ends at the values, so each of them is reported as its own lower and upper bound.
+    auto expectExactValue = [](std::unique_ptr<storm::modelchecker::CheckResult> const& result, double expected) {
+        EXPECT_NEAR(expected, result->asQuantitativeCheckResult<double>().getMin(), 0.0001);
+        auto const& explicitResult = result->asExplicitQuantitativeCheckResult<double>();
+        ASSERT_TRUE(explicitResult.hasLowerBounds());
+        ASSERT_TRUE(explicitResult.hasUpperBounds());
+        EXPECT_EQ(explicitResult.getLowerBoundVector(), explicitResult.getUpperBoundVector());
+    };
+
     auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>(*dtmc);
     auto result = checker.check(env, task);
     auto filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(dtmc->getInitialStates());
     result->filter(*filter);
-    EXPECT_NEAR(0.2, result->asQuantitativeCheckResult<double>().getMin(), 0.0001);
+    expectExactValue(result, 0.2);
 
     task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[1]);
 
     result = checker.check(env, task);
     filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(dtmc->getInitialStates());
     result->filter(*filter);
-    EXPECT_NEAR(0.2, result->asQuantitativeCheckResult<double>().getMin(), 0.0001);
+    expectExactValue(result, 0.2);
 
     task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[2]);
 
     result = checker.check(env, task);
     filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(dtmc->getInitialStates());
     result->filter(*filter);
-    EXPECT_NEAR(0.366, result->asQuantitativeCheckResult<double>().getMin(), 0.0001);
+    expectExactValue(result, 0.366);
 }
 
 TEST(DtmcPrctlModelCheckerTest, AllUntilProbabilities) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     std::string formulasString = "P=? [F \"one\"]";
     formulasString += "; P=? [F \"two\"]";
@@ -867,25 +939,25 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, LtlProbabilitiesDie) {
         // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
         if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse) {
             result = checker->check(tasks[0]);
-            EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/6"));
 
             result = checker->check(tasks[1]);
-            EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/6"));
 
             result = checker->check(tasks[2]);
-            EXPECT_NEAR(this->parseNumber("1/24"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/24"));
 
             result = checker->check(tasks[3]);
-            EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/6"));
 
             result = checker->check(tasks[4]);
-            EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0"));
 
             result = checker->check(tasks[5]);
-            EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/6"));
 
             result = checker->check(tasks[6]);
-            EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0"));
         } else {
             EXPECT_FALSE(checker->canHandle(tasks[0]));
         }
@@ -916,19 +988,19 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, LtlProbabilitiesSynchronousLeader) {
         // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
         if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse) {
             result = checker->check(tasks[0]);
-            EXPECT_NEAR(this->parseNumber("16/25"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("16/25"));
 
             result = checker->check(tasks[1]);
-            EXPECT_NEAR(this->parseNumber("9/25"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("9/25"));
 
             result = checker->check(tasks[2]);
-            EXPECT_NEAR(this->parseNumber("1/25"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/25"));
 
             result = checker->check(tasks[3]);
-            EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("0"));
 
             result = checker->check(tasks[4]);
-            EXPECT_NEAR(this->parseNumber("1/5"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/5"));
 
         } else {
             EXPECT_FALSE(checker->canHandle(tasks[0]));
@@ -968,22 +1040,22 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, HOAProbabilitiesDie) {
         // Not supported in all engines (Hybrid,  PrismDd, JaniDd)
         if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse) {
             result = checker->check(tasks[0]);
-            EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/6"));
 
             result = checker->check(tasks[1]);
-            EXPECT_NEAR(this->parseNumber("1/3"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/3"));
 
             result = checker->check(tasks[2]);
-            EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/6"));
 
             result = checker->check(tasks[3]);
-            EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/6"));
 
             result = checker->check(tasks[4]);
-            EXPECT_NEAR(this->parseNumber("1/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/8"));
 
             result = checker->check(tasks[5]);
-            EXPECT_NEAR(this->parseNumber("1/3"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("1/3"));
 
             result = checker->check(tasks[6]);
             EXPECT_TRUE(this->getQualitativeResultAtInitialState(model, result));
@@ -1012,16 +1084,16 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, SmallDiscount) {
 
     if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse) {
         std::unique_ptr<storm::modelchecker::CheckResult> result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("5"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("5"));
 
         result = checker->check(this->env(), tasks[1]);
-        EXPECT_NEAR(this->parseNumber("45/14"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("45/14"));
         result = checker->check(this->env(), tasks[2]);
-        EXPECT_NEAR(this->parseNumber("15/4"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("15/4"));
         result = checker->check(this->env(), tasks[3]);
-        EXPECT_NEAR(this->parseNumber("12591/6250"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("12591/6250"));
         result = checker->check(this->env(), tasks[4]);
-        EXPECT_NEAR(this->parseNumber("555/256"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        this->expectQuantitativeResultAtInitialState(model, result, this->parseNumber("555/256"));
     } else {
         EXPECT_FALSE(checker->canHandle(tasks[0]));
         EXPECT_FALSE(checker->canHandle(tasks[1]));
@@ -1029,6 +1101,169 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, SmallDiscount) {
         EXPECT_FALSE(checker->canHandle(tasks[3]));
         EXPECT_FALSE(checker->canHandle(tasks[4]));
     }
+}
+
+TYPED_TEST(DtmcPrctlModelCheckerTest, DieJaniProperties) {
+    // Properties are from JANI file in specific order
+    auto modelFormulas = this->buildJaniModelFormulas(STORM_TEST_RESOURCES_DIR "/dtmc/die_janiproperties.jani");
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    this->execute(model, [&]() {
+        EXPECT_EQ(13ul, model->getNumberOfStates());
+        EXPECT_EQ(20ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        // N0: Probability to throw a six
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        // N1: Expected number of coin flips
+        result = checker->check(this->env(), tasks[1]);
+        EXPECT_NEAR(this->parseNumber("11/3"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        // N9: Until vs weak until
+        result = checker->check(this->env(), tasks[9]);
+        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        // N10: Weak until dual
+        result = checker->check(this->env(), tasks[10]);
+        auto const weakUntilDual = this->getQuantitativeResultAtInitialState(model, result);
+        EXPECT_NEAR(this->parseNumber("1/4"), weakUntilDual, this->precision());
+
+        // N11: Release dual
+        result = checker->check(this->env(), tasks[11]);
+        auto const releaseDual = this->getQuantitativeResultAtInitialState(model, result);
+        EXPECT_NEAR(this->parseNumber("1/6"), releaseDual, this->precision());
+
+        // Properties below need LTL
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
+        // N2: Conjunction of path formulas
+        if (checker->canHandle(tasks[2])) {
+            result = checker->check(this->env(), tasks[2]);
+            EXPECT_NEAR(this->parseNumber("1/12"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+
+        // N3: Disjunction of path formulas
+        if (checker->canHandle(tasks[3])) {
+            result = checker->check(this->env(), tasks[3]);
+            EXPECT_NEAR(this->parseNumber("11/12"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+
+        // N4: Negation of a path formula
+        if (checker->canHandle(tasks[4])) {
+            result = checker->check(this->env(), tasks[4]);
+            EXPECT_NEAR(this->parseNumber("5/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+
+        // N5: Implication of path formulas
+        if (checker->canHandle(tasks[5])) {
+            result = checker->check(this->env(), tasks[5]);
+            EXPECT_NEAR(this->parseNumber("11/12"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+
+        // N6: Conjunction of state formulas
+
+        // N7: Weak until
+        if (checker->canHandle(tasks[7])) {
+            result = checker->check(this->env(), tasks[7]);
+            auto const weakUntil = this->getQuantitativeResultAtInitialState(model, result);
+            EXPECT_NEAR(this->parseNumber("3/4"), weakUntil, this->precision());
+            EXPECT_NEAR(this->parseNumber("1"), weakUntil + weakUntilDual, this->precision());
+        }
+
+        // N8: Release
+        if (checker->canHandle(tasks[8])) {
+            result = checker->check(this->env(), tasks[8]);
+            auto const release = this->getQuantitativeResultAtInitialState(model, result);
+            EXPECT_NEAR(this->parseNumber("5/6"), release, this->precision());
+            EXPECT_NEAR(this->parseNumber("1"), release + releaseDual, this->precision());
+        }
+#endif
+    });
+}
+
+TYPED_TEST(DtmcPrctlModelCheckerTest, SimpleCommProtocol) {
+    // see simple_comm_protocol.props
+    std::string formulasString = "P=? [ F (s = 3) ]; ";
+    formulasString += "P=? [ (s<=1) U (s=3) ]; ";
+    formulasString += "P=? [ !(s=3) U (!(s<=1) & !(s=3)) ]; ";
+
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/dtmc/simple_comm_protocol.prism", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+
+    ASSERT_EQ(3ul, tasks.size());
+    this->execute(model, [&]() {
+        EXPECT_EQ(4ul, model->getNumberOfStates());
+        EXPECT_EQ(5ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        result = checker->check(this->env(), tasks[1]);
+        EXPECT_NEAR(this->parseNumber("99/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        result = checker->check(this->env(), tasks[2]);
+        EXPECT_NEAR(this->parseNumber("1/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    });
+}
+
+TYPED_TEST(DtmcPrctlModelCheckerTest, SimpleCommProtocolLTL) {
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
+    // see simple_comm_protocol.props
+    std::string formulasString = "P=? [ (s<=1) W (s=3) ]; ";
+    formulasString += "P=? [ !(s=3) U (!(s<=1) & !(s=3)) ]; ";
+    formulasString += "P=? [ !(s=2) W ((s=3 & !(s=2))) ]; ";
+    formulasString += "P=? [(!(s=2) W ((s=2) W (!(s=2) W ((s=2) W G !(s=2)))))]; ";
+    formulasString += "P=? [ (s=2) R !(s=3) ]; ";
+
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/dtmc/simple_comm_protocol.prism", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+
+    ASSERT_EQ(5ul, tasks.size());
+    this->execute(model, [&]() {
+        EXPECT_EQ(4ul, model->getNumberOfStates());
+        EXPECT_EQ(5ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
+        if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse) {
+            result = checker->check(this->env(), tasks[0]);
+            auto const weakUntil = this->getQuantitativeResultAtInitialState(model, result);
+            EXPECT_NEAR(this->parseNumber("99/100"), weakUntil, this->precision());
+
+            result = checker->check(this->env(), tasks[1]);
+            auto const weakUntilDual = this->getQuantitativeResultAtInitialState(model, result);
+            EXPECT_NEAR(this->parseNumber("1/100"), weakUntilDual, this->precision());
+
+            EXPECT_NEAR(this->parseNumber("1"), weakUntil + weakUntilDual, this->precision());
+
+            result = checker->check(this->env(), tasks[2]);
+            EXPECT_NEAR(this->parseNumber("99/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[3]);
+            EXPECT_NEAR(this->parseNumber("999999/1000000"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[4]);
+            EXPECT_NEAR(this->parseNumber("1/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        } else {
+            EXPECT_FALSE(checker->canHandle(tasks[0]));
+            STORM_SILENT_EXPECT_THROW(checker->check(this->env(), tasks[0]), storm::exceptions::InvalidArgumentException);
+            EXPECT_FALSE(checker->canHandle(tasks[4]));
+            STORM_SILENT_EXPECT_THROW(checker->check(this->env(), tasks[4]), storm::exceptions::InvalidArgumentException);
+        }
+    });
+#else
+    GTEST_SKIP() << "Spot not available.";
+#endif
 }
 
 }  // namespace

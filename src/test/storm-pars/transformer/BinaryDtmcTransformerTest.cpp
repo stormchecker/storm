@@ -14,13 +14,12 @@
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
 #include "storm/environment/Environment.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/solver/OptimizationDirection.h"
-#include "storm/storage/bisimulation/BisimulationType.h"
-#include "storm/storage/prism/Program.h"
 #include "storm/utility/constants.h"
 
 void testModelB(std::string programFile, std::string formulaAsString, std::string constantsAsString) {
@@ -34,16 +33,17 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     uint64_t initialStateModel = dtmc->getStates("init").getNextSetIndex(0);
 
-    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas, storm::storage::BisimulationType::Weak)
-               ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    dtmc =
+        storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas, {.bisimulationType = storm::bisimulation::BisimulationType::Weak})
+            ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     storm::transformer::BinaryDtmcTransformer binaryDtmcTransformer;
     auto simpleDtmc = binaryDtmcTransformer.transform(*dtmc, true);
 
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelChecker(storm::Environment(),
-                                                                                                                                        *dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> modelChecker(
+        storm::Environment(), *dtmc);
     modelChecker.specifyFormula(checkTask);
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelCheckerSimple(
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> modelCheckerSimple(
         storm::Environment(), *simpleDtmc);
     modelCheckerSimple.specifyFormula(checkTask);
 
@@ -68,20 +68,21 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
 
     storm::Environment env;
     for (auto const& instantiation : testInstantiations) {
-        auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
-        auto resultSimple = modelCheckerSimple.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
-        ASSERT_TRUE(storm::utility::isAlmostZero(result - resultSimple))
-            << "Results " << result << " and " << resultSimple << " are not the same but should be.";
+        auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initialStateModel];
+        auto resultSimple = modelCheckerSimple.check(env, instantiation)->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initialStateModel];
+        // The results are exact rationals, but we print their rounded double approximations for readability.
+        EXPECT_EQ(result, resultSimple) << "Results " << storm::utility::convertNumber<double>(result) << " and "
+                                        << storm::utility::convertNumber<double>(resultSimple) << " (both rounded) are not the same but should be.";
     }
 
     auto region = storm::api::createRegion<storm::RationalFunction>("0.4", *dtmc);
 
     auto pla =
-        storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, dtmc, checkTask, storm::modelchecker::RegionCheckEngine::ParameterLifting);
+        storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, dtmc, checkTask, storm::modelchecker::RegionCheckEngine::ExactParameterLifting);
     auto resultPLA = pla->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
-    auto plaSimple =
-        storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, simpleDtmc, checkTask, storm::modelchecker::RegionCheckEngine::ParameterLifting);
+    auto plaSimple = storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, simpleDtmc, checkTask,
+                                                                                       storm::modelchecker::RegionCheckEngine::ExactParameterLifting);
     auto resultPLASimple = plaSimple->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
     ASSERT_TRUE(resultPLA == resultPLASimple) << "Different PLA result with simplified DTMC";
@@ -102,10 +103,20 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
             ASSERT_TRUE(variables.size() == 1);
             auto parameter = *variables.begin();
 
+            // Build the expected values with the cache of the model, just like the transformer does.
+            std::shared_ptr<storm::RawPolynomialCache> cache;
+            for (auto const& entry : row) {
+                if (!entry.getValue().isConstant()) {
+                    cache = entry.getValue().nominator().pCache();
+                    break;
+                }
+            }
+            ASSERT_TRUE(cache != nullptr);
+
             auto parameterPol = storm::RawPolynomial(parameter);
-            auto parameterRational = storm::RationalFunction(carl::makePolynomial<storm::Polynomial>(parameterPol));
+            auto parameterRational = storm::RationalFunction(storm::Polynomial(parameterPol, cache));
             auto oneMinusParameter = storm::RawPolynomial(1) - parameterPol;
-            auto oneMinusParameterRational = storm::RationalFunction(carl::makePolynomial<storm::Polynomial>(oneMinusParameter));
+            auto oneMinusParameterRational = storm::RationalFunction(storm::Polynomial(oneMinusParameter, cache));
 
             uint64_t seenP = 0;
             uint64_t seenOneMinusP = 0;
@@ -130,15 +141,13 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
 class BinaryDtmcTransformerTest : public ::testing::Test {
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 };
 
-TEST_F(BinaryDtmcTransformerTest, DISABLED_Crowds) {
-    // for some reason this test fails on some machines (on debian 12, but not on ubuntu 22.04)
-    // probably some exact model checking thing? no clue
+TEST_F(BinaryDtmcTransformerTest, Crowds) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P=? [F \"observeIGreater1\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "storm-parsers/parser/ExplicitModelParserOptions.h"
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/models/sparse/Model.h"
 
 #include <string>
@@ -21,7 +22,7 @@ namespace parser {
  * The choice of the parser is made using the model hint at the beginning of the given transition file.
  */
 template<typename ValueType = double, typename RewardValueType = double>
-class AutoParser {
+class STORM_PARSERS_API AutoParser {
    public:
     /*!
      * Checks the given files and parses the model within these files.

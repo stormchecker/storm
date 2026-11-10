@@ -1,9 +1,5 @@
 #include "storm-dft/settings/DftSettings.h"
 
-#include "storm-dft/settings/modules/DftGspnSettings.h"
-#include "storm-dft/settings/modules/DftIOSettings.h"
-#include "storm-dft/settings/modules/FaultTreeSettings.h"
-
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-gspn/settings/modules/GSPNExportSettings.h"
 #include "storm-gspn/settings/modules/GSPNSettings.h"
@@ -38,9 +34,6 @@ void initializeDftSettings(std::string const& name, std::string const& executabl
 
     // Register relevant settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
-    storm::settings::addModule<storm::dft::settings::modules::DftIOSettings>();
-    storm::settings::addModule<storm::dft::settings::modules::FaultTreeSettings>();
-    storm::settings::addModule<storm::dft::settings::modules::DftGspnSettings>();
     storm::settings::addModule<storm::settings::modules::IOSettings>();
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::TransformationSettings>();

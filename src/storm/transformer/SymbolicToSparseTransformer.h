@@ -10,7 +10,7 @@
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/Mdp.h"
 
-#include "storm/storage/dd/Odd.h"
+#include "storm/dd/Odd.h"
 
 namespace storm {
 namespace transformer {

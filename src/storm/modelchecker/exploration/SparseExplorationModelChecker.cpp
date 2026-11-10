@@ -9,14 +9,14 @@
 #include "storm/modelchecker/exploration/StateGeneration.h"
 #include "storm/modelchecker/exploration/Statistics.h"
 
-#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionEvaluator.h"
 
 #include "storm/generator/CompressedState.h"
 
-#include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 
 #include "storm/logic/FragmentSpecification.h"
 
@@ -233,7 +233,7 @@ bool SparseExplorationModelChecker<ModelType, StateType>::exploreState(StateGene
         STORM_LOG_TRACE("Exploring state.");
 
         // If it needs to be expanded, we use the generator to retrieve the behavior of the new state.
-        storm::generator::StateBehavior<ValueType, StateType> behavior = stateGeneration.expand();
+        storm::generator::StateBehavior<ValueType, StateType> const& behavior = stateGeneration.expand();
         STORM_LOG_TRACE("State has " << behavior.getNumberOfChoices() << " choices.");
 
         // Clumsily check whether we have found a state that forms a trivial BMEC.

@@ -1,25 +1,20 @@
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/EigenEquationSolverSettings.h"
+#include <limits>
+
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 
-EigenSolverEnvironment::EigenSolverEnvironment() {
-    auto const& eigenSettings = storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>();
-
-    method = eigenSettings.getLinearEquationSystemMethod();
-    methodSetFromDefault = eigenSettings.isLinearEquationSystemMethodSetFromDefault();
-    preconditioner = eigenSettings.getPreconditioningMethod();
-    restartThreshold = eigenSettings.getRestartIterationCount();
-    if (eigenSettings.isMaximalIterationCountSet()) {
-        maxIterationCount = eigenSettings.getMaximalIterationCount();
-    } else {
-        maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
-    }
-    precision = storm::utility::convertNumber<storm::RationalNumber>(eigenSettings.getPrecision());
+EigenSolverEnvironment::EigenSolverEnvironment()
+    : method(storm::solver::EigenLinearEquationSolverMethod::Gmres),
+      methodSetFromDefault(true),
+      preconditioner(storm::solver::EigenLinearEquationSolverPreconditioner::Ilu),
+      restartThreshold(50),
+      maxIterationCount(std::numeric_limits<uint64_t>::max()),
+      precision(storm::utility::convertNumber<storm::RationalNumber>(1e-06)) {
+    // Intentionally left empty.
 }
 
 EigenSolverEnvironment::~EigenSolverEnvironment() {
@@ -34,8 +29,8 @@ bool EigenSolverEnvironment::isMethodSetFromDefault() const {
     return methodSetFromDefault;
 }
 
-void EigenSolverEnvironment::setMethod(storm::solver::EigenLinearEquationSolverMethod value) {
-    methodSetFromDefault = false;
+void EigenSolverEnvironment::setMethod(storm::solver::EigenLinearEquationSolverMethod value, bool isSetFromDefault) {
+    methodSetFromDefault = isSetFromDefault;
     method = value;
 }
 

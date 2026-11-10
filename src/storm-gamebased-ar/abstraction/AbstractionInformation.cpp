@@ -1,14 +1,14 @@
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 
+#include "storm/dd/DdManager.h"
 #include "storm/environment/Environment.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/dd/DdManager.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"
 
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/ExpressionManager.h"
 
 namespace storm::gbar {
 namespace abstraction {
@@ -344,7 +344,7 @@ std::size_t AbstractionInformation<DdType>::getAuxVariableCount() const {
 }
 
 template<storm::dd::DdType DdType>
-std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> const& AbstractionInformation<DdType>::getPredicateToBddMap() const {
+storm::expressions::ExpressionMap<storm::dd::Bdd<DdType>> const& AbstractionInformation<DdType>::getPredicateToBddMap() const {
     return expressionToBddMap;
 }
 

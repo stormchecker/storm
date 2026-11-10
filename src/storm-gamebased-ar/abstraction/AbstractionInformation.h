@@ -5,13 +5,13 @@
 #include <set>
 #include <vector>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
-#include "storm/storage/dd/Bdd.h"
+#include "storm/dd/Bdd.h"
 
 #include "storm/solver/SmtSolver.h"
 
-#include "storm/storage/expressions/EquivalenceChecker.h"
+#include "storm/expressions/EquivalenceChecker.h"
 
 namespace storm {
 namespace expressions {
@@ -387,7 +387,7 @@ class AbstractionInformation {
      *
      * @return A mapping from predicates to their representing BDDs.
      */
-    std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> const& getPredicateToBddMap() const;
+    storm::expressions::ExpressionMap<storm::dd::Bdd<DdType>> const& getPredicateToBddMap() const;
 
     /*!
      * Retrieves the meta variables pairs for all predicates.
@@ -657,7 +657,7 @@ class AbstractionInformation {
     std::vector<storm::dd::Bdd<DdType>> auxVariableBdds;
 
     /// A mapping from expressions to the corresponding BDDs.
-    std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> expressionToBddMap;
+    storm::expressions::ExpressionMap<storm::dd::Bdd<DdType>> expressionToBddMap;
 
     /// The location variable pairs (source/successor).
     std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> locationVariablePairs;

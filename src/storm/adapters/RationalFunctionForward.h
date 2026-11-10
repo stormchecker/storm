@@ -35,6 +35,12 @@ typedef GmpRationalNumber RationalFunctionCoefficient;
 #error GMP is to be used, but is not available.
 #endif
 
+#if (defined(STORM_USE_CLN_EA) && !defined(STORM_USE_CLN_RF)) || (!defined(STORM_USE_CLN_EA) && defined(STORM_USE_CLN_RF))
+#define STORM_RATIONAL_NUMBER_DIFFERS_FROM_COEFFICIENT 1
+#else
+#define STORM_RATIONAL_NUMBER_DIFFERS_FROM_COEFFICIENT 0
+#endif
+
 typedef carl::MultivariatePolynomial<RationalFunctionCoefficient> RawPolynomial;
 typedef carl::UnivariatePolynomial<RationalFunctionCoefficient> RawUnivariatePolynomial;
 typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;

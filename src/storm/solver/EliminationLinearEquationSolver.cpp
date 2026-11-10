@@ -91,6 +91,8 @@ bool EliminationLinearEquationSolver<ValueType>::internalSolveEquations(Environm
         eliminator.eliminateState(state, false);
     }
 
+    this->setSolutionBoundsExact(x);
+
     return true;
 }
 

@@ -11,10 +11,16 @@ namespace storm {
 
 class MinMaxLpSolverEnvironment;
 
+// Explicitly instantiated once in CoreEnvironments.cpp; this avoids redundant re-instantiation elsewhere.
+extern template class SubEnvironment<MinMaxLpSolverEnvironment>;
+
 class MinMaxSolverEnvironment {
    public:
     MinMaxSolverEnvironment();
     ~MinMaxSolverEnvironment();
+
+    MinMaxLpSolverEnvironment& lp();
+    MinMaxLpSolverEnvironment const& lp() const;
 
     storm::solver::MinMaxMethod const& getMethod() const;
     bool const& isMethodSetFromDefault() const;
@@ -29,10 +35,10 @@ class MinMaxSolverEnvironment {
     void setMultiplicationStyle(storm::solver::MultiplicationStyle value);
     bool isForceRequireUnique() const;
     void setForceRequireUnique(bool value);
-    MinMaxLpSolverEnvironment const& lp() const;
-    MinMaxLpSolverEnvironment& lp();
 
    private:
+    SubEnvironment<MinMaxLpSolverEnvironment> lpEnvironment;
+
     storm::solver::MinMaxMethod minMaxMethod;
     bool methodSetFromDefault;
     uint64_t maxIterationCount;
@@ -40,6 +46,5 @@ class MinMaxSolverEnvironment {
     bool considerRelativeTerminationCriterion;
     storm::solver::MultiplicationStyle multiplicationStyle;
     bool forceRequireUnique;
-    SubEnvironment<MinMaxLpSolverEnvironment> lpEnvironment;
 };
 }  // namespace storm

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include "storm/exceptions/UnexpectedException.h"
-#include "storm/storage/jani/eliminator/ArrayEliminator.h"
+#include "storm/languages/jani/eliminator/ArrayEliminator.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

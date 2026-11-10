@@ -102,9 +102,9 @@ storm::models::ModelType AutoParser<ValueType, RewardValueType>::analyzeHint(std
 }
 
 // Explicitly instantiate the parser.
-template class AutoParser<double, double>;
+template class STORM_PARSERS_API AutoParser<double, double>;
 
-template class AutoParser<double, storm::Interval>;
+template class STORM_PARSERS_API AutoParser<double, storm::Interval>;
 
 }  // namespace parser
 }  // namespace storm

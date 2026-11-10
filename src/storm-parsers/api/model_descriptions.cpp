@@ -5,8 +5,8 @@
 
 #include "storm/api/properties.h"
 
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/Property.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"

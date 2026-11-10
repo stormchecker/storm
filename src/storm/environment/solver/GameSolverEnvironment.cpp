@@ -1,28 +1,19 @@
 #include "storm/environment/solver/GameSolverEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GameSolverSettings.h"
+#include <limits>
+
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 
-GameSolverEnvironment::GameSolverEnvironment() {
-    auto const& gameSettings = storm::settings::getModule<storm::settings::modules::GameSolverSettings>();
-
-    gameMethod = gameSettings.getGameSolvingMethod();
-    methodSetFromDefault = gameSettings.isGameSolvingMethodSetFromDefaultValue();
-    if (gameSettings.isMaximalIterationCountSet()) {
-        maxIterationCount = gameSettings.getMaximalIterationCount();
-    } else {
-        maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
-    }
-    precision = storm::utility::convertNumber<storm::RationalNumber>(gameSettings.getPrecision());
-    considerRelativeTerminationCriterion =
-        gameSettings.getConvergenceCriterion() == storm::settings::modules::GameSolverSettings::ConvergenceCriterion::Relative;
-    STORM_LOG_ASSERT(considerRelativeTerminationCriterion ||
-                         gameSettings.getConvergenceCriterion() == storm::settings::modules::GameSolverSettings::ConvergenceCriterion::Absolute,
-                     "Unknown convergence criterion.");
+GameSolverEnvironment::GameSolverEnvironment()
+    : gameMethod(storm::solver::GameMethod::ValueIteration),
+      methodSetFromDefault(true),
+      maxIterationCount(std::numeric_limits<uint64_t>::max()),
+      precision(storm::utility::convertNumber<storm::RationalNumber>(1e-06)),
+      considerRelativeTerminationCriterion(true) {
+    // Intentionally left empty.
 }
 
 GameSolverEnvironment::~GameSolverEnvironment() {
@@ -37,8 +28,8 @@ bool const& GameSolverEnvironment::isMethodSetFromDefault() const {
     return methodSetFromDefault;
 }
 
-void GameSolverEnvironment::setMethod(storm::solver::GameMethod value) {
-    methodSetFromDefault = false;
+void GameSolverEnvironment::setMethod(storm::solver::GameMethod value, bool isSetFromDefault) {
+    methodSetFromDefault = isSetFromDefault;
     gameMethod = value;
 }
 

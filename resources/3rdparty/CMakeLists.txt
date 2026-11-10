@@ -6,6 +6,37 @@ add_custom_target(test-resources)
 
 include(FetchContent)
 
+# Applies the given patch to the given source directory unless it was already applied.
+function(storm_apply_patch name source_dir patch_file)
+    set(patch_args -p1 -s -F0 -i ${patch_file})
+    # The patch was already applied if it can be reversed
+    execute_process(
+            COMMAND patch -R --dry-run -f ${patch_args}
+            WORKING_DIRECTORY ${source_dir}
+            RESULT_VARIABLE reverse_result
+            OUTPUT_QUIET ERROR_QUIET
+    )
+    if(reverse_result EQUAL 0)
+        return()
+    endif()
+    # Dry run first to avoid leaving the sources partially patched
+    execute_process(
+            COMMAND patch --dry-run -N -f ${patch_args}
+            WORKING_DIRECTORY ${source_dir}
+            RESULT_VARIABLE patch_result
+    )
+    if(patch_result EQUAL 0)
+        execute_process(
+                COMMAND patch -N -f ${patch_args}
+                WORKING_DIRECTORY ${source_dir}
+                RESULT_VARIABLE patch_result
+        )
+    endif()
+    if(NOT patch_result EQUAL 0)
+        message(FATAL_ERROR "Storm - Failed to apply ${patch_file} to ${name} sources in ${source_dir}.")
+    endif()
+endfunction()
+
 message(STATUS "Storm - Building external resources with ${STORM_RESOURCES_BUILD_JOBCOUNT} job(s) in parallel.")
 
 #############################################################
@@ -16,27 +47,22 @@ message(STATUS "Storm - Building external resources with ${STORM_RESOURCES_BUILD
 
 # Do not take a branch, needs internet connection.
 message(STATUS "Storm - Including l3pp logging.")
-ExternalProject_Add(
-        l3pp_ext
+FetchContent_Declare(
+        l3pp
         GIT_REPOSITORY https://github.com/hbruintjes/l3pp.git
         GIT_TAG 513c7589232396e4b8975113b7709a8f39b46c85
-        SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/l3pp
-        UPDATE_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
-        LOG_DOWNLOAD ON
-        LOG_INSTALL ON
-        LOG_OUTPUT_ON_FAILURE ON
+        # l3pp has no CMakeLists.txt today, but guard against it gaining one upstream and being
+        # silently added as a subdirectory (see Eigen/Boost.PFR above for the same pattern).
+        SOURCE_SUBDIR do-not-add-as-subdirectory
 )
+FetchContent_MakeAvailable(l3pp)
 add_library(l3pp INTERFACE) # Not imported, we are in control of the sources.
-add_dependencies(l3pp l3pp_ext)
 target_include_directories(l3pp INTERFACE
-        $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}/l3pp>
+        $<BUILD_INTERFACE:${l3pp_SOURCE_DIR}>
         $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/l3pp>
 )
 install(TARGETS l3pp EXPORT storm_Targets)
-install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/l3pp/ DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/l3pp FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
+install(DIRECTORY ${l3pp_SOURCE_DIR}/ DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/l3pp FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
 add_dependencies(storm_resources l3pp)
 list(APPEND STORM_DEP_TARGETS l3pp)
 
@@ -85,30 +111,21 @@ endif()
 if(NOT STORM_DISABLE_GMM)
     set(GMM_VERSION "5.5")
     message(STATUS "Storm - Including gmm ${GMM_VERSION}.")
-    ExternalProject_Add(
-            gmm_src
+    FetchContent_Declare(
+            gmm
             URL https://download-mirror.savannah.gnu.org/releases/getfem/stable/gmm-${GMM_VERSION}.tar.gz
-            SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/gmm
-            # Try to apply patch and otherwise check that patch was already applied
-            # Needed because while -N ignores already applied patches it still returns with exit code 1
-            PATCH_COMMAND patch -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch || patch --dry-run -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch | grep "Reversed (or previously applied) patch detected!"
-            UPDATE_COMMAND ""
-            CONFIGURE_COMMAND ""
-            BUILD_COMMAND ""
-            INSTALL_COMMAND ""
-            LOG_DOWNLOAD ON
-            LOG_INSTALL ON
-            LOG_OUTPUT_ON_FAILURE ON
     )
+    FetchContent_MakeAvailable(gmm)
+    # Apply patch on downloaded/existing sources
+    storm_apply_patch(gmm ${gmm_SOURCE_DIR} ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch)
     add_library(gmm INTERFACE) # Not imported, we are in control of the sources.
-    add_dependencies(gmm gmm_src)
     add_dependencies(storm_resources gmm)
     target_include_directories(gmm INTERFACE
-            $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}/gmm/include>
+            $<BUILD_INTERFACE:${gmm_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}>
     )
     install(TARGETS gmm EXPORT storm_Targets)
-    install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/gmm/include/gmm
+    install(DIRECTORY ${gmm_SOURCE_DIR}/include/gmm
             DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}
             FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
     list(APPEND STORM_DEP_TARGETS gmm)
@@ -124,38 +141,36 @@ endif()
 ##
 #############################################################
 
-# Checkout Eigen
-# https://gitlab.com/libeigen/eigen
 set(STORM_EIGEN_GIT_TAG "bc3b39870ecb690a623a3f49149a358b95c5781d")
 message(STATUS "Storm - Including Eigen commit ${STORM_EIGEN_GIT_TAG} (Version 5.0.1).")
-ExternalProject_Add(
-        eigen_src
-        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+FetchContent_Declare(
+        eigen
+        GIT_REPOSITORY https://github.com/eigen-mirror/eigen.git
         GIT_TAG ${STORM_EIGEN_GIT_TAG}
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/StormEigen/StormEigen
-        # First check whether patch was already applied (--reverse --check), otherwise apply patch
-        PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch --reverse --check -q || git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch
-        UPDATE_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
-        LOG_DOWNLOAD ON
-        LOG_INSTALL ON
-        LOG_OUTPUT_ON_FAILURE ON
+        # Eigen ships its own CMakeLists.txt, which we do not want to  process.
+        # Pointing SOURCE_SUBDIR at a subdirectory with no CMakeLists.txt makes FetchContent_MakeAvailable() populate
+        # the source without calling add_subdirectory() on it.
+        SOURCE_SUBDIR do-not-add-as-subdirectory
 )
+FetchContent_MakeAvailable(eigen)
+# The include path exposes the parent of the checkout, whose directory is named "StormEigen".
+# This allows to #include <StormEigen/Eigen/Dense> and avoids name clashes with system-installed Eigen.
+cmake_path(GET eigen_SOURCE_DIR PARENT_PATH STORM_EIGEN_PARENT_DIR)
+# Apply patch on downloaded/existing sources
+storm_apply_patch(Eigen ${eigen_SOURCE_DIR} ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch)
 add_library(eigenstorm INTERFACE) # Not imported, we are in control of the sources.
-add_dependencies(eigenstorm eigen_src)
 if(STORM_WARNING_AS_ERROR AND STORM_COMPILER_GCC)
         # Ignore warning in Eigen
         target_compile_options(eigenstorm INTERFACE -Wno-class-memaccess)
 endif()
 # note that we include without StormEigen
 target_include_directories(eigenstorm INTERFACE
-        $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}/StormEigen>
+        $<BUILD_INTERFACE:${STORM_EIGEN_PARENT_DIR}>
         $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/StormEigen>
 )
 install(TARGETS eigenstorm EXPORT storm_Targets)
-install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/StormEigen/StormEigen
+install(DIRECTORY ${eigen_SOURCE_DIR}
         DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}
         FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
 add_dependencies(storm_resources eigenstorm)
@@ -178,28 +193,21 @@ endif()
 
 if(${Boost_VERSION} VERSION_LESS "1.75.0") # Debian 12 ships with Boost 1.74.0
     message(STATUS "Storm - Loading Boost.PFR as it is not part of Boost < 1.75.0")
-    ExternalProject_Add(
-            boost_pfr_src
+    FetchContent_Declare(
+            boost_pfr
             GIT_REPOSITORY https://github.com/boostorg/pfr.git
             GIT_TAG 2.2.0
-            SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/boost_pfr
-            PATCH_COMMAND ""
-            UPDATE_COMMAND ""
-            CONFIGURE_COMMAND ""
-            BUILD_COMMAND ""
-            INSTALL_COMMAND ""
-            LOG_DOWNLOAD ON
-            LOG_INSTALL ON
-            LOG_OUTPUT_ON_FAILURE ON
+            # pfr ships its own CMakeLists.txt, which we do not want to process (see Eigen above).
+            SOURCE_SUBDIR do-not-add-as-subdirectory
     )
+    FetchContent_MakeAvailable(boost_pfr)
     add_library(boost_pfr INTERFACE) # Not imported, we are in control of the sources.
-    add_dependencies(boost_pfr boost_pfr_src)
     target_include_directories(boost_pfr INTERFACE
-            $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}/boost_pfr/include>
+            $<BUILD_INTERFACE:${boost_pfr_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}>
     )
     install(TARGETS boost_pfr EXPORT storm_Targets)
-    install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/boost_pfr/include/boost
+    install(DIRECTORY ${boost_pfr_SOURCE_DIR}/include/boost
             DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}
             PATTERN ".git" EXCLUDE)
     add_dependencies(storm_resources boost_pfr)
@@ -292,17 +300,16 @@ if(NOT STORM_DISABLE_Z3)
     find_package(Z3 QUIET 4.8.12 NO_MODULE)
     # Notice that such old z3 versions do not provide config files, so we could bump this version ahead.
     if(TARGET z3::libz3)
-        set(STORM_HAVE_Z3 ON)
-        set(STORM_Z3_CONFIG ON) # For the config file, did we include z3 via a config (yes)
-
         set(Z3_VERSION "${Z3_VERSION_MAJOR}.${Z3_VERSION_MINOR}.${Z3_VERSION_PATCH}")
 
         if("${Z3_VERSION}" VERSION_EQUAL "4.10.1")
             message(WARNING "Storm cannot be linked against Z3 version 4.10.1, see issue 252.")
-            message(WARNING "Storm - Could not link with z3. Building of Prism/JANI models will not be supported.")
+            message(WARNING "Storm - Could not link with z3. Features that require Z3 will not be supported.")
             set(Z3_FOUND FALSE)
         else()
             message(STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}).")
+            set(STORM_HAVE_Z3 ON)
+            set(STORM_Z3_CONFIG ON) # For the config file, did we include z3 via a config (yes)
             list(APPEND STORM_DEP_IMP_TARGETS z3::libz3)
         endif()
     else()
@@ -311,16 +318,14 @@ if(NOT STORM_DISABLE_Z3)
         find_package(Z3 QUIET 4.8.12)
 
         if(Z3_FOUND)
-
-            set(STORM_HAVE_Z3 ON)
-            set(STORM_Z3_CONFIG OFF) # For the config file, did we include z3 via a config (no)
-
             if("${Z3_VERSION}" VERSION_EQUAL "4.10.1")
                 message(WARNING "Storm cannot be linked against Z3 version 4.10.1, see issue 252.")
-                message(WARNING "Storm - Could not link with z3. Building of Prism/JANI models will not be supported.")
+                message(WARNING "Storm - Could not link with z3. Features that require Z3 will not be supported.")
                 set(Z3_FOUND FALSE)
             else()
                 message(STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}).")
+                set(STORM_HAVE_Z3 ON)
+                set(STORM_Z3_CONFIG OFF) # For the config file, did we include z3 via a config (no)
 
                 add_library(z3 SHARED IMPORTED)
                 set_target_properties(
@@ -332,13 +337,61 @@ if(NOT STORM_DISABLE_Z3)
                 list(APPEND STORM_DEP_IMP_TARGETS z3)
             endif()
         else()
-            message(WARNING "Storm - Z3 not found. Building of Prism/JANI models will not be supported.")
+            message(WARNING "Storm - Z3 not found. Features that require Z3 will not be supported.")
         endif()
     endif()
 else()
-    message(WARNING "Storm - Not linking with Z3. Building of Prism/JANI models will not be supported.")
+    message(WARNING "Storm - Not linking with Z3. Features that require Z3 will not be supported.")
 endif()
 
+#############################################################
+##
+##	cvc5 (optional)
+##
+#############################################################
+
+# Storm builds terms through cvc5::TermManager, which it passes to the cvc5::Solver constructor.
+set(STORM_CVC5_MIN_VERSION "1.2")
+
+if(NOT STORM_DISABLE_CVC5)
+    # cvc5's own config file looks for the (lower case) cvc5_ROOT variable, whereas Storm uses upper case
+    # variable names for the roots of the different solvers.
+    if(CVC5_ROOT)
+        set(cvc5_ROOT "${CVC5_ROOT}")
+    endif()
+
+    # We rely on the CMake config file that cvc5 installs (since version 1.2), so cvc5 has to be installed with its own
+    # "make install". Note that we cannot request a minimum version here: cvc5's own version file uses the
+    # SamePatchVersion strategy and reports compatibility only for an exact major.minor.patch match, so requesting 1.2
+    # would reject an installed 1.4.0. We compare the version we find ourselves further below instead.
+    find_package(cvc5 QUIET NO_MODULE)
+    if(TARGET cvc5::cvc5)
+        set(cvc5_FOUND_VERSION "${cvc5_VERSION}")
+    endif()
+
+    if(NOT cvc5_FOUND_VERSION)
+        message(WARNING "Storm - cvc5 not found, or its version could not be determined."
+                " cvc5 will not be available as an SMT solver backend.")
+    elseif(cvc5_FOUND_VERSION VERSION_LESS STORM_CVC5_MIN_VERSION)
+        message(WARNING "Storm - Found cvc5 ${cvc5_FOUND_VERSION}, but ${STORM_CVC5_MIN_VERSION} or newer is required."
+                " cvc5 will not be available as an SMT solver backend.")
+    elseif(CVC5_SAFE_BUILD OR CVC5_STABLE_BUILD)
+        # cvc5 records its build type in the config file (since 1.3; older versions have no restricted modes). Safe and
+        # stable builds reject terms that Storm creates, e.g., the power operator, so we require an unrestricted build.
+        # Note that the unrestricted build sets both variables to IGNORE, which CMake considers to be false.
+        message(WARNING "Storm - Found cvc5 ${cvc5_FOUND_VERSION}, but it was built in safe or stable mode, which does not support all"
+                " features that Storm requires. Build cvc5 with './configure.sh unrestricted'."
+                " cvc5 will not be available as an SMT solver backend.")
+    else()
+        set(STORM_HAVE_CVC5 ON)
+        message(STATUS "Storm - Linking with cvc5 (version ${cvc5_FOUND_VERSION}).")
+
+        list(APPEND STORM_DEP_IMP_TARGETS cvc5::cvc5)
+    endif()
+else()
+    set(STORM_HAVE_CVC5 OFF)
+    message(STATUS "Storm - Not linking with cvc5.")
+endif()
 
 #############################################################
 ##
@@ -412,6 +465,20 @@ endif()
 
 if(NOT STORM_DISABLE_HIGHS)
     set(STORM_HAVE_HIGHS OFF)
+    if(MACOSX AND NOT highs_DIR AND NOT highs_ROOT)
+        # Homebrew's prefix is not on the default search path for Apple Silicon (/opt/homebrew).
+        # We try to get a hint where HiGHS is located, if installed via homebrew.
+        find_program(_highs_BREW_EXECUTABLE brew)
+        if (_highs_BREW_EXECUTABLE)
+            execute_process(
+                    COMMAND "${_highs_BREW_EXECUTABLE}" --prefix highs
+                    ERROR_QUIET # Ignore any error, e.g. if highs is not installed via brew.
+                    OUTPUT_VARIABLE highs_ROOT
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+        endif ()
+        unset(_highs_BREW_EXECUTABLE)
+    endif()
     find_package(highs CONFIG QUIET)
 
     if(TARGET highs::highs)
@@ -476,6 +543,12 @@ SET(CARL_LIB_INSTALL_DIR ${STORM_RESOURCE_LIBRARY_INSTALL_DIR})
 SET(CARL_INCLUDE_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR})
 SET(CARL_CMAKE_INSTALL_DIR ${STORM_CMAKE_INSTALL_DIR}/resources/carl)
 
+# carl reuses Storm's (patched) Eigen, and Eigen must be available before carl.
+FetchContent_GetProperties(eigen)
+if(NOT eigen_POPULATED)
+    message(FATAL_ERROR "Storm - Eigen must be made available before carl.")
+endif()
+
 FETCHCONTENT_MAKEAVAILABLE(carl)
 include(${carl_BINARY_DIR}/carlConfig.cmake)
 
@@ -538,23 +611,18 @@ endif()
 
 set(STORM_HAVE_QVBS OFF)
 if(STORM_LOAD_QVBS)
-    ExternalProject_Add(
-            download_qvbs
+    FetchContent_Declare(
+            qvbs
             GIT_REPOSITORY https://github.com/ahartmanns/qcomp.git
             GIT_SHALLOW 1
-            PREFIX ${PROJECT_BINARY_DIR}/qvbs
-            UPDATE_COMMAND ""
-            CONFIGURE_COMMAND ""
-            BUILD_COMMAND ""
-            INSTALL_COMMAND ""
-            LOG_DOWNLOAD ON
-            LOG_INSTALL ON
-            LOG_OUTPUT_ON_FAILURE ON
+            # qcomp has no CMakeLists.txt today, but guard against it gaining one upstream and
+            # being silently added as a subdirectory (see Eigen/Boost.PFR/l3pp above). Only
+            # STORM_QVBS_ROOT (a plain source-dir path) is actually needed here.
+            SOURCE_SUBDIR do-not-add-as-subdirectory
     )
-    add_dependencies(storm_resources download_qvbs)
+    FetchContent_MakeAvailable(qvbs)
     set(STORM_HAVE_QVBS ON)
-    ExternalProject_Get_Property(download_qvbs source_dir)
-    set(STORM_QVBS_ROOT "${source_dir}/benchmarks")
+    set(STORM_QVBS_ROOT "${qvbs_SOURCE_DIR}/benchmarks")
 elseif(NOT "${STORM_QVBS_ROOT}" STREQUAL "")
     if( EXISTS "${STORM_QVBS_ROOT}/index.json")
         set(STORM_HAVE_QVBS ON)
@@ -664,14 +732,10 @@ endif()
 #############################################################
 
 if(STORM_BUILD_TESTS)
-    # Use commit with workaround for char conversion warning, being recognized by Clang 21+.
-    # See https://github.com/google/googletest/issues/4762
-    set(GTEST_VERSION "fa8438ae6b70c57010177de47a9f13d7041a6328")
-    #set(GTEST_VERSION "1.17.0")
+    set(GTEST_VERSION "1.18.0")
     FETCHCONTENT_DECLARE(
             googletest
-            URL https://github.com/google/googletest/archive/${GTEST_VERSION}.zip
-            #URL https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.zip
+            URL https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.zip
     )
     # Tests are not installed
     set(INSTALL_GTEST OFF)

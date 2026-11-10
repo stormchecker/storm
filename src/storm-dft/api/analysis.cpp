@@ -6,7 +6,6 @@
 #include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/modelchecker/DftModularizationChecker.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
-#include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/utility/FDEPConflictFinder.h"
@@ -18,22 +17,19 @@ namespace storm::dft {
 namespace api {
 
 storm::dft::utility::RelevantEvents computeRelevantEvents(std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
-                                                          std::vector<std::string> const& additionalRelevantEventNames) {
+                                                          std::vector<std::string> const& additionalRelevantEventNames, bool addLabelsClaiming) {
     storm::dft::utility::RelevantEvents events(additionalRelevantEventNames.begin(), additionalRelevantEventNames.end());
-    events.insertNamesFromProperties(properties.begin(), properties.end());
+    events.insertNamesFromProperties(properties.begin(), properties.end(), addLabelsClaiming);
     return events;
 }
 
 template<typename ValueType>
 typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFT(
-    storm::dft::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred,
-    bool allowModularisation, storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError,
-    storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior,
-    bool printOutput) {
-    storm::dft::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
-    typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results results =
-        modelChecker.check(dft, properties, symred, allowModularisation, relevantEvents, allowDCForRelevant, approximationError, approximationHeuristic,
-                           eliminateChains, labelBehavior);
+    storm::dft::DftEnvironment const& env, storm::dft::storage::DFT<ValueType> const& dft,
+    std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, storm::dft::utility::RelevantEvents const& relevantEvents, bool printOutput,
+    typename storm::dft::modelchecker::DFTModelChecker<ValueType>::ModelExportCallback const& exportCallback) {
+    storm::dft::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput, exportCallback);
+    typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(env, dft, properties, relevantEvents);
     if (printOutput) {
         modelChecker.printTimings();
         modelChecker.printResults(results);
@@ -42,22 +38,23 @@ typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results analy
 }
 
 template<>
-void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<double>> const& dft, bool const exportToDot, std::string const& filename, bool const calculateMttf,
-                   double const mttfPrecision, double const mttfStepsize, std::string const mttfAlgorithmName, bool const calculateMCS,
-                   bool const calculateProbability, bool const useModularisation, std::string const importanceMeasureName,
-                   std::vector<double> const& timepoints, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
-                   std::vector<std::string> const& additionalRelevantEventNames, size_t const chunksize) {
+void analyzeDFTBdd(storm::dft::DftEnvironment const& env, std::shared_ptr<storm::dft::storage::DFT<double>> const& dft, bool const exportToDot,
+                   std::string const& filename, bool const calculateMttf, double const mttfPrecision, double const mttfStepsize,
+                   std::string const mttfAlgorithmName, bool const calculateMCS, bool const calculateProbability, bool const useModularisation,
+                   std::string const importanceMeasureName, std::vector<double> const& timepoints,
+                   std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, std::vector<std::string> const& additionalRelevantEventNames,
+                   size_t const chunksize) {
 #ifdef STORM_HAVE_SYLVAN
     if (calculateMttf) {
         if (mttfAlgorithmName == "proceeding") {
-            std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperProceeding(dft, mttfStepsize, mttfPrecision) << '\n';
+            std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperProceeding(env, dft, mttfStepsize, mttfPrecision) << '\n';
         } else if (mttfAlgorithmName == "variableChange") {
-            std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperVariableChange(dft, mttfStepsize) << '\n';
+            std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperVariableChange(env, dft, mttfStepsize) << '\n';
         }
     }
 
     if (useModularisation && calculateProbability) {
-        storm::dft::modelchecker::DftModularizationChecker<double> checker{dft};
+        storm::dft::modelchecker::DftModularizationChecker<double> checker{env, dft};
         if (chunksize == 1) {
             for (auto const& timebound : timepoints) {
                 auto const probability{checker.getProbabilityAtTimebound(timebound)};
@@ -85,7 +82,7 @@ void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<double>> const& dft,
                         "Try modularisation.");
     }
 
-    auto sylvanBddManager{storm::dft::storage::SylvanBddManager::createWithDefaultEnvironment()};
+    auto sylvanBddManager{std::make_shared<storm::dft::storage::SylvanBddManager>(env.core())};
     sylvanBddManager->execute([&]() {
         storm::dft::utility::RelevantEvents relevantEvents{additionalRelevantEventNames.begin(), additionalRelevantEventNames.end()};
         storm::dft::adapters::SFTBDDPropertyFormulaAdapter adapter{dft, properties, sylvanBddManager, relevantEvents};
@@ -190,11 +187,12 @@ void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<double>> const& dft,
 }
 
 template<>
-void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunction>> const& dft, bool const exportToDot, std::string const& filename,
-                   bool const calculateMttf, double const mttfPrecision, double const mttfStepsize, std::string const mttfAlgorithmName,
-                   bool const calculateMCS, bool const calculateProbability, bool const useModularisation, std::string const importanceMeasureName,
-                   std::vector<double> const& timepoints, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
-                   std::vector<std::string> const& additionalRelevantEventNames, size_t const chunksize) {
+void analyzeDFTBdd(storm::dft::DftEnvironment const&, std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunction>> const& dft, bool const exportToDot,
+                   std::string const& filename, bool const calculateMttf, double const mttfPrecision, double const mttfStepsize,
+                   std::string const mttfAlgorithmName, bool const calculateMCS, bool const calculateProbability, bool const useModularisation,
+                   std::string const importanceMeasureName, std::vector<double> const& timepoints,
+                   std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, std::vector<std::string> const& additionalRelevantEventNames,
+                   size_t const chunksize) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BDD analysis is not supported for this data type.");
 }
 
@@ -246,18 +244,16 @@ bool computeDependencyConflicts(storm::dft::storage::DFT<ValueType>& dft, bool u
 }
 
 // Explicitly instantiate methods
-template typename storm::dft::modelchecker::DFTModelChecker<double>::dft_results analyzeDFT(storm::dft::storage::DFT<double> const&,
-                                                                                            std::vector<std::shared_ptr<storm::logic::Formula const>> const&,
-                                                                                            bool, bool, storm::dft::utility::RelevantEvents const&, bool,
-                                                                                            double, storm::dft::builder::ApproximationHeuristic, bool,
-                                                                                            storm::transformer::EliminationLabelBehavior, bool);
+template typename storm::dft::modelchecker::DFTModelChecker<double>::dft_results analyzeDFT(
+    storm::dft::DftEnvironment const&, storm::dft::storage::DFT<double> const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&,
+    storm::dft::utility::RelevantEvents const&, bool, typename storm::dft::modelchecker::DFTModelChecker<double>::ModelExportCallback const&);
 template std::pair<uint64_t, uint64_t> computeBEFailureBounds(storm::dft::storage::DFT<double> const&, bool, double);
 template bool computeDependencyConflicts(storm::dft::storage::DFT<double>&, bool, double);
 
 template typename storm::dft::modelchecker::DFTModelChecker<storm::RationalFunction>::dft_results analyzeDFT(
-    storm::dft::storage::DFT<storm::RationalFunction> const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool,
-    storm::dft::utility::RelevantEvents const&, bool, double, storm::dft::builder::ApproximationHeuristic, bool, storm::transformer::EliminationLabelBehavior,
-    bool);
+    storm::dft::DftEnvironment const&, storm::dft::storage::DFT<storm::RationalFunction> const&,
+    std::vector<std::shared_ptr<storm::logic::Formula const>> const&, storm::dft::utility::RelevantEvents const&, bool,
+    typename storm::dft::modelchecker::DFTModelChecker<storm::RationalFunction>::ModelExportCallback const&);
 template std::pair<uint64_t, uint64_t> computeBEFailureBounds(storm::dft::storage::DFT<storm::RationalFunction> const&, bool, double);
 template bool computeDependencyConflicts(storm::dft::storage::DFT<storm::RationalFunction>&, bool, double);
 

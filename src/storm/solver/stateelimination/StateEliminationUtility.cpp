@@ -140,7 +140,7 @@ std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(EliminationOrder co
             }
         }
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Illegal elimination order selected.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidSettingsException, "Illegal elimination order selected.");
 }
 
 std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(storm::storage::BitVector const& states) {

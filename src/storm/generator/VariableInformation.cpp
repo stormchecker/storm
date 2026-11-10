@@ -1,13 +1,13 @@
 #include "storm/generator/VariableInformation.h"
 
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/prism/Program.h"
 
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/AutomatonComposition.h"
-#include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/eliminator/ArrayEliminator.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/languages/jani/Automaton.h"
+#include "storm/languages/jani/AutomatonComposition.h"
+#include "storm/languages/jani/ParallelComposition.h"
+#include "storm/languages/jani/eliminator/ArrayEliminator.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"

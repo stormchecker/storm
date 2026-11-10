@@ -3,8 +3,8 @@
 #include <ostream>
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/expressions/Variable.h"
 #include "storm/logic/FormulaVisitor.h"
-#include "storm/storage/expressions/Variable.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

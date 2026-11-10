@@ -368,6 +368,7 @@ std::ostream& operator<<(std::ostream& out, Path<T> const& p) {
     return out;
 }
 template std::ostream& operator<<(std::ostream& out, Path<double> const& p);
+template std::ostream& operator<<(std::ostream& out, Path<storm::RationalNumber> const& p);
 
 template class ShortestPathsGenerator<double>;
 template class ShortestPathsGenerator<storm::RationalNumber>;

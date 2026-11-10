@@ -1,6 +1,7 @@
 #include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -11,7 +12,6 @@
 #include "storm/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/FilteredRewardModel.h"
 
 namespace storm {

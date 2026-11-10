@@ -71,6 +71,7 @@ Storm has initially been developed at RWTH Aachen University. It is currently un
 * Svenja Stein
 * Manuel Sascha Weiand
 * Ulises Torrella
+* Victor Voronin
 * Lukas Westhofen
 
 For an exhaustive list of contributors and more details, see the [GitHub page](https://github.com/stormchecker/storm/graphs/contributors).

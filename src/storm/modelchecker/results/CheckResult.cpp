@@ -2,6 +2,8 @@
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+
+#include "storm/modelchecker/results/ExplicitCertificateCheckResult.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -62,6 +64,10 @@ bool CheckResult::isExplicitParetoCurveCheckResult() const {
     return false;
 }
 
+bool CheckResult::isExplicitCertificateCheckResult() const {
+    return false;
+}
+
 bool CheckResult::isSymbolicQualitativeCheckResult() const {
     return false;
 }
@@ -110,6 +116,16 @@ ExplicitParetoCurveCheckResult<ValueType>& CheckResult::asExplicitParetoCurveChe
 template<typename ValueType>
 ExplicitParetoCurveCheckResult<ValueType> const& CheckResult::asExplicitParetoCurveCheckResult() const {
     return dynamic_cast<ExplicitParetoCurveCheckResult<ValueType> const&>(*this);
+}
+
+template<typename ValueType>
+ExplicitCertificateCheckResult<ValueType>& CheckResult::asExplicitCertificateCheckResult() {
+    return dynamic_cast<ExplicitCertificateCheckResult<ValueType>&>(*this);
+}
+
+template<typename ValueType>
+ExplicitCertificateCheckResult<ValueType> const& CheckResult::asExplicitCertificateCheckResult() const {
+    return dynamic_cast<ExplicitCertificateCheckResult<ValueType> const&>(*this);
 }
 
 template<typename ValueType>
@@ -200,6 +216,8 @@ template ExplicitQualitativeCheckResult<double>& CheckResult::asExplicitQualitat
 template ExplicitQualitativeCheckResult<double> const& CheckResult::asExplicitQualitativeCheckResult() const;
 template ExplicitParetoCurveCheckResult<double>& CheckResult::asExplicitParetoCurveCheckResult();
 template ExplicitParetoCurveCheckResult<double> const& CheckResult::asExplicitParetoCurveCheckResult() const;
+template ExplicitCertificateCheckResult<double>& CheckResult::asExplicitCertificateCheckResult();
+template ExplicitCertificateCheckResult<double> const& CheckResult::asExplicitCertificateCheckResult() const;
 template LexicographicCheckResult<double>& CheckResult::asLexicographicCheckResult();
 template LexicographicCheckResult<double> const& CheckResult::asLexicographicCheckResult() const;
 
@@ -244,6 +262,9 @@ template ExplicitQualitativeCheckResult<storm::RationalFunction> const& CheckRes
 
 template ExplicitParetoCurveCheckResult<storm::RationalNumber>& CheckResult::asExplicitParetoCurveCheckResult();
 template ExplicitParetoCurveCheckResult<storm::RationalNumber> const& CheckResult::asExplicitParetoCurveCheckResult() const;
+
+template ExplicitCertificateCheckResult<storm::RationalNumber>& CheckResult::asExplicitCertificateCheckResult();
+template ExplicitCertificateCheckResult<storm::RationalNumber> const& CheckResult::asExplicitCertificateCheckResult() const;
 
 template LexicographicCheckResult<storm::RationalNumber>& CheckResult::asLexicographicCheckResult();
 template LexicographicCheckResult<storm::RationalNumber> const& CheckResult::asLexicographicCheckResult() const;

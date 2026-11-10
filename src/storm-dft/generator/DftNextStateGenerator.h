@@ -33,10 +33,11 @@ class DftNextStateGenerator {
 
     /*!
      * Expand and explore current state.
-     * @param stateToIdCallback  Callback function which adds new state and returns the corresponding id.
+     * @param stateToIdCallback Callback function which adds new state and returns the corresponding id.
+     * @param takeFirstDependency Whether to always select the first dependency to resolve non-determinism.
      * @return StateBehavior containing successor choices and distributions.
      */
-    storm::generator::StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback);
+    storm::generator::StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback, bool takeFirstDependency);
 
     /*!
      * Create unique failed state.
@@ -134,9 +135,6 @@ class DftNextStateGenerator {
 
     // Flag indicating whether the model is deterministic.
     bool deterministicModel = false;
-
-    // Flag indicating whether only the first dependency (instead of all) should be explored.
-    bool mTakeFirstDependency = false;
 };
 
 }  // namespace generator

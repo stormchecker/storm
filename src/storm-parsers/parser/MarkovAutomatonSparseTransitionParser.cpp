@@ -295,7 +295,7 @@ typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomato
     return secondPass(buf, firstPass(buf, options), options);
 }
 
-template class MarkovAutomatonSparseTransitionParser<double>;
+template class STORM_PARSERS_API MarkovAutomatonSparseTransitionParser<double>;
 
 }  // namespace parser
 }  // namespace storm

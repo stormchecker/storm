@@ -8,15 +8,16 @@
 #include "storm/environment/modelchecker/ConditionalModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/solver/SolveGoal.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/Extremum.h"
 #include "storm/utility/NumberTraits.h"
@@ -1252,7 +1253,7 @@ std::optional<SolutionType> handleTrivialCases(uint64_t const initialState, Norm
         if (normalForm.conditionStates.get(initialState)) {
             return normalForm.getTargetValue(initialState);  // The value is already known, nothing to do.
         } else {
-            STORM_LOG_THROW(!normalForm.universalObservationFailureStates.get(initialState), storm::exceptions::NotSupportedException,
+            STORM_LOG_THROW(!normalForm.universalObservationFailureStates.get(initialState), storm::exceptions::InvalidPropertyException,
                             "Trying to compute undefined conditional probability: the condition has probability 0 under all policies.");
             // The last case for a terminal initial state is that it is already target and the condition is reachable with non-zero probability.
             // In this case, all schedulers induce a conditional probability of 1 (or do not reach the condition, i.e., have undefined value)

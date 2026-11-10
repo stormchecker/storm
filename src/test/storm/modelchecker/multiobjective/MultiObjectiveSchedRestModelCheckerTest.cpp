@@ -12,7 +12,7 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/storage/SchedulerClass.h"
+#include "storm/storage/scheduler/SchedulerClass.h"
 
 namespace {
 

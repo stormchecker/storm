@@ -3,9 +3,9 @@
 #include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
 #include "storm/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
 
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdManager.h"
 
 #include "storm/solver/SolveGoal.h"
 #include "storm/utility/constants.h"

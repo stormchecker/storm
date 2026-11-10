@@ -4,6 +4,20 @@
 #ifdef STORM_HAVE_Z3
 #include "storm/solver/Z3SmtSolver.h"
 
+#include <cerrno>
+#include <chrono>
+#include <csignal>
+#include <memory>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#include "storm/utility/SignalHandler.h"
+
 TEST(Z3SmtSolver, CheckSat) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
 
@@ -215,6 +229,89 @@ TEST(Z3SmtSolver, UnsatAssumptions) {
     ASSERT_EQ(1ull, unsatCore.size());
     ASSERT_TRUE(unsatCore[0].isVariable());
     ASSERT_STREQ("f2", unsatCore[0].getIdentifier().c_str());
+}
+
+namespace {
+
+//! Builds the unsatisfiable pigeonhole principle PHP(numHoles+1, numHoles) as a hard propositional formula that keeps
+//! z3 busy searching for a long time (instead of returning a result right away).
+void buildHardPigeonholeFormula(storm::expressions::ExpressionManager& manager, storm::solver::Z3SmtSolver& solver, unsigned numHoles) {
+    unsigned numPigeons = numHoles + 1;
+    std::vector<std::vector<storm::expressions::Variable>> pigeon(numPigeons);
+    for (unsigned i = 0; i < numPigeons; ++i) {
+        for (unsigned j = 0; j < numHoles; ++j) {
+            pigeon[i].push_back(manager.declareBooleanVariable("p_" + std::to_string(i) + "_" + std::to_string(j)));
+        }
+    }
+    // Every pigeon sits in at least one hole.
+    for (unsigned i = 0; i < numPigeons; ++i) {
+        storm::expressions::Expression atLeastOneHole = manager.boolean(false);
+        for (unsigned j = 0; j < numHoles; ++j) {
+            atLeastOneHole = atLeastOneHole || pigeon[i][j];
+        }
+        solver.add(atLeastOneHole);
+    }
+    // No two pigeons share a hole.
+    for (unsigned j = 0; j < numHoles; ++j) {
+        for (unsigned i = 0; i < numPigeons; ++i) {
+            for (unsigned k = i + 1; k < numPigeons; ++k) {
+                solver.add(!pigeon[i][j] || !pigeon[k][j]);
+            }
+        }
+    }
+}
+
+}  // namespace
+
+// Regression test for https://github.com/stormchecker/storm/issues/74: while z3 is solving, a termination signal
+// (e.g. Ctrl-C) must abort Storm. z3 installs its own SIGINT handler (the "ctrl_c" parameter) during check() by
+// default, which quietly cancels the solve and makes check() return "unknown" instead of letting Storm react to the
+// interrupt. Storm must disable this behavior.
+TEST(Z3SmtSolver, SignalInterruptsRunningSolver) {
+    constexpr int signalWaitTime = 1;
+
+    pid_t subject = fork();
+    ASSERT_GE(subject, 0);
+    if (subject == 0) {
+        // Child acting as "Storm".
+        storm::utility::resources::installSignalHandler(signalWaitTime);
+
+        std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+        storm::solver::Z3SmtSolver s(*manager);
+        buildHardPigeonholeFormula(*manager, s, 12);
+        s.check();
+
+        // If we reach this point, the interrupt did not abort Storm (most likely because z3 swallowed it). Report
+        // this to the parent through a distinct exit code.
+        _exit(20);
+    }
+
+    // Give the child some time to actually start solving, then interrupt it.
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    ASSERT_EQ(kill(subject, SIGINT), 0);
+
+    int status = 0;
+    bool exited = false;
+    for (int i = 0; i < (signalWaitTime + 10) * 100; ++i) {
+        pid_t result = waitpid(subject, &status, WNOHANG);
+        if (result == subject) {
+            exited = true;
+            break;
+        }
+        if (result == -1 && errno != EINTR) {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    if (!exited) {
+        kill(subject, SIGKILL);
+        while (waitpid(subject, &status, 0) == -1 && errno == EINTR) {
+        }
+    }
+
+    ASSERT_TRUE(exited) << "Storm did not terminate while a z3 solver was running.";
+    ASSERT_TRUE(WIFEXITED(status));
+    EXPECT_EQ(WEXITSTATUS(status), SIGINT) << "The interrupt did not reach Storm's signal handler (z3 swallowed it).";
 }
 
 #endif

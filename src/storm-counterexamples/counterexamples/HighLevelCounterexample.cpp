@@ -3,7 +3,7 @@
 namespace storm {
 namespace counterexamples {
 
-HighLevelCounterexample::HighLevelCounterexample(storm::storage::SymbolicModelDescription const& model) : model(model) {
+HighLevelCounterexample::HighLevelCounterexample(storm::languages::SymbolicModelDescription const& model) : model(model) {
     // Intentionally left empty.
 }
 
@@ -15,7 +15,7 @@ bool HighLevelCounterexample::isJaniHighLevelCounterexample() const {
     return model.isJaniModel();
 }
 
-storm::storage::SymbolicModelDescription const& HighLevelCounterexample::getModelDescription() const {
+storm::languages::SymbolicModelDescription const& HighLevelCounterexample::getModelDescription() const {
     return model;
 }
 

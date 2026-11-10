@@ -4,10 +4,10 @@
 #include "storm-gamebased-ar/abstraction/BottomStateResult.h"
 #include "storm-gamebased-ar/abstraction/GameBddResult.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/Edge.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/DdManager.h"
+#include "storm/languages/jani/Automaton.h"
+#include "storm/languages/jani/Edge.h"
 #include "storm/utility/macros.h"
 
 namespace storm::gbar {

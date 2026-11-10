@@ -4,6 +4,7 @@
 #include "storm-parsers/parser/DirectEncodingParser.h"
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/exceptions/MissingLibraryException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
@@ -207,4 +208,10 @@ TEST(DirectEncodingParserTest, CompressedParsing) {
         auto dtmc = modelPtr->as<storm::models::sparse::Dtmc<double>>();
         ASSERT_EQ(677ul, dtmc->getNumberOfStates());
     }
+}
+
+TEST(DirectEncodingParserTest, RewardAfterLabel) {
+    // The reward bracket must come before 'init'/other labels, not after.
+    STORM_SILENT_ASSERT_THROW(storm::parser::parseDirectEncodingModel<double>(STORM_TEST_RESOURCES_DIR "/dtmc/drn_rewardAfterLabel.drn"),
+                              storm::exceptions::WrongFormatException);
 }

@@ -15,8 +15,6 @@
 #include <map>
 #include <vector>
 
-#include "storm/utility/NumberTraits.h"
-
 namespace storm {
 
 // Forward-declare MatrixEntry class.
@@ -121,8 +119,15 @@ bool isInteger(ValueType const& number);
 template<typename TargetType, typename SourceType>
 TargetType convertNumber(SourceType const& number);
 
-template<typename ValueType>
-std::pair<ValueType, ValueType> asFraction(ValueType const& number);
+/*!
+ * Tries to parse a number from its string representation.
+ *
+ * @param input String representation of the number.
+ * @param result The parsed number (only valid if parsing succeeded).
+ * @return True iff the string could be parsed as a number of the given type.
+ */
+template<typename RationalType>
+bool tryParseNumber(std::string const& input, RationalType& result);
 
 template<typename ValueType>
 ValueType simplify(ValueType value);
@@ -213,6 +218,12 @@ std::pair<IntegerType, IntegerType> divide(IntegerType const& dividend, IntegerT
 
 template<typename IntegerType>
 IntegerType mod(IntegerType const& first, IntegerType const& second);
+
+template<typename IntegerType>
+IntegerType gcd(IntegerType const& first, IntegerType const& second);
+
+template<typename IntegerType>
+IntegerType lcm(IntegerType const& first, IntegerType const& second);
 
 template<typename ValueType>
 std::string to_string(ValueType const& value);

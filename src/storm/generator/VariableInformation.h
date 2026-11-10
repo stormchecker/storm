@@ -1,10 +1,11 @@
 #pragma once
 
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
+#include "storm/expressions/Variable.h"
 #include "storm/generator/ArrayVariableReplacementInformation.h"
-#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace prism {

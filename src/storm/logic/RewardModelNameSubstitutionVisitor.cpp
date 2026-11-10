@@ -3,7 +3,7 @@
 #include <optional>
 #include "storm/logic/Formulas.h"
 
-#include "storm/storage/jani/Model.h"
+#include "storm/languages/jani/Model.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"

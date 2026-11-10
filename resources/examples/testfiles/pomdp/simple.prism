@@ -11,6 +11,7 @@ module main
     [alpha] s>0 & s<5 -> (1-slippery): (s'=s+2) + slippery: true;
     [beta]  s=3 -> (1-slippery): (s'=6)   + slippery: true;
     [beta]  s=4 -> (1-slippery): (s'=5) + slippery: true;
+    [alpha]  s=5 | s=6 -> 1: true;
 endmodule
 
 rewards

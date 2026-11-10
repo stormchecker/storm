@@ -6,10 +6,10 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/builder.h"
 #include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace {
 
@@ -37,8 +37,8 @@ class ParametricDtmcPrctlModelCheckerTest : public ::testing::Test {
     ParametricDtmcPrctlModelCheckerTest() : _environment(TestType::createEnvironment()) {}
 
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 

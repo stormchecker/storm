@@ -191,7 +191,7 @@ storm::builder::ExplorationOrder BuildSettings::getExplorationOrder() const {
     } else if (explorationOrderAsString == "bfs") {
         return storm::builder::ExplorationOrder::Bfs;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown exploration order '" << explorationOrderAsString << "'.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown exploration order '" << explorationOrderAsString << "'.");
 }
 
 bool BuildSettings::isExplorationChecksSet() const {

@@ -49,6 +49,10 @@ uint_fast64_t ChoiceOrigins::getIdentifier(uint_fast64_t choiceIndex) const {
     return indexToIdentifier[choiceIndex];
 }
 
+std::vector<uint_fast64_t> const& ChoiceOrigins::getIdentifiers() const {
+    return indexToIdentifier;
+}
+
 uint_fast64_t ChoiceOrigins::getNumberOfChoices() const {
     return indexToIdentifier.size();
 }

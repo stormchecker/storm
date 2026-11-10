@@ -4,13 +4,11 @@
 #include "storm/environment/exploration/ExplorationEnvironment.h"
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 
 namespace storm {
 
 Environment::Environment() {
-    modelToleranceValue = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
+    modelToleranceValue = DefaultModelTolerance;
 }
 
 Environment::~Environment() {
@@ -27,20 +25,12 @@ Environment& Environment::operator=(Environment const& other) {
     return *this;
 }
 
-SolverEnvironment& Environment::solver() {
-    return internalEnv.get().solverEnvironment.get();
+DdEnvironment& Environment::dd() {
+    return internalEnv.get().ddEnvironment.get();
 }
 
-SolverEnvironment const& Environment::solver() const {
-    return internalEnv.get().solverEnvironment.get();
-}
-
-ModelCheckerEnvironment& Environment::modelchecker() {
-    return internalEnv.get().modelcheckerEnvironment.get();
-}
-
-ModelCheckerEnvironment const& Environment::modelchecker() const {
-    return internalEnv.get().modelcheckerEnvironment.get();
+DdEnvironment const& Environment::dd() const {
+    return internalEnv.get().ddEnvironment.get();
 }
 
 ExplorationEnvironment& Environment::exploration() {
@@ -51,12 +41,20 @@ ExplorationEnvironment const& Environment::exploration() const {
     return internalEnv.get().explorationEnvironment.get();
 }
 
-DdEnvironment& Environment::dd() {
-    return internalEnv.get().ddEnvironment.get();
+ModelCheckerEnvironment& Environment::modelchecker() {
+    return internalEnv.get().modelcheckerEnvironment.get();
 }
 
-DdEnvironment const& Environment::dd() const {
-    return internalEnv.get().ddEnvironment.get();
+ModelCheckerEnvironment const& Environment::modelchecker() const {
+    return internalEnv.get().modelcheckerEnvironment.get();
+}
+
+SolverEnvironment& Environment::solver() {
+    return internalEnv.get().solverEnvironment.get();
+}
+
+SolverEnvironment const& Environment::solver() const {
+    return internalEnv.get().solverEnvironment.get();
 }
 
 double Environment::modelTolerance() const {

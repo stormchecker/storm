@@ -13,6 +13,14 @@ namespace gspn {
  */
 class Transition {
    public:
+    Transition() = default;
+    virtual ~Transition() = default;
+
+    Transition(Transition const&) = default;
+    Transition(Transition&&) = default;
+    Transition& operator=(Transition const&) = default;
+    Transition& operator=(Transition&&) = default;
+
     /*!
      * Set the multiplicity of the input arc originating from the place.
      * If the arc already exists, the former multiplicity is overwritten.

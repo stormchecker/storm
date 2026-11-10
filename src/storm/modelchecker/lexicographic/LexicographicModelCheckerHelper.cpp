@@ -106,7 +106,7 @@ LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::g
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
 MDPSparseModelCheckingHelperReturnType<ValueType> LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::lexReachability(
-    storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs, std::vector<std::vector<bool>> const& mecLexArray,
+    Environment const& env, storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs, std::vector<std::vector<bool>> const& mecLexArray,
     std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel, SparseModelType const& originalMdp) {
     // Eliminate all MECs and generate one sink state instead
     // Add first new states for each MEC
@@ -140,8 +140,8 @@ MDPSparseModelCheckingHelperReturnType<ValueType> LexicographicModelCheckerHelpe
 
         // solve the reachability query for this set of goal states
         std::vector<uint64_t> newInitalStates;
-        auto res =
-            solveOneReachability(newInitalStates, psiStates, transitionMatrix, originalMdp, compressedToReducedMapping, compressionResult.oldToNewStateMapping);
+        auto res = solveOneReachability(env, newInitalStates, psiStates, transitionMatrix, originalMdp, compressedToReducedMapping,
+                                        compressionResult.oldToNewStateMapping);
         if (newInitalStates.empty()) {
             retResult.values[condition] = 0;
             continue;
@@ -279,9 +279,9 @@ storm::storage::BitVector LexicographicModelCheckerHelper<SparseModelType, Value
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
 MDPSparseModelCheckingHelperReturnType<ValueType> LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::solveOneReachability(
-    std::vector<uint64_t>& newInitalStates, storm::storage::BitVector const& psiStates, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-    SparseModelType const& originalMdp, std::vector<uint64_t> const& compressedToReducedMapping, std::vector<uint64_t> const& oldToNewStateMapping) {
-    Environment env;
+    Environment const& env, std::vector<uint64_t>& newInitalStates, storm::storage::BitVector const& psiStates,
+    storm::storage::SparseMatrix<ValueType> const& transitionMatrix, SparseModelType const& originalMdp,
+    std::vector<uint64_t> const& compressedToReducedMapping, std::vector<uint64_t> const& oldToNewStateMapping) {
     // A reachability condition "F x" is transformed to "true U x"
     // phi states are all states
     // psi states are the ones from the "good bccs"

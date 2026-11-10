@@ -24,12 +24,26 @@ The key source directories are:
 | `src/storm-pomdp` | `libstorm-pomdp` | POMDPs |
 | `src/storm-gspn` | `libstorm-gspn` | Generalised Stochastic Petri Nets |
 | `src/storm-conv` | `libstorm-conv` | Model conversion |
-| `src/storm-parsers` | (part of libstorm) | PRISM and JANI parsers |
+| `src/storm-parsers` | `libstorm-parsers` | PRISM and JANI parsers |
 | `src/storm-gamebased-ar` | | Game-based abstraction refinement |
 | `src/storm-permissive` | | Permissive schedulers |
 | `src/test` | | GTest test suite mirroring the library structure |
 
 Each library's public API lives in its `api/` subdirectory (e.g., `src/storm/api/`, `src/storm-pars/api/`).
+
+`libstorm-parsers` is compiled with hidden visibility, so only symbols that opt in are exported from it. Mark every
+non-inline, externally visible function or class of that library with `STORM_PARSERS_API`, which is defined in
+`src/storm-parsers/storm-parsers-api.h`:
+
+```cpp
+#include "storm-parsers/storm-parsers-api.h"
+
+STORM_PARSERS_API void storm::parser::SomeParser::doSomething();
+```
+
+Header-only functions need no annotation: they are instantiated in the consuming translation unit. Code that is generic over
+the numeric backends additionally needs `extern template` declarations (and one explicit instantiation in a `.cpp` file) so
+that consumers do not instantiate the template themselves and thereby duplicate its symbols.
 
 
 ## Building
@@ -61,6 +75,25 @@ Important CMake options:
 | `STORM_USE_CLN_RF` | ON | Use CLN for rational functions |
 | `STORM_BUILD_TESTS` | ON | Build test binaries |
 | `STORM_DISABLE_<DEP>` | OFF | Disable optional dependencies (CUDD, GLPK, Z3, …) |
+
+## Third party resources
+Storm makes extensive use of third-party resources.
+An overview of the dependencies is available on the [website](https://www.stormchecker.org/documentation/obtain-storm/dependencies.html).
+The resources are defined in `resources/3rdparty/CMakeLists.txt` and shipped resources are located in `resources/3rdparty`.
+See the dedicated documentation on [third-party dependencies](3rdparty_dependencies.md).
+
+
+## Versioning
+- Releases have version `X.Y.Z`.
+- Development versions on master have version `X.Y.Z.N` with a development counter `N > 0`.
+  Version `X.Y.Z.N` should be read as: this is an updated version of `X.Y.Z` that has not been released as the next version yet.
+  After a release, the CI automatically opens a PR that sets the version to `X.Y.Z.1`.
+- Increase `N` by one for changes on master which downstream tools such as stormpy need to detect, for example API changes.
+  Downstream tools can then require a specific development version:
+  ```cmake
+  find_package(storm 2.0.0.1 REQUIRED)
+  ```
+- CMake variable `STORM_VERSION` provides the release version information `X.Y.Z`, `STORM_VERSION_DEV` provides the development counter `N` (which is `0` for releases), and `STORM_VERSION_FULL_DEV` provides the full version `X.Y.Z.N`.
 
 
 ## Coding conventions

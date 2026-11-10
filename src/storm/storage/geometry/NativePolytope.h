@@ -2,7 +2,7 @@
 
 #include <memory>
 #include "storm/adapters/EigenAdapter.h"
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 #include "storm/storage/geometry/Polytope.h"
 
 namespace storm {

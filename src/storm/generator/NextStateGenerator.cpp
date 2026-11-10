@@ -6,11 +6,11 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/SimpleValuation.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/StateLabeling.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/valuations/ValuationDescriptionBuilder.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/macros.h"
@@ -278,7 +278,7 @@ void NextStateGenerator<ValueType, StateType>::postprocess(StateBehavior<ValueTy
 
         // Finally remove the choices that were added to other Markovian choices.
         if (numberOfChoicesToDelete > 0) {
-            result.getChoices().resize(result.getChoices().size() - numberOfChoicesToDelete);
+            result.removeLastChoices(numberOfChoicesToDelete);
         }
     }
 }

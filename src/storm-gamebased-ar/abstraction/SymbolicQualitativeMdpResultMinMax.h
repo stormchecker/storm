@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeMdpResult.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeResultMinMax.h"

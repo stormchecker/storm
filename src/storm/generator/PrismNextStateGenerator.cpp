@@ -8,14 +8,15 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionEvaluator.h"
 #include "storm/generator/Distribution.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
 #include "storm/utility/combinatorics.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -218,8 +219,7 @@ std::vector<StateType> PrismNextStateGenerator<ValueType, StateType>::getInitial
         STORM_LOG_DEBUG("Enumerated " << initialStateIndices.size() << " initial states using brute force enumeration.");
     } else {
         // Prepare an SMT solver to enumerate all initial states.
-        storm::utility::solver::SmtSolverFactory factory;
-        std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(program.getManager());
+        std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::getSmtSolver(program.getManager());
 
         std::vector<storm::expressions::Expression> rangeExpressions = program.getAllRangeExpressions();
         for (auto const& expression : rangeExpressions) {
@@ -268,9 +268,10 @@ std::vector<StateType> PrismNextStateGenerator<ValueType, StateType>::getInitial
 }
 
 template<typename ValueType, typename StateType>
-StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
+StateBehavior<ValueType, StateType> const& PrismNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
     // Prepare the result, in case we return early.
-    StateBehavior<ValueType, StateType> result;
+    StateBehavior<ValueType, StateType>& result = this->currentStateBehavior;
+    result.clear();
 
     // First, construct the state rewards, as we may return early if there are no choices later and we already
     // need the state rewards then.
@@ -586,7 +587,7 @@ ValueType evaluateLikelihoodExpression(storm::prism::Update const& update, storm
         if (update.isLikelihoodInterval()) {
             BaseValueType lower = evaluator.asRational(update.getLikelihoodExpressionInterval().first);
             BaseValueType upper = evaluator.asRational(update.getLikelihoodExpressionInterval().second);
-            return ValueType(lower, carl::BoundType::WEAK, upper, carl::BoundType::WEAK);
+            return ValueType(lower, storm::BoundType::WEAK, upper, storm::BoundType::WEAK);
         } else {
             return evaluator.asRational(update.getLikelihoodExpression());
         }
@@ -599,7 +600,7 @@ ValueType evaluateLikelihoodExpression(storm::prism::Update const& update, storm
 
 template<typename ValueType, typename StateType>
 std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getAsynchronousChoices(CompressedState const& state,
-                                                                                                     StateToIdCallback stateToIdCallback,
+                                                                                                     StateToIdCallback const& stateToIdCallback,
                                                                                                      CommandFilter const& commandFilter) {
     std::vector<Choice<ValueType>> result;
 
@@ -716,7 +717,7 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
 
 template<typename ValueType, typename StateType>
 std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getSelfLoopsForAllActions(CompressedState const& state,
-                                                                                                        StateToIdCallback stateToIdCallback,
+                                                                                                        StateToIdCallback const& stateToIdCallback,
                                                                                                         CommandFilter const& commandFilter) {
     std::vector<Choice<ValueType>> result;
 
@@ -857,7 +858,7 @@ template<typename ValueType, typename StateType>
 void PrismNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribution(
     storm::storage::BitVector const& state, ValueType const& probability, uint64_t position,
     std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator> const& iteratorList,
-    storm::generator::Distribution<StateType, ValueType>& distribution, StateToIdCallback stateToIdCallback) {
+    storm::generator::Distribution<StateType, ValueType>& distribution, StateToIdCallback const& stateToIdCallback) {
     if (storm::utility::isZero<ValueType>(probability)) {
         return;
     }
@@ -887,7 +888,7 @@ void PrismNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribu
 
 template<typename ValueType, typename StateType>
 void PrismNextStateGenerator<ValueType, StateType>::addSynchronousChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state,
-                                                                          StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
+                                                                          StateToIdCallback const& stateToIdCallback, CommandFilter const& commandFilter) {
     for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
         if (this->actionMask != nullptr) {
             if (!this->actionMask->query(*this, actionIndex)) {

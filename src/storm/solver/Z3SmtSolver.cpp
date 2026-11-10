@@ -76,6 +76,11 @@ Z3SmtSolver::Z3SmtSolver(storm::expressions::ExpressionManager& manager)
     config.set("model", true);
     context = std::make_unique<z3::context>(config);
     solver = std::make_unique<z3::solver>(*context);
+    // Do not let z3 install its own SIGINT handler (the "ctrl_c" parameter): if we did, z3 would swallow interrupts
+    // during check() and just return "unknown" instead of letting Storm's signal handler abort the computation.
+    z3::params params(*context);
+    params.set("ctrl_c", false);
+    solver->set(params);
     expressionAdapter = std::make_unique<storm::adapters::Z3ExpressionAdapter>(this->getManager(), *context);
 #endif
 }
@@ -174,7 +179,7 @@ SmtSolver::CheckResult Z3SmtSolver::check() {
 #endif
 }
 
-SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) {
+SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(storm::expressions::ExpressionSet const& assumptions) {
 #ifdef STORM_HAVE_Z3
     lastCheckAssumptions = true;
     z3::expr_vector z3Assumptions(*this->context);

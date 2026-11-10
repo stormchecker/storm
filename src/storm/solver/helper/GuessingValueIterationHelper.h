@@ -29,7 +29,7 @@ class IterationHelper {
 
     IndexType selectRowGroupToGuess(const std::vector<ValueType>& lowerX, const std::vector<ValueType>& upperX);
 
-    ValueType getMaxLength(std::vector<ValueType>& lower, std::vector<ValueType>& upper) const;
+    bool checkConvergence(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper, bool relative, ValueType const& precision) const;
     ValueType getSumLength(std::vector<ValueType>& lower, std::vector<ValueType>& upper) const;
 
    private:
@@ -59,12 +59,14 @@ class GuessingValueIterationHelper {
      * @param lowerX Needs to be some arbitrary lower bound on the actual values initially
      * @param upperX Needs to be some arbitrary upper bound on the actual values initially
      * @param b the values added to each matrix row (the b in A*x+b)
+     * @param relative Whether to use relative precision
+     * @param precision The requested error bound for the midpoint of lowerX and upperX
      * @param dir The optimization direction
-     * @return The status upon termination as well as the number of iterations Also, the maximum (relative/absolute) difference between lowerX and upperX will
-     * be 2*epsilon with the provided precision parameters.
+     * @return The status upon termination. Upon convergence, each interval has width at most 2*precision, scaled by the smaller endpoint magnitude
+     * for relative precision. Intervals containing zero must collapse to zero for relative convergence.
      */
     SolverStatus solveEquations(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations,
-                                ValueType precision, std::optional<storm::solver::OptimizationDirection> dir,
+                                bool relative, ValueType precision, std::optional<storm::solver::OptimizationDirection> dir,
                                 std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback);
 
    private:
@@ -75,7 +77,7 @@ class GuessingValueIterationHelper {
 
     template<OptimizationDirection Dir>
     SolverStatus solveEquations(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations,
-                                ValueType precision, std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback);
+                                bool relative, ValueType precision, std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback);
 
     template<OptimizationDirection Dir>
     void applyInPlace(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, GVIBackend<ValueType, Dir>& backend);
@@ -83,12 +85,13 @@ class GuessingValueIterationHelper {
     template<OptimizationDirection Dir>
     std::pair<gviinternal::VerifyResult, SolverStatus> tryVerify(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX,
                                                                  const std::vector<ValueType>& b, uint64_t& numIterations,
-                                                                 gviinternal::IndexType rowGroupToGuess, ValueType guessValue, ValueType precision,
+                                                                 gviinternal::IndexType rowGroupToGuess, ValueType guessValue, bool relative,
+                                                                 ValueType precision,
                                                                  std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback);
 
     template<OptimizationDirection Dir>
     SolverStatus doIterations(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations,
-                              std::optional<uint64_t> maxIterations, const ValueType& precision,
+                              std::optional<uint64_t> maxIterations, bool relative, const ValueType& precision,
                               std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback);
 };
 }  // namespace storm::solver::helper

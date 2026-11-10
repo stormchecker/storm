@@ -1,6 +1,5 @@
 #include "SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
-#include "storm/analysis/GraphConditions.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"

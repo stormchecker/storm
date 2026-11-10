@@ -145,6 +145,7 @@ std::unique_ptr<Multiplier<ValueType, SolutionType>> MultiplierFactory<ValueType
                     return std::make_unique<ViOperatorMultiplier<ValueType, false, SolutionType>>(matrix);
                 }
             }
+            break;
         case MultiplierType::Native:
             if constexpr (std::is_same_v<ValueType, SolutionType>) {
                 return std::make_unique<NativeMultiplier<ValueType>>(matrix);

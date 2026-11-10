@@ -133,6 +133,10 @@ double MultiObjectiveSettings::getPrecision() const {
     return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
 }
 
+bool MultiObjectiveSettings::isPrecisionSet() const {
+    return this->getOption(precisionOptionName).getHasOptionBeenSet();
+}
+
 bool MultiObjectiveSettings::getPrecisionRelativeToDiff() const {
     return this->getOption(precisionOptionName).getArgumentByName("type").getValueAsString() == "reldiff";
 }

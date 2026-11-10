@@ -22,17 +22,15 @@ double evaluate(storm::RationalFunction const& function, Valuation<storm::Ration
     return evaluateRationalFunction<double>(function, valuation);
 }
 
-#if defined(STORM_HAVE_CLN)
 template<>
-ClnRationalNumber evaluate(storm::RationalFunction const& function, Valuation<storm::RationalFunction> const& valuation) {
-    return evaluateRationalFunction<ClnRationalNumber>(function, valuation);
+storm::RationalNumber evaluate(storm::RationalFunction const& function, Valuation<storm::RationalFunction> const& valuation) {
+    return evaluateRationalFunction<storm::RationalNumber>(function, valuation);
 }
-#endif
 
-#if defined(STORM_HAVE_GMP)
+#if STORM_RATIONAL_NUMBER_DIFFERS_FROM_COEFFICIENT
 template<>
-GmpRationalNumber evaluate(storm::RationalFunction const& function, Valuation<storm::RationalFunction> const& valuation) {
-    return evaluateRationalFunction<GmpRationalNumber>(function, valuation);
+storm::RationalFunctionCoefficient evaluate(storm::RationalFunction const& function, Valuation<storm::RationalFunction> const& valuation) {
+    return evaluateRationalFunction<storm::RationalFunctionCoefficient>(function, valuation);
 }
 #endif
 

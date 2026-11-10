@@ -4,12 +4,12 @@
 #include <set>
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
 #include "storm/transformer/MemoryIncorporation.h"
 #include "storm/transformer/SubsystemBuilder.h"

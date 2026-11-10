@@ -1,35 +1,34 @@
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
+#include <limits>
+
 #include "storm/environment/solver/MinMaxLpSolverEnvironment.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 
-MinMaxSolverEnvironment::MinMaxSolverEnvironment() {
-    auto const& minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
-
-    minMaxMethod = minMaxSettings.getMinMaxEquationSolvingMethod();
-    methodSetFromDefault = minMaxSettings.isMinMaxEquationSolvingMethodSetFromDefaultValue();
-    if (minMaxSettings.isMaximalIterationCountSet()) {
-        maxIterationCount = minMaxSettings.getMaximalIterationCount();
-    } else {
-        maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
-    }
-    precision = storm::utility::convertNumber<storm::RationalNumber>(minMaxSettings.getPrecision());
-    considerRelativeTerminationCriterion =
-        minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
-    STORM_LOG_ASSERT(considerRelativeTerminationCriterion ||
-                         minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute,
-                     "Unknown convergence criterion.");
-    multiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
-    forceRequireUnique = minMaxSettings.isForceUniqueSolutionRequirementSet();
+MinMaxSolverEnvironment::MinMaxSolverEnvironment()
+    : minMaxMethod(storm::solver::MinMaxMethod::Topological),
+      methodSetFromDefault(true),
+      maxIterationCount(std::numeric_limits<uint64_t>::max()),
+      precision(storm::utility::convertNumber<storm::RationalNumber>(1e-06)),
+      considerRelativeTerminationCriterion(true),
+      multiplicationStyle(storm::solver::MultiplicationStyle::GaussSeidel),
+      forceRequireUnique(false) {
+    // Intentionally left empty.
 }
 
 MinMaxSolverEnvironment::~MinMaxSolverEnvironment() {
     // Intentionally left empty
+}
+
+MinMaxLpSolverEnvironment& MinMaxSolverEnvironment::lp() {
+    return lpEnvironment.get();
+}
+
+MinMaxLpSolverEnvironment const& MinMaxSolverEnvironment::lp() const {
+    return lpEnvironment.get();
 }
 
 storm::solver::MinMaxMethod const& MinMaxSolverEnvironment::getMethod() const {
@@ -75,13 +74,6 @@ storm::solver::MultiplicationStyle const& MinMaxSolverEnvironment::getMultiplica
 
 void MinMaxSolverEnvironment::setMultiplicationStyle(storm::solver::MultiplicationStyle value) {
     multiplicationStyle = value;
-}
-
-MinMaxLpSolverEnvironment const& MinMaxSolverEnvironment::lp() const {
-    return lpEnvironment.get();
-}
-MinMaxLpSolverEnvironment& MinMaxSolverEnvironment::lp() {
-    return lpEnvironment.get();
 }
 
 bool MinMaxSolverEnvironment::isForceRequireUnique() const {

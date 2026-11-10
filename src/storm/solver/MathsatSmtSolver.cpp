@@ -1,5 +1,7 @@
 #include "storm/solver/MathsatSmtSolver.h"
 
+#include "storm/exceptions/ExpressionEvaluationException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -227,7 +229,7 @@ SmtSolver::CheckResult MathsatSmtSolver::check() {
 #endif
 }
 
-SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) {
+SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(storm::expressions::ExpressionSet const& assumptions) {
 #ifdef STORM_HAVE_MATHSAT
     lastCheckAssumptions = true;
     std::vector<msat_term> mathSatAssumptions;

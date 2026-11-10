@@ -6,6 +6,7 @@
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
@@ -15,7 +16,6 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/parser/CSVParser.h"
-#include "storm/storage/jani/Property.h"
 
 namespace {
 
@@ -55,8 +55,8 @@ class QuantileQueryTest : public ::testing::Test {
     QuantileQueryTest() : _environment(TestType::createEnvironment()) {}
 
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 

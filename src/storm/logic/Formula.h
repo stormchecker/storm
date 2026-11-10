@@ -77,6 +77,8 @@ class Formula : public std::enable_shared_from_this<Formula> {
     virtual bool isGloballyFormula() const;
     virtual bool isEventuallyFormula() const;
     virtual bool isReachabilityProbabilityFormula() const;
+    virtual bool isWeakUntilFormula() const;
+    virtual bool isReleaseFormula() const;
     virtual bool isHOAPathFormula() const;
 
     // Reward formulas.
@@ -110,6 +112,12 @@ class Formula : public std::enable_shared_from_this<Formula> {
 
     boost::any accept(FormulaVisitor const& visitor) const;
     virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const = 0;
+
+    /*!
+     * Invokes the given callback on this formula and on its subformulas in pre-order, i.e., a formula is visited before its subformulas.
+     * @param callback the subformulas of a formula are only visited if the callback returns true for that formula.
+     */
+    void traverse(std::function<bool(Formula const&)> const& callback) const;
 
     static std::shared_ptr<Formula const> getTrueFormula();
 
@@ -150,6 +158,12 @@ class Formula : public std::enable_shared_from_this<Formula> {
 
     UntilFormula& asUntilFormula();
     UntilFormula const& asUntilFormula() const;
+
+    WeakUntilFormula& asWeakUntilFormula();
+    WeakUntilFormula const& asWeakUntilFormula() const;
+
+    ReleaseFormula& asReleaseFormula();
+    ReleaseFormula const& asReleaseFormula() const;
 
     HOAPathFormula& asHOAPathFormula();
     HOAPathFormula const& asHOAPathFormula() const;

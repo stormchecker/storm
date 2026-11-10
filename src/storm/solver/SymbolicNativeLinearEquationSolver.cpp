@@ -1,10 +1,10 @@
 #include "storm/solver/SymbolicNativeLinearEquationSolver.h"
 
+#include "storm/dd/Add.h"
+#include "storm/dd/DdManager.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/KwekMehlhorn.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"

@@ -1022,21 +1022,26 @@ typename std::enable_if<std::is_same<ValueType, storm::RationalNumber>::value, s
     } else if (occurringNonZeroNumbers.size() == 1) {
         factor = *occurringNonZeroNumbers.begin();
     } else {
+        using IntegerType = typename storm::NumberTraits<ValueType>::IntegerType;
         // Obtain the least common multiple of the denominators of the occurring numbers.
         // We can then multiply the numbers with the lcm to obtain integers.
         auto numberIt = occurringNonZeroNumbers.begin();
-        ValueType lcm = storm::utility::asFraction(*numberIt).second;
+        IntegerType lcm = storm::utility::denominator(*numberIt);
         for (++numberIt; numberIt != occurringNonZeroNumbers.end(); ++numberIt) {
-            lcm = carl::lcm(lcm, storm::utility::asFraction(*numberIt).second);
+            lcm = storm::utility::lcm(lcm, storm::utility::denominator(*numberIt));
         }
         // Multiply all values with the lcm. To reduce the range of considered integers, we also obtain the gcd of the results.
         numberIt = occurringNonZeroNumbers.begin();
-        ValueType gcd = *numberIt * lcm;
+        STORM_LOG_ASSERT(storm::utility::denominator(ValueType(*numberIt * lcm)) == storm::utility::one<IntegerType>(),
+                         "Number '" << *numberIt << "' is not integral.");
+        IntegerType gcd = storm::utility::numerator(ValueType(*numberIt * lcm));
         for (++numberIt; numberIt != occurringNonZeroNumbers.end(); ++numberIt) {
-            gcd = carl::gcd(gcd, static_cast<ValueType>(*numberIt * lcm));
+            STORM_LOG_ASSERT(storm::utility::denominator(ValueType(*numberIt * lcm)) == storm::utility::one<IntegerType>(),
+                             "Number '" << *numberIt << "' is not integral.");
+            gcd = storm::utility::gcd(gcd, storm::utility::numerator(ValueType(*numberIt * lcm)));
         }
 
-        factor = gcd / lcm;
+        factor = storm::utility::convertNumber<ValueType>(gcd) / storm::utility::convertNumber<ValueType>(lcm);
     }
 
     // Build the result

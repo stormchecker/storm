@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  clang-format:
+  code-style:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,16 +15,11 @@ jobs:
       id: clang-versions
       run: |
         echo "FORMAT_VERSION=$(grep '^CLANG_FORMAT_VERSION=' resources/scripts/clang-versions | cut -d= -f2)" >> "$GITHUB_OUTPUT"
-    - uses: DoozyX/clang-format-lint-action@v0.20
-      with:
-        source: './src'
-        clangFormatVersion: ${{ steps.clang-versions.outputs.FORMAT_VERSION }}
-        style: file
-
-  code-style:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v7
+    - name: Install clang-format
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format-${{ steps.clang-versions.outputs.FORMAT_VERSION }}
+    - name: Check code format
+      run: bash resources/scripts/auto-format.sh --check
     - name: Check code style
       run: python3 resources/scripts/check_style.py --checks=include-order,pragma-once,raw-throw

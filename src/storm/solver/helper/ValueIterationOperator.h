@@ -236,6 +236,12 @@ class ValueIterationOperator {
     }
 
     template<typename OpT1, typename OpT2, typename OffT1, typename OffT2>
+    std::pair<OpT1, OpT2> initializeRowRes(std::pair<std::vector<OpT1>, std::vector<OpT2>> const&,
+                                           std::pair<std::vector<OffT1>, std::vector<OffT2>> const& offsets, uint64_t offsetIndex) const {
+        return {offsets.first[offsetIndex], offsets.second[offsetIndex]};
+    }
+
+    template<typename OpT1, typename OpT2, typename OffT1, typename OffT2>
     std::pair<OpT1, OpT2> initializeRowRes(std::pair<std::vector<OpT1>, std::vector<OpT2>> const&, std::pair<std::vector<OffT1> const*, OffT2> const& offsets,
                                            uint64_t offsetIndex) const {
         return {(*offsets.first)[offsetIndex], offsets.second};

@@ -39,6 +39,11 @@ class ChoiceOrigins {
      */
     uint_fast64_t getIdentifier(uint_fast64_t choiceIndex) const;
 
+    /*!
+     * @return Returns the mapping from choice indices to their identifiers.
+     */
+    std::vector<uint_fast64_t> const& getIdentifiers() const;
+
     /*
      * Returns the number of considered identifier.
      * This can be used to, e.g., loop over all identifiers.

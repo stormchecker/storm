@@ -9,8 +9,8 @@
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/solver/SolveGoal.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 
 namespace storm {
 namespace modelchecker {
@@ -315,8 +315,9 @@ std::vector<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeDAPr
 
     } else {
         prodNumericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(
-            env, std::move(solveGoalProduct), product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions(), bvTrue,
-            acceptingStates, this->isQualitativeSet());
+                                env, std::move(solveGoalProduct), product->getProductModel().getTransitionMatrix(),
+                                product->getProductModel().getBackwardTransitions(), bvTrue, acceptingStates, this->isQualitativeSet())
+                                .values;
     }
 
     std::vector<ValueType> numericResult = product->projectToOriginalModel(this->_transitionMatrix.getRowGroupCount(), prodNumericResult);

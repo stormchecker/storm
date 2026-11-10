@@ -71,8 +71,8 @@ NondeterministicModelParser<ValueType, RewardValueType>::parseMdp(std::string co
     return storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(parserResult));
 }
 
-template class NondeterministicModelParser<double, double>;
-template class NondeterministicModelParser<double, storm::Interval>;
+template class STORM_PARSERS_API NondeterministicModelParser<double, double>;
+template class STORM_PARSERS_API NondeterministicModelParser<double, storm::Interval>;
 
 } /* namespace parser */
 } /* namespace storm */

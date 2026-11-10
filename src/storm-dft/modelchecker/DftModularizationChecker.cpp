@@ -4,19 +4,21 @@
 
 #include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/builder/DFTBuilder.h"
+#include "storm-dft/environment/AnalysisEnvironment.h"
+#include "storm-dft/environment/ModelBuilderEnvironment.h"
 #include "storm-dft/modelchecker/DFTModelChecker.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
 #include "storm-dft/utility/DftModularizer.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/api/properties.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/languages/jani/Property.h"
 
 namespace storm::dft {
 namespace modelchecker {
 
 template<typename ValueType>
-DftModularizationChecker<ValueType>::DftModularizationChecker(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft)
-    : dft{dft}, modelchecker(true), sylvanBddManager{storm::dft::storage::SylvanBddManager::createWithDefaultEnvironment()} {
+DftModularizationChecker<ValueType>::DftModularizationChecker(storm::dft::DftEnvironment const& env, std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft)
+    : dft{dft}, env{env}, modelchecker(true), sylvanBddManager{std::make_shared<storm::dft::storage::SylvanBddManager>(env.core())} {
     // Initialize modules
     storm::dft::utility::DftModularizer<ValueType> modularizer;
     auto topModule = modularizer.computeModules(*dft);
@@ -134,7 +136,10 @@ typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results DftMo
     }
     auto const props{storm::api::extractFormulasFromProperties(storm::api::parseProperties(propertyStream.str()))};
 
-    return modelchecker.check(subDft, props, false, false, {});
+    storm::dft::DftEnvironment moduleEnv = env;
+    moduleEnv.modelBuilder().setUseSymmetryReduction(false);
+    moduleEnv.analysis().setUseModularisation(false);
+    return modelchecker.check(moduleEnv, subDft, props);
 }
 
 // Explicitly instantiate the class.

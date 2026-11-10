@@ -1,7 +1,5 @@
 #include "storm/environment/dd/SylvanDdManagerEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/SylvanSettings.h"
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/threads.h"
@@ -9,11 +7,7 @@
 namespace storm {
 
 SylvanDdManagerEnvironment::SylvanDdManagerEnvironment() : maximalMemory(4096), numberOfThreads(0) {
-    if (storm::settings::hasModule<storm::settings::modules::SylvanSettings>()) {
-        auto const& sylvanSettings = storm::settings::getModule<storm::settings::modules::SylvanSettings>();
-        maximalMemory = sylvanSettings.getMaximalMemory();
-        numberOfThreads = sylvanSettings.getNumberOfThreads();
-    }
+    // Intentionally left empty.
 }
 
 SylvanDdManagerEnvironment::~SylvanDdManagerEnvironment() {

@@ -2,6 +2,8 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/languages/SymbolicModelDescription.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
@@ -16,8 +18,6 @@
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 #include "storm/modelchecker/rpatl/SparseSmgRpatlModelChecker.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/Property.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -96,10 +96,10 @@ storm::builder::BuilderType getBuilderType(Engine const& engine) {
 }
 
 template<typename ValueType>
-bool canHandle(storm::utility::Engine const& engine, storm::storage::SymbolicModelDescription::ModelType const& modelType,
+bool canHandle(storm::utility::Engine const& engine, storm::languages::SymbolicModelDescription::ModelType const& modelType,
                storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
     // Define types to improve readability
-    typedef storm::storage::SymbolicModelDescription::ModelType ModelType;
+    typedef storm::languages::SymbolicModelDescription::ModelType ModelType;
     // The Dd library does not make much of a difference (in case of exact or parametric models we will switch to sylvan anyway).
     // Therefore, we always use sylvan here
     storm::dd::DdType const ddType = storm::dd::DdType::Sylvan;
@@ -193,10 +193,10 @@ bool canHandle(storm::utility::Engine const& engine, storm::storage::SymbolicMod
 }
 
 template<>
-bool canHandle<storm::RationalFunction>(storm::utility::Engine const& engine, storm::storage::SymbolicModelDescription::ModelType const& modelType,
+bool canHandle<storm::RationalFunction>(storm::utility::Engine const& engine, storm::languages::SymbolicModelDescription::ModelType const& modelType,
                                         storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> const& checkTask) {
     // Define types to improve readability
-    typedef storm::storage::SymbolicModelDescription::ModelType ModelType;
+    typedef storm::languages::SymbolicModelDescription::ModelType ModelType;
     // The Dd library does not make much of a difference (in case of exact or parametric models we will switch to sylvan anyway).
     // Therefore, we always use sylvan here
     storm::dd::DdType const ddType = storm::dd::DdType::Sylvan;
@@ -256,7 +256,7 @@ bool canHandle<storm::RationalFunction>(storm::utility::Engine const& engine, st
 
 template<typename ValueType>
 bool canHandle(storm::utility::Engine const& engine, std::vector<storm::jani::Property> const& properties,
-               storm::storage::SymbolicModelDescription const& modelDescription) {
+               storm::languages::SymbolicModelDescription const& modelDescription) {
     auto canHandleFormula = [&engine, &modelDescription](auto const& formula, bool onlyInitialStatesRelevant) {
         auto task = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(formula, onlyInitialStatesRelevant);
         bool result = canHandle(engine, modelDescription.getModelType(), task);
@@ -276,11 +276,11 @@ bool canHandle(storm::utility::Engine const& engine, std::vector<storm::jani::Pr
 }
 
 // explicit template instantiations.
-template bool canHandle<double>(storm::utility::Engine const&, std::vector<storm::jani::Property> const&, storm::storage::SymbolicModelDescription const&);
+template bool canHandle<double>(storm::utility::Engine const&, std::vector<storm::jani::Property> const&, storm::languages::SymbolicModelDescription const&);
 template bool canHandle<storm::RationalNumber>(storm::utility::Engine const&, std::vector<storm::jani::Property> const&,
-                                               storm::storage::SymbolicModelDescription const&);
+                                               storm::languages::SymbolicModelDescription const&);
 template bool canHandle<storm::RationalFunction>(storm::utility::Engine const&, std::vector<storm::jani::Property> const&,
-                                                 storm::storage::SymbolicModelDescription const&);
+                                                 storm::languages::SymbolicModelDescription const&);
 
 }  // namespace utility
 }  // namespace storm

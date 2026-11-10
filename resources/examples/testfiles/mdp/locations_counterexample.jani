@@ -1,0 +1,180 @@
+{
+  "jani-version": 1,
+  "name": "locations_counterexample",
+  "type": "mdp",
+  "actions": [
+    {
+      "name": "sync"
+    }
+  ],
+  "variables": [
+    {
+      "name": "s",
+      "type": {
+        "kind": "bounded",
+        "base": "int",
+        "lower-bound": 0,
+        "upper-bound": 3
+      },
+      "initial-value": 0
+    }
+  ],
+  "restrict-initial": {
+    "exp": true
+  },
+  "properties": [],
+  "automata": [
+    {
+      "name": "A",
+      "locations": [
+        {
+          "name": "a0"
+        },
+        {
+          "name": "a1"
+        },
+        {
+          "name": "a2"
+        }
+      ],
+      "initial-locations": [
+        "a0"
+      ],
+      "edges": [
+        {
+          "location": "a0",
+          "action": "sync",
+          "guard": {
+            "exp": true
+          },
+          "destinations": [
+            {
+              "location": "a1",
+              "probability": {
+                "exp": 0.2
+              },
+              "assignments": [
+                {
+                  "ref": "s",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "location": "a2",
+              "probability": {
+                "exp": 0.8
+              },
+              "assignments": [
+                {
+                  "ref": "s",
+                  "value": 2
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "location": "a2",
+          "guard": {
+            "exp": true
+          },
+          "destinations": [
+            {
+              "location": "a2",
+              "probability": {
+                "exp": 1
+              },
+              "assignments": [
+                {
+                  "ref": "s",
+                  "value": 3
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "location": "a1",
+          "guard": {
+            "exp": true
+          },
+          "destinations": [
+            {
+              "location": "a1",
+              "probability": {
+                "exp": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "B",
+      "locations": [
+        {
+          "name": "b0"
+        },
+        {
+          "name": "b1"
+        }
+      ],
+      "initial-locations": [
+        "b0",
+        "b1"
+      ],
+      "edges": [
+        {
+          "location": "b0",
+          "action": "sync",
+          "guard": {
+            "exp": true
+          },
+          "destinations": [
+            {
+              "location": "b1",
+              "probability": {
+                "exp": 1
+              }
+            }
+          ]
+        },
+        {
+          "location": "b1",
+          "action": "sync",
+          "guard": {
+            "exp": true
+          },
+          "destinations": [
+            {
+              "location": "b1",
+              "probability": {
+                "exp": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "system": {
+    "elements": [
+      {
+        "automaton": "A"
+      },
+      {
+        "automaton": "B"
+      }
+    ],
+    "syncs": [
+      {
+        "synchronise": [
+          "sync",
+          "sync"
+        ],
+        "result": "sync"
+      }
+    ]
+  }
+}

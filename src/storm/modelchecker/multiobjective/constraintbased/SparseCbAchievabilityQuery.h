@@ -2,8 +2,8 @@
 
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbQuery.h"
 
+#include "storm/expressions/Variable.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace modelchecker {
@@ -17,7 +17,7 @@ class SparseCbAchievabilityQuery : public SparseCbQuery<SparseModelType> {
    public:
     typedef typename SparseModelType::ValueType ValueType;
 
-    SparseCbAchievabilityQuery(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
+    SparseCbAchievabilityQuery(Environment const& env, preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
 
     virtual ~SparseCbAchievabilityQuery() = default;
 

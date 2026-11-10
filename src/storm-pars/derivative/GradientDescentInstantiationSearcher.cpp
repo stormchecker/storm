@@ -280,7 +280,9 @@ GradientDescentInstantiationSearcher<FunctionType, ConstantType>::stochasticGrad
         // Are we at a stochastic (in bounds) position?
         bool stochasticPosition = true;
         for (auto const& parameter : parameters) {
-            if (nesterovPredictedPosition[parameter] < 0 + precision || nesterovPredictedPosition[parameter] > 1 - precision) {
+            auto const lower = region ? region->getLowerBoundary(parameter) : precision;
+            auto const upper = region ? region->getUpperBoundary(parameter) : utility::one<CoefficientType<FunctionType>>() - precision;
+            if (nesterovPredictedPosition[parameter] < lower || nesterovPredictedPosition[parameter] > upper) {
                 stochasticPosition = false;
                 break;
             }
@@ -375,9 +377,7 @@ GradientDescentInstantiationSearcher<FunctionType, ConstantType>::stochasticGrad
 }
 
 template<typename FunctionType, typename ConstantType>
-std::pair<std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>,
-          typename GradientDescentInstantiationSearcher<FunctionType, ConstantType>::ExtendedConstantType>
-GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescent() {
+storm::pars::FeasibilityResult<ConstantType> GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescent() {
     STORM_LOG_ASSERT(this->synthesisTask, "Call setup before calling gradientDescent.");
 
     resetDynamicValues();
@@ -392,7 +392,13 @@ GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescen
     std::default_random_engine engine(device());
     std::uniform_real_distribution<> dist(0, 1);
     bool initialGuess = true;
-    std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> point;
+    auto point = startPoint.value_or(region ? region->getCenterPoint() : std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>{});
+    // Instantiation also evaluates reward models that do not occur in the queried property.
+    for (auto const& parameter : storm::models::sparse::getRewardParameters(model)) {
+        auto const initialValue = region && region->getVariables().count(parameter) ? region->getCenter(parameter)
+                                                                                    : utility::convertNumber<CoefficientType<FunctionType>>(0.5 + 1e-6);
+        point.emplace(parameter, initialValue);
+    }
     while (true) {
         STORM_LOG_PROGRESS("Trying out a new starting point\n");
         if (initialGuess) {
@@ -412,7 +418,8 @@ GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescen
                 // Do nothing
             } else {
                 logarithmicBarrierTerm = utility::convertNumber<ConstantType>(0.1);
-                point[param] = utility::convertNumber<CoefficientType<FunctionType>>(dist(engine));
+                auto const sample = utility::convertNumber<CoefficientType<FunctionType>>(dist(engine));
+                point[param] = region ? region->getLowerBoundary(param) + sample * region->getDifference(param) : sample;
             }
         }
         initialGuess = false;
@@ -469,7 +476,7 @@ GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescen
     }
 
     STORM_LOG_ASSERT(bestValue.has_value(), "Expected at least one evaluated instantiation.");
-    return std::make_pair(bestInstantiation, *bestValue);
+    return {*bestValue, bestInstantiation};
 }
 
 template<typename FunctionType, typename ConstantType>

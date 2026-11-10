@@ -1,24 +1,24 @@
 #pragma once
 
 #include "storm-counterexamples/counterexamples/Counterexample.h"
-#include "storm/storage/SymbolicModelDescription.h"
+#include "storm/languages/SymbolicModelDescription.h"
 
 namespace storm {
 namespace counterexamples {
 
 class HighLevelCounterexample : public Counterexample {
    public:
-    HighLevelCounterexample(storm::storage::SymbolicModelDescription const& model);
+    HighLevelCounterexample(storm::languages::SymbolicModelDescription const& model);
 
     void writeToStream(std::ostream& out) const override;
 
     bool isPrismHighLevelCounterexample() const;
     bool isJaniHighLevelCounterexample() const;
 
-    storm::storage::SymbolicModelDescription const& getModelDescription() const;
+    storm::languages::SymbolicModelDescription const& getModelDescription() const;
 
    private:
-    storm::storage::SymbolicModelDescription model;
+    storm::languages::SymbolicModelDescription model;
 };
 
 }  // namespace counterexamples

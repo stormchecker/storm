@@ -1,15 +1,9 @@
 #include "storm/environment/solver/GlpkSolverEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GlpkSettings.h"
-
 namespace storm {
 
-GlpkSolverEnvironment::GlpkSolverEnvironment() {
-    auto const& glpkSettings = storm::settings::getModule<storm::settings::modules::GlpkSettings>();
-    integerTolerance = glpkSettings.getIntegerTolerance();
-    milpPresolverEnabled = glpkSettings.isMILPPresolverEnabled();
-    output = glpkSettings.isOutputSet();
+GlpkSolverEnvironment::GlpkSolverEnvironment() : integerTolerance(1e-06), milpPresolverEnabled(true), output(false) {
+    // Intentionally left empty.
 }
 
 GlpkSolverEnvironment::~GlpkSolverEnvironment() {

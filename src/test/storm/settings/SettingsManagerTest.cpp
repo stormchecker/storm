@@ -4,6 +4,7 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
 namespace {
@@ -59,6 +60,10 @@ TEST(SettingsManagerTest, ValueWithLeadingDashShortOption) {
 TEST(SettingsManagerTest, ValueWithLeadingDashFollowedByKnownOption) {
     storm::settings::mutableManager().setFromExplodedString({"--optionc", "-1 <= x <= 1", "--verbose"});
     EXPECT_EQ("-1 <= x <= 1", storm::settings::getModule<SettingsParsingTestModule>().getOptionString("optionc"));
+
+    // The "--verbose" option is only used here as a known option to test the parsing behavior. Setting it mutates the global
+    // settings manager, so we restore the defaults to avoid influencing other tests depending on the test execution order.
+    storm::settings::mutableManager().getModule(storm::settings::modules::GeneralSettings::moduleName).restoreDefaults();
 }
 
 TEST(SettingsManagerTest, KnownOptionNotSwallowedAsValue) {

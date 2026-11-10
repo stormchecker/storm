@@ -1,5 +1,8 @@
 #include "storm/solver/stateelimination/EquationSystemEliminator.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+
 namespace storm {
 namespace solver {
 namespace stateelimination {

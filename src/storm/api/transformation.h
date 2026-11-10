@@ -141,10 +141,20 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> transformToNondetermini
         components.markovianStates = storm::storage::BitVector(components.transitionMatrix.getRowGroupCount(), true);
         return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::MarkovAutomaton, std::move(components));
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException,
-                        "Cannot transform model of type " << model.getType() << " to a nondeterministic model.");
+        STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidOperationException,
+                                        "Cannot transform model of type " << model.getType() << " to a nondeterministic model.");
     }
 }
+
+/*!
+ * Identifies states of the given model that are equivalent  w.r.t. to the given formula and merges them into a single state, yielding a (potentially smaller)
+ * model on which the given formula can still be checked.
+ * @note depending on the formula, this merges, e.g., states with probability 0/1 or reward 0/infty based on graph-based analysis.
+ * @return the resulting model, or nullptr if merging is not applicable (e.g. because the model type or the formula is not supported).
+ */
+template<typename ValueType>
+std::shared_ptr<storm::models::sparse::Model<ValueType>> mergeEquivalentStatesForFormula(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                                                                         storm::logic::Formula const& formula);
 
 /*!
  * Permutes the order of the states of the model according to the given order.

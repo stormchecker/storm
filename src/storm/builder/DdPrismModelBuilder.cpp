@@ -4,19 +4,19 @@
 
 #include "storm/adapters/AddExpressionAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdManager.h"
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/languages/prism/Compositions.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/prism/Compositions.h"
-#include "storm/storage/prism/Program.h"
 #include "storm/utility/dd.h"
 
 namespace storm {
@@ -1076,7 +1076,7 @@ typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismMode
 
         return ActionDecisionDiagram(action1.guardDd || action2.guardDd, combinedTransitions, assignedGlobalVariables, numberOfUsedNondeterminismVariables + 1);
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Illegal model type.");
+        STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidStateException, "Illegal model type.");
     }
 }
 

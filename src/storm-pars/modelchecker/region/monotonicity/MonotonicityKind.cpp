@@ -22,8 +22,8 @@ std::ostream& operator<<(std::ostream& out, MonotonicityKind kind) {
             out << "Unknown";
             break;
         default:
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                            "Could not get a string from the region monotonicity check result. The case has not been implemented.");
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::NotImplementedException,
+                                            "Could not get a string from the region monotonicity check result. The case has not been implemented.");
     }
     return out;
 }

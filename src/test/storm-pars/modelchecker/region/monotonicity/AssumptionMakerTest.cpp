@@ -9,24 +9,25 @@
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm-pars/modelchecker/region/monotonicity/Order.h"
 #include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
+#include "storm/environment/Environment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/graph.h"
 
 class AssumptionMakerTest : public ::testing::Test {
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 };
@@ -43,7 +44,7 @@ TEST_F(AssumptionMakerTest, Brp_without_bisimulation) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
     model = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
@@ -63,24 +64,35 @@ TEST_F(AssumptionMakerTest, Brp_without_bisimulation) {
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple), region);
 
-    EXPECT_EQ(3ul, result.size());
+    // The candidate count is a prerequisite for the indexed accesses below, so fail hard here
+    // rather than continuing into unchecked operator[] calls.
+    ASSERT_EQ(3ul, result.size());
 
     for (auto res : result) {
         EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, res.second);
-        EXPECT_EQ(true, res.first->getFirstOperand()->isVariable());
-        EXPECT_EQ(true, res.first->getSecondOperand()->isVariable());
     }
 
-    assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
+    // Regression test: when more than one candidate survives, they must be returned in construction
+    // order (val1 > val2, val2 > val1, val1 == val2), not e.g. heap-address order of some internal
+    // representation.
+    EXPECT_EQ(183ul, result[0].first.state1);
+    EXPECT_EQ(186ul, result[0].first.state2);
+    EXPECT_EQ(storm::analysis::AssumptionRelation::Greater, result[0].first.relation);
+    EXPECT_EQ(186ul, result[1].first.state1);
+    EXPECT_EQ(183ul, result[1].first.state2);
+    EXPECT_EQ(storm::analysis::AssumptionRelation::Greater, result[1].first.relation);
+    EXPECT_EQ(183ul, result[2].first.state1);
+    EXPECT_EQ(186ul, result[2].first.state2);
+    EXPECT_EQ(storm::analysis::AssumptionRelation::Equal, result[2].first.relation);
+
+    assumptionMaker.initializeCheckingOnSamples(storm::Environment(), formulas[0], model, region, 10);
     result = assumptionMaker.createAndCheckAssumptions(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple), region);
     EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, itr->second);
-    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
-    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
-    EXPECT_EQ("186", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ("183", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(186ul, itr->first.state1);
+    EXPECT_EQ(183ul, itr->first.state2);
+    EXPECT_EQ(storm::analysis::AssumptionRelation::Greater, itr->first.relation);
 }
 
 TEST_F(AssumptionMakerTest, Simple1) {
@@ -94,7 +106,7 @@ TEST_F(AssumptionMakerTest, Simple1) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
@@ -118,7 +130,7 @@ TEST_F(AssumptionMakerTest, Simple1) {
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
     EXPECT_EQ(0ul, result.size());
-    assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
+    assumptionMaker.initializeCheckingOnSamples(storm::Environment(), formulas[0], model, region, 10);
     result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
     EXPECT_EQ(0ul, result.size());
 
@@ -129,11 +141,9 @@ TEST_F(AssumptionMakerTest, Simple1) {
     EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, itr->second);
-    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
-    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
-    EXPECT_EQ("1", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ("2", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(1ul, itr->first.state1);
+    EXPECT_EQ(2ul, itr->first.state2);
+    EXPECT_EQ(storm::analysis::AssumptionRelation::Greater, itr->first.relation);
 }
 
 TEST_F(AssumptionMakerTest, Casestudy1) {
@@ -147,7 +157,7 @@ TEST_F(AssumptionMakerTest, Casestudy1) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
     model = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
@@ -175,9 +185,7 @@ TEST_F(AssumptionMakerTest, Casestudy1) {
     EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, itr->second);
-    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
-    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
-    EXPECT_EQ("1", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ("2", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(1ul, itr->first.state1);
+    EXPECT_EQ(2ul, itr->first.state2);
+    EXPECT_EQ(storm::analysis::AssumptionRelation::Greater, itr->first.relation);
 }

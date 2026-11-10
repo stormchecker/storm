@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 
 namespace storm {
 namespace logic {

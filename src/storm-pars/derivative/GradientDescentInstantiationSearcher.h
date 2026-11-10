@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/variant.hpp>
 #include <map>
 #include <memory>
 
@@ -8,6 +9,7 @@
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
+#include "storm-pars/utility/FeasibilityResult.h"
 #include "storm-pars/utility/FeasibilitySynthesisTask.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/environment/Environment.h"
@@ -170,9 +172,7 @@ class GradientDescentInstantiationSearcher {
     /**
      * Perform Gradient Descent.
      */
-    std::pair<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>,
-              ExtendedConstantType>
-    gradientDescent();
+    storm::pars::FeasibilityResult<ConstantType> gradientDescent();
 
     /**
      * Print the previously done run as JSON. This run can be retrieved using getVisualizationWalk.
@@ -263,11 +263,7 @@ class GradientDescentInstantiationSearcher {
         std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>& position,
         const std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType>& gradient, uint_fast64_t stepNum);
     ConstantType constantTypeSqrt(ConstantType input) {
-        if (std::is_same<ConstantType, double>::value) {
-            return utility::sqrt(input);
-        } else {
-            return carl::sqrt(input);
-        }
+        return storm::utility::sqrt(input);
     }
 
     utility::Stopwatch stochasticWatch;

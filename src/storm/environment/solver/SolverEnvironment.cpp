@@ -1,11 +1,8 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 
+#include "storm-config.h"
 #include "storm/environment/solver/AllSolverEnvironments.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/utility/macros.h"
 
@@ -15,20 +12,85 @@
 namespace storm {
 
 SolverEnvironment::SolverEnvironment() {
-    auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-    forceSoundness = generalSettings.isSoundSet();
-    forceExact = generalSettings.isExactSet() || generalSettings.isExactFinitePrecisionSet();
-    linearEquationSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
-    linearEquationSolverTypeSetFromDefault = storm::settings::getModule<storm::settings::modules::CoreSettings>().isEquationSolverSetFromDefaultValue();
-    lpSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver();
-    lpSolverTypeSetFromDefault = storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue();
-    debug = storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet();
-    verbose = generalSettings.isVerboseSet();
-    showProgressDelay = generalSettings.getShowProgressDelay();
+    forceSoundness = false;
+    forceExact = false;
+    linearEquationSolverType = storm::solver::EquationSolverType::Topological;
+    linearEquationSolverTypeSetFromDefault = true;
+#if defined STORM_HAVE_HIGHS
+    lpSolverType = storm::solver::LpSolverType::Highs;
+#elif defined STORM_HAVE_GLPK
+    lpSolverType = storm::solver::LpSolverType::Glpk;
+#elif defined STORM_HAVE_SOPLEX
+    lpSolverType = storm::solver::LpSolverType::Soplex;
+#else
+    lpSolverType = storm::solver::LpSolverType::Z3;
+#endif
+    lpSolverTypeSetFromDefault = true;
+#if defined STORM_DEFAULT_SMT_SOLVER_Z3
+    smtSolverType = storm::solver::SmtSolverType::Z3;
+#elif defined STORM_DEFAULT_SMT_SOLVER_MATHSAT
+    smtSolverType = storm::solver::SmtSolverType::Mathsat;
+#elif defined STORM_DEFAULT_SMT_SOLVER_CVC5
+    smtSolverType = storm::solver::SmtSolverType::Cvc5;
+#else
+    smtSolverType = storm::solver::SmtSolverType::Z3;
+#endif
+    smtSolverTypeSetFromDefault = true;
+    debug = false;
+    verbose = false;
+    showProgressDelay = 5;
 }
 
 SolverEnvironment::~SolverEnvironment() {
     // Intentionally left empty
+}
+
+EigenSolverEnvironment& SolverEnvironment::eigen() {
+    return eigenSolverEnvironment.get();
+}
+
+EigenSolverEnvironment const& SolverEnvironment::eigen() const {
+    return eigenSolverEnvironment.get();
+}
+
+EliminationSolverEnvironment& SolverEnvironment::elimination() {
+    return eliminationSolverEnvironment.get();
+}
+
+EliminationSolverEnvironment const& SolverEnvironment::elimination() const {
+    return eliminationSolverEnvironment.get();
+}
+
+GameSolverEnvironment& SolverEnvironment::game() {
+    return gameSolverEnvironment.get();
+}
+
+GameSolverEnvironment const& SolverEnvironment::game() const {
+    return gameSolverEnvironment.get();
+}
+
+GlpkSolverEnvironment& SolverEnvironment::glpk() {
+    return glpkSolverEnvironment.get();
+}
+
+GlpkSolverEnvironment const& SolverEnvironment::glpk() const {
+    return glpkSolverEnvironment.get();
+}
+
+GmmxxSolverEnvironment& SolverEnvironment::gmmxx() {
+    return gmmxxSolverEnvironment.get();
+}
+
+GmmxxSolverEnvironment const& SolverEnvironment::gmmxx() const {
+    return gmmxxSolverEnvironment.get();
+}
+
+GurobiSolverEnvironment& SolverEnvironment::gurobi() {
+    return gurobiSolverEnvironment.get();
+}
+
+GurobiSolverEnvironment const& SolverEnvironment::gurobi() const {
+    return gurobiSolverEnvironment.get();
 }
 
 LongRunAverageSolverEnvironment& SolverEnvironment::lra() {
@@ -37,14 +99,6 @@ LongRunAverageSolverEnvironment& SolverEnvironment::lra() {
 
 LongRunAverageSolverEnvironment const& SolverEnvironment::lra() const {
     return longRunAverageSolverEnvironment.get();
-}
-
-TimeBoundedSolverEnvironment& SolverEnvironment::timeBounded() {
-    return timeBoundedSolverEnvironment.get();
-}
-
-TimeBoundedSolverEnvironment const& SolverEnvironment::timeBounded() const {
-    return timeBoundedSolverEnvironment.get();
 }
 
 MinMaxSolverEnvironment& SolverEnvironment::minMax() {
@@ -63,52 +117,12 @@ MultiplierEnvironment const& SolverEnvironment::multiplier() const {
     return multiplierEnvironment.get();
 }
 
-EigenSolverEnvironment& SolverEnvironment::eigen() {
-    return eigenSolverEnvironment.get();
-}
-
-EigenSolverEnvironment const& SolverEnvironment::eigen() const {
-    return eigenSolverEnvironment.get();
-}
-
-GmmxxSolverEnvironment& SolverEnvironment::gmmxx() {
-    return gmmxxSolverEnvironment.get();
-}
-
-GmmxxSolverEnvironment const& SolverEnvironment::gmmxx() const {
-    return gmmxxSolverEnvironment.get();
-}
-
 NativeSolverEnvironment& SolverEnvironment::native() {
     return nativeSolverEnvironment.get();
 }
 
 NativeSolverEnvironment const& SolverEnvironment::native() const {
     return nativeSolverEnvironment.get();
-}
-
-GameSolverEnvironment& SolverEnvironment::game() {
-    return gameSolverEnvironment.get();
-}
-
-GameSolverEnvironment const& SolverEnvironment::game() const {
-    return gameSolverEnvironment.get();
-}
-
-TopologicalSolverEnvironment& SolverEnvironment::topological() {
-    return topologicalSolverEnvironment.get();
-}
-
-TopologicalSolverEnvironment const& SolverEnvironment::topological() const {
-    return topologicalSolverEnvironment.get();
-}
-
-EliminationSolverEnvironment& SolverEnvironment::elimination() {
-    return eliminationSolverEnvironment.get();
-}
-
-EliminationSolverEnvironment const& SolverEnvironment::elimination() const {
-    return eliminationSolverEnvironment.get();
 }
 
 OviSolverEnvironment& SolverEnvironment::ovi() {
@@ -119,44 +133,20 @@ OviSolverEnvironment const& SolverEnvironment::ovi() const {
     return oviSolverEnvironment.get();
 }
 
-GurobiSolverEnvironment& SolverEnvironment::gurobi() {
-    return gurobiSolverEnvironment.get();
+TimeBoundedSolverEnvironment& SolverEnvironment::timeBounded() {
+    return timeBoundedSolverEnvironment.get();
 }
 
-GurobiSolverEnvironment const& SolverEnvironment::gurobi() const {
-    return gurobiSolverEnvironment.get();
+TimeBoundedSolverEnvironment const& SolverEnvironment::timeBounded() const {
+    return timeBoundedSolverEnvironment.get();
 }
 
-GlpkSolverEnvironment& SolverEnvironment::glpk() {
-    return glpkSolverEnvironment.get();
+TopologicalSolverEnvironment& SolverEnvironment::topological() {
+    return topologicalSolverEnvironment.get();
 }
 
-GlpkSolverEnvironment const& SolverEnvironment::glpk() const {
-    return glpkSolverEnvironment.get();
-}
-
-bool SolverEnvironment::isForceSoundness() const {
-    return forceSoundness;
-}
-
-void SolverEnvironment::setForceSoundness(bool value) {
-    SolverEnvironment::forceSoundness = value;
-}
-
-bool SolverEnvironment::isForceExact() const {
-    return forceExact;
-}
-
-void SolverEnvironment::setForceExact(bool value) {
-    SolverEnvironment::forceExact = value;
-}
-
-bool SolverEnvironment::isDebugSet() const {
-    return debug;
-}
-
-void SolverEnvironment::setDebug(bool value) {
-    SolverEnvironment::debug = value;
+TopologicalSolverEnvironment const& SolverEnvironment::topological() const {
+    return topologicalSolverEnvironment.get();
 }
 
 bool SolverEnvironment::isVerboseSet() const {
@@ -199,6 +189,19 @@ void SolverEnvironment::setLpSolverType(storm::solver::LpSolverType const& value
 
 bool SolverEnvironment::isLpSolverTypeSetFromDefaultValue() const {
     return lpSolverTypeSetFromDefault;
+}
+
+storm::solver::SmtSolverType const& SolverEnvironment::getSmtSolverType() const {
+    return smtSolverType;
+}
+
+void SolverEnvironment::setSmtSolverType(storm::solver::SmtSolverType const& value, bool isSetFromDefault) {
+    smtSolverTypeSetFromDefault = isSetFromDefault;
+    smtSolverType = value;
+}
+
+bool SolverEnvironment::isSmtSolverTypeSetFromDefaultValue() const {
+    return smtSolverTypeSetFromDefault;
 }
 
 std::pair<boost::optional<storm::RationalNumber>, boost::optional<bool>> SolverEnvironment::getPrecisionOfLinearEquationSolver(
@@ -246,4 +249,28 @@ void SolverEnvironment::setLinearEquationSolverPrecision(boost::optional<storm::
         // gmm, eigen, elimination, and topological solvers do not have a precision
     }
 }
+
+bool SolverEnvironment::isForceSoundness() const {
+    return forceSoundness;
+}
+
+void SolverEnvironment::setForceSoundness(bool value) {
+    SolverEnvironment::forceSoundness = value;
+}
+bool SolverEnvironment::isForceExact() const {
+    return forceExact;
+}
+
+void SolverEnvironment::setForceExact(bool value) {
+    SolverEnvironment::forceExact = value;
+}
+
+bool SolverEnvironment::isDebugSet() const {
+    return debug;
+}
+
+void SolverEnvironment::setDebug(bool value) {
+    SolverEnvironment::debug = value;
+}
+
 }  // namespace storm

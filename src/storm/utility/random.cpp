@@ -2,6 +2,8 @@
 
 #include <limits>
 
+#include "storm/utility/constants.h"
+
 namespace storm {
 namespace utility {
 RandomProbabilityGenerator<double>::RandomProbabilityGenerator() : distribution(0.0, 1.0) {
@@ -27,7 +29,8 @@ RandomProbabilityGenerator<RationalNumber>::RandomProbabilityGenerator() : distr
 RandomProbabilityGenerator<RationalNumber>::RandomProbabilityGenerator(uint64_t seed) : distribution(0, std::numeric_limits<uint64_t>::max()), engine(seed) {}
 
 RationalNumber RandomProbabilityGenerator<RationalNumber>::random() {
-    return carl::rationalize<RationalNumber>(distribution(engine)) / carl::rationalize<RationalNumber>(std::numeric_limits<uint64_t>::max());
+    return storm::utility::convertNumber<RationalNumber>(distribution(engine)) /
+           storm::utility::convertNumber<RationalNumber>(std::numeric_limits<uint64_t>::max());
 }
 
 uint64_t RandomProbabilityGenerator<RationalNumber>::random_uint(uint64_t min, uint64_t max) {

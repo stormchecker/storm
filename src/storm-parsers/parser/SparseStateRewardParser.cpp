@@ -64,7 +64,7 @@ std::vector<ValueType> SparseStateRewardParser<ValueType>::parseSparseStateRewar
     return stateRewards;
 }
 
-template class SparseStateRewardParser<double>;
-template class SparseStateRewardParser<storm::Interval>;
+template class STORM_PARSERS_API SparseStateRewardParser<double>;
+template class STORM_PARSERS_API SparseStateRewardParser<storm::Interval>;
 }  // namespace parser
 }  // namespace storm

@@ -1,7 +1,7 @@
 #pragma once
 #include "storm/environment/Environment.h"
+#include "storm/languages/jani/Model.h"
 #include "storm/models/sparse/Pomdp.h"
-#include "storm/storage/jani/Model.h"
 
 namespace storm {
 

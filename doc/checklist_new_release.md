@@ -7,7 +7,7 @@ Note that in most cases a simultaneous release of [carl-storm](https://github.co
    This should be automatically handled by a CI workflow triggered by new releases in carl-storm.
    To manually update the carl version, update the following locations:
    * `STORM_CARL_GIT_TAG` in `CMakeLists.txt`
-   * `carl_tag` in `Dockerfile`, `.github/workflows/Dockerfile.alpine`, `.github/workflows/Dockerfile.archlinux` and `.github/workflows/Dockerfile.release`
+   * `carl_tag` in `Dockerfile` and `.github/workflows/Dockerfile.release`
 
 2. Update the versions of the dependencies in the [storm-dependencies Dockerfile](https://github.com/stormchecker/docker-storm/blob/main/storm-dependencies/Dockerfile).
    Use the [CI of docker-storm](https://github.com/stormchecker/docker-storm/actions/workflows/dependencies.yml) to create new Docker images.
@@ -27,7 +27,8 @@ At this point, all relevant pull requests should have been merged into Storm and
      git log last_tag..HEAD
      ```
 
-5. Set new Storm version in `CMakeList.cmake`.
+5. Set new Storm version `X.Y.Z` in `project(storm VERSION ...)` in `CMakeLists.txt`.
+   Remove the development counter `.N` (see [Versioning](developers.md#versioning)).
 
 6. Create a new pull request with the changes of steps 4 and 5.
    When the CI checks are successful, stash and merge the pull request into the master branch.
@@ -42,11 +43,12 @@ At this point, all relevant pull requests should have been merged into Storm and
 
 8. [Create a new release](https://github.com/stormchecker/storm/releases/new) on GitHub.
    Create a new tag or use the tag created in the previous step.
-   Finishing the release automatically triggers a CI workflow which also
+   Finishing the release automatically triggers the CI workflow `.github/workflows/release.yml` which
+   * checks that both the release tag and the Storm version in `CMakeLists.txt` are `X.Y.Z` (without development counter)
    * updates the `stable` branch
    * creates new Docker containers for both the tag and `stable` branch
    * triggers a PR in stormpy to update the Storm version
-   * triggers a PR in Storm to set the development version of Storm again
+   * triggers a PR in Storm to set the development version `X.Y.Z.1` of Storm again
 
 
 ## After the release

@@ -4,14 +4,13 @@
 #include "storm-gamebased-ar/abstraction/ExpressionTranslator.h"
 #include "storm-gamebased-ar/abstraction/GameBddResult.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/prism/Program.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
@@ -21,13 +20,12 @@ namespace storm::gbar {
 namespace abstraction {
 namespace prism {
 
-using storm::settings::modules::AbstractionSettings;
-
 template<storm::dd::DdType DdType, typename ValueType>
 PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::Environment const& env, storm::prism::Program const& program,
                                                                     std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
-                                                                    MenuGameAbstractorOptions const& options)
-    : program(program),
+                                                                    AbstractionOptions const& options)
+    : MenuGameAbstractor<DdType, ValueType>(options),
+      program(program),
       smtSolverFactory(smtSolverFactory),
       abstractionInformation(env, program.getManager(), program.getAllExpressionVariables(), smtSolverFactory->create(program.getManager()),
                              AbstractionInformationOptions(options.constraints)),
@@ -66,11 +64,10 @@ PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::Envir
                                                    static_cast<uint_fast64_t>(std::ceil(std::log2(maximalUpdateCount))));
 
     // For each module of the concrete program, we create an abstract counterpart.
-    auto const& settings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
-    bool useDecomposition = settings.isUseDecompositionSet();
-    restrictToValidBlocks = settings.getValidBlockMode() == storm::settings::modules::AbstractionSettings::ValidBlockMode::BlockEnumeration;
+    bool useDecomposition = options.useDecomposition;
+    restrictToValidBlocks = options.restrictToValidBlocks;
     bool addPredicatesForValidBlocks = !restrictToValidBlocks;
-    bool debug = settings.isDebugSet();
+    bool debug = options.debug;
     for (auto const& module : program.getModules()) {
         this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory, useDecomposition, addPredicatesForValidBlocks, debug);
     }

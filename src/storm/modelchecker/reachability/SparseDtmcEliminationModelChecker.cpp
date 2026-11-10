@@ -18,7 +18,7 @@
 #include "storm/solver/stateelimination/PrioritizedStateEliminator.h"
 #include "storm/solver/stateelimination/StateEliminationUtility.h"
 #include "storm/solver/stateelimination/StaticStatePriorityQueue.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -512,11 +512,9 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     if (computeForInitialStatesOnly) {
         // If we computed the results for the initial (and prob 0 and prob1) states only, we need to filter the
         // result to only communicate these results.
-        std::unique_ptr<ExplicitQuantitativeCheckResult<ValueType>> checkResult = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>();
-        for (uint64_t state : ~maybeStates | initialStates) {
-            (*checkResult)[state] = result[state];
-        }
-        return std::move(checkResult);  // move() required by, e.g., clang 3.8
+        storm::storage::BitVector relevantStates = ~maybeStates | initialStates;
+        std::vector<ValueType> relevantValues = storm::utility::vector::filterVector(result, relevantStates);
+        return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(relevantStates), std::move(relevantValues));
     }
     return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
 }
@@ -621,15 +619,19 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     if (computeForInitialStatesOnly) {
         // If we computed the results for the initial (and inf) states only, we need to filter the result to
         // only communicate these results.
-        std::unique_ptr<ExplicitQuantitativeCheckResult<ValueType>> checkResult = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>();
-        for (uint64_t state : ~maybeStates | initialStates) {
-            (*checkResult)[state] = result[state];
-        }
-        return std::move(checkResult);  // move() required by, e.g., clang 3.8
+        storm::storage::BitVector relevantStates = ~maybeStates | initialStates;
+        auto relevantValues = storm::utility::vector::filterVector(result, relevantStates);
+        return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(relevantStates), std::move(relevantValues));
     }
     return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
 }
 
+// GCC 15 raises a false positive -Wfree-nonheap-object when compiling SparseDtmcEliminationModelChecker
+// with GMP rational functions (STORM_USE_CLN_RF=OFF) in Release mode: the inlined std::vector destructor
+// for MatrixEntry<..., RationalFunction<..., GMP>> is incorrectly flagged. Not a real memory error.
+// See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108846
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(
     Environment const& env, CheckTask<storm::logic::ConditionalFormula, SolutionType> const& checkTask) {
@@ -867,6 +869,7 @@ void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performPrioritizedS
         }
     }
 }
+#pragma GCC diagnostic pop
 
 template<typename SparseDtmcModelType>
 void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performOrdinaryStateElimination(

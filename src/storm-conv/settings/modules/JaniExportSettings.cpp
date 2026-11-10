@@ -1,5 +1,6 @@
 #include "JaniExportSettings.h"
 
+#include "storm-conv/converter/options/JaniConversionOptions.h"
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
@@ -11,6 +12,12 @@
 namespace storm {
 namespace settings {
 namespace modules {
+
+namespace {
+// The defaults of the options are taken from the library's default-constructed options.
+storm::converter::JaniConversionOptions const defaultOptions;
+}  // namespace
+
 const std::string JaniExportSettings::moduleName = "exportJani";
 
 const std::string JaniExportSettings::edgeAssignmentsOptionName = "edge-assignments";
@@ -66,12 +73,12 @@ JaniExportSettings::JaniExportSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument(
                                          "location-heuristic", "If this number of locations is reached, no further unfolding will be performed")
-                                         .setDefaultValueUnsignedInteger(10)
+                                         .setDefaultValueUnsignedInteger(defaultOptions.locationEliminationLocationHeuristic)
                                          .makeOptional()
                                          .build())
                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument(
                                          "edges-heuristic", "Determines how many new edges may be created by a single elimination")
-                                         .setDefaultValueUnsignedInteger(10000)
+                                         .setDefaultValueUnsignedInteger(defaultOptions.locationEliminationEdgeHeuristic)
                                          .makeOptional()
                                          .build())
                         .build());

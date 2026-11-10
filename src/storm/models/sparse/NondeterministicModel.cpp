@@ -6,9 +6,9 @@
 #include "storm/io/export.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/transformer/SubsystemBuilder.h"
 
 namespace storm {

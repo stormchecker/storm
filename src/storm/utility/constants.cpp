@@ -1,6 +1,7 @@
 #include "storm/utility/constants.h"
 
 #include <cmath>
+#include <numeric>
 
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -351,6 +352,16 @@ std::pair<IntegerType, IntegerType> divide(IntegerType const& dividend, IntegerT
     return std::make_pair(dividend / divisor, mod(dividend, divisor));
 }
 
+template<typename IntegerType>
+IntegerType gcd(IntegerType const& first, IntegerType const& second) {
+    return std::gcd(first, second);
+}
+
+template<typename IntegerType>
+IntegerType lcm(IntegerType const& first, IntegerType const& second) {
+    return std::lcm(first, second);
+}
+
 template<typename ValueType>
 std::string to_string(ValueType const& value) {
     std::stringstream ss;
@@ -473,17 +484,17 @@ double convertNumber(ClnRationalNumber const& number) {
 }
 
 template<>
-ClnRationalNumber convertNumber(std::string const& number) {
-    ClnRationalNumber result;
-    if (carl::try_parse<ClnRationalNumber>(number, result)) {
-        return result;
-    }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unable to parse '" << number << "' as a rational number.");
+bool tryParseNumber(std::string const& input, ClnRationalNumber& result) {
+    return carl::try_parse<ClnRationalNumber>(input, result);
 }
 
 template<>
-std::pair<ClnRationalNumber, ClnRationalNumber> asFraction(ClnRationalNumber const& number) {
-    return std::make_pair(carl::getNum(number), carl::getDenom(number));
+ClnRationalNumber convertNumber(std::string const& number) {
+    ClnRationalNumber result;
+    if (tryParseNumber(number, result)) {
+        return result;
+    }
+    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unable to parse '" << number << "' as a rational number.");
 }
 
 template<>
@@ -543,6 +554,18 @@ std::pair<typename NumberTraits<ClnRationalNumber>::IntegerType, typename Number
     std::pair<typename NumberTraits<ClnRationalNumber>::IntegerType, typename NumberTraits<ClnRationalNumber>::IntegerType> result;
     carl::divide(dividend, divisor, result.first, result.second);
     return result;
+}
+
+template<>
+typename NumberTraits<ClnRationalNumber>::IntegerType gcd(typename NumberTraits<ClnRationalNumber>::IntegerType const& first,
+                                                          typename NumberTraits<ClnRationalNumber>::IntegerType const& second) {
+    return carl::gcd(first, second);
+}
+
+template<>
+typename NumberTraits<ClnRationalNumber>::IntegerType lcm(typename NumberTraits<ClnRationalNumber>::IntegerType const& first,
+                                                          typename NumberTraits<ClnRationalNumber>::IntegerType const& second) {
+    return carl::lcm(first, second);
 }
 
 template<>
@@ -702,17 +725,17 @@ double convertNumber(GmpRationalNumber const& number) {
 }
 
 template<>
-GmpRationalNumber convertNumber(std::string const& number) {
-    GmpRationalNumber result;
-    if (carl::try_parse<GmpRationalNumber>(number, result)) {
-        return result;
-    }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unable to parse '" << number << "' as a rational number.");
+bool tryParseNumber(std::string const& input, GmpRationalNumber& result) {
+    return carl::try_parse<GmpRationalNumber>(input, result);
 }
 
 template<>
-std::pair<GmpRationalNumber, GmpRationalNumber> asFraction(GmpRationalNumber const& number) {
-    return std::make_pair(carl::getNum(number), carl::getDenom(number));
+GmpRationalNumber convertNumber(std::string const& number) {
+    GmpRationalNumber result;
+    if (tryParseNumber(number, result)) {
+        return result;
+    }
+    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unable to parse '" << number << "' as a rational number.");
 }
 
 template<>
@@ -773,6 +796,18 @@ std::pair<typename NumberTraits<GmpRationalNumber>::IntegerType, typename Number
     std::pair<typename NumberTraits<GmpRationalNumber>::IntegerType, typename NumberTraits<GmpRationalNumber>::IntegerType> result;
     carl::divide(dividend, divisor, result.first, result.second);
     return result;
+}
+
+template<>
+typename NumberTraits<GmpRationalNumber>::IntegerType gcd(typename NumberTraits<GmpRationalNumber>::IntegerType const& first,
+                                                          typename NumberTraits<GmpRationalNumber>::IntegerType const& second) {
+    return carl::gcd(first, second);
+}
+
+template<>
+typename NumberTraits<GmpRationalNumber>::IntegerType lcm(typename NumberTraits<GmpRationalNumber>::IntegerType const& first,
+                                                          typename NumberTraits<GmpRationalNumber>::IntegerType const& second) {
+    return carl::lcm(first, second);
 }
 
 template<>
@@ -1157,6 +1192,15 @@ storm::Interval abs(storm::Interval const& interval) {
 }
 
 template<>
+storm::Interval pow(storm::Interval const& value, int_fast64_t exponent) {
+    if (exponent >= 0) {
+        return value.pow(exponent);
+    } else {
+        return storm::utility::one<storm::Interval>() / value.pow(-exponent);
+    }
+}
+
+template<>
 bool isApproxEqual(storm::Interval const& a, storm::Interval const& b, storm::Interval const& precision, bool relative) {
     STORM_LOG_ASSERT(precision.isPointInterval(), "Precision must be a point interval.");
     return isApproxEqual<double>(a.lower(), b.lower(), precision.center(), relative) &&
@@ -1173,6 +1217,15 @@ bool isApproxEqual(storm::RationalInterval const& a, storm::RationalInterval con
 template<>
 storm::RationalInterval abs(storm::RationalInterval const& interval) {
     return interval.abs();
+}
+
+template<>
+storm::RationalInterval pow(storm::RationalInterval const& value, int_fast64_t exponent) {
+    if (exponent >= 0) {
+        return value.pow(exponent);
+    } else {
+        return storm::utility::one<storm::RationalInterval>() / value.pow(-exponent);
+    }
 }
 
 // Explicit instantiations.

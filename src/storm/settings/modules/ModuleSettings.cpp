@@ -65,6 +65,9 @@ uint_fast64_t ModuleSettings::getPrintLengthOfLongestOption(bool includeAdvanced
 
 void ModuleSettings::restoreDefaults() {
     for (auto& option : options) {
+        // Also reset flags (e.g. --sound) which have no arguments and hence no default value.
+        option->setHasOptionBeenSet(false);
+        option->setHasOptionBeenSetWithModulePrefix(false);
         for (auto& argument : option->getArguments()) {
             if (argument->getHasDefaultValue()) {
                 argument->setFromDefaultValue();
