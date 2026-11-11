@@ -89,9 +89,10 @@ See the dedicated documentation on [third-party dependencies](3rdparty_dependenc
   Version `X.Y.Z.N` should be read as: this is an updated version of `X.Y.Z` that has not been released as the next version yet.
   After a release, the CI automatically opens a PR that sets the version to `X.Y.Z.1`.
 - Increase `N` by one for changes on master which downstream tools such as stormpy need to detect, for example API changes.
-  Downstream tools can then require a specific development version:
+  The CI checks stormpy compatibility automatically.
+  Downstream tools can require a specific development version:
   ```cmake
-  find_package(storm 2.0.0.1 REQUIRED)
+  find_package(storm X.Y.Z.N REQUIRED)
   ```
 - CMake variable `STORM_VERSION` provides the release version information `X.Y.Z`, `STORM_VERSION_DEV` provides the development counter `N` (which is `0` for releases), and `STORM_VERSION_FULL_DEV` provides the full version `X.Y.Z.N`.
 
@@ -215,7 +216,7 @@ Workflows are in `.github/workflows/`:
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `ci.yml` | PR, push to master, weekly, manual | Full build+test matrix (Debug/Release, GMP/CLN combos, with/without optional deps), stormpy compatibility check |
+| `ci.yml` | PR, push to master, weekly, manual | Build+test matrix from `ci-configs.json` (Debug/Release, GMP/CLN combos, with/without optional deps), stormpy compatibility check |
 | `formatcheck.yml` | push, PR, manual | Checks `src/` with clang-format 20 |
 | `formatapply.yml` | manual | Auto-applies formatting and commits |
 | `lint-check.yml` | PR, manual | Runs clang-format and clang-tidy on the changed lines of a PR |
@@ -224,10 +225,10 @@ Workflows are in `.github/workflows/`:
 | `release.yml` | GitHub release published | Checks the version, deploys Docker images, updates the `stable` branch and triggers follow-up PRs |
 
 `ci.yml` covers multiple configurations including GMP/CLN combinations and a sanitizer build.
-The configurations are defined in `.github/workflows/ci-configs.json`.
-On every commit of a PR, a quick subset of the configurations is run (mode "quick").
-When the PR is labeled "ready for review" and on pushes to master, more configurations are run (mode "normal").
-The weekly run uses all configurations (mode "extensive").
+The configurations are defined in `.github/workflows/ci-configs.json`, grouped into three modes:
+- **quick**: runs on every commit of a PR. A quick subset of the configurations is run.
+- **normal**: runs when the PR is labeled `ready for review` and on pushes to master. Runs additional configurations (including all of **quick**).
+- **extensive**: runs when the PR is labeled `ci: extensive` and once per week. Runs extensive configurations checking various build configurations.
 In the modes "normal" and "extensive", the CI also checks whether stormpy (master) still builds and passes its tests with the changed Storm.
 A CI failure is most commonly caused by a formatting error (fix with `make format`) or a missing template instantiation for one of the `ValueType` variants.
 
