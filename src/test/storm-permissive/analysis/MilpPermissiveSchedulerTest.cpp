@@ -13,8 +13,8 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 
-// The default LP solver (HiGHS, GLPK or Z3) must support MILP; SoPlex does not.
-#if defined STORM_HAVE_HIGHS || defined STORM_HAVE_GLPK || defined STORM_HAVE_Z3
+// The default LP solver must support MILP. SoPlex does not and takes precedence over Z3 as default.
+#if defined STORM_HAVE_HIGHS || defined STORM_HAVE_GLPK || (defined STORM_HAVE_Z3 && !defined STORM_HAVE_SOPLEX)
 
 TEST(MilpPermissiveSchedulerTest, DieSelection) {
 #ifndef STORM_HAVE_SMT_SOLVER
