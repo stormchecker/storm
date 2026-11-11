@@ -216,22 +216,22 @@ Workflows are in `.github/workflows/`:
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `ci.yml` | PR, push to master, weekly, manual | Build+test matrix from `ci-configs.json` (Debug/Release, GMP/CLN combos, with/without optional deps) |
+| `ci.yml` | PR, push to master, weekly, manual | Build+test matrix from `ci-configs.json` (Debug/Release, GMP/CLN combos, with/without optional deps), stormpy compatibility check |
 | `formatcheck.yml` | push, PR, manual | Checks `src/` with clang-format 20 |
 | `formatapply.yml` | manual | Auto-applies formatting and commits |
-| `doxygen.yml` | push to master | Publishes API docs |
-| `release.yml` | tag push | Publishes GitHub releases |
+| `lint-check.yml` | PR, manual | Runs clang-format and clang-tidy on the changed lines of a PR |
+| `lint-full.yml` | weekly, manual | Runs clang-format and clang-tidy on the full codebase |
+| `doxygen.yml` | daily, manual | Publishes API docs |
+| `release.yml` | GitHub release published | Checks the version, deploys Docker images, updates the `stable` branch and triggers follow-up PRs |
 
-`ci.yml` covers multiple configurations including GMP/CLN combinations and a sanitizer build. A CI failure is most commonly caused by a formatting error (fix with `make format`) or a missing template instantiation for one of the `ValueType` variants.
-The configurations are defined in `ci-configs.json`, grouped into three modes:
-- **quick**: every commit of a pull request.
-- **normal**: pull requests with the label `ready for review`, every push to master.
-- **extensive**: pull requests with the label `ci: extensive` (for every commit until the label is removed), weekly, or manually via *Run workflow*.
+`ci.yml` covers multiple configurations including GMP/CLN combinations and a sanitizer build.
+The configurations are defined in `.github/workflows/ci-configs.json`, grouped into three modes:
+- **quick**: runs on every commit of a PR. A quick subset of the configurations is run.
+- **normal**: runs when the PR is labeled `ready for review` and on pushes to master. Runs additional configurations (including all of **quick**).
+- **extensive**: runs when the PR is labeled `ci: extensive` and once per week. Runs extensive configurations checking various build configurations.
+In the modes "normal" and "extensive", the CI also checks whether stormpy (master) still builds and passes its tests with the changed Storm.
+A CI failure is most commonly caused by a formatting error (fix with `make format`) or a missing template instantiation for one of the `ValueType` variants.
 
 
 ## Contributing
-- Check that all tests run successfully: `make test`.
-- Check that the code is properly formatted: `make format`.
-  There is also a CI job which can provide automated code formatting.
-- New code should be submitted by opening a [pull request](https://github.com/stormchecker/storm/pulls).
-  Our continuous integration automatically checks that the code in the PR is properly formatted and all tests run successfully. 
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for how to contribute to Storm (pull requests, CI, review).
