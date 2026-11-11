@@ -148,7 +148,8 @@ storm::expressions::Expression Z3ExpressionAdapter::translateExpression(z3::expr
                 return this->translateExpression(expr.arg(0)) / this->translateExpression(expr.arg(1));
             case Z3_OP_IDIV:
                 // Storm has no integer division, and translating this to Storm's division would silently change the semantics.
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Failed to convert Z3 expression. Integer division is not supported.");
+                STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::NotImplementedException,
+                                                "Failed to convert Z3 expression. Integer division is not supported.");
             case Z3_OP_ANUM:
                 // Arithmetic numeral.
                 if (expr.is_int() && expr.is_const()) {

@@ -215,13 +215,17 @@ Workflows are in `.github/workflows/`:
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `buildtest.yml` | PR, daily, manual | Full build+test matrix (Debug/Release, GMP/CLN combos, with/without optional deps) |
+| `ci.yml` | PR, push to master, weekly, manual | Build+test matrix from `ci-configs.json` (Debug/Release, GMP/CLN combos, with/without optional deps) |
 | `formatcheck.yml` | push, PR, manual | Checks `src/` with clang-format 20 |
 | `formatapply.yml` | manual | Auto-applies formatting and commits |
 | `doxygen.yml` | push to master | Publishes API docs |
 | `release.yml` | tag push | Publishes GitHub releases |
 
-`buildtest.yml` covers multiple configurations including GMP/CLN combinations and a sanitizer build. A CI failure is most commonly caused by a formatting error (fix with `make format`) or a missing template instantiation for one of the `ValueType` variants.
+`ci.yml` covers multiple configurations including GMP/CLN combinations and a sanitizer build. A CI failure is most commonly caused by a formatting error (fix with `make format`) or a missing template instantiation for one of the `ValueType` variants.
+The configurations are defined in `ci-configs.json`, grouped into three modes:
+- **quick**: every commit of a pull request.
+- **normal**: pull requests with the label `ready for review`, every push to master.
+- **extensive**: pull requests with the label `ci: extensive` (for every commit until the label is removed), weekly, or manually via *Run workflow*.
 
 
 ## Contributing
