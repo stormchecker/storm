@@ -4,10 +4,21 @@
 # docker build -t yourusername/storm .
 # A different base image can be set from the commandline with:
 # --build-arg BASE_IMAGE=<new_base_image>
+#
+# Two types of images can be built via --build-arg image_type=<type>:
+# - dev (default): contains the Storm sources, the build directory and the installed Storm.
+# - release: only contains the installed Storm (in /usr/local).
+# With --build-arg run_tests=ON, the tests and further checks are run during the build.
 
 # Set base image
 ARG BASE_IMAGE=movesrwth/storm-dependencies:latest
-FROM $BASE_IMAGE
+# Type of the final image (dev or release)
+ARG image_type=dev
+
+
+# Development image (also used to build the release image)
+###########################################################
+FROM $BASE_IMAGE AS dev
 LABEL org.opencontainers.image.authors="dev@stormchecker.org"
 
 
@@ -45,6 +56,8 @@ ARG all_sanitizers="OFF"
 # Specify additional CMake arguments for Storm
 ARG cmake_args=""
 ARG ccache_size="3G"
+# Whether to run the tests and checks after building
+ARG run_tests="OFF"
 
 # Check for ccache
 ENV CCACHE_DIR=/root/.ccache
@@ -95,4 +108,50 @@ RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
 # (This can be adapted to only build 'storm' or 'binaries' depending on custom needs)
 RUN ccache --max-size=$ccache_size && ccache --zero-stats && make -j $no_threads && ccache --show-stats --verbose
 
+# Install Storm
+RUN make install
+
+# Run tests
+RUN if [ "$run_tests" = "ON" ]; then \
+      ctest --output-on-failure; \
+    fi
+# Check compile flags
+RUN if [ "$run_tests" = "ON" ]; then \
+      bash /opt/storm/.github/actions/check-compile-flags-action/check-flags.sh /opt/storm/build/src/storm/CMakeFiles/storm.dir "$build_type"; \
+    fi
+# Build and run starter project with Storm from the build directory
+RUN if [ "$run_tests" = "ON" ]; then \
+      git clone https://github.com/stormchecker/storm-project-starter-cpp /opt/storm-starter && \
+      cmake -S /opt/storm-starter -B /opt/storm-starter/build-intree -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT=/opt/storm/build && \
+      cmake --build /opt/storm-starter/build-intree -j $no_threads && \
+      /opt/storm-starter/build-intree/bin/starter-project /opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'; \
+    fi
+# Build and run starter project with installed Storm
+# The build directory is hidden (by an empty tmpfs)
+RUN --mount=type=tmpfs,target=/opt/storm/build \
+    if [ "$run_tests" = "ON" ]; then \
+      /usr/local/bin/storm --version && \
+      cmake -S /opt/storm-starter -B /opt/storm-starter/build-installed -DNEVER_FETCH_STORM=TRUE && \
+      cmake --build /opt/storm-starter/build-installed -j $no_threads && \
+      /opt/storm-starter/build-installed/bin/starter-project /opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'; \
+    fi
+
 WORKDIR /opt/storm
+
+
+# Release image
+###############
+# Only contains the files installed by Storm (as listed in the install manifest).
+# The files are copied via a bind mount to avoid duplicating the base image's /usr/local.
+FROM $BASE_IMAGE AS release
+LABEL org.opencontainers.image.authors="dev@stormchecker.org"
+RUN --mount=type=bind,from=dev,source=/,target=/mnt/dev \
+    test -s /mnt/dev/opt/storm/build/install_manifest.txt && \
+    sed 's|^/||' /mnt/dev/opt/storm/build/install_manifest.txt | tar -cf - -C /mnt/dev -T - | tar -xf - -C / && \
+    storm --version
+WORKDIR /opt
+
+
+# Final image
+#############
+FROM ${image_type}

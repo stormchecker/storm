@@ -2,7 +2,7 @@ name: Release Docker
 # Builds Storm and deploys images to DockerHub
 # The images are built from the tag or branch (stable or master) selected when triggering the workflow.
 # The Docker tag is the name of the selected ref (e.g. 1.1.0 or stable), master yields the tag 'ci'.
-# Tags and stable use Dockerfile.release (installed Storm), master uses the Dockerfile (with build directory).
+# Tags and stable yield release images (only installed Storm), master yields the dev image (with sources and build directory).
 
 on:
   # needed to trigger the workflow manually
@@ -19,8 +19,10 @@ jobs:
     with:
       image: movesrwth/storm
       tag: ${{ github.ref == 'refs/heads/master' && 'ci' || github.ref_name }}
-      dockerfile: ${{ github.ref == 'refs/heads/master' && 'Dockerfile' || '.github/workflows/Dockerfile.release' }}
       build_args: |
         BASE_IMAGE=movesrwth/storm-dependencies:latest
-      debug_build_args: ${{ github.ref != 'refs/heads/master' && 'developer=ON' || '' }}
+        run_tests=ON
+        ${{ github.ref != 'refs/heads/master' && 'image_type=release' || '' }}
+      debug_build_args: |
+        developer=ON
     secrets: inherit

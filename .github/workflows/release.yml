@@ -47,9 +47,10 @@ jobs:
       image: movesrwth/storm
       # Use the tag from the release
       tag: ${{ github.event.release.tag_name }}
-      dockerfile: .github/workflows/Dockerfile.release
       build_args: |
         BASE_IMAGE=movesrwth/storm-dependencies:latest
+        run_tests=ON
+        image_type=release
       debug_build_args: |
         developer=ON
     secrets: inherit

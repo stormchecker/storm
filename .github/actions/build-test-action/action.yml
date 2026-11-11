@@ -180,7 +180,6 @@ runs:
       uses: ./.github/actions/check-compile-flags-action
       with:
         buildType: ${{ env.BUILD_TYPE }}
-        docker: false
     - name: Run tests
       working-directory: ./build
       # Disabled sanitizer checks for now
@@ -191,7 +190,6 @@ runs:
       if: inputs.install == 'true'
       uses: ./.github/actions/starter-project-action
       with:
-        docker: false
         stormDir: "${GITHUB_WORKSPACE}/build"
         command: ${{ env.STARTER_PROJECT_COMMAND }}
     - name: Install storm
@@ -211,6 +209,5 @@ runs:
       if: inputs.install == 'true'
       uses: ./.github/actions/starter-project-action
       with:
-        docker: false
         stormDir: ""
         command: ${{ env.STARTER_PROJECT_COMMAND }}
