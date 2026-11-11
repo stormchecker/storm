@@ -117,7 +117,7 @@ RUN if [ "$run_tests" = "ON" ]; then \
     fi
 # Check compile flags
 RUN if [ "$run_tests" = "ON" ]; then \
-      bash /opt/storm/.github/actions/check-compile-flags-action/check-flags.sh /opt/storm/build/src/storm/CMakeFiles/storm.dir "$build_type"; \
+      bash /opt/storm/resources/scripts/check-flags.sh /opt/storm/build/src/storm/CMakeFiles/storm.dir "$build_type"; \
     fi
 # Build and run starter project with Storm from the build directory
 RUN if [ "$run_tests" = "ON" ]; then \
