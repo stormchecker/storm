@@ -1,8 +1,8 @@
 name: Release new version
 # Triggered by new a release on GitHub
 # - checks that the release tag and the Storm version are X.Y.Z
-# - updates stable branch
 # - deploys Docker containers
+# - updates stable branch (which also triggers the CI building the 'stable' Docker containers)
 # - builds Debian packages and adds them to the release
 # - updates Storm version in stormpy via PR
 # - sets Storm development version in Storm via PR
@@ -39,10 +39,19 @@ jobs:
   deploy_docker:
     # Create Docker images for tag
     needs: check_version
-    uses: ./.github/workflows/release_docker.yml
+    uses: stormchecker/ci-workflows/.github/workflows/release_docker.yml@v1
+    permissions:
+      contents: read
+      id-token: write  # to sign the provenance of the images
     with:
+      image: movesrwth/storm
       # Use the tag from the release
       tag: ${{ github.event.release.tag_name }}
+      dockerfile: .github/workflows/Dockerfile.release
+      build_args: |
+        BASE_IMAGE=movesrwth/storm-dependencies:latest
+      debug_build_args: |
+        developer=ON
     secrets: inherit
 
   update_stable:
@@ -51,6 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - name: Git clone
         uses: actions/checkout@v7
@@ -65,14 +75,11 @@ jobs:
           git checkout stable
           git rebase ${{ github.event.release.tag_name }}
           git push origin stable
-
-  deploy_docker_stable:
-    # Create Docker images for stable branch
-    needs: update_stable
-    uses: ./.github/workflows/release_docker.yml
-    with:
-      tag: stable
-    secrets: inherit
+      - name: Trigger CI for stable
+        # Pushes using the GITHUB_TOKEN do not trigger workflows, so trigger the CI (which deploys the 'stable' Docker images) manually
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --repo ${{ github.repository }} --ref stable
 
   get_carl_tag:
     # Get carl-storm version used by the release
@@ -123,7 +130,7 @@ jobs:
 
   update_stormpy:
     # Trigger generation of PR in stormpy which updates the Storm version
-    needs: [deploy_docker, deploy_docker_stable]
+    needs: [deploy_docker, update_stable]
     uses: stormchecker/stormpy/.github/workflows/update_storm.yml@master
     with:
       storm_version: ${{ github.event.release.tag_name }}
@@ -132,7 +139,7 @@ jobs:
 
   set_storm_dev:
     # Update Storm version again to reflect future development version
-    needs: [deploy_docker, deploy_docker_stable]
+    needs: [deploy_docker, update_stable]
     runs-on: ubuntu-latest
     steps:
       - name: Git clone
