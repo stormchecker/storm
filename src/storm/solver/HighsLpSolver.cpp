@@ -1,5 +1,6 @@
 #include "storm/solver/HighsLpSolver.h"
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
@@ -414,6 +415,21 @@ void HighsLpSolver<ValueType, RawMode>::pop() {
 }
 
 template<typename ValueType, bool RawMode>
+void HighsLpSolver<ValueType, RawMode>::setTolerance(double tolerance) {
+    for (std::string const option : {"primal_feasibility_tolerance", "dual_feasibility_tolerance"}) {
+        // Clamp the tolerance to the range that HiGHS accepts for this option.
+        double minValue, maxValue;
+        HighsStatus status = highs.getDoubleOptionValues(option, nullptr, &minValue, &maxValue);
+        STORM_LOG_THROW(status != HighsStatus::kError, storm::exceptions::InvalidStateException, "Unable to query HiGHS option '" << option << "'.");
+        double const value = std::clamp(tolerance, minValue, maxValue);
+        STORM_LOG_WARN_COND(value == tolerance,
+                            "Requested tolerance " << tolerance << " is not supported by HiGHS option '" << option << "'. Using " << value << " instead.");
+        status = highs.setOptionValue(option, value);
+        STORM_LOG_THROW(status != HighsStatus::kError, storm::exceptions::InvalidStateException, "Unable to set HiGHS option '" << option << "'.");
+    }
+}
+
+template<typename ValueType, bool RawMode>
 void HighsLpSolver<ValueType, RawMode>::setMaximalMILPGap(ValueType const& gap, bool relative) {
     double gapAsDouble = storm::utility::convertNumber<double>(gap);
     HighsStatus status = relative ? highs.setOptionValue("mip_rel_gap", gapAsDouble) : highs.setOptionValue("mip_abs_gap", gapAsDouble);
@@ -568,6 +584,13 @@ void HighsLpSolver<ValueType, RawMode>::push() {
 
 template<typename ValueType, bool RawMode>
 void HighsLpSolver<ValueType, RawMode>::pop() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for HiGHS. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with HiGHS support.");
+}
+
+template<typename ValueType, bool RawMode>
+void HighsLpSolver<ValueType, RawMode>::setTolerance(double) {
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
                     "This version of storm was compiled without support for HiGHS. Yet, a method was called that requires this support. Please choose a "
                     "version of storm with HiGHS support.");

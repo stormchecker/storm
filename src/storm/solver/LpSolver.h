@@ -379,6 +379,13 @@ class LpSolver {
     virtual void setMaximalMILPGap(ValueType const& gap, bool relative) = 0;
 
     /*!
+     * Sets the (primal) feasibility and (dual) optimality tolerance of the solver.
+     * Exact solvers (or solvers running in exact mode) ignore this setting.
+     * Each solver clamps the value to the range it supports.
+     */
+    virtual void setTolerance(double tolerance) = 0;
+
+    /*!
      * Returns the obtained gap after a call to optimize()
      */
     virtual ValueType getMILPGap(bool relative) const = 0;

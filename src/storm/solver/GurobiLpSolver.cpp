@@ -1,5 +1,6 @@
 #include "storm/solver/GurobiLpSolver.h"
 
+#include <algorithm>
 #include <numeric>
 
 #include "storm/environment/solver/GurobiSolverEnvironment.h"
@@ -688,6 +689,24 @@ ValueType GurobiLpSolver<ValueType, RawMode>::getObjectiveValue(uint64_t solutio
 }
 
 template<typename ValueType, bool RawMode>
+void GurobiLpSolver<ValueType, RawMode>::setTolerance(double tolerance) {
+    GRBenv* modelEnv = GRBgetenv(model);
+    for (char const* parameter : {GRB_DBL_PAR_FEASIBILITYTOL, GRB_DBL_PAR_OPTIMALITYTOL}) {
+        // Clamp the tolerance to the range that Gurobi accepts for this parameter.
+        double currentValue, minValue, maxValue, defaultValue;
+        int error = GRBgetdblparaminfo(modelEnv, parameter, &currentValue, &minValue, &maxValue, &defaultValue);
+        STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
+                        "Unable to query Gurobi parameter " << parameter << " (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
+        double const value = std::clamp(tolerance, minValue, maxValue);
+        STORM_LOG_WARN_COND(value == tolerance,
+                            "Requested tolerance " << tolerance << " is not supported by Gurobi parameter " << parameter << ". Using " << value << " instead.");
+        error = GRBsetdblparam(modelEnv, parameter, value);
+        STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
+                        "Unable to set Gurobi parameter " << parameter << " (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
+    }
+}
+
+template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::setMaximalMILPGap(ValueType const& gap, bool relative) {
     int error = -1;
     if (relative) {
@@ -922,6 +941,13 @@ bool GurobiLpSolver<ValueType, RawMode>::getBinaryValue(Variable const&, uint64_
 
 template<typename ValueType, bool RawMode>
 ValueType GurobiLpSolver<ValueType, RawMode>::getObjectiveValue(uint64_t) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
+                    "version of storm with Gurobi support.");
+}
+
+template<typename ValueType, bool RawMode>
+void GurobiLpSolver<ValueType, RawMode>::setTolerance(double) {
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
                     "This version of storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a "
                     "version of storm with Gurobi support.");

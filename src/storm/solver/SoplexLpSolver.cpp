@@ -1,5 +1,6 @@
 #include "storm/solver/SoplexLpSolver.h"
 
+#include <algorithm>
 #include <numeric>
 
 #include "storm/exceptions/InternalException.h"
@@ -295,6 +296,25 @@ void SoplexLpSolver<ValueType, RawMode>::pop() {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Push/Pop not supported on SoPlex.");
 }
 
+template<typename ValueType, bool RawMode>
+void SoplexLpSolver<ValueType, RawMode>::setTolerance(double tolerance) {
+    // In exact mode, the tolerances are zero and are kept that way.
+    if constexpr (!std::is_same_v<ValueType, storm::RationalNumber>) {
+        for (SoPlex::RealParam const parameter : {SoPlex::FEASTOL, SoPlex::OPTTOL}) {
+            // Clamp the tolerance to the range that SoPlex accepts for this parameter.
+            auto const& parameterInfo = SoPlex::Settings::realParam;
+            std::string const& name = parameterInfo.name[parameter];
+            double const minValue = static_cast<double>(parameterInfo.lower[parameter]);
+            double const maxValue = static_cast<double>(parameterInfo.upper[parameter]);
+            double const value = std::clamp(tolerance, minValue, maxValue);
+            STORM_LOG_WARN_COND(value == tolerance,
+                                "Requested tolerance " << tolerance << " is not supported by SoPlex parameter " << name << ". Using " << value << " instead.");
+            bool const success = solver.setRealParam(parameter, value);
+            STORM_LOG_THROW(success, storm::exceptions::InvalidStateException, "Unable to set SoPlex parameter " << name << ".");
+        }
+    }
+}
+
 #else
 template<typename ValueType, bool RawMode>
 SoplexLpSolver<ValueType, RawMode>::SoplexLpSolver(std::string const&, OptimizationDirection const&) {
@@ -401,6 +421,13 @@ void SoplexLpSolver<ValueType, RawMode>::writeModelToFile(std::string const&) co
 
 template<typename ValueType, bool RawMode>
 void SoplexLpSolver<ValueType, RawMode>::push() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
+                    "version of support with Soplex support.");
+}
+
+template<typename ValueType, bool RawMode>
+void SoplexLpSolver<ValueType, RawMode>::setTolerance(double) {
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
                     "This version of storm was compiled without support for Soplex. Yet, a method was called that requires this support. Please choose a "
                     "version of support with Soplex support.");
