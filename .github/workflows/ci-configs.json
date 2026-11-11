@@ -7,12 +7,14 @@
     "ClnExact": false,
     "ClnRatfunc": true,
     "AllSanitizers": false,
+    "stormpyCheck": false,
     "expectNotHave": []
   },
   "linuxTests": [
     {
       "name": "All dependencies",
       "cache": true,
+      "stormpyCheck": true,
       "buildTypes": {
         "quick": [
           "Debug",

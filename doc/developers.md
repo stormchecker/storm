@@ -89,9 +89,10 @@ See the dedicated documentation on [third-party dependencies](3rdparty_dependenc
   Version `X.Y.Z.N` should be read as: this is an updated version of `X.Y.Z` that has not been released as the next version yet.
   After a release, the CI automatically opens a PR that sets the version to `X.Y.Z.1`.
 - Increase `N` by one for changes on master which downstream tools such as stormpy need to detect, for example API changes.
-  Downstream tools can then require a specific development version:
+  The CI checks stormpy compatibility automatically.
+  Downstream tools can require a specific development version:
   ```cmake
-  find_package(storm 2.0.0.1 REQUIRED)
+  find_package(storm X.Y.Z.N REQUIRED)
   ```
 - CMake variable `STORM_VERSION` provides the release version information `X.Y.Z`, `STORM_VERSION_DEV` provides the development counter `N` (which is `0` for releases), and `STORM_VERSION_FULL_DEV` provides the full version `X.Y.Z.N`.
 

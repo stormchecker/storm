@@ -9,6 +9,8 @@ name: CI
 # on a manual run: run the configs of the selected mode
 # Configurations are defined in ci-configs.json.
 # This CI then calls the tests in build-test-action and test-deploy with the given configurations.
+# The installation steps are not executed in quick mode.
+# Configs with "stormpyCheck" additionally build and test stormpy against Storm (see stormpy-check-action) (only runs in normal/extensive mode).
 # Cache is restored everywhere (except for extensive) but only saved on master pushes.
 
 on:
@@ -106,6 +108,13 @@ jobs:
           save_3rdparty_cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           # Skip install steps for quick mode
           install: ${{ needs.prepare.outputs.mode != 'quick' }}
+      - name: Check stormpy compatibility
+        # Build and test stormpy against the installed Storm (not in quick mode)
+        if: matrix.config.stormpyCheck && needs.prepare.outputs.mode != 'quick'
+        uses: ./.github/actions/stormpy-check-action
+        with:
+          nr_jobs: "4"
+          build_type: ${{ matrix.config.buildType }}
 
   macTests:
     needs: prepare
