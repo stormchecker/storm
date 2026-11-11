@@ -36,7 +36,7 @@ struct RegionRefinementOptions {
     storm::modelchecker::RegionSplittingStrategy regionSplittingStrategy;
 
     MonotonicityOptions monotonicitySetting;
-    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& discreteVariables;
+    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables;
     bool allowModelSimplification;
     storm::pars::analysis::GraphPreservationStatus graphPreservationStatus;
     bool preconditionsValidated;
