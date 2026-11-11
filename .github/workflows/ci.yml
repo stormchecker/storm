@@ -195,6 +195,7 @@ jobs:
         BASE_IMAGE=movesrwth/storm-dependencies:latest
         run_tests=ON
         ${{ github.ref == 'refs/heads/stable' && 'image_type=release' || '' }}
+        ${{ github.ref != 'refs/heads/stable' && 'carl_tag=master' || '' }}
       debug_build_args: |
         developer=ON
     secrets: inherit

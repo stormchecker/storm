@@ -17,10 +17,10 @@ on:
         type: string
         default: 'Release'
       carl_tag:
-        description: 'carl-storm tag to build against'
+        description: 'carl-storm tag to build against (empty: use the default carl_tag of the Dockerfile)'
         required: false
         type: string
-        default: 'master'
+        default: ''
   # needed to trigger the workflow manually
   workflow_dispatch:
     inputs:
@@ -74,7 +74,7 @@ jobs:
           docker build -t movesrwth/storm:ci . \
             --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro.tag }} \
             --build-arg build_type="${{ inputs.build_type }}" \
-            --build-arg carl_tag="${{ inputs.carl_tag }}" \
+            ${{ inputs.carl_tag != '' && format('--build-arg carl_tag="{0}"', inputs.carl_tag) || '' }} \
             --build-arg cmake_args="-DSTORM_BUILD_TESTS=OFF -DCPACK_DEBIAN_PACKAGE_VERSION=${{ inputs.version }}-${{ matrix.distro.name }} -DCPACK_PACKAGE_FILE_NAME=storm-${{ inputs.version }}-${{ matrix.distro.name }}-${{ matrix.platform.name }}${BUILD_SUFFIX}" \
             --build-arg no_threads=${NR_JOBS}
             # Sets the debian version for CPack. CMake version remains unchanged because it must be numeric.

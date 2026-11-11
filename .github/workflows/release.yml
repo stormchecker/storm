@@ -82,26 +82,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run ci.yml --repo ${{ github.repository }} --ref stable
 
-  get_carl_tag:
-    # Get carl-storm version used by the release
-    runs-on: ubuntu-latest
-    outputs:
-      carl_tag: ${{ steps.carl.outputs.carl_tag }}
-    steps:
-      - name: Git clone
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.release.tag_name }}
-      - name: Read carl-storm version from CMakeLists.txt
-        id: carl
-        run: |
-          carl_tag=$(sed -n -E 's/.*STORM_CARL_GIT_TAG_DEFAULT "([^"]+)".*/\1/p' CMakeLists.txt)
-          test -n "$carl_tag"
-          echo "carl_tag=$carl_tag" >> "$GITHUB_OUTPUT"
-
   build_deb:
     # Create and test Debian packages (Release & Debug) for the new release
-    needs: get_carl_tag
+    # The carl-storm version is given by the default carl_tag in the Dockerfile of the release
+    needs: check_version
     strategy:
       matrix:
         build_type: [Release, Debug]
@@ -109,7 +93,6 @@ jobs:
     with:
       version: ${{ github.event.release.tag_name }}
       build_type: ${{ matrix.build_type }}
-      carl_tag: ${{ needs.get_carl_tag.outputs.carl_tag }}
 
   upload_deb:
     # Add Debian packages as assets to the release
@@ -171,7 +154,7 @@ jobs:
 
   notify:
     name: Email notification
-    needs: [deploy_docker, update_stable, get_carl_tag, build_deb, upload_deb, update_stormpy, set_storm_dev]
+    needs: [deploy_docker, update_stable, build_deb, upload_deb, update_stormpy, set_storm_dev]
     # Only run in main repo and even if previous step failed
     if: github.repository_owner == 'stormchecker' && always()
     uses: stormchecker/ci-workflows/.github/workflows/notify_email.yml@v1

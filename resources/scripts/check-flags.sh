@@ -23,22 +23,32 @@ fail() {
     exit 1
 }
 
+# Whether the given flag occurs as a separate word in the file
+has_flag() {
+    grep -q -E -e "(^|[[:space:]])$1([[:space:]]|$)" "$2"
+}
+
+for file in "$flags" "$link"; do
+    [ -f "$file" ] || fail "File '$file' not found."
+done
+
 case "$build_type" in
     Release)
-        if grep -q -e '-g' "$flags"; then fail "Unexpected flag '-g' for release build."; fi
-        if ! grep -q -e '-O3' "$flags"; then fail "Missing flag '-O3' for release build."; fi
-        if ! grep -q -e '-DNDEBUG' "$flags"; then fail "Missing flag '-DNDEBUG' for release build."; fi
-        if ! grep -q -e '-flto' "$flags"; then fail "Missing '-flto' compile flag for release build."; fi
-        if ! grep -q -e '-flto' "$link"; then fail "Missing '-flto' link flag for release build."; fi
+        if has_flag '-g' "$flags"; then fail "Unexpected flag '-g' for release build."; fi
+        if ! has_flag '-O3' "$flags"; then fail "Missing flag '-O3' for release build."; fi
+        if ! has_flag '-DNDEBUG' "$flags"; then fail "Missing flag '-DNDEBUG' for release build."; fi
+        if ! has_flag '-flto(=[^[:space:]]*)?' "$flags"; then fail "Missing '-flto' compile flag for release build."; fi
+        if ! has_flag '-flto(=[^[:space:]]*)?' "$link"; then fail "Missing '-flto' link flag for release build."; fi
         bash "$(dirname "${BASH_SOURCE[0]}")/check-lto.sh" "$dir"
         ;;
     Debug)
-        if ! grep -q -e '-g' "$flags"; then fail "Missing flag '-g' for debug build."; fi
-        if grep -q -e '-O3' "$flags"; then fail "Unexpected flag '-O3' for debug build."; fi
-        if grep -q -e '-DNDEBUG' "$flags"; then fail "Unexpected flag '-DNDEBUG' for debug build."; fi
+        if ! has_flag '-g' "$flags"; then fail "Missing flag '-g' for debug build."; fi
+        if has_flag '-O3' "$flags"; then fail "Unexpected flag '-O3' for debug build."; fi
+        if has_flag '-DNDEBUG' "$flags"; then fail "Unexpected flag '-DNDEBUG' for debug build."; fi
         ;;
     *)
         echo "No compile flag checks for build type '$build_type'."
+        exit 0
         ;;
 esac
 echo "Compile flags for $build_type build are as expected."
