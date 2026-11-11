@@ -13,7 +13,7 @@ The Storm website [www.stormchecker.org](https://www.stormchecker.org/) provides
 - Video tutorials and interactive code examples are available in [Tutorials](https://www.stormchecker.org/tutorials.html).
 - The [Storm starter project](https://github.com/stormchecker/storm-project-starter-cpp/) provides a starting point for incorporating Storm into C++ projects.
 - Storm provides a Python interface called [stormpy](https://stormchecker.github.io/stormpy/) for easy prototyping and interaction with Storm.
-- In case of any issues installing or using Storm, [let us know](https://www.stormchecker.org/documentation/obtain-storm/troubleshooting.html).
+- In case of any issues installing or using Storm, open an [issue on Github](https://github.com/stormchecker/storm/issues/new), let us know via [email](https://www.stormchecker.org/about.html#people) or contact us in the [storm-general channel on Zulip](https://pmc-tools.zulipchat.com/#narrow/channel/564475-storm-general).
 
 
 Examples
@@ -25,8 +25,9 @@ Additional input files for Storm can be obtained from the [storm-examples](https
 Developers
 -----------------------------
 We welcome contributions to Storm.
-Our [information for developers](doc/developers.md) contains general information to get started with the development on Storm.
+For larger contributions, please discuss it beforehand with us in the [storm-general channel on Zulip](https://pmc-tools.zulipchat.com/#narrow/channel/564475-storm-general).
 The [contribution guidelines](CONTRIBUTING.md) describe how to submit changes.
+Our [information for developers](doc/developers.md) contains general information to get started with the development on Storm.
 Feel free to contact us in case you need any pointers or help.
 
 
