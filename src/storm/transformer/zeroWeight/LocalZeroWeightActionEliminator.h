@@ -63,7 +63,7 @@ class LocalZeroWeightActionEliminator {
      *
      * @param state State in the input matrix.
      */
-    void eliminateState(uint64_t state);
+    void eliminateState(uint64_t state, std::vector<uint64_t>* affectedStates = nullptr);
 
     /*!
      * Builds the matrix containing the states that have not been eliminated.
@@ -90,8 +90,12 @@ class LocalZeroWeightActionEliminator {
     };
 
     uint64_t addAction(WorkingAction&& action);
+    /*! Returns estimated successor and choice-record entries allocated by eliminating a state next. */
+    uint64_t scoreState(uint64_t state) const;
     static bool mergeChoiceSelections(std::vector<ChoiceSelection> const& first, std::vector<ChoiceSelection> const& second,
                                       std::vector<ChoiceSelection>& result);
+    static bool areChoiceSelectionsCompatible(std::vector<ChoiceSelection> const& first, std::vector<ChoiceSelection> const& second);
+    static uint64_t composedSupportSize(std::vector<Transition> const& first, std::vector<Transition> const& second, uint64_t eliminatedState);
     static std::vector<Transition> composeTransitions(std::vector<Transition> const& predecessorTransitions, uint64_t eliminatedState,
                                                       ValueType const& probabilityToState, std::vector<Transition> const& normalizedTransitions);
 

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <set>
 #include <utility>
 
 #include "storm/adapters/RationalNumberAdapter.h"
@@ -12,6 +13,14 @@
 #include "storm/utility/macros.h"
 
 namespace storm::transformer {
+
+namespace {
+
+uint64_t saturatedAdd(uint64_t first, uint64_t second) {
+    return second > std::numeric_limits<uint64_t>::max() - first ? std::numeric_limits<uint64_t>::max() : first + second;
+}
+
+}  // namespace
 
 template<typename ValueType>
 typename LocalZeroWeightActionEliminator<ValueType>::Result LocalZeroWeightActionEliminator<ValueType>::eliminate(
@@ -24,8 +33,31 @@ typename LocalZeroWeightActionEliminator<ValueType>::Result LocalZeroWeightActio
     LocalZeroWeightActionEliminator<ValueType> eliminator(splitResult.transitionMatrix, splitResult.actionWeights, splitResult.targetStates,
                                                           splitResult.initialStates);
     for (auto const& component : splitResult.analysis.weakComponents) {
+        using Priority = std::pair<uint64_t, uint64_t>;
+        std::set<Priority> queue;
+        std::vector<uint64_t> scores(splitResult.transitionMatrix.getRowGroupCount());
+        storm::storage::BitVector remaining(splitResult.transitionMatrix.getRowGroupCount(), false);
         for (uint64_t state : component.states) {
-            eliminator.eliminateState(state);
+            scores[state] = eliminator.scoreState(state);
+            queue.emplace(scores[state], state);
+            remaining.set(state);
+        }
+        while (!queue.empty()) {
+            uint64_t const state = queue.begin()->second;
+            queue.erase(queue.begin());
+            remaining.set(state, false);
+            std::vector<uint64_t> affectedStates;
+            eliminator.eliminateState(state, &affectedStates);
+            std::sort(affectedStates.begin(), affectedStates.end());
+            affectedStates.erase(std::unique(affectedStates.begin(), affectedStates.end()), affectedStates.end());
+            for (uint64_t affected : affectedStates) {
+                if (!remaining.get(affected)) {
+                    continue;
+                }
+                queue.erase(Priority{scores[affected], affected});
+                scores[affected] = eliminator.scoreState(affected);
+                queue.emplace(scores[affected], affected);
+            }
         }
     }
     auto result = eliminator.build();
@@ -166,6 +198,85 @@ bool LocalZeroWeightActionEliminator<ValueType>::mergeChoiceSelections(std::vect
 }
 
 template<typename ValueType>
+bool LocalZeroWeightActionEliminator<ValueType>::areChoiceSelectionsCompatible(std::vector<ChoiceSelection> const& first,
+                                                                               std::vector<ChoiceSelection> const& second) {
+    auto firstIt = first.begin();
+    auto secondIt = second.begin();
+    while (firstIt != first.end() && secondIt != second.end()) {
+        if (firstIt->state < secondIt->state) {
+            ++firstIt;
+        } else if (secondIt->state < firstIt->state) {
+            ++secondIt;
+        } else {
+            if (firstIt->row != secondIt->row) {
+                return false;
+            }
+            ++firstIt;
+            ++secondIt;
+        }
+    }
+    return true;
+}
+
+template<typename ValueType>
+uint64_t LocalZeroWeightActionEliminator<ValueType>::composedSupportSize(std::vector<Transition> const& first, std::vector<Transition> const& second,
+                                                                         uint64_t eliminatedState) {
+    uint64_t size = 0;
+    auto firstIt = first.begin();
+    auto secondIt = second.begin();
+    while (firstIt != first.end() || secondIt != second.end()) {
+        uint64_t successor;
+        if (secondIt == second.end() || (firstIt != first.end() && firstIt->first < secondIt->first)) {
+            successor = firstIt++->first;
+        } else if (firstIt == first.end() || secondIt->first < firstIt->first) {
+            successor = secondIt++->first;
+        } else {
+            successor = firstIt->first;
+            ++firstIt;
+            ++secondIt;
+        }
+        if (successor != eliminatedState) {
+            ++size;
+        }
+    }
+    return size;
+}
+
+template<typename ValueType>
+uint64_t LocalZeroWeightActionEliminator<ValueType>::scoreState(uint64_t state) const {
+    STORM_LOG_ASSERT(state < numberOfStates && !eliminatedStates.get(state), "Expected an active candidate state.");
+    std::vector<uint64_t> localActions;
+    for (uint64_t actionId : stateActions[state]) {
+        if (actions[actionId].active) {
+            localActions.push_back(actionId);
+        }
+    }
+    std::vector<uint64_t> predecessors;
+    for (uint64_t actionId : incomingActions[state]) {
+        auto const& action = actions[actionId];
+        if (action.active && action.sourceState != state) {
+            predecessors.push_back(actionId);
+        }
+    }
+    uint64_t storage = 0;
+    for (uint64_t predecessorId : predecessors) {
+        auto const& predecessor = actions[predecessorId];
+        for (uint64_t choiceId : localActions) {
+            auto const& choice = actions[choiceId];
+            auto const selectedRow = std::lower_bound(predecessor.choiceSelections.begin(), predecessor.choiceSelections.end(), state,
+                                                      [](ChoiceSelection const& selection, uint64_t candidate) { return selection.state < candidate; });
+            if ((selectedRow != predecessor.choiceSelections.end() && selectedRow->state == state && selectedRow->row != choice.inputRow) ||
+                !areChoiceSelectionsCompatible(predecessor.choiceSelections, choice.choiceSelections)) {
+                continue;
+            }
+            storage = saturatedAdd(storage, composedSupportSize(predecessor.transitions, choice.transitions, state));
+            storage = saturatedAdd(storage, saturatedAdd(predecessor.choiceSelections.size(), choice.choiceSelections.size() + 1));
+        }
+    }
+    return storage;
+}
+
+template<typename ValueType>
 std::vector<typename LocalZeroWeightActionEliminator<ValueType>::Transition> LocalZeroWeightActionEliminator<ValueType>::composeTransitions(
     std::vector<Transition> const& predecessorTransitions, uint64_t eliminatedState, ValueType const& probabilityToState,
     std::vector<Transition> const& normalizedTransitions) {
@@ -211,12 +322,20 @@ std::vector<typename LocalZeroWeightActionEliminator<ValueType>::Transition> Loc
 }
 
 template<typename ValueType>
-void LocalZeroWeightActionEliminator<ValueType>::eliminateState(uint64_t state) {
+void LocalZeroWeightActionEliminator<ValueType>::eliminateState(uint64_t state, std::vector<uint64_t>* affectedStates) {
     STORM_LOG_THROW(state < numberOfStates, storm::exceptions::InvalidArgumentException, "Cannot eliminate a state outside the transition matrix.");
     STORM_LOG_THROW(!eliminatedStates.get(state), storm::exceptions::InvalidArgumentException, "Cannot eliminate the same state twice.");
     STORM_LOG_THROW(!targetStates.get(state) && !initialStates.get(state), storm::exceptions::InvalidArgumentException,
                     "Target and initial states must not be eliminated.");
 
+    auto touch = [&](WorkingAction const& action) {
+        if (affectedStates != nullptr) {
+            affectedStates->push_back(action.sourceState);
+            for (auto const& transition : action.transitions) {
+                affectedStates->push_back(transition.first);
+            }
+        }
+    };
     std::vector<NormalizedChoice> normalizedChoices;
     normalizedChoices.reserve(stateActions[state].size());
     for (uint64_t actionId : stateActions[state]) {
@@ -224,6 +343,7 @@ void LocalZeroWeightActionEliminator<ValueType>::eliminateState(uint64_t state) 
         if (!action.active) {
             continue;
         }
+        touch(action);
         STORM_LOG_THROW(storm::utility::isZero(action.weight), storm::exceptions::InvalidArgumentException,
                         "Split mixed states before eliminating zero-weight actions.");
 
@@ -258,6 +378,7 @@ void LocalZeroWeightActionEliminator<ValueType>::eliminateState(uint64_t state) 
             continue;
         }
         WorkingAction const predecessorAction = actions[predecessorActionId];
+        touch(predecessorAction);
         auto const stateTransition = std::lower_bound(predecessorAction.transitions.begin(), predecessorAction.transitions.end(), state,
                                                       [](Transition const& transition, uint64_t successor) { return transition.first < successor; });
         if (stateTransition == predecessorAction.transitions.end() || stateTransition->first != state || !storm::utility::isPositive(stateTransition->second)) {
@@ -276,6 +397,7 @@ void LocalZeroWeightActionEliminator<ValueType>::eliminateState(uint64_t state) 
                                       predecessorAction.weight,
                                       predecessorAction.inputRow,
                                       std::move(choiceSelections)};
+            touch(replacement);
             addAction(std::move(replacement));
         }
     }
