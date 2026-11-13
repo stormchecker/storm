@@ -2,13 +2,18 @@
 #include "storm/adapters/SpotAdapter.h"
 #include "storm/automata/DeterministicAutomaton.h"
 
+#include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/logic/Formula.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"
 
 #include <sys/wait.h>
+#include <chrono>
+#include <csignal>
+#include <thread>
 
 namespace storm {
 namespace automata {
@@ -77,11 +82,22 @@ std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daExtern
         // never reached
         return std::shared_ptr<DeterministicAutomaton>();
     } else {  // in the parent
-        int status;
+        // Register the external tool so that it is killed if Storm receives a termination signal.
+        storm::utility::resources::ChildProcessGuard childProcessGuard(pid);
 
-        // wait for completion
-        while (wait(&status) != pid) {
-            // Intentionally left emtpty
+        int status = 0;
+        pid_t waitedPid;
+        // Wait for completion. We poll so that we can react to termination requests while the tool is running.
+        while ((waitedPid = waitpid(pid, &status, WNOHANG)) == 0) {
+            if (storm::utility::resources::isTerminate()) {
+                kill(pid, SIGKILL);
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+        STORM_LOG_THROW(waitedPid == pid, storm::exceptions::FileIoException,
+                        "Could not construct deterministic automaton, waiting for the external tool failed.");
+        if (storm::utility::resources::isTerminate()) {
+            STORM_LOG_THROW(false, storm::exceptions::AbortException, "Aborted while constructing deterministic automaton.");
         }
 
         int rv;
