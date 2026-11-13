@@ -33,6 +33,16 @@
       "baseImg": "movesrwth/storm-dependencies:latest"
     },
     {
+      "name": "Developer mode",
+      "buildTypes": {
+        "extensive": [
+          "Release"
+        ]
+      },
+      "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DEVELOPER=ON",
+      "baseImg": "movesrwth/storm-dependencies:latest"
+    },
+    {
       "name": "Minimal dependencies",
       "cache": true,
       "buildTypes": {

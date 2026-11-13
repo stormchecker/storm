@@ -40,23 +40,12 @@ jobs:
 
   notify:
     name: Email notification
-    runs-on: ubuntu-latest
     needs: [deploy]
     # Only run in main repo and even if previous step failed
     if: github.repository_owner == 'stormchecker' && always()
-    steps:
-      - uses: technote-space/workflow-conclusion-action@v3
-      - uses: dawidd6/action-send-mail@v23
-        with:
-          server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
-          server_port: 587
-          username: ${{ secrets.STORM_CI_MAIL_USERNAME }}
-          password: ${{ secrets.STORM_CI_MAIL_PASSWORD }}
-          subject: "[You broke it] Doxygen generation failed for ${{ github.repository }}"
-          body:
-            "CI job of ${{ github.repository }} has failed for commit ${{ github.sha }}.\n\
-            The error type is: ${{ env.WORKFLOW_CONCLUSION }}.\n\n\
-            For more information, see https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          to: ${{ secrets.STORM_CI_MAIL_RECIPIENTS }}
-          from: Github Actions <you-broke-it@stormchecker.org>
-        if: env.WORKFLOW_CONCLUSION != 'success' # notify only if failure
+    uses: stormchecker/ci-workflows/.github/workflows/notify_email.yml@v1
+    with:
+      title: Doxygen generation
+    secrets: inherit
+    permissions:
+      actions: read

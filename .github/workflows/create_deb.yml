@@ -16,6 +16,11 @@ on:
         required: false
         type: string
         default: 'Release'
+      carl_tag:
+        description: 'carl-storm tag to build against (empty: use the default carl_tag of the Dockerfile)'
+        required: false
+        type: string
+        default: ''
   # needed to trigger the workflow manually
   workflow_dispatch:
     inputs:
@@ -29,10 +34,17 @@ on:
         required: false
         type: string
         default: 'Release'
+      carl_tag:
+        description: 'carl-storm tag to build against'
+        required: false
+        type: string
+        default: 'master'
 
 env:
   # GitHub runners currently have 4 cores
   NR_JOBS: "4"
+  # Suffix to distinguish debug packages
+  BUILD_SUFFIX: ${{ inputs.build_type != 'Release' && '-debug' || '' }}
 
 jobs:
   build_deb:
@@ -62,8 +74,8 @@ jobs:
           docker build -t movesrwth/storm:ci . \
             --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro.tag }} \
             --build-arg build_type="${{ inputs.build_type }}" \
-            --build-arg carl_tag=master \
-            --build-arg cmake_args="-DSTORM_BUILD_TESTS=OFF -DCPACK_DEBIAN_PACKAGE_VERSION=${{ inputs.version }}-${{ matrix.distro.name }} -DCPACK_PACKAGE_FILE_NAME=storm-${{ inputs.version }}-${{ matrix.distro.name }}-${{ matrix.platform.name }}" \
+            ${{ inputs.carl_tag != '' && format('--build-arg carl_tag="{0}"', inputs.carl_tag) || '' }} \
+            --build-arg cmake_args="-DSTORM_BUILD_TESTS=OFF -DCPACK_DEBIAN_PACKAGE_VERSION=${{ inputs.version }}-${{ matrix.distro.name }} -DCPACK_PACKAGE_FILE_NAME=storm-${{ inputs.version }}-${{ matrix.distro.name }}-${{ matrix.platform.name }}${BUILD_SUFFIX}" \
             --build-arg no_threads=${NR_JOBS}
             # Sets the debian version for CPack. CMake version remains unchanged because it must be numeric.
             # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers
@@ -81,7 +93,7 @@ jobs:
       - name: Upload Debian package artifact
         uses: actions/upload-artifact@v7
         with:
-          name: storm-deb-${{ matrix.distro.name }}-${{ matrix.platform.name }}
+          name: storm-deb-${{ matrix.distro.name }}-${{ matrix.platform.name }}${{ env.BUILD_SUFFIX }}
           path: ./package/*.deb
 
 
@@ -116,7 +128,7 @@ jobs:
       - name: Download .deb artifact
         uses: actions/download-artifact@v8
         with:
-          name: storm-deb-${{ matrix.distro.build_artifact }}-${{ matrix.platform.name }}
+          name: storm-deb-${{ matrix.distro.build_artifact }}-${{ matrix.platform.name }}${{ env.BUILD_SUFFIX }}
           path: package
       - name: Install package
         run: |

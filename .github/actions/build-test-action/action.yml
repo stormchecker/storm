@@ -177,10 +177,8 @@ runs:
       run: ./bin/storm --version
       shell: bash
     - name: Check compile flags
-      uses: ./.github/actions/check-compile-flags-action
-      with:
-        buildType: ${{ env.BUILD_TYPE }}
-        docker: false
+      run: bash resources/scripts/check-flags.sh build/src/storm/CMakeFiles/storm.dir "${{ env.BUILD_TYPE }}"
+      shell: bash
     - name: Run tests
       working-directory: ./build
       # Disabled sanitizer checks for now
@@ -189,11 +187,12 @@ runs:
       shell: bash
     - name: Build starter-project
       if: inputs.install == 'true'
-      uses: ./.github/actions/starter-project-action
-      with:
-        docker: false
-        stormDir: "${GITHUB_WORKSPACE}/build"
-        command: ${{ env.STARTER_PROJECT_COMMAND }}
+      run: |
+        git clone https://github.com/stormchecker/storm-project-starter-cpp ../storm-starter
+        cmake -S ../storm-starter -B ../storm-starter/build-intree -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT="${GITHUB_WORKSPACE}/build"
+        cmake --build ../storm-starter/build-intree -j ${{ inputs.nr_jobs }}
+        ../storm-starter/build-intree/bin/starter-project ${{ env.STARTER_PROJECT_COMMAND }}
+      shell: bash
     - name: Install storm
       if: inputs.install == 'true'
       working-directory: ./build
@@ -209,8 +208,8 @@ runs:
       shell: bash
     - name: Build starter-project on installed Storm
       if: inputs.install == 'true'
-      uses: ./.github/actions/starter-project-action
-      with:
-        docker: false
-        stormDir: ""
-        command: ${{ env.STARTER_PROJECT_COMMAND }}
+      run: |
+        cmake -S ../storm-starter -B ../storm-starter/build-installed -DNEVER_FETCH_STORM=TRUE
+        cmake --build ../storm-starter/build-installed -j ${{ inputs.nr_jobs }}
+        ../storm-starter/build-installed/bin/starter-project ${{ env.STARTER_PROJECT_COMMAND }}
+      shell: bash

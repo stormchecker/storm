@@ -1,23 +1,25 @@
 name: CI
 # Build Storm and perform checks (run tests, check compiler flags, build starter project)
 
-# on every pull request commit: run "quick" configs
-# for every PR when labeled "ready for review", on every master push: run "normal" configs
-# for every PR when labeled "ci: extensive": run "extensive" configs (also for later commits until the label is removed)
-# labels other than "ready for review" and "ci: extensive" are ignored
-# every week: run "extensive" configs (no cache, not fail-fast, including deploy)
-# on a manual run: run the configs of the selected mode
+# - on every pull request commit: run "quick" configs
+# - for every PR when labeled "ready for review", on every master/stable push: run "normal" configs
+# - for every PR when labeled "ci: extensive": run "extensive" configs (also for later commits until the label is removed)
+#   labels other than "ready for review" and "ci: extensive" are ignored
+# - every week: run "extensive" configs (no cache, not fail-fast, including deploy)
+# - on a manual run: run the configs of the selected mode
+
 # Configurations are defined in ci-configs.json.
-# This CI then calls the tests in build-test-action and test-deploy with the given configurations.
-# The installation steps are not executed in quick mode.
-# Configs with "stormpyCheck" additionally build and test stormpy against Storm (see stormpy-check-action) (only runs in normal/extensive mode).
-# Cache is restored everywhere (except for extensive) but only saved on master pushes.
+# - this CI then calls the tests in build-test-action with the given configurations.
+# - the installation steps are not executed in quick mode.
+# - configs with "stormpyCheck" additionally build and test stormpy against Storm (see stormpy-check-action) (only runs in normal/extensive mode).
+# - Docker images are deployed to DockerHub for master (tag 'ci') and stable (tag 'stable').
+# - Cache is restored everywhere (except for extensive) but only saved on master pushes.
 
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
   push:
-    branches: [master]
+    branches: [master, stable]
   schedule:
     - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
   workflow_dispatch:
@@ -167,49 +169,45 @@ jobs:
           # Skip install steps for quick mode
           install: ${{ needs.prepare.outputs.mode != 'quick' }}
 
-  # Need to split deploy into two jobs
-  # Otherwise the name is not correctly displayed when the job is skipped.
-  # Deploy on master pushes and in extensive mode.
-  deploy-debug:
-    name: Deploy (Debug)
+  # Build Docker images and deploy them
+  # master yields the 'ci' images (dev image with sources and build directory)
+  # stable yields the 'stable' images (release image with only the installed Storm)
+  deploy:
+    name: Deploy
     needs: prepare
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || needs.prepare.outputs.mode == 'extensive'
-    uses: ./.github/workflows/test-deploy.yml
+    # Run on master/stable and for PR in 'extensive' mode
+    if: (github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/stable')) || needs.prepare.outputs.mode == 'extensive'
+    # Run deployments for the same branch in sequence to ensure correct deployment
+    concurrency:
+      group: deploy-${{ github.ref }}
+      cancel-in-progress: false
+    uses: stormchecker/ci-workflows/.github/workflows/release_docker.yml@v1
+    permissions:
+      contents: read
+      id-token: write  # to sign the provenance of the images
     with:
-      nr_jobs: "4"
-      buildType: "Debug"
-      dockerTag: "ci-debug"
-    secrets: inherit
-
-  deploy-release:
-    name: Deploy (Release)
-    needs: prepare
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || needs.prepare.outputs.mode == 'extensive'
-    uses: ./.github/workflows/test-deploy.yml
-    with:
-      nr_jobs: "4"
-      buildType: "Release"
-      dockerTag: "ci"
+      image: movesrwth/storm
+      tag: ${{ github.ref == 'refs/heads/stable' && 'stable' || 'ci' }}
+      # Always build, but only deploy for master/stable.
+      # Check for forks is done in the shared workflow.
+      push: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/stable') }}
+      build_args: |
+        BASE_IMAGE=movesrwth/storm-dependencies:latest
+        run_tests=ON
+        ${{ github.ref == 'refs/heads/stable' && 'image_type=release' || '' }}
+        ${{ github.ref != 'refs/heads/stable' && 'carl_tag=master' || '' }}
+      debug_build_args: |
+        developer=ON
     secrets: inherit
 
   notify:
     name: Email notification
-    runs-on: ubuntu-latest
-    needs: [linuxTests, macTests, deploy-debug, deploy-release]
-    if: github.repository_owner == 'stormchecker' && (github.event_name == 'push' || github.event_name == 'schedule') && always()
-    steps:
-      - uses: technote-space/workflow-conclusion-action@v3
-      - uses: dawidd6/action-send-mail@v23
-        with:
-          server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
-          server_port: 587
-          username: ${{ secrets.STORM_CI_MAIL_USERNAME }}
-          password: ${{ secrets.STORM_CI_MAIL_PASSWORD }}
-          subject: "[You broke it] ${{ github.event_name == 'schedule' && 'CI Weekly' || 'CI' }} failed for ${{ github.repository }} on master"
-          body:
-            "CI job of ${{ github.repository }} has failed for commit ${{ github.sha }}.\n\
-            The error type is: ${{ env.WORKFLOW_CONCLUSION }}.\n\n\
-            For more information, see https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          to: ${{ secrets.STORM_CI_MAIL_RECIPIENTS }}
-          from: Github Actions <you-broke-it@stormchecker.org>
-        if: env.WORKFLOW_CONCLUSION != 'success'
+    needs: [linuxTests, macTests, deploy]
+    # Only run in main repo (not for pull requests) and even if previous step failed
+    if: github.repository_owner == 'stormchecker' && github.event_name != 'pull_request' && always()
+    uses: stormchecker/ci-workflows/.github/workflows/notify_email.yml@v1
+    with:
+      title: ${{ github.event_name == 'schedule' && 'CI Weekly' || 'CI' }}
+    secrets: inherit
+    permissions:
+      actions: read
