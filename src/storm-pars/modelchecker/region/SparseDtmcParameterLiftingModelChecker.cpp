@@ -38,6 +38,18 @@
 namespace storm {
 namespace modelchecker {
 
+namespace detail {
+// Only the robust parameter lifter needs the environment (to select the SMT solver); the plain one does not.
+template<typename ParametricType, typename ConstantType, bool Robust, typename... Args>
+std::unique_ptr<ParameterLifterType<ParametricType, ConstantType, Robust>> createParameterLifter(Environment const& env, Args&&... args) {
+    if constexpr (Robust) {
+        return std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(env, std::forward<Args>(args)...);
+    } else {
+        return std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(std::forward<Args>(args)...);
+    }
+}
+}  // namespace detail
+
 template<typename SparseModelType, typename ConstantType, bool Robust>
 SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::SparseDtmcParameterLiftingModelChecker()
     : SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>(std::make_unique<GeneralSolverFactoryType<ConstantType, Robust>>()) {
@@ -125,7 +137,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
 template<typename SparseModelType, typename ConstantType, bool Robust>
 void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::specifyBoundedUntilFormula(
-    const CheckTask<storm::logic::BoundedUntilFormula, ConstantType>& checkTask) {
+    Environment const& env, const CheckTask<storm::logic::BoundedUntilFormula, ConstantType>& checkTask) {
     STORM_LOG_ERROR_COND(!Robust, "Bounded until formulas not implemented for Robust PLA");
     // get the step bound
     STORM_LOG_THROW(!checkTask.getFormula().hasLowerBound(), storm::exceptions::NotSupportedException, "Lower step bounds are not supported.");
@@ -167,8 +179,8 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
         // Create the vector of one-step probabilities to go to target states.
         std::vector<ParametricType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(
             storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), psiStates);
-        parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
-            this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, false, isOrderBasedMonotonicityBackend());
+        parameterLifter = detail::createParameterLifter<ParametricType, ConstantType, Robust>(env, this->parametricModel->getTransitionMatrix(), b, maybeStates,
+                                                                                              maybeStates, false, isOrderBasedMonotonicityBackend());
     }
 
     // We know some bounds for the results so set them
@@ -228,15 +240,15 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
             maybeStates = allTrue;
 
-            parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
-                filteredMatrix, target, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
+            parameterLifter = detail::createParameterLifter<ParametricType, ConstantType, Robust>(
+                env, filteredMatrix, target, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
         } else {
             // Create the vector of one-step probabilities to go to target states.
             std::vector<ParametricType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(
                 storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), statesWithProbability01.second);
-            parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
-                this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, isValueDeltaRegionSplitEstimates(),
-                isOrderBasedMonotonicityBackend());
+            parameterLifter = detail::createParameterLifter<ParametricType, ConstantType, Robust>(env, this->parametricModel->getTransitionMatrix(), b,
+                                                                                                  maybeStates, maybeStates, isValueDeltaRegionSplitEstimates(),
+                                                                                                  isOrderBasedMonotonicityBackend());
         }
     }
 
@@ -299,12 +311,12 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
             auto filteredMatrix = this->parametricModel->getTransitionMatrix().filterEntries(rowFilter);
             maybeStates = allTrue;
 
-            parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
-                filteredMatrix, b, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
+            parameterLifter = detail::createParameterLifter<ParametricType, ConstantType, Robust>(
+                env, filteredMatrix, b, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
         } else {
-            parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
-                this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, isValueDeltaRegionSplitEstimates(),
-                isOrderBasedMonotonicityBackend());
+            parameterLifter = detail::createParameterLifter<ParametricType, ConstantType, Robust>(env, this->parametricModel->getTransitionMatrix(), b,
+                                                                                                  maybeStates, maybeStates, isValueDeltaRegionSplitEstimates(),
+                                                                                                  isOrderBasedMonotonicityBackend());
         }
     }
 
@@ -327,7 +339,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
 template<typename SparseModelType, typename ConstantType, bool Robust>
 void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::specifyCumulativeRewardFormula(
-    const CheckTask<storm::logic::CumulativeRewardFormula, ConstantType>& checkTask) {
+    Environment const& env, const CheckTask<storm::logic::CumulativeRewardFormula, ConstantType>& checkTask) {
     STORM_LOG_ERROR_COND(!Robust, "Not implemented for robust mode.");
     // Obtain the stepBound
     stepBound = checkTask.getFormula().getBound().evaluateAsInt();
@@ -351,7 +363,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
     std::vector<ParametricType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
 
     parameterLifter =
-        std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates);
+        detail::createParameterLifter<ParametricType, ConstantType, Robust>(env, this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates);
     // We only know a lower bound for the result
     lowerResultBound = storm::utility::zero<ConstantType>();
 

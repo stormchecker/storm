@@ -59,7 +59,7 @@ TEST_F(OrderExtenderTest, Brp_with_bisimulation_on_model) {
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0]);
     auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>;
     auto criticalTuple = extender.toOrder(
-        region,
+        storm::Environment(), region,
         std::make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(model->getNumberOfStates(), std::get<1>(criticalTuple));
     EXPECT_EQ(model->getNumberOfStates(), std::get<2>(criticalTuple));
@@ -102,7 +102,7 @@ TEST_F(OrderExtenderTest, Brp_without_bisimulation_on_model) {
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0]);
     auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>;
     auto criticalTuple = extender.toOrder(
-        region,
+        storm::Environment(), region,
         std::make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(183ul, std::get<1>(criticalTuple));
     EXPECT_EQ(186ul, std::get<2>(criticalTuple));
@@ -146,7 +146,7 @@ TEST_F(OrderExtenderTest, Brp_with_bisimulation_on_matrix) {
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
-    auto res = extender.extendOrder(nullptr, region);
+    auto res = extender.extendOrder(storm::Environment(), nullptr, region);
     auto order = std::get<0>(res);
     EXPECT_EQ(order->getNumberOfAddedStates(), model->getNumberOfStates());
     EXPECT_TRUE(order->getDoneBuilding());
@@ -194,7 +194,7 @@ TEST_F(OrderExtenderTest, Brp_without_bisimulation_on_matrix) {
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
-    auto res = extender.extendOrder(nullptr, region);
+    auto res = extender.extendOrder(storm::Environment(), nullptr, region);
     auto order = std::get<0>(res);
     EXPECT_FALSE(order->getDoneBuilding());
 }
@@ -220,7 +220,7 @@ TEST_F(OrderExtenderTest, simple1_on_model) {
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
 
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0]);
-    auto order = std::get<0>(extender.toOrder(region));
+    auto order = std::get<0>(extender.toOrder(storm::Environment(), region));
     EXPECT_EQ(5ul, order->getNumberOfAddedStates());
     EXPECT_TRUE(order->getDoneBuilding());
 
@@ -273,7 +273,7 @@ TEST_F(OrderExtenderTest, simple1_on_matrix) {
 
     // OrderExtender
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
-    auto res = extender.extendOrder(nullptr, region);
+    auto res = extender.extendOrder(storm::Environment(), nullptr, region);
     auto order = std::get<0>(res);
     EXPECT_EQ(order->getNumberOfAddedStates(), model->getNumberOfStates());
     EXPECT_TRUE(order->getDoneBuilding());
@@ -312,7 +312,7 @@ TEST_F(OrderExtenderTest, casestudy1_on_model) {
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
 
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0]);
-    auto order = std::get<0>(extender.toOrder(region));
+    auto order = std::get<0>(extender.toOrder(storm::Environment(), region));
 
     EXPECT_EQ(5ul, order->getNumberOfAddedStates());
     EXPECT_TRUE(order->getDoneBuilding());
@@ -365,7 +365,7 @@ TEST_F(OrderExtenderTest, casestudy1_on_matrix) {
 
     // OrderExtender
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
-    auto res = extender.extendOrder(nullptr, region);
+    auto res = extender.extendOrder(storm::Environment(), nullptr, region);
     auto order = std::get<0>(res);
     EXPECT_EQ(order->getNumberOfAddedStates(), model->getNumberOfStates());
     EXPECT_TRUE(order->getDoneBuilding());
@@ -419,6 +419,6 @@ TEST_F(OrderExtenderTest, casestudy2_on_matrix) {
 
     // OrderExtender
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
-    auto res = extender.extendOrder(nullptr, region);
+    auto res = extender.extendOrder(storm::Environment(), nullptr, region);
     EXPECT_TRUE(std::get<0>(res)->getDoneBuilding());
 }

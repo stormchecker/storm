@@ -71,23 +71,23 @@ TEST_F(AssumptionCheckerTest, Brp_no_bisimulation) {
     auto dummyOrder = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(above, below, 193, decomposition, statesSorted));
 
     storm::analysis::Assumption assumption{7, 5, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, checker.validateAssumption(assumption, dummyOrder, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, checker.validateAssumption(storm::Environment(), assumption, dummyOrder, region));
 
     assumption = storm::analysis::Assumption{5, 7, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, checker.validateAssumption(assumption, dummyOrder, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, checker.validateAssumption(storm::Environment(), assumption, dummyOrder, region));
 
     assumption = storm::analysis::Assumption{7, 5, storm::analysis::AssumptionRelation::Equal};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, checker.validateAssumption(assumption, dummyOrder, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, checker.validateAssumption(storm::Environment(), assumption, dummyOrder, region));
 
     checker.initializeCheckingOnSamples(storm::Environment(), formulas[0], dtmc, region, 3);
     assumption = storm::analysis::Assumption{7, 5, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, checker.validateAssumption(assumption, dummyOrder, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, checker.validateAssumption(storm::Environment(), assumption, dummyOrder, region));
 
     assumption = storm::analysis::Assumption{5, 7, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyOrder, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, dummyOrder, region));
 
     assumption = storm::analysis::Assumption{7, 5, storm::analysis::AssumptionRelation::Equal};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyOrder, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, dummyOrder, region));
 }
 
 TEST_F(AssumptionCheckerTest, Simple1) {
@@ -130,23 +130,23 @@ TEST_F(AssumptionCheckerTest, Simple1) {
 
     // Validating
     storm::analysis::Assumption assumption{1, 2, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{2, 1, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{1, 2, storm::analysis::AssumptionRelation::Equal};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     region = storm::api::parseRegion<storm::RationalFunction>("0.51 <= p <= 0.99", vars);
     assumption = storm::analysis::Assumption{1, 2, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{2, 1, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{1, 2, storm::analysis::AssumptionRelation::Equal};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 }
 
 TEST_F(AssumptionCheckerTest, Casestudy1) {
@@ -189,23 +189,23 @@ TEST_F(AssumptionCheckerTest, Casestudy1) {
 
     // Validating
     storm::analysis::Assumption assumption{1, 2, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{2, 1, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{1, 2, storm::analysis::AssumptionRelation::Equal};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     checker.initializeCheckingOnSamples(storm::Environment(), formulas[0], dtmc, region, 3);
     assumption = storm::analysis::Assumption{1, 2, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{2, 1, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{1, 2, storm::analysis::AssumptionRelation::Equal};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 }
 
 TEST_F(AssumptionCheckerTest, Casestudy2) {
@@ -249,13 +249,13 @@ TEST_F(AssumptionCheckerTest, Casestudy2) {
 
     // Checking on samples and validate
     storm::analysis::Assumption assumption{1, 2, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{2, 1, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{1, 2, storm::analysis::AssumptionRelation::Equal};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 }
 
 TEST_F(AssumptionCheckerTest, Casestudy3) {
@@ -297,22 +297,22 @@ TEST_F(AssumptionCheckerTest, Casestudy3) {
     auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(above, below, 5, decomposition, statesSorted));
 
     storm::analysis::Assumption assumption{1, 2, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{2, 1, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{1, 2, storm::analysis::AssumptionRelation::Equal};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     checker.initializeCheckingOnSamples(storm::Environment(), formulas[0], dtmc, region, 3);
 
     assumption = storm::analysis::Assumption{1, 2, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{2, 1, storm::analysis::AssumptionRelation::Greater};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 
     assumption = storm::analysis::Assumption{1, 2, storm::analysis::AssumptionRelation::Equal};
-    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+    EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(storm::Environment(), assumption, order, region));
 }
