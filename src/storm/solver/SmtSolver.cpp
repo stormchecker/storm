@@ -84,14 +84,6 @@ storm::expressions::ExpressionManager& SmtSolver::getManager() {
     return manager;
 }
 
-bool SmtSolver::setTimeout(uint_fast64_t) {
-    return false;
-}
-
-bool SmtSolver::unsetTimeout() {
-    return false;
-}
-
 std::string SmtSolver::getSmtLibString() const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support exporting the assertions in the SMT-LIB format.");
     return "ERROR";

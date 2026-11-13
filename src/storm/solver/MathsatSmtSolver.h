@@ -1,6 +1,8 @@
 #pragma once
 
 #include <boost/container/flat_map.hpp>
+#include <chrono>
+#include <optional>
 #include "storm-config.h"
 #include "storm/adapters/MathsatExpressionAdapter.h"
 #include "storm/solver/SmtSolver.h"
@@ -104,8 +106,43 @@ class MathsatSmtSolver : public SmtSolver {
 
     virtual storm::expressions::Expression getInterpolant(std::vector<uint_fast64_t> const& groupsA) override;
 
+    virtual void setTimeout(uint_fast64_t milliseconds) override;
+
+    virtual void unsetTimeout() override;
+
    private:
     storm::expressions::SimpleValuation convertMathsatModelToValuation();
+
+#ifdef STORM_HAVE_MATHSAT
+    /*!
+     * Starts the clock for the timeout (if any) of the upcoming query.
+     */
+    void startTimeoutClock();
+
+    /*!
+     * @return True iff a timeout is set and the deadline of the current query has passed.
+     */
+    bool isTimeoutExceeded() const;
+
+    /*!
+     * Processes the result of a call to msat_all_sat.
+     *
+     * @param result The value returned by msat_all_sat.
+     * @param numberOfModels The number of models that were passed to the callback.
+     * @param abortedByCallback Whether the callback aborted the enumeration.
+     * @return The number of models found. If the enumeration was aborted (by the callback or because of the timeout),
+     * these are the models found until then.
+     */
+    uint_fast64_t processAllSatResult(int result, uint_fast64_t numberOfModels, bool abortedByCallback) const;
+
+    /*!
+     * Termination test that is periodically called by MathSAT during search.
+     *
+     * @param userData A pointer to the solver.
+     * @return Non-zero iff the search is to be aborted because the timeout was exceeded.
+     */
+    static int terminationTest(void* userData);
+#endif
 
 #ifdef STORM_HAVE_MATHSAT
     // The MathSAT environment.
@@ -114,6 +151,12 @@ class MathsatSmtSolver : public SmtSolver {
     // The expression adapter used to translate expressions to MathSAT's format. This has to be a pointer, since
     // it must be initialized after creating the environment, but the adapter class has no default constructor.
     std::unique_ptr<storm::adapters::MathsatExpressionAdapter> expressionAdapter;
+
+    // The timeout for each query (if any).
+    std::optional<std::chrono::milliseconds> timeout;
+
+    // The point in time at which the current query is aborted. Only relevant if a timeout is set.
+    std::chrono::steady_clock::time_point deadline;
 #endif
 
     // A flag storing whether the last call was a check involving assumptions.

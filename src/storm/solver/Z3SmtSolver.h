@@ -68,9 +68,9 @@ class Z3SmtSolver : public SmtSolver {
 
     virtual std::vector<storm::expressions::Expression> getUnsatAssumptions() override;
 
-    virtual bool setTimeout(uint_fast64_t milliseconds) override;
+    virtual void setTimeout(uint_fast64_t milliseconds) override;
 
-    virtual bool unsetTimeout() override;
+    virtual void unsetTimeout() override;
 
     virtual std::string getSmtLibString() const override;
 
