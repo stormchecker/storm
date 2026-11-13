@@ -5,6 +5,7 @@
 
 TEST(FileTest, GetLine) {
     std::stringstream stream;
+    // NOLINTNEXTLINE(performance-avoid-endl) -- Deliberately testing std::endl
     stream << "Hello world" << std::endl << "This is a test with n\nThis is a test with rn\r\n\nMore tests";
 
     std::string str;

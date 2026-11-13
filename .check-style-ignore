@@ -1,0 +1,40 @@
+# Files ignored by resources/scripts/check_style.py
+# Each [section] corresponds to the corresponding check
+
+[include-order]
+# Header is included via its full path to avoid an ambiguous include
+src/storm/adapters/sylvan.cpp
+src/storm/utility/string.cpp
+# Include of a 3rdparty header
+src/storm/adapters/ExprttkAdapter.h
+src/storm/adapters/cudd.h
+src/storm/adapters/sylvan.h
+src/storm/storage/dd/bisimulation/InternalSylvanSignatureRefiner.cpp
+# A #pragma .../diagnostic push/ignored/pop block prevents reordering
+src/storm-pars/transformer/BinaryDtmcTransformer.cpp
+src/storm/adapters/IntervalAdapter.h
+src/storm/adapters/JsonAdapter.h
+src/storm/adapters/RationalFunctionAdapter.h
+src/storm/adapters/eigen.h
+src/storm/analysis/GraphConditions.h
+src/storm/automata/DeterministicAutomaton.cpp
+src/storm/solver/GurobiLpSolver.h
+src/storm/solver/HighsLpSolver.h
+src/storm/solver/SoplexLpSolver.h
+src/storm/storage/dd/bisimulation/InternalCuddSignatureRefiner.h
+src/storm/storage/dd/bisimulation/QuotientExtractor.cpp
+src/test/storm-pars/modelchecker/region/monotonicity/MonotonicityHelperTest.cpp
+src/test/storm-pars/transformer/IntervalEndComponentPreserverTest.cpp
+src/test/storm/storage/SylvanDdTest.cpp
+src/test/storm_gtest.h
+
+[raw-throw]
+# Implements STORM_LOG_THROW
+src/storm/utility/macros.h
+# Deliberate throw
+src/storm/automata/HOAConsumerDAHeader.h
+
+[stdout-usage]
+# Explicit use of std::cout
+src/storm-cli-utilities/print.h
+src/storm/utility/initialize.cpp
