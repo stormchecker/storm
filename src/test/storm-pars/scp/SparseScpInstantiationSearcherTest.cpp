@@ -1,5 +1,4 @@
 #include "storm-config.h"
-#include "test/storm-pars/scp/LpSolverTestUtils.h"
 #include "test/storm_gtest.h"
 
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
@@ -14,6 +13,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/utility/constants.h"
+#include "test/storm-pars/scp/LpSolverTestUtils.h"
 
 using namespace storm::pars::scp;
 
@@ -41,7 +41,15 @@ std::shared_ptr<storm::logic::Formula const> parseSingleFormula(std::string cons
 
 }  // namespace
 
-class SparseScpInstantiationSearcherTest : public storm::pars::scp::testutils::LpSolverTest {};
+class SparseScpInstantiationSearcherTest : public storm::pars::scp::testutils::LpSolverTest {
+   public:
+    void SetUp() override {
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
+#endif
+        LpSolverTest::SetUp();
+    }
+};
 
 TEST_P(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc) {
     carl::VariablePool::getInstance().clear();
