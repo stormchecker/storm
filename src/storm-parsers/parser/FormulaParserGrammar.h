@@ -78,13 +78,14 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
     // A parser used for recognizing the optimality operators.
     optimalityOperatorStruct optimalityOperator_;
 
+    // 'printall' and 'values' are equivalent, the former is per PRISM spec, and the latter is more semantically clear.
     struct filterTypeStruct : qi::symbols<char, storm::modelchecker::FilterType> {
         filterTypeStruct() {
             add("min", storm::modelchecker::FilterType::MIN)("max", storm::modelchecker::FilterType::MAX)("sum", storm::modelchecker::FilterType::SUM)(
                 "avg", storm::modelchecker::FilterType::AVG)("count", storm::modelchecker::FilterType::COUNT)(
                 "forall", storm::modelchecker::FilterType::FORALL)("exists", storm::modelchecker::FilterType::EXISTS)(
-                "argmin", storm::modelchecker::FilterType::ARGMIN)("argmax", storm::modelchecker::FilterType::ARGMAX)("values",
-                                                                                                                      storm::modelchecker::FilterType::VALUES);
+                "argmin", storm::modelchecker::FilterType::ARGMIN)("argmax", storm::modelchecker::FilterType::ARGMAX)(
+                "printall", storm::modelchecker::FilterType::VALUES)("values", storm::modelchecker::FilterType::VALUES);
         }
     };
 

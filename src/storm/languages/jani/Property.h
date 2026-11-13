@@ -61,6 +61,12 @@ class FilterExpression {
         return (ft == storm::modelchecker::FilterType::VALUES) && statesFormula && statesFormula->isInitialFormula();
     }
 
+    /**
+     * Output filter expression in PRISM syntax.
+     * @param out output stream
+     */
+    void asPrismSyntax(std::ostream& out) const;
+
     FilterExpression substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
         return FilterExpression(formula->substitute(substitution), ft, statesFormula->substitute(substitution));
     }
@@ -140,6 +146,16 @@ class Property {
 
     FilterExpression const& getFilter() const;
 
+    /**
+     * Output property in PRISM syntax, without comment.
+     * @param out output stream
+     */
+    void asPrismSyntax(std::ostream& out) const;
+
+    /**
+     * Output property in PRISM syntax, without comment.
+     * @return property as a string
+     */
     std::string asPrismSyntax() const;
 
     std::set<storm::expressions::Variable> const& getUndefinedConstants() const;

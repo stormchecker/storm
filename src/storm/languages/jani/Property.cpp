@@ -3,6 +3,14 @@
 namespace storm {
 namespace jani {
 
+void FilterExpression::asPrismSyntax(std::ostream& out) const {
+    if (isDefault()) {
+        out << *formula;
+        return;
+    }
+    out << "filter(" << storm::modelchecker::toPrismSyntax(ft) << ", " << *formula << ", " << *statesFormula << ")";
+}
+
 std::ostream& operator<<(std::ostream& os, FilterExpression const& fe) {
     return os << "Obtain " << toString(fe.getFilterType()) << " of the '" << *fe.getStatesFormula() << "'-states with values described by '" << *fe.getFormula()
               << "'";
@@ -28,26 +36,17 @@ std::string const& Property::getComment() const {
     return this->comment;
 }
 
+void Property::asPrismSyntax(std::ostream& out) const {
+    if (!this->getName().empty()) {
+        out << "\"" << this->getName() << "\": ";
+    }
+    this->getFilter().asPrismSyntax(out);
+    out << ";";
+}
+
 std::string Property::asPrismSyntax() const {
     std::stringstream stream;
-    if (!this->getName().empty()) {
-        stream << "\"" << this->getName() << "\": ";
-    }
-    auto fe = this->getFilter();
-    if (fe.isDefault()) {
-        stream << *fe.getFormula();
-    } else {
-        stream << "filter(" << storm::modelchecker::toString(fe.getFilterType()) << ", " << *fe.getFormula();
-        if (fe.getStatesFormula() && !fe.getStatesFormula()->isInitialFormula()) {
-            stream << ", " << *fe.getFormula();
-        }
-        stream << ")";
-    }
-    stream << ";";
-
-    if (!this->getComment().empty()) {
-        stream << " // " << this->getComment();
-    }
+    this->asPrismSyntax(stream);
     return stream.str();
 }
 
