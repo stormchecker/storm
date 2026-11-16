@@ -84,6 +84,8 @@ HighsLpSolver<ValueType, RawMode>::HighsLpSolver(std::string const&, Optimizatio
     : LpSolver<ValueType, RawMode>(optDir), nextVariableIndex(0) {
     // By default, HiGHS prints its log to the command line. We disable this as storm provides its own logging.
     highs.setOptionValue("output_flag", false);
+    // The MIP feasibility tolerance must be below the strictInequalityMargin, otherwise strict and non-strict constraints become indistinguishable.
+    highs.setOptionValue("mip_feasibility_tolerance", strictInequalityMargin / 10);
 }
 
 template<typename ValueType, bool RawMode>
@@ -270,7 +272,8 @@ void HighsLpSolver<ValueType, RawMode>::optimize() const {
 
     // Then we actually optimize the model.
     HighsStatus status = highs.run();
-    STORM_LOG_THROW(status != HighsStatus::kError, storm::exceptions::InvalidStateException, "Unable to optimize the model with HiGHS.");
+    STORM_LOG_THROW(status != HighsStatus::kError, storm::exceptions::InvalidStateException,
+                    "Unable to optimize the model with HiGHS (model status: " << highs.modelStatusToString(highs.getModelStatus()) << ").");
 
     this->currentModelHasBeenOptimized = true;
     modelStatus = highs.getModelStatus();
