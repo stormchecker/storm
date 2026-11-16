@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <string>
 
 #include "storm/solver/SolverRequirement.h"
@@ -24,8 +25,19 @@ class LpSolverRequirements {
         StrictRelations
     };
 
+    /*!
+     * Returns all elements. Must list every Element.
+     */
+    static constexpr std::array<Element, 4> allElements() {
+        return {Element::IntegerVariables, Element::Incremental, Element::IndicatorConstraints, Element::StrictRelations};
+    }
+
     LpSolverRequirements() = default;
 
+    /*!
+     * Enables the requirement for the respective feature.
+     * @param critical If false, the requirement is optional (nice to have). The requirement is enabled either way.
+     */
     LpSolverRequirements& requireIntegerVariables(bool critical = true);
     LpSolverRequirements& requireIncremental(bool critical = true);
     LpSolverRequirements& requireIndicatorConstraints(bool critical = true);

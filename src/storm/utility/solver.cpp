@@ -138,8 +138,7 @@ bool Z3LpSolverFactory<ValueType>::supports(storm::solver::LpSolverRequirements:
 template<typename ValueType>
 storm::solver::LpSolverRequirements LpSolverFactory<ValueType>::getUnsupportedRequirements(storm::solver::LpSolverRequirements const& requirements) const {
     storm::solver::LpSolverRequirements unsupported;
-    using Element = storm::solver::LpSolverRequirements::Element;
-    for (auto const element : {Element::IntegerVariables, Element::Incremental, Element::IndicatorConstraints, Element::StrictRelations}) {
+    for (auto const element : storm::solver::LpSolverRequirements::allElements()) {
         auto const& requirement = requirements.get(element);
         if (requirement && !supports(element)) {
             unsupported.require(element, requirement.isCritical());
