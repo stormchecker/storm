@@ -143,6 +143,9 @@ MathsatSmtSolver::MathsatSmtSolver(storm::expressions::ExpressionManager& manage
     STORM_LOG_THROW(!MSAT_ERROR_ENV(env), storm::exceptions::UnexpectedException, "Unable to create Mathsat environment.");
     msat_destroy_config(config);
 
+    // Register the termination test that realizes timeouts.
+    msat_set_termination_test(env, &MathsatSmtSolver::terminationTest, this);
+
     expressionAdapter = std::make_unique<storm::adapters::MathsatExpressionAdapter>(manager, env);
 #else
     (void)options;
@@ -189,6 +192,8 @@ void MathsatSmtSolver::pop(uint_fast64_t n) {
 void MathsatSmtSolver::reset() {
 #ifdef STORM_HAVE_MATHSAT
     msat_reset_env(env);
+    // Make sure that the termination test survives the reset.
+    msat_set_termination_test(env, &MathsatSmtSolver::terminationTest, this);
 #else
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without MathSAT support.");
 #endif
@@ -212,6 +217,7 @@ void MathsatSmtSolver::add(storm::expressions::Expression const& e) {
 SmtSolver::CheckResult MathsatSmtSolver::check() {
 #ifdef STORM_HAVE_MATHSAT
     lastCheckAssumptions = false;
+    startTimeoutClock();
     switch (msat_solve(env)) {
         case MSAT_SAT:
             this->lastResult = SmtSolver::CheckResult::Sat;
@@ -239,6 +245,7 @@ SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(storm::expressions
         mathSatAssumptions.push_back(this->expressionAdapter->translateExpression(assumption));
     }
 
+    startTimeoutClock();
     switch (msat_solve_with_assumptions(env, mathSatAssumptions.data(), mathSatAssumptions.size())) {
         case MSAT_SAT:
             this->lastResult = SmtSolver::CheckResult::Sat;
@@ -267,6 +274,7 @@ SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::initializer_l
         mathSatAssumptions.push_back(this->expressionAdapter->translateExpression(assumption));
     }
 
+    startTimeoutClock();
     switch (msat_solve_with_assumptions(env, mathSatAssumptions.data(), mathSatAssumptions.size())) {
         case MSAT_SAT:
             this->lastResult = SmtSolver::CheckResult::Sat;
@@ -372,12 +380,20 @@ class AllsatValuationCallbackUserData {
             valuation.setBooleanValue(stormVariable, currentTermValue);
         }
 
+        ++user->numberOfModels;
         if (user->callback(valuation)) {
             return 1;
         } else {
+            user->abortedByCallback = true;
             return 0;
         }
     }
+
+    // The number of models that were passed to the callback.
+    uint_fast64_t numberOfModels = 0;
+
+    // Whether the callback aborted the enumeration.
+    bool abortedByCallback = false;
 
    protected:
     // The manager responsible for the expression.s
@@ -405,12 +421,20 @@ class AllsatModelReferenceCallbackUserData {
     static int allsatModelReferenceCallback(msat_term* model, int, void* user_data) {
         AllsatModelReferenceCallbackUserData* user = reinterpret_cast<AllsatModelReferenceCallbackUserData*>(user_data);
         MathsatSmtSolver::MathsatAllsatModelReference modelReference(user->manager, user->env, model, user->atomToSlotMapping);
+        ++user->numberOfModels;
         if (user->callback(modelReference)) {
             return 1;
         } else {
+            user->abortedByCallback = true;
             return 0;
         }
     }
+
+    // The number of models that were passed to the callback.
+    uint_fast64_t numberOfModels = 0;
+
+    // Whether the callback aborted the enumeration.
+    bool abortedByCallback = false;
 
    protected:
     // The manager responsible for the expression.s
@@ -442,12 +466,12 @@ uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable>
     }
 
     AllsatValuationCallbackUserData allSatUserData(this->getManager(), *expressionAdapter, env, callback);
-    int numberOfModels =
-        msat_all_sat(env, msatImportant.data(), msatImportant.size(), &AllsatValuationCallbackUserData::allsatValuationsCallback, &allSatUserData);
+    startTimeoutClock();
+    int result = msat_all_sat(env, msatImportant.data(), msatImportant.size(), &AllsatValuationCallbackUserData::allsatValuationsCallback, &allSatUserData);
 
     // Restore original assertion stack and return.
     this->pop();
-    return static_cast<uint_fast64_t>(numberOfModels);
+    return processAllSatResult(result, allSatUserData.numberOfModels, allSatUserData.abortedByCallback);
 #else
     (void)important;
     (void)callback;
@@ -472,12 +496,13 @@ uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable>
     }
 
     AllsatModelReferenceCallbackUserData allSatUserData(this->getManager(), env, atomToSlotMapping, callback);
-    int numberOfModels =
+    startTimeoutClock();
+    int result =
         msat_all_sat(env, msatImportant.data(), msatImportant.size(), &AllsatModelReferenceCallbackUserData::allsatModelReferenceCallback, &allSatUserData);
 
     // Restore original assertion stack and return.
     this->pop();
-    return static_cast<uint_fast64_t>(numberOfModels);
+    return processAllSatResult(result, allSatUserData.numberOfModels, allSatUserData.abortedByCallback);
 #else
     (void)important;
     (void)callback;
@@ -548,5 +573,49 @@ storm::expressions::Expression MathsatSmtSolver::getInterpolant(std::vector<uint
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without MathSAT support.");
 #endif
 }
+
+void MathsatSmtSolver::setTimeout(uint_fast64_t milliseconds) {
+#ifdef STORM_HAVE_MATHSAT
+    timeout = std::chrono::milliseconds(milliseconds);
+#else
+    (void)milliseconds;
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without MathSAT support.");
+#endif
+}
+
+void MathsatSmtSolver::unsetTimeout() {
+#ifdef STORM_HAVE_MATHSAT
+    timeout.reset();
+#else
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without MathSAT support.");
+#endif
+}
+
+#ifdef STORM_HAVE_MATHSAT
+void MathsatSmtSolver::startTimeoutClock() {
+    if (timeout) {
+        deadline = std::chrono::steady_clock::now() + timeout.value();
+    }
+}
+
+bool MathsatSmtSolver::isTimeoutExceeded() const {
+    return timeout && std::chrono::steady_clock::now() >= deadline;
+}
+
+int MathsatSmtSolver::terminationTest(void* userData) {
+    return static_cast<MathsatSmtSolver const*>(userData)->isTimeoutExceeded() ? 1 : 0;
+}
+
+uint_fast64_t MathsatSmtSolver::processAllSatResult(int result, uint_fast64_t numberOfModels, bool abortedByCallback) const {
+    if (result < 0) {
+        // MathSAT reports an error if the enumeration was aborted, either by the callback or by the termination test.
+        bool const timedOut = isTimeoutExceeded();
+        STORM_LOG_THROW(timedOut || abortedByCallback, storm::exceptions::UnexpectedException, "MathSAT failed to perform AllSat.");
+        STORM_LOG_WARN_COND(!timedOut || abortedByCallback, "AllSat was aborted because of the timeout. Only " << numberOfModels << " models were found.");
+    }
+    // Return the number of models passed to the callback, which is the number of models found so far even if the enumeration was aborted.
+    return numberOfModels;
+}
+#endif
 }  // namespace solver
 }  // namespace storm

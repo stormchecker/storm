@@ -342,19 +342,17 @@ std::vector<storm::expressions::Expression> Cvc5SmtSolver::getUnsatAssumptions()
 #endif
 }
 
-bool Cvc5SmtSolver::setTimeout(uint_fast64_t milliseconds) {
+void Cvc5SmtSolver::setTimeout(uint_fast64_t milliseconds) {
 #ifdef STORM_HAVE_CVC5
     this->solver->setOption("tlimit-per", std::to_string(milliseconds));
-    return true;
 #else
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
-bool Cvc5SmtSolver::unsetTimeout() {
+void Cvc5SmtSolver::unsetTimeout() {
 #ifdef STORM_HAVE_CVC5
     this->solver->setOption("tlimit-per", "0");
-    return true;
 #else
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif

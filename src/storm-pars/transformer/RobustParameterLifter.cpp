@@ -202,10 +202,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
         exprBounds = exprBounds && expressionManager->rational(0) <= var && var <= expressionManager->rational(1);
     }
 
-    if (!smtSolver->setTimeout(50)) {
-        // Without a timeout, the search for zeroes might not terminate in reasonable time.
-        return std::nullopt;
-    }
+    smtSolver->setTimeout(50);
 
     smtSolver->add(exprBounds);
     smtSolver->add(expression);

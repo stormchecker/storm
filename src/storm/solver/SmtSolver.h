@@ -278,20 +278,17 @@ class SmtSolver {
     storm::expressions::ExpressionManager& getManager();
 
     /*!
-     * If supported by the solver, this will limit all subsequent satisfiability queries to the given number of
-     * milliseconds.
+     * Limits each subsequent satisfiability query to the given number of milliseconds.
+     * If a query exceeds this limit, it is aborted and its result is CheckResult::Unknown.
      *
      * @param milliseconds The amount of milliseconds before timing out.
-     * @return True iff the solver supports setting a timeout.
      */
-    virtual bool setTimeout(uint_fast64_t milliseconds);
+    virtual void setTimeout(uint_fast64_t milliseconds) = 0;
 
     /*!
-     * If supported by the solver, this unsets a previous timeout.
-     *
-     * @return True iff the solver supports timeouts.
+     * Unsets a previous timeout such that subsequent queries are no longer limited in time.
      */
-    virtual bool unsetTimeout();
+    virtual void unsetTimeout() = 0;
 
     /*!
      * If supported by the solver, this function returns the current assertions in the SMT-LIB format.

@@ -598,8 +598,7 @@ storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithLeq(uint64
 
 void DFTASFChecker::setSolverTimeout(uint_fast64_t milliseconds) {
     STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, timeout cannot be set.");
-    bool timeoutSet = solver->setTimeout(milliseconds);
-    STORM_LOG_WARN_COND(timeoutSet, "The selected SMT solver does not support timeouts. Queries may take arbitrarily long.");
+    solver->setTimeout(milliseconds);
 }
 
 void DFTASFChecker::unsetSolverTimeout() {

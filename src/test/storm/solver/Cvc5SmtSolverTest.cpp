@@ -5,6 +5,7 @@
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/expressions/OperatorType.h"
 #include "storm/solver/Cvc5SmtSolver.h"
+#include "test/storm/solver/SmtSolverTimeoutTestUtils.h"
 
 TEST(Cvc5SmtSolver, CheckSat) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
@@ -465,4 +466,11 @@ TEST(Cvc5SmtSolver, UnsatAssumptionsWithBooleanEquivalence) {
     ASSERT_NO_THROW(unsatAssumptions = s.getUnsatAssumptions());
     EXPECT_FALSE(unsatAssumptions.empty());
 }
+
+TEST(Cvc5SmtSolver, Timeout) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    storm::solver::Cvc5SmtSolver s(*manager);
+    storm::test::checkSmtSolverTimeout(s, *manager);
+}
+
 #endif
