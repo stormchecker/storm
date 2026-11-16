@@ -601,6 +601,9 @@ bool HighsLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Elemen
             return !RawMode;
         case LpSolverRequirements::Element::IndicatorConstraints:
             return !RawMode;
+        case LpSolverRequirements::Element::StrictRelations:
+            // Only approximated by shifting the bound.
+            return false;
     }
     return false;
 }

@@ -443,6 +443,8 @@ bool SoplexLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Eleme
             return false;
         case LpSolverRequirements::Element::IndicatorConstraints:
             return false;
+        case LpSolverRequirements::Element::StrictRelations:
+            return false;
     }
     return false;
 }

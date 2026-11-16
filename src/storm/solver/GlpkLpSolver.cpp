@@ -617,6 +617,9 @@ bool GlpkLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element
             return !RawMode;
         case LpSolverRequirements::Element::IndicatorConstraints:
             return false;
+        case LpSolverRequirements::Element::StrictRelations:
+            // Only approximated by shifting the bound.
+            return false;
     }
     return false;
 }

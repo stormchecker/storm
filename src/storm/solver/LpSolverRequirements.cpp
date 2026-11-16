@@ -20,6 +20,11 @@ LpSolverRequirements& LpSolverRequirements::requireIndicatorConstraints(bool cri
     return *this;
 }
 
+LpSolverRequirements& LpSolverRequirements::requireStrictRelations(bool critical) {
+    strictRelationsRequirement.enable(critical);
+    return *this;
+}
+
 LpSolverRequirements& LpSolverRequirements::require(Element const& element, bool critical) {
     switch (element) {
         case Element::IntegerVariables:
@@ -28,6 +33,8 @@ LpSolverRequirements& LpSolverRequirements::require(Element const& element, bool
             return requireIncremental(critical);
         case Element::IndicatorConstraints:
             return requireIndicatorConstraints(critical);
+        case Element::StrictRelations:
+            return requireStrictRelations(critical);
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown Element type.");
 }
@@ -44,6 +51,10 @@ SolverRequirement const& LpSolverRequirements::indicatorConstraints() const {
     return indicatorConstraintsRequirement;
 }
 
+SolverRequirement const& LpSolverRequirements::strictRelations() const {
+    return strictRelationsRequirement;
+}
+
 SolverRequirement const& LpSolverRequirements::get(Element const& element) const {
     switch (element) {
         case Element::IntegerVariables:
@@ -52,16 +63,19 @@ SolverRequirement const& LpSolverRequirements::get(Element const& element) const
             return incremental();
         case Element::IndicatorConstraints:
             return indicatorConstraints();
+        case Element::StrictRelations:
+            return strictRelations();
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown Element type.");
 }
 
 bool LpSolverRequirements::hasEnabledRequirement() const {
-    return integerVariablesRequirement || incrementalRequirement || indicatorConstraintsRequirement;
+    return integerVariablesRequirement || incrementalRequirement || indicatorConstraintsRequirement || strictRelationsRequirement;
 }
 
 bool LpSolverRequirements::hasEnabledCriticalRequirement() const {
-    return integerVariablesRequirement.isCritical() || incrementalRequirement.isCritical() || indicatorConstraintsRequirement.isCritical();
+    return integerVariablesRequirement.isCritical() || incrementalRequirement.isCritical() || indicatorConstraintsRequirement.isCritical() ||
+           strictRelationsRequirement.isCritical();
 }
 
 std::string LpSolverRequirements::getEnabledRequirementsAsString() const {
@@ -82,6 +96,7 @@ std::string LpSolverRequirements::getEnabledRequirementsAsString() const {
     append(integerVariables(), "integerVariables");
     append(incremental(), "incremental");
     append(indicatorConstraints(), "indicatorConstraints");
+    append(strictRelations(), "strictRelations");
     res += "]";
     return res;
 }

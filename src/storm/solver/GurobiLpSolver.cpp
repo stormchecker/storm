@@ -1014,6 +1014,9 @@ bool GurobiLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Eleme
             return true;
         case LpSolverRequirements::Element::IndicatorConstraints:
             return true;
+        case LpSolverRequirements::Element::StrictRelations:
+            // Only approximated by shifting the bound.
+            return false;
     }
     return false;
 }

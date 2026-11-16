@@ -485,6 +485,8 @@ bool Z3LpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element c
             return !RawMode;
         case LpSolverRequirements::Element::IndicatorConstraints:
             return !RawMode;
+        case LpSolverRequirements::Element::StrictRelations:
+            return true;
     }
     return false;
 }

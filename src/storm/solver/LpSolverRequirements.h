@@ -18,7 +18,10 @@ class LpSolverRequirements {
         // Support for incremental solving via push() and pop().
         Incremental,
         // Support for indicator constraints.
-        IndicatorConstraints
+        IndicatorConstraints,
+        // Exact support for strict inequalities (< and >).
+        // Some solvers accept them but only approximate them by shifting the bound by a small margin; these do not count as supporting this feature.
+        StrictRelations
     };
 
     LpSolverRequirements() = default;
@@ -26,11 +29,13 @@ class LpSolverRequirements {
     LpSolverRequirements& requireIntegerVariables(bool critical = true);
     LpSolverRequirements& requireIncremental(bool critical = true);
     LpSolverRequirements& requireIndicatorConstraints(bool critical = true);
+    LpSolverRequirements& requireStrictRelations(bool critical = true);
     LpSolverRequirements& require(Element const& element, bool critical = true);
 
     SolverRequirement const& integerVariables() const;
     SolverRequirement const& incremental() const;
     SolverRequirement const& indicatorConstraints() const;
+    SolverRequirement const& strictRelations() const;
     SolverRequirement const& get(Element const& element) const;
 
     bool hasEnabledRequirement() const;
@@ -42,6 +47,7 @@ class LpSolverRequirements {
     SolverRequirement integerVariablesRequirement;
     SolverRequirement incrementalRequirement;
     SolverRequirement indicatorConstraintsRequirement;
+    SolverRequirement strictRelationsRequirement;
 };
 
 }  // namespace storm::solver
