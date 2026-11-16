@@ -21,6 +21,11 @@ on:
         required: false
         type: string
         default: ''
+      ref:
+        description: 'Git ref (branch, tag or SHA) of Storm to build (empty: default ref of the checkout action)'
+        required: false
+        type: string
+        default: ''
   # needed to trigger the workflow manually
   workflow_dispatch:
     inputs:
@@ -36,6 +41,11 @@ on:
         default: 'Release'
       carl_tag:
         description: 'carl-storm tag to build against (empty: use the default carl tag of the CMakeLists.txt)'
+        required: false
+        type: string
+        default: ''
+      ref:
+        description: 'Git ref (branch, tag or SHA) of Storm to build (empty: default ref of the checkout action)'
         required: false
         type: string
         default: ''
@@ -70,6 +80,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: stormchecker/storm
+          ref: ${{ inputs.ref }}
       - name: Restore 3rdparty source cache
         id: cache-3rdparty-restore
         uses: ./.github/actions/cache-3rdparty-action
