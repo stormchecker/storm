@@ -27,9 +27,9 @@ jobs:
           CARL_VERSION: ${{ inputs.carl_version }}
         run: |
           # Update STORM_CARL_GIT_TAG_DEFAULT (the default for STORM_CARL_GIT_TAG)
-          sed -i -E "s/STORM_CARL_GIT_TAG_DEFAULT \"([0-9]+\.[0-9]+)\"/STORM_CARL_GIT_TAG_DEFAULT \"${CARL_VERSION}\"/" CMakeLists.txt
+          sed -i -E "s/STORM_CARL_GIT_TAG_DEFAULT \"[0-9]+(\.[0-9]+)+\"/STORM_CARL_GIT_TAG_DEFAULT \"${CARL_VERSION}\"/" CMakeLists.txt
           # Update carl_tag
-          sed -i -E "s/ARG carl_tag=\"[0-9]+\.[0-9]+\"/ARG carl_tag=\"${CARL_VERSION}\"/" Dockerfile
+          sed -i -E "s/ARG carl_tag=\"[0-9]+(\.[0-9]+)+\"/ARG carl_tag=\"${CARL_VERSION}\"/" Dockerfile
       - name: Commit update
         env:
           CARL_VERSION: ${{ inputs.carl_version }}
