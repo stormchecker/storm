@@ -701,6 +701,30 @@ TYPED_TEST(LpSolverTest, StrictRelations) {
     }
 }
 
+TYPED_TEST(LpSolverTest, IncrementalIndicatorConstraint) {
+    if (!this->supports(Element::Incremental) || !this->supports(Element::IndicatorConstraints)) {
+        GTEST_SKIP();
+    }
+    auto solver = this->factory()->create(this->env(), "");
+    solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
+    storm::expressions::Variable x = solver->addBoundedContinuousVariable("x", 0, this->parseNumber("5"), 1);
+    storm::expressions::Variable b = solver->addBinaryVariable("b");
+    ASSERT_NO_THROW(solver->addConstraint("", b == solver->getConstant(1)));
+
+    // (b == 1) => x <= 2 is only present between push() and pop().
+    solver->push();
+    ASSERT_NO_THROW(solver->addIndicatorConstraint("", b, true, x <= solver->getConstant(this->parseNumber("2"))));
+    ASSERT_NO_THROW(solver->update());
+    ASSERT_NO_THROW(solver->optimize());
+    ASSERT_TRUE(solver->isOptimal());
+    EXPECT_NEAR(this->parseNumber("2"), solver->getContinuousValue(x), this->precision());
+
+    ASSERT_NO_THROW(solver->pop());
+    ASSERT_NO_THROW(solver->optimize());
+    ASSERT_TRUE(solver->isOptimal());
+    EXPECT_NEAR(this->parseNumber("5"), solver->getContinuousValue(x), this->precision());
+}
+
 TYPED_TEST(LpSolverTest, IndicatorConstraintLeq) {
     if (!this->supports(Element::IndicatorConstraints)) {
         GTEST_SKIP();

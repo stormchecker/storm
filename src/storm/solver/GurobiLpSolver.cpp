@@ -520,6 +520,7 @@ void GurobiLpSolver<ValueType, RawMode>::pop() {
                         "Unable to delete constraints (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
         GRBgetintattr(model, GRB_INT_ATTR_NUMGENCONSTRS, &num);
         indicesToBeRemoved = storm::utility::vector::buildVectorForRange(lvl.firstGenConstraintIndex, num);
+        error = GRBdelgenconstrs(model, indicesToBeRemoved.size(), indicesToBeRemoved.data());
         STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
                         "Unable to delete general constraints (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
         indicesToBeRemoved.clear();
