@@ -1005,6 +1005,19 @@ std::vector<GurobiSolverMethod> getGurobiSolverMethods() {
             GurobiSolverMethod::CONCURRENT, GurobiSolverMethod::DETCONCURRENT, GurobiSolverMethod::DETCONCURRENTSIMPLEX};
 }
 
+template<typename ValueType, bool RawMode>
+bool GurobiLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element const& element) {
+    switch (element) {
+        case LpSolverRequirements::Element::IntegerVariables:
+            return true;
+        case LpSolverRequirements::Element::Incremental:
+            return true;
+        case LpSolverRequirements::Element::IndicatorConstraints:
+            return true;
+    }
+    return false;
+}
+
 template class GurobiLpSolver<double, true>;
 template class GurobiLpSolver<double, false>;
 template class GurobiLpSolver<storm::RationalNumber, true>;

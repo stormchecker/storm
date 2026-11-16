@@ -617,6 +617,26 @@ TYPED_TEST(LpSolverTest, MILPUnbounded) {
     STORM_SILENT_ASSERT_THROW(solver->getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
+TYPED_TEST(LpSolverTest, SupportedRequirements) {
+    using Element = storm::solver::LpSolverRequirements::Element;
+    auto const factory = this->factory();
+    EXPECT_EQ(this->supportsInteger(), factory->supports(Element::IntegerVariables));
+    EXPECT_EQ(this->supportsIncremental(), factory->supports(Element::Incremental));
+    EXPECT_EQ(this->supportsIndicator(), factory->supports(Element::IndicatorConstraints));
+
+    auto const requirements = storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental(false);
+    auto const unsupported = factory->getUnsupportedRequirements(requirements);
+    EXPECT_EQ(!this->supportsInteger(), static_cast<bool>(unsupported.integerVariables()));
+    EXPECT_EQ(!this->supportsInteger(), unsupported.hasEnabledCriticalRequirement());
+    EXPECT_EQ(!this->supportsIncremental(), static_cast<bool>(unsupported.incremental()));
+    EXPECT_FALSE(unsupported.incremental().isCritical());
+    EXPECT_FALSE(unsupported.indicatorConstraints());
+
+    auto const unsupportedFromEnv =
+        storm::utility::solver::getUnsupportedLpSolverRequirements<typename TestFixture::ValueType>(this->env(), requirements, this->solverSelection());
+    EXPECT_EQ(unsupported.getEnabledRequirementsAsString(), unsupportedFromEnv.getEnabledRequirementsAsString());
+}
+
 TYPED_TEST(LpSolverTest, Incremental) {
     if (!this->supportsIncremental()) {
         GTEST_SKIP();

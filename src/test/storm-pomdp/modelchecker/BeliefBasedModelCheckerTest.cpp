@@ -20,8 +20,10 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/solver/LpSolverRequirements.h"
 #include "storm/transformer/MakePOMDPCanonic.h"
 #include "storm/utility/graph.h"
+#include "storm/utility/solver.h"
 
 namespace {
 enum class PreprocessingType { None, SelfloopReduction, QualitativeReduction, All };
@@ -241,8 +243,9 @@ class BeliefBasedModelCheckerTest : public ::testing::Test {
     }
 
     bool lpSolverSupportsClipping() const {
-        // SoPlex does not support push/pop needed by incremental MILPs
-        return env().solver().getLpSolverType() != storm::solver::LpSolverType::Soplex;
+        // Clipping requires an incremental MILP solver.
+        auto const requirements = storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental();
+        return !storm::utility::solver::getUnsupportedLpSolverRequirements<BeliefValueType>(env(), requirements).hasEnabledCriticalRequirement();
     }
 
     template<typename ValueType>
@@ -1538,7 +1541,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, reward_bounded_min_rejects_two_sided_dim
 #if defined STORM_HAVE_LP_SOLVER
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_Pmax) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     typedef storm::models::sparse::Pomdp<typename TestFixture::POMDPValueType> POMDPType;
     typedef typename TestFixture::POMDPValueType POMDPValueType;
@@ -1578,7 +1581,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_Pmax) {
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_Pmin) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     typedef storm::models::sparse::Pomdp<typename TestFixture::POMDPValueType> POMDPType;
     typedef typename TestFixture::POMDPValueType POMDPValueType;
@@ -1618,7 +1621,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_Pmin) {
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_Pmin_early_clipping_is_sound) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     typedef storm::models::sparse::Pomdp<typename TestFixture::POMDPValueType> POMDPType;
     typedef typename TestFixture::POMDPValueType POMDPValueType;
@@ -1645,7 +1648,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_Pmin_early_clipping_is_sound
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_slippery_Pmax) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     typedef storm::models::sparse::Pomdp<typename TestFixture::POMDPValueType> POMDPType;
     typedef typename TestFixture::POMDPValueType POMDPValueType;
@@ -1678,7 +1681,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_slippery_Pmax) {
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_slippery_Pmin) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     typedef storm::models::sparse::Pomdp<typename TestFixture::POMDPValueType> POMDPType;
     typedef typename TestFixture::POMDPValueType POMDPValueType;
@@ -1724,7 +1727,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_slippery_Pmin) {
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_Rmax) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     typedef storm::models::sparse::Pomdp<typename TestFixture::POMDPValueType> POMDPType;
     typedef typename TestFixture::POMDPValueType POMDPValueType;
@@ -1757,7 +1760,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_Rmax) {
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_Rmin) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     typedef storm::models::sparse::Pomdp<typename TestFixture::POMDPValueType> POMDPType;
     typedef typename TestFixture::POMDPValueType POMDPValueType;
@@ -1790,7 +1793,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_Rmin) {
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_slippery_Rmax) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     typedef storm::models::sparse::Pomdp<typename TestFixture::POMDPValueType> POMDPType;
     typedef typename TestFixture::POMDPValueType POMDPValueType;
@@ -1823,7 +1826,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_slippery_Rmax) {
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_slippery_Rmin) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     typedef storm::models::sparse::Pomdp<typename TestFixture::POMDPValueType> POMDPType;
     typedef typename TestFixture::POMDPValueType POMDPValueType;
@@ -1856,7 +1859,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_simple_slippery_Rmin) {
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_maze2_Rmin) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     typedef storm::models::sparse::Pomdp<typename TestFixture::POMDPValueType> POMDPType;
     typedef typename TestFixture::POMDPValueType POMDPValueType;
@@ -1888,7 +1891,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_maze2_Rmin) {
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_maze2_Rmax) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     typedef storm::models::sparse::Pomdp<typename TestFixture::POMDPValueType> POMDPType;
     typedef typename TestFixture::POMDPValueType POMDPValueType;
@@ -1919,7 +1922,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_maze2_Rmax) {
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_maze2_slippery_Rmin) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     if (this->env().solver().getLpSolverType() == storm::solver::LpSolverType::Z3) {
         GTEST_SKIP() << "LP solver is too slow for clipping on this instance.";
@@ -1955,7 +1958,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_maze2_slippery_Rmin) {
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_maze2_slippery_Rmax) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     if (this->env().solver().getLpSolverType() == storm::solver::LpSolverType::Z3) {
         GTEST_SKIP() << "LP solver is too slow for clipping on this instance.";
@@ -1989,7 +1992,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_maze2_slippery_Rmax) {
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_refuel_Pmax) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     typedef storm::models::sparse::Pomdp<typename TestFixture::POMDPValueType> POMDPType;
     typedef typename TestFixture::POMDPValueType POMDPValueType;
@@ -2021,7 +2024,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, clip_refuel_Pmax) {
 
 TYPED_TEST(BeliefBasedModelCheckerTest, clip_refuel_Pmin) {
     if (!this->lpSolverSupportsClipping()) {
-        GTEST_SKIP() << "LP solver does not support clipping.";
+        GTEST_SKIP() << "LP solver does not support incremental MILP required for clipping.";
     }
     typedef storm::models::sparse::Pomdp<typename TestFixture::POMDPValueType> POMDPType;
     typedef typename TestFixture::POMDPValueType POMDPValueType;

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <memory>
+
+#include "storm/solver/LpSolverRequirements.h"
 #include "storm/solver/SolverSelectionOptions.h"
 
 namespace storm {
@@ -37,6 +39,16 @@ class LpSolverFactory {
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const = 0;
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(storm::Environment const& env, std::string const& name) const = 0;
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const = 0;
+
+    /*!
+     * Returns whether the LP solvers created by this factory support the given feature.
+     */
+    virtual bool supports(storm::solver::LpSolverRequirements::Element const& element) const = 0;
+
+    /*!
+     * Returns the subset of the given requirements that are not supported by the LP solvers created by this factory.
+     */
+    storm::solver::LpSolverRequirements getUnsupportedRequirements(storm::solver::LpSolverRequirements const& requirements) const;
 };
 
 template<typename ValueType>
@@ -45,6 +57,7 @@ class GlpkLpSolverFactory : public LpSolverFactory<ValueType> {
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
+    virtual bool supports(storm::solver::LpSolverRequirements::Element const& element) const override;
 };
 
 template<typename ValueType>
@@ -53,6 +66,7 @@ class SoplexLpSolverFactory : public LpSolverFactory<ValueType> {
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
+    virtual bool supports(storm::solver::LpSolverRequirements::Element const& element) const override;
 };
 
 template<typename ValueType>
@@ -61,6 +75,7 @@ class HighsLpSolverFactory : public LpSolverFactory<ValueType> {
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
+    virtual bool supports(storm::solver::LpSolverRequirements::Element const& element) const override;
 };
 
 template<typename ValueType>
@@ -69,6 +84,7 @@ class GurobiLpSolverFactory : public LpSolverFactory<ValueType> {
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
+    virtual bool supports(storm::solver::LpSolverRequirements::Element const& element) const override;
 
    private:
     std::shared_ptr<storm::solver::GurobiEnvironment> const& getOrCreateGurobiEnvironment(storm::Environment const& env) const;
@@ -82,6 +98,7 @@ class Z3LpSolverFactory : public LpSolverFactory<ValueType> {
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType, false>> create(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType, true>> createRaw(storm::Environment const& env, std::string const& name) const override;
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
+    virtual bool supports(storm::solver::LpSolverRequirements::Element const& element) const override;
 };
 
 template<typename ValueType>
@@ -95,6 +112,15 @@ std::unique_ptr<storm::solver::LpSolver<ValueType, false>> getLpSolver(
 template<typename ValueType>
 std::unique_ptr<storm::solver::LpSolver<ValueType, true>> getRawLpSolver(
     storm::Environment const& env, std::string const& name, storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS);
+
+/*!
+ * Returns the subset of the given requirements that are not supported by the LP solver selected via the environment (or the given solver type).
+ * If the result has no enabled critical requirement, the selected LP solver supports all critical requirements.
+ */
+template<typename ValueType>
+storm::solver::LpSolverRequirements getUnsupportedLpSolverRequirements(
+    storm::Environment const& env, storm::solver::LpSolverRequirements const& requirements,
+    storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS);
 
 /*!
  * Factory for SMT solvers.

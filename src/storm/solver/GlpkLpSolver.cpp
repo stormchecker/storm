@@ -608,6 +608,19 @@ ValueType GlpkLpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
     }
 }
 
+template<typename ValueType, bool RawMode>
+bool GlpkLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element const& element) {
+    switch (element) {
+        case LpSolverRequirements::Element::IntegerVariables:
+            return true;
+        case LpSolverRequirements::Element::Incremental:
+            return !RawMode;
+        case LpSolverRequirements::Element::IndicatorConstraints:
+            return false;
+    }
+    return false;
+}
+
 template class GlpkLpSolver<double, true>;
 template class GlpkLpSolver<double, false>;
 template class GlpkLpSolver<storm::RationalNumber, true>;

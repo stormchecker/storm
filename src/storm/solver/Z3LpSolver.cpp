@@ -476,6 +476,19 @@ ValueType Z3LpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
 }
 #endif
 
+template<typename ValueType, bool RawMode>
+bool Z3LpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element const& element) {
+    switch (element) {
+        case LpSolverRequirements::Element::IntegerVariables:
+            return true;
+        case LpSolverRequirements::Element::Incremental:
+            return !RawMode;
+        case LpSolverRequirements::Element::IndicatorConstraints:
+            return !RawMode;
+    }
+    return false;
+}
+
 template class Z3LpSolver<double, false>;
 template class Z3LpSolver<storm::RationalNumber, false>;
 template class Z3LpSolver<double, true>;

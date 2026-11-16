@@ -592,6 +592,19 @@ ValueType HighsLpSolver<ValueType, RawMode>::getMILPGap(bool) const {
 
 #endif
 
+template<typename ValueType, bool RawMode>
+bool HighsLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element const& element) {
+    switch (element) {
+        case LpSolverRequirements::Element::IntegerVariables:
+            return true;
+        case LpSolverRequirements::Element::Incremental:
+            return !RawMode;
+        case LpSolverRequirements::Element::IndicatorConstraints:
+            return !RawMode;
+    }
+    return false;
+}
+
 template class HighsLpSolver<double, true>;
 template class HighsLpSolver<double, false>;
 

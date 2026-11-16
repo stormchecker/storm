@@ -434,6 +434,19 @@ ValueType SoplexLpSolver<ValueType, RawMode>::getMILPGap(bool) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support integer variables.");
 }
 
+template<typename ValueType, bool RawMode>
+bool SoplexLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element const& element) {
+    switch (element) {
+        case LpSolverRequirements::Element::IntegerVariables:
+            return false;
+        case LpSolverRequirements::Element::Incremental:
+            return false;
+        case LpSolverRequirements::Element::IndicatorConstraints:
+            return false;
+    }
+    return false;
+}
+
 template class SoplexLpSolver<double, false>;
 template class SoplexLpSolver<storm::RationalNumber, false>;
 template class SoplexLpSolver<double, true>;
