@@ -2,9 +2,8 @@ name: Doxygen
 # Builds and deploys Storm's Doxygen documentation
 
 on:
-  schedule:
-      # run daily
-      - cron: '0 8 * * *'
+  push:
+    branches: [master]
   # needed to trigger the workflow manually
   workflow_dispatch:
 
@@ -18,22 +17,27 @@ jobs:
   deploy:
     name: Create documentation
     runs-on: ubuntu-latest
+    container: movesrwth/storm-dependencies:latest
     # Do not run on forks
     if: github.repository_owner == 'stormchecker'
+    # Run deployments in sequence to ensure correct deployment
+    concurrency:
+      group: deploy-doxygen
+      cancel-in-progress: false
     steps:
       - name: Git clone
         uses: actions/checkout@v7
-      - name: Build Doxygen via Dockerfile
-        run: docker build -t movesrwth/storm-doc:latest -f .github/workflows/Dockerfile.doxygen . --build-arg no_threads=${NR_JOBS}
-      - name: Run Docker
-        run: docker run -d -it --name ci movesrwth/storm-doc:latest
-      - name: Copy doxygen
-        run: docker cp ci:/opt/storm/build/doc/html .
+      - name: Install Doxygen
+        run: apt-get update && apt-get install -qq -y doxygen graphviz
+      - name: Configure Storm
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DSTORM_PORTABLE=ON
+      - name: Build Doxygen
+        run: cmake --build build --target doc -j ${NR_JOBS}
       - name: Deploy doxygen
         uses: peaceiris/actions-gh-pages@v4
         with:
           personal_token: ${{ secrets.CI_DOC_DEPLOY_TOKEN }}
-          publish_dir: ./html
+          publish_dir: ./build/doc/html
           external_repository: stormchecker/storm-doc
           publish_branch: main
           force_orphan: true
