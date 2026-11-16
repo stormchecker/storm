@@ -76,16 +76,22 @@ jobs:
         with:
           restore: true
       - name: Configure Storm
+        # Inputs are passed via environment variables to avoid shell injection.
+        env:
+          BUILD_TYPE: ${{ inputs.build_type }}
+          CARL_TAG: ${{ inputs.carl_tag }}
+          VERSION: ${{ inputs.version }}
+          DISTRO: ${{ matrix.distro.name }}
+          PLATFORM: ${{ matrix.platform.name }}
+          CACHE_ARGS: ${{ steps.cache-3rdparty-restore.outputs.cmake-args }}
         # Sets the debian version for CPack. CMake version remains unchanged because it must be numeric.
         run: |
-          cmake -S . -B build \
-            -DCMAKE_BUILD_TYPE="${{ inputs.build_type }}" \
-            -DSTORM_PORTABLE=ON \
-            ${{ inputs.carl_tag != '' && format('-DSTORM_CARL_GIT_TAG="{0}"', inputs.carl_tag) || '' }} \
-            -DSTORM_BUILD_TESTS=OFF \
-            -DCPACK_DEBIAN_PACKAGE_VERSION=${{ inputs.version }}-${{ matrix.distro.name }} \
-            -DCPACK_PACKAGE_FILE_NAME=storm-${{ inputs.version }}-${{ matrix.distro.name }}-${{ matrix.platform.name }}${BUILD_SUFFIX} \
-            ${{ steps.cache-3rdparty-restore.outputs.cmake-args }}
+          args=(-DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DSTORM_PORTABLE=ON -DSTORM_BUILD_TESTS=OFF
+                -DCPACK_DEBIAN_PACKAGE_VERSION="$VERSION-$DISTRO"
+                -DCPACK_PACKAGE_FILE_NAME="storm-$VERSION-$DISTRO-$PLATFORM$BUILD_SUFFIX")
+          if [ -n "$CARL_TAG" ]; then args+=(-DSTORM_CARL_GIT_TAG="$CARL_TAG"); fi
+          # CACHE_ARGS is intentionally unquoted to split it into separate arguments
+          cmake -S . -B build "${args[@]}" $CACHE_ARGS
       - name: Build Storm
         run: cmake --build build -j ${NR_JOBS}
       - name: Create .deb package

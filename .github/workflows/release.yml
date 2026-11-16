@@ -24,13 +24,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          VERSION: ${{ needs.get_version.outputs.full_version }}
         run: |
-          TAG="${{ github.event.release.tag_name }}"
           if ! [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Release tag '$TAG' is not of the form X.Y.Z" >&2
             exit 1
           fi
-          VERSION="${{ needs.get_version.outputs.full_version }}"
           if [ "$VERSION" != "$TAG" ]; then
             echo "Storm version '$VERSION' in CMakeLists.txt does not match release tag '$TAG'" >&2
             exit 1
@@ -69,12 +70,14 @@ jobs:
           ref: ${{ github.event.release.tag_name }}
           fetch-depth: 0
       - name: Rebase
+        env:
+          TAG: ${{ github.event.release.tag_name }}
         run: |
           git config user.name 'Stormchecker bot'
           git config user.email 'dev@stormchecker.org'
           git fetch origin stable
           git checkout stable
-          git rebase ${{ github.event.release.tag_name }}
+          git rebase "$TAG"
           git push origin stable
       - name: Trigger CI for stable
         # Pushes using the GITHUB_TOKEN do not trigger workflows, so trigger the CI (which deploys the 'stable' Docker images) manually
@@ -110,7 +113,8 @@ jobs:
       - name: Upload debs to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload ${{ github.event.release.tag_name }} debs/*.deb --repo ${{ github.repository }} --clobber
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" debs/*.deb --repo "$GITHUB_REPOSITORY" --clobber
 
   update_stormpy:
     # Trigger generation of PR in stormpy which updates the Storm version
