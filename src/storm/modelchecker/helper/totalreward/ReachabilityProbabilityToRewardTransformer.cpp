@@ -1,4 +1,4 @@
-#include "storm/modelchecker/certificates/utility/ReachabilityProbabilityToRewardTransformer.h"
+#include "storm/modelchecker/helper/totalreward/ReachabilityProbabilityToRewardTransformer.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/graph.h"
@@ -32,8 +32,10 @@ TotalRewardSpecification<ValueType> ReachabilityProbabilityToRewardTransformer<V
     auto [prob01States, prob1States] = storm::utility::graph::performProb01(backwardTransitionCache.get(), constraintStates.value(), targetStates);
     prob01States |= prob1States;
 
-    return TotalRewardSpecification<ValueType>{
-        std::move(prob01States), {{TerminalStateValue<ValueType>::getOne(), std::move(prob1States)}}, true, storm::NullRef};
+    return TotalRewardSpecification<ValueType>{std::move(prob01States),
+                                               {{storm::utility::ExtendedValueType<ValueType>(storm::utility::one<ValueType>()), std::move(prob1States)}},
+                                               true,
+                                               storm::NullRef};
 }
 
 template<typename ValueType>
@@ -55,8 +57,10 @@ TotalRewardSpecification<ValueType> ReachabilityProbabilityToRewardTransformer<V
                                            : storm::utility::graph::performProb01Max(transitionMatrix, transitionMatrix.getRowGroupIndices(),
                                                                                      backwardTransitionCache.get(), constraintStates.value(), targetStates);
     prob01States |= prob1States;
-    return TotalRewardSpecification<ValueType>{
-        std::move(prob01States), {{TerminalStateValue<ValueType>::getOne(), std::move(prob1States)}}, storm::solver::minimize(*dir), storm::NullRef};
+    return TotalRewardSpecification<ValueType>{std::move(prob01States),
+                                               {{storm::utility::ExtendedValueType<ValueType>(storm::utility::one<ValueType>()), std::move(prob1States)}},
+                                               storm::solver::minimize(*dir),
+                                               storm::NullRef};
 }
 
 template class ReachabilityProbabilityToRewardTransformer<double>;

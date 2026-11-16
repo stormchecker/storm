@@ -16,10 +16,9 @@
 #include "storm/modelchecker/certificates/RankingType.h"
 #include "storm/modelchecker/certificates/ReachabilityProbabilityCertificate.h"
 #include "storm/modelchecker/certificates/ReachabilityRewardCertificate.h"
-#include "storm/modelchecker/certificates/utility/ExtendedValueUtility.h"
 #include "storm/modelchecker/certificates/utility/LowerUpperBoundsComputer.h"
-#include "storm/modelchecker/certificates/utility/ReachabilityProbabilityToRewardTransformer.h"
-#include "storm/modelchecker/certificates/utility/ReachabilityRewardTransformer.h"
+#include "storm/modelchecker/helper/totalreward/ReachabilityProbabilityToRewardTransformer.h"
+#include "storm/modelchecker/helper/totalreward/ReachabilityRewardTransformer.h"
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
@@ -126,10 +125,10 @@ class LowerUpperValueCertificateComputer {
         uint64_t const numberOfStates = totalRewardSpecification.terminalStates.size();
         globalLowerValues.assign(numberOfStates, storm::utility::zero<ValueType>());
         for (auto const& [value, stateSet] : totalRewardSpecification.terminalStateValues) {
-            if (value.isFinite()) {
-                storm::utility::vector::setVectorValues(globalLowerValues, stateSet, value.getFiniteValue());
+            if (storm::utility::isFinite(value)) {
+                storm::utility::vector::setVectorValues(globalLowerValues, stateSet, storm::utility::getFinite(value));
             } else {
-                STORM_LOG_ASSERT(value.isPositiveInfinity(), "Unexpected terminal state value.");
+                STORM_LOG_ASSERT(storm::utility::isInfinity(value), "Unexpected terminal state value.");
                 // Infinity is not representable in ValueType (in particular not for rational numbers).
                 // The values of these states are never used in any computation, because choices leading to such states are either cut away or do not exist.
                 // The actual infinite values are set by the caller.
@@ -228,8 +227,8 @@ class LowerUpperValueCertificateComputer {
         STORM_LOG_ASSERT(totalRewardSpecification.terminalStateValues.size() == 1, "Unexpected number of terminal state values.");
         STORM_LOG_ASSERT(subsystem.isDisjointFrom(totalRewardSpecification.terminalStates), "subsystem contains terminal state.");
         auto const& [value, stateSet] = totalRewardSpecification.terminalStateValues.front();
-        STORM_LOG_ASSERT(value.isFinite() || value.isPositiveInfinity(), "Unexpected terminal state value.");
-        if (storm::solver::minimize(Dir) && value.isPositiveInfinity()) {
+        STORM_LOG_ASSERT(storm::utility::isFinite(value) || storm::utility::isInfinity(value), "Unexpected terminal state value.");
+        if (storm::solver::minimize(Dir) && storm::utility::isInfinity(value)) {
             // We have an infinite terminal state value, so we need to cut away all choices leading to those states.
             return transitionProbabilityMatrix.getRowFilter(subsystem, ~stateSet);
         }
@@ -408,7 +407,8 @@ class LowerUpperValueCertificateComputer {
         // If we minimize, choices that lead to states with infinite value can be ignored
         // (If we maximize, there are no such choices since the optimal value would be infinite as well.)
         auto const& infinityStates = totalRewardSpecification.terminalStateValues.front().second;
-        bool const ignoreChoicesToInfinity = storm::solver::minimize(Dir) && totalRewardSpecification.terminalStateValues.front().first.isPositiveInfinity();
+        bool const ignoreChoicesToInfinity =
+            storm::solver::minimize(Dir) && storm::utility::isInfinity(totalRewardSpecification.terminalStateValues.front().first);
         for (auto const rowIndex : transitionProbabilityMatrix.getRowGroupIndices(state)) {
             if (ignoreChoicesToInfinity) {
                 auto const row = transitionProbabilityMatrix.getRow(rowIndex);
@@ -613,8 +613,8 @@ storm::storage::BitVector computeInductiveChoices(storm::storage::SparseMatrix<V
     for (auto state : relevantStates) {
         bool stateHasInductiveChoice = false;
         for (auto choice : transitionProbabilityMatrix.getRowGroupIndices(state)) {
-            VectorValueType const choiceValue = detail::multiplyRowWithVectorAddNumber(
-                transitionProbabilityMatrix, choice, valueVector, rewardVector.has_value() ? rewardVector->at(choice) : storm::utility::zero<ValueType>());
+            VectorValueType const choiceValue = transitionProbabilityMatrix.multiplyRowWithVector(
+                choice, valueVector, rewardVector.has_value() ? rewardVector->at(choice) : storm::utility::zero<ValueType>());
             if (storm::solver::maximize(Dir) ? valueVector[state] <= choiceValue : choiceValue <= valueVector[state]) {
                 inductiveChoices.set(choice);
                 stateHasInductiveChoice = true;
@@ -739,7 +739,8 @@ ProbabilityCertificateData<ValueType> computeReachabilityProbabilityCertificateD
     storm::storage::BackwardTransitionCache<ValueType> backwardTransitionCache(transitionProbabilityMatrix);
     auto toRewardData = ReachabilityProbabilityToRewardTransformer<ValueType>(transitionProbabilityMatrix, backwardTransitionCache)
                             .transform(optionalDir, targetStates, constraintStates);
-    STORM_LOG_ASSERT(toRewardData.terminalStateValues.size() == 1 && toRewardData.terminalStateValues.front().first.isOne(),
+    STORM_LOG_ASSERT(toRewardData.terminalStateValues.size() == 1 &&
+                         toRewardData.terminalStateValues.front().first == storm::utility::ExtendedValueType<ValueType>(storm::utility::one<ValueType>()),
                      "Expected exactly one terminal state value with value 1.");
     LowerUpperValueCertificateComputer<ValueType, Nondeterministic, Dir> computer(env.modelchecker().certificate(), transitionProbabilityMatrix, toRewardData);
 
@@ -814,7 +815,7 @@ RewardCertificateData<ValueType> computeReachabilityRewardCertificateData(storm:
     storm::storage::BackwardTransitionCache<ValueType> backwardTransitionCache(transitionProbabilityMatrix);
     auto toRewardData = ReachabilityRewardTransformer<ValueType>(transitionProbabilityMatrix, backwardTransitionCache)
                             .transform(optionalDir, targetStates, stateActionRewardVector);
-    STORM_LOG_ASSERT(toRewardData.terminalStateValues.size() == 1 && toRewardData.terminalStateValues.front().first.isPositiveInfinity(),
+    STORM_LOG_ASSERT(toRewardData.terminalStateValues.size() == 1 && storm::utility::isInfinity(toRewardData.terminalStateValues.front().first),
                      "Expected exactly one terminal state value with value +infinity.");
     auto const& infinityStates = toRewardData.terminalStateValues.front().second;
     LowerUpperValueCertificateComputer<ValueType, Nondeterministic, Dir> computer(env.modelchecker().certificate(), transitionProbabilityMatrix, toRewardData);

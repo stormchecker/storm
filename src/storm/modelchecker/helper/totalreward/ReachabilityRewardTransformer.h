@@ -3,7 +3,7 @@
 #include <optional>
 #include <vector>
 
-#include "storm/modelchecker/certificates/utility/TotalRewardSpecification.h"
+#include "storm/modelchecker/helper/totalreward/TotalRewardSpecification.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BackwardTransitionCache.h"
 #include "storm/storage/BitVector.h"
