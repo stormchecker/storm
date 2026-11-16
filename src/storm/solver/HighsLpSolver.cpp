@@ -600,7 +600,8 @@ bool HighsLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Elemen
         case LpSolverRequirements::Element::Incremental:
             return !RawMode;
         case LpSolverRequirements::Element::IndicatorConstraints:
-            return !RawMode;
+            // Only emulated via big-M, which requires bounded variables.
+            return false;
         case LpSolverRequirements::Element::StrictRelations:
             // Only approximated by shifting the bound.
             return false;

@@ -18,7 +18,8 @@ class LpSolverRequirements {
         IntegerVariables,
         // Support for incremental solving via push() and pop().
         Incremental,
-        // Support for indicator constraints.
+        // Support for indicator constraints over arbitrary (also unbounded) variables.
+        // Solvers that only emulate them for bounded variables do not count as supporting this feature.
         IndicatorConstraints,
         // Exact support for strict inequalities (< and >).
         // Some solvers accept them but only approximate them by shifting the bound by a small margin; these do not count as supporting this feature.
