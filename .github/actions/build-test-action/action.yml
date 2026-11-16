@@ -177,7 +177,11 @@ runs:
       run: ./bin/storm --version
       shell: bash
     - name: Check compile flags
-      run: bash resources/scripts/check-flags.sh build/src/storm/CMakeFiles/storm.dir "${{ env.BUILD_TYPE }}"
+      # Developer mode disables LTO
+      run: |
+        LTO_ARG=""
+        if grep -q '^STORM_DEVELOPER:BOOL=ON' build/CMakeCache.txt; then LTO_ARG="--no-lto"; fi
+        bash resources/scripts/check-flags.sh build/src/storm/CMakeFiles/storm.dir "${{ env.BUILD_TYPE }}" $LTO_ARG
       shell: bash
     - name: Run tests
       working-directory: ./build

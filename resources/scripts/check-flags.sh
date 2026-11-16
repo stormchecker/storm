@@ -1,20 +1,30 @@
 #!/usr/bin/env bash
 # Check the compile flags of Storm for the given build type.
 #
-# Usage: check-flags.sh <storm.dir> <build-type>
+# Usage: check-flags.sh <storm.dir> <build-type> [--no-lto]
 #   <storm.dir>   CMake target directory of Storm, e.g. build/src/storm/CMakeFiles/storm.dir
 #   <build-type>  CMake build type (Release or Debug)
+#   --no-lto      LTO is expected to be disabled (e.g. in developer mode)
 #
-# Release: no '-g', '-O3', '-DNDEBUG' and LTO ('-flto' compile/link flag and LTO IR in the object files)
+# Release: '-O3', '-DNDEBUG', no '-g', and LTO ('-flto' compile/link flag and LTO IR in the object files)
+#          With --no-lto: no '-flto' instead.
 # Debug:   '-g', no '-O3', no '-DNDEBUG'
 set -euo pipefail
 
-if [ $# -ne 2 ]; then
-    echo "Usage: $0 <storm.dir> <build-type>" >&2
+usage() {
+    echo "Usage: $0 <storm.dir> <build-type> [--no-lto]" >&2
     exit 2
+}
+if [ $# -lt 2 ] || [ $# -gt 3 ]; then
+    usage
 fi
 dir=$1
 build_type=$2
+use_lto=true
+if [ $# -eq 3 ]; then
+    [ "$3" = "--no-lto" ] || usage
+    use_lto=false
+fi
 flags="$dir/flags.make"
 link="$dir/link.txt"
 
@@ -37,9 +47,14 @@ case "$build_type" in
         if has_flag '-g' "$flags"; then fail "Unexpected flag '-g' for release build."; fi
         if ! has_flag '-O3' "$flags"; then fail "Missing flag '-O3' for release build."; fi
         if ! has_flag '-DNDEBUG' "$flags"; then fail "Missing flag '-DNDEBUG' for release build."; fi
-        if ! has_flag '-flto(=[^[:space:]]*)?' "$flags"; then fail "Missing '-flto' compile flag for release build."; fi
-        if ! has_flag '-flto(=[^[:space:]]*)?' "$link"; then fail "Missing '-flto' link flag for release build."; fi
-        bash "$(dirname "${BASH_SOURCE[0]}")/check-lto.sh" "$dir"
+        if [ "$use_lto" = true ]; then
+            if ! has_flag '-flto(=[^[:space:]]*)?' "$flags"; then fail "Missing '-flto' compile flag for release build."; fi
+            if ! has_flag '-flto(=[^[:space:]]*)?' "$link"; then fail "Missing '-flto' link flag for release build."; fi
+            bash "$(dirname "${BASH_SOURCE[0]}")/check-lto.sh" "$dir"
+        else
+            if has_flag '-flto(=[^[:space:]]*)?' "$flags"; then fail "Unexpected '-flto' compile flag for release build without LTO."; fi
+            if has_flag '-flto(=[^[:space:]]*)?' "$link"; then fail "Unexpected '-flto' link flag for release build without LTO."; fi
+        fi
         ;;
     Debug)
         if ! has_flag '-g' "$flags"; then fail "Missing flag '-g' for debug build."; fi
