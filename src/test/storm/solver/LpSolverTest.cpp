@@ -4,6 +4,7 @@
 #include <optional>
 
 #include "storm/environment/Environment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/expressions/Expression.h"
@@ -11,39 +12,20 @@
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
 #include "storm/solver/LpSolver.h"
+#include "storm/solver/LpSolverRequirements.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
 
 namespace {
 
+using Element = storm::solver::LpSolverRequirements::Element;
+
 class DefaultEnvironment {
    public:
     typedef double ValueType;
     static const bool isExact = false;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::FROMSETTINGS;
-// The default solver is HiGHS if available, otherwise GLPK or a fallback.
-#ifdef STORM_HAVE_HIGHS
-    static const bool IntegerSupport = true;
-    static const bool IncrementalSupport = true;
-    static const bool strictRelationSupport = true;
-    static const bool IndicatorSupport = true;
-#elif defined STORM_HAVE_GLPK
-    static const bool IntegerSupport = true;
-    static const bool IncrementalSupport = true;
-    static const bool strictRelationSupport = true;
-    static const bool IndicatorSupport = false;
-#elif defined STORM_HAVE_SOPLEX
-    static const bool IntegerSupport = false;
-    static const bool IncrementalSupport = false;
-    static const bool strictRelationSupport = false;
-    static const bool IndicatorSupport = false;
-#else
-    static const bool IntegerSupport = true;
-    static const bool IncrementalSupport = true;
-    static const bool strictRelationSupport = true;
-    static const bool IndicatorSupport = true;
-#endif
 
     static bool skip() {
 #ifdef STORM_HAVE_LP_SOLVER
@@ -59,10 +41,6 @@ class GlpkEnvironment {
     typedef double ValueType;
     static const bool isExact = false;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Glpk;
-    static const bool IntegerSupport = true;
-    static const bool IncrementalSupport = true;
-    static const bool strictRelationSupport = true;
-    static const bool IndicatorSupport = false;
 
     static bool skip() {
         return false;
@@ -75,10 +53,6 @@ class GurobiEnvironment {
     typedef double ValueType;
     static const bool isExact = false;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Gurobi;
-    static const bool IntegerSupport = true;
-    static const bool IncrementalSupport = true;
-    static const bool strictRelationSupport = true;
-    static const bool IndicatorSupport = true;
 
     static bool skip() {
         return storm::test::noGurobi;
@@ -91,10 +65,6 @@ class Z3Environment {
     typedef storm::RationalNumber ValueType;
     static const bool isExact = true;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Z3;
-    static const bool IntegerSupport = true;
-    static const bool IncrementalSupport = true;
-    static const bool strictRelationSupport = true;
-    static const bool IndicatorSupport = true;
 
     static bool skip() {
         return false;
@@ -107,10 +77,6 @@ class SoplexEnvironment {
     typedef double ValueType;
     static const bool isExact = false;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Soplex;
-    static const bool IntegerSupport = false;
-    static const bool IncrementalSupport = false;
-    static const bool strictRelationSupport = false;
-    static const bool IndicatorSupport = false;
 
     static bool skip() {
         return false;
@@ -122,10 +88,6 @@ class SoplexExactEnvironment {
     typedef storm::RationalNumber ValueType;
     static const bool isExact = true;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Soplex;
-    static const bool IntegerSupport = false;
-    static const bool IncrementalSupport = false;
-    static const bool strictRelationSupport = false;
-    static const bool IndicatorSupport = false;
 
     static bool skip() {
         return false;
@@ -139,10 +101,6 @@ class HighsEnvironment {
     typedef double ValueType;
     static const bool isExact = false;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Highs;
-    static const bool IntegerSupport = true;
-    static const bool IncrementalSupport = true;
-    static const bool strictRelationSupport = true;
-    static const bool IndicatorSupport = true;
 
     static bool skip() {
         return false;
@@ -181,20 +139,14 @@ class LpSolverTest : public ::testing::Test {
         return TestType::isExact ? parseNumber("0") : parseNumber("1e-15");
     }
 
-    bool supportsInteger() const {
-        return TestType::IntegerSupport;
+    bool supports(Element element) const {
+        return factory()->supports(element);
     }
 
-    bool supportsIncremental() const {
-        return TestType::IncrementalSupport;
-    }
-
-    bool supportsStrictRelation() const {
-        return TestType::strictRelationSupport;
-    }
-
-    bool supportsIndicator() const {
-        return TestType::IndicatorSupport;
+    // The type of the LP solver under test.
+    storm::solver::LpSolverType lpSolverType() const {
+        return solverSelection() == storm::solver::LpSolverTypeSelection::FROMSETTINGS ? env().solver().getLpSolverType()
+                                                                                       : storm::solver::convert(solverSelection());
     }
 
     // Builds a solver with a bounded continuous variable x in [0, 5] (with objective coefficient 1) and a binary variable b.
@@ -389,7 +341,7 @@ TYPED_TEST(LpSolverTest, LPOptimizeMinRaw) {
 }
 
 TYPED_TEST(LpSolverTest, MILPOptimizeMax) {
-    if (!this->supportsInteger()) {
+    if (!this->supports(Element::IntegerVariables)) {
         GTEST_SKIP();
     }
     auto solver = this->factory()->create(this->env(), "");
@@ -418,7 +370,7 @@ TYPED_TEST(LpSolverTest, MILPOptimizeMax) {
 }
 
 TYPED_TEST(LpSolverTest, MILPOptimizeMaxRaw) {
-    if (!this->supportsInteger()) {
+    if (!this->supports(Element::IntegerVariables)) {
         GTEST_SKIP();
     }
     typedef typename TestFixture::ValueType ValueType;
@@ -462,7 +414,7 @@ TYPED_TEST(LpSolverTest, MILPOptimizeMaxRaw) {
 }
 
 TYPED_TEST(LpSolverTest, MILPOptimizeMin) {
-    if (!this->supportsInteger()) {
+    if (!this->supports(Element::IntegerVariables)) {
         GTEST_SKIP();
     }
     auto solver = this->factory()->create(this->env(), "");
@@ -513,7 +465,7 @@ TYPED_TEST(LpSolverTest, LPInfeasible) {
     ASSERT_NO_THROW(solver->addConstraint("", x + y + z <= solver->getConstant(12)));
     ASSERT_NO_THROW(solver->addConstraint("", solver->getConstant(this->parseNumber("1/2")) * y + z - x == solver->getConstant(5)));
     ASSERT_NO_THROW(solver->addConstraint("", y - x <= solver->getConstant(this->parseNumber("11/2"))));
-    if (this->supportsStrictRelation()) {
+    if (this->supports(Element::StrictRelations)) {
         ASSERT_NO_THROW(solver->addConstraint("", y > solver->getConstant((this->parseNumber("7")))));
     } else {
         ASSERT_NO_THROW(solver->addConstraint("", y >= solver->getConstant(this->parseNumber("7") + this->precision())));
@@ -531,7 +483,7 @@ TYPED_TEST(LpSolverTest, LPInfeasible) {
 }
 
 TYPED_TEST(LpSolverTest, MILPInfeasible) {
-    if (!this->supportsInteger()) {
+    if (!this->supports(Element::IntegerVariables)) {
         GTEST_SKIP();
     }
     auto solver = this->factory()->create(this->env(), "");
@@ -547,7 +499,7 @@ TYPED_TEST(LpSolverTest, MILPInfeasible) {
     ASSERT_NO_THROW(solver->addConstraint("", x + y + z <= solver->getConstant(12)));
     ASSERT_NO_THROW(solver->addConstraint("", solver->getConstant(this->parseNumber("1/2")) * y + z - x == solver->getConstant(5)));
     ASSERT_NO_THROW(solver->addConstraint("", y - x <= solver->getConstant(this->parseNumber("11/2"))));
-    if (this->supportsStrictRelation()) {
+    if (this->supports(Element::StrictRelations)) {
         ASSERT_NO_THROW(solver->addConstraint("", y > solver->getConstant((this->parseNumber("7")))));
     } else {
         ASSERT_NO_THROW(solver->addConstraint("", y >= solver->getConstant(this->parseNumber("7") + this->precision())));
@@ -590,7 +542,7 @@ TYPED_TEST(LpSolverTest, LPUnbounded) {
 }
 
 TYPED_TEST(LpSolverTest, MILPUnbounded) {
-    if (!this->supportsInteger()) {
+    if (!this->supports(Element::IntegerVariables)) {
         GTEST_SKIP();
     }
     auto solver = this->factory()->create(this->env(), "");
@@ -617,19 +569,17 @@ TYPED_TEST(LpSolverTest, MILPUnbounded) {
     STORM_SILENT_ASSERT_THROW(solver->getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
-TYPED_TEST(LpSolverTest, SupportedRequirements) {
-    using Element = storm::solver::LpSolverRequirements::Element;
+TYPED_TEST(LpSolverTest, RequirementsQuery) {
     auto const factory = this->factory();
-    EXPECT_EQ(this->supportsInteger(), factory->supports(Element::IntegerVariables));
-    EXPECT_EQ(this->supportsIncremental(), factory->supports(Element::Incremental));
-    EXPECT_EQ(this->supportsIndicator(), factory->supports(Element::IndicatorConstraints));
-
-    auto const requirements = storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental(false);
+    auto const requirements = storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental(false).requireStrictRelations(false);
     auto const unsupported = factory->getUnsupportedRequirements(requirements);
-    EXPECT_EQ(!this->supportsInteger(), static_cast<bool>(unsupported.integerVariables()));
-    EXPECT_EQ(!this->supportsInteger(), unsupported.hasEnabledCriticalRequirement());
-    EXPECT_EQ(!this->supportsIncremental(), static_cast<bool>(unsupported.incremental()));
+    EXPECT_EQ(!factory->supports(Element::IntegerVariables), static_cast<bool>(unsupported.integerVariables()));
+    EXPECT_EQ(!factory->supports(Element::IntegerVariables), unsupported.hasEnabledCriticalRequirement());
+    EXPECT_EQ(!factory->supports(Element::Incremental), static_cast<bool>(unsupported.incremental()));
     EXPECT_FALSE(unsupported.incremental().isCritical());
+    EXPECT_EQ(!factory->supports(Element::StrictRelations), static_cast<bool>(unsupported.strictRelations()));
+    EXPECT_FALSE(unsupported.strictRelations().isCritical());
+    // Features that were not requested are never reported.
     EXPECT_FALSE(unsupported.indicatorConstraints());
 
     auto const unsupportedFromEnv =
@@ -637,8 +587,29 @@ TYPED_TEST(LpSolverTest, SupportedRequirements) {
     EXPECT_EQ(unsupported.getEnabledRequirementsAsString(), unsupportedFromEnv.getEnabledRequirementsAsString());
 }
 
+TYPED_TEST(LpSolverTest, UnsupportedFeaturesThrow) {
+    if (!this->supports(Element::IntegerVariables)) {
+        // Covers both integer and binary variables.
+        auto solver = this->factory()->create(this->env(), "");
+        EXPECT_THROW(solver->addUnboundedIntegerVariable("i"), storm::exceptions::NotSupportedException);
+        EXPECT_THROW(solver->addBinaryVariable("b"), storm::exceptions::NotSupportedException);
+    }
+    if (!this->supports(Element::Incremental)) {
+        auto solver = this->factory()->create(this->env(), "");
+        // The exception type differs between solvers.
+        EXPECT_ANY_THROW(solver->push());
+    }
+    // Indicator constraints require a binary indicator variable.
+    if (!this->supports(Element::IndicatorConstraints) && this->supports(Element::IntegerVariables)) {
+        auto solver = this->factory()->create(this->env(), "");
+        storm::expressions::Variable x = solver->addBoundedContinuousVariable("x", 0, this->parseNumber("5"), 1);
+        storm::expressions::Variable b = solver->addBinaryVariable("b");
+        EXPECT_THROW(solver->addIndicatorConstraint("", b, true, x <= solver->getConstant(this->parseNumber("3"))), storm::exceptions::NotSupportedException);
+    }
+}
+
 TYPED_TEST(LpSolverTest, Incremental) {
-    if (!this->supportsIncremental()) {
+    if (!this->supports(Element::Incremental)) {
         GTEST_SKIP();
     }
     auto solver = this->factory()->create(this->env(), "");
@@ -708,18 +679,30 @@ TYPED_TEST(LpSolverTest, Incremental) {
     ASSERT_FALSE(solver->isInfeasible());
 }
 
-TYPED_TEST(LpSolverTest, StrictRelationUnsupportedThrows) {
-    if (this->supportsStrictRelation()) {
-        GTEST_SKIP();
-    }
+TYPED_TEST(LpSolverTest, StrictRelations) {
     auto solver = this->factory()->create(this->env(), "");
+    solver->setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x = solver->addBoundedContinuousVariable("x", 0, this->parseNumber("5"), 1);
-    EXPECT_THROW(solver->addConstraint("", x < solver->getConstant(this->parseNumber("3"))), storm::exceptions::NotSupportedException);
-    EXPECT_THROW(solver->addConstraint("", x > solver->getConstant(this->parseNumber("1"))), storm::exceptions::NotSupportedException);
+    if (this->supports(Element::StrictRelations)) {
+        // Strict relations are handled exactly: 3 < x <= 3 + 1e-9 is feasible.
+        ASSERT_NO_THROW(solver->addConstraint("", x > solver->getConstant(this->parseNumber("3"))));
+        ASSERT_NO_THROW(solver->addConstraint("", x <= solver->getConstant(this->parseNumber("3") + this->parseNumber("1/1000000000"))));
+        ASSERT_NO_THROW(solver->optimize());
+        ASSERT_TRUE(solver->isOptimal());
+        EXPECT_GT(solver->getContinuousValue(x), this->parseNumber("3"));
+    } else if (this->lpSolverType() == storm::solver::LpSolverType::Soplex) {
+        // SoPlex rejects strict relations.
+        EXPECT_THROW(solver->addConstraint("", x < solver->getConstant(this->parseNumber("3"))), storm::exceptions::NotSupportedException);
+        EXPECT_THROW(solver->addConstraint("", x > solver->getConstant(this->parseNumber("1"))), storm::exceptions::NotSupportedException);
+    } else {
+        // Strict relations are accepted but only approximated by shifting the bound.
+        EXPECT_NO_THROW(solver->addConstraint("", x < solver->getConstant(this->parseNumber("3"))));
+        EXPECT_NO_THROW(solver->addConstraint("", x > solver->getConstant(this->parseNumber("1"))));
+    }
 }
 
 TYPED_TEST(LpSolverTest, IndicatorConstraintLeq) {
-    if (!this->supportsIndicator()) {
+    if (!this->supports(Element::IndicatorConstraints)) {
         GTEST_SKIP();
     }
     storm::expressions::Variable x;
@@ -741,7 +724,7 @@ TYPED_TEST(LpSolverTest, IndicatorConstraintLeq) {
 }
 
 TYPED_TEST(LpSolverTest, IndicatorConstraintLeqInactive) {
-    if (!this->supportsIndicator()) {
+    if (!this->supports(Element::IndicatorConstraints)) {
         GTEST_SKIP();
     }
     storm::expressions::Variable x;
@@ -763,7 +746,7 @@ TYPED_TEST(LpSolverTest, IndicatorConstraintLeqInactive) {
 }
 
 TYPED_TEST(LpSolverTest, IndicatorConstraintGeq) {
-    if (!this->supportsIndicator()) {
+    if (!this->supports(Element::IndicatorConstraints)) {
         GTEST_SKIP();
     }
     storm::expressions::Variable x;
@@ -785,7 +768,7 @@ TYPED_TEST(LpSolverTest, IndicatorConstraintGeq) {
 }
 
 TYPED_TEST(LpSolverTest, IndicatorConstraintEq) {
-    if (!this->supportsIndicator()) {
+    if (!this->supports(Element::IndicatorConstraints)) {
         GTEST_SKIP();
     }
     storm::expressions::Variable x;
