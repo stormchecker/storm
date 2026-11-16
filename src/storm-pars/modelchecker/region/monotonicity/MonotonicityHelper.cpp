@@ -165,7 +165,7 @@ MonotonicityHelper<ValueType, ConstantType>::createLocalMonotonicityResult(std::
     LocalMonotonicityResult<VariableType> localMonRes(model->getNumberOfStates());
     for (uint_fast64_t state = 0; state < model->getNumberOfStates(); ++state) {
         for (auto& var : extender->getVariablesOccuringAtState()[state]) {
-            localMonRes.setMonotonicity(state, var, extender->getMonotoncityChecker().checkLocalMonotonicity(order, state, var, region));
+            localMonRes.setMonotonicity(state, var, extender->getMonotoncityChecker().checkLocalMonotonicity(env, order, state, var, region));
         }
     }
     localMonRes.setDone(order->getDoneBuilding());
@@ -180,7 +180,7 @@ void MonotonicityHelper<ValueType, ConstantType>::createOrder() {
 
     // Create initial order
     auto monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
-    criticalTuple = extender->toOrder(region, monRes);
+    criticalTuple = extender->toOrder(env, region, monRes);
     auto order = std::get<0>(criticalTuple);
     if (order->isInvalid()) {
         // The initial order already turned out to be inconsistent. It carries the same "done"
@@ -241,14 +241,14 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
 
         // Make the three assumptions
         STORM_LOG_INFO("Creating assumptions for " << current.val1 << " and " << current.val2 << ". ");
-        auto newAssumptions = assumptionMaker.createAndCheckAssumptions(current.val1, current.val2, current.order, region);
+        auto newAssumptions = assumptionMaker.createAndCheckAssumptions(env, current.val1, current.val2, current.order, region);
         STORM_LOG_ASSERT(newAssumptions.size() <= 3, "At most three candidate assumptions can be created.");
 
         if (newAssumptions.empty()) {
             auto fallbackMonRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
             for (auto& entry : occuringStatesAtVariable) {
                 for (auto& state : entry.second) {
-                    extender->checkParOnStateMonRes(state, current.order, entry.first, fallbackMonRes);
+                    extender->checkParOnStateMonRes(env, state, current.order, entry.first, fallbackMonRes);
                     if (fallbackMonRes->getMonotonicity(entry.first) == Monotonicity::Unknown) {
                         break;
                     }
@@ -288,7 +288,7 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
                 // only add assumption to the set of assumptions if it is unknown whether it holds or not
                 branchAssumptions.push_back(assumption.first);
             }
-            auto criticalTuple = extender->extendOrder(branchOrder, region, branchMonRes, assumption.first);
+            auto criticalTuple = extender->extendOrder(env, branchOrder, region, branchMonRes, assumption.first);
             preparedBranches.push_back(
                 {std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::move(branchAssumptions), branchMonRes});
         }
