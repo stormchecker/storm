@@ -84,7 +84,7 @@ jobs:
 
   build_deb:
     # Create and test Debian packages (Release & Debug) for the new release
-    # The carl-storm version is given by the default carl_tag in the Dockerfile of the release
+    # The carl-storm version is given by the default carl tag in the CMakeLists.txt of the release
     needs: check_version
     strategy:
       matrix:
