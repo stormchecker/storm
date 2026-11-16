@@ -142,9 +142,7 @@ class MathsatSmtSolver : public SmtSolver {
      * @return Non-zero iff the search is to be aborted because the timeout was exceeded.
      */
     static int terminationTest(void* userData);
-#endif
 
-#ifdef STORM_HAVE_MATHSAT
     // The MathSAT environment.
     msat_env env;
 
