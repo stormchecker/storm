@@ -10,6 +10,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/languages/prism/Program.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
@@ -18,6 +19,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/solver/LpSolver.h"
+#include "storm/solver/LpSolverRequirements.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
@@ -957,6 +959,11 @@ class MILPMinimalLabelSetGenerator {
         ChoiceInformation choiceInformation = determineRelevantAndProblematicChoices(mdp, labelSets, stateInformation, psiStates);
 
         // (4) Encode resulting system as MILP problem.
+        auto const unsupported =
+            storm::utility::solver::getUnsupportedLpSolverRequirements<double>(env, storm::solver::LpSolverRequirements().requireIntegerVariables());
+        STORM_LOG_THROW(!unsupported.hasEnabledCriticalRequirement(), storm::exceptions::NotSupportedException,
+                        "The selected LP solver does not support " << unsupported.getEnabledRequirementsAsString()
+                                                                   << ", which is required for computing minimal label sets. Select a different LP solver.");
         std::shared_ptr<storm::solver::LpSolver<double>> solver = storm::utility::solver::getLpSolver<double>(env, "MinimalLabelSetCounterexample");
 
         //  (4.1) Create variables.

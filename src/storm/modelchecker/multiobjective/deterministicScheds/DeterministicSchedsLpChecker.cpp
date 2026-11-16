@@ -7,11 +7,13 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/LpSolverRequirements.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 #include "storm/utility/solver.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
 namespace storm::modelchecker::multiobjective {
@@ -582,6 +584,15 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initializeLpMod
     auto backwardChoices = model.getTransitionMatrix().transpose();
     STORM_LOG_WARN_COND(!env.solver().isLpSolverTypeSetFromDefaultValue() || env.solver().getLpSolverType() == storm::solver::LpSolverType::Gurobi,
                         "The selected MILP solver might not perform well. Consider installing / using Gurobi.");
+    // The encoding uses binary variables and push()/pop(), and indicator constraints if enabled.
+    auto requirements = storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental();
+    if (env.modelchecker().multi().getUseIndicatorConstraints()) {
+        requirements.requireIndicatorConstraints();
+    }
+    auto const unsupported = storm::utility::solver::getUnsupportedLpSolverRequirements<ValueType>(env, requirements);
+    STORM_LOG_THROW(!unsupported.hasEnabledCriticalRequirement(), storm::exceptions::NotSupportedException,
+                    "The selected LP solver does not support " << unsupported.getEnabledRequirementsAsString()
+                                                               << ", which is required for computing deterministic schedulers. Select a different LP solver.");
     lpModel = storm::utility::solver::getLpSolver<ValueType>(env, "model");
 
     lpModel->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
