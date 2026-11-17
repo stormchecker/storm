@@ -2,6 +2,7 @@
 #include "storm/dd/sylvan/InternalSylvanBdd.h"
 
 #include "storm-gamebased-ar/abstraction/QualitativeResult.h"
+#include "storm/dd/DdInstantiations.h"
 
 namespace storm::gbar {
 namespace abstraction {
@@ -31,8 +32,9 @@ SymbolicQualitativeResult<Type> const& SymbolicQualitativeResultMinMax<Type>::ge
     return getProb1(storm::OptimizationDirection::Maximize);
 }
 
-template class SymbolicQualitativeResultMinMax<storm::dd::DdType::CUDD>;
-template class SymbolicQualitativeResultMinMax<storm::dd::DdType::Sylvan>;
+#define STORM_DD_INSTANTIATE(DD) template class SymbolicQualitativeResultMinMax<storm::dd::DdType::DD>;
+STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace abstraction
 }  // namespace storm::gbar

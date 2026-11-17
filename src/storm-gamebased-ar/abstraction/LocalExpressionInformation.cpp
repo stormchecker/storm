@@ -5,6 +5,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include "storm/dd/sylvan/InternalSylvanBdd.h"
 
+#include "storm/dd/DdInstantiations.h"
 #include "storm/utility/macros.h"
 
 namespace storm::gbar {
@@ -229,8 +230,9 @@ std::ostream& operator<<(std::ostream& out, LocalExpressionInformation<DdType> c
     return out;
 }
 
-template class LocalExpressionInformation<storm::dd::DdType::CUDD>;
-template class LocalExpressionInformation<storm::dd::DdType::Sylvan>;
+#define STORM_DD_INSTANTIATE(DD) template class LocalExpressionInformation<storm::dd::DdType::DD>;
+STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 template std::ostream& operator<<(std::ostream& out, LocalExpressionInformation<storm::dd::DdType::CUDD> const& partition);
 template std::ostream& operator<<(std::ostream& out, LocalExpressionInformation<storm::dd::DdType::Sylvan> const& partition);

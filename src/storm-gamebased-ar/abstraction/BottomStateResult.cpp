@@ -1,4 +1,5 @@
 #include "storm-gamebased-ar/abstraction/BottomStateResult.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm::gbar {
@@ -10,7 +11,8 @@ BottomStateResult<DdType>::BottomStateResult(storm::dd::Bdd<DdType> const& state
     // Intentionally left empty.
 }
 
-template struct BottomStateResult<storm::dd::DdType::CUDD>;
-template struct BottomStateResult<storm::dd::DdType::Sylvan>;
+#define STORM_DD_INSTANTIATE(DD) template struct BottomStateResult<storm::dd::DdType::DD>;
+STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 }  // namespace abstraction
 }  // namespace storm::gbar

@@ -2,6 +2,7 @@
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
@@ -169,8 +170,8 @@ AbstractionInformation<DdType> const& StateSetAbstractor<DdType, ValueType>::get
     return abstractionInformation.get();
 }
 
-template class StateSetAbstractor<storm::dd::DdType::CUDD, double>;
-template class StateSetAbstractor<storm::dd::DdType::Sylvan, double>;
-template class StateSetAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class StateSetAbstractor<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 }  // namespace abstraction
 }  // namespace storm::gbar

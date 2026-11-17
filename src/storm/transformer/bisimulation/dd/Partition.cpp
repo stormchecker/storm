@@ -1,6 +1,7 @@
 #include "storm/transformer/bisimulation/dd/Partition.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
@@ -379,11 +380,9 @@ std::pair<storm::expressions::Variable, storm::expressions::Variable> Partition<
     return std::make_pair(blockVariables[0], blockVariables[1]);
 }
 
-template class Partition<storm::dd::DdType::CUDD, double>;
-
-template class Partition<storm::dd::DdType::Sylvan, double>;
-template class Partition<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-template class Partition<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class Partition<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace bisimulation
 }  // namespace dd

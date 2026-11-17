@@ -26,6 +26,7 @@
 
 #include "storm/utility/Stopwatch.h"
 
+#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
 
@@ -794,10 +795,9 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeRea
     return computeReachabilityRewards(env, dir, model, transitionMatrix, rewardModel, targetStates, qualitative);
 }
 
-template class HybridMdpPrctlHelper<storm::dd::DdType::CUDD, double>;
-template class HybridMdpPrctlHelper<storm::dd::DdType::Sylvan, double>;
-
-template class HybridMdpPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class HybridMdpPrctlHelper<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace helper
 }  // namespace modelchecker

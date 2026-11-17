@@ -6,6 +6,7 @@
 
 #include "storm/environment/solver/GameSolverEnvironment.h"
 
+#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -182,13 +183,13 @@ std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> SymbolicGame
                                                                rowColumnMetaVariablePairs, player1Variables, player2Variables));
 }
 
-template class SymbolicGameSolver<storm::dd::DdType::CUDD, double>;
-template class SymbolicGameSolver<storm::dd::DdType::Sylvan, double>;
-template class SymbolicGameSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class SymbolicGameSolver<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
-template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>;
-template class SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>;
-template class SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class SymbolicGameSolverFactory<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace solver
 }  // namespace storm

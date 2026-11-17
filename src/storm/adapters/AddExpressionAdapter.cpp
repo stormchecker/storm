@@ -223,9 +223,8 @@ boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::Rati
 }
 
 // Explicitly instantiate the symbolic expression adapter
-template class AddExpressionAdapter<storm::dd::DdType::CUDD, double>;
-template class AddExpressionAdapter<storm::dd::DdType::Sylvan, double>;
-template class AddExpressionAdapter<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-template class AddExpressionAdapter<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class AddExpressionAdapter<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 }  // namespace adapters
 }  // namespace storm

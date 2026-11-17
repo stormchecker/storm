@@ -4,6 +4,7 @@
 
 #include "storm/dd/DdManager.h"
 
+#include "storm/dd/DdInstantiations.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/solver.h"
 
@@ -142,8 +143,9 @@ storm::dd::Bdd<DdType> ValidBlockAbstractor<DdType>::getSourceStateBdd(storm::so
     return result;
 }
 
-template class ValidBlockAbstractor<storm::dd::DdType::CUDD>;
-template class ValidBlockAbstractor<storm::dd::DdType::Sylvan>;
+#define STORM_DD_INSTANTIATE(DD) template class ValidBlockAbstractor<storm::dd::DdType::DD>;
+STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace abstraction
 }  // namespace storm::gbar

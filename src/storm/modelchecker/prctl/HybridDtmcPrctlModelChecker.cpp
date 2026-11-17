@@ -1,6 +1,7 @@
 #include "storm/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/helper/infinitehorizon/HybridInfiniteHorizonHelper.h"
@@ -148,10 +149,9 @@ std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeLong
     return helper.computeLongRunAverageRewards(env, rewardModel.get());
 }
 
-template class HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
-template class HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::DD, ValueType>>;
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
-template class HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
-template class HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
 }  // namespace modelchecker
 }  // namespace storm

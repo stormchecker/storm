@@ -1,4 +1,5 @@
 #include "storm/transformer/bisimulation/dd/Signature.h"
+#include "storm/dd/DdInstantiations.h"
 
 namespace storm {
 namespace dd {
@@ -14,11 +15,9 @@ storm::dd::Add<DdType, ValueType> const& Signature<DdType, ValueType>::getSignat
     return signatureAdd;
 }
 
-template class Signature<storm::dd::DdType::CUDD, double>;
-
-template class Signature<storm::dd::DdType::Sylvan, double>;
-template class Signature<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-template class Signature<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class Signature<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace bisimulation
 }  // namespace dd

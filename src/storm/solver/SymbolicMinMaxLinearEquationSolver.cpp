@@ -9,6 +9,7 @@
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
+#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
 #include "storm/utility/SignalHandler.h"
@@ -608,13 +609,13 @@ GeneralSymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>::create() co
     return std::make_unique<SymbolicMinMaxLinearEquationSolver<DdType, ValueType>>();
 }
 
-template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::CUDD, double>;
-template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
-template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
-template class GeneralSymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
-template class GeneralSymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
-template class GeneralSymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class GeneralSymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace solver
 }  // namespace storm

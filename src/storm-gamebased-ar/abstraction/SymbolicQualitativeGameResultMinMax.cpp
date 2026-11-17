@@ -1,4 +1,5 @@
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeGameResultMinMax.h"
+#include "storm/dd/DdInstantiations.h"
 
 namespace storm::gbar {
 namespace abstraction {
@@ -21,8 +22,9 @@ SymbolicQualitativeResult<Type> const& SymbolicQualitativeGameResultMinMax<Type>
     }
 }
 
-template class SymbolicQualitativeGameResultMinMax<storm::dd::DdType::CUDD>;
-template class SymbolicQualitativeGameResultMinMax<storm::dd::DdType::Sylvan>;
+#define STORM_DD_INSTANTIATE(DD) template class SymbolicQualitativeGameResultMinMax<storm::dd::DdType::DD>;
+STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace abstraction
 }  // namespace storm::gbar

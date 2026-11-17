@@ -1,6 +1,7 @@
 #include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -151,10 +152,10 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::co
 }
 
 // Explicitly instantiate the model checker.
-template class HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::CUDD, double>>;
-template class HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, double>>;
-
-template class HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) \
+    template class HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::DD, ValueType>>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace modelchecker
 }  // namespace storm

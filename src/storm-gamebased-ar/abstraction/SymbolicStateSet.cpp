@@ -1,4 +1,5 @@
 #include "storm-gamebased-ar/abstraction/SymbolicStateSet.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm::gbar {
@@ -19,8 +20,9 @@ storm::dd::Bdd<Type> const& SymbolicStateSet<Type>::getStates() const {
     return states;
 }
 
-template class SymbolicStateSet<storm::dd::DdType::CUDD>;
-template class SymbolicStateSet<storm::dd::DdType::Sylvan>;
+#define STORM_DD_INSTANTIATE(DD) template class SymbolicStateSet<storm::dd::DdType::DD>;
+STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace abstraction
 }  // namespace storm::gbar
