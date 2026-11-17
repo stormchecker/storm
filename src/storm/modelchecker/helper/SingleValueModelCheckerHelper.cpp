@@ -1,6 +1,7 @@
 #include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/DdInstantiations.h"
 
 namespace storm {
 namespace modelchecker {
@@ -99,11 +100,10 @@ template class SingleValueModelCheckerHelper<double, storm::models::ModelReprese
 template class SingleValueModelCheckerHelper<storm::RationalNumber, storm::models::ModelRepresentation::Sparse>;
 template class SingleValueModelCheckerHelper<storm::RationalFunction, storm::models::ModelRepresentation::Sparse>;
 
-template class SingleValueModelCheckerHelper<double, storm::models::ModelRepresentation::DdSylvan>;
-template class SingleValueModelCheckerHelper<storm::RationalNumber, storm::models::ModelRepresentation::DdSylvan>;
-template class SingleValueModelCheckerHelper<storm::RationalFunction, storm::models::ModelRepresentation::DdSylvan>;
-
-template class SingleValueModelCheckerHelper<double, storm::models::ModelRepresentation::DdCudd>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) \
+    template class SingleValueModelCheckerHelper<ValueType, storm::models::GetModelRepresentation<storm::dd::DdType::DD>::representation>;
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace helper
 }  // namespace modelchecker
