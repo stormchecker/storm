@@ -1205,12 +1205,10 @@ std::enable_if_t<!std::is_same_v<TargetValueType, ValueType>, Add<LibraryType, T
     return Add<LibraryType, TargetValueType>(this->getDdManager(), internalAdd.template toValueType<TargetValueType>(), this->getContainedMetaVariables());
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class Add<storm::dd::DdType::DD, ValueType>;
+#define STORM_DD_INSTANTIATE(DD, ValueType)               \
+    template class Add<storm::dd::DdType::DD, ValueType>; \
+    template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::DD, ValueType> const& add);
 STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
-
-#define STORM_DD_INSTANTIATE(DD, ValueType) template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::DD, ValueType> const& add);
-STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
 #undef STORM_DD_INSTANTIATE
 
 // Additional instantiations that are not part of the standard lists.
