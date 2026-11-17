@@ -275,7 +275,6 @@ std::pair<storm::expressions::SimpleValuation, ValueType> AddIterator<DdType::CU
 
 template class AddIterator<DdType::CUDD, double>;
 template class AddIterator<DdType::CUDD, uint_fast64_t>;
-template class AddIterator<DdType::CUDD, storm::RationalNumber>;
 
 }  // namespace dd
 }  // namespace storm

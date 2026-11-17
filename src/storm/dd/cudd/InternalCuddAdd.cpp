@@ -131,11 +131,6 @@ InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::ceil(
 }
 
 template<typename ValueType>
-InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, ValueType>::sharpenKwekMehlhorn(size_t /*precision*/) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
-}
-
-template<typename ValueType>
 InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::minimum(InternalAdd<DdType::CUDD, ValueType> const& other) const {
     return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Minimum(other.getCuddAdd()));
 }
@@ -196,12 +191,6 @@ bool InternalAdd<DdType::CUDD, ValueType>::equalModuloPrecision(InternalAdd<DdTy
     }
 }
 
-template<>
-bool InternalAdd<DdType::CUDD, storm::RationalNumber>::equalModuloPrecision(InternalAdd<DdType::CUDD, storm::RationalNumber> const& /*other*/,
-                                                                            storm::RationalNumber const& /*precision*/, bool /*relative*/) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
-}
-
 template<typename ValueType>
 InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::swapVariables(std::vector<InternalBdd<DdType::CUDD>> const& from,
                                                                                          std::vector<InternalBdd<DdType::CUDD>> const& to) const {
@@ -259,19 +248,9 @@ InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greater(ValueTyp
     return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().BddStrictThreshold(value));
 }
 
-template<>
-InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greater(storm::RationalNumber const& value) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
-}
-
 template<typename ValueType>
 InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greaterOrEqual(ValueType const& value) const {
     return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().BddThreshold(value));
-}
-
-template<>
-InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greaterOrEqual(storm::RationalNumber const& value) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
 template<typename ValueType>
@@ -279,19 +258,9 @@ InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::less(ValueType c
     return InternalBdd<DdType::CUDD>(ddManager, ~this->getCuddAdd().BddThreshold(value));
 }
 
-template<>
-InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::less(storm::RationalNumber const& value) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
-}
-
 template<typename ValueType>
 InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::lessOrEqual(ValueType const& value) const {
     return InternalBdd<DdType::CUDD>(ddManager, ~this->getCuddAdd().BddStrictThreshold(value));
-}
-
-template<>
-InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::lessOrEqual(storm::RationalNumber const& value) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
 template<typename ValueType>
@@ -867,13 +836,6 @@ DdNode* InternalAdd<DdType::CUDD, ValueType>::fromVectorRec(::DdManager* manager
     }
 }
 
-template<>
-DdNode* InternalAdd<DdType::CUDD, storm::RationalNumber>::fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel,
-                                                                        uint_fast64_t maxLevel, std::vector<storm::RationalNumber> const& values,
-                                                                        Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
-}
-
 #else
 template<typename ValueType>
 bool InternalAdd<DdType::CUDD, ValueType>::operator==(InternalAdd<DdType::CUDD, ValueType> const& other) const {
@@ -1023,13 +985,6 @@ InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::ceil(
 }
 
 template<typename ValueType>
-InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, ValueType>::sharpenKwekMehlhorn(size_t /*precision*/) const {
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
-                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
-                    "of Storm with CUDD support.");
-}
-
-template<typename ValueType>
 InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::minimum(InternalAdd<DdType::CUDD, ValueType> const& other) const {
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
                     "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
@@ -1104,14 +1059,6 @@ bool InternalAdd<DdType::CUDD, ValueType>::equalModuloPrecision(InternalAdd<DdTy
                     "of Storm with CUDD support.");
 }
 
-template<>
-bool InternalAdd<DdType::CUDD, storm::RationalNumber>::equalModuloPrecision(InternalAdd<DdType::CUDD, storm::RationalNumber> const& /*other*/,
-                                                                            storm::RationalNumber const& /*precision*/, bool /*relative*/) const {
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
-                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
-                    "of Storm with CUDD support.");
-}
-
 template<typename ValueType>
 InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::swapVariables(std::vector<InternalBdd<DdType::CUDD>> const& from,
                                                                                          std::vector<InternalBdd<DdType::CUDD>> const& to) const {
@@ -1151,22 +1098,8 @@ InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greater(ValueTyp
                     "of Storm with CUDD support.");
 }
 
-template<>
-InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greater(storm::RationalNumber const& value) const {
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
-                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
-                    "of Storm with CUDD support.");
-}
-
 template<typename ValueType>
 InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greaterOrEqual(ValueType const& value) const {
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
-                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
-                    "of Storm with CUDD support.");
-}
-
-template<>
-InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greaterOrEqual(storm::RationalNumber const& value) const {
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
                     "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
                     "of Storm with CUDD support.");
@@ -1179,22 +1112,8 @@ InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::less(ValueType c
                     "of Storm with CUDD support.");
 }
 
-template<>
-InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::less(storm::RationalNumber const& value) const {
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
-                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
-                    "of Storm with CUDD support.");
-}
-
 template<typename ValueType>
 InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::lessOrEqual(ValueType const& value) const {
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
-                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
-                    "of Storm with CUDD support.");
-}
-
-template<>
-InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::lessOrEqual(storm::RationalNumber const& value) const {
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
                     "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
                     "of Storm with CUDD support.");
@@ -1440,10 +1359,5 @@ template class InternalAdd<DdType::CUDD, double>;
 template InternalAdd<DdType::CUDD, double> InternalAdd<DdType::CUDD, double>::toValueType<double>() const;
 template class InternalAdd<DdType::CUDD, uint_fast64_t>;
 template InternalAdd<DdType::CUDD, uint_fast64_t> InternalAdd<DdType::CUDD, uint_fast64_t>::toValueType<uint_fast64_t>() const;
-
-template class InternalAdd<DdType::CUDD, storm::RationalNumber>;
-template InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, storm::RationalNumber>::toValueType<storm::RationalNumber>() const;
-template InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, double>::toValueType<storm::RationalNumber>() const;
-template InternalAdd<DdType::CUDD, double> InternalAdd<DdType::CUDD, storm::RationalNumber>::toValueType<double>() const;
 }  // namespace dd
 }  // namespace storm

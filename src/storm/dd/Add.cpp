@@ -142,20 +142,11 @@ Add<LibraryType, ValueType> Add<LibraryType, ValueType>::ceil() const {
 }
 
 template<DdType LibraryType, typename ValueType>
-Add<LibraryType, storm::RationalNumber> Add<LibraryType, ValueType>::sharpenKwekMehlhorn(uint64_t) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
-}
-
-template<>
-Add<storm::dd::DdType::Sylvan, storm::RationalNumber> Add<storm::dd::DdType::Sylvan, double>::sharpenKwekMehlhorn(uint64_t precision) const {
-    return Add<storm::dd::DdType::Sylvan, storm::RationalNumber>(this->getDdManager(), internalAdd.sharpenKwekMehlhorn(static_cast<std::size_t>(precision)),
-                                                                 this->getContainedMetaVariables());
-}
-
-template<>
-Add<storm::dd::DdType::Sylvan, storm::RationalNumber> Add<storm::dd::DdType::Sylvan, storm::RationalNumber>::sharpenKwekMehlhorn(uint64_t precision) const {
-    return Add<storm::dd::DdType::Sylvan, storm::RationalNumber>(this->getDdManager(), internalAdd.sharpenKwekMehlhorn(static_cast<std::size_t>(precision)),
-                                                                 this->getContainedMetaVariables());
+Add<LibraryType, storm::RationalNumber> Add<LibraryType, ValueType>::sharpenKwekMehlhorn(uint64_t precision) const
+    requires(SupportsSharpening<LibraryType, ValueType>)
+{
+    return Add<LibraryType, storm::RationalNumber>(this->getDdManager(), internalAdd.sharpenKwekMehlhorn(static_cast<std::size_t>(precision)),
+                                                   this->getContainedMetaVariables());
 }
 
 template<DdType LibraryType, typename ValueType>
@@ -1226,13 +1217,6 @@ STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
 #define STORM_DD_INSTANTIATE(DD) template class Add<storm::dd::DdType::DD, uint_fast64_t>;
 STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
 #undef STORM_DD_INSTANTIATE
-
-template class Add<storm::dd::DdType::CUDD, storm::RationalNumber>;
-template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::CUDD, storm::RationalNumber> const& add);
-
-template Add<storm::dd::DdType::CUDD, storm::RationalNumber> Add<storm::dd::DdType::CUDD, storm::RationalNumber>::toValueType<storm::RationalNumber>() const;
-template Add<storm::dd::DdType::CUDD, storm::RationalNumber> Add<storm::dd::DdType::CUDD, double>::toValueType<storm::RationalNumber>() const;
-template Add<storm::dd::DdType::CUDD, double> Add<storm::dd::DdType::CUDD, storm::RationalNumber>::toValueType<double>() const;
 
 template Add<storm::dd::DdType::Sylvan, storm::RationalNumber> Add<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType<storm::RationalNumber>()
     const;
