@@ -561,6 +561,8 @@ void insertJsonValue(storm::json<ValueType>& entry, std::string const& key, stor
         entry[key] = "inf";
     } else if (storm::utility::isNegativeInfinity(value)) {
         entry[key] = "-inf";
+    } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+        entry[key] = storm::utility::to_string(value.getFinite());
     } else if constexpr (std::is_same_v<storm::utility::ExtendedValueType<ValueType>, ValueType>) {
         entry[key] = value;
     } else {

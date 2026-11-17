@@ -178,6 +178,10 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
     storm::storage::Scheduler<ValueType> const& getScheduler() const;
     storm::storage::Scheduler<ValueType>& getScheduler();
 
+    /*!
+     * Finite rational values and bounds are JSON strings such as "1/3" and "1"; finite floating-point values are JSON numbers.
+     * Infinities are written as "inf" and "-inf".
+     */
     storm::json<ValueType> toJson(std::optional<storm::storage::sparse::Valuations> const& stateValuations = std::nullopt,
                                   std::optional<storm::models::sparse::StateLabeling> const& stateLabels = std::nullopt) const;
 

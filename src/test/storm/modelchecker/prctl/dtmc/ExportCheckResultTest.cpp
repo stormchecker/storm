@@ -114,6 +114,9 @@ void runExportTest(storm::Environment const& env) {
             // JSON has no infinity of its own, so an infinite value is exported as this string.
             ASSERT_TRUE(entry.at("v").is_string()) << "State " << state << " has an infinite value, but was exported as " << entry.at("v").dump() << ".";
             EXPECT_EQ("inf", entry.at("v").template get<std::string>());
+        } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+            ASSERT_TRUE(entry.at("v").is_string());
+            EXPECT_EQ(storm::utility::getFinite(values[state]), storm::utility::convertNumber<ValueType>(entry.at("v").template get<std::string>()));
         } else {
             ASSERT_TRUE(entry.at("v").is_number()) << "State " << state << " has the finite value " << values[state] << ", but was exported as "
                                                    << entry.at("v").dump() << ".";
@@ -139,7 +142,12 @@ void runNegativeInfinityExportTest() {
     ASSERT_TRUE(exported.is_array());
     ASSERT_EQ(3ull, exported.size());
 
-    EXPECT_TRUE(exported[0].at("v").is_number());
+    if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+        ASSERT_TRUE(exported[0].at("v").is_string());
+        EXPECT_EQ("1", exported[0].at("v").template get<std::string>());
+    } else {
+        EXPECT_TRUE(exported[0].at("v").is_number());
+    }
     // JSON has no infinity of its own, and the two of them must not be exported as the same thing.
     ASSERT_TRUE(exported[1].at("v").is_string()) << "The negative infinity was exported as " << exported[1].at("v").dump() << ".";
     EXPECT_EQ("-inf", exported[1].at("v").template get<std::string>());
@@ -153,6 +161,27 @@ TEST(ExportCheckResultTest, NegativeInfinityDouble) {
 
 TEST(ExportCheckResultTest, NegativeInfinityExact) {
     runNegativeInfinityExportTest<storm::RationalNumber>();
+}
+
+TEST(ExportCheckResultTest, ExactValuesAndBoundsRoundTrip) {
+    std::string const tenTo400 = "1" + std::string(400, '0');
+    std::vector<std::string> const expectedValues{"1/3", "-1/3", "9007199254740993", tenTo400, "1/" + tenTo400, "0", "1"};
+    std::vector<storm::RationalNumber> values;
+    for (auto const& value : expectedValues) {
+        values.push_back(storm::utility::convertNumber<storm::RationalNumber>(value));
+    }
+    storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalNumber> result(values);
+    result.setValuesExact();
+
+    auto exported = storm::json<double>::parse(storm::dumpJson(result.toJson()));
+    ASSERT_EQ(values.size(), exported.size());
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        EXPECT_EQ(i, exported[i].at("s").get<uint64_t>());
+        for (auto const* key : {"v", "lb", "ub"}) {
+            ASSERT_TRUE(exported[i].at(key).is_string());
+            EXPECT_EQ(expectedValues[i], exported[i].at(key).get<std::string>());
+        }
+    }
 }
 
 /*!
