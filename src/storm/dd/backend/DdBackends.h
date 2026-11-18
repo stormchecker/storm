@@ -55,8 +55,7 @@ auto dispatchDdType(DdType type, F&& f, DdTypeList<First, Rest...>) {
     if constexpr (sizeof...(Rest) > 0) {
         return dispatchDdType(type, std::forward<F>(f), DdTypeList<Rest...>{});
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected DD type.");
-        __builtin_unreachable();
+        STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::UnexpectedException, "Unexpected DD type.");
     }
 }
 
@@ -70,8 +69,8 @@ auto dispatchDdTypeSupporting(DdType type, F&& f, DdTypeList<First, Rest...>) {
     if constexpr (sizeof...(Rest) > 0) {
         return dispatchDdTypeSupporting<ValueType>(type, std::forward<F>(f), DdTypeList<Rest...>{});
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected combination of DD library '" << ddLibraryName(type) << "' and value type.");
-        __builtin_unreachable();
+        STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::UnexpectedException,
+                                        "Unexpected combination of DD library '" << ddLibraryName(type) << "' and value type.");
     }
 }
 
