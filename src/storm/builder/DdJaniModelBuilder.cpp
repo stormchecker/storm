@@ -37,6 +37,182 @@
 namespace storm {
 namespace builder {
 
+namespace {
+/*!
+ * The assignment levels of a JANI model as needed by the symbolic builder.
+ *
+ * The symbolic builder requires every variable to be assigned at no more than one level. The value of a variable x
+ * that is read at level k is then statically known: it is the successor value of x if x is assigned at a level below
+ * k, and otherwise the predecessor value (or, for a transient variable, its initial value).
+ *
+ * A transient variable whose value is read at a level above the one where it is written is called "passed". The
+ * builder treats it like a global variable that is only ever read in its successor version: when it is not written
+ * in a step, it takes its initial value (instead of keeping its predecessor value), and after composition its
+ * successor version is summed out.
+ */
+struct AssignmentLevels {
+    // All levels at which assignments occur.
+    std::set<int64_t> levels;
+    // The (unique) level at which each variable is assigned.
+    std::map<storm::expressions::Variable, int64_t> writeLevel;
+    // The initial values of all transient variables (with defined constants substituted).
+    std::map<storm::expressions::Variable, storm::expressions::Expression> transientInitialValues;
+    // The passed transient variables (see above).
+    std::set<storm::expressions::Variable> passedTransientVariables;
+    // If non-empty, the reason why the symbolic builder can not handle the model's assignment levels.
+    std::string error;
+
+    int64_t lowestLevel() const {
+        return levels.empty() ? 0 : *levels.begin();
+    }
+
+    bool isPassed(storm::expressions::Variable const& variable) const {
+        return passedTransientVariables.count(variable) > 0;
+    }
+
+    /*!
+     * Retrieves whether the given variable is read in its successor version when read at the given level.
+     */
+    bool isReadAsSuccessor(storm::expressions::Variable const& variable, int64_t level) const {
+        auto it = writeLevel.find(variable);
+        return it != writeLevel.end() && it->second < level;
+    }
+};
+
+template<typename Callback>
+void forEachAssignment(storm::jani::Model const& model, Callback const& callback) {
+    for (auto const& automaton : model.getAutomata()) {
+        for (auto const& edge : automaton.getEdges()) {
+            // Edge assignments are performed in every destination of the edge.
+            for (auto const& assignment : edge.getAssignments()) {
+                callback(assignment);
+            }
+            for (auto const& destination : edge.getDestinations()) {
+                for (auto const& assignment : destination.getOrderedAssignments()) {
+                    callback(assignment);
+                }
+            }
+        }
+    }
+}
+
+template<typename Callback>
+void forEachTransientVariable(storm::jani::Model const& model, Callback const& callback) {
+    for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
+        callback(variable);
+    }
+    for (auto const& automaton : model.getAutomata()) {
+        for (auto const& variable : automaton.getVariables().getTransientVariables()) {
+            callback(variable);
+        }
+    }
+}
+
+AssignmentLevels analyzeAssignmentLevels(storm::jani::Model const& model) {
+    AssignmentLevels info;
+
+    std::map<storm::expressions::Variable, storm::jani::Variable const*> transientVariables;
+    forEachTransientVariable(model, [&](storm::jani::Variable const& variable) { transientVariables.emplace(variable.getExpressionVariable(), &variable); });
+    auto constantsSubstitution = model.getConstantsSubstitution();
+    for (auto const& [expressionVariable, variable] : transientVariables) {
+        if (variable->hasInitExpression()) {
+            info.transientInitialValues.emplace(expressionVariable, variable->getInitExpression().substitute(constantsSubstitution));
+        }
+    }
+
+    if (model.usesAssignmentLevels() && model.getModelType() == storm::jani::ModelType::MA) {
+        info.error = "Markov automata with assignment levels are not supported.";
+        return info;
+    }
+
+    // Determine the unique write level of every variable.
+    forEachAssignment(model, [&](storm::jani::Assignment const& assignment) {
+        info.levels.insert(assignment.getLevel());
+        auto it = info.writeLevel.emplace(assignment.getExpressionVariable(), assignment.getLevel()).first;
+        if (it->second != assignment.getLevel() && info.error.empty()) {
+            info.error = "Variable '" + assignment.getExpressionVariable().getName() + "' is assigned at levels " +
+                         std::to_string(std::min(it->second, assignment.getLevel())) + " and " + std::to_string(std::max(it->second, assignment.getLevel())) +
+                         ", but the symbolic engine requires every variable to be assigned at a single level.";
+        }
+    });
+    if (!info.error.empty()) {
+        return info;
+    }
+
+    // Determine the passed transient variables.
+    auto passedValuesReadBy = [&](storm::jani::Assignment const& assignment) {
+        std::set<storm::expressions::Variable> result;
+        for (auto const& variable : assignment.getAssignedExpression().getVariables()) {
+            if (transientVariables.count(variable) > 0 && info.isReadAsSuccessor(variable, assignment.getLevel())) {
+                result.insert(variable);
+            }
+        }
+        return result;
+    };
+    forEachAssignment(model, [&](storm::jani::Assignment const& assignment) {
+        auto passed = passedValuesReadBy(assignment);
+        info.passedTransientVariables.insert(passed.begin(), passed.end());
+    });
+
+    for (auto const& expressionVariable : info.passedTransientVariables) {
+        auto const* variable = transientVariables.at(expressionVariable);
+        auto const& type = variable->getType();
+        bool supportedType = (type.isBasicType() && type.asBasicType().isBooleanType()) || (type.isBoundedType() && type.asBoundedType().isIntegerType());
+        if (!supportedType) {
+            info.error = "Transient variable '" + variable->getName() +
+                         "' is read at a level above the one where it is written, which the symbolic engine only supports for Boolean and bounded integer "
+                         "variables.";
+            return info;
+        }
+        if (!variable->hasInitExpression()) {
+            info.error = "Transient variable '" + variable->getName() + "' has no initial value.";
+            return info;
+        }
+    }
+
+    // Transient variables that are not passed on (for example reward variables) may not depend on passed values.
+    forEachAssignment(model, [&](storm::jani::Assignment const& assignment) {
+        if (!info.error.empty() || !assignment.isTransient() || info.isPassed(assignment.getExpressionVariable())) {
+            return;
+        }
+        auto passed = passedValuesReadBy(assignment);
+        if (!passed.empty()) {
+            info.error = "Transient variable '" + assignment.getExpressionVariable().getName() + "' is assigned a value that depends on '" +
+                         passed.begin()->getName() +
+                         "', which is written at a lower level within the same step. The symbolic engine does not support this for transient variables "
+                         "that are not read at a higher level (such as reward variables).";
+        }
+    });
+    return info;
+}
+
+/*!
+ * Performs the edge assignments in the destinations and lifts the transient assignments of the lowest level that are
+ * identical in all destinations of an edge back to the edge (except for passed transient variables, which are handled
+ * like non-transient variables). Returns an error message if transient destination assignments remain that the
+ * symbolic builder can not handle.
+ */
+std::string prepareTransientAssignments(storm::jani::Model& model, AssignmentLevels const& assignmentLevels) {
+    model.pushEdgeAssignmentsToDestinations();
+    model.liftTransientEdgeDestinationAssignments(assignmentLevels.lowestLevel(), assignmentLevels.passedTransientVariables);
+    for (auto const& automaton : model.getAutomata()) {
+        for (auto const& edge : automaton.getEdges()) {
+            for (auto const& destination : edge.getDestinations()) {
+                for (auto const& assignment : destination.getOrderedAssignments().getTransientAssignments()) {
+                    if (!assignmentLevels.isPassed(assignment.getExpressionVariable())) {
+                        return "Transient variable '" + assignment.getExpressionVariable().getName() +
+                               "' is assigned in a destination of an edge of automaton '" + automaton.getName() +
+                               "', but the symbolic engine only supports transient assignments (to variables that are not read at a higher assignment level) "
+                               "that are at the lowest assignment level and identical in all destinations of an edge.";
+                    }
+                }
+            }
+        }
+    }
+    return "";
+}
+}  // namespace
+
 template<storm::dd::DdType Type, typename ValueType>
 storm::jani::ModelFeatures DdJaniModelBuilder<Type, ValueType>::getSupportedJaniFeatures() {
     storm::jani::ModelFeatures features;
@@ -61,10 +237,17 @@ bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& mo
         STORM_LOG_INFO("Symbolic engine can not build Jani model due to unsupported jani features.");
         return false;
     }
-    // Check assignment levels
-    if (model.usesAssignmentLevels()) {
-        STORM_LOG_INFO("Symbolic engine can not build Jani model due to assignment levels.");
-        return false;
+    // Check assignment levels and transient assignments
+    if (model.usesAssignmentLevels() || model.hasTransientEdgeDestinationAssignments()) {
+        auto levels = analyzeAssignmentLevels(model);
+        if (levels.error.empty()) {
+            storm::jani::Model preparedModel = model;
+            levels.error = prepareTransientAssignments(preparedModel, levels);
+        }
+        if (!levels.error.empty()) {
+            STORM_LOG_INFO("Symbolic engine can not build Jani model due to assignment levels: " << levels.error);
+            return false;
+        }
     }
     // Check nonTrivial reward expressions
     if (properties) {
@@ -167,7 +350,7 @@ void DdJaniModelBuilder<Type, ValueType>::Options::addLabel(std::string const& l
 template<storm::dd::DdType Type, typename ValueType>
 class ParameterCreator {
    public:
-    void create(storm::jani::Model const& /*model*/, storm::adapters::AddExpressionAdapter<Type, ValueType>& /*rowExpressionAdapter*/) {
+    void create(storm::jani::Model const& /*model*/, std::vector<std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>>> const& /*adapters*/) {
         // Intentionally left empty: no support for parameters for this data type.
     }
 
@@ -185,13 +368,16 @@ class ParameterCreator<Type, storm::RationalFunction> {
         // Intentionally left empty.
     }
 
-    void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter) {
+    void create(storm::jani::Model const& model,
+                std::vector<std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>>> const& adapters) {
         for (auto const& constant : model.getConstants()) {
             if (!constant.isDefined()) {
                 storm::RationalFunctionVariable carlVariable = storm::createRFVariable(constant.getExpressionVariable().getName());
                 parameters.insert(carlVariable);
                 auto rf = convertVariableToPolynomial(carlVariable);
-                rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
+                for (auto const& adapter : adapters) {
+                    adapter->setValue(constant.getExpressionVariable(), rf);
+                }
             }
         }
     }
@@ -283,14 +469,39 @@ struct CompositionVariables {
 
     // The parameters that appear in the model.
     std::set<storm::RationalFunctionVariable> parameters;
+
+    // The successor (column) meta variables of the passed transient variables (see AssignmentLevels). They are used during
+    // composition and summed out afterwards. Their row meta variables are never used.
+    std::set<storm::expressions::Variable> passedTransientColumnMetaVariables;
+
+    // For every assignment level, the expression adapter and the substitution (of transient variables by their initial
+    // values) used to translate the expressions assigned at that level.
+    struct LevelTranslation {
+        std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> adapter;
+        std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
+        std::set<storm::expressions::Variable> substitutedVariables;
+    };
+    std::map<int64_t, LevelTranslation> levelTranslations;
+
+    /*!
+     * Translates an expression that is assigned at the given level.
+     */
+    storm::dd::Add<Type, ValueType> translateAssignedExpression(storm::expressions::Expression const& expression, int64_t level) const {
+        auto const& translation = levelTranslations.at(level);
+        if (translation.substitutedVariables.empty() || !expression.containsVariable(translation.substitutedVariables)) {
+            return translation.adapter->translateExpression(expression);
+        }
+        return translation.adapter->translateExpression(expression.substitute(translation.substitution));
+    }
 };
 
 // A class responsible for creating the necessary variables for a subsequent composition of automata.
 template<storm::dd::DdType Type, typename ValueType>
 class CompositionVariableCreator : public storm::jani::CompositionVisitor {
    public:
-    CompositionVariableCreator(storm::jani::Model const& model, storm::jani::CompositionInformation const& actionInformation)
-        : model(model), automata(), actionInformation(actionInformation) {
+    CompositionVariableCreator(storm::jani::Model const& model, storm::jani::CompositionInformation const& actionInformation,
+                               AssignmentLevels const& assignmentLevels)
+        : model(model), automata(), actionInformation(actionInformation), assignmentLevels(assignmentLevels) {
         // Intentionally left empty.
     }
 
@@ -301,9 +512,6 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
         this->model.getSystemComposition().accept(*this, boost::none);
         STORM_LOG_THROW(automata.size() == this->model.getNumberOfAutomata(), storm::exceptions::InvalidArgumentException,
                         "Cannot build symbolic model from JANI model whose system composition refers to a subset of automata.");
-
-        STORM_LOG_THROW(!this->model.hasTransientEdgeDestinationAssignments(), storm::exceptions::InvalidArgumentException,
-                        "The symbolic JANI model builder currently does not support transient edge destination assignments.");
 
         // Then, check that the model does not contain non-transient unbounded integer or non-transient real variables.
         STORM_LOG_THROW(!this->model.getGlobalVariables().containsNonTransientUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException,
@@ -342,6 +550,15 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
    private:
     CompositionVariables<Type, ValueType> createVariables(std::shared_ptr<storm::dd::DdManager<Type>> const& manager) {
         CompositionVariables<Type, ValueType> result(manager);
+
+        // The meta variables of passed transient variables are created first, i.e., at the top of the variable order.
+        // Before they are summed out, the factors of all readers depend on them; with these variables at the bottom,
+        // the intermediate DDs would have to keep track of all sets of consistent values.
+        forEachTransientVariable(this->model, [&](storm::jani::Variable const& variable) {
+            if (assignmentLevels.isPassed(variable.getExpressionVariable())) {
+                createPassedTransientVariable(variable, result);
+            }
+        });
 
         for (auto const& nonSilentActionIndex : actionInformation.getNonSilentActionIndices()) {
             std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair =
@@ -430,8 +647,16 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
             result.automatonToRangeMap[automaton.getName()] = (range && globalVariableRanges).template toAdd<ValueType>();
         }
 
+        createLevelTranslations(result);
+
+        std::vector<std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>>> adapters = {result.rowExpressionAdapter};
+        for (auto const& levelTranslation : result.levelTranslations) {
+            if (levelTranslation.second.adapter != result.rowExpressionAdapter) {
+                adapters.push_back(levelTranslation.second.adapter);
+            }
+        }
         ParameterCreator<Type, ValueType> parameterCreator;
-        parameterCreator.create(model, *result.rowExpressionAdapter);
+        parameterCreator.create(model, adapters);
         if (std::is_same<ValueType, storm::RationalFunction>::value) {
             result.parameters = parameterCreator.getParameters();
         }
@@ -439,31 +664,35 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
         return result;
     }
 
-    void createVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
-        auto const& type = variable.getType();
-        if (type.isBasicType() && type.asBasicType().isBooleanType()) {
-            createBooleanVariable(variable, result);
-        } else if (type.isBoundedType() && type.asBoundedType().isIntegerType()) {
-            createBoundedIntegerVariable(variable, result);
-        } else {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid type of variable in JANI model.");
+    void createLevelTranslations(CompositionVariables<Type, ValueType>& result) {
+        // Variables written at a level below the one of the assignment are read in their successor version. Transient
+        // variables that are not are replaced by their initial value.
+        for (auto const& level : assignmentLevels.levels) {
+            auto mapping = result.variableToRowMetaVariableMap;
+            for (auto const& [variable, writeLevel] : assignmentLevels.writeLevel) {
+                if (assignmentLevels.isReadAsSuccessor(variable, level) && result.variableToColumnMetaVariableMap->count(variable) > 0) {
+                    if (mapping == result.variableToRowMetaVariableMap) {
+                        mapping = std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>(*result.variableToRowMetaVariableMap);
+                    }
+                    (*mapping)[variable] = result.variableToColumnMetaVariableMap->at(variable);
+                }
+            }
+            typename CompositionVariables<Type, ValueType>::LevelTranslation translation;
+            translation.adapter = mapping == result.variableToRowMetaVariableMap
+                                      ? result.rowExpressionAdapter
+                                      : std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(result.manager, mapping);
+            for (auto const& [variable, initialValue] : assignmentLevels.transientInitialValues) {
+                if (mapping->count(variable) == 0) {
+                    translation.substitution.emplace(variable, initialValue);
+                    translation.substitutedVariables.insert(variable);
+                }
+            }
+            result.levelTranslations.emplace(level, std::move(translation));
         }
     }
 
-    void createBoundedIntegerVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
-        auto const& type = variable.getType().asBoundedType();
-        STORM_LOG_THROW(type.hasLowerBound(), storm::exceptions::NotSupportedException,
-                        "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() << " has no lower bound.");
-        STORM_LOG_THROW(type.hasUpperBound(), storm::exceptions::NotSupportedException,
-                        "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() << " has no upper bound.");
-        int_fast64_t low = type.getLowerBound().evaluateAsInt();
-        int_fast64_t high = type.getUpperBound().evaluateAsInt();
-
-        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair =
-            result.manager->addMetaVariable(variable.getExpressionVariable().getName(), low, high);
-
-        STORM_LOG_TRACE("Created meta variables for global integer variable: " << variablePair.first.getName() << " and " << variablePair.second.getName()
-                                                                               << ".");
+    void createVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
+        auto variablePair = createMetaVariables(variable, result);
 
         result.rowMetaVariables.insert(variablePair.first);
         result.variableToRowMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.first);
@@ -473,39 +702,58 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
 
         storm::dd::Bdd<Type> variableIdentity = result.manager->getIdentity(variablePair.first, variablePair.second);
         result.variableToIdentityMap.emplace(variable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
-        result.rowColumnMetaVariablePairs.push_back(variablePair);
+
         result.variableToRangeMap.emplace(variablePair.first, result.manager->getRange(variablePair.first));
         result.variableToRangeMap.emplace(variablePair.second, result.manager->getRange(variablePair.second));
 
+        result.rowColumnMetaVariablePairs.push_back(variablePair);
         result.allGlobalVariables.insert(variable.getExpressionVariable());
     }
 
-    void createBooleanVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
-        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair =
-            result.manager->addMetaVariable(variable.getExpressionVariable().getName());
+    /*!
+     * Creates the meta variables of a passed transient variable. Its successor version is handled like the one of a
+     * global variable, except that its "identity" (used whenever the variable is not written) is its initial value.
+     * Its row meta variable is not used, but creating a pair keeps the DD variables of row and column meta variables
+     * interleaved.
+     */
+    void createPassedTransientVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
+        auto variablePair = createMetaVariables(variable, result);
+        auto const& initialValue = assignmentLevels.transientInitialValues.at(variable.getExpressionVariable());
+        int_fast64_t initialEncoding = initialValue.hasBooleanType() ? (initialValue.evaluateAsBool() ? 1 : 0) : initialValue.evaluateAsInt();
 
-        STORM_LOG_TRACE("Created meta variables for global boolean variable: " << variablePair.first.getName() << " and " << variablePair.second.getName()
-                                                                               << ".");
-
-        result.rowMetaVariables.insert(variablePair.first);
-        result.variableToRowMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.first);
-
-        result.columnMetaVariables.insert(variablePair.second);
         result.variableToColumnMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.second);
-
-        storm::dd::Bdd<Type> variableIdentity = result.manager->getIdentity(variablePair.first, variablePair.second);
-        result.variableToIdentityMap.emplace(variable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
-
-        result.variableToRangeMap.emplace(variablePair.first, result.manager->getRange(variablePair.first));
+        result.passedTransientColumnMetaVariables.insert(variablePair.second);
+        result.variableToIdentityMap.emplace(variable.getExpressionVariable(),
+                                             result.manager->getEncoding(variablePair.second, initialEncoding).template toAdd<ValueType>());
         result.variableToRangeMap.emplace(variablePair.second, result.manager->getRange(variablePair.second));
-
-        result.rowColumnMetaVariablePairs.push_back(variablePair);
         result.allGlobalVariables.insert(variable.getExpressionVariable());
+    }
+
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> createMetaVariables(storm::jani::Variable const& variable,
+                                                                                              CompositionVariables<Type, ValueType>& result) {
+        auto const& type = variable.getType();
+        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair;
+        if (type.isBasicType() && type.asBasicType().isBooleanType()) {
+            variablePair = result.manager->addMetaVariable(variable.getExpressionVariable().getName());
+        } else if (type.isBoundedType() && type.asBoundedType().isIntegerType()) {
+            auto const& boundedType = type.asBoundedType();
+            STORM_LOG_THROW(boundedType.hasLowerBound(), storm::exceptions::NotSupportedException,
+                            "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() << " has no lower bound.");
+            STORM_LOG_THROW(boundedType.hasUpperBound(), storm::exceptions::NotSupportedException,
+                            "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() << " has no upper bound.");
+            variablePair = result.manager->addMetaVariable(variable.getExpressionVariable().getName(), boundedType.getLowerBound().evaluateAsInt(),
+                                                           boundedType.getUpperBound().evaluateAsInt());
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid type of variable in JANI model.");
+        }
+        STORM_LOG_TRACE("Created meta variables " << variablePair.first.getName() << " and " << variablePair.second.getName() << ".");
+        return variablePair;
     }
 
     storm::jani::Model const& model;
     std::set<std::string> automata;
     storm::jani::CompositionInformation actionInformation;
+    AssignmentLevels const& assignmentLevels;
 };
 
 template<storm::dd::DdType Type, typename ValueType>
@@ -571,19 +819,25 @@ EdgeDestinationDd<Type, ValueType> buildEdgeDestinationDd(storm::jani::Automaton
 
     STORM_LOG_TRACE("Translating edge destination.");
 
-    // Iterate over all assignments (boolean and integer) and build the DD for it.
+    // Iterate over all assignments (boolean and integer) and build the DD for it. Besides non-transient variables, these
+    // include passed transient variables, the only transient variables with a successor meta variable.
     std::set<storm::expressions::Variable> assignedVariables;
-    for (auto const& assignment : destination.getOrderedAssignments().getNonTransientAssignments()) {
+    for (auto const& assignment : destination.getOrderedAssignments()) {
+        auto primedMetaVariableIt = variables.variableToColumnMetaVariableMap->find(assignment.getExpressionVariable());
+        if (assignment.isTransient() && primedMetaVariableIt == variables.variableToColumnMetaVariableMap->end()) {
+            continue;
+        }
+
         // Record the variable as being written.
-        STORM_LOG_TRACE("Assigning to variable " << variables.variableToRowMetaVariableMap->at(assignment.getExpressionVariable()).getName());
+        STORM_LOG_TRACE("Assigning to variable " << assignment.getExpressionVariable().getName());
         assignedVariables.insert(assignment.getExpressionVariable());
 
         // Translate the written variable.
-        auto const& primedMetaVariable = variables.variableToColumnMetaVariableMap->at(assignment.getExpressionVariable());
+        auto const& primedMetaVariable = primedMetaVariableIt->second;
         storm::dd::Add<Type, ValueType> writtenVariable = variables.manager->template getIdentity<ValueType>(primedMetaVariable);
 
         // Translate the expression that is being assigned.
-        storm::dd::Add<Type, ValueType> assignedExpression = variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
+        storm::dd::Add<Type, ValueType> assignedExpression = variables.translateAssignedExpression(assignment.getAssignedExpression(), assignment.getLevel());
 
         // Combine the assigned expression with the guard.
         storm::dd::Add<Type, ValueType> result = assignedExpression * guard.template toAdd<ValueType>();
@@ -604,16 +858,24 @@ EdgeDestinationDd<Type, ValueType> buildEdgeDestinationDd(storm::jani::Automaton
     std::set_intersection(assignedVariables.begin(), assignedVariables.end(), variables.allGlobalVariables.begin(), variables.allGlobalVariables.end(),
                           std::inserter(assignedGlobalVariables, assignedGlobalVariables.begin()));
 
-    // All unassigned boolean variables need to keep their value.
+    // All unassigned boolean variables need to keep their value (passed transient variables take their initial value, and
+    // other transient variables are not part of the DD).
     for (storm::jani::Variable const& variable : automaton.getVariables().getBooleanVariables()) {
+        if (variable.isTransient() && variables.variableToColumnMetaVariableMap->count(variable.getExpressionVariable()) == 0) {
+            continue;
+        }
         if (assignedVariables.find(variable.getExpressionVariable()) == assignedVariables.end()) {
             STORM_LOG_TRACE("Multiplying identity of variable " << variable.getName());
             transitions *= variables.variableToIdentityMap.at(variable.getExpressionVariable());
         }
     }
 
-    // All unassigned integer variables need to keep their value.
+    // All unassigned integer variables need to keep their value (passed transient variables take their initial value, and
+    // other transient variables are not part of the DD).
     for (storm::jani::Variable const& variable : automaton.getVariables().getBoundedIntegerVariables()) {
+        if (variable.isTransient() && variables.variableToColumnMetaVariableMap->count(variable.getExpressionVariable()) == 0) {
+            continue;
+        }
         if (assignedVariables.find(variable.getExpressionVariable()) == assignedVariables.end()) {
             STORM_LOG_TRACE("Multiplying identity of variable " << variable.getName());
             transitions *= variables.variableToIdentityMap.at(variable.getExpressionVariable());
@@ -1260,6 +1522,9 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
         boost::optional<storm::dd::Add<Type, ValueType>> exitRates;
         std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
         if (this->model.getModelType() == storm::jani::ModelType::CTMC && hasTransientEdgeAssignments) {
+            STORM_LOG_THROW(this->variables.passedTransientColumnMetaVariables.empty(), storm::exceptions::NotSupportedException,
+                            "The symbolic JANI model builder does not support rewards on synchronizing edges of CTMCs that pass transient values "
+                            "between assignment levels.");
             // For CTMCs, we need to weigh the transient assignments with the exit rates.
             exitRates = this->variables.manager->template getAddOne<ValueType>();
             for (auto const& actionIndexPair : actions) {
@@ -1572,14 +1837,15 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
             // Finally treat the transient assignments.
             std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
             if (!this->transientVariables.empty()) {
-                performTransientAssignments(edge.getAssignments().getTransientAssignments(), [this, &transientEdgeAssignments, &guardAdd,
-                                                                                              &exitRates](storm::jani::Assignment const& assignment) {
-                    auto newTransientEdgeAssignments = guardAdd * this->variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
-                    if (exitRates) {
-                        newTransientEdgeAssignments *= exitRates.get();
-                    }
-                    transientEdgeAssignments[assignment.getExpressionVariable()] = newTransientEdgeAssignments;
-                });
+                performTransientAssignments(edge.getAssignments().getTransientAssignments(),
+                                            [this, &transientEdgeAssignments, &guardAdd, &exitRates](storm::jani::Assignment const& assignment) {
+                                                auto newTransientEdgeAssignments = guardAdd * this->variables.translateAssignedExpression(
+                                                                                                  assignment.getAssignedExpression(), assignment.getLevel());
+                                                if (exitRates) {
+                                                    newTransientEdgeAssignments *= exitRates.get();
+                                                }
+                                                transientEdgeAssignments[assignment.getExpressionVariable()] = newTransientEdgeAssignments;
+                                            });
             }
 
             return EdgeDd(isMarkovian, guard, transitions, transientEdgeAssignments, globalVariablesInSomeDestination);
@@ -1991,6 +2257,23 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
         action.transitions *= missingIdentities;
     }
 
+    /*!
+     * Sums out the successor meta variables of the passed transient variables. This needs to be a sum (rather than an
+     * existential abstraction), because different values of these variables may lead to the same successor.
+     */
+    storm::dd::Add<Type, ValueType> sumOutPassedTransientVariables(storm::dd::Add<Type, ValueType> const& transitions) const {
+        if (this->variables.passedTransientColumnMetaVariables.empty()) {
+            return transitions;
+        }
+        storm::dd::Add<Type, ValueType> result = transitions.sumAbstract(this->variables.passedTransientColumnMetaVariables);
+        for (auto const& metaVariable : result.getContainedMetaVariables()) {
+            STORM_LOG_ASSERT(this->variables.rowMetaVariables.count(metaVariable) > 0 || this->variables.columnMetaVariables.count(metaVariable) > 0 ||
+                                 this->variables.allNondeterminismVariables.count(metaVariable) > 0,
+                             "Unexpected meta variable " << metaVariable.getName() << " in transition DD.");
+        }
+        return result;
+    }
+
     ComposerResult<Type, ValueType> buildSystemFromAutomaton(AutomatonDd& automaton) {
         STORM_LOG_TRACE("Building system from final automaton.");
 
@@ -2037,6 +2320,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
 
                 result += extendedTransitions;
             }
+            result = sumOutPassedTransientVariables(result);
 
             return ComposerResult<Type, ValueType>(result, automaton.transientLocationAssignments, transientEdgeAssignments, illegalFragment,
                                                    numberOfUsedNondeterminismVariables);
@@ -2056,6 +2340,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
                 addToTransientAssignmentMap(transientEdgeAssignments, action.second.transientEdgeAssignments);
                 result += action.second.transitions;
             }
+            result = sumOutPassedTransientVariables(result);
 
             return ComposerResult<Type, ValueType>(result, automaton.transientLocationAssignments, transientEdgeAssignments, illegalFragment, 0);
         } else {
@@ -2207,14 +2492,8 @@ storm::dd::Bdd<Type> doFixDeadlocks(storm::jani::ModelType const& modelType, sto
                 STORM_LOG_INFO((*it).first.toPrettyString(variables.rowMetaVariables) << '\n');
             }
 
-            // Create a global identity DD.
-            storm::dd::Add<Type, ValueType> globalIdentity = variables.manager->template getAddOne<ValueType>();
-            for (auto const& identity : variables.automatonToIdentityMap) {
-                globalIdentity *= identity.second;
-            }
-            for (auto const& variable : variables.allGlobalVariables) {
-                globalIdentity *= variables.variableToIdentityMap.at(variable);
-            }
+            // Create a global identity DD over all state variables (locations and non-transient variables).
+            storm::dd::Add<Type, ValueType> globalIdentity = variables.manager->getIdentity(variables.rowColumnMetaVariablePairs).template toAdd<ValueType>();
 
             if (modelType == storm::jani::ModelType::DTMC || modelType == storm::jani::ModelType::CTMC) {
                 // For DTMCs, we can simply add the identity of the global module for all deadlock states.
@@ -2327,17 +2606,23 @@ std::map<std::string, storm::expressions::Expression> buildLabelExpressions(stor
 template<storm::dd::DdType Type, typename ValueType>
 std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> buildInternal(storm::jani::Model const& model,
                                                                                typename DdJaniModelBuilder<Type, ValueType>::Options const& options,
-                                                                               std::shared_ptr<storm::dd::DdManager<Type>> const& manager) {
+                                                                               std::shared_ptr<storm::dd::DdManager<Type>> const& manager,
+                                                                               AssignmentLevels const& assignmentLevels) {
     // Determine the actions that will appear in the parallel composition.
     storm::jani::CompositionInformationVisitor visitor(model, model.getSystemComposition());
     storm::jani::CompositionInformation actionInformation = visitor.getInformation();
 
     // Create all necessary variables.
-    CompositionVariableCreator<Type, ValueType> variableCreator(model, actionInformation);
+    CompositionVariableCreator<Type, ValueType> variableCreator(model, actionInformation, assignmentLevels);
     CompositionVariables<Type, ValueType> variables = variableCreator.create(manager);
 
     // Determine which transient assignments need to be considered in the building process.
     std::vector<storm::expressions::Variable> rewardVariables = selectRewardVariables<Type, ValueType>(model, options);
+    for (auto const& rewardVariable : rewardVariables) {
+        STORM_LOG_THROW(!assignmentLevels.isPassed(rewardVariable), storm::exceptions::NotSupportedException,
+                        "The symbolic JANI model builder does not support reward models that refer to transient variable '"
+                            << rewardVariable.getName() << "', which is read at a level above the one where it is written.");
+    }
 
     // Create a builder to compose and build the model.
     bool applyMaximumProgress = options.applyMaximumProgressAssumption && model.getModelType() == storm::jani::ModelType::MA;
@@ -2413,8 +2698,6 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
                         "Model still contains these undefined constants: " << boost::join(strings, ", ") << ".");
     }
 
-    STORM_LOG_THROW(!model.usesAssignmentLevels(), storm::exceptions::WrongFormatException,
-                    "The symbolic JANI model builder currently does not support assignment levels.");
     auto features = model.getModelFeatures();
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::StateExitRewards);
@@ -2439,14 +2722,12 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
     STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidStateException,
                     "The dd jani model builder does not support the following model feature(s): " << features.toString() << ".");
 
-    // Lift the transient edge destinations. We can do so, as we know that there are no assignment levels (because that's not supported anyway).
-    if (preparedModel.hasTransientEdgeDestinationAssignments()) {
-        // This operation is correct as we are asserting that there are no assignment levels and no non-trivial reward expressions.
-        preparedModel.liftTransientEdgeDestinationAssignments();
-    }
+    AssignmentLevels assignmentLevels = analyzeAssignmentLevels(preparedModel);
+    STORM_LOG_THROW(assignmentLevels.error.empty(), storm::exceptions::NotSupportedException,
+                    "The symbolic JANI model builder can not handle the assignment levels of this model: " << assignmentLevels.error);
 
-    STORM_LOG_THROW(!preparedModel.hasTransientEdgeDestinationAssignments(), storm::exceptions::WrongFormatException,
-                    "The symbolic JANI model builder currently does not support transient edge destination assignments.");
+    std::string transientAssignmentError = prepareTransientAssignments(preparedModel, assignmentLevels);
+    STORM_LOG_THROW(transientAssignmentError.empty(), storm::exceptions::NotSupportedException, transientAssignmentError);
 
     // Create the manager
     auto manager = std::make_shared<storm::dd::DdManager<Type>>(env);
@@ -2455,7 +2736,9 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
     std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;
 
     // invoke the builder
-    manager->execute([&preparedModel, &options, &manager, &result]() { result = buildInternal<Type, ValueType>(preparedModel, options, manager); });
+    manager->execute([&preparedModel, &options, &manager, &result, &assignmentLevels]() {
+        result = buildInternal<Type, ValueType>(preparedModel, options, manager, assignmentLevels);
+    });
 
     return result;
 }

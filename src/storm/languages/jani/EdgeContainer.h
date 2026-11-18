@@ -104,7 +104,7 @@ class EdgeContainer {
     std::set<uint64_t> getActionIndices() const;
 
     void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const substituteTranscendentalNumbers);
-    void liftTransientDestinationAssignments(int64_t maxLevel = 0);
+    void liftTransientDestinationAssignments(int64_t maxLevel = 0, std::set<storm::expressions::Variable> const& excludedVariables = {});
     void pushAssignmentsToDestinations();
     void insertEdge(Edge const& e, uint64_t locStart, uint64_t locEnd);
     void insertTemplateEdge(std::shared_ptr<TemplateEdge> const& te);
