@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -31,26 +32,20 @@ struct DdTypeList {
 /// Register Dd types
 using RegisteredDdTypes = DdTypeList<DdType::CUDD, DdType::Sylvan>;
 
-namespace detail {
-
-template<typename ValueType, DdType First, DdType... Rest>
-constexpr DdType firstDdTypeSupportingImpl() {
-    if constexpr (BackendTraits<First>::template supportsValueType<ValueType>) {
-        return First;
-    } else {
-        static_assert(sizeof...(Rest) > 0, "No registered DD backend supports the given value type.");
-        if constexpr (sizeof...(Rest) > 0) {
-            return firstDdTypeSupportingImpl<ValueType, Rest...>();
-        } else {
-            return First;
+/*!
+ * The name of the given backend.
+ */
+inline std::string_view ddLibraryName(DdType type) {
+    std::string_view name = "unknown";
+    RegisteredDdTypes::forEach([&](auto tag) {
+        if (type == decltype(tag)::value) {
+            name = BackendTraits<decltype(tag)::value>::name;
         }
-    }
+    });
+    return name;
 }
 
-template<typename ValueType, DdType... Types>
-constexpr DdType firstDdTypeSupporting(DdTypeList<Types...>) {
-    return firstDdTypeSupportingImpl<ValueType, Types...>();
-}
+namespace detail {
 
 template<typename F, DdType First, DdType... Rest>
 auto dispatchDdType(DdType type, F&& f, DdTypeList<First, Rest...>) {
@@ -65,23 +60,40 @@ auto dispatchDdType(DdType type, F&& f, DdTypeList<First, Rest...>) {
     }
 }
 
-}  // namespace detail
+template<typename ValueType, typename F, DdType First, DdType... Rest>
+auto dispatchDdTypeSupporting(DdType type, F&& f, DdTypeList<First, Rest...>) {
+    if constexpr (BackendTraits<First>::template supportsValueType<ValueType>) {
+        if (type == First) {
+            return f(std::integral_constant<DdType, First>{});
+        }
+    }
+    if constexpr (sizeof...(Rest) > 0) {
+        return dispatchDdTypeSupporting<ValueType>(type, std::forward<F>(f), DdTypeList<Rest...>{});
+    } else {
+        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected combination of DD library '" << ddLibraryName(type) << "' and value type.");
+        __builtin_unreachable();
+    }
+}
 
-/*!
- * The first registered backend that supports the given value type.
- * Useful to name the result type of a callback that is dispatched over backends (all alternatives must return the same type).
- */
-template<typename ValueType>
-inline constexpr DdType firstDdTypeSupporting = detail::firstDdTypeSupporting<ValueType>(RegisteredDdTypes{});
+}  // namespace detail
 
 /*!
  * Translates the runtime value `type` to the compile-time constant.
  * All alternatives of f must return the same type.
- * Replaces hand-written `switch (ddType) { case CUDD: ...; case Sylvan: ...; }` dispatch code.
+ * Replaces handwritten `switch (ddType) { case CUDD: ...; case Sylvan: ...; }` dispatch code.
  */
 template<typename F>
 auto dispatchDdType(DdType type, F&& f) {
     return detail::dispatchDdType(type, std::forward<F>(f), RegisteredDdTypes{});
+}
+
+/*!
+ * Like dispatchDdType, but only considers backends that support the ValueType.
+ * Throws an UnexpectedException if the given backend does not support ValueType.
+ */
+template<typename ValueType, typename F>
+auto dispatchDdTypeSupporting(DdType type, F&& f) {
+    return detail::dispatchDdTypeSupporting<ValueType>(type, std::forward<F>(f), RegisteredDdTypes{});
 }
 
 }  // namespace dd

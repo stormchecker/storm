@@ -352,18 +352,8 @@ auto castAndApply(std::shared_ptr<storm::models::ModelBase> const& model, auto c
                 // Avoiding a couple of unnecessary template instantiations
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Symbolic interval models are currently not supported.");
             } else {
-                // All alternatives return the same type; name it via the first backend that supports the value type.
-                using Result =
-                    decltype(castAndApplyImpl.template operator()<storm::models::symbolic::Model<storm::dd::firstDdTypeSupporting<ValueType>, ValueType>>());
-                return storm::dd::dispatchDdType(*ddType, [&](auto ddTag) -> Result {
-                    constexpr storm::dd::DdType DD = decltype(ddTag)::value;
-                    if constexpr (storm::dd::BackendTraits<DD>::template supportsValueType<ValueType>) {
-                        return castAndApplyImpl.template operator()<storm::models::symbolic::Model<DD, ValueType>>();
-                    } else {
-                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException,
-                                        "Unexpected combination of DD library " << storm::dd::BackendTraits<DD>::name << " and value type.");
-                        __builtin_unreachable();
-                    }
+                return storm::dd::dispatchDdTypeSupporting<ValueType>(*ddType, [&](auto ddTag) {
+                    return castAndApplyImpl.template operator()<storm::models::symbolic::Model<decltype(ddTag)::value, ValueType>>();
                 });
             }
         }
@@ -401,20 +391,9 @@ auto applyValueType(ModelProcessingInformation::ValueType vt, auto const& callba
 }
 
 auto applyDdLibValueType(storm::dd::DdType dd, ModelProcessingInformation::ValueType vt, auto const& callback) {
-    // All alternatives return the same type; name it via the first registered backend (all of them support double).
-    constexpr storm::dd::DdType ReferenceDd = storm::dd::RegisteredDdTypes::first;
-    using Result = decltype(callback.template operator()<ReferenceDd, double>());
-    return storm::dd::dispatchDdType(dd, [&](auto ddTag) -> Result {
-        constexpr storm::dd::DdType DD = decltype(ddTag)::value;
-        return applyValueType(vt, [&]<typename ValueType>() -> Result {
-            if constexpr (storm::dd::BackendTraits<DD>::template supportsValueType<ValueType>) {
-                return callback.template operator()<DD, ValueType>();
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException,
-                                "Unexpected value type for DD library " << storm::dd::BackendTraits<DD>::name << ".");
-                __builtin_unreachable();
-            }
-        });
+    return applyValueType(vt, [&]<typename ValueType>() {
+        return storm::dd::dispatchDdTypeSupporting<ValueType>(dd,
+                                                              [&](auto ddTag) { return callback.template operator()<decltype(ddTag)::value, ValueType>(); });
     });
 }
 
