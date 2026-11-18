@@ -1728,7 +1728,13 @@ storm::utility::ExtendedNumber<ValueType> SparseMatrix<ValueType>::multiplyRowWi
         if (storm::utility::isZero(entry.getValue())) {
             continue;  // Ignore zero entries, even if the corresponding vector value is infinite.
         }
-        result += entry.getValue() * vector[entry.getColumn()];
+        auto const& vectorValue = vector[entry.getColumn()];
+        // Avoid copies into ExtendedNumber wrapper
+        if (result.isFinite() && vectorValue.isFinite()) {
+            result.getFinite() += entry.getValue() * vectorValue.getFinite();
+        } else {
+            result += entry.getValue() * vectorValue;
+        }
     }
     return result;
 }
