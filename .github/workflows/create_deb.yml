@@ -1,5 +1,5 @@
-# Prepares a deb package of Storm
-# Packages are built for different versions and indicated by 'artifact' name
+# Builds and tests Debian packages of Storm.
+# Packages are uploaded as artifacts named 'storm-deb-<distro>-<platform>[-debug]'.
 name: Build deb package
 
 on:
@@ -16,6 +16,16 @@ on:
         required: false
         type: string
         default: 'Release'
+      carl_tag:
+        description: 'carl-storm tag to build against (empty: use the default carl tag of the CMakeLists.txt)'
+        required: false
+        type: string
+        default: ''
+      ref:
+        description: 'Git ref (branch, tag or SHA) of Storm to build (empty: default ref of the checkout action)'
+        required: false
+        type: string
+        default: ''
   # needed to trigger the workflow manually
   workflow_dispatch:
     inputs:
@@ -29,15 +39,28 @@ on:
         required: false
         type: string
         default: 'Release'
+      carl_tag:
+        description: 'carl-storm tag to build against (empty: use the default carl tag of the CMakeLists.txt)'
+        required: false
+        type: string
+        default: ''
+      ref:
+        description: 'Git ref (branch, tag or SHA) of Storm to build (empty: default ref of the checkout action)'
+        required: false
+        type: string
+        default: ''
 
 env:
   # GitHub runners currently have 4 cores
   NR_JOBS: "4"
+  # Suffix to distinguish debug packages
+  BUILD_SUFFIX: ${{ inputs.build_type != 'Release' && '-debug' || '' }}
 
 jobs:
   build_deb:
     name: Build Debian package on ${{ matrix.distro.name }}-${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runner }}
+    container: movesrwth/storm-basesystem:${{ matrix.distro.tag }}
     strategy:
       fail-fast: false
       matrix:
@@ -57,38 +80,46 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: stormchecker/storm
-      - name: Build Storm from Dockerfile
+          ref: ${{ inputs.ref }}
+      - name: Restore 3rdparty source cache
+        id: cache-3rdparty-restore
+        uses: ./.github/actions/cache-3rdparty-action
+        with:
+          restore: true
+      - name: Configure Storm
+        # Inputs are passed via environment variables to avoid shell injection.
+        env:
+          BUILD_TYPE: ${{ inputs.build_type }}
+          CARL_TAG: ${{ inputs.carl_tag }}
+          VERSION: ${{ inputs.version }}
+          DISTRO: ${{ matrix.distro.name }}
+          PLATFORM: ${{ matrix.platform.name }}
+          CACHE_ARGS: ${{ steps.cache-3rdparty-restore.outputs.cmake-args }}
+        # Sets the debian version for CPack. CMake version remains unchanged because it must be numeric.
         run: |
-          docker build -t movesrwth/storm:ci . \
-            --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro.tag }} \
-            --build-arg build_type="${{ inputs.build_type }}" \
-            --build-arg carl_tag=master \
-            --build-arg cmake_args="-DSTORM_BUILD_TESTS=OFF -DCPACK_DEBIAN_PACKAGE_VERSION=${{ inputs.version }}-${{ matrix.distro.name }} -DCPACK_PACKAGE_FILE_NAME=storm-${{ inputs.version }}-${{ matrix.distro.name }}-${{ matrix.platform.name }}" \
-            --build-arg no_threads=${NR_JOBS}
-            # Sets the debian version for CPack. CMake version remains unchanged because it must be numeric.
-            # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers
-      - name: Run Docker container
-        run: docker run -d -it --name ci movesrwth/storm:ci
-
+          args=(-DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DSTORM_PORTABLE=ON -DSTORM_BUILD_TESTS=OFF
+                -DCPACK_DEBIAN_PACKAGE_VERSION="$VERSION-$DISTRO"
+                -DCPACK_PACKAGE_FILE_NAME="storm-$VERSION-$DISTRO-$PLATFORM$BUILD_SUFFIX")
+          if [ -n "$CARL_TAG" ]; then args+=(-DSTORM_CARL_GIT_TAG="$CARL_TAG"); fi
+          # CACHE_ARGS is intentionally unquoted to split it into separate arguments
+          cmake -S . -B build "${args[@]}" $CACHE_ARGS
+      - name: Build Storm
+        run: cmake --build build -j ${NR_JOBS}
       - name: Create .deb package
-        run: docker exec ci bash -c "cd /opt/storm/build && make package"
-
-      - name: Copy package from container
-        run: |
-          docker exec ci bash -c "mkdir -p /opt/package && cp /opt/storm/build/*.deb /opt/package/"
-          docker cp ci:/opt/package ./package
+        run: cmake --build build --target package
 
       - name: Upload Debian package artifact
         uses: actions/upload-artifact@v7
         with:
-          name: storm-deb-${{ matrix.distro.name }}-${{ matrix.platform.name }}
-          path: ./package/*.deb
+          name: storm-deb-${{ matrix.distro.name }}-${{ matrix.platform.name }}${{ env.BUILD_SUFFIX }}
+          path: build/*.deb
 
 
   test_deb:
     name: Test Debian package on ${{ matrix.distro.image }}-${{ matrix.platform.name }}
     needs: build_deb
     runs-on: ${{ matrix.platform.runner }}
+    container: ${{ matrix.distro.image }}
     strategy:
       fail-fast: false
       matrix:
@@ -116,33 +147,20 @@ jobs:
       - name: Download .deb artifact
         uses: actions/download-artifact@v8
         with:
-          name: storm-deb-${{ matrix.distro.build_artifact }}-${{ matrix.platform.name }}
+          name: storm-deb-${{ matrix.distro.build_artifact }}-${{ matrix.platform.name }}${{ env.BUILD_SUFFIX }}
           path: package
       - name: Install package
         run: |
-          docker run -d -it --name ci-test ${{ matrix.distro.image }}
-          docker cp package/*.deb ci-test:/opt/
-          docker exec ci-test bash -c "
-            set -e
-            apt-get update
-            apt-get install -y /opt/*.deb
-          "
+          apt-get update
+          apt-get install -y ./package/*.deb
       - name: Run Storm
-        run: |
-          docker exec ci-test bash -c "storm --version"
+        run: storm --version
       - name: Build starter project using Storm
         run: |
-          docker exec ci-test bash -c "
-            apt-get install -y build-essential ca-certificates cmake git
-            git clone https://github.com/stormchecker/storm-project-starter-cpp /opt/storm-starter
-            mkdir -p /opt/storm-starter/build
-            cd /opt/storm-starter/build
-            cmake -DNEVER_FETCH_STORM=TRUE ..
-            make -j ${NR_JOBS}
-          "
+          apt-get install -y build-essential ca-certificates cmake git
+          git clone https://github.com/stormchecker/storm-project-starter-cpp /opt/storm-starter
+          cmake -S /opt/storm-starter -B /opt/storm-starter/build -DNEVER_FETCH_STORM=TRUE
+          cmake --build /opt/storm-starter/build -j ${NR_JOBS}
       - name: Run starter project
-        run: |
-          docker exec ci-test bash -c "
-            cd /opt/storm-starter
-            ./build/bin/starter-project examples/die.pm examples/die.pctl
-          "
+        working-directory: /opt/storm-starter
+        run: ./build/bin/starter-project examples/die.pm examples/die.pctl

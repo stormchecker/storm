@@ -36,6 +36,10 @@ inputs:
     description: "Run post-build steps: starter project, install, run installed storm"
     type: boolean
     default: true
+  expensive_tests:
+    description: "Also run the expensive tests (STORM_EXPENSIVE_*)"
+    type: boolean
+    default: false
 
 runs:
   using: "composite"
@@ -177,23 +181,29 @@ runs:
       run: ./bin/storm --version
       shell: bash
     - name: Check compile flags
-      uses: ./.github/actions/check-compile-flags-action
-      with:
-        buildType: ${{ env.BUILD_TYPE }}
-        docker: false
+      # Developer mode disables LTO
+      run: |
+        LTO_ARG=""
+        if grep -q '^STORM_DEVELOPER:BOOL=ON' build/CMakeCache.txt; then LTO_ARG="--no-lto"; fi
+        bash resources/scripts/check-flags.sh build/src/storm/CMakeFiles/storm.dir "${{ env.BUILD_TYPE }}" $LTO_ARG
+      shell: bash
     - name: Run tests
       working-directory: ./build
+      # Enable expensive tests if requested
+      env:
+        GTEST_ALSO_RUN_DISABLED_TESTS: ${{ inputs.expensive_tests == 'true' && '1' || '0' }}
       # Disabled sanitizer checks for now
       #run: ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest --output-on-failure
       run: ctest --output-on-failure
       shell: bash
     - name: Build starter-project
       if: inputs.install == 'true'
-      uses: ./.github/actions/starter-project-action
-      with:
-        docker: false
-        stormDir: "${GITHUB_WORKSPACE}/build"
-        command: ${{ env.STARTER_PROJECT_COMMAND }}
+      run: |
+        git clone https://github.com/stormchecker/storm-project-starter-cpp ../storm-starter
+        cmake -S ../storm-starter -B ../storm-starter/build-intree -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT="${GITHUB_WORKSPACE}/build"
+        cmake --build ../storm-starter/build-intree -j ${{ inputs.nr_jobs }}
+        ../storm-starter/build-intree/bin/starter-project ${{ env.STARTER_PROJECT_COMMAND }}
+      shell: bash
     - name: Install storm
       if: inputs.install == 'true'
       working-directory: ./build
@@ -209,8 +219,8 @@ runs:
       shell: bash
     - name: Build starter-project on installed Storm
       if: inputs.install == 'true'
-      uses: ./.github/actions/starter-project-action
-      with:
-        docker: false
-        stormDir: ""
-        command: ${{ env.STARTER_PROJECT_COMMAND }}
+      run: |
+        cmake -S ../storm-starter -B ../storm-starter/build-installed -DNEVER_FETCH_STORM=TRUE
+        cmake --build ../storm-starter/build-installed -j ${{ inputs.nr_jobs }}
+        ../storm-starter/build-installed/bin/starter-project ${{ env.STARTER_PROJECT_COMMAND }}
+      shell: bash
