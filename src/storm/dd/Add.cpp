@@ -3,6 +3,7 @@
 #include <boost/algorithm/string/join.hpp>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/dd/DdMetaVariable.h"
 #include "storm/dd/Odd.h"
@@ -141,20 +142,11 @@ Add<LibraryType, ValueType> Add<LibraryType, ValueType>::ceil() const {
 }
 
 template<DdType LibraryType, typename ValueType>
-Add<LibraryType, storm::RationalNumber> Add<LibraryType, ValueType>::sharpenKwekMehlhorn(uint64_t) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
-}
-
-template<>
-Add<storm::dd::DdType::Sylvan, storm::RationalNumber> Add<storm::dd::DdType::Sylvan, double>::sharpenKwekMehlhorn(uint64_t precision) const {
-    return Add<storm::dd::DdType::Sylvan, storm::RationalNumber>(this->getDdManager(), internalAdd.sharpenKwekMehlhorn(static_cast<std::size_t>(precision)),
-                                                                 this->getContainedMetaVariables());
-}
-
-template<>
-Add<storm::dd::DdType::Sylvan, storm::RationalNumber> Add<storm::dd::DdType::Sylvan, storm::RationalNumber>::sharpenKwekMehlhorn(uint64_t precision) const {
-    return Add<storm::dd::DdType::Sylvan, storm::RationalNumber>(this->getDdManager(), internalAdd.sharpenKwekMehlhorn(static_cast<std::size_t>(precision)),
-                                                                 this->getContainedMetaVariables());
+Add<LibraryType, storm::RationalNumber> Add<LibraryType, ValueType>::sharpenKwekMehlhorn(uint64_t precision) const
+    requires(SupportsSharpening<LibraryType, ValueType>)
+{
+    return Add<LibraryType, storm::RationalNumber>(this->getDdManager(), internalAdd.sharpenKwekMehlhorn(static_cast<std::size_t>(precision)),
+                                                   this->getContainedMetaVariables());
 }
 
 template<DdType LibraryType, typename ValueType>
@@ -1213,24 +1205,16 @@ std::enable_if_t<!std::is_same_v<TargetValueType, ValueType>, Add<LibraryType, T
     return Add<LibraryType, TargetValueType>(this->getDdManager(), internalAdd.template toValueType<TargetValueType>(), this->getContainedMetaVariables());
 }
 
-template class Add<storm::dd::DdType::CUDD, double>;
-template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::CUDD, double> const& add);
-template class Add<storm::dd::DdType::CUDD, uint_fast64_t>;
+#define STORM_DD_INSTANTIATE(DD, ValueType)               \
+    template class Add<storm::dd::DdType::DD, ValueType>; \
+    template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::DD, ValueType> const& add);
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
-template class Add<storm::dd::DdType::Sylvan, double>;
-template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, double> const& add);
-template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
-
-template class Add<storm::dd::DdType::CUDD, storm::RationalNumber>;
-template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::CUDD, storm::RationalNumber> const& add);
-
-template class Add<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& add);
-template class Add<storm::dd::DdType::Sylvan, storm::RationalFunction>;
-
-template Add<storm::dd::DdType::CUDD, storm::RationalNumber> Add<storm::dd::DdType::CUDD, storm::RationalNumber>::toValueType<storm::RationalNumber>() const;
-template Add<storm::dd::DdType::CUDD, storm::RationalNumber> Add<storm::dd::DdType::CUDD, double>::toValueType<storm::RationalNumber>() const;
-template Add<storm::dd::DdType::CUDD, double> Add<storm::dd::DdType::CUDD, storm::RationalNumber>::toValueType<double>() const;
+// Additional instantiations that are not part of the standard lists.
+#define STORM_DD_INSTANTIATE(DD) template class Add<storm::dd::DdType::DD, uint_fast64_t>;
+STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 template Add<storm::dd::DdType::Sylvan, storm::RationalNumber> Add<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType<storm::RationalNumber>()
     const;

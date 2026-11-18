@@ -7,6 +7,7 @@
 #include "storm-gamebased-ar/abstraction/BottomStateResult.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/dd/Add.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/languages/prism/Command.h"
 #include "storm/languages/prism/Update.h"
@@ -778,9 +779,9 @@ void CommandAbstractor<DdType, ValueType>::notifyGuardIsPredicate() {
     skipBottomStates = true;
 }
 
-template class CommandAbstractor<storm::dd::DdType::CUDD, double>;
-template class CommandAbstractor<storm::dd::DdType::Sylvan, double>;
-template class CommandAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class CommandAbstractor<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 }  // namespace prism
 }  // namespace abstraction
 }  // namespace storm::gbar

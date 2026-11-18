@@ -4,6 +4,7 @@
 
 #include "storm/dd/DdManager.h"
 
+#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
@@ -161,11 +162,9 @@ std::chrono::high_resolution_clock::duration PartitionRefiner<DdType, ValueType>
     return totalRefinementTime;
 }
 
-template class PartitionRefiner<storm::dd::DdType::CUDD, double>;
-
-template class PartitionRefiner<storm::dd::DdType::Sylvan, double>;
-template class PartitionRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-template class PartitionRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class PartitionRefiner<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace bisimulation
 }  // namespace dd

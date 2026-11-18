@@ -1,17 +1,16 @@
 #include "storm/solver/SymbolicMinMaxLinearEquationSolver.h"
 
-#include "storm/dd/DdManager.h"
-
 #include "storm/dd/Add.h"
 #include "storm/dd/Bdd.h"
-
-#include "storm/utility/constants.h"
-
+#include "storm/dd/DdInstantiations.h"
+#include "storm/dd/DdManager.h"
+#include "storm/dd/backend/BackendTraits.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
-
 #include "storm/exceptions/InvalidEnvironmentException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
 #include "storm/utility/SignalHandler.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
 
@@ -250,14 +249,20 @@ SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSea
                                                                                           storm::solver::OptimizationDirection const& dir,
                                                                                           storm::dd::Add<DdType, ValueType> const& x,
                                                                                           storm::dd::Add<DdType, ValueType> const& b) const {
-    storm::dd::Add<DdType, storm::RationalNumber> rationalB = b.template toValueType<storm::RationalNumber>();
-    SymbolicMinMaxLinearEquationSolver<DdType, storm::RationalNumber> rationalSolver(
-        this->A.template toValueType<storm::RationalNumber>(), this->allRows, this->illegalMask, this->rowMetaVariables, this->columnMetaVariables,
-        this->choiceVariables, this->rowColumnMetaVariablePairs, std::make_unique<GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalNumber>>());
+    if constexpr (storm::dd::BackendTraits<DdType>::template supportsValueType<storm::RationalNumber>) {
+        storm::dd::Add<DdType, storm::RationalNumber> rationalB = b.template toValueType<storm::RationalNumber>();
+        SymbolicMinMaxLinearEquationSolver<DdType, storm::RationalNumber> rationalSolver(
+            this->A.template toValueType<storm::RationalNumber>(), this->allRows, this->illegalMask, this->rowMetaVariables, this->columnMetaVariables,
+            this->choiceVariables, this->rowColumnMetaVariablePairs,
+            std::make_unique<GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalNumber>>());
 
-    storm::dd::Add<DdType, storm::RationalNumber> rationalResult =
-        solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(env, dir, rationalSolver, *this, rationalB, this->getLowerBoundsVector(), b);
-    return rationalResult.template toValueType<ValueType>();
+        storm::dd::Add<DdType, storm::RationalNumber> rationalResult = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(
+            env, dir, rationalSolver, *this, rationalB, this->getLowerBoundsVector(), b);
+        return rationalResult.template toValueType<ValueType>();
+    } else {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                        "Rational search is not supported, as the selected DD library does not support rational numbers.");
+    }
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
@@ -608,13 +613,13 @@ GeneralSymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>::create() co
     return std::make_unique<SymbolicMinMaxLinearEquationSolver<DdType, ValueType>>();
 }
 
-template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::CUDD, double>;
-template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
-template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
-template class GeneralSymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
-template class GeneralSymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
-template class GeneralSymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class GeneralSymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace solver
 }  // namespace storm

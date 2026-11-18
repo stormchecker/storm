@@ -7,6 +7,7 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"
 
+#include "storm/dd/DdInstantiations.h"
 #include "storm/expressions/Expression.h"
 #include "storm/expressions/ExpressionManager.h"
 
@@ -603,8 +604,9 @@ storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodeLocation(storm::exp
     return this->getDdManager().getEncoding(locationVariable, locationIndex);
 }
 
-template class AbstractionInformation<storm::dd::DdType::CUDD>;
-template class AbstractionInformation<storm::dd::DdType::Sylvan>;
+#define STORM_DD_INSTANTIATE(DD) template class AbstractionInformation<storm::dd::DdType::DD>;
+STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 template std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>>
 AbstractionInformation<storm::dd::DdType::CUDD>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<storm::dd::DdType::CUDD> const& choice) const;

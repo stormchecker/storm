@@ -4,6 +4,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/dd/Add.h"
 #include "storm/dd/Bdd.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -222,9 +223,8 @@ boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::Rati
 }
 
 // Explicitly instantiate the symbolic expression adapter
-template class AddExpressionAdapter<storm::dd::DdType::CUDD, double>;
-template class AddExpressionAdapter<storm::dd::DdType::Sylvan, double>;
-template class AddExpressionAdapter<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-template class AddExpressionAdapter<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class AddExpressionAdapter<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 }  // namespace adapters
 }  // namespace storm

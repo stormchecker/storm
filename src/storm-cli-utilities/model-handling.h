@@ -10,6 +10,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/storm.h"
 #include "storm/builder/BuilderType.h"
+#include "storm/dd/backend/DdBackends.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/dd/DdEnvironment.h"
 #include "storm/environment/dd/SylvanDdManagerEnvironment.h"
@@ -351,14 +352,9 @@ auto castAndApply(std::shared_ptr<storm::models::ModelBase> const& model, auto c
                 // Avoiding a couple of unnecessary template instantiations
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Symbolic interval models are currently not supported.");
             } else {
-                using enum storm::dd::DdType;
-                if (*ddType == CUDD) {
-                    if constexpr (std::is_same_v<ValueType, double>) {
-                        return castAndApplyImpl.template operator()<storm::models::symbolic::Model<CUDD, ValueType>>();
-                    }
-                }
-                STORM_LOG_ASSERT(*ddType == Sylvan, "Unexpected Dd type.");
-                return castAndApplyImpl.template operator()<storm::models::symbolic::Model<Sylvan, ValueType>>();
+                return storm::dd::dispatchDdTypeSupporting<ValueType>(*ddType, [&](auto ddTag) {
+                    return castAndApplyImpl.template operator()<storm::models::symbolic::Model<decltype(ddTag)::value, ValueType>>();
+                });
             }
         }
     };
@@ -395,23 +391,10 @@ auto applyValueType(ModelProcessingInformation::ValueType vt, auto const& callba
 }
 
 auto applyDdLibValueType(storm::dd::DdType dd, ModelProcessingInformation::ValueType vt, auto const& callback) {
-    using enum storm::dd::DdType;
-    using enum ModelProcessingInformation::ValueType;
-    switch (dd) {
-        case CUDD:
-            STORM_LOG_THROW(vt == FinitePrecision, storm::exceptions::UnexpectedException, "Unexpected value type for DD library Cudd.");
-            return callback.template operator()<CUDD, double>();
-        case Sylvan:
-            switch (vt) {
-                case FinitePrecision:
-                    return callback.template operator()<Sylvan, double>();
-                case Exact:
-                    return callback.template operator()<Sylvan, storm::RationalNumber>();
-                case Parametric:
-                    return callback.template operator()<Sylvan, storm::RationalFunction>();
-            }
-    }
-    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected DDType or value type.");
+    return applyValueType(vt, [&]<typename ValueType>() {
+        return storm::dd::dispatchDdTypeSupporting<ValueType>(dd,
+                                                              [&](auto ddTag) { return callback.template operator()<decltype(ddTag)::value, ValueType>(); });
+    });
 }
 
 inline void ensureNoUndefinedPropertyConstants(std::vector<storm::jani::Property> const& properties) {
@@ -897,13 +880,13 @@ void exportModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueTyp
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-typename std::enable_if<DdType != storm::dd::DdType::Sylvan && !std::is_same<ValueType, double>::value, std::shared_ptr<storm::models::Model<ValueType>>>::type
+typename std::enable_if<!storm::dd::BackendTraits<DdType>::template supportsValueType<ValueType>, std::shared_ptr<storm::models::Model<ValueType>>>::type
 preprocessDdMarkovAutomaton(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model) {
     return model;
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-typename std::enable_if<DdType == storm::dd::DdType::Sylvan || std::is_same<ValueType, double>::value, std::shared_ptr<storm::models::Model<ValueType>>>::type
+typename std::enable_if<storm::dd::BackendTraits<DdType>::template supportsValueType<ValueType>, std::shared_ptr<storm::models::Model<ValueType>>>::type
 preprocessDdMarkovAutomaton(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model) {
     auto ma = model->template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>();
     if (!ma->isClosed()) {
@@ -984,8 +967,8 @@ std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessModel(std::
                                                                            SymbolicInput const& input, ModelProcessingInformation const& mpi) {
     return applyValueType(mpi.verificationValueType, [&model, &input, &mpi]<typename VT>() -> std::pair<std::shared_ptr<storm::models::ModelBase>, bool> {
         // To safe a few template instantiations, we only consider those combinations that actually occur in the CLI
-        if constexpr (std::is_same_v<ValueType, VT> ||
-                      (DdType == storm::dd::DdType::Sylvan && std::is_same_v<ValueType, storm::RationalNumber> && std::is_same_v<VT, double>)) {
+        if constexpr (std::is_same_v<ValueType, VT> || (storm::dd::BackendTraits<DdType>::template supportsValueType<storm::RationalNumber> &&
+                                                        std::is_same_v<ValueType, storm::RationalNumber> && std::is_same_v<VT, double>)) {
             return preprocessDdModelImpl<VT>(model, input, mpi);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,

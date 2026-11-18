@@ -5,6 +5,7 @@
 #include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/MenuGameAbstractor.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/dd/Odd.h"
 #include "storm/exceptions/InvalidStateException.h"
@@ -1680,9 +1681,9 @@ bool MenuGameRefiner<Type, ValueType>::addedAllGuards() const {
     return addedAllGuardsFlag;
 }
 
-template class MenuGameRefiner<storm::dd::DdType::CUDD, double>;
-template class MenuGameRefiner<storm::dd::DdType::Sylvan, double>;
-template class MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class MenuGameRefiner<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace abstraction
 }  // namespace storm::gbar

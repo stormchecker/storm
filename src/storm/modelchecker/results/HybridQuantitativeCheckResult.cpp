@@ -1,6 +1,7 @@
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -276,10 +277,8 @@ void HybridQuantitativeCheckResult<Type, ValueType>::oneMinus() {
 }
 
 // Explicitly instantiate the class.
-template class HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>;
-template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>;
-
-template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class HybridQuantitativeCheckResult<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 }  // namespace modelchecker
 }  // namespace storm

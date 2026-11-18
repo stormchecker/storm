@@ -1,6 +1,7 @@
 #include "storm/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/helper/infinitehorizon/HybridInfiniteHorizonHelper.h"
@@ -133,7 +134,7 @@ std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeLong
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, stateFormula);
     SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
 
-    storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, false> helper(this->getModel(), this->getModel().getTransitionMatrix());
+    storm::modelchecker::helper::HybridInfiniteHorizonHelper<DdType, ValueType, false> helper(this->getModel(), this->getModel().getTransitionMatrix());
     storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
     return helper.computeLongRunAverageProbabilities(env, subResult.getTruthValuesVector());
 }
@@ -143,15 +144,14 @@ std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeLong
     Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
 
-    storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, false> helper(this->getModel(), this->getModel().getTransitionMatrix());
+    storm::modelchecker::helper::HybridInfiniteHorizonHelper<DdType, ValueType, false> helper(this->getModel(), this->getModel().getTransitionMatrix());
     storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
     return helper.computeLongRunAverageRewards(env, rewardModel.get());
 }
 
-template class HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
-template class HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::DD, ValueType>>;
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
-template class HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
-template class HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
 }  // namespace modelchecker
 }  // namespace storm

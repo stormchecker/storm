@@ -1,5 +1,6 @@
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 
+#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
@@ -145,9 +146,9 @@ std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<ModelType>::computeRea
         env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector());
 }
 
-template class SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
-template class SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::DD, ValueType>>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
-template class SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
 }  // namespace modelchecker
 }  // namespace storm

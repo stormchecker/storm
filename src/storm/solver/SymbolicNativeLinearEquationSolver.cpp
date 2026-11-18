@@ -1,7 +1,9 @@
 #include "storm/solver/SymbolicNativeLinearEquationSolver.h"
 
 #include "storm/dd/Add.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
+#include "storm/dd/backend/BackendTraits.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
@@ -277,14 +279,19 @@ template<typename ImpreciseType>
 typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type
 SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(Environment const& env, storm::dd::Add<DdType, ValueType> const& x,
                                                                                           storm::dd::Add<DdType, ValueType> const& b) const {
-    storm::dd::Add<DdType, storm::RationalNumber> rationalB = b.template toValueType<storm::RationalNumber>();
-    SymbolicNativeLinearEquationSolver<DdType, storm::RationalNumber> rationalSolver(this->A.template toValueType<storm::RationalNumber>(), this->allRows,
-                                                                                     this->rowMetaVariables, this->columnMetaVariables,
-                                                                                     this->rowColumnMetaVariablePairs);
+    if constexpr (storm::dd::BackendTraits<DdType>::template supportsValueType<storm::RationalNumber>) {
+        storm::dd::Add<DdType, storm::RationalNumber> rationalB = b.template toValueType<storm::RationalNumber>();
+        SymbolicNativeLinearEquationSolver<DdType, storm::RationalNumber> rationalSolver(this->A.template toValueType<storm::RationalNumber>(), this->allRows,
+                                                                                         this->rowMetaVariables, this->columnMetaVariables,
+                                                                                         this->rowColumnMetaVariablePairs);
 
-    storm::dd::Add<DdType, storm::RationalNumber> rationalResult =
-        solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(env, rationalSolver, *this, rationalB, this->getLowerBoundsVector(), b);
-    return rationalResult.template toValueType<ValueType>();
+        storm::dd::Add<DdType, storm::RationalNumber> rationalResult =
+            solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(env, rationalSolver, *this, rationalB, this->getLowerBoundsVector(), b);
+        return rationalResult.template toValueType<ValueType>();
+    } else {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                        "Rational search is not supported, as the selected DD library does not support rational numbers.");
+    }
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
@@ -343,14 +350,10 @@ std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> 
     return std::make_unique<SymbolicNativeLinearEquationSolver<DdType, ValueType>>();
 }
 
-template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::CUDD, double>;
-template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::CUDD, storm::RationalNumber>;
-template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
-template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-
-template class SymbolicNativeLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
-template class SymbolicNativeLinearEquationSolverFactory<storm::dd::DdType::CUDD, storm::RationalNumber>;
-template class SymbolicNativeLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
-template class SymbolicNativeLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#define STORM_DD_INSTANTIATE(DD, ValueType)                                              \
+    template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::DD, ValueType>; \
+    template class SymbolicNativeLinearEquationSolverFactory<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 }  // namespace solver
 }  // namespace storm

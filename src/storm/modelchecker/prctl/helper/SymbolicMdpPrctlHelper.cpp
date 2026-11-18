@@ -16,6 +16,7 @@
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 
+#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
@@ -368,10 +369,10 @@ std::unique_ptr<CheckResult> SymbolicMdpPrctlHelper<DdType, ValueType>::computeR
     return computeReachabilityRewards(env, dir, model, transitionMatrix, rewardModel, targetStates, startValues);
 }
 
-template class SymbolicMdpPrctlHelper<storm::dd::DdType::CUDD, double>;
-template class SymbolicMdpPrctlHelper<storm::dd::DdType::Sylvan, double>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class SymbolicMdpPrctlHelper<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
-template class SymbolicMdpPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

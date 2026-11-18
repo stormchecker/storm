@@ -12,6 +12,7 @@
 #include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
+#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
@@ -132,10 +133,11 @@ void BisimulationAbstractionRefinementModelChecker<ModelType>::refineAbstractMod
     this->bisimulation->compute(10);
 }
 
-template class BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
-template class BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
-template class BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
-template class BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+#define STORM_DD_INSTANTIATE(DD, ValueType)                                                                                        \
+    template class BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::DD, ValueType>>; \
+    template class BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::DD, ValueType>>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace modelchecker
 }  // namespace storm::gbar

@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/dd/DdEnvironment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -515,26 +516,23 @@ void DdManager<LibraryType>::execute(std::function<void()> const& f) const {
     internalDdManager.execute(f);
 }
 
-template class DdManager<DdType::CUDD>;
+#define STORM_DD_INSTANTIATE(DD) template class DdManager<storm::dd::DdType::DD>;
+STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getAddZero() const;
 template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getAddZero() const;
-template Add<DdType::CUDD, storm::RationalNumber> DdManager<DdType::CUDD>::getAddZero() const;
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getAddOne() const;
 template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getAddOne() const;
-template Add<DdType::CUDD, storm::RationalNumber> DdManager<DdType::CUDD>::getAddOne() const;
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getInfinity<double>() const;
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getConstant(double const& value) const;
 template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getConstant(uint_fast64_t const& value) const;
-template Add<DdType::CUDD, storm::RationalNumber> DdManager<DdType::CUDD>::getConstant(storm::RationalNumber const& value) const;
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const;
 template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const;
-
-template class DdManager<DdType::Sylvan>;
 
 template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getAddZero() const;
 template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getAddZero() const;

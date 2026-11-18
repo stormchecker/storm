@@ -85,11 +85,6 @@ InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getConstan
     return InternalAdd<DdType::CUDD, ValueType>(this, cuddManager.constant(value));
 }
 
-template<>
-InternalAdd<DdType::CUDD, storm::RationalNumber> InternalDdManager<DdType::CUDD>::getConstant(storm::RationalNumber const& value) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
-}
-
 std::vector<InternalBdd<DdType::CUDD>> InternalDdManager<DdType::CUDD>::createDdVariables(uint64_t numberOfLayers,
                                                                                           boost::optional<uint_fast64_t> const& position) {
     std::vector<InternalBdd<DdType::CUDD>> result;
@@ -211,13 +206,6 @@ InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getConstan
                     "of Storm with CUDD support.");
 }
 
-template<>
-InternalAdd<DdType::CUDD, storm::RationalNumber> InternalDdManager<DdType::CUDD>::getConstant(storm::RationalNumber const& value) const {
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
-                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
-                    "of Storm with CUDD support.");
-}
-
 std::vector<InternalBdd<DdType::CUDD>> InternalDdManager<DdType::CUDD>::createDdVariables(uint64_t numberOfLayers,
                                                                                           boost::optional<uint_fast64_t> const& position) {
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
@@ -270,11 +258,9 @@ uint_fast64_t InternalDdManager<DdType::CUDD>::getNumberOfDdVariables() const {
 
 template InternalAdd<DdType::CUDD, double> InternalDdManager<DdType::CUDD>::getAddOne() const;
 template InternalAdd<DdType::CUDD, uint_fast64_t> InternalDdManager<DdType::CUDD>::getAddOne() const;
-template InternalAdd<DdType::CUDD, storm::RationalNumber> InternalDdManager<DdType::CUDD>::getAddOne() const;
 
 template InternalAdd<DdType::CUDD, double> InternalDdManager<DdType::CUDD>::getAddZero() const;
 template InternalAdd<DdType::CUDD, uint_fast64_t> InternalDdManager<DdType::CUDD>::getAddZero() const;
-template InternalAdd<DdType::CUDD, storm::RationalNumber> InternalDdManager<DdType::CUDD>::getAddZero() const;
 
 template InternalAdd<DdType::CUDD, double> InternalDdManager<DdType::CUDD>::getConstant(double const& value) const;
 template InternalAdd<DdType::CUDD, uint_fast64_t> InternalDdManager<DdType::CUDD>::getConstant(uint_fast64_t const& value) const;

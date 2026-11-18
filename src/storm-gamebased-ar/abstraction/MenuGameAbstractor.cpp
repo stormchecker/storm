@@ -4,6 +4,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/dd/Add.h"
 #include "storm/dd/Bdd.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/io/file.h"
 #include "storm/utility/dd.h"
 
@@ -181,8 +182,8 @@ bool MenuGameAbstractor<DdType, ValueType>::hasTargetStateExpression() const {
     return this->targetStateExpression.isInitialized();
 }
 
-template class MenuGameAbstractor<storm::dd::DdType::CUDD, double>;
-template class MenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
-template class MenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class MenuGameAbstractor<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 }  // namespace abstraction
 }  // namespace storm::gbar

@@ -2,6 +2,7 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/dd/Add.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/prctl/helper/SymbolicDtmcPrctlHelper.h"
@@ -134,10 +135,9 @@ std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeRe
     return std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(this->getModel().getReachableStates(), numericResult);
 }
 
-template class SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
-template class SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::DD, ValueType>>;
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
-template class SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
-template class SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
 }  // namespace modelchecker
 }  // namespace storm

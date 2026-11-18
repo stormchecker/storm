@@ -1,6 +1,7 @@
 #include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -132,7 +133,7 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::co
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
 
-    storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, true> helper(
+    storm::modelchecker::helper::HybridInfiniteHorizonHelper<DdType, ValueType, true> helper(
         this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector());
     storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, this->getModel());
     return helper.computeLongRunAverageProbabilities(env, subResult.getTruthValuesVector());
@@ -144,17 +145,17 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::co
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-    storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, true> helper(
+    storm::modelchecker::helper::HybridInfiniteHorizonHelper<DdType, ValueType, true> helper(
         this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector());
     storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, this->getModel());
     return helper.computeLongRunAverageRewards(env, rewardModel.get());
 }
 
 // Explicitly instantiate the model checker.
-template class HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::CUDD, double>>;
-template class HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, double>>;
-
-template class HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) \
+    template class HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::DD, ValueType>>;
+STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace modelchecker
 }  // namespace storm

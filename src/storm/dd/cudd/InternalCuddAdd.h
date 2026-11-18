@@ -240,13 +240,6 @@ class InternalAdd<DdType::CUDD, ValueType> {
     InternalAdd<DdType::CUDD, ValueType> ceil() const;
 
     /*!
-     * Retrieves the function that sharpens all values in the current ADD with the Kwek-Mehlhorn algorithm.
-     *
-     * @return The resulting ADD.
-     */
-    InternalAdd<DdType::CUDD, storm::RationalNumber> sharpenKwekMehlhorn(size_t precision) const;
-
-    /*!
      * Retrieves the function that maps all evaluations to the minimum of the function values of the two ADDs.
      *
      * @param other The ADD with which to perform the operation.

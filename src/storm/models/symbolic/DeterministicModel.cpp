@@ -3,6 +3,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/dd/Add.h"
 #include "storm/dd/Bdd.h"
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
@@ -36,11 +37,9 @@ DeterministicModel<Type, ValueType>::DeterministicModel(
 }
 
 // Explicitly instantiate the template class.
-template class DeterministicModel<storm::dd::DdType::CUDD>;
-
-template class DeterministicModel<storm::dd::DdType::Sylvan>;
-template class DeterministicModel<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-template class DeterministicModel<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class DeterministicModel<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
 }  // namespace symbolic
 }  // namespace models

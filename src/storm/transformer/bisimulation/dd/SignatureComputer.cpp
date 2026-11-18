@@ -4,6 +4,7 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/utility/macros.h"
@@ -175,15 +176,13 @@ storm::dd::Add<DdType, ValueType> const& SignatureComputer<DdType, ValueType>::g
     return boost::get<storm::dd::Add<DdType, ValueType>>(this->transitionMatrix01.get());
 }
 
-template class SignatureIterator<storm::dd::DdType::CUDD, double>;
-template class SignatureIterator<storm::dd::DdType::Sylvan, double>;
-template class SignatureIterator<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-template class SignatureIterator<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class SignatureIterator<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 
-template class SignatureComputer<storm::dd::DdType::CUDD, double>;
-template class SignatureComputer<storm::dd::DdType::Sylvan, double>;
-template class SignatureComputer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-template class SignatureComputer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#define STORM_DD_INSTANTIATE(DD, ValueType) template class SignatureComputer<storm::dd::DdType::DD, ValueType>;
+STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 }  // namespace bisimulation
 }  // namespace dd
 }  // namespace storm

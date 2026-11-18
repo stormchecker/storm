@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"
@@ -90,7 +91,8 @@ std::set<storm::expressions::Variable> Dd<LibraryType>::subtractMetaVariables(st
     return metaVariables;
 }
 
-template class Dd<storm::dd::DdType::CUDD>;
-template class Dd<storm::dd::DdType::Sylvan>;
+#define STORM_DD_INSTANTIATE(DD) template class Dd<storm::dd::DdType::DD>;
+STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
+#undef STORM_DD_INSTANTIATE
 }  // namespace dd
 }  // namespace storm
