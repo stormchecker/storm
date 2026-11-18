@@ -36,6 +36,10 @@ inputs:
     description: "Run post-build steps: starter project, install, run installed storm"
     type: boolean
     default: true
+  expensive_tests:
+    description: "Also run the expensive tests (STORM_EXPENSIVE_*)"
+    type: boolean
+    default: false
 
 runs:
   using: "composite"
@@ -185,6 +189,9 @@ runs:
       shell: bash
     - name: Run tests
       working-directory: ./build
+      # Enable expensive tests if requested
+      env:
+        GTEST_ALSO_RUN_DISABLED_TESTS: ${{ inputs.expensive_tests == 'true' && '1' || '0' }}
       # Disabled sanitizer checks for now
       #run: ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest --output-on-failure
       run: ctest --output-on-failure

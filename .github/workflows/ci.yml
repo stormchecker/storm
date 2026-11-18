@@ -11,6 +11,7 @@ name: CI
 # Configurations are defined in ci-configs.json.
 # - this CI then calls the tests in build-test-action with the given configurations.
 # - the installation steps are not executed in quick mode.
+# - Expensive tests (STORM_EXPENSIVE_*) are only run in extensive mode.
 # - configs with "stormpyCheck" additionally build and test stormpy against Storm (see stormpy-check-action) (only runs in normal/extensive mode).
 # - Docker images are deployed to DockerHub for master (tag 'ci') and stable (tag 'stable').
 # - Cache is restored everywhere (except for extensive) but only saved on master pushes.
@@ -108,6 +109,8 @@ jobs:
           save_cache: ${{ matrix.config.cache && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           restore_3rdparty_cache: true
           save_3rdparty_cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          # Run expensive tests only in extensive mode
+          expensive_tests: ${{ needs.prepare.outputs.mode == 'extensive' }}
           # Skip install steps for quick mode
           install: ${{ needs.prepare.outputs.mode != 'quick' }}
       - name: Check stormpy compatibility
@@ -166,6 +169,8 @@ jobs:
           save_cache: ${{ matrix.config.cache && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           restore_3rdparty_cache: true
           save_3rdparty_cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          # Run expensive tests only in extensive mode
+          expensive_tests: ${{ needs.prepare.outputs.mode == 'extensive' }}
           # Skip install steps for quick mode
           install: ${{ needs.prepare.outputs.mode != 'quick' }}
 
