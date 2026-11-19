@@ -143,11 +143,6 @@ class LpSolverTest : public ::testing::Test {
         return factory()->supports(element);
     }
 
-    // HiGHS emulates indicator constraints for bounded variables.
-    bool supportsBoundedIndicatorConstraints() const {
-        return supports(Element::IndicatorConstraints) || lpSolverType() == storm::solver::LpSolverType::Highs;
-    }
-
     // The type of the LP solver under test.
     storm::solver::LpSolverType lpSolverType() const {
         return solverSelection() == storm::solver::LpSolverTypeSelection::FROMSETTINGS ? env().solver().getLpSolverType()
@@ -607,8 +602,7 @@ TYPED_TEST(LpSolverTest, UnsupportedFeaturesThrow) {
     // Indicator constraints require a binary indicator variable.
     if (!this->supports(Element::IndicatorConstraints) && this->supports(Element::IntegerVariables)) {
         auto solver = this->factory()->create(this->env(), "");
-        // Use a variable without upper bound, as some solvers emulate indicator constraints for bounded variables.
-        storm::expressions::Variable x = solver->addLowerBoundedContinuousVariable("x", 0, 1);
+        storm::expressions::Variable x = solver->addBoundedContinuousVariable("x", 0, this->parseNumber("5"), 1);
         storm::expressions::Variable b = solver->addBinaryVariable("b");
         EXPECT_THROW(solver->addIndicatorConstraint("", b, true, x <= solver->getConstant(this->parseNumber("3"))), storm::exceptions::NotSupportedException);
     }
@@ -708,7 +702,7 @@ TYPED_TEST(LpSolverTest, StrictRelations) {
 }
 
 TYPED_TEST(LpSolverTest, IncrementalIndicatorConstraint) {
-    if (!this->supports(Element::Incremental) || !this->supportsBoundedIndicatorConstraints()) {
+    if (!this->supports(Element::Incremental) || !this->supports(Element::IndicatorConstraints)) {
         GTEST_SKIP();
     }
     auto solver = this->factory()->create(this->env(), "");
@@ -732,7 +726,7 @@ TYPED_TEST(LpSolverTest, IncrementalIndicatorConstraint) {
 }
 
 TYPED_TEST(LpSolverTest, IndicatorConstraintLeq) {
-    if (!this->supportsBoundedIndicatorConstraints()) {
+    if (!this->supports(Element::IndicatorConstraints)) {
         GTEST_SKIP();
     }
     storm::expressions::Variable x;
@@ -754,7 +748,7 @@ TYPED_TEST(LpSolverTest, IndicatorConstraintLeq) {
 }
 
 TYPED_TEST(LpSolverTest, IndicatorConstraintLeqInactive) {
-    if (!this->supportsBoundedIndicatorConstraints()) {
+    if (!this->supports(Element::IndicatorConstraints)) {
         GTEST_SKIP();
     }
     storm::expressions::Variable x;
@@ -776,7 +770,7 @@ TYPED_TEST(LpSolverTest, IndicatorConstraintLeqInactive) {
 }
 
 TYPED_TEST(LpSolverTest, IndicatorConstraintGeq) {
-    if (!this->supportsBoundedIndicatorConstraints()) {
+    if (!this->supports(Element::IndicatorConstraints)) {
         GTEST_SKIP();
     }
     storm::expressions::Variable x;
@@ -798,7 +792,7 @@ TYPED_TEST(LpSolverTest, IndicatorConstraintGeq) {
 }
 
 TYPED_TEST(LpSolverTest, IndicatorConstraintEq) {
-    if (!this->supportsBoundedIndicatorConstraints()) {
+    if (!this->supports(Element::IndicatorConstraints)) {
         GTEST_SKIP();
     }
     storm::expressions::Variable x;
