@@ -22,14 +22,17 @@ class LpSolverRequirements {
         IndicatorConstraints,
         // Exact support for strict inequalities (< and >).
         // Some solvers accept them but only approximate them by shifting the bound by a small margin; these do not count as supporting this feature.
-        StrictRelations
+        StrictRelations,
+        // Support for exact computations in rational arithmetic.
+        // Excludes solvers that convert the values to floating point numbers internally.
+        ExactArithmetic
     };
 
     /*!
      * Returns all elements. Must list every Element.
      */
-    static constexpr std::array<Element, 4> allElements() {
-        return {Element::IntegerVariables, Element::Incremental, Element::IndicatorConstraints, Element::StrictRelations};
+    static constexpr std::array<Element, 5> allElements() {
+        return {Element::IntegerVariables, Element::Incremental, Element::IndicatorConstraints, Element::StrictRelations, Element::ExactArithmetic};
     }
 
     LpSolverRequirements() = default;
@@ -42,12 +45,14 @@ class LpSolverRequirements {
     LpSolverRequirements& requireIncremental(bool critical = true);
     LpSolverRequirements& requireIndicatorConstraints(bool critical = true);
     LpSolverRequirements& requireStrictRelations(bool critical = true);
+    LpSolverRequirements& requireExactArithmetic(bool critical = true);
     LpSolverRequirements& require(Element const& element, bool critical = true);
 
     SolverRequirement const& integerVariables() const;
     SolverRequirement const& incremental() const;
     SolverRequirement const& indicatorConstraints() const;
     SolverRequirement const& strictRelations() const;
+    SolverRequirement const& exactArithmetic() const;
     SolverRequirement const& get(Element const& element) const;
 
     bool hasEnabledRequirement() const;
@@ -60,6 +65,7 @@ class LpSolverRequirements {
     SolverRequirement incrementalRequirement;
     SolverRequirement indicatorConstraintsRequirement;
     SolverRequirement strictRelationsRequirement;
+    SolverRequirement exactArithmeticRequirement;
 };
 
 }  // namespace storm::solver

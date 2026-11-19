@@ -14,6 +14,7 @@
 #include "storm/expressions/LinearCoefficientVisitor.h"
 #include "storm/expressions/OperatorType.h"
 #include "storm/io/file.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -487,6 +488,8 @@ bool Z3LpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element c
             return !RawMode;
         case LpSolverRequirements::Element::StrictRelations:
             return true;
+        case LpSolverRequirements::Element::ExactArithmetic:
+            return storm::NumberTraits<ValueType>::IsExact;
     }
     return false;
 }

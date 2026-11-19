@@ -10,6 +10,7 @@
 #include "storm/solver/LpSolverRequirements.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/solver.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
@@ -583,10 +584,13 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initializeLpMod
     auto backwardChoices = model.getTransitionMatrix().transpose();
     STORM_LOG_WARN_COND(!env.solver().isLpSolverTypeSetFromDefaultValue() || env.solver().getLpSolverType() == storm::solver::LpSolverType::Gurobi,
                         "The selected MILP solver might not perform well. Consider installing / using Gurobi.");
-    // The encoding uses binary variables and push()/pop(), and indicator constraints if enabled.
+    // The encoding uses binary variables and push()/pop(), indicator constraints if enabled, and exact arithmetic for exact value types.
     auto requirements = storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental();
     if (env.modelchecker().multi().getUseIndicatorConstraints()) {
         requirements.requireIndicatorConstraints();
+    }
+    if constexpr (storm::NumberTraits<ValueType>::IsExact) {
+        requirements.requireExactArithmetic();
     }
     storm::utility::solver::checkLpSolverRequirements<ValueType>(env, requirements, "computing deterministic schedulers");
     lpModel = storm::utility::solver::getLpSolver<ValueType>(env, "model");

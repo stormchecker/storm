@@ -22,6 +22,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/solver/LpSolverRequirements.h"
 #include "storm/transformer/MakePOMDPCanonic.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/solver.h"
 
@@ -243,8 +244,11 @@ class BeliefBasedModelCheckerTest : public ::testing::Test {
     }
 
     bool lpSolverSupportsClipping() const {
-        // Clipping requires an incremental MILP solver.
-        auto const requirements = storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental();
+        // Clipping requires an incremental MILP solver, which is exact for exact value types.
+        auto requirements = storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental();
+        if constexpr (storm::NumberTraits<BeliefValueType>::IsExact) {
+            requirements.requireExactArithmetic();
+        }
         return !storm::utility::solver::getUnsupportedLpSolverRequirements<BeliefValueType>(env(), requirements).hasEnabledCriticalRequirement();
     }
 

@@ -605,6 +605,9 @@ bool HighsLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Elemen
         case LpSolverRequirements::Element::StrictRelations:
             // Only approximated by shifting the bound.
             return false;
+        case LpSolverRequirements::Element::ExactArithmetic:
+            // Only supports double precision.
+            return false;
     }
     return false;
 }

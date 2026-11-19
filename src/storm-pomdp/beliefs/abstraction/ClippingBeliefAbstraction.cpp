@@ -10,6 +10,7 @@
 #include "storm/expressions/ExpressionManager.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/solver/LpSolverRequirements.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/solver.h"
 
@@ -18,7 +19,10 @@ namespace storm::pomdp::beliefs {
 template<typename BeliefType>
 void ClippingBeliefAbstraction<BeliefType>::createLpSolver(storm::Environment const& env) {
     // Clipping uses binary variables and push()/pop(), i.e., incremental MILP.
-    auto const requirements = storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental();
+    auto requirements = storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental();
+    if constexpr (storm::NumberTraits<BeliefValueType>::IsExact) {
+        requirements.requireExactArithmetic();
+    }
     storm::utility::solver::checkLpSolverRequirements<BeliefValueType>(env, requirements, "clipping");
     lpSolver = storm::utility::solver::getLpSolver<BeliefValueType>(env, "POMDP LP Solver");
     lpSolver->push();

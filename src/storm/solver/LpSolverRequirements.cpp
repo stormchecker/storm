@@ -25,6 +25,11 @@ LpSolverRequirements& LpSolverRequirements::requireStrictRelations(bool critical
     return *this;
 }
 
+LpSolverRequirements& LpSolverRequirements::requireExactArithmetic(bool critical) {
+    exactArithmeticRequirement.enable(critical);
+    return *this;
+}
+
 LpSolverRequirements& LpSolverRequirements::require(Element const& element, bool critical) {
     switch (element) {
         case Element::IntegerVariables:
@@ -35,6 +40,8 @@ LpSolverRequirements& LpSolverRequirements::require(Element const& element, bool
             return requireIndicatorConstraints(critical);
         case Element::StrictRelations:
             return requireStrictRelations(critical);
+        case Element::ExactArithmetic:
+            return requireExactArithmetic(critical);
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown Element type.");
 }
@@ -55,6 +62,10 @@ SolverRequirement const& LpSolverRequirements::strictRelations() const {
     return strictRelationsRequirement;
 }
 
+SolverRequirement const& LpSolverRequirements::exactArithmetic() const {
+    return exactArithmeticRequirement;
+}
+
 SolverRequirement const& LpSolverRequirements::get(Element const& element) const {
     switch (element) {
         case Element::IntegerVariables:
@@ -65,17 +76,19 @@ SolverRequirement const& LpSolverRequirements::get(Element const& element) const
             return indicatorConstraints();
         case Element::StrictRelations:
             return strictRelations();
+        case Element::ExactArithmetic:
+            return exactArithmetic();
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown Element type.");
 }
 
 bool LpSolverRequirements::hasEnabledRequirement() const {
-    return integerVariablesRequirement || incrementalRequirement || indicatorConstraintsRequirement || strictRelationsRequirement;
+    return integerVariablesRequirement || incrementalRequirement || indicatorConstraintsRequirement || strictRelationsRequirement || exactArithmeticRequirement;
 }
 
 bool LpSolverRequirements::hasEnabledCriticalRequirement() const {
     return integerVariablesRequirement.isCritical() || incrementalRequirement.isCritical() || indicatorConstraintsRequirement.isCritical() ||
-           strictRelationsRequirement.isCritical();
+           strictRelationsRequirement.isCritical() || exactArithmeticRequirement.isCritical();
 }
 
 std::string LpSolverRequirements::getEnabledRequirementsAsString() const {
@@ -97,6 +110,7 @@ std::string LpSolverRequirements::getEnabledRequirementsAsString() const {
     append(incremental(), "incremental");
     append(indicatorConstraints(), "indicatorConstraints");
     append(strictRelations(), "strictRelations");
+    append(exactArithmetic(), "exactArithmetic");
     res += "]";
     return res;
 }

@@ -14,6 +14,7 @@
 #include "storm/solver/LpSolver.h"
 #include "storm/solver/LpSolverRequirements.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
 
@@ -24,7 +25,6 @@ using Element = storm::solver::LpSolverRequirements::Element;
 class DefaultEnvironment {
    public:
     typedef double ValueType;
-    static const bool isExact = false;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::FROMSETTINGS;
 
     static bool skip() {
@@ -39,7 +39,6 @@ class DefaultEnvironment {
 class GlpkEnvironment {
    public:
     typedef double ValueType;
-    static const bool isExact = false;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Glpk;
 
     static bool skip() {
@@ -51,7 +50,6 @@ class GlpkEnvironment {
 class GurobiEnvironment {
    public:
     typedef double ValueType;
-    static const bool isExact = false;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Gurobi;
 
     static bool skip() {
@@ -63,7 +61,6 @@ class GurobiEnvironment {
 class Z3Environment {
    public:
     typedef storm::RationalNumber ValueType;
-    static const bool isExact = true;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Z3;
 
     static bool skip() {
@@ -75,7 +72,6 @@ class Z3Environment {
 class SoplexEnvironment {
    public:
     typedef double ValueType;
-    static const bool isExact = false;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Soplex;
 
     static bool skip() {
@@ -86,7 +82,6 @@ class SoplexEnvironment {
 class SoplexExactEnvironment {
    public:
     typedef storm::RationalNumber ValueType;
-    static const bool isExact = true;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Soplex;
 
     static bool skip() {
@@ -99,7 +94,6 @@ class SoplexExactEnvironment {
 class HighsEnvironment {
    public:
     typedef double ValueType;
-    static const bool isExact = false;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Highs;
 
     static bool skip() {
@@ -136,7 +130,7 @@ class LpSolverTest : public ::testing::Test {
     }
 
     ValueType precision() const {
-        return TestType::isExact ? parseNumber("0") : parseNumber("1e-15");
+        return supports(Element::ExactArithmetic) ? parseNumber("0") : parseNumber("1e-15");
     }
 
     bool supports(Element element) const {
@@ -571,7 +565,8 @@ TYPED_TEST(LpSolverTest, MILPUnbounded) {
 
 TYPED_TEST(LpSolverTest, RequirementsQuery) {
     auto const factory = this->factory();
-    auto const requirements = storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental(false).requireStrictRelations(false);
+    auto const requirements =
+        storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental(false).requireStrictRelations(false).requireExactArithmetic(false);
     auto const unsupported = factory->getUnsupportedRequirements(requirements);
     EXPECT_EQ(!factory->supports(Element::IntegerVariables), static_cast<bool>(unsupported.integerVariables()));
     EXPECT_EQ(!factory->supports(Element::IntegerVariables), unsupported.hasEnabledCriticalRequirement());
@@ -579,6 +574,11 @@ TYPED_TEST(LpSolverTest, RequirementsQuery) {
     EXPECT_FALSE(unsupported.incremental().isCritical());
     EXPECT_EQ(!factory->supports(Element::StrictRelations), static_cast<bool>(unsupported.strictRelations()));
     EXPECT_FALSE(unsupported.strictRelations().isCritical());
+    EXPECT_EQ(!factory->supports(Element::ExactArithmetic), static_cast<bool>(unsupported.exactArithmetic()));
+    // Exact results are only possible for exact value types.
+    if (!storm::NumberTraits<typename TestFixture::ValueType>::IsExact) {
+        EXPECT_FALSE(factory->supports(Element::ExactArithmetic));
+    }
     // Features that were not requested are never reported.
     EXPECT_FALSE(unsupported.indicatorConstraints());
 

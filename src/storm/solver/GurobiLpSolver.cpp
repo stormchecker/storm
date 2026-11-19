@@ -1018,6 +1018,9 @@ bool GurobiLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Eleme
         case LpSolverRequirements::Element::StrictRelations:
             // Only approximated by shifting the bound.
             return false;
+        case LpSolverRequirements::Element::ExactArithmetic:
+            // Values are converted to floating point numbers.
+            return false;
     }
     return false;
 }

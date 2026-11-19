@@ -12,6 +12,7 @@
 #include "storm/expressions/Expression.h"
 #include "storm/expressions/ExpressionManager.h"
 #include "storm/expressions/LinearCoefficientVisitor.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -445,6 +446,9 @@ bool SoplexLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Eleme
             return false;
         case LpSolverRequirements::Element::StrictRelations:
             return false;
+        case LpSolverRequirements::Element::ExactArithmetic:
+            // SoPlex uses its rational mode for exact value types.
+            return storm::NumberTraits<ValueType>::IsExact;
     }
     return false;
 }
