@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 #include "storm/solver/LpSolverRequirements.h"
 #include "storm/solver/SolverSelectionOptions.h"
@@ -121,6 +122,14 @@ template<typename ValueType>
 storm::solver::LpSolverRequirements getUnsupportedLpSolverRequirements(
     storm::Environment const& env, storm::solver::LpSolverRequirements const& requirements,
     storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS);
+
+/*!
+ * Throws a NotSupportedException if the LP solver selected via the environment (or the given solver type) does not support all critical requirements.
+ * @param purpose Description of what the LP solver is used for, e.g., "clipping". Used in the error message.
+ */
+template<typename ValueType>
+void checkLpSolverRequirements(storm::Environment const& env, storm::solver::LpSolverRequirements const& requirements, std::string const& purpose,
+                               storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS);
 
 /*!
  * Factory for SMT solvers.

@@ -6,6 +6,7 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/MissingLibraryException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/solver/Cvc5SmtSolver.h"
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
@@ -199,6 +200,15 @@ storm::solver::LpSolverRequirements getUnsupportedLpSolverRequirements(storm::En
     return getLpSolverFactory<ValueType>(env, solvType)->getUnsupportedRequirements(requirements);
 }
 
+template<typename ValueType>
+void checkLpSolverRequirements(storm::Environment const& env, storm::solver::LpSolverRequirements const& requirements, std::string const& purpose,
+                               storm::solver::LpSolverTypeSelection solvType) {
+    auto const unsupported = getUnsupportedLpSolverRequirements<ValueType>(env, requirements, solvType);
+    STORM_LOG_THROW(!unsupported.hasEnabledCriticalRequirement(), storm::exceptions::NotSupportedException,
+                    "The selected LP solver does not support " << unsupported.getEnabledRequirementsAsString() << ", which is required for " << purpose
+                                                               << ". Select a different LP solver.");
+}
+
 namespace {
 std::unique_ptr<storm::solver::SmtSolver> createSmtSolver(storm::solver::SmtSolverType smtSolverType, storm::expressions::ExpressionManager& manager) {
     switch (smtSolverType) {
@@ -277,6 +287,10 @@ template class SoplexLpSolverFactory<double>;
 template class SoplexLpSolverFactory<storm::RationalNumber>;
 template class HighsLpSolverFactory<double>;
 
+template void checkLpSolverRequirements<double>(storm::Environment const&, storm::solver::LpSolverRequirements const&, std::string const&,
+                                                storm::solver::LpSolverTypeSelection);
+template void checkLpSolverRequirements<storm::RationalNumber>(storm::Environment const&, storm::solver::LpSolverRequirements const&, std::string const&,
+                                                               storm::solver::LpSolverTypeSelection);
 template storm::solver::LpSolverRequirements getUnsupportedLpSolverRequirements<double>(storm::Environment const&, storm::solver::LpSolverRequirements const&,
                                                                                         storm::solver::LpSolverTypeSelection);
 template storm::solver::LpSolverRequirements getUnsupportedLpSolverRequirements<storm::RationalNumber>(storm::Environment const&,

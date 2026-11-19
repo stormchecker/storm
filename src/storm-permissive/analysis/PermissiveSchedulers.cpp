@@ -5,7 +5,6 @@
 #include "storm-permissive/analysis/SmtBasedPermissiveSchedulers.h"
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -31,11 +30,8 @@ boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMILP
     storm::storage::BitVector sinkstates =
         storm::utility::graph::performProb0A(backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
 
-    auto const unsupported =
-        storm::utility::solver::getUnsupportedLpSolverRequirements<double>(env, storm::solver::LpSolverRequirements().requireIntegerVariables());
-    STORM_LOG_THROW(!unsupported.hasEnabledCriticalRequirement(), storm::exceptions::NotSupportedException,
-                    "The selected LP solver does not support " << unsupported.getEnabledRequirementsAsString()
-                                                               << ", which is required for computing permissive schedulers. Select a different LP solver.");
+    storm::utility::solver::checkLpSolverRequirements<double>(env, storm::solver::LpSolverRequirements().requireIntegerVariables(),
+                                                              "computing permissive schedulers");
     auto solver = storm::utility::solver::getLpSolver<double>(env, "PermissiveSchedulers");
     MilpPermissiveSchedulerComputation<storm::models::sparse::StandardRewardModel<double>> comp(*solver, mdp, goalstates, sinkstates);
     STORM_LOG_THROW(!storm::logic::isStrict(safeProp.getComparisonType()), storm::exceptions::NotImplementedException, "Strict bounds are not supported.");

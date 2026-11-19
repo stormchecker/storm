@@ -13,7 +13,6 @@
 #include "storm/utility/solver.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
 namespace storm::modelchecker::multiobjective {
@@ -589,10 +588,7 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initializeLpMod
     if (env.modelchecker().multi().getUseIndicatorConstraints()) {
         requirements.requireIndicatorConstraints();
     }
-    auto const unsupported = storm::utility::solver::getUnsupportedLpSolverRequirements<ValueType>(env, requirements);
-    STORM_LOG_THROW(!unsupported.hasEnabledCriticalRequirement(), storm::exceptions::NotSupportedException,
-                    "The selected LP solver does not support " << unsupported.getEnabledRequirementsAsString()
-                                                               << ", which is required for computing deterministic schedulers. Select a different LP solver.");
+    storm::utility::solver::checkLpSolverRequirements<ValueType>(env, requirements, "computing deterministic schedulers");
     lpModel = storm::utility::solver::getLpSolver<ValueType>(env, "model");
 
     lpModel->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);

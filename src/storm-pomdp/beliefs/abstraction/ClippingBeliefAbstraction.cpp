@@ -5,7 +5,6 @@
 #include "storm-pomdp/beliefs/storage/BeliefBuilder.h"
 #include "storm-pomdp/beliefs/utility/BeliefNumerics.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/expressions/Expression.h"
 #include "storm/expressions/ExpressionManager.h"
@@ -20,10 +19,7 @@ template<typename BeliefType>
 void ClippingBeliefAbstraction<BeliefType>::createLpSolver(storm::Environment const& env) {
     // Clipping uses binary variables and push()/pop(), i.e., incremental MILP.
     auto const requirements = storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental();
-    auto const unsupported = storm::utility::solver::getUnsupportedLpSolverRequirements<BeliefValueType>(env, requirements);
-    STORM_LOG_THROW(!unsupported.hasEnabledCriticalRequirement(), storm::exceptions::NotSupportedException,
-                    "Clipping requires an LP solver supporting incremental MILP, but the selected LP solver does not support "
-                        << unsupported.getEnabledRequirementsAsString() << ". Select a different LP solver.");
+    storm::utility::solver::checkLpSolverRequirements<BeliefValueType>(env, requirements, "clipping");
     lpSolver = storm::utility::solver::getLpSolver<BeliefValueType>(env, "POMDP LP Solver");
     lpSolver->push();
 }
