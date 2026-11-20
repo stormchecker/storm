@@ -42,7 +42,8 @@ class LpSolverFactory {
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const = 0;
 
     /*!
-     * Returns whether the LP solvers created by this factory support the given feature.
+     * Returns whether the LP solvers created by this factory via create() support the given feature.
+     * Solvers created via createRaw() may support fewer features.
      */
     virtual bool supports(storm::solver::LpSolverRequirements::Element const& element) const = 0;
 
