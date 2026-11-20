@@ -491,7 +491,7 @@ bool Z3LpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element c
         case LpSolverRequirements::Element::ExactArithmetic:
             return storm::NumberTraits<ValueType>::IsExact;
     }
-    return false;
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "Unknown LP solver requirement element.");
 }
 
 template class Z3LpSolver<double, false>;

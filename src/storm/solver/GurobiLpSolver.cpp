@@ -1022,7 +1022,7 @@ bool GurobiLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Eleme
             // Values are converted to floating point numbers.
             return false;
     }
-    return false;
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "Unknown LP solver requirement element.");
 }
 
 template class GurobiLpSolver<double, true>;
