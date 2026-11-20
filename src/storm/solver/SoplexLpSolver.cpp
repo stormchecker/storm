@@ -12,6 +12,7 @@
 #include "storm/expressions/Expression.h"
 #include "storm/expressions/ExpressionManager.h"
 #include "storm/expressions/LinearCoefficientVisitor.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -432,6 +433,24 @@ void SoplexLpSolver<ValueType, RawMode>::setMaximalMILPGap(ValueType const&, boo
 template<typename ValueType, bool RawMode>
 ValueType SoplexLpSolver<ValueType, RawMode>::getMILPGap(bool) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support integer variables.");
+}
+
+template<typename ValueType, bool RawMode>
+bool SoplexLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element const& element) {
+    switch (element) {
+        case LpSolverRequirements::Element::IntegerVariables:
+            return false;
+        case LpSolverRequirements::Element::Incremental:
+            return false;
+        case LpSolverRequirements::Element::IndicatorConstraints:
+            return false;
+        case LpSolverRequirements::Element::StrictRelations:
+            return false;
+        case LpSolverRequirements::Element::ExactArithmetic:
+            // SoPlex uses its rational mode for exact value types.
+            return storm::NumberTraits<ValueType>::IsExact;
+    }
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "Unknown LP solver requirement element.");
 }
 
 template class SoplexLpSolver<double, false>;

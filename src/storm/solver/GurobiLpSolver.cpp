@@ -520,6 +520,7 @@ void GurobiLpSolver<ValueType, RawMode>::pop() {
                         "Unable to delete constraints (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
         GRBgetintattr(model, GRB_INT_ATTR_NUMGENCONSTRS, &num);
         indicesToBeRemoved = storm::utility::vector::buildVectorForRange(lvl.firstGenConstraintIndex, num);
+        error = GRBdelgenconstrs(model, indicesToBeRemoved.size(), indicesToBeRemoved.data());
         STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
                         "Unable to delete general constraints (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
         indicesToBeRemoved.clear();
@@ -1003,6 +1004,25 @@ std::optional<GurobiSolverMethod> gurobiSolverMethodFromString(std::string const
 std::vector<GurobiSolverMethod> getGurobiSolverMethods() {
     return {GurobiSolverMethod::AUTOMATIC,  GurobiSolverMethod::PRIMALSIMPLEX, GurobiSolverMethod::DUALSIMPLEX,         GurobiSolverMethod::BARRIER,
             GurobiSolverMethod::CONCURRENT, GurobiSolverMethod::DETCONCURRENT, GurobiSolverMethod::DETCONCURRENTSIMPLEX};
+}
+
+template<typename ValueType, bool RawMode>
+bool GurobiLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element const& element) {
+    switch (element) {
+        case LpSolverRequirements::Element::IntegerVariables:
+            return true;
+        case LpSolverRequirements::Element::Incremental:
+            return true;
+        case LpSolverRequirements::Element::IndicatorConstraints:
+            return true;
+        case LpSolverRequirements::Element::StrictRelations:
+            // Only approximated by shifting the bound.
+            return false;
+        case LpSolverRequirements::Element::ExactArithmetic:
+            // Values are converted to floating point numbers.
+            return false;
+    }
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "Unknown LP solver requirement element.");
 }
 
 template class GurobiLpSolver<double, true>;

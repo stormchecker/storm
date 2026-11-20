@@ -9,18 +9,31 @@
 #include "storm/expressions/Expression.h"
 #include "storm/expressions/ExpressionManager.h"
 #include "storm/solver/LpSolver.h"
+#include "storm/solver/LpSolverRequirements.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/solver.h"
 
 namespace storm::pomdp::beliefs {
 
 template<typename BeliefType>
+void ClippingBeliefAbstraction<BeliefType>::createLpSolver(storm::Environment const& env) {
+    // Clipping uses binary variables and push()/pop(), i.e., incremental MILP.
+    auto requirements = storm::solver::LpSolverRequirements().requireIntegerVariables().requireIncremental();
+    if constexpr (storm::NumberTraits<BeliefValueType>::IsExact) {
+        requirements.requireExactArithmetic();
+    }
+    storm::utility::solver::checkLpSolverRequirements<BeliefValueType>(env, requirements, "clipping");
+    lpSolver = storm::utility::solver::getLpSolver<BeliefValueType>(env, "POMDP LP Solver");
+    lpSolver->push();
+}
+
+template<typename BeliefType>
 ClippingBeliefAbstraction<BeliefType>::ClippingBeliefAbstraction(storm::Environment const& env, std::vector<uint64_t>&& observationResolutions)
     : observationResolutions(std::forward<std::vector<uint64_t>>(observationResolutions)) {
     STORM_LOG_ASSERT(std::all_of(this->observationResolutions.begin(), this->observationResolutions.end(), [](auto o) { return o > 0; }),
                      "Expected that the resolutions are positive.");
-    lpSolver = storm::utility::solver::getLpSolver<BeliefValueType>(env, "POMDP LP Solver");
-    lpSolver->push();
+    createLpSolver(env);
 }
 
 template<typename BeliefType>
@@ -30,8 +43,7 @@ ClippingBeliefAbstraction<BeliefType>::ClippingBeliefAbstraction(storm::Environm
       extremalRewardValues(std::forward<std::vector<BeliefValueType>>(extremalRewardValues)) {
     STORM_LOG_ASSERT(std::all_of(this->observationResolutions.begin(), this->observationResolutions.end(), [](auto o) { return o > 0; }),
                      "Expected that the resolutions are positive.");
-    lpSolver = storm::utility::solver::getLpSolver<BeliefValueType>(env, "POMDP LP Solver");
-    lpSolver->push();
+    createLpSolver(env);
 }
 
 template<typename BeliefType>

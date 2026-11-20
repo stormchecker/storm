@@ -8,6 +8,7 @@
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/LpSolverRequirements.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
@@ -29,6 +30,8 @@ boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMILP
     storm::storage::BitVector sinkstates =
         storm::utility::graph::performProb0A(backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
 
+    storm::utility::solver::checkLpSolverRequirements<double>(env, storm::solver::LpSolverRequirements().requireIntegerVariables(),
+                                                              "computing permissive schedulers");
     auto solver = storm::utility::solver::getLpSolver<double>(env, "PermissiveSchedulers");
     MilpPermissiveSchedulerComputation<storm::models::sparse::StandardRewardModel<double>> comp(*solver, mdp, goalstates, sinkstates);
     STORM_LOG_THROW(!storm::logic::isStrict(safeProp.getComparisonType()), storm::exceptions::NotImplementedException, "Strict bounds are not supported.");

@@ -6,6 +6,7 @@
 #include "storm/adapters/Z3ExpressionAdapter.h"
 #include "storm/expressions/Expressions.h"
 #include "storm/solver/LpSolver.h"
+#include "storm/solver/LpSolverRequirements.h"
 
 #ifdef STORM_HAVE_Z3
 #include <z3++.h>
@@ -90,6 +91,11 @@ class Z3LpSolver : public LpSolver<ValueType, RawMode> {
 
     virtual void push() override;
     virtual void pop() override;
+
+    /*!
+     * Returns whether LP solvers of this type support the given feature.
+     */
+    static bool isSupported(LpSolverRequirements::Element const& element);
 
     virtual void setMaximalMILPGap(ValueType const& gap, bool relative) override;
     virtual ValueType getMILPGap(bool relative) const override;
