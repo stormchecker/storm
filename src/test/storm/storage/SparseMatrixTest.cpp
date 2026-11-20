@@ -6,11 +6,14 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/utility/ExtendedNumber.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/permutation.h"
 
 TEST(SparseMatrixBuilder, CreationEmpty) {
@@ -1379,4 +1382,46 @@ TEST(SparseMatrix, EqualityIgnoresExplicitZeros) {
     auto matrix4 = builder4.build();
     EXPECT_FALSE(matrix4 == matrix2);
     EXPECT_FALSE(matrix2 == matrix4);
+}
+
+TEST(SparseMatrix, MultiplyRowWithVector) {
+    storm::storage::SparseMatrixBuilder<double> builder(2, 3);
+    builder.addNextValue(0, 0, 0.5);
+    builder.addNextValue(0, 1, 0.0);  // explicit zero entry
+    builder.addNextValue(0, 2, 0.25);
+    builder.addNextValue(1, 1, 1.0);
+    auto matrix = builder.build();
+
+    std::vector<double> vector({2.0, storm::utility::infinity<double>(), 4.0});
+    EXPECT_EQ(2.0, matrix.multiplyRowWithVector(0, vector));
+    // Zero entries are ignored even if the vector value is infinite
+    EXPECT_EQ(3.0, matrix.multiplyRowWithVector(0, vector, 1.0));
+    EXPECT_TRUE(storm::utility::isInfinity(matrix.multiplyRowWithVector(1, vector)));
+    EXPECT_TRUE(storm::utility::isInfinity(matrix.multiplyRowWithVector(1, vector, 1.0)));
+}
+
+TEST(SparseMatrix, MultiplyRowWithVectorExtendedValues) {
+    using ValueType = storm::RationalNumber;
+    using ExtendedValueType = storm::utility::ExtendedValueType<ValueType>;
+    storm::storage::SparseMatrixBuilder<ValueType> builder(2, 3);
+    builder.addNextValue(0, 0, storm::utility::convertNumber<ValueType>(0.5));
+    builder.addNextValue(0, 1, storm::utility::zero<ValueType>());  // explicit zero entry
+    builder.addNextValue(0, 2, storm::utility::convertNumber<ValueType>(0.25));
+    builder.addNextValue(1, 1, storm::utility::one<ValueType>());
+    auto matrix = builder.build();
+
+    std::vector<ExtendedValueType> vector({ExtendedValueType(storm::utility::convertNumber<ValueType>(2.0)), storm::utility::positiveInfinity<ValueType>(),
+                                           ExtendedValueType(storm::utility::convertNumber<ValueType>(4.0))});
+    auto const result = matrix.multiplyRowWithVector(0, vector);
+    ASSERT_TRUE(storm::utility::isFinite(result));
+    EXPECT_EQ(storm::utility::convertNumber<ValueType>(2.0), storm::utility::getFinite(result));
+    auto const resultWithOffset = matrix.multiplyRowWithVector(0, vector, ExtendedValueType(storm::utility::one<ValueType>()));
+    ASSERT_TRUE(storm::utility::isFinite(resultWithOffset));
+    EXPECT_EQ(storm::utility::convertNumber<ValueType>(3.0), storm::utility::getFinite(resultWithOffset));
+    EXPECT_TRUE(storm::utility::isInfinity(matrix.multiplyRowWithVector(1, vector)));
+
+    // The default is to use the value type of the matrix
+    std::vector<ValueType> plainVector(
+        {storm::utility::convertNumber<ValueType>(2.0), storm::utility::zero<ValueType>(), storm::utility::convertNumber<ValueType>(4.0)});
+    EXPECT_EQ(storm::utility::convertNumber<ValueType>(2.0), matrix.multiplyRowWithVector(0, plainVector));
 }

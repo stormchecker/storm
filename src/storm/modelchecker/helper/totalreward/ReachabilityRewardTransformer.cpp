@@ -1,4 +1,4 @@
-#include "storm/modelchecker/certificates/utility/ReachabilityRewardTransformer.h"
+#include "storm/modelchecker/helper/totalreward/ReachabilityRewardTransformer.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/graph.h"
@@ -29,7 +29,7 @@ TotalRewardSpecification<ValueType> ReachabilityRewardTransformer<ValueType>::tr
     auto infStates = storm::utility::graph::performProb1(backwardTransitionCache.get(), allStates, targetStates);
     infStates.complement();
     return TotalRewardSpecification<ValueType>{.terminalStates = targetStates | infStates,
-                                               .terminalStateValues = {{TerminalStateValue<ValueType>::getPlusInfinity(), std::move(infStates)}},
+                                               .terminalStateValues = {{storm::utility::positiveInfinity<ValueType>(), std::move(infStates)}},
                                                .terminalStatesUniversallyAlmostSurelyReached = true,
                                                .actionRewards = actionRewards};
 }
@@ -50,7 +50,7 @@ TotalRewardSpecification<ValueType> ReachabilityRewardTransformer<ValueType>::tr
                                                                                           backwardTransitionCache.get(), allStates, targetStates);
     infStates.complement();
     return TotalRewardSpecification<ValueType>{.terminalStates = targetStates | infStates,
-                                               .terminalStateValues = {{TerminalStateValue<ValueType>::getPlusInfinity(), std::move(infStates)}},
+                                               .terminalStateValues = {{storm::utility::positiveInfinity<ValueType>(), std::move(infStates)}},
                                                .terminalStatesUniversallyAlmostSurelyReached = storm::solver::maximize(*dir),
                                                .actionRewards = actionRewards};
 }

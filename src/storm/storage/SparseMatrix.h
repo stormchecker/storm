@@ -17,6 +17,12 @@
 #include "storm/utility/OptionalRef.h"
 #include "storm/utility/constants.h"
 
+// Forward declaration for extended numbers.
+namespace storm::utility {
+template<typename ValueType>
+class ExtendedNumber;
+}  // namespace storm::utility
+
 // Forward declaration for adapter classes.
 namespace storm {
 namespace adapters {
@@ -989,13 +995,23 @@ class SparseMatrix {
                                    std::vector<ValueType>& result, std::vector<uint64_t>* choices) const;
 
     /*!
-     * Multiplies a single row of the matrix with the given vector and returns the result
+     * Multiplies a single row of the matrix with the given vector and adds the given offset to the result.
+     * Zero entries of the matrix are ignored. In particular, the vector may contain infinite values without that a zero entry yields 'zero times infinity'.
      *
      * @param row The index of the row with which to multiply
      * @param vector The vector with which to multiply the row.
-     * @return the result of the multiplication.
+     * @param offset The value that is added to the result of the multiplication.
+     * @return offset + sum_j matrix(row, j) * vector[j]
      */
-    value_type multiplyRowWithVector(index_type row, std::vector<value_type> const& vector) const;
+    ValueType multiplyRowWithVector(index_type row, std::vector<ValueType> const& vector, ValueType offset = storm::utility::zero<ValueType>()) const;
+
+    /*!
+     * Same as above, but for vectors whose values can be infinite (see storm/utility/ExtendedNumber.h). The result is infinite if the vector contains an
+     * infinite value for a non-zero entry (or undefined, e.g. 'infinity minus infinity') as expected.
+     * This is intended for value types that do not have an infinity of their own, e.g. rational numbers.
+     */
+    storm::utility::ExtendedNumber<ValueType> multiplyRowWithVector(index_type row, std::vector<storm::utility::ExtendedNumber<ValueType>> const& vector,
+                                                                    storm::utility::ExtendedNumber<ValueType> offset = storm::utility::zero<ValueType>()) const;
 
     /*!
      * Multiplies the vector to the matrix from the left and writes the result to the given result vector.
