@@ -104,7 +104,7 @@ To update ExprTk, download the latest version from the [website](https://www.par
 
 ### GMM
 To update GMM, change the corresponding version in `$STORM_DIR/resources/3rdparty/CMakeLists.txt`.
-Check whether the patch located at `$STORM_DIR/resources/3rdparty/patches/gmm55.patch` still applies to the new version; update or rename it (and adjust the patch path in the CMake file) if it does not.
+Check whether the patch located at `$STORM_DIR/resources/3rdparty/patches/gmm56.patch` still applies to the new version; update or rename it (and adjust the patch path in the CMake file) if it does not.
 The patch is applied during CMake configuration; it is skipped if it was already applied.
 
 ### googletest / gtest
