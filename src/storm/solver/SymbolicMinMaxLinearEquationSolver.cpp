@@ -259,8 +259,8 @@ SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSea
             env, dir, rationalSolver, *this, rationalB, this->getLowerBoundsVector(), b);
         return rationalResult.template toValueType<ValueType>();
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                        "Rational search is not supported, as the selected DD library does not support rational numbers.");
+        STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::NotSupportedException,
+                                        "Rational search is not supported, as the selected DD library does not support rational numbers.");
     }
 }
 

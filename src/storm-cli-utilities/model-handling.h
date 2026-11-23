@@ -971,8 +971,8 @@ std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessModel(std::
                                                         std::is_same_v<ValueType, storm::RationalNumber> && std::is_same_v<VT, double>)) {
             return preprocessDdModelImpl<VT>(model, input, mpi);
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                            "Unexpected combination of DD library, build value type, and verification value type.");
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::NotSupportedException,
+                                            "Unexpected combination of DD library, build value type, and verification value type.");
         }
     });
 }
