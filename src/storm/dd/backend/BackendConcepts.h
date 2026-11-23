@@ -197,17 +197,17 @@ concept InternalAddBackend =
 
 /*!
  * Contract of InternalDdManager<T>.
- * `BddType` is the matching InternalBdd, `AddType` the matching InternalAdd for double, `EnvironmentType` the backend's environment type
+ * `BddType` is the matching InternalBdd, `AddType` the matching InternalAdd<T, ValueType>, `EnvironmentType` the backend's environment type
  * (storm::DdEnvironmentSelector<T>::type).
  */
-template<typename ManagerType, typename BddType, typename AddType, typename EnvironmentType>
+template<typename ManagerType, typename BddType, typename AddType, typename EnvironmentType, typename ValueType>
 concept InternalDdManagerBackend =
     std::constructible_from<ManagerType, EnvironmentType const&> && requires(ManagerType const& m, ManagerType& mm, std::function<void()> const& f) {
         { m.getBddOne() } -> std::same_as<BddType>;
         { m.getBddZero() } -> std::same_as<BddType>;
-        { m.template getAddOne<double>() } -> std::same_as<AddType>;
-        { m.template getAddZero<double>() } -> std::same_as<AddType>;
-        { m.template getConstant<double>(double{}) } -> std::same_as<AddType>;
+        { m.template getAddOne<ValueType>() } -> std::same_as<AddType>;
+        { m.template getAddZero<ValueType>() } -> std::same_as<AddType>;
+        { m.template getConstant<ValueType>(ValueType{}) } -> std::same_as<AddType>;
         { mm.createDdVariables(uint_fast64_t{}, std::declval<boost::optional<uint_fast64_t> const&>()) } -> std::same_as<std::vector<BddType>>;
         { m.supportsOrderedInsertion() } -> std::same_as<bool>;
         { m.getNumberOfDdVariables() } -> std::same_as<uint_fast64_t>;
