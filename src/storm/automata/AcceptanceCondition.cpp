@@ -71,6 +71,8 @@ bool AcceptanceCondition::isAccepting(const storm::storage::StateBlock& scc, acc
                         }
                     }
                     break;
+                default:
+                    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::UnexpectedException, "Unknown atom acceptance type.");
             }
 
             return (negated ? !rv : rv);
