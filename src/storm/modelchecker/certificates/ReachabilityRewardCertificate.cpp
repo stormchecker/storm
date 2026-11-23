@@ -5,7 +5,6 @@
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/modelchecker/certificates/utility/ExtendedValueUtility.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -85,8 +84,7 @@ bool checkUpperBoundCertificate(storm::storage::SparseMatrix<ValueType> const& t
         auto stateValue = storm::solver::maximize(Dir) ? storm::utility::negativeInfinity<ValueType>() : storm::utility::positiveInfinity<ValueType>();
         storm::utility::Extremum<Dir, RankingType> stateRankMinusOne;
         for (auto choice : transitionProbabilityMatrix.getRowGroupIndices(state)) {
-            auto const currentChoiceValue =
-                detail::multiplyRowWithVectorAddNumber(transitionProbabilityMatrix, choice, values, stateActionRewardVector[choice]);
+            auto const currentChoiceValue = transitionProbabilityMatrix.multiplyRowWithVector(choice, values, stateActionRewardVector[choice]);
             stateValue = storm::solver::maximize(Dir) ? std::max(stateValue, currentChoiceValue) : std::min(stateValue, currentChoiceValue);
             // Compute rank for this choice if we're maximizing or if the choice is inductive
             if (storm::solver::maximize(Dir) || currentChoiceValue <= values[state]) {
@@ -153,8 +151,7 @@ bool checkLowerBoundCertificate(storm::storage::SparseMatrix<ValueType> const& t
         storm::utility::Extremum<storm::solver::invert(Dir), RankingType> stateRank;
 
         for (auto choice : transitionProbabilityMatrix.getRowGroupIndices(state)) {
-            auto const currentChoiceValue =
-                detail::multiplyRowWithVectorAddNumber(transitionProbabilityMatrix, choice, values, stateActionRewardVector[choice]);
+            auto const currentChoiceValue = transitionProbabilityMatrix.multiplyRowWithVector(choice, values, stateActionRewardVector[choice]);
             stateValue = storm::solver::maximize(Dir) ? std::max(stateValue, currentChoiceValue) : std::min(stateValue, currentChoiceValue);
             // Compute rank for this choice
             storm::utility::Minimum<RankingType> minSuccessorRank;

@@ -15,6 +15,7 @@
 #include "storm/storage/SubmatrixBuilder.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/ConstantsComparator.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -1707,11 +1708,33 @@ void SparseMatrix<ValueType>::multiplyWithVectorBackward(std::vector<ValueType> 
 }
 
 template<typename ValueType>
-ValueType SparseMatrix<ValueType>::multiplyRowWithVector(index_type row, std::vector<ValueType> const& vector) const {
-    ValueType result = storm::utility::zero<ValueType>();
-
+ValueType SparseMatrix<ValueType>::multiplyRowWithVector(index_type row, std::vector<ValueType> const& vector, ValueType offset) const {
+    ValueType result = std::move(offset);
     for (auto const& entry : this->getRow(row)) {
+        if (storm::utility::isZero(entry.getValue())) {
+            continue;  // Ignore zero entries, even if the corresponding vector value is infinite.
+        }
         result += entry.getValue() * vector[entry.getColumn()];
+    }
+    return result;
+}
+
+template<typename ValueType>
+storm::utility::ExtendedNumber<ValueType> SparseMatrix<ValueType>::multiplyRowWithVector(index_type row,
+                                                                                         std::vector<storm::utility::ExtendedNumber<ValueType>> const& vector,
+                                                                                         storm::utility::ExtendedNumber<ValueType> offset) const {
+    storm::utility::ExtendedNumber<ValueType> result = std::move(offset);
+    for (auto const& entry : this->getRow(row)) {
+        if (storm::utility::isZero(entry.getValue())) {
+            continue;  // Ignore zero entries, even if the corresponding vector value is infinite.
+        }
+        auto const& vectorValue = vector[entry.getColumn()];
+        // Avoid copies into ExtendedNumber wrapper
+        if (result.isFinite() && vectorValue.isFinite()) {
+            result.getFinite() += entry.getValue() * vectorValue.getFinite();
+        } else {
+            result += entry.getValue() * vectorValue;
+        }
     }
     return result;
 }
