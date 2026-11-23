@@ -915,13 +915,15 @@ std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementM
             result = std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(
                 abstractModel.getReachableStates(), abstractModel.getInitialStates(),
                 (abstractModel.getInitialStates() && symbolicQualitativeResultMinMax.getProb0Min().getStates())
-                    .ite(abstractModel.getManager().template getConstant<ValueType>(0.5), abstractModel.getManager().template getAddZero<ValueType>()));
+                    .ite(abstractModel.getManager().template getConstant<ValueType>(storm::utility::convertNumber<ValueType>(0.5)),
+                         abstractModel.getManager().template getAddZero<ValueType>()));
         } else if (checkTask->isBoundSet() && checkTask->getBoundThreshold() == storm::utility::one<ValueType>() &&
                    (abstractModel.getInitialStates() && symbolicQualitativeResultMinMax.getProb1Max().getStates()) != abstractModel.getInitialStates()) {
             result = std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(
                 abstractModel.getReachableStates(), abstractModel.getInitialStates(),
                 (abstractModel.getInitialStates() && symbolicQualitativeResultMinMax.getProb1Max().getStates())
-                        .ite(abstractModel.getManager().template getConstant<ValueType>(0.5), abstractModel.getManager().template getAddZero<ValueType>()) +
+                        .ite(abstractModel.getManager().template getConstant<ValueType>(storm::utility::convertNumber<ValueType>(0.5)),
+                             abstractModel.getManager().template getAddZero<ValueType>()) +
                     symbolicQualitativeResultMinMax.getProb1Max().getStates().template toAdd<ValueType>());
         }
     }
@@ -973,7 +975,7 @@ bool AbstractAbstractionRefinementModelChecker<ModelType>::boundsAreSufficiently
     storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType> const& upperBounds =
         bounds.second->asSymbolicQuantitativeCheckResult<DdType, ValueType>();
 
-    return lowerBounds.getValueVector().equalModuloPrecision(upperBounds.getValueVector(), this->precision, false);
+    return lowerBounds.getValueVector().equalModuloPrecision(upperBounds.getValueVector(), storm::utility::convertNumber<ValueType>(this->precision), false);
 }
 
 template<typename ModelType>
