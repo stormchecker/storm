@@ -164,7 +164,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeLongRu
     SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
 
     auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
-    storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, false> helper(this->getModel(), probabilisticTransitions,
+    storm::modelchecker::helper::HybridInfiniteHorizonHelper<DdType, ValueType, false> helper(this->getModel(), probabilisticTransitions,
                                                                                               this->getModel().getExitRateVector());
     storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
     return helper.computeLongRunAverageProbabilities(env, subResult.getTruthValuesVector());
@@ -175,7 +175,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeLongRu
     Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
     auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
-    storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, false> helper(this->getModel(), probabilisticTransitions,
+    storm::modelchecker::helper::HybridInfiniteHorizonHelper<DdType, ValueType, false> helper(this->getModel(), probabilisticTransitions,
                                                                                               this->getModel().getExitRateVector());
     storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
     return helper.computeLongRunAverageRewards(env, rewardModel.get());

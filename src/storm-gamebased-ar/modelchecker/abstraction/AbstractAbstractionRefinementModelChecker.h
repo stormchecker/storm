@@ -83,7 +83,7 @@ class AbstractAbstractionRefinementModelChecker : public storm::modelchecker::Ab
     virtual ~AbstractAbstractionRefinementModelChecker();
 
     /// Overridden methods from super class.
-    virtual bool canHandle(storm::modelchecker::CheckTask<storm::logic::Formula> const& checkTask) const override;
+    virtual bool canHandle(storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
     virtual std::unique_ptr<storm::modelchecker::CheckResult> computeUntilProbabilities(
         Environment const& env, storm::modelchecker::CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) override;
     virtual std::unique_ptr<storm::modelchecker::CheckResult> computeReachabilityProbabilities(

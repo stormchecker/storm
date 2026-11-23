@@ -7,6 +7,7 @@
 #include "storm/dd/InternalAdd.h"
 #include "storm/dd/InternalDdManager.h"
 #include "storm/dd/Odd.h"
+#include "storm/dd/backend/BackendTraits.h"
 #include "storm/dd/cudd/CuddAddIterator.h"
 #include "storm/dd/cudd/InternalCuddAdd.h"
 #include "storm/dd/sylvan/InternalSylvanAdd.h"
@@ -25,6 +26,13 @@ namespace bisimulation {
 template<DdType LibraryType, typename ValueType>
 class InternalSignatureRefiner;
 }
+
+/*!
+ * Whether the Kwek-Mehlhorn sharpening is available: the backend has to support rational numbers and the ADD has to be over doubles or rational numbers.
+ */
+template<DdType LibraryType, typename ValueType>
+inline constexpr bool SupportsSharpening = BackendTraits<LibraryType>::template supportsValueType<storm::RationalNumber> &&
+                                           (std::is_same_v<ValueType, double> || std::is_same_v<ValueType, storm::RationalNumber>);
 
 template<DdType LibraryType, typename ValueType = double>
 class Add : public Dd<LibraryType> {
@@ -236,10 +244,12 @@ class Add : public Dd<LibraryType> {
 
     /*!
      * Retrieves the function that sharpens all values in the current ADD with the Kwek-Mehlhorn algorithm.
+     * Only available if SupportsSharpening holds.
      *
      * @return The resulting ADD.
      */
-    Add<LibraryType, storm::RationalNumber> sharpenKwekMehlhorn(uint64_t precision) const;
+    Add<LibraryType, storm::RationalNumber> sharpenKwekMehlhorn(uint64_t precision) const
+        requires(SupportsSharpening<LibraryType, ValueType>);
 
     /*!
      * Retrieves the function that maps all evaluations to the minimum of the function values of the two ADDs.

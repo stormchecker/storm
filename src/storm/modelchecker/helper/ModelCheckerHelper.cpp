@@ -38,11 +38,10 @@ template class ModelCheckerHelper<double, storm::models::ModelRepresentation::Sp
 template class ModelCheckerHelper<storm::RationalNumber, storm::models::ModelRepresentation::Sparse>;
 template class ModelCheckerHelper<storm::RationalFunction, storm::models::ModelRepresentation::Sparse>;
 
-template class ModelCheckerHelper<double, storm::models::ModelRepresentation::DdSylvan>;
-template class ModelCheckerHelper<storm::RationalNumber, storm::models::ModelRepresentation::DdSylvan>;
-template class ModelCheckerHelper<storm::RationalFunction, storm::models::ModelRepresentation::DdSylvan>;
-
-template class ModelCheckerHelper<double, storm::models::ModelRepresentation::DdCudd>;
+template class ModelCheckerHelper<double, storm::models::GetModelRepresentation<storm::dd::DdType::CUDD>::representation>;
+template class ModelCheckerHelper<double, storm::models::GetModelRepresentation<storm::dd::DdType::Sylvan>::representation>;
+template class ModelCheckerHelper<storm::RationalNumber, storm::models::GetModelRepresentation<storm::dd::DdType::Sylvan>::representation>;
+template class ModelCheckerHelper<storm::RationalFunction, storm::models::GetModelRepresentation<storm::dd::DdType::Sylvan>::representation>;
 
 }  // namespace helper
 }  // namespace modelchecker

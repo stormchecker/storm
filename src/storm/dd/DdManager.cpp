@@ -519,17 +519,14 @@ template class DdManager<DdType::CUDD>;
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getAddZero() const;
 template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getAddZero() const;
-template Add<DdType::CUDD, storm::RationalNumber> DdManager<DdType::CUDD>::getAddZero() const;
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getAddOne() const;
 template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getAddOne() const;
-template Add<DdType::CUDD, storm::RationalNumber> DdManager<DdType::CUDD>::getAddOne() const;
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getInfinity<double>() const;
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getConstant(double const& value) const;
 template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getConstant(uint_fast64_t const& value) const;
-template Add<DdType::CUDD, storm::RationalNumber> DdManager<DdType::CUDD>::getConstant(storm::RationalNumber const& value) const;
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const;
 template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const;

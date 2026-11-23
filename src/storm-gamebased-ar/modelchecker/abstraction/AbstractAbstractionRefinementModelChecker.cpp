@@ -45,7 +45,7 @@ AbstractAbstractionRefinementModelChecker<ModelType>::~AbstractAbstractionRefine
 }
 
 template<typename ModelType>
-bool AbstractAbstractionRefinementModelChecker<ModelType>::canHandle(storm::modelchecker::CheckTask<storm::logic::Formula> const& checkTask) const {
+bool AbstractAbstractionRefinementModelChecker<ModelType>::canHandle(storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
     storm::logic::Formula const& formula = checkTask.getFormula();
     bool enableRewards = this->supportsReachabilityRewards();
     storm::logic::FragmentSpecification fragment =
@@ -207,21 +207,21 @@ bool AbstractAbstractionRefinementModelChecker<ModelType>::checkForResultAfterQu
 
         if (lowerBounds) {
             if (storm::logic::isLowerBound(comparisonType)) {
-                ValueType minimalLowerBound = quantitativeResult.getMin();
+                auto minimalLowerBound = quantitativeResult.getMin();
                 result = (storm::logic::isStrict(comparisonType) && minimalLowerBound > threshold) ||
                          (!storm::logic::isStrict(comparisonType) && minimalLowerBound >= threshold);
             } else {
-                ValueType maximalLowerBound = quantitativeResult.getMax();
+                auto maximalLowerBound = quantitativeResult.getMax();
                 result = (storm::logic::isStrict(comparisonType) && maximalLowerBound >= threshold) ||
                          (!storm::logic::isStrict(comparisonType) && maximalLowerBound > threshold);
             }
         } else {
             if (storm::logic::isLowerBound(comparisonType)) {
-                ValueType minimalUpperBound = quantitativeResult.getMin();
+                auto minimalUpperBound = quantitativeResult.getMin();
                 result = (storm::logic::isStrict(comparisonType) && minimalUpperBound <= threshold) ||
                          (!storm::logic::isStrict(comparisonType) && minimalUpperBound < threshold);
             } else {
-                ValueType maximalUpperBound = quantitativeResult.getMax();
+                auto maximalUpperBound = quantitativeResult.getMax();
                 result = (storm::logic::isStrict(comparisonType) && maximalUpperBound < threshold) ||
                          (!storm::logic::isStrict(comparisonType) && maximalUpperBound <= threshold);
             }
@@ -996,6 +996,8 @@ template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic
 template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
 template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
 template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
 
 }  // namespace modelchecker
 }  // namespace storm::gbar

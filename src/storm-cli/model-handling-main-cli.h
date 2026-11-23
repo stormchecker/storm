@@ -6,10 +6,10 @@
 
 #include "storm-cli-utilities/SettingsUtils.h"
 #include "storm-cli-utilities/model-handling.h"
-
 #include "storm-counterexamples/api/counterexamples.h"
 #include "storm-gamebased-ar/api/verification.h"
 #include "storm-parsers/parser/ExpressionParser.h"
+#include "storm/dd/backend/DdBackends.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitCertificateCheckResult.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
@@ -699,7 +699,7 @@ void verifyWithAbstractionRefinementEngine(std::shared_ptr<storm::models::symbol
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-typename std::enable_if<DdType != storm::dd::DdType::CUDD || std::is_same<ValueType, double>::value, void>::type verifyModel(
+typename std::enable_if<storm::dd::BackendTraits<DdType>::template supportsValueType<ValueType>, void>::type verifyModel(
     std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& symbolicModel, SymbolicInput const& input,
     ModelProcessingInformation const& mpi) {
     if (mpi.engine == storm::utility::Engine::Hybrid) {
@@ -712,9 +712,9 @@ typename std::enable_if<DdType != storm::dd::DdType::CUDD || std::is_same<ValueT
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-typename std::enable_if<DdType == storm::dd::DdType::CUDD && !std::is_same<ValueType, double>::value, void>::type verifySymbolicModel(
+typename std::enable_if<!storm::dd::BackendTraits<DdType>::template supportsValueType<ValueType>, void>::type verifySymbolicModel(
     std::shared_ptr<storm::models::ModelBase> const&, SymbolicInput const&, ModelProcessingInformation const&) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support the selected data-type.");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, storm::dd::BackendTraits<DdType>::name << " does not support the selected data-type.");
 }
 
 inline void processInput(SymbolicInput const& input, ModelProcessingInformation const& mpi) {

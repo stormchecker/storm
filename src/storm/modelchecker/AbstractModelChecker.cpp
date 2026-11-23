@@ -12,6 +12,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/FormulaInformation.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
@@ -152,8 +153,13 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeStateFormul
     } else {
         STORM_LOG_ASSERT(resultPointer->isSymbolicQualitativeCheckResult(), "Unexpected result type.");
         STORM_LOG_ASSERT(ModelType::Representation != storm::models::ModelRepresentation::Sparse, "Unexpected model type.");
-        auto const& qualRes = resultPointer->asSymbolicQualitativeCheckResult<storm::models::GetDdType<ModelType::Representation>::ddType>();
-        return std::make_unique<SymbolicQuantitativeCheckResult<storm::models::GetDdType<ModelType::Representation>::ddType, SolutionType>>(qualRes);
+        if constexpr (ModelType::Representation != storm::models::ModelRepresentation::Sparse) {
+            constexpr storm::dd::DdType ddType = storm::models::GetDdType<ModelType::Representation>::ddType;
+            auto const& qualRes = resultPointer->asSymbolicQualitativeCheckResult<ddType>();
+            return std::make_unique<SymbolicQuantitativeCheckResult<ddType, SolutionType>>(qualRes);
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected symbolic check result for a sparse model.");
+        }
     }
 }
 

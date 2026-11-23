@@ -131,7 +131,7 @@ bool StandardGameSolver<ValueType>::solveGamePolicyIteration(Environment const& 
         *player1Choices = std::vector<storm::storage::sparse::state_type>(this->getPlayer1Matrix().getRowGroupCount(), 0);
     } else {
         // Player 1 represented by grouping of player 2 states.
-        player1Choices->resize(player1Choices->size() - 1);
+        player1Choices->resize(this->player1Grouping->size() - 1);
     }
     if (this->hasSchedulerHints()) {
         *player2Choices = this->player2ChoicesHint.get();

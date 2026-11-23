@@ -122,10 +122,7 @@ storm::dd::Add<DdType, ValueType> SymbolicEquationSolver<DdType, ValueType>::get
 
 template class SymbolicEquationSolver<storm::dd::DdType::CUDD, double>;
 template class SymbolicEquationSolver<storm::dd::DdType::Sylvan, double>;
-
-template class SymbolicEquationSolver<storm::dd::DdType::CUDD, storm::RationalNumber>;
 template class SymbolicEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-
 template class SymbolicEquationSolver<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 }  // namespace solver
 }  // namespace storm

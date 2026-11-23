@@ -1,16 +1,15 @@
 #include "storm/settings/modules/CoreSettings.h"
 
+#include "storm/dd/DdType.h"
+#include "storm/dd/backend/DdBackends.h"
+#include "storm/exceptions/IllegalArgumentValueException.h"
+#include "storm/exceptions/InvalidOptionException.h"
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/solver/SolverSelectionOptions.h"
-
-#include "storm/dd/DdType.h"
-
-#include "storm/exceptions/IllegalArgumentValueException.h"
-#include "storm/exceptions/InvalidOptionException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -78,17 +77,16 @@ CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(storm::utility
                              .build())
             .build());
 
-    // Initialize options for DD libraries
+    // Initialize options for all available DD libraries
     std::vector<std::string> ddLibraries;
     std::string ddDefault = "";
-#ifdef STORM_HAVE_CUDD
-    ddLibraries.push_back("cudd");
-    ddDefault = "cudd";
-#endif
-#ifdef STORM_HAVE_SYLVAN
-    ddLibraries.push_back("sylvan");
-    ddDefault = "sylvan";  // Overwrite previous default and give Sylvan priority
-#endif
+    storm::dd::RegisteredDdTypes::forEach([&](auto type) {
+        using Traits = storm::dd::BackendTraits<decltype(type)::value>;
+        if constexpr (Traits::available) {
+            ddLibraries.push_back(std::string(Traits::name));
+            ddDefault = std::string(Traits::name);  // Later registered backends take priority as default (Sylvan over CUDD)
+        }
+    });
     if (!ddLibraries.empty()) {
         this->addOption(
             storm::settings::OptionBuilder(moduleName, ddLibraryOptionName, false, "Sets which library is preferred for decision-diagram operations.")
@@ -201,11 +199,14 @@ bool CoreSettings::isSmtSolverSetFromDefaultValue() const {
 
 storm::dd::DdType CoreSettings::getDdLibraryType() const {
     std::string ddLibraryAsString = this->getOption(ddLibraryOptionName).getArgumentByName("name").getValueAsString();
-    if (ddLibraryAsString == "sylvan") {
-        return storm::dd::DdType::Sylvan;
-    } else {
-        return storm::dd::DdType::CUDD;
-    }
+    // Defaults to the first registered backend (CUDD) if the name is not known.
+    auto result = storm::dd::RegisteredDdTypes::first;
+    storm::dd::RegisteredDdTypes::forEach([&](auto type) {
+        if (ddLibraryAsString == storm::dd::BackendTraits<decltype(type)::value>::name) {
+            result = decltype(type)::value;
+        }
+    });
+    return result;
 }
 
 bool CoreSettings::isDdLibraryTypeSetFromDefaultValue() const {
