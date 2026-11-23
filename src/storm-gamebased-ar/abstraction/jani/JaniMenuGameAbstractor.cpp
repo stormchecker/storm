@@ -5,7 +5,6 @@
 #include "storm-gamebased-ar/abstraction/GameBddResult.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/dd/Add.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -322,9 +321,9 @@ void JaniMenuGameAbstractor<DdType, ValueType>::notifyGuardsArePredicates() {
 }
 
 // Explicitly instantiate the class.
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class JaniMenuGameAbstractor<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class JaniMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
+template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
+template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 }  // namespace jani
 }  // namespace abstraction
 }  // namespace storm::gbar

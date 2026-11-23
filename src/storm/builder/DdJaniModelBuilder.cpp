@@ -7,7 +7,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/dd/Add.h"
 #include "storm/dd/Bdd.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
@@ -2461,9 +2460,10 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
     return result;
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class DdJaniModelBuilder<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class DdJaniModelBuilder<storm::dd::DdType::CUDD, double>;
+template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, double>;
 
+template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 }  // namespace builder
 }  // namespace storm

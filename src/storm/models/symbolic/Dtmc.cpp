@@ -3,7 +3,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/dd/Add.h"
 #include "storm/dd/Bdd.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
@@ -68,11 +67,12 @@ std::shared_ptr<Dtmc<Type, NewValueType>> Dtmc<Type, ValueType>::toValueType() c
 }
 
 // Explicitly instantiate the template class.
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class Dtmc<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class Dtmc<storm::dd::DdType::CUDD, double>;
 
+template class Dtmc<storm::dd::DdType::Sylvan, double>;
+template class Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template std::shared_ptr<Dtmc<storm::dd::DdType::Sylvan, double>> Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType() const;
+template class Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
 }  // namespace symbolic
 }  // namespace models

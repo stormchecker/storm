@@ -1,6 +1,5 @@
 #include "storm/transformer/bisimulation/dd/BisimulationDecomposition.h"
 
-#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/symbolic/Mdp.h"
@@ -187,11 +186,12 @@ void BisimulationDecomposition<DdType, ValueType, ExportValueType>::refineWrtRew
     }
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class BisimulationDecomposition<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class BisimulationDecomposition<storm::dd::DdType::CUDD, double>;
 
+template class BisimulationDecomposition<storm::dd::DdType::Sylvan, double>;
+template class BisimulationDecomposition<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class BisimulationDecomposition<storm::dd::DdType::Sylvan, storm::RationalNumber, double>;
+template class BisimulationDecomposition<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
 }  // namespace dd
 }  // namespace storm

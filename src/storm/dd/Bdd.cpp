@@ -4,7 +4,6 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/dd/Add.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/dd/DdMetaVariable.h"
 #include "storm/dd/Odd.h"
@@ -587,9 +586,7 @@ storm::storage::BitVector Bdd<LibraryType>::filterExplicitVector(Odd const& odd,
     return result;
 }
 
-#define STORM_DD_INSTANTIATE(DD) template class Bdd<storm::dd::DdType::DD>;
-STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class Bdd<DdType::CUDD>;
 
 template Bdd<DdType::CUDD> Bdd<DdType::CUDD>::fromVector(DdManager<DdType::CUDD> const& ddManager, std::vector<double> const& explicitValues,
                                                          storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables,
@@ -604,6 +601,8 @@ template std::vector<uint_fast64_t> Bdd<DdType::CUDD>::filterExplicitVector(Odd 
 template Add<DdType::CUDD, double> Bdd<DdType::CUDD>::ite(Add<DdType::CUDD, double> const& thenAdd, Add<DdType::CUDD, double> const& elseAdd) const;
 template Add<DdType::CUDD, uint_fast64_t> Bdd<DdType::CUDD>::ite(Add<DdType::CUDD, uint_fast64_t> const& thenAdd,
                                                                  Add<DdType::CUDD, uint_fast64_t> const& elseAdd) const;
+
+template class Bdd<DdType::Sylvan>;
 
 template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<double> const& explicitValues,
                                                              storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables,

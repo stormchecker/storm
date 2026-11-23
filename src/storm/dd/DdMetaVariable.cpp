@@ -1,6 +1,5 @@
 #include "storm/dd/DdMetaVariable.h"
 
-#include "storm/dd/DdInstantiations.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -148,8 +147,7 @@ void DdMetaVariable<LibraryType>::precomputeLowestIndex() {
     }
 }
 
-#define STORM_DD_INSTANTIATE(DD) template class DdMetaVariable<storm::dd::DdType::DD>;
-STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class DdMetaVariable<DdType::CUDD>;
+template class DdMetaVariable<DdType::Sylvan>;
 }  // namespace dd
 }  // namespace storm

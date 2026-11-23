@@ -3,7 +3,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/dd/Add.h"
 #include "storm/dd/Bdd.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -81,9 +80,9 @@ bool MenuGame<Type, ValueType>::hasLabel(std::string const&) const {
     return false;
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class MenuGame<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class MenuGame<storm::dd::DdType::CUDD, double>;
+template class MenuGame<storm::dd::DdType::Sylvan, double>;
 
+template class MenuGame<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 }  // namespace abstraction
 }  // namespace storm::gbar

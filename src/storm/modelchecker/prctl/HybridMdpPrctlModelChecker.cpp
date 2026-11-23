@@ -1,7 +1,6 @@
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/UnexpectedException.h"
@@ -196,9 +195,9 @@ std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<ModelType>::checkMultiOb
     }
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::DD, ValueType>>;
-STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
+template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
 
 }  // namespace modelchecker
 }  // namespace storm

@@ -3,7 +3,6 @@
 #include <boost/algorithm/string/join.hpp>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/dd/DdMetaVariable.h"
 #include "storm/dd/Odd.h"
@@ -1205,16 +1204,18 @@ std::enable_if_t<!std::is_same_v<TargetValueType, ValueType>, Add<LibraryType, T
     return Add<LibraryType, TargetValueType>(this->getDdManager(), internalAdd.template toValueType<TargetValueType>(), this->getContainedMetaVariables());
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType)               \
-    template class Add<storm::dd::DdType::DD, ValueType>; \
-    template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::DD, ValueType> const& add);
-STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class Add<storm::dd::DdType::CUDD, double>;
+template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::CUDD, double> const& add);
+template class Add<storm::dd::DdType::CUDD, uint_fast64_t>;
 
-// Additional instantiations that are not part of the standard lists.
-#define STORM_DD_INSTANTIATE(DD) template class Add<storm::dd::DdType::DD, uint_fast64_t>;
-STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class Add<storm::dd::DdType::Sylvan, double>;
+template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, double> const& add);
+template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
+
+template class Add<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& add);
+template class Add<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& add);
 
 template Add<storm::dd::DdType::Sylvan, storm::RationalNumber> Add<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType<storm::RationalNumber>()
     const;

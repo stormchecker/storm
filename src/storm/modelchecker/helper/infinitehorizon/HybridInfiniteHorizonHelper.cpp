@@ -1,7 +1,6 @@
 #include "storm/modelchecker/helper/infinitehorizon/HybridInfiniteHorizonHelper.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseDeterministicInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
@@ -161,14 +160,15 @@ std::unique_ptr<SparseInfiniteHorizonHelper<ValueType, Nondeterministic>> Hybrid
     return result;
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class HybridInfiniteHorizonHelper<storm::dd::DdType::DD, ValueType, false>;
-STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class HybridInfiniteHorizonHelper<storm::dd::DdType::CUDD, double, false>;
+template class HybridInfiniteHorizonHelper<storm::dd::DdType::Sylvan, double, false>;
+template class HybridInfiniteHorizonHelper<storm::dd::DdType::Sylvan, storm::RationalNumber, false>;
+template class HybridInfiniteHorizonHelper<storm::dd::DdType::Sylvan, storm::RationalFunction, false>;
 
 // The nondeterministic helper is not instantiated for storm::RationalFunction.
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class HybridInfiniteHorizonHelper<storm::dd::DdType::DD, ValueType, true>;
-STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class HybridInfiniteHorizonHelper<storm::dd::DdType::CUDD, double, true>;
+template class HybridInfiniteHorizonHelper<storm::dd::DdType::Sylvan, double, true>;
+template class HybridInfiniteHorizonHelper<storm::dd::DdType::Sylvan, storm::RationalNumber, true>;
 
 }  // namespace helper
 }  // namespace modelchecker

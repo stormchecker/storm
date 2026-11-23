@@ -1,5 +1,4 @@
 #include "storm-gamebased-ar/abstraction/SymbolicQuantitativeGameResult.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm::gbar {
@@ -59,9 +58,9 @@ std::pair<ValueType, ValueType> const& SymbolicQuantitativeGameResult<Type, Valu
     return initialStatesRange.get();
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class SymbolicQuantitativeGameResult<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class SymbolicQuantitativeGameResult<storm::dd::DdType::CUDD, double>;
+template class SymbolicQuantitativeGameResult<storm::dd::DdType::Sylvan, double>;
+template class SymbolicQuantitativeGameResult<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 
 }  // namespace abstraction
 }  // namespace storm::gbar

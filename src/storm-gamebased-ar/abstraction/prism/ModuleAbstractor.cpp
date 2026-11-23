@@ -5,7 +5,6 @@
 #include "storm-gamebased-ar/abstraction/GameBddResult.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/dd/Add.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/languages/prism/Module.h"
 #include "storm/utility/macros.h"
@@ -121,9 +120,9 @@ void ModuleAbstractor<DdType, ValueType>::notifyGuardsArePredicates() {
     }
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class ModuleAbstractor<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class ModuleAbstractor<storm::dd::DdType::CUDD, double>;
+template class ModuleAbstractor<storm::dd::DdType::Sylvan, double>;
+template class ModuleAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 }  // namespace prism
 }  // namespace abstraction
 }  // namespace storm::gbar

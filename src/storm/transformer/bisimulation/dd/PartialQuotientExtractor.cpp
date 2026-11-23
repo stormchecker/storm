@@ -1,7 +1,6 @@
 #include "storm/transformer/bisimulation/dd/PartialQuotientExtractor.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/symbolic/Mdp.h"
@@ -156,11 +155,12 @@ std::shared_ptr<storm::models::symbolic::Model<DdType, ExportValueType>> Partial
     }
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class PartialQuotientExtractor<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class PartialQuotientExtractor<storm::dd::DdType::CUDD, double>;
+template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, double>;
 
+template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalNumber, double>;
+template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
 }  // namespace bisimulation
 }  // namespace dd

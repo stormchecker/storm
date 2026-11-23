@@ -8,7 +8,6 @@
 #include "storm-gamebased-ar/abstraction/SymbolicStateSet.h"
 #include "storm/dd/Add.h"
 #include "storm/dd/Bdd.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -993,11 +992,12 @@ std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementM
             lowerBounds.getValueVector().getDdManager().getConstant(storm::utility::convertNumber<ValueType>(std::string("2.0"))));
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType)                                                                                    \
-    template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::DD, ValueType>>; \
-    template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::DD, ValueType>>;
-STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
+template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
+template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
+template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
 
 }  // namespace modelchecker
 }  // namespace storm::gbar

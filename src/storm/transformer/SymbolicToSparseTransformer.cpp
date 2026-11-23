@@ -2,7 +2,6 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/dd/Add.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/AtomicExpressionFormula.h"
@@ -259,21 +258,25 @@ std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> SymbolicMaToS
     return std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(components));
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::CUDD, double>;
+template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::Sylvan, double>;
+template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class SymbolicMdpToSparseMdpTransformer<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class SymbolicMdpToSparseMdpTransformer<storm::dd::DdType::CUDD, double>;
+template class SymbolicMdpToSparseMdpTransformer<storm::dd::DdType::Sylvan, double>;
+template class SymbolicMdpToSparseMdpTransformer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+template class SymbolicMdpToSparseMdpTransformer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class SymbolicCtmcToSparseCtmcTransformer<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class SymbolicCtmcToSparseCtmcTransformer<storm::dd::DdType::CUDD, double>;
+template class SymbolicCtmcToSparseCtmcTransformer<storm::dd::DdType::Sylvan, double>;
+template class SymbolicCtmcToSparseCtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+template class SymbolicCtmcToSparseCtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::CUDD, double>;
+template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::Sylvan, double>;
+template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
 }  // namespace transformer
 }  // namespace storm

@@ -2,7 +2,6 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/dd/Add.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
@@ -157,11 +156,17 @@ std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> 
     }
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType)                                               \
-    template class SymbolicLinearEquationSolver<storm::dd::DdType::DD, ValueType>;        \
-    template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::DD, ValueType>; \
-    template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class SymbolicLinearEquationSolver<storm::dd::DdType::CUDD, double>;
+template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+template class SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
+template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
+template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
+template class SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+template class SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 }  // namespace solver
 }  // namespace storm

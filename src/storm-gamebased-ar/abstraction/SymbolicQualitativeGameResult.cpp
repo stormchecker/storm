@@ -1,5 +1,4 @@
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeGameResult.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm::gbar {
@@ -16,8 +15,7 @@ storm::dd::Bdd<Type> const& SymbolicQualitativeGameResult<Type>::getStates() con
     return this->getPlayer1States();
 }
 
-#define STORM_DD_INSTANTIATE(DD) template class SymbolicQualitativeGameResult<storm::dd::DdType::DD>;
-STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class SymbolicQualitativeGameResult<storm::dd::DdType::CUDD>;
+template class SymbolicQualitativeGameResult<storm::dd::DdType::Sylvan>;
 }  // namespace abstraction
 }  // namespace storm::gbar

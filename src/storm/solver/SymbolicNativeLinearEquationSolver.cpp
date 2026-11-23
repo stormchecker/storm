@@ -1,7 +1,6 @@
 #include "storm/solver/SymbolicNativeLinearEquationSolver.h"
 
 #include "storm/dd/Add.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdManager.h"
 #include "storm/dd/backend/BackendTraits.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
@@ -350,10 +349,11 @@ std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> 
     return std::make_unique<SymbolicNativeLinearEquationSolver<DdType, ValueType>>();
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType)                                              \
-    template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::DD, ValueType>; \
-    template class SymbolicNativeLinearEquationSolverFactory<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_NON_PARAMETRIC(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::CUDD, double>;
+template class SymbolicNativeLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
+template class SymbolicNativeLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
+template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+template class SymbolicNativeLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 }  // namespace solver
 }  // namespace storm

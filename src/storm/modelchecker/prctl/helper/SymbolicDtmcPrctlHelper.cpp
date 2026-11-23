@@ -3,7 +3,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/dd/Add.h"
 #include "storm/dd/Bdd.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/DdType.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
@@ -249,10 +248,11 @@ storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::co
     return computeReachabilityRewards(env, model, transitionMatrix, rewardModel, targetStates, qualitative, startValues);
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class SymbolicDtmcPrctlHelper<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class SymbolicDtmcPrctlHelper<storm::dd::DdType::CUDD, double>;
+template class SymbolicDtmcPrctlHelper<storm::dd::DdType::Sylvan, double>;
 
+template class SymbolicDtmcPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+template class SymbolicDtmcPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

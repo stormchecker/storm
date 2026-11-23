@@ -1,5 +1,4 @@
 #include "storm-gamebased-ar/abstraction/GameBddResult.h"
-#include "storm/dd/DdInstantiations.h"
 #include "storm/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm::gbar {
@@ -16,9 +15,8 @@ GameBddResult<DdType>::GameBddResult(storm::dd::Bdd<DdType> const& gameBdd, uint
     // Intentionally left empty.
 }
 
-#define STORM_DD_INSTANTIATE(DD) template struct GameBddResult<storm::dd::DdType::DD>;
-STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template struct GameBddResult<storm::dd::DdType::CUDD>;
+template struct GameBddResult<storm::dd::DdType::Sylvan>;
 
 }  // namespace abstraction
 }  // namespace storm::gbar

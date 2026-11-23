@@ -7,7 +7,6 @@
 
 #include "storm/expressions/Expression.h"
 
-#include "storm/dd/DdInstantiations.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
@@ -235,9 +234,8 @@ boost::any ExpressionTranslator<DdType>::visit(RationalLiteralExpression const&,
                     "Expressions of this kind are currently not supported by the abstraction expression translator.");
 }
 
-#define STORM_DD_INSTANTIATE(DD) template class ExpressionTranslator<storm::dd::DdType::DD>;
-STORM_DD_FOR_EACH_BACKEND(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class ExpressionTranslator<storm::dd::DdType::CUDD>;
+template class ExpressionTranslator<storm::dd::DdType::Sylvan>;
 
 }  // namespace abstraction
 }  // namespace storm::gbar

@@ -1,6 +1,5 @@
 #include "storm/transformer/bisimulation/dd/NondeterministicModelPartitionRefiner.h"
 
-#include "storm/dd/DdInstantiations.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
@@ -111,9 +110,11 @@ bool NondeterministicModelPartitionRefiner<DdType, ValueType>::refineWrtStateAct
     }
 }
 
-#define STORM_DD_INSTANTIATE(DD, ValueType) template class NondeterministicModelPartitionRefiner<storm::dd::DdType::DD, ValueType>;
-STORM_DD_FOR_EACH_STANDARD(STORM_DD_INSTANTIATE)
-#undef STORM_DD_INSTANTIATE
+template class NondeterministicModelPartitionRefiner<storm::dd::DdType::CUDD, double>;
+
+template class NondeterministicModelPartitionRefiner<storm::dd::DdType::Sylvan, double>;
+template class NondeterministicModelPartitionRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+template class NondeterministicModelPartitionRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
 }  // namespace bisimulation
 }  // namespace dd
