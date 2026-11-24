@@ -36,5 +36,4 @@ src/storm/automata/HOAConsumerDAHeader.h
 
 [stdout-usage]
 # Explicit use of std::cout
-src/storm-cli-utilities/print.h
 src/storm/utility/initialize.cpp
