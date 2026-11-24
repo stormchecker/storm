@@ -10,6 +10,7 @@
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/modelchecker/cvar/ZeroWeightTransformation.h"
 #include "storm/modelchecker/cvar/preprocessing/SspCvarPreprocessingResult.h"
@@ -21,6 +22,7 @@
 #include "storm/transformer/zeroWeight/GlobalZeroWeightActionTransformer.h"
 #include "storm/transformer/zeroWeight/LocalZeroWeightActionEliminator.h"
 #include "storm/transformer/zeroWeight/MixedWeightStateSplitter.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/logging.h"
@@ -115,7 +117,14 @@ std::vector<ValueType> computeExpectedCostsToGoal(Environment const& env, storm:
     auto result = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, ValueType>::computeReachabilityRewards(
         env, storm::solver::SolveGoal<ValueType, ValueType>(storm::OptimizationDirection::Minimize), transitionMatrix, backwardTransitions, rewardModel,
         targetStates, false, false);
-    return std::move(result.values);
+    std::vector<ValueType> expectedCosts;
+    expectedCosts.reserve(result.values.size());
+    for (auto& value : result.values) {
+        STORM_LOG_THROW(storm::utility::isFinite(value), storm::exceptions::UnexpectedException,
+                        "Expected costs to reach the target states are unexpectedly infinite.");
+        expectedCosts.push_back(std::move(storm::utility::getFinite(value)));
+    }
+    return expectedCosts;
 }
 
 template<typename ValueType>

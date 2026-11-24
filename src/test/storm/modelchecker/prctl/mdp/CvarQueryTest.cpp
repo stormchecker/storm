@@ -15,6 +15,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/CvarFormula.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/cvar/CvarInterpretation.h"
@@ -35,6 +36,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/StateLabeling.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/constants.h"
 
 namespace {
@@ -88,9 +90,16 @@ std::unique_ptr<storm::modelchecker::CheckResult> checkInitialStateResult(CvarTe
 }
 
 template<typename ValueType>
+ValueType getFiniteInitialStateValue(storm::modelchecker::CheckResult const& result) {
+    auto const& value = result.asExplicitQuantitativeCheckResult<ValueType>().getMax();
+    STORM_LOG_THROW(storm::utility::isFinite(value), storm::exceptions::UnexpectedException, "CVaR value of the initial state is unexpectedly infinite.");
+    return storm::utility::getFinite(value);
+}
+
+template<typename ValueType>
 ValueType checkInitialStateValue(CvarTestInput<ValueType> const& input) {
     auto result = checkInitialStateResult(input);
-    return result->template asExplicitQuantitativeCheckResult<ValueType>().getMax();
+    return getFiniteInitialStateValue<ValueType>(*result);
 }
 
 template<typename ValueType>
@@ -101,7 +110,7 @@ ValueType checkInitialStateValueWithMethod(CvarTestInput<ValueType> const& input
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> checker(*input.mdp);
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*input.formula, true);
     auto result = checker.check(env, task);
-    return result->template asExplicitQuantitativeCheckResult<ValueType>().getMax();
+    return getFiniteInitialStateValue<ValueType>(*result);
 }
 
 template<typename ValueType>
@@ -113,7 +122,7 @@ ValueType checkInitialStateValueWithMethodAndInterpretationSelection(CvarTestInp
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> checker(*input.mdp);
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*input.formula, true);
     auto result = checker.check(env, task);
-    return result->template asExplicitQuantitativeCheckResult<ValueType>().getMax();
+    return getFiniteInitialStateValue<ValueType>(*result);
 }
 
 template<typename ParetoFront>
