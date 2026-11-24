@@ -61,6 +61,10 @@ jobs:
     name: Build Debian package on ${{ matrix.distro.name }}-${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runner }}
     container: movesrwth/storm-basesystem:${{ matrix.distro.tag }}
+    defaults:
+      run:
+        # Use bash to support arrays
+        shell: bash
     strategy:
       fail-fast: false
       matrix:

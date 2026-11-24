@@ -19,7 +19,7 @@ namespace dd {
 template<DdType... Types>
 struct DdTypeList {
     static constexpr std::size_t size = sizeof...(Types);
-    static constexpr DdType values[] = {Types...};
+    static constexpr DdType values[sizeof...(Types)] = {Types...};
     /// The first registered backend (the fallback if nothing else is selected).
     static constexpr DdType first = values[0];
 

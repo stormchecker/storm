@@ -158,7 +158,7 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeStateFormul
             auto const& qualRes = resultPointer->asSymbolicQualitativeCheckResult<ddType>();
             return std::make_unique<SymbolicQuantitativeCheckResult<ddType, SolutionType>>(qualRes);
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected symbolic check result for a sparse model.");
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::UnexpectedException, "Unexpected symbolic check result for a sparse model.");
         }
     }
 }
