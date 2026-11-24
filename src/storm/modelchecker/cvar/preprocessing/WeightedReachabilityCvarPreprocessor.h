@@ -136,9 +136,9 @@ WeightedReachabilityCvarPreprocessingResult<typename SparseMdpModelType::ValueTy
         collapsedTargetReachingMecCount = targetReachingMecs.size();
         auto oldStateCount = transitionMatrix.getRowGroupCount();
         applyTargetReachingMecCollapse(transitionMatrix, effectiveTargetStates, badMecStates, terminalRewards, initialState, targetReachingMecs);
-        STORM_PRINT_AND_LOG("CVaR preprocessing collapsed " << collapsedTargetReachingMecCount
-                                                            << " target-reaching end component(s), reducing the transition matrix from " << oldStateCount
-                                                            << " to " << transitionMatrix.getRowGroupCount() << " states.\n");
+        STORM_LOG_STATISTICS("CVaR preprocessing collapsed " << collapsedTargetReachingMecCount
+                                                             << " target-reaching end component(s), reducing the transition matrix from " << oldStateCount
+                                                             << " to " << transitionMatrix.getRowGroupCount() << " states.");
     }
 
     return {rewardModelName,
