@@ -123,7 +123,7 @@ class DoxygenStyleCheck(Check):
     name = "doxygen-style"
 
     JAVADOC_OPEN_RE = re.compile(r"^\s*/\*\*(?!\*)")
-    TRIPLE_SLASH_RE = re.compile(r"^\s*///(?!/)\s*\S")
+    TRIPLE_SLASH_RE = re.compile(r"^\s*///(?!/)")
 
     def __init__(self, src_dir, repo_root, ignore_sections):
         super().__init__(src_dir, repo_root, ignore_sections)
@@ -181,6 +181,10 @@ class IncludeOrderCheck(Check):
     COND_START_RE = re.compile(r"^\s*#\s*(if|ifdef|ifndef)\b")
     COND_END_RE = re.compile(r"^\s*#\s*endif\b")
     PRAGMA_RE = re.compile(r"^\s*#\s*pragma\b")
+    # Other preprocessor directives that may appear between includes, e.g. guarding optional dependencies
+    DIRECTIVE_RE = re.compile(
+        r"^\s*#\s*(if|ifdef|ifndef|elif|elifdef|elifndef|else|endif|define|undef)\b"
+    )
 
     ISSUE_LABELS = {
         "comment_only_file": "file is empty, or contains only blank lines/comments -- no real code to anchor the include order",
@@ -229,11 +233,13 @@ class IncludeOrderCheck(Check):
 
     def scan_region_entries(self, lines, start):
         """Scan `lines` from index `start`, classifying each line as a blank,
-        an include ("SYSTEM"/"STORM"), or "other" (comment / block-comment
-        continuation / #pragma, e.g. diagnostic push/pop wrapping one
-        include). Stops at the first line that is real code. Returns a list
-        of (kind, absolute_index) entries, with any trailing blank/"other"
-        entries after the last SYSTEM/STORM entry already dropped."""
+        an include ("SYSTEM"/"STORM"), a preprocessor directive ("directive",
+        e.g. #ifdef/#endif guarding an optional dependency), or "other"
+        (comment / block-comment continuation / #pragma, e.g. diagnostic
+        push/pop wrapping one include). Stops at the first line that is real
+        code. Returns a list of (kind, absolute_index) entries, with any
+        trailing non-include entries after the last SYSTEM/STORM entry
+        already dropped."""
         i, n, in_block = start, len(lines), False
         entries = []
         while i < n:
@@ -247,6 +253,10 @@ class IncludeOrderCheck(Check):
                 continue
             if s == "":
                 entries.append(("blank", i))
+                i += 1
+                continue
+            if self.DIRECTIVE_RE.match(s):
+                entries.append(("directive", i))
                 i += 1
                 continue
             if s.startswith("//") or self.PRAGMA_RE.match(s):
@@ -266,12 +276,45 @@ class IncludeOrderCheck(Check):
                 continue
             break
 
-        # Drop trailing blank/comment entries after the last SYSTEM/STORM entry
+        # Drop trailing blank/comment/directive entries after the last SYSTEM/STORM entry
         real = [idx for kind, idx in entries if kind in ("SYSTEM", "STORM")]
         if not real:
             return []
         last = max(real)
         return [(kind, idx) for kind, idx in entries if idx <= last]
+
+    @staticmethod
+    def check_include_groups(sequence, issues):
+        """group_order / missing_group_separator / blank_within_group: check a
+        sequence of "blank"/"SYSTEM"/"STORM"/"break" entries against the
+        system/storm include groups. A "break" marks a cut-out conditional
+        block; blank lines around it are not counted."""
+        current_category = None
+        pending_blanks = 0
+        after_break = False
+        for kind in sequence:
+            if kind == "blank":
+                if not after_break:
+                    pending_blanks += 1
+                continue
+            if kind == "break":
+                pending_blanks = 0
+                after_break = True
+                continue
+            if current_category is None:
+                current_category = kind
+            elif kind == current_category:
+                if pending_blanks > 0:
+                    issues.add("blank_within_group")
+            elif current_category == "STORM" and kind == "SYSTEM":
+                issues.add("group_order")
+                current_category = kind
+            else:  # SYSTEM -> STORM transition
+                if pending_blanks == 0 and not after_break:
+                    issues.add("missing_group_separator")
+                current_category = kind
+            pending_blanks = 0
+            after_break = False
 
     def analyze_include_order(self, cpp_path, lines, header_path):
         """Return None if compliant, else an IncludeViolation. `header_path`
@@ -374,33 +417,36 @@ class IncludeOrderCheck(Check):
         # comment_in_includes: a comment is interspersed among the includes.
         # Reported alongside whatever else is found below, but the "other"
         # entries themselves are dropped first so they can't corrupt the
-        # group-order state machine, which only knows about "blank"/"SYSTEM"/
-        # "STORM".
+        # group-order state machine.
         if any(kind == "other" for kind, _idx in truncated):
             issues.add("comment_in_includes")
             truncated = [(kind, idx) for kind, idx in truncated if kind != "other"]
 
-        # group_order / missing_group_separator / blank_within_group: checked
-        # against the system/storm include groups.
-        current_category = None
-        pending_blanks = 0
-        for kind, _idx in truncated:
-            if kind == "blank":
-                pending_blanks += 1
-                continue
-            if current_category is None:
-                current_category = kind
-            elif kind == current_category:
-                if pending_blanks > 0:
-                    issues.add("blank_within_group")
-            elif current_category == "STORM" and kind == "SYSTEM":
-                issues.add("group_order")
-                current_category = kind
-            else:  # SYSTEM -> STORM transition
-                if pending_blanks == 0:
-                    issues.add("missing_group_separator")
-                current_category = kind
-            pending_blanks = 0
+        # Split the entries at preprocessor directives: the unconditional
+        # includes form one sequence (with a "break" where a conditional block
+        # was cut out), and each run of includes inside a conditional block is
+        # checked on its own. Conditional blocks may thus follow the storm
+        # includes, as optional dependencies need "storm-config.h" first.
+        unconditional = []
+        conditional_runs = []
+        run = None
+        for kind, idx in truncated:
+            if kind == "directive":
+                if run:
+                    conditional_runs.append(run)
+                run = None
+                unconditional.append("break")
+            elif depths[idx] == 0:
+                unconditional.append(kind)
+            else:
+                if run is None:
+                    run = []
+                run.append(kind)
+        if run:
+            conditional_runs.append(run)
+
+        for sequence in [unconditional] + conditional_runs:
+            self.check_include_groups(sequence, issues)
 
         # bare_include: a quoted include uses a bare filename. Scanned from
         # preamble_end (not region_start), since region_start is pushed past
