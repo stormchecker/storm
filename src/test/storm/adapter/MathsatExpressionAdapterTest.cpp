@@ -4,18 +4,33 @@
 #ifdef STORM_HAVE_MATHSAT
 #include <mathsat.h>
 #include "storm/adapters/MathsatExpressionAdapter.h"
+#include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/expressions/ExpressionManager.h"
 #include "storm/expressions/Expressions.h"
 #include "storm/expressions/OperatorType.h"
 #include "storm/settings/SettingsManager.h"
 
-TEST(MathsatExpressionAdapter, StormToMathsatBasic) {
-    msat_config config = msat_create_config();
-    msat_env env = msat_create_env(config);
-    ASSERT_FALSE(MSAT_ERROR_ENV(env));
-    msat_destroy_config(config);
+class MathsatExpressionAdapter : public ::testing::Test {
+   protected:
+    void SetUp() override {
+        msat_config config = msat_create_config();
+        env = msat_create_env(config);
+        msat_destroy_config(config);
+        ASSERT_FALSE(MSAT_ERROR_ENV(env));
+    }
 
-    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    void TearDown() override {
+        // Only destroy a valid environment
+        if (!MSAT_ERROR_ENV(env)) {
+            msat_destroy_env(env);
+        }
+    }
+
+    msat_env env;
+    std::shared_ptr<storm::expressions::ExpressionManager> manager = std::make_shared<storm::expressions::ExpressionManager>();
+};
+
+TEST_F(MathsatExpressionAdapter, StormToMathsatBasic) {
     storm::adapters::MathsatExpressionAdapter adapter(*manager, env);
 
     storm::expressions::Expression exprTrue = manager->boolean(true);
@@ -54,13 +69,7 @@ TEST(MathsatExpressionAdapter, StormToMathsatBasic) {
     msat_reset_env(env);
 }
 
-TEST(MathsatExpressionAdapter, StormToMathsatInteger) {
-    msat_config config = msat_create_config();
-    msat_env env = msat_create_env(config);
-    ASSERT_FALSE(MSAT_ERROR_ENV(env));
-    msat_destroy_config(config);
-
-    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+TEST_F(MathsatExpressionAdapter, StormToMathsatInteger) {
     storm::adapters::MathsatExpressionAdapter adapter(*manager, env);
 
     storm::expressions::Variable x = manager->declareIntegerVariable("x");
@@ -89,13 +98,7 @@ TEST(MathsatExpressionAdapter, StormToMathsatInteger) {
     msat_reset_env(env);
 }
 
-TEST(MathsatExpressionAdapter, StormToMathsatReal) {
-    msat_config config = msat_create_config();
-    msat_env env = msat_create_env(config);
-    ASSERT_FALSE(MSAT_ERROR_ENV(env));
-    msat_destroy_config(config);
-
-    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+TEST_F(MathsatExpressionAdapter, StormToMathsatReal) {
     storm::adapters::MathsatExpressionAdapter adapter(*manager, env);
 
     storm::expressions::Variable x = manager->declareRationalVariable("x");
@@ -124,13 +127,49 @@ TEST(MathsatExpressionAdapter, StormToMathsatReal) {
     msat_reset_env(env);
 }
 
-TEST(MathsatExpressionAdapter, StormToMathsatFloorCeil) {
-    msat_config config = msat_create_config();
-    msat_env env = msat_create_env(config);
-    ASSERT_FALSE(MSAT_ERROR_ENV(env));
-    msat_destroy_config(config);
+TEST_F(MathsatExpressionAdapter, StormToMathsatPower) {
+    storm::adapters::MathsatExpressionAdapter adapter(*manager, env);
 
-    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    storm::expressions::Variable x = manager->declareRationalVariable("x");
+    msat_term xVar = msat_make_constant(env, msat_declare_function(env, "x", msat_get_rational_type(env)));
+    msat_term msatSquare = msat_make_times(env, xVar, xVar);
+    msat_term conjecture;
+
+    // Integer exponent.
+    storm::expressions::Expression exprIntPow = storm::expressions::pow(x, manager->integer(2));
+    ASSERT_NO_THROW(conjecture = msat_make_not(env, msat_make_equal(env, adapter.translateExpression(exprIntPow), msatSquare)));
+    msat_assert_formula(env, conjecture);
+    ASSERT_TRUE(msat_solve(env) == msat_result::MSAT_UNSAT);
+    msat_reset_env(env);
+
+    // Rational-typed but integral exponent
+    storm::expressions::Expression exprRationalPow = storm::expressions::pow(x, manager->rational(2));
+    ASSERT_NO_THROW(conjecture = msat_make_not(env, msat_make_equal(env, adapter.translateExpression(exprRationalPow), msatSquare)));
+    msat_assert_formula(env, conjecture);
+    ASSERT_TRUE(msat_solve(env) == msat_result::MSAT_UNSAT);
+    msat_reset_env(env);
+
+    // Larger odd exponent to test exponentiation by squaring
+    storm::expressions::Expression exprFifthPow = storm::expressions::pow(x, manager->integer(5));
+    msat_term msatFifth = msat_make_times(env, msat_make_times(env, msatSquare, msatSquare), xVar);
+    ASSERT_NO_THROW(conjecture = msat_make_not(env, msat_make_equal(env, adapter.translateExpression(exprFifthPow), msatFifth)));
+    msat_assert_formula(env, conjecture);
+    ASSERT_TRUE(msat_solve(env) == msat_result::MSAT_UNSAT);
+    msat_reset_env(env);
+
+    // Exponent zero.
+    storm::expressions::Expression exprZeroPow = storm::expressions::pow(x, manager->integer(0));
+    ASSERT_NO_THROW(conjecture = msat_make_not(env, msat_make_equal(env, adapter.translateExpression(exprZeroPow), msat_make_number(env, "1"))));
+    msat_assert_formula(env, conjecture);
+    ASSERT_TRUE(msat_solve(env) == msat_result::MSAT_UNSAT);
+    msat_reset_env(env);
+
+    // Non-integral exponent is rejected.
+    STORM_SILENT_ASSERT_THROW(adapter.translateExpression(storm::expressions::pow(x, manager->rational(0.5))),
+                              storm::exceptions::ExpressionEvaluationException);
+}
+
+TEST_F(MathsatExpressionAdapter, StormToMathsatFloorCeil) {
     storm::adapters::MathsatExpressionAdapter adapter(*manager, env);
 
     storm::expressions::Variable d = manager->declareRationalVariable("d");
@@ -170,13 +209,7 @@ TEST(MathsatExpressionAdapter, StormToMathsatFloorCeil) {
     msat_reset_env(env);
 }
 
-TEST(MathsatExpressionAdapter, MathsatToStormBasic) {
-    msat_config config = msat_create_config();
-    msat_env env = msat_create_env(config);
-    ASSERT_FALSE(MSAT_ERROR_ENV(env));
-    msat_destroy_config(config);
-
-    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+TEST_F(MathsatExpressionAdapter, MathsatToStormBasic) {
     manager->declareBooleanVariable("x");
     manager->declareBooleanVariable("y");
     storm::adapters::MathsatExpressionAdapter adapter(*manager, env);
