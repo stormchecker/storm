@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include "storm/solver/LpSolver.h"
+#include "storm/solver/LpSolverRequirements.h"
 // To detect whether the usage of Soplex is possible, this include is necessary.
 #include "storm-config.h"
 
@@ -75,6 +76,11 @@ class SoplexLpSolver : public LpSolver<ValueType, RawMode> {
 
     virtual void push() override;
     virtual void pop() override;
+
+    /*!
+     * Returns whether LP solvers of this type support the given feature.
+     */
+    static bool isSupported(LpSolverRequirements::Element const& element);
 
     //////////////////
     // MILP related methods not supported by SoPlex

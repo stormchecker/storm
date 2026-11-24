@@ -592,6 +592,26 @@ ValueType HighsLpSolver<ValueType, RawMode>::getMILPGap(bool) const {
 
 #endif
 
+template<typename ValueType, bool RawMode>
+bool HighsLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element const& element) {
+    switch (element) {
+        case LpSolverRequirements::Element::IntegerVariables:
+            return true;
+        case LpSolverRequirements::Element::Incremental:
+            return !RawMode;
+        case LpSolverRequirements::Element::IndicatorConstraints:
+            // Emulated via big-M. This requires the constraint to be bounded, otherwise addIndicatorConstraint() throws.
+            return !RawMode;
+        case LpSolverRequirements::Element::StrictRelations:
+            // Only approximated by shifting the bound.
+            return false;
+        case LpSolverRequirements::Element::ExactArithmetic:
+            // Only supports double precision.
+            return false;
+    }
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "Unknown LP solver requirement element.");
+}
+
 template class HighsLpSolver<double, true>;
 template class HighsLpSolver<double, false>;
 

@@ -608,6 +608,25 @@ ValueType GlpkLpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
     }
 }
 
+template<typename ValueType, bool RawMode>
+bool GlpkLpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element const& element) {
+    switch (element) {
+        case LpSolverRequirements::Element::IntegerVariables:
+            return true;
+        case LpSolverRequirements::Element::Incremental:
+            return !RawMode;
+        case LpSolverRequirements::Element::IndicatorConstraints:
+            return false;
+        case LpSolverRequirements::Element::StrictRelations:
+            // Only approximated by shifting the bound.
+            return false;
+        case LpSolverRequirements::Element::ExactArithmetic:
+            // Values are converted to floating point numbers.
+            return false;
+    }
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "Unknown LP solver requirement element.");
+}
+
 template class GlpkLpSolver<double, true>;
 template class GlpkLpSolver<double, false>;
 template class GlpkLpSolver<storm::RationalNumber, true>;

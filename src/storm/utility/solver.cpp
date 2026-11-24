@@ -6,6 +6,7 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/MissingLibraryException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/solver/Cvc5SmtSolver.h"
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
@@ -39,6 +40,11 @@ std::unique_ptr<LpSolverFactory<ValueType>> GlpkLpSolverFactory<ValueType>::clon
 }
 
 template<typename ValueType>
+bool GlpkLpSolverFactory<ValueType>::supports(storm::solver::LpSolverRequirements::Element const& element) const {
+    return storm::solver::GlpkLpSolver<ValueType, false>::isSupported(element);
+}
+
+template<typename ValueType>
 std::unique_ptr<storm::solver::LpSolver<ValueType>> SoplexLpSolverFactory<ValueType>::create(storm::Environment const&, std::string const& name) const {
     return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::SoplexLpSolver<ValueType>(name));
 }
@@ -55,6 +61,11 @@ std::unique_ptr<LpSolverFactory<ValueType>> SoplexLpSolverFactory<ValueType>::cl
 }
 
 template<typename ValueType>
+bool SoplexLpSolverFactory<ValueType>::supports(storm::solver::LpSolverRequirements::Element const& element) const {
+    return storm::solver::SoplexLpSolver<ValueType, false>::isSupported(element);
+}
+
+template<typename ValueType>
 std::unique_ptr<storm::solver::LpSolver<ValueType>> HighsLpSolverFactory<ValueType>::create(storm::Environment const&, std::string const& name) const {
     return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::HighsLpSolver<ValueType>(name));
 }
@@ -67,6 +78,11 @@ std::unique_ptr<storm::solver::LpSolver<ValueType, true>> HighsLpSolverFactory<V
 template<typename ValueType>
 std::unique_ptr<LpSolverFactory<ValueType>> HighsLpSolverFactory<ValueType>::clone() const {
     return std::make_unique<HighsLpSolverFactory<ValueType>>(*this);
+}
+
+template<typename ValueType>
+bool HighsLpSolverFactory<ValueType>::supports(storm::solver::LpSolverRequirements::Element const& element) const {
+    return storm::solver::HighsLpSolver<ValueType, false>::isSupported(element);
 }
 
 template<typename ValueType>
@@ -96,6 +112,11 @@ std::unique_ptr<LpSolverFactory<ValueType>> GurobiLpSolverFactory<ValueType>::cl
 }
 
 template<typename ValueType>
+bool GurobiLpSolverFactory<ValueType>::supports(storm::solver::LpSolverRequirements::Element const& element) const {
+    return storm::solver::GurobiLpSolver<ValueType, false>::isSupported(element);
+}
+
+template<typename ValueType>
 std::unique_ptr<storm::solver::LpSolver<ValueType>> Z3LpSolverFactory<ValueType>::create(storm::Environment const&, std::string const& name) const {
     return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::Z3LpSolver<ValueType>(name));
 }
@@ -108,6 +129,23 @@ std::unique_ptr<storm::solver::LpSolver<ValueType, true>> Z3LpSolverFactory<Valu
 template<typename ValueType>
 std::unique_ptr<LpSolverFactory<ValueType>> Z3LpSolverFactory<ValueType>::clone() const {
     return std::make_unique<Z3LpSolverFactory<ValueType>>(*this);
+}
+
+template<typename ValueType>
+bool Z3LpSolverFactory<ValueType>::supports(storm::solver::LpSolverRequirements::Element const& element) const {
+    return storm::solver::Z3LpSolver<ValueType, false>::isSupported(element);
+}
+
+template<typename ValueType>
+storm::solver::LpSolverRequirements LpSolverFactory<ValueType>::getUnsupportedRequirements(storm::solver::LpSolverRequirements const& requirements) const {
+    storm::solver::LpSolverRequirements unsupported;
+    for (auto const element : storm::solver::LpSolverRequirements::allElements()) {
+        auto const& requirement = requirements.get(element);
+        if (requirement && !supports(element)) {
+            unsupported.require(element, requirement.isCritical());
+        }
+    }
+    return unsupported;
 }
 
 template<typename ValueType>
@@ -154,6 +192,21 @@ std::unique_ptr<storm::solver::LpSolver<ValueType, true>> getRawLpSolver(storm::
                                                                          storm::solver::LpSolverTypeSelection solvType) {
     std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> factory = getLpSolverFactory<ValueType>(env, solvType);
     return factory->createRaw(env, name);
+}
+
+template<typename ValueType>
+storm::solver::LpSolverRequirements getUnsupportedLpSolverRequirements(storm::Environment const& env, storm::solver::LpSolverRequirements const& requirements,
+                                                                       storm::solver::LpSolverTypeSelection solvType) {
+    return getLpSolverFactory<ValueType>(env, solvType)->getUnsupportedRequirements(requirements);
+}
+
+template<typename ValueType>
+void checkLpSolverRequirements(storm::Environment const& env, storm::solver::LpSolverRequirements const& requirements, std::string const& purpose,
+                               storm::solver::LpSolverTypeSelection solvType) {
+    auto const unsupported = getUnsupportedLpSolverRequirements<ValueType>(env, requirements, solvType);
+    STORM_LOG_THROW(!unsupported.hasEnabledCriticalRequirement(), storm::exceptions::NotSupportedException,
+                    "The selected LP solver does not support " << unsupported.getEnabledRequirementsAsString() << ", which is required for " << purpose
+                                                               << ". Select a different LP solver.");
 }
 
 namespace {
@@ -234,6 +287,15 @@ template class SoplexLpSolverFactory<double>;
 template class SoplexLpSolverFactory<storm::RationalNumber>;
 template class HighsLpSolverFactory<double>;
 
+template void checkLpSolverRequirements<double>(storm::Environment const&, storm::solver::LpSolverRequirements const&, std::string const&,
+                                                storm::solver::LpSolverTypeSelection);
+template void checkLpSolverRequirements<storm::RationalNumber>(storm::Environment const&, storm::solver::LpSolverRequirements const&, std::string const&,
+                                                               storm::solver::LpSolverTypeSelection);
+template storm::solver::LpSolverRequirements getUnsupportedLpSolverRequirements<double>(storm::Environment const&, storm::solver::LpSolverRequirements const&,
+                                                                                        storm::solver::LpSolverTypeSelection);
+template storm::solver::LpSolverRequirements getUnsupportedLpSolverRequirements<storm::RationalNumber>(storm::Environment const&,
+                                                                                                       storm::solver::LpSolverRequirements const&,
+                                                                                                       storm::solver::LpSolverTypeSelection);
 template std::unique_ptr<LpSolverFactory<double>> getLpSolverFactory(storm::Environment const& env, storm::solver::LpSolverTypeSelection solvType);
 template std::unique_ptr<LpSolverFactory<storm::RationalNumber>> getLpSolverFactory(storm::Environment const& env,
                                                                                     storm::solver::LpSolverTypeSelection solvType);

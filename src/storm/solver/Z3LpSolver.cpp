@@ -14,6 +14,7 @@
 #include "storm/expressions/LinearCoefficientVisitor.h"
 #include "storm/expressions/OperatorType.h"
 #include "storm/io/file.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -475,6 +476,23 @@ ValueType Z3LpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
                     "requires this support.");
 }
 #endif
+
+template<typename ValueType, bool RawMode>
+bool Z3LpSolver<ValueType, RawMode>::isSupported(LpSolverRequirements::Element const& element) {
+    switch (element) {
+        case LpSolverRequirements::Element::IntegerVariables:
+            return true;
+        case LpSolverRequirements::Element::Incremental:
+            return !RawMode;
+        case LpSolverRequirements::Element::IndicatorConstraints:
+            return !RawMode;
+        case LpSolverRequirements::Element::StrictRelations:
+            return true;
+        case LpSolverRequirements::Element::ExactArithmetic:
+            return storm::NumberTraits<ValueType>::IsExact;
+    }
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "Unknown LP solver requirement element.");
+}
 
 template class Z3LpSolver<double, false>;
 template class Z3LpSolver<storm::RationalNumber, false>;

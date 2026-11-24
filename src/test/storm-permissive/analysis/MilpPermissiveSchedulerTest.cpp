@@ -12,12 +12,16 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/utility/solver.h"
 
-// The default LP solver (HiGHS, GLPK or Z3) must support MILP; SoPlex does not.
-#if defined STORM_HAVE_HIGHS || defined STORM_HAVE_GLPK || defined STORM_HAVE_Z3
+#ifdef STORM_HAVE_LP_SOLVER
 
 TEST(MilpPermissiveSchedulerTest, DieSelection) {
     storm::Environment env;
+    if (storm::utility::solver::getUnsupportedLpSolverRequirements<double>(env, storm::solver::LpSolverRequirements().requireIntegerVariables())
+            .hasEnabledCriticalRequirement()) {
+        GTEST_SKIP() << "LP solver does not support MILP.";
+    }
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/die_c1.nm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());

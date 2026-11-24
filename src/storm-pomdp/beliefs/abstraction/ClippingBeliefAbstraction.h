@@ -76,6 +76,9 @@ class ClippingBeliefAbstraction {
     BeliefClipping clipBeliefToGrid(BeliefType const& belief, uint64_t resolution);
 
    private:
+    /** Creates the LP solver, checking that it supports the requirements of clipping. */
+    void createLpSolver(storm::Environment const& env);
+
     std::vector<uint64_t> observationResolutions;
     std::shared_ptr<storm::solver::LpSolver<BeliefValueType>> lpSolver;
     std::optional<std::vector<BeliefValueType>> extremalRewardValues = std::nullopt;

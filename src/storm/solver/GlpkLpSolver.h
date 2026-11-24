@@ -3,6 +3,7 @@
 #include <map>
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/solver/LpSolver.h"
+#include "storm/solver/LpSolverRequirements.h"
 
 #include "storm-config.h"
 
@@ -89,6 +90,11 @@ class GlpkLpSolver : public LpSolver<ValueType, RawMode> {
 
     virtual void push() override;
     virtual void pop() override;
+
+    /*!
+     * Returns whether LP solvers of this type support the given feature.
+     */
+    static bool isSupported(LpSolverRequirements::Element const& element);
 
     virtual void setMaximalMILPGap(ValueType const& gap, bool relative) override;
     virtual ValueType getMILPGap(bool relative) const override;
