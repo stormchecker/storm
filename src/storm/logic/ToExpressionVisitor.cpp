@@ -63,6 +63,10 @@ boost::any ToExpressionVisitor::visit(CumulativeRewardFormula const&, boost::any
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
 }
 
+boost::any ToExpressionVisitor::visit(CvarFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+}
+
 boost::any ToExpressionVisitor::visit(EventuallyFormula const&, boost::any const&) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
 }

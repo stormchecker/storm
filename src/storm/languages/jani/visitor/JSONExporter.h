@@ -59,6 +59,7 @@ class FormulaToJaniJson : public storm::logic::FormulaVisitor {
     virtual boost::any visit(storm::logic::BoundedUntilFormula const& f, boost::any const& data) const;
     virtual boost::any visit(storm::logic::ConditionalFormula const& f, boost::any const& data) const;
     virtual boost::any visit(storm::logic::CumulativeRewardFormula const& f, boost::any const& data) const;
+    virtual boost::any visit(storm::logic::CvarFormula const& f, boost::any const& data) const;
     virtual boost::any visit(storm::logic::EventuallyFormula const& f, boost::any const& data) const;
     virtual boost::any visit(storm::logic::TimeOperatorFormula const& f, boost::any const& data) const;
     virtual boost::any visit(storm::logic::GameFormula const& f, boost::any const& data) const;

@@ -1,0 +1,16 @@
+mdp
+
+module main
+    s : [0..2] init 0;
+
+    [split] s=0 -> 1/2 : (s'=1) + 1/2 : (s'=2);
+    [loop] s=1 -> 1 : (s'=1);
+    [] s=2 -> 1 : (s'=2);
+endmodule
+
+label "goal" = s=2;
+
+rewards "reward"
+    [split] true : 1;
+    [loop] true : 1;
+endrewards

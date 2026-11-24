@@ -1,0 +1,43 @@
+mdp
+
+const int N;
+
+module main
+    s : [0..N+5] init 0;
+
+    [enter_front] s=0 -> (s'=1);
+    [enter_back] s=0 -> (s'=N);
+
+    [advance] s>=1 & s<N -> 1/2 : (s'=s) + 1/2 : (s'=s+1);
+    [low_exit] s>=1 & s<N -> (s'=N+1);
+    [high_exit] s=N -> (s'=N+2);
+    [skip] s=N -> (s'=N+5);
+
+    [low] s=N+1 -> 3/4 : (s'=N+3) + 1/4 : (s'=N+4);
+    [high] s=N+2 -> (s'=N+5);
+    [bonus] s=N+3 -> (s'=N+5);
+    [penalty] s=N+4 -> (s'=N+5);
+    [] s=N+5 -> (s'=N+5);
+endmodule
+
+label "goal" = s=N+5;
+
+rewards "cost"
+    [enter_front] true : 1;
+    [enter_back] true : 2;
+    [low] true : 1;
+    [high] true : 7;
+    [bonus] true : 1;
+    [penalty] true : 13;
+    [skip] true : 10;
+endrewards
+
+rewards "reward"
+    [enter_front] true : 1;
+    [enter_back] true : 1;
+    [low] true : 1;
+    [high] true : 8;
+    [bonus] true : 11;
+    [penalty] true : 1;
+    [skip] true : 1;
+endrewards

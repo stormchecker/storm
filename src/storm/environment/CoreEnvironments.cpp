@@ -22,6 +22,7 @@ template class SubEnvironment<ExplorationEnvironment>;
 
 template class SubEnvironment<ModelCheckerEnvironment>;
 template class SubEnvironment<CertificateModelCheckerEnvironment>;
+template class SubEnvironment<CvarModelCheckerEnvironment>;
 template class SubEnvironment<ConditionalModelCheckerEnvironment>;
 template class SubEnvironment<MultiObjectiveModelCheckerEnvironment>;
 

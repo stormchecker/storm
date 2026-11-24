@@ -12,12 +12,14 @@ namespace storm {
 // Forward declare subenvironments
 class CertificateModelCheckerEnvironment;
 class ConditionalModelCheckerEnvironment;
+class CvarModelCheckerEnvironment;
 class MultiObjectiveModelCheckerEnvironment;
 
 // Explicitly instantiated once in CoreEnvironments.cpp
 // Avoids redundant re-instantiation elsewhere
 extern template class SubEnvironment<CertificateModelCheckerEnvironment>;
 extern template class SubEnvironment<ConditionalModelCheckerEnvironment>;
+extern template class SubEnvironment<CvarModelCheckerEnvironment>;
 extern template class SubEnvironment<MultiObjectiveModelCheckerEnvironment>;
 
 class ModelCheckerEnvironment {
@@ -27,6 +29,8 @@ class ModelCheckerEnvironment {
 
     CertificateModelCheckerEnvironment& certificate();
     CertificateModelCheckerEnvironment const& certificate() const;
+    CvarModelCheckerEnvironment& cvar();
+    CvarModelCheckerEnvironment const& cvar() const;
 
     ConditionalModelCheckerEnvironment& conditional();
     ConditionalModelCheckerEnvironment const& conditional() const;
@@ -52,6 +56,7 @@ class ModelCheckerEnvironment {
 
    private:
     SubEnvironment<CertificateModelCheckerEnvironment> certificateModelCheckerEnvironment;
+    SubEnvironment<CvarModelCheckerEnvironment> cvarModelCheckerEnvironment;
     SubEnvironment<ConditionalModelCheckerEnvironment> conditionalModelCheckerEnvironment;
     SubEnvironment<MultiObjectiveModelCheckerEnvironment> multiObjectiveModelCheckerEnvironment;
 

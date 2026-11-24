@@ -20,6 +20,7 @@ class FormulaVisitor {
     virtual boost::any visit(BoundedUntilFormula const& f, boost::any const& data) const = 0;
     virtual boost::any visit(ConditionalFormula const& f, boost::any const& data) const = 0;
     virtual boost::any visit(CumulativeRewardFormula const& f, boost::any const& data) const = 0;
+    virtual boost::any visit(CvarFormula const& f, boost::any const& data) const = 0;
     virtual boost::any visit(EventuallyFormula const& f, boost::any const& data) const = 0;
     virtual boost::any visit(TimeOperatorFormula const& f, boost::any const& data) const = 0;
     virtual boost::any visit(GloballyFormula const& f, boost::any const& data) const = 0;

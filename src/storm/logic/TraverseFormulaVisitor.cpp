@@ -74,6 +74,13 @@ boost::any TraverseFormulaVisitor::visit(CumulativeRewardFormula const& f, boost
     return boost::any();
 }
 
+boost::any TraverseFormulaVisitor::visit(CvarFormula const& f, boost::any const& data) const {
+    if (callback(f)) {
+        f.getSubformula().accept(*this, data);
+    }
+    return boost::any();
+}
+
 boost::any TraverseFormulaVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {
     if (callback(f)) {
         f.getSubformula().accept(*this, data);

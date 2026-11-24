@@ -1,0 +1,20 @@
+mdp
+
+module main
+    s : [0..3] init 0;
+
+    [safe] s=0 -> 1 : (s'=3);
+    [risky] s=0 -> 1/5 : (s'=1) + 4/5 : (s'=2);
+    [low] s=1 -> 1 : (s'=3);
+    [high] s=2 -> 1 : (s'=3);
+    [] s=3 -> 1 : (s'=3);
+endmodule
+
+label "goal" = s=3;
+
+rewards "reward"
+    [safe] true : 6;
+    [risky] true : 1;
+    [low] true : 1;
+    [high] true : 9;
+endrewards

@@ -1,0 +1,16 @@
+mdp
+
+module main
+    s : [0..3] init 0;
+
+    [] s=0 -> 1/2 : (s'=1) + 1/2 : (s'=2);
+    [] s=1 -> 1 : (s'=1);
+    [] s=2 -> 1 : (s'=3);
+    [] s=3 -> 1 : (s'=2);
+endmodule
+
+label "target" = s=1;
+
+rewards "term"
+    s=1 : 4;
+endrewards

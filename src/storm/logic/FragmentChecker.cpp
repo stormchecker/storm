@@ -31,6 +31,9 @@ bool FragmentChecker::conformsToSpecification(Formula const& f, FragmentSpecific
     if (specification.isQuantileFormulaAtTopLevelRequired()) {
         result &= f.isQuantileFormula();
     }
+    if (specification.isCvarFormulaAtTopLevelRequired()) {
+        result &= f.isCvarFormula();
+    }
 
     return result;
 }
@@ -149,6 +152,14 @@ boost::any FragmentChecker::visit(CumulativeRewardFormula const& f, boost::any c
         }
     }
     return result;
+}
+
+boost::any FragmentChecker::visit(CvarFormula const& f, boost::any const& data) const {
+    InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+    if (!inherited.getSpecification().areCvarFormulasAllowed()) {
+        return false;
+    }
+    return f.getSubformula().accept(*this, data);
 }
 
 boost::any FragmentChecker::visit(EventuallyFormula const& f, boost::any const& data) const {

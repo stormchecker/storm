@@ -2,6 +2,7 @@
 
 #include "storm/environment/modelchecker/CertificateModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/ConditionalModelCheckerEnvironment.h"
+#include "storm/environment/modelchecker/CvarModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
 #include "storm/modelchecker/helper/infinitehorizon/SteadyStateDistributionAlgorithm.h"
@@ -31,6 +32,14 @@ CertificateModelCheckerEnvironment& ModelCheckerEnvironment::certificate() {
 
 CertificateModelCheckerEnvironment const& ModelCheckerEnvironment::certificate() const {
     return certificateModelCheckerEnvironment.get();
+}
+
+CvarModelCheckerEnvironment& ModelCheckerEnvironment::cvar() {
+    return cvarModelCheckerEnvironment.get();
+}
+
+CvarModelCheckerEnvironment const& ModelCheckerEnvironment::cvar() const {
+    return cvarModelCheckerEnvironment.get();
 }
 
 ConditionalModelCheckerEnvironment& ModelCheckerEnvironment::conditional() {

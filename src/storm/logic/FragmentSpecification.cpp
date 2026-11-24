@@ -241,6 +241,17 @@ FragmentSpecification quantiles() {
     return quantiles;
 }
 
+FragmentSpecification cvars() {
+    FragmentSpecification cvars = propositional();
+
+    cvars.setCvarFormulasAllowed(true);
+    cvars.setCvarFormulaAtTopLevelRequired(true);
+    cvars.setRewardOperatorsAllowed(true);
+    cvars.setReachabilityRewardFormulasAllowed(true);
+
+    return cvars;
+}
+
 FragmentSpecification::FragmentSpecification() {
     probabilityOperator = false;
     rewardOperator = false;
@@ -249,6 +260,7 @@ FragmentSpecification::FragmentSpecification() {
 
     multiObjectiveFormula = false;
     quantileFormula = false;
+    cvarFormula = false;
 
     globallyFormula = false;
     reachabilityProbabilityFormula = false;
@@ -299,8 +311,9 @@ FragmentSpecification::FragmentSpecification() {
 
     operatorAtTopLevelRequired = false;
     multiObjectiveFormulaAtTopLevelRequired = false;
-    operatorsAtTopLevelOfMultiObjectiveFormulasRequired = false;
     quantileFormulaAtTopLevelRequired = false;
+    cvarFormulaAtTopLevelRequired = false;
+    operatorsAtTopLevelOfMultiObjectiveFormulasRequired = false;
 
     rewardAccumulation = false;
 
@@ -363,6 +376,15 @@ bool FragmentSpecification::areQuantileFormulasAllowed() const {
 
 FragmentSpecification& FragmentSpecification::setQuantileFormulasAllowed(bool newValue) {
     this->quantileFormula = newValue;
+    return *this;
+}
+
+bool FragmentSpecification::areCvarFormulasAllowed() const {
+    return cvarFormula;
+}
+
+FragmentSpecification& FragmentSpecification::setCvarFormulasAllowed(bool newValue) {
+    this->cvarFormula = newValue;
     return *this;
 }
 
@@ -760,6 +782,15 @@ bool FragmentSpecification::isQuantileFormulaAtTopLevelRequired() const {
 
 FragmentSpecification& FragmentSpecification::setQuantileFormulaAtTopLevelRequired(bool newValue) {
     quantileFormulaAtTopLevelRequired = newValue;
+    return *this;
+}
+
+bool FragmentSpecification::isCvarFormulaAtTopLevelRequired() const {
+    return cvarFormulaAtTopLevelRequired;
+}
+
+FragmentSpecification& FragmentSpecification::setCvarFormulaAtTopLevelRequired(bool newValue) {
+    cvarFormulaAtTopLevelRequired = newValue;
     return *this;
 }
 
