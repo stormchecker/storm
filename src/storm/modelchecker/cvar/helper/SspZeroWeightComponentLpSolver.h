@@ -185,8 +185,8 @@ class SspZeroWeightComponentLpSolver {
             ValueType primary = primaryProbability * selected.probability + primaryExpectedCost * selected.expectedCost;
             ValueType secondary = secondaryProbability * selected.probability + secondaryExpectedCost * selected.expectedCost;
             for (auto const& point : front) {
-                auto const candidatePrimary = primaryProbability * point.probability + primaryExpectedCost * point.expectedCost;
-                auto const candidateSecondary = secondaryProbability * point.probability + secondaryExpectedCost * point.expectedCost;
+                ValueType const candidatePrimary = primaryProbability * point.probability + primaryExpectedCost * point.expectedCost;
+                ValueType const candidateSecondary = secondaryProbability * point.probability + secondaryExpectedCost * point.expectedCost;
                 if (candidatePrimary < primary || (candidatePrimary == primary && candidateSecondary < secondary)) {
                     selected = point;
                     primary = candidatePrimary;
