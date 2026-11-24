@@ -10,6 +10,7 @@
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
 #include "storm/environment/Environment.h"
+#include "storm/environment/modelchecker/CvarModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"

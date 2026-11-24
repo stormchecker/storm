@@ -2,6 +2,8 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/Environment.h"
+#include "storm/environment/modelchecker/CvarModelCheckerEnvironment.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/modelchecker/cvar/CvarInterpretation.h"

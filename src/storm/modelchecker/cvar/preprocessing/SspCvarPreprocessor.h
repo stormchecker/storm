@@ -5,6 +5,9 @@
 #include <string>
 #include <vector>
 
+#include "storm/environment/Environment.h"
+#include "storm/environment/modelchecker/CvarModelCheckerEnvironment.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"

@@ -5,7 +5,6 @@
 
 #include "storm/environment/Environment.h"
 #include "storm/environment/SubEnvironment.h"
-#include "storm/environment/modelchecker/CvarModelCheckerEnvironment.h"
 #include "storm/modelchecker/helper/infinitehorizon/SteadyStateDistributionAlgorithm.h"
 
 namespace storm {
@@ -13,12 +12,14 @@ namespace storm {
 // Forward declare subenvironments
 class CertificateModelCheckerEnvironment;
 class ConditionalModelCheckerEnvironment;
+class CvarModelCheckerEnvironment;
 class MultiObjectiveModelCheckerEnvironment;
 
 // Explicitly instantiated once in CoreEnvironments.cpp
 // Avoids redundant re-instantiation elsewhere
 extern template class SubEnvironment<CertificateModelCheckerEnvironment>;
 extern template class SubEnvironment<ConditionalModelCheckerEnvironment>;
+extern template class SubEnvironment<CvarModelCheckerEnvironment>;
 extern template class SubEnvironment<MultiObjectiveModelCheckerEnvironment>;
 
 class ModelCheckerEnvironment {

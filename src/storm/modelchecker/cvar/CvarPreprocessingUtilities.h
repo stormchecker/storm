@@ -2,8 +2,8 @@
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 

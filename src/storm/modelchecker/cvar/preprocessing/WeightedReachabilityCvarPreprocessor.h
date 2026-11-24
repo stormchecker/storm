@@ -5,7 +5,7 @@
 #include "storm/modelchecker/cvar/CvarPreprocessingUtilities.h"
 #include "storm/modelchecker/cvar/CvarQueryInformation.h"
 #include "storm/modelchecker/cvar/preprocessing/WeightedReachabilityCvarPreprocessingResult.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
