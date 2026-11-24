@@ -109,7 +109,7 @@ endif()
 #############################################################
 
 if(NOT STORM_DISABLE_GMM)
-    set(GMM_VERSION "5.5")
+    set(GMM_VERSION "5.6")
     message(STATUS "Storm - Including gmm ${GMM_VERSION}.")
     FetchContent_Declare(
             gmm
@@ -117,7 +117,7 @@ if(NOT STORM_DISABLE_GMM)
     )
     FetchContent_MakeAvailable(gmm)
     # Apply patch on downloaded/existing sources
-    storm_apply_patch(gmm ${gmm_SOURCE_DIR} ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm55.patch)
+    storm_apply_patch(gmm ${gmm_SOURCE_DIR} ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm56.patch)
     add_library(gmm INTERFACE) # Not imported, we are in control of the sources.
     add_dependencies(storm_resources gmm)
     target_include_directories(gmm INTERFACE
